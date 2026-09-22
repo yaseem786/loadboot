@@ -1540,3 +1540,11 @@ export async function invProofUrl(ref, seconds = 600) {
   if (error) throw error;
   return data.signedUrl;
 }
+
+// bl_inv_0405 — investor-initiated amendments, expense acknowledgement, doc params
+export const invProposeAmendment  = (p) => rpc('inv_propose_amendment', { p });
+export const invWithdrawAmendment = (id) => rpc('inv_withdraw_amendment', { p_id: id });
+export const invMyAmendments      = (agreementId) => rpc('inv_my_amendments', { p_agreement: agreementId });
+export const invAckExpense        = (id) => rpc('inv_ack_expense', { p_expense: id });
+export const ccInvDecideAmendment = (id, accept, note) => rpc('cc_inv_decide_amendment', { p_id: id, p_accept: !!accept, p_note: note || null });
+export const ccInvAmendments      = (agreementId) => rpc('cc_inv_amendments', { p_agreement: agreementId });

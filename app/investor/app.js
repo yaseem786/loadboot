@@ -16,8 +16,8 @@ import { getSession, signInWithPassword, signOut, onAuthChange, resetPassword,
 import { el, mount } from '../shared/ui/dom.js';
 import { invMe, invMyRequests, invDeclarePayment, invLedger, invStatements, invConfirmPayout,
          invSetLang, invFlag, invMyFlags, invSettings, invCurrentDoc, invSignDoc, invGrowth, invProjection,
-         invUploadProof, invProofUrl } from '../shared/api.js';
-import { mdToHtml } from './agreement-template.js';
+         invUploadProof, invProofUrl, invProposeAmendment, invWithdrawAmendment, invMyAmendments, invAckExpense } from '../shared/api.js';
+import { mdToHtml, buildFromParams } from './agreement-template.js';
 import { t, setLang, getLang, LANGS } from './i18n.js';
 import { vendorWhat, catWhat, termWhat, TERMS, CATEGORIES, VENDORS } from './glossary.js';
 // SMS second factor is OFF until an SMS provider is wired into Supabase Auth (Telnyx via the
@@ -297,7 +297,7 @@ function renderHome(host) {
       p.exit_participation_pct != null ? el('p', { class: 'iv-muted', style: 'margin:10px 0 0' }, t('h_exit') + ': ' + t('h_exit_val', pct(p.exit_participation_pct))) : null,
       recovering ? el('p', { class: 'iv-muted', style: 'margin:10px 0 0' }, t('h_note_recovering', pct(p.payback_rate_pct), pct(p.effective_share_pct))) : null,
     ]),
-    journey(p),
+    journey(p), amendCard(p),
     open.length ? el('div', { class: 'iv-open' }, [el('b', null, t('h_open')), el('ul', null, open.map(q => el('li', null, t('oq_' + q, pct(p.permanent_share_pct)))))]) : null,
     projectionCard(),
   ]);
@@ -449,6 +449,9 @@ async function renderLedger(host) {
     dl([[t('amount'), money(x.amount)], [t('date'), fmtDate(x.date)], [t('l_vendor'), x.vendor], [t('l_details'), x.description],
         [t('l_paid_from'), x.tranche ? t('l_tranche', fmtDate(x.tranche)) : null], [t('l_recurring'), x.recurring ? t('l_yes') : t('l_no')]]),
     x.receipt_url ? el('a', { class: 'iv-btn block', href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(x.receipt_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, t('view') + ' ' + t('receipt')) : el('p', { class: 'iv-muted' }, t('l_no_receipt')),
+    x.reversed ? null : x.acknowledged_at ? el('div', { class: 'iv-ok' }, t('ack_done', fmtDate(x.acknowledged_at))) : el('div', null, [
+      el('button', { class: 'iv-btn primary block', onClick: async (e) => { e.target.disabled = true; try { await invAckExpense(x.id); x.acknowledged_at = new Date().toISOString(); S.ledger = null; renderShell(); } catch (ex) { alert(err(ex)); e.target.disabled = false; } } }, t('ack_btn')),
+      el('p', { class: 'iv-muted', style: 'font-size:.75rem' }, t('ack_hint'))]),
     flagButton('expense', x.id),
   ]));
   mount(host, [
@@ -464,7 +467,7 @@ async function renderLedger(host) {
     exp.length ? el('div', { class: 'iv-list' }, exp.map(x => el('button', { class: 'iv-row', onClick: () => expSheet(x) }, [
       el('div', { class: 'ic ' + (x.reversed ? 'in' : 'out') }, x.reversed ? icon('arrowBack') : catIcon(x.category)),
       el('div', null, [el('div', { class: 't' }, x.reversed ? t('l_reversal') + ' · ' + catName(x.category) : (x.vendor || catName(x.category))), el('div', { class: 's' }, fmtDate(x.date) + (x.description ? ' · ' + x.description : '')), el('div', { class: 's what' }, vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang()))]),
-      el('div', { class: 'amt ' + (x.reversed ? 'pos' : 'neg') }, [(x.reversed ? '+' : '−') + money(x.amount), x.receipt_url ? el('small', null, t('receipt') + ' ✓') : null]),
+      el('div', { class: 'amt ' + (x.reversed ? 'pos' : 'neg') }, [(x.reversed ? '+' : '−') + money(x.amount), (!x.reversed && !x.acknowledged_at) ? el('small', { class: 'iv-new' }, t('ack_new')) : x.receipt_url ? el('small', null, t('receipt') + ' ✓') : null]),
     ]))) : empty(t('l_empty')),
     el('div', { class: 'iv-actions', style: 'justify-content:center' }, el('button', { class: 'iv-btn sm', onClick: exportCsv }, [icon('download'), t('l_export')])),
     await flagsSection(),
@@ -729,8 +732,12 @@ async function agreementV3() {
   const mine = (doc.signatures || []).find(s => s.party === 'investor');
   const co = (doc.signatures || []).find(s => s.party === 'company');
   const ph = /class="ph"/.test(doc.body_md) || /\[[A-Z][A-Za-z ]+\]/.test(doc.body_md);
-  const view = el('div', { class: 'iv-doc' + (lang === 'ur' ? ' rtl' : '') });
-  view.innerHTML = mdToHtml(doc.body_md);
+  const viewLang = getLang();
+  const translated = (viewLang !== lang && doc.params) ? buildFromParams(doc.params, viewLang) : null;
+  const shownLang = translated ? viewLang : lang;
+  const view = el('div', { class: 'iv-doc' + (shownLang === 'ur' ? ' rtl' : '') });
+  view.innerHTML = mdToHtml(translated || doc.body_md);
+  const stale = !!doc.stale;
   const sigStatus = el('div', null, [
     mine ? el('div', { class: 'iv-signed' }, [icon('check', ''), el('div', null, [el('b', null, t('doc_signed_you')), ' · ', mine.signer_name, ' · ', fmtDate(mine.signed_at)])]) : null,
     co ? el('div', { class: 'iv-signed' }, [icon('check', ''), el('div', null, [el('b', null, t('doc_signed_co')), ' · ', co.signer_name + (co.signer_title ? ', ' + co.signer_title : ''), ' · ', fmtDate(co.signed_at)])]) : null,
@@ -740,6 +747,7 @@ async function agreementV3() {
   const close = openSheet(t('doc_title'), body);
   const signBlock = () => {
     if (mine) return null;
+    if (stale) return null;
     if (ph) return el('div', { class: 'iv-warn' }, t('doc_ph'));
     const name = inp('iv-sig-name', { type: 'text', required: true, autocomplete: 'name', placeholder: S.me && S.me.name ? S.me.name : '' });
     const pad = sigPad();
@@ -765,13 +773,66 @@ async function agreementV3() {
   };
   mount(body, [
     el('p', { class: 'iv-muted', style: 'margin:0 0 8px' }, [el('b', null, doc.title), ' · ', t('doc_v', doc.version), ' · ', fmtDate(doc.published_at)]),
+    stale ? el('div', { class: 'iv-warn' }, t('doc_stale', fmtDate(res.terms_changed_at))) : null,
+    translated ? el('div', { class: 'iv-gl-p' }, t('doc_translated', doc.version, t('doc_lang_' + lang))) : null,
     sigStatus, view,
     el('p', { class: 'iv-muted', style: 'margin:8px 0 0;font-size:.72rem' }, t('doc_hash')), el('div', { class: 'iv-hash' }, doc.hash),
     signBlock(),
     el('div', { class: 'iv-actions', style: 'margin-top:12px' }, [
-      el('button', { class: 'iv-btn sm', type: 'button', onClick: () => { const w = window.open('', '_blank'); if (!w) return; w.document.write('<!doctype html><title>' + doc.title + '</title><style>body{font-family:Georgia,serif;max-width:760px;margin:30px auto;padding:0 20px;line-height:1.6}' + (lang === 'ur' ? 'body{direction:rtl}' : '') + '.ph{background:#FEF3C7}</style>' + mdToHtml(doc.body_md) + '<hr><p style="font-family:monospace;font-size:11px">SHA-256 ' + doc.hash + '</p>' + (doc.signatures || []).map(s => '<p>' + (s.party === 'investor' ? 'Investor' : 'Company') + ': ' + s.signer_name + ' — ' + new Date(s.signed_at).toLocaleString() + '</p>').join('')); w.document.close(); } }, t('doc_download')),
+      el('button', { class: 'iv-btn sm', type: 'button', onClick: () => { const w = window.open('', '_blank'); if (!w) return; w.document.write('<!doctype html><title>' + doc.title + '</title><style>body{font-family:Georgia,serif;max-width:760px;margin:30px auto;padding:0 20px;line-height:1.6}' + (shownLang === 'ur' ? 'body{direction:rtl;font-family:"Noto Nastaliq Urdu",serif}' : '') + '.ph{background:#FEF3C7}</style>' + mdToHtml(translated || doc.body_md) + '<hr><p style="font-family:monospace;font-size:11px">SHA-256 ' + doc.hash + '</p>' + (doc.signatures || []).map(s => '<p>' + (s.party === 'investor' ? 'Investor' : 'Company') + ': ' + s.signer_name + ' — ' + new Date(s.signed_at).toLocaleString() + '</p>').join('')); w.document.close(); } }, t('doc_download')),
       el('button', { class: 'iv-btn sm', type: 'button', onClick: () => { close(); showTermsSummary(); } }, t('h_agreement')),
     ]),
     flagButton('agreement', a.id),
   ]);
+}
+
+// ---------- investor-initiated changes (bl_inv_0405): change commitment / stop / resume ----------
+function amendCard(p) {
+  const a = S.agr; const box = el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('am_title')), el('div', { class: 'iv-sk', style: 'height:14px;width:60%' })]);
+  if (a.status === 'wound_down' || a.status === 'closed') return null;
+  const paint = (list) => {
+    const pending = list.find(m => m.status === 'proposed');
+    const closed = !!a.commitment_closed_at || p.commitment_closed;
+    const kindLabel = (m) => t('am_kind_' + m.kind);
+    const hist = list.filter(m => m.status !== 'proposed').slice(0, 5);
+    mount(box, [
+      el('p', { class: 'iv-eyebrow' }, t('am_title')), el('p', { class: 'iv-muted', style: 'margin:0 0 10px' }, t('am_sub')),
+      pending ? el('div', { class: 'iv-warn' }, [el('b', null, kindLabel(pending) + ' → ' + money(pending.new_value.commitment_cap)), el('div', null, t('am_pending')),
+        el('button', { class: 'iv-btn sm', style: 'margin-top:8px', onClick: async () => { try { await invWithdrawAmendment(pending.id); S.amend = null; renderShell(); } catch (ex) { alert(err(ex)); } } }, t('am_withdraw'))]) :
+      el('div', { class: 'iv-choice' }, [
+        el('button', { type: 'button', onClick: () => amendSheet('commitment_change', p) }, [icon('doc'), t('am_change'), el('small', null, money(p.commitment_cap))]),
+        closed ? el('button', { type: 'button', onClick: () => amendSheet('resume_funding', p) }, [icon('arrowBack'), t('am_resume')])
+               : el('button', { type: 'button', onClick: () => amendSheet('stop_funding', p) }, [icon('x'), t('am_stop'), el('small', null, money(p.funded))]),
+      ]),
+      hist.length ? el('div', null, [el('div', { class: 'iv-sect' }, el('h2', null, t('am_history'))), el('div', { class: 'iv-list' }, hist.map(m => el('div', { class: 'iv-row', style: 'cursor:default' }, [
+        el('div', { class: 'ic' }, icon('doc')), el('div', null, [el('div', { class: 't' }, kindLabel(m) + ' → ' + money(m.new_value.commitment_cap)), el('div', { class: 's' }, fmtDate(m.decided_at || m.created_at) + (m.decision_note ? ' · ' + m.decision_note : ''))]),
+        el('div', { class: 'amt' }, pill(t('am_' + m.status), m.status === 'accepted' ? 'ok' : m.status === 'declined' ? 'due' : 'wait'))])))]) : null,
+    ]);
+  };
+  (S.amend && S.amend.agr === a.id ? Promise.resolve(S.amend.list) : invMyAmendments(a.id).then(r => { S.amend = { agr: a.id, list: r.amendments || [] }; return S.amend.list; }))
+    .then(paint).catch(ex => mount(box, [el('p', { class: 'iv-eyebrow' }, t('am_title')), el('p', { class: 'iv-muted' }, err(ex))]));
+  return box;
+}
+function amendSheet(kind, p) {
+  const a = S.agr; const proRata = a.early_stop_share_mode !== 'keep';
+  const cap = inp('iv-newcap', { type: 'number', inputmode: 'decimal', min: String(Number(p.funded || 0)), step: '1', value: kind === 'stop_funding' ? p.funded : '', required: kind !== 'stop_funding', disabled: kind === 'stop_funding' });
+  const reason = el('textarea', { id: 'iv-am-reason', name: 'iv-am-reason', rows: 2 });
+  const prev = el('div', { class: 'iv-pay' }); const msg = el('div'); const btn = el('button', { class: 'iv-btn primary block', type: 'submit' }, t('am_send'));
+  const paint = () => {
+    const nc = kind === 'stop_funding' ? Number(p.funded) : Number(cap.value || 0);
+    const orig = Number(p.original_cap || p.commitment_cap); const funded = Number(p.funded || 0);
+    const stops = nc > 0 && nc === funded;
+    const share = stops && proRata ? Number(p.permanent_share_pct) * funded / orig : Number(p.permanent_share_pct);
+    mount(prev, [el('p', { class: 'iv-eyebrow', style: 'margin:0' }, t('am_preview')), dl([
+      [t('am_p_cap'), nc > 0 ? money(nc) : '—'],
+      [t('am_p_target'), money(stops ? funded : (p.recovery_target && Number(p.recovery_target) > funded ? p.recovery_target : nc || funded))],
+      [t('am_p_share'), pct(share)],
+    ]), el('p', { class: 'iv-muted', style: 'margin:8px 0 0;font-size:.78rem' }, t('am_p_note'))]);
+  };
+  cap.oninput = paint; paint();
+  const close = openSheet(t('am_kind_' + kind), el('form', { onSubmit: async (e) => { e.preventDefault(); btn.disabled = true; mount(msg, '');
+    try { await invProposeAmendment({ agreement_id: a.id, kind, new_cap: kind === 'stop_funding' ? null : cap.value, reason: reason.value }); S.amend = null; mount(msg, el('div', { class: 'iv-ok' }, t('am_pending'))); setTimeout(() => { close(); renderShell(); }, 900); }
+    catch (ex) { mount(msg, el('div', { class: 'iv-err' }, err(ex))); btn.disabled = false; } } }, [
+    msg, kind === 'stop_funding' ? el('p', { class: 'iv-muted' }, termWhat('recovery', getLang())) : field(t('am_new_cap'), cap, money(p.funded) + ' ≤ … '), prev, field(t('am_reason'), reason), btn,
+  ]));
 }

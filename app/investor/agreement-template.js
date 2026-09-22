@@ -19,9 +19,16 @@ export const DEFAULT_EXTRA = {
   statement_day: 10, payout_days: 7, flag_answer_days: 5, request_response_days: 7,
   mediator: '', governing_law: '', notify_new_investor: true, audit_per_year: 1,
   owner_salary_in_expenses: '', tax_treatment: '',
+  separate_account: '', bank_statement_access: '', key_person: '', other_members: '', visits: '',
 };
 
 export function hasPlaceholders(md) { return /class="ph"/.test(md); }
+// A published document stores { agreement, investor, extra } (bl_inv_0405). Rebuild it in any
+// language for READING; the signature stays bound to the published text's hash.
+export function buildFromParams(params, lang) {
+  if (!params || !params.agreement) return null;
+  return buildAgreement(params.agreement, params.investor || {}, params.extra || {}, lang);
+}
 
 export function buildAgreement(a, investor, extra, lang) {
   const x = Object.assign({}, DEFAULT_EXTRA, extra || {});
@@ -33,7 +40,7 @@ export function buildAgreement(a, investor, extra, lang) {
   const stopMode = a.early_stop_share_mode === 'keep' ? 'KEEP' : 'PRO_RATA';
   const exitPct = a.exit_participation_pct != null ? pct(a.exit_participation_pct) : null;
   const target = a.payback_basis === 'fixed' ? money(a.payback_fixed_amount, cur) : null;
-  const D = lang === 'ur_roman' ? UR : EN;
+  const D = lang === 'ur_roman' ? UR : lang === 'ur' ? URS : EN;
   return D({ a, investor, x, cur, cap, pay, share, isEquity, shareType, stopMode, exitPct, target });
 }
 
@@ -166,6 +173,34 @@ ${a.buyout_terms ? '13.1 ' + a.buyout_terms + '\n13.2 The Investor is never obli
 ## 22. Electronic signature
 22.1 Both sides agree to sign electronically in the Portal. A signature records the signer's typed name, an optional drawn signature, the time, the device, and a cryptographic hash of exactly this text. A signature is valid only against the version it was made on.
 22.2 Each side may download this signed document at any time.
+
+## 23. Changes the Investor may start from the Portal
+23.1 The Investor may propose in the Portal: to raise or lower the Commitment (never below the Funded Amount), to stop funding at the Funded Amount, or to resume after a stop.
+23.2 A proposal binds no one until the Company accepts it in the Portal. The Company answers within **${x.request_response_days} days**, with a written reason if it declines. The Investor may withdraw a proposal before it is decided.
+23.3 When accepted, the change applies at once to the Portal figures, this document is marked **out of date**, and the Company publishes a new version reflecting the change. Both sides sign the new version. Until then the last fully signed version, together with the accepted change in the Portal record, governs.
+23.4 Lowering the Commitment to the Funded Amount is the same as stopping under clause 10; the pro-rata rule in clause 10.3 applies.
+
+## 24. Seeing and acknowledging entries
+24.1 Every Capital Request, Tranche, expense, Statement and Payout appears in the Portal as soon as it is recorded, with the plain-language meaning of what was bought and why.
+24.2 The Investor may mark an expense as **seen**, or **question** it (clause 14.2). Silence is neither agreement nor objection: the Portal record stands and any entry may still be questioned later.
+24.3 The Portal shows the Investor what is new since their last visit.
+
+## 25. Questions investors usually ask — the answers are part of this agreement
+**Can I get my money back early?** No. Money already spent is not returned. Cash still unspent in the Fund is returned only on wind-down (clause 11) or by agreement.
+**Can I put in more than the Commitment?** Only after the Commitment is raised in the Portal (clause 23). Money above it is not accepted.
+**Can I stop after paying part?** Yes, at any time, from the Portal, without penalty (clauses 10 and 23).
+**Is my money kept in a separate bank account?** ${or(x.separate_account, 'SEPARATE ACCOUNT: YES / NO — and where')}
+**Can I see bank statements?** The Investor sees every entry and receipt in the Portal, and may have an accountant review the ledger once a year (clause 14.3). ${or(x.bank_statement_access, 'BANK STATEMENT ACCESS: yes on request / no')}
+**Who owns the LoadBoot software, brand and customers?** The Company. This agreement gives the Investor money rights only (clause 3.4).
+**What if the Company takes a bigger investor or venture money later?** The Investor is told in the Portal first (clause 16). The Investor's percentages under this agreement do not change. On a sale, clause 12 applies.
+**What if the owner dies, leaves or cannot work?** The Company continues with its remaining members. ${or(x.key_person, 'KEY PERSON RULE: e.g. if the founder cannot run the Company for 90+ days, the Investor may ask for wind-down under clause 11')}
+**Who else is behind the Company?** ${or(x.other_members, 'OTHER MEMBERS / CO-FOUNDERS and whether they are on the Company record')}
+**Can I sell or give my rights to someone else?** Not without the Company's written consent (clause 15.4). On death, clause 18 applies.
+**Is there a minimum profit or guaranteed return?** No (clause 3.2). A month without Profit pays nothing.
+**How is Profit checked?** From the Statement; every expense is tagged, receipted and questionable in the Portal (clauses 7, 14).
+**What currency am I paid in?** ${cur} (clause 17).
+**Can I visit the office or meet the team?** ${or(x.visits, 'VISITS: e.g. yes, on reasonable notice')}
+**What happens if the Company breaks this agreement?** Clause 20 (talk → neutral person → courts). The Portal record is the evidence.
 `;
 }
 
@@ -298,6 +333,34 @@ ${a.buyout_terms ? '13.1 ' + a.buyout_terms + '\n13.2 Investor bechne par kabhi 
 ## 22. Electronic dastakhat
 22.1 Dono fareeq Portal mein electronic dastakhat par raazi hain. Dastakhat mein type kiya naam, ikhtiyari khincha hua signature, waqt, device, aur bilkul isi matn ka cryptographic hash record hota hai. Dastakhat sirf usi version par jaiz hai jis par kiya gaya.
 22.2 Har fareeq sign shuda document kabhi bhi download kar sakta hai.
+
+## 23. Jo tabdeeliyan Investor Portal se shuru kar sakta hai
+23.1 Investor Portal mein tajweez kar sakta hai: Commitment barhana ya ghatana (Funded Amount se neeche kabhi nahi), Funded Amount par funding rokna, ya rukne ke baad dobara shuru karna.
+23.2 Tajweez kisi ko paband nahi karti jab tak Company Portal mein qabool na kare. Company **${x.request_response_days} din** mein jawab deti hai, inkaar ho to likhi wajah ke sath. Faisle se pehle Investor tajweez wapis le sakta hai.
+23.3 Qabool hone par tabdeeli Portal ke aadad par foran lagu hoti hai, ye document **purana** nishan-zad ho jata hai, aur Company nayi version publish karti hai. Dono fareeq nayi version par sign karte hain. Tab tak aakhri poori sign shuda version + Portal record mein qabool shuda tabdeeli lagu hai.
+23.4 Commitment ko Funded Amount tak ghatana shaq 10 ke rukne jaisa hai; shaq 10.3 ka pro-rata usool lagu hoga.
+
+## 24. Entries dekhna aur tasdeeq karna
+24.1 Har Capital Request, Tranche, kharcha, Statement aur Payout record hote hi Portal mein nazar aata hai, saade alfaz mein ke kya khareeda aur kyun.
+24.2 Investor kharche ko **dekh liya** nishan laga sakta hai, ya us par **sawal** utha sakta hai (shaq 14.2). Khamoshi na razamandi hai na aitraaz: Portal record qaim rehta hai aur baad mein bhi sawal ho sakta hai.
+24.3 Portal Investor ko batata hai ke pichli baar ke baad naya kya hai.
+
+## 25. Jo sawal investor aksar poochte hain — jawab is agreement ka hissa hain
+**Kya main apna paisa jaldi wapis le sakta hoon?** Nahi. Kharch shuda paisa wapis nahi hota. Fund mein bacha hua cash sirf wind-down (shaq 11) ya bahami razamandi se wapis hota hai.
+**Kya main Commitment se zyada de sakta hoon?** Sirf jab Commitment Portal mein barha di jaye (shaq 23). Us se upar paisa qabool nahi.
+**Kya kuch de kar ruk sakta hoon?** Haan, kabhi bhi, Portal se, bina jurmana (shaq 10 aur 23).
+**Kya mera paisa alag bank account mein rakha jata hai?** ${or(x.separate_account, 'ALAG ACCOUNT: HAAN / NAHI — aur kahan')}
+**Kya main bank statements dekh sakta hoon?** Investor Portal mein har entry aur raseed dekhta hai, aur saal mein ek baar accountant se ledger check karwa sakta hai (shaq 14.3). ${or(x.bank_statement_access, 'BANK STATEMENT: darkhwast par haan / nahi')}
+**LoadBoot ka software, brand aur customers kis ke hain?** Company ke. Ye agreement Investor ko sirf paise ke huqooq deta hai (shaq 3.4).
+**Agar Company baad mein bara investor ya venture paisa le?** Investor ko pehle Portal mein bataya jayega (shaq 16). Is agreement ke fisad nahi badalte. Sale par shaq 12 lagu hai.
+**Agar malik faut ho jaye, chhor de ya kaam na kar sake?** Company apne baqi members ke sath chalti hai. ${or(x.key_person, 'KEY PERSON USOOL: maslan founder 90+ din Company na chala sake to Investor shaq 11 ke tahat wind-down maang sakta hai')}
+**Company ke peeche aur kaun hai?** ${or(x.other_members, 'DEEGAR MEMBERS / CO-FOUNDERS aur kya wo Company record par hain')}
+**Kya main apne huqooq kisi aur ko bech ya de sakta hoon?** Company ki likhi ijazat ke bagair nahi (shaq 15.4). Wafat par shaq 18.
+**Kya kam se kam munafa ya guaranteed wapsi hai?** Nahi (shaq 3.2). Bina munafay ka mahina kuch nahi deta.
+**Munafa kaise check hota hai?** Statement se; har kharcha tag shuda, raseed ke sath, aur Portal mein sawal ke qabil (shaq 7, 14).
+**Mujhe kis currency mein milega?** ${cur} (shaq 17).
+**Kya main office aa sakta hoon ya team se mil sakta hoon?** ${or(x.visits, 'VISITS: maslan haan, munasib ittila par')}
+**Agar Company ye agreement tore to?** Shaq 20 (baat → neutral shakhs → adalat). Portal record saboot hai.
 `;
 }
 
@@ -318,4 +381,165 @@ export function mdToHtml(md) {
     i++;
   }
   return out.join('\n');
+}
+
+// اردو (Nastaliq script). Same clauses, same numbers; English text governs (clause 21.5).
+function URS({ a, investor, x, cur, cap, pay, share, isEquity, shareType, stopMode, exitPct, target }) {
+  const inv = or(investor && investor.name, 'سرمایہ کار کا پورا نام');
+  return `# سرمایہ کاری کا معاہدہ
+
+**فریقین:** ${x.company_name}، ${x.company_state} میں رجسٹرڈ لمیٹڈ لائبلٹی کمپنی (**کمپنی**)، جس کی طرف سے ${x.company_signer}، ${x.company_signer_title}، **اور** ${inv} (**سرمایہ کار**)۔
+
+یہ معاہدہ جان بوجھ کر سادہ زبان میں لکھا گیا ہے۔ اس کا ہر نمبر انویسٹر پورٹل میں لائیو دکھتا ہے، اور پورٹل کا ریکارڈ ہی وہ ریکارڈ ہے جس پر دونوں فریق بھروسہ کرتے ہیں۔
+
+## 1. پس منظر
+کمپنی لوڈ بوٹ چلاتی ہے — ٹرکنگ کیریئرز کے لیے ڈسپیچ اور لوڈ مینجمنٹ سروس۔ سرمایہ کار کمپنی کے کاروبار میں پیسہ لگا رہا ہے جس کے بدلے اسے منافع میں حصہ ملے گا جیسا نیچے لکھا ہے۔ سرمایہ کار قرض نہیں دے رہا اور نہ کوئی مقررہ واپسی خرید رہا ہے۔
+
+## 2. تعریفات
+| اصطلاح | مطلب |
+|---|---|
+| **کمٹمنٹ** | زیادہ سے زیادہ جتنا سرمایہ کار دینے پر راضی ہوا: **${cap}**۔ یہ حد ہے، پابندی نہیں۔ |
+| **کیپیٹل ریکویسٹ** | کمپنی کی پورٹل میں کی گئی درخواست — رقم اور مقصد کے ساتھ۔ |
+| **قسط (ٹرانچ)** | کیپیٹل ریکویسٹ پر (یا اس کے بغیر) سرمایہ کار کی ایک ادائیگی۔ |
+| **فنڈڈ اماؤنٹ** | تمام قسطوں کا مجموعہ جن کی **دونوں** فریقوں نے پورٹل میں تصدیق کی۔ صرف تصدیق شدہ پیسہ گنتا ہے۔ |
+| **فنڈ** | فنڈڈ اماؤنٹ منفی جو اس میں سے خرچ ہو چکا۔ |
+| **منافع** | کیلنڈر مہینے میں اصل میں وصول شدہ آمدنی، منفی شق 7 کے اخراجات۔ |
+| **ریکوری ٹارگٹ** | ${target ? 'مقررہ رقم **' + target + '**۔' : '**فنڈڈ اماؤنٹ** — جتنا سرمایہ کار نے اصل میں دیا، اس سے زیادہ نہیں۔'} |
+| **ریکوری پیریڈ** | پہلی قسط سے اس وقت تک جب ریکوری ٹارگٹ پے آؤٹس کے ذریعے واپس ہو جائے۔ |
+| **مستقل حصہ** | منافع کا **${share}**، جب تک کمپنی منافع کمائے، شق 10 اور 11 کے تابع۔ |
+| **اسٹیٹمنٹ** | ماہانہ منافع کا حساب جو پورٹل میں شائع ہوتا ہے۔ |
+| **پے آؤٹ** | اسٹیٹمنٹ پر کمپنی کی سرمایہ کار کو ادائیگی، جس کی سرمایہ کار پورٹل میں تصدیق کرتا ہے۔ |
+| **پورٹل** | loadboot.com/app/investor پر انویسٹر پورٹل، اور کمپنی کا کمانڈ سینٹر جو اس میں لکھتا ہے۔ |
+
+## 3. یہ سرمایہ کاری کیا ہے — اور کیا نہیں
+3.1 پیسہ **خطرے میں** ہے۔ اگر کمپنی منافع نہ کمائے تو اس مدت کا سرمایہ کار کو کچھ نہیں ملتا۔ اگر کمپنی ناکام ہو جائے تو خرچ شدہ رقم ضائع ہو سکتی ہے (شق 11)۔
+3.2 یہ **قرض نہیں** ہے۔ نہ سود، نہ مقررہ تاریخِ واپسی، نہ ضمانت شدہ منافع۔
+3.3 **کوئی ذاتی ذمہ داری نہیں۔** نہ ${x.company_signer} اور نہ کمپنی کا کوئی اور ممبر، افسر یا ملازم سرمایہ کار کے سامنے ذاتی طور پر ذمہ دار ہے۔ سرمایہ کار کا واحد سہارا کمپنی ہے۔
+3.4 ${isEquity ? 'سرمایہ کار کو کمپنی میں **ملکیت (ممبرشپ انٹرسٹ)** ملتی ہے — شق 9 کے مطابق۔ ' : shareType === 'PROFIT_SHARE' ? 'سرمایہ کار کو **ملکیت نہیں ملتی**، نہ ووٹ، نہ انتظامیہ میں جگہ۔ اس کے حقوق صرف پیسے کے ہیں: ریکوری پے آؤٹس، مستقل حصہ، اور شق 12 کی فروخت میں شرکت۔ ' : PH('5% کی نوعیت — ایکویٹی یا منافع میں حصہ') + ' '}
+
+## 4. کمٹمنٹ اور کیپیٹل ریکویسٹ
+4.1 کمپنی پورٹل میں کیپیٹل ریکویسٹ اٹھا سکتی ہے — رقم، مقصد اور زمرہ لکھ کر۔ تمام قسطوں کا مجموعہ کمٹمنٹ سے زیادہ نہیں ہوگا جب تک دونوں فریق تحریری طور پر کمٹمنٹ نہ بدلیں (کمپنی کی پورٹل میں ترمیم، جو سرمایہ کار کو نظر آئے، تحریر شمار ہوگی)۔
+4.2 سرمایہ کار **${x.request_response_days} دن** میں جواب دے گا — ادائیگی کر کے یا انکار کر کے۔ انکار **خلاف ورزی نہیں**؛ فنڈڈ اماؤنٹ جہاں ہے وہیں رہتا ہے۔
+4.3 باقی کمٹمنٹ سے زیادہ رقم اس وقت تک قبول نہیں جب تک پورٹل میں کمٹمنٹ بڑھائی نہ جائے۔
+4.4 دستخط کے وقت **${money(a.position && a.position.funded, cur)}** فنڈ اور تصدیق شدہ ہے۔
+
+## 5. ادائیگی، تصدیق اور ثبوت
+5.1 پورٹل کمپنی کی ادائیگی کی تفصیلات دکھاتا ہے۔ سرمایہ کار صرف انہی پر ادائیگی کرتا ہے۔
+5.2 ادائیگی کے بعد سرمایہ کار پورٹل میں رقم، تاریخ، طریقہ، ریفرنس اور ثبوت (بینک سلپ یا اسکرین شاٹ، پورٹل کی نجی اسٹوریج میں) کے ساتھ اسے درج کرتا ہے۔
+5.3 کمپنی پورٹل میں وصولی کی تصدیق کرتی ہے۔ **قسط دونوں تصدیقوں کے بعد ہی گنتی ہے۔** جو ادائیگی کمپنی کو نہ ملے وہ لکھی وجہ کے ساتھ مسترد ہوتی ہے؛ سرمایہ کار بہتر ثبوت کے ساتھ دوبارہ درج کر سکتا ہے۔
+5.4 تصدیق شدہ اندراج کبھی ایڈٹ نہیں ہوتا۔ غلطی وجہ کے ساتھ ایک نظر آنے والے ریورسل اندراج سے درست ہوتی ہے، اور کوئی بھی اندراج صرف ایک بار ریورس ہو سکتا ہے۔
+
+## 6. فنڈ کا استعمال
+6.1 فنڈ صرف کمپنی کے کاروبار پر خرچ ہوتا ہے: دفتر، عملہ، سامان، ٹولز اور سبسکرپشنز، پیشہ ورانہ فیس، مارکیٹنگ اور ایسے ہی آپریٹنگ اخراجات۔
+6.2 ہر خرچہ ادائیگی کے **48 گھنٹے** کے اندر پورٹل میں درج ہوتا ہے — کس قسط سے ادا ہوا اور کس زمرے کا، رسید کے ساتھ جہاں ہو۔
+6.3 خرچ شدہ پیسہ واپس نہیں ہوتا، سوائے شق 11 کے وائنڈ ڈاؤن کے۔
+
+## 7. منافع — فارمولا
+7.1 کیلنڈر مہینے کا **منافع** = اس مہینے میں اصل میں **وصول** شدہ آمدنی (صرف جاری کردہ انوائس نہیں گنتی) **منفی**:
+${or(a.profit_definition, 'اخراجات کی طے شدہ فہرست — کرایہ، یوٹیلیٹیز، تنخواہ اور کمیشن، ٹولز/سبسکرپشنز، پیشہ ورانہ فیس، بینک چارجز، سامان')}
+7.2 ${x.owner_salary_in_expenses ? 'مالک کا معاوضہ: ' + x.owner_salary_in_expenses : PH('مالک کی اپنی تنخواہ خرچہ ہے یا نہیں، اور اس کی حد')}
+7.3 ${x.tax_treatment ? 'ٹیکس: ' + x.tax_treatment : PH('کمپنی کے ٹیکس فارمولے میں کیسے گنے جائیں گے')}
+7.4 کمپنی ہر مہینے کا اسٹیٹمنٹ اگلے مہینے کی **${x.statement_day} تاریخ** تک پورٹل میں شائع کرتی ہے — آمدنی، اخراجات، منافع اور سرمایہ کار کا پے آؤٹ۔
+7.5 ${a.loss_carry_forward ? '**نقصان آگے جاتا ہے۔** منفی منافع والا مہینہ نقصان کا پول بناتا ہے۔ بعد کا منافع پہلے پول بھرتا ہے؛ پے آؤٹ صرف اس سے اوپر کے منافع پر بنتا ہے۔ پول میں صرف اس معاہدے کے مہینے گنتے ہیں۔' : '**مہینہ بہ مہینہ۔** نقصان والا مہینہ کچھ واجب نہیں کرتا اور آگے نہیں جاتا؛ اگلے منافع والے مہینے کا پے آؤٹ اسی مہینے پر بنتا ہے۔'}
+
+## 8. ریکوری پیریڈ میں سرمایہ کار کی واپسی
+8.1 مثبت منافع والے ہر اسٹیٹمنٹ پر سرمایہ کار کو ملتا ہے: **منافع کا ${pay}** ریکوری ٹارگٹ کی طرف، **مزید منافع کا ${share}** مستقل حصے کے طور پر۔ ریکوری کا حصہ کبھی باقی رقم سے زیادہ نہیں ہوتا۔
+8.2 پے آؤٹ اسٹیٹمنٹ کے **${x.payout_days} دن** کے اندر ادا ہوتا ہے اور ثبوت کے ساتھ پورٹل میں درج ہوتا ہے۔ سرمایہ کار پورٹل میں وصولی کی تصدیق کرتا ہے۔
+8.3 پے آؤٹ صرف منافع سے آتا ہے۔ **بغیر منافع کے مہینے میں کمپنی پر کچھ واجب نہیں۔** نہ فنڈ سے، نہ کمپنی کے دوسرے پیسے سے، نہ کسی پر ذاتی طور پر۔
+8.4 کمپنی جلدی یا زیادہ ادا کر سکتی ہے؛ اسے کبھی ایسا کرنا نہیں پڑتا۔
+
+## 9. ریکوری ٹارگٹ پورا ہونے کے بعد
+9.1 ریکوری کا حصہ رک جاتا ہے۔ **${share}** کا مستقل حصہ اسی ماہانہ اسٹیٹمنٹ پر جاری رہتا ہے جب تک کمپنی منافع کمائے۔
+9.2 ${isEquity ? 'ملکیت: سرمایہ کار کے پاس ' + share + ' ممبرشپ انٹرسٹ ہے، ' + (a.equity_vesting_mode === 'pro_rata' ? 'جو فنڈڈ اماؤنٹ ÷ کمٹمنٹ کے تناسب سے ویسٹ ہوتا ہے' : 'جو دستخط پر پورا جاری ہوتا ہے') + '۔ ملکیت کے معاملات میں کمپنی کا آپریٹنگ ایگریمنٹ فوقیت رکھتا ہے۔' : shareType === 'PROFIT_SHARE' ? 'مستقل حصہ پیسے کا حق ہے، ملکیت نہیں۔ یہ صرف شق 11، 12 یا 13 کے تحت ختم ہوتا ہے۔' : PH('ایکویٹی یا منافع میں حصے کی عبارت')}
+
+## 10. اگر کمٹمنٹ پوری ہونے سے پہلے فنڈنگ رک جائے
+10.1 سرمایہ کار کسی بھی وقت رک سکتا ہے۔ کمپنی پورٹل میں فنڈڈ اماؤنٹ پر کمٹمنٹ بند کر سکتی ہے، لکھی وجہ کے ساتھ جو سرمایہ کار کو نظر آئے۔ کھلی کیپیٹل ریکویسٹس منسوخ ہو جاتی ہیں۔
+10.2 ریکوری ٹارگٹ فنڈڈ اماؤنٹ بن جاتا ہے۔
+10.3 مستقل حصہ بن جاتا ہے: ${stopMode === 'KEEP' ? '**پورا ' + share + '**، بلا تبدیلی۔' : '**' + share + ' × (فنڈڈ اماؤنٹ ÷ کمٹمنٹ)** — جتنا دیا اس کے تناسب سے۔ مثال: ' + money(800000, cur) + ' از ' + money(2000000, cur) + ' → 2%۔'}
+10.4 رکنا خلاف ورزی نہیں اور اس پر کوئی جرمانہ نہیں۔ کمپنی بعد میں باہمی رضامندی سے کمٹمنٹ دوبارہ کھول سکتی ہے، پورٹل میں درج۔
+${a.early_stop_terms ? '10.5 مزید طے شدہ الفاظ: ' + a.early_stop_terms : ''}
+
+## 11. نقصان، بندش اور وائنڈ ڈاؤن
+11.1 اگر کمپنی جاری نہ رہ سکے تو کمپنی پورٹل میں لکھی وجہ کے ساتھ وائنڈ ڈاؤن درج کرتی ہے۔
+11.2 اس ترتیب سے: (الف) فنڈ میں باقی نقد سرمایہ کار کو واپس؛ (ب) فنڈ سے خریدا سامان بیچ کر رقم واپس؛ (ج) خرچ شدہ پیسہ نقصان درج ہوتا ہے اور واپس نہیں ہوتا۔
+11.3 پہلے سے ملے پے آؤٹ سرمایہ کار کے ہیں اور واپس نہیں لیے جاتے۔ ریکوری اور مستقل حصہ دونوں ختم۔
+11.4 حتمی اسٹیٹمنٹ شائع ہوتا ہے؛ دونوں فریق پورٹل میں واپسی کی تصدیق کرتے ہیں۔ شق 3.3 (کوئی ذاتی ذمہ داری نہیں) پوری طرح لاگو۔
+
+## 12. کمپنی کی فروخت
+${exitPct ? '12.1 اگر کمپنی یا اس کا تقریباً پورا کاروبار بک جائے تو سرمایہ کار کو کمپنی کے مالکان کو ملنے والی **خالص رقم کا ' + exitPct + '** ملے گا، کمپنی کو ملنے کے 30 دن میں، چاہے ریکوری ٹارگٹ پورا ہوا ہو یا نہیں۔ یہ صرف ادائیگی کا حق ہے؛ نہ ملکیت نہ ووٹ۔\\n12.2 اس ادائیگی کے بعد یہ معاہدہ ختم۔' : (a.exit_treatment ? '12.1 ' + a.exit_treatment : '12.1 ' + PH('فروخت پر سرمایہ کار کو کیا ملے گا'))}
+
+## 13. بائی آؤٹ
+${a.buyout_terms ? '13.1 ' + a.buyout_terms + '\\n13.2 سرمایہ کار بیچنے پر کبھی مجبور نہیں۔' : '13.1 ریکوری ٹارگٹ کے بعد کمپنی مستقل حصہ خریدنے کی پیشکش کر سکتی ہے۔ ' + PH('بائی آؤٹ قیمت کا فارمولا') + ' سرمایہ کار بیچنے پر کبھی مجبور نہیں۔'}
+
+## 14. معلومات اور پورٹل
+14.1 سرمایہ کار کو پورٹل تک مسلسل رسائی ہے: ہر قسط، رسید کے ساتھ ہر خرچہ، فنڈ کا بیلنس، ہر اسٹیٹمنٹ، ہر پے آؤٹ، یہ معاہدہ اور اس کے دستخط، اور کاروبار کی مجموعی ترقی (صرف گنتی)۔
+14.2 سرمایہ کار پورٹل میں کسی بھی اندراج پر سوال اٹھا سکتا ہے۔ کمپنی **${x.flag_answer_days} دن** میں پورٹل میں جواب دیتی ہے۔
+14.3 سرمایہ کار کبھی بھی لیجر ایکسپورٹ کر سکتا ہے اور سال میں **${x.audit_per_year}** بار اپنے خرچ پر اکاؤنٹنٹ سے جانچ کروا سکتا ہے۔
+14.4 پورٹل کا ریکارڈ ہی ریکارڈ ہے۔ پیغامات، کالیں اور یادداشت اسے رد نہیں کرتے۔
+
+## 15. سرمایہ کار کیا نہیں کرتا
+15.1 انتظام، بھرتی، قیمتوں، کیریئرز، بروکرز یا خرچ کے فیصلوں میں کوئی کردار نہیں۔ کوئی ویٹو نہیں۔
+15.2 کمپنی کی طرف سے اس کے کیریئرز، بروکرز، شپرز یا عملے سے کوئی رابطہ نہیں۔
+15.3 رازداری: کمپنی کے اعداد، گاہک، ریٹس اور طریقے نجی رہتے ہیں — معاہدے کے دوران اور بعد میں۔
+15.4 سرمایہ کار کمپنی کی تحریری اجازت کے بغیر یہ معاہدہ منتقل یا گروی نہیں رکھ سکتا۔
+
+## 16. دوسرے سرمایہ کار
+16.1 کمپنی دوسروں سے پیسہ لے سکتی ہے۔${x.notify_new_investor ? ' نیا سرمایہ کار شامل کرنے سے پہلے پورٹل میں سرمایہ کار کو بتائے گی۔' : ''} دوسرے سرمایہ کار کے آنے سے اس معاہدے کے فیصد نہیں بدلتے۔
+
+## 17. کرنسی اور ٹیکس
+17.1 تمام رقمیں **${cur}** میں ہیں۔ پورٹل میں دکھائی کوئی اور کرنسی صرف سہولت کے لیے ہے۔
+17.2 ہر فریق اپنا ٹیکس خود بھرتا ہے۔ اگر قانون کمپنی سے پے آؤٹ پر ٹیکس کٹوتی چاہے تو کمپنی کرے گی اور پورٹل میں درج کرے گی۔
+
+## 18. وفات، معذوری، منتقلی
+18.1 اگر سرمایہ کار فوت ہو جائے یا اہلیت کھو دے تو اس کے ورثا یا نمائندہ صرف پیسے کے حقوق (پے آؤٹ، واپسی، فروخت میں شرکت) میں اس کی جگہ لیتے ہیں، حق کے ثبوت پر۔ انتظامی حقوق پیدا نہیں ہوتے۔
+18.2 کمپنی حق واضح ہونے تک پے آؤٹ روک سکتی ہے، پھر رکی رقم ادا کرے گی۔
+
+## 19. قابو سے باہر تاخیر
+19.1 بینکنگ بندش، ضوابط، آفات جیسے واقعات سے تاخیر پر کوئی فریق خلاف ورزی میں نہیں۔ واقعہ ختم ہونے پر ذمہ داریاں بحال۔
+
+## 20. تنازعات
+20.1 پہلے دونوں فریق بات کرتے ہیں — پورٹل میں تحریری نوٹس کے 30 دن میں۔
+20.2 پھر ایک ایسا شخص جسے دونوں مانیں: ${or(x.mediator, 'نام یا چننے کا طریقہ')}۔
+20.3 پھر عدالت۔ لاگو قانون اور عدالت: ${or(x.governing_law, 'قانون اور عدالت')}۔
+20.4 کسی تنازعے کے دوران پورٹل چلتا رہتا ہے۔
+
+## 21. عام شرائط
+21.1 یہ معاہدہ اس سرمایہ کاری کے بارے میں تمام پچھلی باتوں اور پیغامات کی جگہ لیتا ہے۔
+21.2 تبدیلی تحریری اور دونوں کے دستخط سے — پورٹل میں شائع اور دستخط شدہ نئی ورژن ایسی تحریر ہے۔
+21.3 کوئی شق ناقابلِ نفاذ ہو تو باقی قائم رہتا ہے۔
+21.4 نوٹس پورٹل میں اور ریکارڈ پر موجود ای میل پر دیے جاتے ہیں۔
+21.5 انگریزی متن اصل ہے؛ پورٹل کا ترجمہ سہولت کے لیے ہے۔
+
+## 22. الیکٹرانک دستخط
+22.1 دونوں فریق پورٹل میں الیکٹرانک دستخط پر راضی ہیں۔ دستخط میں ٹائپ کیا نام، اختیاری کھینچا ہوا دستخط، وقت، ڈیوائس، اور بالکل اسی متن کا کرپٹوگرافک ہیش ریکارڈ ہوتا ہے۔ دستخط صرف اسی ورژن پر جائز ہے جس پر کیا گیا۔
+22.2 ہر فریق دستخط شدہ دستاویز کبھی بھی ڈاؤن لوڈ کر سکتا ہے۔
+
+## 23. جو تبدیلیاں سرمایہ کار پورٹل سے شروع کر سکتا ہے
+23.1 سرمایہ کار پورٹل میں تجویز کر سکتا ہے: کمٹمنٹ بڑھانا یا گھٹانا (فنڈڈ اماؤنٹ سے نیچے کبھی نہیں)، فنڈڈ اماؤنٹ پر فنڈنگ روکنا، یا رکنے کے بعد دوبارہ شروع کرنا۔
+23.2 تجویز کسی کو پابند نہیں کرتی جب تک کمپنی پورٹل میں قبول نہ کرے۔ کمپنی **${x.request_response_days} دن** میں جواب دیتی ہے، انکار ہو تو لکھی وجہ کے ساتھ۔ فیصلے سے پہلے سرمایہ کار تجویز واپس لے سکتا ہے۔
+23.3 قبول ہونے پر تبدیلی پورٹل کے اعداد پر فوراً لاگو ہوتی ہے، یہ دستاویز **پرانی** نشان زد ہو جاتی ہے، اور کمپنی نئی ورژن شائع کرتی ہے۔ دونوں فریق نئی ورژن پر دستخط کرتے ہیں۔ تب تک آخری مکمل دستخط شدہ ورژن اور پورٹل ریکارڈ میں قبول شدہ تبدیلی لاگو ہے۔
+23.4 کمٹمنٹ کو فنڈڈ اماؤنٹ تک گھٹانا شق 10 کے رکنے جیسا ہے؛ شق 10.3 کا تناسبی اصول لاگو ہوگا۔
+
+## 24. اندراجات دیکھنا اور تصدیق کرنا
+24.1 ہر کیپیٹل ریکویسٹ، قسط، خرچہ، اسٹیٹمنٹ اور پے آؤٹ درج ہوتے ہی پورٹل میں نظر آتا ہے، سادہ الفاظ میں کہ کیا خریدا اور کیوں۔
+24.2 سرمایہ کار خرچے کو **دیکھ لیا** نشان لگا سکتا ہے، یا اس پر **سوال** اٹھا سکتا ہے (شق 14.2)۔ خاموشی نہ رضامندی ہے نہ اعتراض: پورٹل ریکارڈ قائم رہتا ہے اور بعد میں بھی سوال ہو سکتا ہے۔
+24.3 پورٹل سرمایہ کار کو بتاتا ہے کہ پچھلی بار کے بعد نیا کیا ہے۔
+
+## 25. جو سوال سرمایہ کار اکثر پوچھتے ہیں — جواب اس معاہدے کا حصہ ہیں
+**کیا میں اپنا پیسہ جلدی واپس لے سکتا ہوں؟** نہیں۔ خرچ شدہ پیسہ واپس نہیں ہوتا۔ فنڈ میں بچا نقد صرف وائنڈ ڈاؤن (شق 11) یا باہمی رضامندی سے واپس ہوتا ہے۔
+**کیا میں کمٹمنٹ سے زیادہ دے سکتا ہوں؟** صرف جب پورٹل میں کمٹمنٹ بڑھا دی جائے (شق 23)۔ اس سے اوپر پیسہ قبول نہیں۔
+**کیا کچھ دے کر رک سکتا ہوں؟** ہاں، کبھی بھی، پورٹل سے، بغیر جرمانہ (شق 10 اور 23)۔
+**کیا میرا پیسہ الگ بینک اکاؤنٹ میں رکھا جاتا ہے؟** ${or(x.separate_account, 'الگ اکاؤنٹ: ہاں / نہیں — اور کہاں')}
+**کیا میں بینک اسٹیٹمنٹ دیکھ سکتا ہوں؟** سرمایہ کار پورٹل میں ہر اندراج اور رسید دیکھتا ہے، اور سال میں ایک بار اکاؤنٹنٹ سے لیجر چیک کروا سکتا ہے (شق 14.3)۔ ${or(x.bank_statement_access, 'بینک اسٹیٹمنٹ: درخواست پر ہاں / نہیں')}
+**لوڈ بوٹ کا سافٹ ویئر، برانڈ اور گاہک کس کے ہیں؟** کمپنی کے۔ یہ معاہدہ سرمایہ کار کو صرف پیسے کے حقوق دیتا ہے (شق 3.4)۔
+**اگر کمپنی بعد میں بڑا سرمایہ کار یا وینچر پیسہ لے؟** سرمایہ کار کو پہلے پورٹل میں بتایا جائے گا (شق 16)۔ اس معاہدے کے فیصد نہیں بدلتے۔ فروخت پر شق 12 لاگو۔
+**اگر مالک فوت ہو جائے، چھوڑ دے یا کام نہ کر سکے؟** کمپنی اپنے باقی ممبرز کے ساتھ چلتی ہے۔ ${or(x.key_person, 'کلیدی شخص اصول: مثلاً بانی 90+ دن کمپنی نہ چلا سکے تو سرمایہ کار شق 11 کے تحت وائنڈ ڈاؤن مانگ سکتا ہے')}
+**کمپنی کے پیچھے اور کون ہے؟** ${or(x.other_members, 'دیگر ممبرز / شریک بانی اور کیا وہ کمپنی ریکارڈ پر ہیں')}
+**کیا میں اپنے حقوق کسی اور کو بیچ یا دے سکتا ہوں؟** کمپنی کی تحریری اجازت کے بغیر نہیں (شق 15.4)۔ وفات پر شق 18۔
+**کیا کم از کم منافع یا ضمانت شدہ واپسی ہے؟** نہیں (شق 3.2)۔ بغیر منافع کا مہینہ کچھ نہیں دیتا۔
+**منافع کیسے چیک ہوتا ہے؟** اسٹیٹمنٹ سے؛ ہر خرچہ ٹیگ شدہ، رسید کے ساتھ، اور پورٹل میں سوال کے قابل (شق 7، 14)۔
+**مجھے کس کرنسی میں ملے گا؟** ${cur} (شق 17)۔
+**کیا میں دفتر آ سکتا ہوں یا ٹیم سے مل سکتا ہوں؟** ${or(x.visits, 'ملاقات: مثلاً ہاں، مناسب اطلاع پر')}
+**اگر کمپنی یہ معاہدہ توڑے تو؟** شق 20 (بات → غیر جانبدار شخص → عدالت)۔ پورٹل ریکارڈ ثبوت ہے۔
+`;
 }

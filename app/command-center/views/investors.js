@@ -14,7 +14,7 @@ import { sectionHead, statCard, toolbar, openDrawer, fmtDate, askReason, askConf
 import { ccInvList, ccInvDetail, ccInvSaveInvestor, ccInvLinkUser, ccInvSaveAgreement, ccInvRequest,
          ccInvConfirmReceipt, ccInvReverseReceipt, ccInvExpense, ccInvReverseExpense, ccInvPublishMonth, ccInvPay,
          ccInvRejectReceipt, ccInvCloseCommitment, ccInvReopenCommitment, ccInvWindDown, ccInvAnswerFlag,
-         ccInvSettingsGet, ccInvSettingsSet, ccInvPublishDoc, ccInvCountersign, invProofUrl, invCurrentDoc } from '../../shared/api.js';
+         ccInvSettingsGet, ccInvSettingsSet, ccInvPublishDoc, ccInvCountersign, invProofUrl, invCurrentDoc, ccInvAmendments, ccInvDecideAmendment } from '../../shared/api.js';
 import { buildAgreement, hasPlaceholders, mdToHtml, DEFAULT_EXTRA } from '../../investor/agreement-template.js';
 import { VENDOR_NAMES, vendorWhat } from '../../investor/glossary.js';
 import { can } from '../../shared/permissions.js';
@@ -358,7 +358,8 @@ async function openDetail(agrId, onListChange) {
     showLoading(body, 'Loading ledger…');
     let D;
     try { D = await ccInvDetail(agrId); } catch (e) { showError(body, humanizeError(e), paint); return; }
-    try { const r = await invCurrentDoc(agrId); D.doc = r && r.doc; } catch (_) { D.doc = null; }
+    try { const r = await invCurrentDoc(agrId); D.doc = r && r.doc; D.terms_changed_at = r && r.terms_changed_at; } catch (_) { D.doc = null; }
+    try { const r = await ccInvAmendments(agrId); D.amendments = r.amendments || []; D.acks = r.acks || {}; } catch (_) { D.amendments = []; D.acks = {}; }
     const a = D.agreement || {}, p = D.position || {}, cur = a.currency || 'PKR';
     const rec = p.phase === 'recovering';
     const sec = (title, actions, node) => el('div', { style: 'margin-top:22px' }, [
@@ -384,6 +385,16 @@ async function openDetail(agrId, onListChange) {
         a.commitment_closed_at ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { const v = await askReason('Reopen — new commitment cap (' + cur + ')', { placeholder: String(a.original_cap || a.commitment_cap) }); if (!v) return; try { await ccInvReopenCommitment(agrId, Number(v)); toast('Reopened'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Reopen commitment') : null,
         el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', style: 'color:#dc2626', onClick: () => windDownForm(agrId, p, cur, reload) }, 'Wind down (loss / shutdown)'),
       ]) : null,
+
+      (D.amendments || []).some(m => m.status === 'proposed') ? el('div', { class: 'lb-callout lb-callout-amber', style: 'margin-top:12px' }, [el('b', null, 'The investor has proposed a change. '), 'Accepting applies it at once and marks the current document out of date — publish a new version afterwards.']) : null,
+      sec('Investor proposals', null, tbl(['When', 'Proposal', 'Reason', 'Status', ''], (D.amendments || []).map(m => row([
+        fmtDate(m.created_at), { commitment_change: 'Change commitment', stop_funding: 'Stop funding', resume_funding: 'Resume funding' }[m.kind] + ' → ' + pkr(m.new_value.commitment_cap, cur) + ' (was ' + pkr(m.old_value.commitment_cap, cur) + ', funded ' + pkr(m.old_value.funded, cur) + ')',
+        el('div', null, [m.reason || '—', m.decision_note ? el('div', { style: 'opacity:.7;margin-top:4px' }, '↳ ' + m.decision_note) : null]),
+        pill(m.status, { proposed: 'amber', accepted: 'green', declined: 'red', withdrawn: 'gray' }[m.status]),
+        (manage && m.status === 'proposed') ? el('div', { style: 'display:flex;gap:4px' }, [
+          el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async () => { if (!(await askConfirm('Accept this proposal?', { body: 'Applies immediately: commitment ' + pkr(m.new_value.commitment_cap, cur) + (m.kind === 'stop_funding' ? ' and funding closes (pro-rata rule per the agreement).' : '.') + ' The current document becomes out of date — you will publish a new version next.' }))) return; try { await ccInvDecideAmendment(m.id, true, null); toast('Accepted — now publish a new document version'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Accept'),
+          el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async () => { const why = await askReason('Decline — the investor reads this', { placeholder: 'Why not' }); if (!why) return; try { await ccInvDecideAmendment(m.id, false, why); toast('Declined'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Decline'),
+        ]) : ''])))),
 
       sec('Terms', manage ? [el('button', { class: 'lb-btn lb-btn-sm', onClick: () => agreementForm(a, [], reload) }, 'Edit')] : null,
         el('div', { class: 'cc-fields' }, [
@@ -419,9 +430,10 @@ async function openDetail(agrId, onListChange) {
       sec('Expenses', manage ? [el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => expenseForm(agrId, D.receipts || [], cur, reload) }, '+ Log expense')] : null,
         el('div', null, [
           Object.keys(D.by_category || {}).length ? el('div', { style: 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px' }, Object.entries(D.by_category).sort((x, y) => y[1] - x[1]).map(([c, v]) => pill(c + ' ' + pkr(v, cur), 'blue'))) : null,
-          tbl(['Date', 'Category', 'Vendor / what', 'Amount', 'Receipt', ''], (D.expenses || []).map(x => row([
+          tbl(['Date', 'Category', 'Vendor / what', 'Amount', 'Receipt', 'Investor', ''], (D.expenses || []).map(x => row([
             fmtDate(x.date), x.category, (x.vendor || '—') + (x.description ? ' · ' + x.description : '') + (x.recurring ? ' · monthly' : ''),
             el('b', { style: x.reversed ? 'color:#16a34a' : '' }, (x.reversed ? '+' : '−') + pkr(x.amount, cur)), link(x.receipt_url, 'view'),
+            x.reversed ? '' : (D.acks || {})[x.id] ? pill('Seen ' + fmtDate((D.acks || {})[x.id]), 'green') : pill('Not yet seen', 'gray'),
             (manage && !x.reversed) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async () => { const why = await askReason('Reverse this expense', { placeholder: 'Why?' }); if (!why) return; try { await ccInvReverseExpense(x.id, why); toast('Reversed'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Reverse') : ''], x.reversed ? 'cc-row-muted' : ''))),
         ])),
 
@@ -515,32 +527,37 @@ function docSection(D, agrId, manage, reload) {
     el('div', { class: 'cc-inv-sig' + (co ? '' : ' wait') }, co ? ['LoadBoot signed · ' + co.signer_name + (co.signer_title ? ', ' + co.signer_title : '') + ' · ' + fmtDate(co.signed_at)] : ['Awaiting LoadBoot\'s countersignature']),
   ]) : null;
   const publishForm = () => {
-    const lang = sel([['en', 'English'], ['ur_roman', 'Roman Urdu']], inv.lang === 'ur_roman' ? 'ur_roman' : 'en');
+    const lang = sel([['en', 'English (governing)'], ['ur_roman', 'Roman Urdu'], ['ur', 'Urdu']], 'en');
     const x = Object.assign({}, DEFAULT_EXTRA, (D.settings && D.settings.agreement_extra) || {});
     const signer = inp({ value: x.company_signer }), signerT = inp({ value: x.company_signer_title }), state = inp({ value: x.company_state });
     const stDay = num({ value: x.statement_day, step: '1' }), payDays = num({ value: x.payout_days, step: '1' }), flagDays = num({ value: x.flag_answer_days, step: '1' }), reqDays = num({ value: x.request_response_days, step: '1' });
     const law = inp({ value: x.governing_law || '', placeholder: 'e.g. Laws of Pakistan (Islamabad courts)' }), med = inp({ value: x.mediator || '', placeholder: 'Named neutral person for disputes' });
     const salary = inp({ value: x.owner_salary_in_expenses || '', placeholder: 'e.g. Owner draws no salary until recovery' }), tax = inp({ value: x.tax_treatment || '', placeholder: 'e.g. Each party bears its own taxes' });
+    const sepAcct = inp({ value: x.separate_account || '', placeholder: 'e.g. Yes — a dedicated LoadBoot account at Meezan Bank' }), bankAcc = inp({ value: x.bank_statement_access || '', placeholder: 'e.g. Yes, on request, within 7 days' });
+    const keyP = inp({ value: x.key_person || '', placeholder: 'e.g. If the founder cannot run the Company for 90+ days, the Investor may ask for wind-down' }), others = inp({ value: x.other_members || '', placeholder: 'e.g. Asim Latif, co-founder — not yet on the LLC record' }), visits = inp({ value: x.visits || '', placeholder: 'e.g. Yes, on reasonable notice' });
     const preview = el('div', { class: 'cc-inv-doc' });
     const warn = el('div');
     const build = () => {
-      const md = buildAgreement(a, inv, { company_signer: signer.value, company_signer_title: signerT.value, company_state: state.value, statement_day: stDay.value, payout_days: payDays.value, flag_answer_days: flagDays.value, request_response_days: reqDays.value, governing_law: law.value, mediator: med.value, owner_salary_in_expenses: salary.value, tax_treatment: tax.value }, lang.value);
+      const md = buildAgreement(Object.assign({}, a, { position: D.position }), inv, { company_signer: signer.value, company_signer_title: signerT.value, company_state: state.value, statement_day: stDay.value, payout_days: payDays.value, flag_answer_days: flagDays.value, request_response_days: reqDays.value, governing_law: law.value, mediator: med.value, owner_salary_in_expenses: salary.value, tax_treatment: tax.value, separate_account: sepAcct.value, bank_statement_access: bankAcc.value, key_person: keyP.value, other_members: others.value, visits: visits.value }, lang.value);
       preview.className = 'cc-inv-doc' + (lang.value === 'ur' ? ' rtl' : ''); preview.innerHTML = mdToHtml(md);
       mount(warn, hasPlaceholders(md) ? el('div', { class: 'lb-callout lb-callout-amber' }, [el('b', null, 'Open points highlighted in yellow. '), 'The investor can read this version but cannot sign it. Fill the term (Edit agreement) and publish again.']) : el('div', { class: 'lb-callout lb-callout-green' }, 'No open points — this version can be signed.'));
       return md;
     };
-    [lang, signer, signerT, state, stDay, payDays, flagDays, reqDays, law, med, salary, tax].forEach(i => { i.oninput = build; i.onchange = build; });
+    [lang, signer, signerT, state, stDay, payDays, flagDays, reqDays, law, med, salary, tax, sepAcct, bankAcc, keyP, others, visits].forEach(i => { i.oninput = build; i.onchange = build; });
     const btn = el('button', { class: 'lb-btn lb-btn-primary' }, doc ? 'Publish as version ' + (doc.version + 1) : 'Publish version 1');
     btn.onclick = async () => {
       const md = build();
       const ok = await askConfirm('Publish this document to the investor?', { body: (doc ? 'Version ' + doc.version + ' becomes superseded; existing signatures stay attached to it and BOTH parties must sign again. ' : '') + 'The text is hashed (SHA-256) and signatures bind to that hash.' });
       if (!ok) return;
-      submit(btn, () => ccInvPublishDoc({ agreement_id: agrId, body_md: md, lang: lang.value, title: 'Investment Agreement — ' + (a.title || '') }), () => { toast('Published'); reload(); });
+      const extra = { company_signer: signer.value, company_signer_title: signerT.value, company_state: state.value, statement_day: stDay.value, payout_days: payDays.value, flag_answer_days: flagDays.value, request_response_days: reqDays.value, governing_law: law.value, mediator: med.value, owner_salary_in_expenses: salary.value, tax_treatment: tax.value, separate_account: sepAcct.value, bank_statement_access: bankAcc.value, key_person: keyP.value, other_members: others.value, visits: visits.value };
+      submit(btn, () => ccInvPublishDoc({ agreement_id: agrId, body_md: md, lang: lang.value, title: 'Investment Agreement — ' + (a.title || ''), params: { agreement: Object.assign({}, a, { position: D.position }), investor: { name: inv.name }, extra } }), () => { toast('Published'); reload(); });
     };
     const form = el('div', null, [
       el('div', { class: 'cc-inv-set' }, [f('Language', lang), f('Company signer', signer), f('Signer title', signerT), f('Company state / registration', state),
         f('Statement day (of month)', stDay), f('Payout within (days)', payDays), f('Answer questions within (days)', flagDays), f('Respond to capital request within (days)', reqDays),
-        f('Governing law', law), f('Mediator', med), f('Owner salary rule', salary), f('Tax treatment', tax)]),
+        f('Governing law', law), f('Mediator', med), f('Owner salary rule', salary), f('Tax treatment', tax),
+        f('Separate bank account?', sepAcct), f('Bank statement access', bankAcc), f('Key-person rule', keyP), f('Other members / co-founders', others), f('Office visits', visits)]),
+      el('p', { style: 'font-size:.82rem;opacity:.75;margin:6px 0 10px' }, 'Publish in English — clause 21.5 makes the English text govern. The investor reads it in their own language automatically (a faithful translation built from the same inputs); their signature binds to the published English text.'),
       warn, preview, el('div', { style: 'margin-top:10px' }, btn),
     ]);
     build();
@@ -555,7 +572,8 @@ function docSection(D, agrId, manage, reload) {
     };
     return el('div', { class: 'lb-card', style: 'padding:14px;margin-top:10px' }, [el('h4', { style: 'margin:0 0 8px' }, 'Countersign'), el('div', { class: 'cc-inv-set' }, [f('Name', name), f('Title', title)]), btn]);
   };
-  const current = doc ? el('div', null, [
+  const staleNote = (doc && doc.stale) ? el('div', { class: 'lb-callout lb-callout-amber', style: 'margin-bottom:10px' }, [el('b', null, 'Out of date. '), 'Terms changed on ' + fmtDate(D.terms_changed_at) + ' after v' + doc.version + ' was published. Draft and publish a new version; both parties sign again.']) : null;
+  const current = doc ? el('div', null, [staleNote,
     el('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' }, [
       el('div', null, [el('b', null, doc.title), ' · v' + doc.version + ' · ' + (doc.lang === 'ur_roman' ? 'Roman Urdu' : doc.lang === 'ur' ? 'Urdu' : 'English') + ' · ' + fmtDate(doc.published_at)]),
       doc.fully_signed ? pill('Fully signed', 'green') : pill('Signatures pending', 'amber')]),
