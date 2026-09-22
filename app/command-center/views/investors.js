@@ -12,7 +12,8 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, toolbar, openDrawer, fmtDate, askReason, askConfirm } from '../../shared/ui/components.js';
 import { ccInvList, ccInvDetail, ccInvSaveInvestor, ccInvLinkUser, ccInvSaveAgreement, ccInvRequest,
-         ccInvConfirmReceipt, ccInvReverseReceipt, ccInvExpense, ccInvReverseExpense, ccInvPublishMonth, ccInvPay } from '../../shared/api.js';
+         ccInvConfirmReceipt, ccInvReverseReceipt, ccInvExpense, ccInvReverseExpense, ccInvPublishMonth, ccInvPay,
+         ccInvRejectReceipt, ccInvCloseCommitment, ccInvReopenCommitment, ccInvWindDown, ccInvAnswerFlag } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -117,10 +118,12 @@ function investorForm(inv, onDone) {
   const phone = inp({ value: inv ? (inv.phone || '') : '', placeholder: '+92…' });
   const rel = inp({ value: inv ? (inv.relationship || '') : '', placeholder: 'friend / family / angel' });
   const notes = ta({ placeholder: 'Anything staff should know' });
+  const lang = sel([['en', 'English'], ['ur_roman', 'Roman Urdu'], ['ur', 'Urdu (اردو)']], inv ? (inv.lang || inv.preferred_lang || 'en') : 'en');
   const linkEmail = inp({ type: 'email', placeholder: 'email they signed up with' });
   const btn = el('button', { class: 'lb-btn lb-btn-primary' }, inv ? 'Save' : 'Add investor');
   const d = openDrawer(inv ? inv.name : 'New investor', el('div', null, [
-    f('Name', name), f('Email', email), f('Phone', phone), f('Relationship', rel), f('Notes', notes), btn,
+    f('Name', name), f('Email', email), f('Phone', phone), f('Relationship', rel),
+    f('Portal language', lang, 'What their portal opens in. They can switch it themselves.'), f('Notes', notes), btn,
     inv ? el('div', { style: 'margin-top:22px;padding-top:14px;border-top:1px solid rgba(128,128,128,.25)' }, [
       el('b', null, 'Portal login'), el('p', { style: 'font-size:.85rem;opacity:.75;margin:4px 0 10px' },
         inv.linked ? 'Linked — they can sign in at /app/investor/.' : 'Not linked yet. They must sign up (any LoadBoot signup page) with an email, then you link it here.'),
@@ -131,7 +134,7 @@ function investorForm(inv, onDone) {
       }) }, 'Link'),
     ]) : null,
   ]), { subtitle: 'Investors see their own agreements only — never carriers, loads or other investors.' });
-  btn.onclick = () => submit(btn, () => ccInvSaveInvestor({ id: inv ? inv.id : null, name: name.value, email: email.value, phone: phone.value, relationship: rel.value, notes: notes.value }), () => { d.close(); onDone(); });
+  btn.onclick = () => submit(btn, () => ccInvSaveInvestor({ id: inv ? inv.id : null, name: name.value, email: email.value, phone: phone.value, relationship: rel.value, notes: notes.value, preferred_lang: lang.value }), () => { d.close(); onDone(); });
 }
 
 function agreementForm(agr, rows, onDone, presetInvestor) {
@@ -150,6 +153,9 @@ function agreementForm(agr, rows, onDone, presetInvestor) {
   const exitT = ta({ value: a.exit_treatment || '', placeholder: 'What the investor gets if the company is sold' });
   const stopT = ta({ value: a.early_stop_terms || '', placeholder: 'If they stop funding partway: target = what was paid; the permanent share becomes …' });
   const buyout = ta({ value: a.buyout_terms || '', placeholder: 'Optional buy-back formula after recovery' });
+  const stopMode = sel([['pro_rata', 'Pro-rate the permanent % to what was paid (8 of 20 → 2%)'], ['keep', 'Keep the full permanent %']], a.early_stop_share_mode || 'pro_rata');
+  const carry = sel([['false', 'Month by month — a loss month owes nothing and is not carried'], ['true', 'Carry losses forward — later profit first repays earlier losses']], String(a.loss_carry_forward === true));
+  const exitPct = num({ value: a.exit_participation_pct ?? '', max: '100', placeholder: 'e.g. 5' });
   const signed = inp({ type: 'date', value: a.signed_date || '' });
   const doc = inp({ type: 'url', value: a.doc_url || '', placeholder: 'https://… signed PDF' });
   const status = sel([['draft', 'Draft'], ['active', 'Active'], ['recovered', 'Recovered'], ['closed', 'Closed']], a.status || 'active');
@@ -161,7 +167,10 @@ function agreementForm(agr, rows, onDone, presetInvestor) {
     f('Recovery target', basis), f('Fixed target amount', fixed),
     f('What the permanent % IS', shareType, 'Leave undecided and the portal shows it as an open question rather than guessing.'),
     f('Equity vesting (equity only)', vest),
-    f('Profit definition', profitDef), f('If the company is sold', exitT), f('If they stop funding partway', stopT), f('Buyout clause', buyout),
+    f('Profit definition', profitDef),
+    f('Exit participation % (of sale proceeds)', exitPct, 'Phantom equity: a share of a sale WITHOUT ownership. Blank = none.'), f('If the company is sold (words)', exitT),
+    f('If they stop funding partway — the permanent %', stopMode), f('If they stop funding partway (words)', stopT),
+    f('Loss months', carry), f('Buyout clause', buyout),
     el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Signed on', signed), f('Status', status)]),
     f('Signed document link', doc), btn,
   ]), { subtitle: 'These words are what the investor reads in their portal. Write them as agreed, not as hoped.' });
@@ -171,6 +180,7 @@ function agreementForm(agr, rows, onDone, presetInvestor) {
     payback_basis: basis.value, payback_fixed_amount: fixed.value, share_type: shareType.value,
     equity_vesting_mode: vest.value, profit_definition: profitDef.value, exit_treatment: exitT.value,
     early_stop_terms: stopT.value, buyout_terms: buyout.value, signed_date: signed.value, doc_url: doc.value, status: status.value,
+    early_stop_share_mode: stopMode.value, loss_carry_forward: carry.value === 'true', exit_participation_pct: exitPct.value,
   }), () => { d.close(); onDone(); });
 }
 
@@ -248,6 +258,21 @@ function payForm(po, cur, onDone) {
   btn.onclick = () => submit(btn, () => ccInvPay({ payout_id: po.id, payback_portion: pay.value, share_portion: share.value, paid_date: date.value, method: method.value, reference: ref.value, proof_url: proof.value }), () => { d.close(); onDone(); });
 }
 
+function windDownForm(agrId, p, cur, onDone) {
+  const reason = ta({ placeholder: 'Written reason — the investor reads this', required: true });
+  const assets = num({ value: '', placeholder: '0' });
+  const ret = num({ value: Math.max(Number(p.fund_cash || 0), 0), required: true });
+  const btn = el('button', { class: 'lb-btn lb-btn-primary', style: 'background:#dc2626;border-color:#dc2626' }, 'Wind down this agreement');
+  const d = openDrawer('Wind down — loss / shutdown', el('div', null, [
+    el('div', { class: 'lb-callout lb-callout-red' }, [el('b', null, 'This ends the agreement. '), 'Unspent fund cash (' + pkr(p.fund_cash, cur) + ') plus any asset sale proceeds go back to the investor as a capital return. Spent money (' + pkr(p.spent, cur) + ') is recorded as lost. Nothing is owed personally by the owner. The investor sees all of it.']),
+    f('Reason', reason), f('Asset sale proceeds (equipment sold, etc.)', assets, 'Added to the return'),
+    f('Amount to return', ret, 'Defaults to fund cash + asset proceeds. Recorded as a pending capital-return payout — mark it paid when sent.'), btn,
+  ]));
+  assets.oninput = () => { ret.value = (Math.max(Number(p.fund_cash || 0), 0) + Number(assets.value || 0)).toFixed(2); };
+  btn.onclick = async () => { if (!(await askConfirm('Wind down for real?', { body: 'This cannot be undone from the UI.', danger: true, confirmLabel: 'Yes, wind down' }))) return;
+    submit(btn, () => ccInvWindDown({ agreement_id: agrId, reason: reason.value, asset_proceeds: assets.value, return_amount: ret.value }), () => { d.close(); onDone(); }); };
+}
+
 // ─────────────────────────────────────────────────────────── detail drawer
 async function openDetail(agrId, onListChange) {
   const body = el('div');
@@ -277,12 +302,22 @@ async function openDetail(agrId, onListChange) {
       (p.open_questions || []).length ? el('div', { class: 'lb-callout lb-callout-amber', style: 'margin-top:12px' }, [
         el('b', null, 'Open questions in this agreement: '), (p.open_questions || []).join(', '), ' — the investor sees these flagged too.']) : null,
 
+      a.status === 'wound_down' ? el('div', { class: 'lb-callout lb-callout-red', style: 'margin-top:12px' }, [el('b', null, 'Wound down. '), 'Reason: ' + ((a.wind_down || {}).reason || '—') + ' · returned ' + pkr((a.wind_down || {}).return_amount, cur) + ' · lost ' + pkr((a.wind_down || {}).spent_and_lost, cur)]) : null,
+      (a.commitment_closed_at && a.status !== 'wound_down') ? el('div', { class: 'lb-callout lb-callout-amber', style: 'margin-top:12px' }, [el('b', null, 'Commitment closed at ' + pkr(a.commitment_cap, cur) + '. '), 'Was ' + pkr(a.original_cap, cur) + ' · permanent share now ' + pct(p.effective_share_pct) + ' · ' + (a.closed_reason || '')]) : null,
+      manage && a.status !== 'wound_down' ? el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:12px' }, [
+        !a.commitment_closed_at ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { const why = await askReason('Close the commitment at ' + pkr(p.funded, cur) + '?', { placeholder: 'Why is the investor stopping here?' }); if (!why) return; try { await ccInvCloseCommitment(agrId, why); toast('Commitment closed'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Close commitment at funded amount') : null,
+        a.commitment_closed_at ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { const v = await askReason('Reopen — new commitment cap (' + cur + ')', { placeholder: String(a.original_cap || a.commitment_cap) }); if (!v) return; try { await ccInvReopenCommitment(agrId, Number(v)); toast('Reopened'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Reopen commitment') : null,
+        el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', style: 'color:#dc2626', onClick: () => windDownForm(agrId, p, cur, reload) }, 'Wind down (loss / shutdown)'),
+      ]) : null,
+
       sec('Terms', manage ? [el('button', { class: 'lb-btn lb-btn-sm', onClick: () => agreementForm(a, [], reload) }, 'Edit')] : null,
         el('div', { class: 'cc-fields' }, [
           field('Payback', pct(a.payback_rate_pct) + ' of profit until ' + (a.payback_basis === 'fixed' ? pkr(a.payback_fixed_amount, cur) : 'funded amount') + ' is back'),
           field('Permanent', pct(a.permanent_share_pct) + ' of profit, forever'),
           field('That % is', a.share_type === 'equity' ? 'Equity (' + (a.equity_vesting_mode === 'pro_rata' ? 'vests pro-rata — now ' + pct(p.equity_vested_pct) : 'upfront') + ')' : a.share_type === 'profit_share' ? 'Profit share only' : 'NOT DECIDED'),
           field('Profit =', a.profit_definition), field('If sold', a.exit_treatment), field('If funding stops', a.early_stop_terms), field('Buyout', a.buyout_terms),
+          field('On a sale', a.exit_participation_pct != null ? pct(a.exit_participation_pct) + ' of proceeds' : '—'),
+          field('Stops partway', a.early_stop_share_mode === 'keep' ? 'permanent % kept' : 'permanent % pro-rated'), field('Loss months', a.loss_carry_forward ? 'carried forward' : 'month by month'),
           field('Signed', a.signed_date ? fmtDate(a.signed_date) : 'not signed'), field('Document', link(a.doc_url, 'open PDF')),
         ])),
 
@@ -297,11 +332,12 @@ async function openDetail(agrId, onListChange) {
           fmtDate(r.received_date), el('b', { style: Number(r.amount) < 0 ? 'color:#dc2626' : '' }, pkr(r.amount, cur)),
           (r.method || '—') + (r.reference ? ' · ' + r.reference : '') + ' ', link(r.proof_url, '(proof)'),
           r.declared_at ? pill('Declared', 'green') : pill('—', 'gray'),
-          r.confirmed_at ? pill('Confirmed', 'green') : pill('Not yet', 'amber'),
+          r.state === 'rejected' ? pill('Rejected', 'red') : r.confirmed_at ? pill('Confirmed', 'green') : pill('Not yet', 'amber'),
           manage ? el('div', { style: 'display:flex;gap:4px' }, [
-            !r.confirmed_at ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async () => { if (!(await askConfirm('Confirm ' + pkr(r.amount, cur) + ' received?', { body: 'This makes it count. It cannot be edited afterwards — only reversed.' }))) return; try { await ccInvConfirmReceipt({ receipt_id: r.id }); toast('Confirmed'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Confirm') : null,
+            (!r.confirmed_at && r.state !== 'rejected') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async () => { if (!(await askConfirm('Confirm ' + pkr(r.amount, cur) + ' received?', { body: 'This makes it count. It cannot be edited afterwards — only reversed.' }))) return; try { await ccInvConfirmReceipt({ receipt_id: r.id }); toast('Confirmed'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Confirm') : null,
+            (!r.confirmed_at && r.state !== 'rejected' && r.declared_at) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async () => { const why = await askReason('Reject this declared payment', { placeholder: 'e.g. never arrived / wrong amount' }); if (!why) return; try { await ccInvRejectReceipt(r.id, why); toast('Rejected'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Reject') : null,
             (r.confirmed_at && r.state !== 'reversal' && Number(r.amount) > 0) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async () => { const why = await askReason('Reverse this receipt', { placeholder: 'Why?' }); if (!why) return; try { await ccInvReverseReceipt(r.id, why); toast('Reversed'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Reverse') : null,
-          ]) : ''], r.state === 'reversal' ? 'cc-row-muted' : '')))),
+          ]) : ''], (r.state === 'reversal' || r.state === 'rejected') ? 'cc-row-muted' : '')))),
 
       sec('Expenses', manage ? [el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => expenseForm(agrId, D.receipts || [], cur, reload) }, '+ Log expense')] : null,
         el('div', null, [
@@ -313,8 +349,13 @@ async function openDetail(agrId, onListChange) {
         ])),
 
       sec('Payouts due', null, tbl(['Month', 'Payback', 'Share', 'Total', ''], (D.payouts_due || []).map(po => row([
-        po.month ? new Date(po.month).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '—', pkr(po.payback, cur), pkr(po.share, cur), el('b', null, pkr(po.total, cur)),
+        po.kind === 'capital_return' ? el('b', null, 'Capital return') : (po.month ? new Date(po.month).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '—'), pkr(po.payback, cur), pkr(po.share, cur), el('b', null, pkr(po.total, cur)),
         manage ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => payForm(po, cur, reload) }, 'Pay') : ''])))),
+
+      sec('Investor questions', null, tbl(['Raised', 'About', 'Question', 'Status', ''], (D.flags || []).map(fl => row([
+        fmtDate(fl.raised_at), fl.kind, el('div', null, [fl.note, fl.answer ? el('div', { style: 'opacity:.7;margin-top:4px' }, '↳ ' + fl.answer) : null]),
+        pill(fl.status, fl.status === 'open' ? 'amber' : 'green'),
+        (manage && fl.status === 'open') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async () => { const ans = await askReason('Answer the investor', { placeholder: 'They read this in their portal' }); if (!ans) return; try { await ccInvAnswerFlag(fl.id, ans, true); toast('Answered'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Answer') : ''])))),
 
       sec('Payout history', null, tbl(['Month', 'Total', 'Paid', 'Investor confirmed'], (D.payouts || []).filter(x => x.status === 'paid').map(x => row([
         x.month ? new Date(x.month).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '—', pkr(x.total, cur), fmtDate(x.paid_date) + ' ', link(x.proof_url, '(proof)'),

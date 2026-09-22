@@ -133,3 +133,37 @@ a{color:var(--iv-blue2)}
 .iv-sect{margin:22px 0 10px;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .iv-sect h2{font-size:1.05rem;margin:0}
 @media (min-width:600px){.iv-kv{grid-template-columns:repeat(4,1fr)}}
+
+/* ---------- v2: language, RTL, skeleton, banners, security ---------- */
+.iv-urdu body,.iv-urdu .iv-shell,.iv-urdu .iv-login,.iv-urdu .iv-sheet{font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Manrope,system-ui,sans-serif;line-height:1.9}
+.iv-urdu .iv-h1{line-height:1.6}
+.iv-urdu .iv-big,.iv-urdu .iv-kv .v,.iv-urdu .iv-row .amt,.iv-urdu .iv-dl b{font-family:Manrope,system-ui,sans-serif;line-height:1.2}
+[dir="rtl"] .iv-row{grid-template-columns:auto 1fr 38px;direction:rtl}
+[dir="rtl"] .iv-row .amt{text-align:left}
+[dir="rtl"] .band.lb{border-left:0;border-right:3px solid var(--iv-blue);padding-left:0;padding-right:16px}
+[dir="rtl"] .iv-sheet .close{float:left}
+.iv-lang{display:flex;gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--iv-line);border-radius:99px;padding:3px}
+.iv-lang button{background:none;border:0;color:var(--iv-ink3);font:inherit;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:99px;cursor:pointer;min-height:28px}
+.iv-lang button.on{background:var(--iv-blue);color:#fff}
+.iv-lang button:focus-visible{outline:2px solid var(--iv-blue2);outline-offset:2px}
+.iv-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0883F7,#0B6ED0);display:grid;place-items:center;font-weight:800;font-size:.85rem;color:#fff;flex:none}
+.iv-topright{display:flex;align-items:center;gap:10px}
+.iv-ic{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.iv-row .ic .iv-ic{width:18px;height:18px}
+.iv-sk{position:relative;overflow:hidden;background:rgba(255,255,255,.06);border-radius:8px;min-height:14px}
+.iv-sk:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);animation:ivSk 1.2s infinite}
+@keyframes ivSk{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.iv-sk-card{padding:16px;display:flex;flex-direction:column;gap:10px}
+.iv-banner{border-radius:var(--iv-r2);padding:12px 14px;margin-bottom:12px;font-size:.9rem;display:flex;gap:10px;align-items:flex-start}
+.iv-banner .iv-ic{flex:none;margin-top:2px}
+.iv-banner.stop{background:rgba(245,185,66,.1);border:1px solid rgba(245,185,66,.4);color:#F8D690}
+.iv-banner.wound{background:rgba(252,83,5,.1);border:1px solid rgba(252,83,5,.4);color:#FFB08A}
+.iv-banner.done{background:rgba(46,209,138,.1);border:1px solid rgba(46,209,138,.35);color:#9BEFC9}
+.iv-flag-btn{background:none;border:0;color:var(--iv-ink3);font:inherit;font-size:.8rem;font-weight:700;cursor:pointer;padding:8px 0;display:inline-flex;gap:6px;align-items:center;min-height:36px}
+.iv-flag-btn:hover{color:var(--iv-amber)}
+.iv-qr{background:#fff;padding:10px;border-radius:12px;display:inline-block;max-width:220px}
+.iv-qr svg{width:100%;height:auto;display:block}
+.iv-sec-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.iv-empty svg{width:40px;height:40px;stroke:var(--iv-ink3);fill:none;stroke-width:1.5;margin:0 auto 8px;display:block}
+.iv-tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:360px){.iv-lang button{padding:5px 7px;font-size:.68rem}}

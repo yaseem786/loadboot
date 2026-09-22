@@ -1504,3 +1504,12 @@ export const ccInvReverseExpense = (id, reason) => rpc('cc_inv_reverse_expense',
 export const ccInvPublishMonth   = (p) => rpc('cc_inv_publish_month', { p });
 export const ccInvPay            = (p) => rpc('cc_inv_pay', { p });
 export const ccInvDetail         = (agreementId) => rpc('cc_inv_detail', { p_agreement: agreementId });
+// bl_inv_0402 — scenarios, language, flags
+export const invSetLang          = (lang) => rpc('inv_set_lang', { p_lang: lang });
+export const invFlag             = (p) => rpc('inv_flag', { p });
+export const invMyFlags          = (agreementId) => rpc('inv_my_flags', { p_agreement: agreementId });
+export const ccInvRejectReceipt  = (id, reason) => rpc('cc_inv_reject_receipt', { p_receipt: id, p_reason: reason });
+export const ccInvCloseCommitment = (agreementId, reason) => rpc('cc_inv_close_commitment', { p_agreement: agreementId, p_reason: reason });
+export const ccInvReopenCommitment = (agreementId, newCap) => rpc('cc_inv_reopen_commitment', { p_agreement: agreementId, p_new_cap: newCap });
+export const ccInvWindDown       = (p) => rpc('cc_inv_wind_down', { p });
+export const ccInvAnswerFlag     = (id, answer, resolve = true) => rpc('cc_inv_answer_flag', { p_flag: id, p_answer: answer, p_resolve: resolve });

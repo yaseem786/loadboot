@@ -17,6 +17,8 @@
 | **Company ki taraf se** | Muhammad Yaseen, Member/Manager — company ki haisiyat se sign kar raha hai, zaati haisiyat se nahi |
 | **Investor** | Hamza Ali ("Investor") |
 
+> **Asim Latif (co-founder):** LLC mein abhi listed nahi. Jab tak wo member ke tor par register na ho, sirf Yaseen sign karega. Jis din Asim member banta hai, ye agreement LLC ka hai — dobara sign karne ki zaroorat nahi, lekin Asim ko is ki copy aur ilm hona chahiye. `[TAY KARNA HAI: Asim kab aur kitne % par listed hoga]`
+
 ### Yaseen ke zaati naam par kyun NAHI
 
 Agar agreement Yaseen ke zaati naam par ho, to:
@@ -238,6 +240,54 @@ Ye clause dosti bachane ke liye hai — pehle se saaf ho to baad mein bura nahi 
 
 ---
 
+## 13. Nuqsan — company chal na sake ya band ho jaye
+
+**13.1** Ye investment hai, qarz nahi. Company ke nakaam hone ki surat mein **Yaseen ya Asim ki zaati zimmedari koi nahi** — na ghar, na gaari, na zaati account.
+
+**13.2** Band hone par ye tarteeb hogi (portal mein "wind-down" ke naam se record hoti hai):
+1. Fund mein jo paisa **kharch nahi hua** wo poora Investor ko wapis
+2. Fund ke paise se jo saman (computers, furniture) khareeda gaya, wo bech kar us ki raqam Investor ko wapis
+3. Jo kharch ho chuka — salary, kiraya, tools — wo **gaya**; is ki wapsi nahi
+4. Aakhri hisaab portal par publish hoga, aur dono tasdeeq karenge
+
+**13.3** Band hone ke baad 15% aur 5% dono khatam — kyunke munafa hi nahi raha.
+
+**13.4** Agar company band hone se pehle munafay mein rahi ho aur kuch wapsi ho chuki ho, to wo wapsi Investor ki hai — wapis nahi li jayegi.
+
+## 14. Beech mein rukna — asal mechanics
+
+Farz karein Investor 8 lakh de kar ruk gaya:
+
+**14.1** LoadBoot Command Center mein "commitment close" karega. Us lamhe:
+- Commitment 20 lakh se **8 lakh** ho jata hai
+- Wapsi ka target **8 lakh** (jitna asal mein diya)
+- Koi khuli request cancel
+- Portal par saaf likha aata hai: kab band hui, kitne par, kyun
+
+**14.2** Permanent 5% ka kya hoga — `[TAY KARNA HAI]`:
+- **Tajweez: pro-rata** → 8/20 × 5% = **2%** hamesha. Ye munsifana hai — jitna paisa, utna hissa.
+- Ya poora 5% barqarar (Investor ke haq mein)
+
+**14.3** Agar baad mein Investor phir dena chahe, LoadBoot commitment dobara khol sakta hai — nayi hadd ke sath, portal par record ke sath.
+
+## 15. Munafa na ho to
+
+**15.1** Jis mahine munafa nahi (revenue ≤ kharcha), us mahine **kuch wajib nahi**. Portal par us mahine ka statement "munafa nahi — kuch wajib nahi" dikhayega.
+
+**15.2** Wo mahina **jama nahi hota** — agle mahine ke munafay par sirf agle mahine ka hisaab. `[TAY KARNA HAI: ya nuqsan aage jaye — yani agle munafay se pehle pichla nuqsan poora ho, phir hissa nikle. Ye Yaseen ke haq mein hai; system dono chala sakta hai]`
+
+**15.3** Yaseen kabhi **qarzdar nahi** — koi fixed adayegi, koi sood, koi deadline. Sirf munafa, sirf jab ho.
+
+## 16. Company bikne par — Exit participation (tajweez)
+
+Clause 4 ke Option A (profit share) ke sath ye jorne ki tajweez hai, taake Investor ko malkiyat diye bagair bikri ka faida bhi mile:
+
+**16.1** Agar LoadBoot (ya us ka business) bik jaye, to Investor ko bikri ki raqam ka **`[TAY KARNA HAI: %, tajweez 5%]`** milega — chahe us waqt wapsi mukammal ho ya nahi.
+
+**16.2** Ye malkiyat nahi hai — voting nahi, kagzaat mein naam nahi, tax ki pechidgi nahi. Sirf bikri par hissa.
+
+**16.3** Bikri ke baad ye agreement khatam.
+
 ## 12. Aam shartein
 
 **12.1** Ye agreement pichli tamam zubani baaton ki jagah leta hai.
@@ -260,7 +310,7 @@ Ye clause dosti bachane ke liye hai — pehle se saaf ho to baad mein bura nahi 
 
 ---
 
-## ✅ Sign karne se pehle ye 8 khaane bharne hain
+## ✅ Sign karne se pehle ye 11 khaane bharne hain
 
 | # | Clause | Sawal |
 |---|---|---|
@@ -272,6 +322,9 @@ Ye clause dosti bachane ke liye hai — pehle se saaf ho to baad mein bura nahi 
 | 6 | 7.2 | Buyout ka formula |
 | 7 | 10.3 | Naye investor se pehle batana zaroori hai? |
 | 8 | 11.3 | Ikhtilaf par kaun sa qanoon |
+| 9 | 0 | Asim kab aur kitne % par LLC mein listed hoga |
+| 10 | 15.2 | Nuqsan wala mahina aage jaye ya nahi |
+| 11 | 16.1 | Bikri par Investor ka % (exit participation) |
 
 ---
 
