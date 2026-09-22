@@ -147,6 +147,7 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    telnyx-whatsapp, send-email via api.js) are operational person-to-person messages, not marketing, and a deleted user's email/phone
    are already nulled. Edge housekeeping for Yaseen (dashboard, cannot be done from here): delete prod `lc-doc-check-debug` (v8, July
    debug copy of the upload path), prod `lb-tmp-keyread` (410 stub), prod `dmail-probe` if the dmail lane is done with it.
+   → 22 Sep: Yaseen deleted `lc-doc-check-debug` + `lb-tmp-keyread` on prod; `dmail-probe` kept (in doubt). DONE.
    ERASURE REMOVAL WORKFLOW BUILT — **STAGING ONLY** (22 Sep, bl_audit_0365 + edge `erasure-purge` v1 staging slot 1, ezbr b395c569…).
    Until now a request with ANY file reference could never complete (Codex's gate, by design). Now: staff sees every inventory item
    (`cc_erasure_items`), decides per item (`cc_erasure_decide`: 'remove', or 'hold' with retention_class + retain_until in the future),
@@ -164,10 +165,16 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    anon_security_definer 33 = the reviewed baseline (all guest-facing by design); authenticated_security_definer 928 = the whole
    RPC surface, INFO-grade, no action; extension_in_public = pg_net registered in public (not relocatable; moving = drop/recreate
    = loses net._http_response + touches 40 cron jobs → ACCEPTED, not worth the risk); auth_leaked_password_protection = the
-   dashboard toggle only Yaseen can flip (F15).
+   dashboard toggle only Yaseen can flip (F15). → 22 Sep: the toggle is Pro-plan only (org on Free); F15 = plan-gated, NOT flippable;
+   min password length / character rules on the same screen are the free-plan substitute (Yaseen's call).
    Remaining gates: complete erasure (retention decision + real removal with evidence, frozen-user UI message, deletion-flow browser
    check; freeze/revocation/prefix DONE 20 Sep); F10 DONE; notification/edge parity;
-   Retell real-signature proof; password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
+   Retell real-signature proof (22 Sep status: prod retell_hook_log holds ONE real `call_started signature_ok` and ONE `call_inbound
+   inbound:signature_ok` from 7 Sep = the HMAC format matches Retell at least once, but the same day also logged `digest_mismatch`,
+   and every inbound delivery since 8 Sep passed on the URL token with the signature verdict unrecorded; no call-event delivery since
+   7 Sep — Retell account has no credit. retell-inbound-hook v3 (staging v13 / prod v6, 22 Sep) now logs `url_token_ok;sig=<reason>`
+   so the next real inbound calls say whether the signature is absent or rejected. ENFORCE STAYS OFF until credit + one clean
+   signed call_started/call_ended and inbound `sig=` verdicts read ok); password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -247,3 +254,9 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
 - **2026-09-22 — Claude:** Yaseen approved the retention table → bl_audit_0366 built (staging 7/7), then 0365 + 0366 + edge erasure-purge applied to PROD (13/13 rollback-txn workflow test, zero residue, anon unchanged). The erasure gate's DB/edge side is now complete; remaining for that gate: CC review screen (ChatGPT), deletion-flow browser check (needs a throwaway login). No push, no messages, nothing deleted.
 - **2026-09-22 — Claude:** Security advisor re-run on prod; bl_audit_0367 pinned the last 35 mutable search_path functions (both envs, smoke PASS, 0 left); pg_net-in-public accepted with reason; F15 toggle still Yaseen's. No push, no messages, nothing deleted.
 - **2026-09-22 — Codex, work-split prerequisite blocked:** GitHub API confirms remote main 0ea536bb6bb5f7cfe20965633433d2905e915ba2 and its HANDOFF reports the 19-Sep Codex patch reconciled onto main. Required WORK-SPLIT-2026-09-22.md and CHATGPT-HANDOFF-2026-09-22.md return 404 on remote main and are absent locally; WORK-SPLIT also returns 404 on feat/dispatcher-model. Paused implementation/merges pending those ownership instructions; no production DB/edge calls, messages, data deletion or push. Local fetch stalled and was cancelled; local checkout remains unreconciled. Next: obtain the two files, read them in order, then resume the requested five-step sequence. This LOG entry is local only until reconciliation.
+- **2026-09-22 — Claude:** Merge conflict from Yaseen's pull (ChatGPT's 6 commits vs local main) resolved in HANDOFF LOG keeping both sides →
+  merge commit 455b337 on local main (5 ahead; investor-lane worktree changes left unstaged). Yaseen: leaked-password toggle is Pro-only (F15
+  plan-gated), deleted lc-doc-check-debug + lb-tmp-keyread on prod. Retell: prod log shows one real signature_ok on 7 Sep but nothing verifiable
+  since (no credit); shipped retell-inbound-hook v3 (sig-reason logging on token fallback) staging v13 + prod v6, both fail-closed smoke 401.
+  Deletion-flow browser check pending: Chrome is signed in as the owner account, test carrier muhammadyaseenhakeem786@gmail.com (7 objects,
+  no open request) needs Yaseen's login first.

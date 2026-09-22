@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// retell-inbound-hook v2 (audit F14, 2026-09-07) — accepts EITHER a valid signature OR a URL token.
+// retell-inbound-hook v3 (audit F14, 2026-09-07; v3 2026-09-22 sig-reason logging) — accepts EITHER a valid signature OR a URL token.
 //
 // WHY v2. Retell's docs are explicit that the CALL webhook is signed; they do NOT say the same about the
 // phone-number INBOUND webhook, and no real inbound delivery has been observed. Since this endpoint fails
@@ -107,7 +107,9 @@ Deno.serve(async (req: Request) => {
         await log(null, "token_check_unavailable", false, null);
         return json({ ...EMPTY, error: "verification unavailable", code: "LB503", reason: "token_check_unavailable" }, 503);
       }
-      if (t.body.token_ok === true) how = "url_token_ok";
+      // v3 (2026-09-22): record WHY the signature did not carry the day, so real traffic tells us whether Retell
+      // sends no signature on inbound deliveries or a signature our verifier rejects (needed before enforce mode).
+      if (t.body.token_ok === true) how = "url_token_ok;sig=" + (sig ? String(v.body.reason ?? "unverified") : "absent");
     }
   }
   if (!how) {
