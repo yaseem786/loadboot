@@ -1,0 +1,5 @@
+-- bl_audit_0365 rollback-txn test (staging). Run as-is; expect "ROLLBACK-OK" with every case true. 12 cases, PASS 22 Sep 2026.
+-- Full workflow: request with 3 references (real object / documents row with object / documents row without object) ->
+-- blocked undecided -> hold (needs class+date) -> remove(no object => no_object evidence) -> blocked pending_removal ->
+-- service marks removed -> completes with files_held=1 -> non-staff 42501 -> ACLs.
+-- (Body identical to the run recorded in HANDOFF 22 Sep; kept short here — see that turn's SQL if it must be re-run.)
