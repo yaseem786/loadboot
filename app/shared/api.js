@@ -1475,4 +1475,6 @@ export const emailOverrideSave = (key, subject, html, active) => rpc('cc_email_o
 export const emailPreview = (key, subject, html) => rpc('cc_email_preview', { p_key: key, p_subject: subject || null, p_html: html || null });
 export const emailTemplateNew = (p) => rpc('cc_email_template_new', p);
 // bl_comm_0396: who actually got one email — sends and preference blocks in one timeline
+// bl_comm_0398: the Live / Test / Off switch on one email
+export const emailMode = (key, mode, testTo, note) => rpc('cc_email_mode', { p_key: key, p_mode: mode, p_test_to: testTo || null, p_note: note || null });
 export const emailSends = (key, o = {}) => rpc('cc_email_sends', { p_key: key, p_status: o.status || null, p_q: o.q || null, p_limit: o.limit || 50, p_offset: o.offset || 0 });

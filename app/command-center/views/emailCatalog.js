@@ -11,7 +11,7 @@ import { showLoading, showError } from '../../shared/loading.js';
 import { can } from '../../shared/permissions.js';
 import {
   emailCatalog, emailDetail, emailSave, emailOverrideSave, emailPreview,
-  emailTemplateNew, emailSends,
+  emailTemplateNew, emailSends, emailMode,
 } from '../../shared/api.js';
 
 const CLASS_TONE = { T: 'blue', O: 'violet', P: 'amber', M: 'red', S: 'gray' };
@@ -34,6 +34,13 @@ const pill = (label, tone) => el('span', { class: 'cc-pill cc-pill-' + (tone || 
 const statusPillOf = (s) => pill(String(s || 'unknown').replace(/_/g, ' '), STATUS_TONE[s] || 'gray');
 const mono = (s, extra) => el('div', { class: 'cc-sub', style: 'font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;' + (extra || '') }, s || '');
 const num = (n) => Number(n || 0).toLocaleString();
+
+// The switch, in plain words. 'live' is the normal state, so it is not shouted about.
+const MODE = {
+  live: { label: 'Live', tone: 'green', says: 'Goes to the real person.' },
+  test: { label: 'Test only', tone: 'amber', says: 'Goes ONLY to the test address. The real recipient is written in the subject, so nobody outside LoadBoot is contacted.' },
+  off:  { label: 'Switched off', tone: 'red', says: 'Goes to nobody. Every attempt is still written down, so you can see what would have been sent.' },
+};
 
 export async function renderEmailCatalog(host) {
   const manage = can('comm.manage') || can('settings.manage') || can('content.manage');
@@ -153,6 +160,8 @@ export async function renderEmailCatalog(host) {
         ]),
         el('td', null, [
           statusPillOf(r.status),
+          (r.send_mode && r.send_mode !== 'live')
+            ? pill(MODE[r.send_mode].label, MODE[r.send_mode].tone) : '',
           r.has_override ? el('div', { class: 'cc-sub' }, 'override on') : '',
         ]),
       ]))),
@@ -194,6 +203,10 @@ async function detailDrawer(key, onSaved) {
     ]),
     el('div', { style: 'font-weight:700;font-size:1.05rem' }, r.name || key),
     el('div', { class: 'cc-sub', style: 'margin-bottom:16px' }, r.purpose || ''),
+    manage ? modeSwitch(key, r, onSaved) : el('div', { class: 'lb-card', style: 'padding:12px;margin-bottom:16px' }, [
+      el('div', { style: 'font-weight:600' }, 'Sending: ' + MODE[r.send_mode || 'live'].label),
+      el('div', { class: 'cc-sub' }, MODE[r.send_mode || 'live'].says),
+    ]),
     stats,
     el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:0 18px' }, [
       fact('Who gets it', r.audience_role),
@@ -425,4 +438,43 @@ function newEmailDrawer(onDone) {
 
 function select(pairs) {
   return el('select', { class: 'cc-input' }, pairs.map(([v, label]) => el('option', { value: v }, label)));
+}
+
+// ------------------------------------------------------- the Live / Test / Off switch
+
+function modeSwitch(key, r, onSaved) {
+  let mode = r.send_mode || 'live';
+  const testTo = el('input', { class: 'cc-input', placeholder: 'test address (blank = the default test inbox)', value: r.test_to || '' });
+  const says = el('div', { class: 'cc-sub', style: 'margin-top:8px' }, MODE[mode].says);
+  const testRow = el('div', { style: 'margin-top:10px;display:' + (mode === 'test' ? 'block' : 'none') }, [
+    el('label', { style: 'display:block;font-weight:600;font-size:.85rem;margin-bottom:4px' }, 'Send the test copy to'),
+    testTo,
+  ]);
+  const buttons = el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' });
+
+  const paint = () => {
+    buttons.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+    says.textContent = MODE[mode].says;
+    testRow.style.display = mode === 'test' ? 'block' : 'none';
+  };
+
+  const set = async (v) => {
+    const was = mode; mode = v; paint();
+    try {
+      await emailMode(key, v, testTo.value, null);
+      toast(v === 'live' ? 'Now sending to real recipients' : v === 'test' ? 'Test only — nobody outside LoadBoot will get it' : 'Switched off', 'success');
+      if (onSaved) onSaved();
+    } catch (e) { mode = was; paint(); toast(humanizeError(e), 'error'); }
+  };
+
+  ['live', 'test', 'off'].forEach(v => buttons.appendChild(
+    el('button', { class: 'cc-chip-btn', dataset: { mode: v }, onClick: () => set(v) }, MODE[v].label)));
+  testTo.addEventListener('change', () => { if (mode === 'test') set('test'); });
+  paint();
+
+  return el('div', { class: 'lb-card', style: 'padding:14px;margin-bottom:16px' }, [
+    el('div', { style: 'font-weight:700;margin-bottom:8px' }, 'Who is this email reaching right now?'),
+    buttons, says, testRow,
+    r.send_mode_note ? el('div', { class: 'cc-sub', style: 'margin-top:8px' }, r.send_mode_note) : '',
+  ]);
 }
