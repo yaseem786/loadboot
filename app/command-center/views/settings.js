@@ -114,7 +114,25 @@ export async function renderSettings(host) {
           },
         }, x.t)));
       const wa = (c && c.whatsapp) || {}, ph = (c && c.phone) || {};
+      // bl_wa_0392 — say out loud which channel is live right now, not just which button is highlighted.
+      const meta = CH.filter((x) => x.v === cur)[0] || CH[0];
+      const liveTxt = cur === 'phone' ? (ph.display || '\u2014')
+        : cur === 'whatsapp' ? (wa.display || '\u2014')
+        : (wa.display || '\u2014') + '  +  ' + (ph.display || '\u2014');
+      const dot = el('span', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (cur === 'phone' ? '#0883F7' : '#25D366') + ';margin-right:8px;vertical-align:middle' });
+      const statusLine = el('div', {
+        style: 'display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:10px;background:rgba(255,255,255,.03)',
+      }, [
+        el('span', { style: 'font-weight:700' }, [dot, 'Active now: ' + meta.t]),
+        el('span', { class: 'cc-sub' }, liveTxt),
+        el('span', { class: 'cc-sub' }, cur === 'whatsapp'
+          ? '\u00b7 Call links are hidden on the website while this is on.'
+          : cur === 'both'
+            ? '\u00b7 Website, e-mails and signature show both.'
+            : '\u00b7 WhatsApp is not shown anywhere.'),
+      ]);
       mount(chanHost, el('div', null, [
+        statusLine,
         row,
         el('div', { class: 'cc-sub', style: 'margin-top:12px;line-height:1.7' }, [
           el('div', null, 'WhatsApp  ' + (wa.display || '\u2014')),

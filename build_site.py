@@ -427,8 +427,8 @@ PHONE_TEL = '+14692537575'
 # One consistent "call us / we call you" strip for decision-point pages (mobile-wraps).
 PHONE_STRIP = ('<section style="padding:14px 0 0"><div class="wrap"><div class="call-strip">'
  '&#128222; Questions? Call us 24/7: <a href="tel:' + PHONE_TEL + '" data-lb-contact="inline">' + PHONE_DISP + '</a>'
- '<span style="color:#94a3b8">&middot;</span>'
- '<a href="contact.html#call">or we call you &mdash; right now or scheduled &rarr;</a>'
+ '<span style="color:#94a3b8" data-lb-callonly>&middot;</span>'
+ '<a href="contact.html#call" data-lb-callonly>or we call you &mdash; right now or scheduled &rarr;</a>'
  '</div></div></section>')
 
 def header_v1(active):
@@ -443,7 +443,7 @@ def header_v1(active):
         else:
             links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
     mob = '<a href="tel:+14692537575" class="nav-mob" data-lb-contact="nav">&#128222; Call us 24/7 &mdash; +1 (469) 253-7575</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
-    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+14692537575" class="tb-call" data-lb-contact="topbar">&#128222; 24/7&nbsp; +1 (469) 253-7575</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
+    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+14692537575" class="tb-call" data-lb-contact="topbar">&#128222; 24/7&nbsp; +1 (469) 253-7575</a><a href="contact.html#call" class="tb-cb" data-lb-callonly>or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
 <a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" width="165" height="36" fetchpriority="high" decoding="async" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
@@ -464,7 +464,7 @@ def footer():
 <div class="foot-top">
 <div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" width="146" height="32" decoding="async" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
-<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+14692537575" data-lb-contact="footer">&#128222; +1 (469) 253-7575 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
+<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+14692537575" data-lb-contact="footer">&#128222; +1 (469) 253-7575 &middot; 24/7</a><a class="foot-cb" href="contact.html#call" data-lb-callonly>We call you &rarr;</a></div>
 <div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
 <div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
@@ -534,6 +534,15 @@ _CONTACT_SWITCH = ("<script>(function(){"
         "inline:function(d){return d+' on WhatsApp';}};"
   "function apply(c){try{"
     "if(!c||!c.whatsapp||!c.whatsapp.url)return;"
+    "var _d=c.whatsapp.display||'',_u=c.whatsapp.url,_i,_e;"
+    "var co=document.querySelectorAll('[data-lb-callonly]');"
+    "for(_i=0;_i<co.length;_i++){co[_i].style.display=(c.channel==='whatsapp')?'none':'';}"
+    "var wo=document.querySelectorAll('[data-lb-waonly]');"
+    "for(_i=0;_i<wo.length;_i++){_e=wo[_i];"
+      "if(c.channel!=='whatsapp'&&c.channel!=='both'){_e.style.display='none';continue;}"
+      "_e.style.display=_e.getAttribute('data-lb-waonly')||'';"
+      "if(_e.tagName==='A'){_e.setAttribute('href',_u);_e.setAttribute('rel','noopener');_e.setAttribute('target','_blank');}"
+      "var _n=_e.querySelector('[data-lb-wa-num]');if(_n)_n.textContent=_d;}"
     "if(c.channel!=='whatsapp'&&c.channel!=='both')return;"
     "var both=c.channel==='both';"
     "var d=c.whatsapp.display||'',u=c.whatsapp.url;"
@@ -1901,7 +1910,7 @@ call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="m
 <b>Dispatcher &amp; referral questions are handled by email and live chat</b> &mdash; you will get faster, written answers.
 <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="careers.html">Dispatcher jobs &rarr;</a>
 <a class="btn btn-secondary" href="create-agent-account.html">Referral / agent account &rarr;</a></div></div>
-<div id="cwMain" hidden style="margin-top:14px">
+<div id="cwMain" hidden style="margin-top:14px" data-lb-callonly>
 <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:16px">
 &#128222; Call us anytime, 24/7 &mdash; answered on the first ring:&nbsp;<a href="tel:""" + VOICE_NUMBER_TEL + """" style="font-weight:800;font-size:1.15rem;color:#0883F7;text-decoration:none">""" + VOICE_NUMBER_DISPLAY + """</a></div>
 <h3 style="margin:0 0 12px">&hellip;or we call you</h3>
@@ -1914,7 +1923,8 @@ call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="m
 </div>
 <button class="btn btn-primary" id="cwBtn" style="width:100%;justify-content:center;margin-top:18px">&#128222; Call me</button>
 <p id="cwMsg" style="text-align:center;margin-top:12px;font-size:.92rem;color:var(--muted)">By requesting a call you agree to receive one call from LoadBoot at this number.</p>
-</div></div></div></section>
+</div>
+<a data-lb-waonly="flex" style="display:none;margin-top:14px;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#fff;font-weight:800;border-radius:12px;padding:16px 18px;text-decoration:none" href="#">&#128172; Message the dispatch desk on WhatsApp &mdash; <span data-lb-wa-num></span></a></div></div></section>
 <script>(function(){
 function vkey(){return window.LBVisitorIdentity.getKey();}
 var roles=document.querySelectorAll('input[name=cwrole]');var gate=document.getElementById('cwGate');var main=document.getElementById('cwMain');
@@ -6474,7 +6484,7 @@ def _hub_cta(portal_href, portal_label):
             '<div class="hub-cta-t"><h3>Create your free account</h3>'
             '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
             '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
-            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+14692537575" style="color:#fff;font-weight:800;text-decoration:none" data-lb-contact="inline">+1 (469) 253-7575</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
+            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+14692537575" style="color:#fff;font-weight:800;text-decoration:none" data-lb-contact="inline">+1 (469) 253-7575</a> &mdash; 24/7,<span data-lb-callonly> or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></span></p></div>'
             '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
             '</div></div></section>')
 
