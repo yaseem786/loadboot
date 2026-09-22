@@ -1910,8 +1910,8 @@ call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="m
 <b>Dispatcher &amp; referral questions are handled by email and live chat</b> &mdash; you will get faster, written answers.
 <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="careers.html">Dispatcher jobs &rarr;</a>
 <a class="btn btn-secondary" href="create-agent-account.html">Referral / agent account &rarr;</a></div></div>
-<div id="cwMain" hidden style="margin-top:14px" data-lb-callonly>
-<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+<div id="cwMain" hidden style="margin-top:14px">
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:16px" data-lb-callonly>
 &#128222; Call us anytime, 24/7 &mdash; answered on the first ring:&nbsp;<a href="tel:""" + VOICE_NUMBER_TEL + """" style="font-weight:800;font-size:1.15rem;color:#0883F7;text-decoration:none">""" + VOICE_NUMBER_DISPLAY + """</a></div>
 <h3 style="margin:0 0 12px">&hellip;or we call you</h3>
 <div class="form-grid">
