@@ -138,6 +138,15 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    WORK SPLIT (Yaseen 22 Sep, "dono ka kaam takraye nahi"): `WORK-SPLIT-2026-09-22.md` — Claude = DB/edge/security/prod applies;
    ChatGPT = git hygiene, frontend (frozen-user message, getToken), build/perf (F19/F20), SEO/analytics/cron/status docs (F21–F27),
    and the 0342/0343 diff review (no prod apply). File ownership lists inside; both only APPEND to this LOG.
+   NOTIFICATION/EDGE PARITY slice CLOSED 22 Sep: bl_audit_0364 (staging + prod) — on a COMPLETED deletion the processor now also
+   removes push_subscriptions (web/APNs endpoints), user_devices, in-app notifications (197 prod payloads carried email/phone),
+   comm_preferences, emergency contacts of orgs the user owns, and scrubs chat onboarding contact data (account_email, data.email/
+   phone/contact_name) on rows matched the 0355 way. 8/8 on both envs; other users untouched; body md5 1fb9c012… identical on both;
+   rollback rehearsed byte-exact on staging (ROLLBACK-ERASURE-NOTIF-2026-09-22.sql). Reviewed and left alone: sys_email honours
+   suppressions (Codex), delivery-worker claims through cc_delivery_worker_claim; the dispatcher-initiated senders (dmail, telnyx-sms,
+   telnyx-whatsapp, send-email via api.js) are operational person-to-person messages, not marketing, and a deleted user's email/phone
+   are already nulled. Edge housekeeping for Yaseen (dashboard, cannot be done from here): delete prod `lc-doc-check-debug` (v8, July
+   debug copy of the upload path), prod `lb-tmp-keyread` (410 stub), prod `dmail-probe` if the dmail lane is done with it.
    Remaining gates: complete erasure (retention decision + real removal with evidence, frozen-user UI message, deletion-flow browser
    check; freeze/revocation/prefix DONE 20 Sep); F10 DONE; notification/edge parity;
    Retell real-signature proof; password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
@@ -215,3 +224,4 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
 - **2026-09-22 — Claude:** Re-sync: all 19–20 Sep audit commits are on origin/main (pushed by Yaseen); working tree is on another lane's branch, so audit files are committed to main via plumbing without touching that tree. F10 closed (0358, both envs). Wrote CHATGPT-HANDOFF-2026-09-22.md: Codex's work is on main/prod except 0342/0343 (staging-only by their own header) and three unmerged 6-Sep doc branches. No push, no messages, nothing deleted.
 - **2026-09-22 — Claude:** F25 closed on both envs (0359 FK indexes, 0361 RLS initplan, 0362 dup indexes); anon drift from the SMS lane fixed on staging (0360). All committed to main via plumbing (working tree belongs to another lane). No push, no messages, nothing deleted.
 - **2026-09-22 — Claude:** F14 closed on both envs (0363 search_path pin, before/after error profile identical on prod). Work split written (WORK-SPLIT-2026-09-22.md) with the ChatGPT prompt. Prod now: anon SECDEF 33 unchanged, mutable search_path 0/0, unindexed FKs 0, dup indexes 0. No push, no messages, nothing deleted.
+- **2026-09-22 — Claude:** bl_audit_0364 on staging+prod (deletion now clears push/device/notification/preference/emergency-contact rows and chat contact data; 8/8 both envs; rollback byte-exact). ChatGPT reported it cannot see WORK-SPLIT / CHATGPT-HANDOFF: they are on Yaseen's LOCAL main only (8 commits ahead of origin) — Yaseen must push. No push from here, no messages, nothing deleted.
