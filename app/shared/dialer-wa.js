@@ -45,6 +45,13 @@ export function createWaPanel(ctx) {
 .lbdwa-recdot.off{animation:none;opacity:.35}
 .lbdwa-prev{flex:1;min-width:0;height:32px}
 .lbdwa-recsend{width:36px;height:36px;border-radius:50%;border:0;background:var(--bl);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+/* bl_wa_0396 - the dispatcher reads the message before choosing it, not just the template's name. */
+.lbdwa-tpls{display:flex;flex-direction:column;gap:6px}
+.lbdwa-tpl{display:block;width:100%;text-align:left;border:1px solid var(--ln);background:rgba(255,255,255,.04);color:#dbe6fb;border-radius:12px;padding:8px 10px;cursor:pointer;font:inherit}
+.lbdwa-tpl b{display:block;font-size:12px;text-transform:capitalize;color:#fff;margin-bottom:2px}
+.lbdwa-tpl span{display:block;font-size:11.5px;line-height:1.45;color:#9fb3d6;white-space:pre-wrap}
+.lbdwa-tpl.on{border-color:var(--bl);background:rgba(8,131,247,.18)}
+.lbdwa-tpl.on span{color:#cfe1fb}
 @keyframes lbdwaBlink{50%{opacity:.25}}
 @keyframes lbdwaWave{0%,100%{height:6px}50%{height:20px}}
 .lbdwa-doc{display:flex;gap:9px;align-items:center;background:rgba(255,255,255,.12);border:0;border-radius:10px;
@@ -547,8 +554,10 @@ export function createWaPanel(ctx) {
     const chosen = tpls.find((x) => x.name === S.waTpl) || null;
     return h('div', null, [
       h('div', { class: 'lbd-note', style: 'margin:0 0 8px' }, 'The 24-hour window is closed — only an approved template can go out.'),
-      h('div', { class: 'lbd-tpl' }, tpls.map((x) => h('button', { type: 'button', style: S.waTpl === x.name ? 'border-color:var(--bl);background:rgba(8,131,247,.18);color:#fff' : '',
-        onClick: () => { S.waTpl = x.name; S.waVars = new Array(x.variables).fill(''); paint(); } }, x.name.replace(/_/g, ' ')))),
+      h('div', { class: 'lbdwa-tpls' }, tpls.map((x) => h('button', {
+        type: 'button', class: 'lbdwa-tpl' + (S.waTpl === x.name ? ' on' : ''),
+        onClick: () => { S.waTpl = x.name; S.waVars = new Array(x.variables).fill(''); paint(); },
+      }, [h('b', null, x.name.replace(/_/g, ' ')), h('span', null, labelled(x))]))),
       chosen ? h('div', { style: 'margin-top:8px' }, [
         ...(chosen.var_labels || []).map((lab, i) => h('input', { class: 'lbd-in', style: 'margin-bottom:6px', placeholder: lab, 'aria-label': lab,
           value: S.waVars[i] || '', onInput: (e) => { S.waVars[i] = e.target.value; const pv = rootOf().querySelector('[data-wapv]'); if (pv) pv.textContent = fill(chosen.body, S.waVars); } })),
@@ -559,6 +568,12 @@ export function createWaPanel(ctx) {
   }
 
   const fill = (body, vars) => (body || '').replace(/\{\{(\d+)\}\}/g, (_, i) => (vars && vars[Number(i) - 1]) || '{{' + i + '}}');
+  // bl_wa_0396 - the body with each {{n}} shown as the thing it stands for, so the list reads as English
+  // before a single box is filled in. Meta owns the wording; this only makes the placeholders legible.
+  const labelled = (x) => (x.body || '').replace(/\{\{(\d+)\}\}/g, (_, i) => {
+    const lab = (x.var_labels || [])[Number(i) - 1];
+    return lab ? '\u27e8' + lab + '\u27e9' : '{{' + i + '}}';
+  });
 
   function view() {
     const wa = S.wa || { enabled: false, threads: [], unassigned: [], templates: [] };

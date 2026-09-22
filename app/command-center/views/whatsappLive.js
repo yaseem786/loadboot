@@ -42,6 +42,12 @@ const CSS = `
 .wl-bub.out{align-self:flex-end;background:var(--b);border-color:var(--b);color:#fff}
 .wl-bub.fail{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:#b91c1c}
 .wl-bub small{display:block;margin-top:3px;font-size:10px;opacity:.75}
+/* bl_wa_0396 - the template list shows the message that will go out, not just its name. */
+.wl-tpls{display:flex;flex-direction:column;gap:6px;max-width:580px}
+.wl-tpl{text-align:left;border:1px solid var(--line,#e5e9f2);background:var(--card,#fff);color:inherit;border-radius:12px;padding:9px 11px;cursor:pointer;font:inherit}
+.wl-tpl b{display:block;font-size:12.5px;text-transform:capitalize;margin-bottom:2px}
+.wl-tpl span{display:block;font-size:12px;line-height:1.45;color:var(--muted,#64748b);white-space:pre-wrap}
+.wl-tpl.on{border-color:var(--b);box-shadow:0 0 0 2px rgba(8,131,247,.18)}
 .wl-day{align-self:center;background:rgba(100,116,139,.14);color:var(--mut,#64748b);font:600 10.5px Inter,system-ui,sans-serif;padding:3px 10px;border-radius:999px;margin:6px 0 2px}
 .wl-img{max-width:240px;max-height:280px;border-radius:12px;display:block;cursor:zoom-in;object-fit:cover}
 .wl-ph{width:200px;height:110px;border-radius:12px;display:grid;place-items:center;background:rgba(100,116,139,.12);font-size:11.5px}
@@ -391,6 +397,12 @@ export async function renderWhatsappLive(host) {
     } catch (e) { if (!quiet) toast(humanizeError(e)); }
   }
   const fill = (body, vars) => (body || '').replace(/\{\{(\d+)\}\}/g, (_, i) => (vars && vars[Number(i) - 1]) || '{{' + i + '}}');
+  // bl_wa_0396 - the same body with each {{n}} shown as what it stands for, so the list can be read
+  // before anything is typed. Meta owns the wording; this only makes the placeholders legible.
+  const labelled = (x) => (x.body || '').replace(/\{\{(\d+)\}\}/g, (_, i) => {
+    const lab = (x.var_labels || [])[Number(i) - 1];
+    return lab ? '\u27e8' + lab + '\u27e9' : '{{' + i + '}}';
+  });
 
   // one click, one message: a second click while the first is still in flight is ignored (the first live
   // test sent the same reply twice, 1.3 s apart, because nothing stopped it). The server refuses a repeat too.
@@ -427,11 +439,15 @@ export async function renderWhatsappLive(host) {
       ]) : el('div', null, [
         !approved.length
           ? el('div', { class: 'wl-note' }, 'The window is closed and no template is approved at Meta yet, so nothing can be sent to this person until they message first.')
-          : el('div', { class: 'wl-row' }, [
-            el('select', { class: 'wl-sel', onChange: (e) => { tplName = e.target.value; tplVars = new Array(((approved.find((x) => x.name === tplName) || {}).variables) || 0).fill(''); paintThread(); } },
-              [el('option', { value: '' }, 'Choose an approved template'), ...approved.map((x) => el('option', { value: x.name }, x.name))]),
-            ...(chosen ? (chosen.var_labels || []).map((lab, i) => el('input', { class: 'wl-in', placeholder: lab, value: tplVars[i] || '', onInput: (e) => { tplVars[i] = e.target.value; } })) : []),
-            chosen ? el('button', { class: 'wl-btn pri', disabled: sending, onClick: () => send({ thread_id: t.id, template: { name: chosen.name, vars: tplVars } }) }, sending ? 'Sending…' : 'Send template') : null,
+          : el('div', null, [
+            el('div', { class: 'wl-tpls' }, approved.map((x) => el('button', {
+              type: 'button', class: 'wl-tpl' + (tplName === x.name ? ' on' : ''),
+              onClick: () => { tplName = x.name; tplVars = new Array(x.variables || 0).fill(''); paintThread(); },
+            }, [el('b', null, x.name.replace(/_/g, ' ')), el('span', null, labelled(x))]))),
+            chosen ? el('div', { class: 'wl-row', style: 'margin-top:8px' }, [
+              ...(chosen.var_labels || []).map((lab, i) => el('input', { class: 'wl-in', placeholder: lab, value: tplVars[i] || '', onInput: (e) => { tplVars[i] = e.target.value; } })),
+              el('button', { class: 'wl-btn pri', disabled: sending, onClick: () => send({ thread_id: t.id, template: { name: chosen.name, vars: tplVars } }) }, sending ? 'Sending…' : 'Send template'),
+            ]) : null,
           ]),
         chosen ? el('div', { class: 'wl-bub out', style: 'margin-top:10px' }, fill(chosen.body, tplVars)) : null,
         el('div', { class: 'wl-row' }, [el('button', { class: 'wl-btn', onClick: () => { open = null; thr = null; paintThread(); } }, 'Close panel')]),
