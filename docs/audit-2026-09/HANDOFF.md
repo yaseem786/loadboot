@@ -129,6 +129,15 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    Anon-surface DRIFT caught: the SMS-consent lane (staging only) created 6 functions with default EXECUTE-to-PUBLIC (staging anon
    SECDEF 32 -> 38); every body refuses when auth.uid() is null, so not exploitable; bl_audit_0360 revoked PUBLIC+anon (no-op on prod,
    where they do not exist yet) -> staging back to 32 / 6a7bd230…, prod 33 / 8736b2d7…. When that lane reaches prod, 0360 must go with it.
+   F14 CLOSED 22 Sep: bl_audit_0363 pinned search_path on every SECURITY INVOKER function authenticated may execute (staging 107 / prod
+   86 targets; pin = "app_private, public, extensions, pg_temp", the path 1,234 SECDEF callers already use; zero name collisions
+   verified across public/app_private/extensions/vault/cron before writing) + the last mutable SECDEF (bl_cmp_0324_rollback → pg_catalog).
+   Proof: staging smoke = 3 audit RPC suites PASS + 204 zero-arg SECDEF RPCs called as staff with 0 resolution errors; prod smoke 191
+   RPCs, 0 resolution errors, and the "other error" profile is IDENTICAL before vs after the pin (46/46, measured by resetting inside a
+   rolled-back txn). mutable search_path count on prod: invoker 0, secdef 0. Rollback: ROLLBACK-SEARCH-PATH-2026-09-22.sql.
+   WORK SPLIT (Yaseen 22 Sep, "dono ka kaam takraye nahi"): `WORK-SPLIT-2026-09-22.md` — Claude = DB/edge/security/prod applies;
+   ChatGPT = git hygiene, frontend (frozen-user message, getToken), build/perf (F19/F20), SEO/analytics/cron/status docs (F21–F27),
+   and the 0342/0343 diff review (no prod apply). File ownership lists inside; both only APPEND to this LOG.
    Remaining gates: complete erasure (retention decision + real removal with evidence, frozen-user UI message, deletion-flow browser
    check; freeze/revocation/prefix DONE 20 Sep); F10 DONE; notification/edge parity;
    Retell real-signature proof; password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
@@ -205,3 +214,4 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
 - **2026-09-20 — Claude:** Erasure gate: bl_audit_0356 upload freeze (13/13) and bl_audit_0357 session revoke on completion (7/7) applied staging then prod, bodies identical across envs, anon names unchanged, zero fixtures; rollbacks written; retention PROPOSAL written (no removal). Gate still open: real removal + retention decision, deletion-flow browser check, frozen-user UI message. No push, no messages, no real account touched.
 - **2026-09-22 — Claude:** Re-sync: all 19–20 Sep audit commits are on origin/main (pushed by Yaseen); working tree is on another lane's branch, so audit files are committed to main via plumbing without touching that tree. F10 closed (0358, both envs). Wrote CHATGPT-HANDOFF-2026-09-22.md: Codex's work is on main/prod except 0342/0343 (staging-only by their own header) and three unmerged 6-Sep doc branches. No push, no messages, nothing deleted.
 - **2026-09-22 — Claude:** F25 closed on both envs (0359 FK indexes, 0361 RLS initplan, 0362 dup indexes); anon drift from the SMS lane fixed on staging (0360). All committed to main via plumbing (working tree belongs to another lane). No push, no messages, nothing deleted.
+- **2026-09-22 — Claude:** F14 closed on both envs (0363 search_path pin, before/after error profile identical on prod). Work split written (WORK-SPLIT-2026-09-22.md) with the ChatGPT prompt. Prod now: anon SECDEF 33 unchanged, mutable search_path 0/0, unindexed FKs 0, dup indexes 0. No push, no messages, nothing deleted.
