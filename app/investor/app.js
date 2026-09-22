@@ -19,6 +19,12 @@ import { invMe, invMyRequests, invDeclarePayment, invLedger, invStatements, invC
          invUploadProof, invProofUrl } from '../shared/api.js';
 import { mdToHtml } from './agreement-template.js';
 import { t, setLang, getLang, LANGS } from './i18n.js';
+import { vendorWhat, catWhat, termWhat, TERMS, CATEGORIES, VENDORS } from './glossary.js';
+// SMS second factor is OFF until an SMS provider is wired into Supabase Auth (Telnyx via the
+// "Send SMS" auth hook is possible). Authenticator app is the default and needs nothing.
+const SMS_2FA_ENABLED = false;
+// Public places LoadBoot lives. Facebook / Capterra come from CC → Settings → Links (not invented).
+const PUBLIC_LINKS = { site: 'https://loadboot.com', play: 'https://play.google.com/store/apps/details?id=com.loadboot.app', linkedin: 'https://www.linkedin.com/company/135138228/', trustpilot: 'https://www.trustpilot.com/review/loadboot.com' };
 
 const root = document.getElementById('lb-app');
 const S = { me: null, agreements: [], agr: null, tab: 'home', ledger: null, requests: null, statements: null, flags: null, settings: null, growth: null, proj: null, doc: null };
@@ -195,62 +201,116 @@ function stateBanner(p) {
   if (p.phase === 'permanent_share' && Number(p.recovered) > 0) return el('div', { class: 'iv-banner done' }, [icon('check'), el('span', null, t('h_note_recovered', pct(p.effective_share_pct)))]);
   return null;
 }
-const kv = (k, v, cls) => el('div', null, [el('div', { class: 'k' }, k), el('div', { class: 'v ' + (cls || '') }, v)]);
+const kv = (k, v, cls, term) => el('div', null, [el('div', { class: 'k' }, term ? [k, ' ', qBtn(term)] : k), el('div', { class: 'v ' + (cls || '') }, v)]);
+const qBtn = (term, cat) => el('button', { class: 'iv-q', type: 'button', 'aria-label': t('gl_what'), onClick: (e) => { e.stopPropagation(); e.preventDefault(); cat ? openSheet(t('gl_what'), el('p', { class: 'iv-gl-p' }, catWhat(cat, getLang()))) : showTerm(term); } }, '?');
+const DONUT = ['#0883F7', '#2ED18A', '#F5B942', '#FC5305', '#A78BFA', '#38BDF8', '#F472B6', '#94A3B8', '#FB923C', '#4ADE80'];
+function donut(cats, total) {
+  let acc = 0; const stops = cats.map(([c, v], i) => { const a = acc; acc += 100 * Number(v) / Math.max(1, Number(total)); return DONUT[i % DONUT.length] + ' ' + a.toFixed(1) + '% ' + acc.toFixed(1) + '%'; });
+  return el('div', { class: 'iv-donut', style: 'background:conic-gradient(' + stops.join(',') + (acc < 100 ? ',rgba(255,255,255,.06) ' + acc.toFixed(1) + '% 100%' : '') + ')' }, el('div', null, [el('b', null, money(total)), el('span', null, t('h_spent'))]));
+}
+function showTerm(term) { openSheet(t('gl_what'), el('div', null, [el('p', { class: 'iv-gl-p' }, termWhat(term, getLang())), el('button', { class: 'iv-btn sm', onClick: () => showGlossary() }, t('gl_row'))])); }
+function showGlossary() {
+  const lang = getLang(); const item = (title, text) => el('div', { class: 'iv-gl' }, [el('b', null, title), el('span', null, text)]);
+  openSheet(t('gl_title'), el('div', null, [
+    el('p', { class: 'iv-muted' }, t('gl_sub')),
+    el('div', { class: 'iv-sect' }, el('h2', null, t('h_title'))), Object.keys(TERMS).map(k => item(termWhat(k, lang).split(' — ')[0], termWhat(k, lang).split(' — ').slice(1).join(' — '))),
+    el('div', { class: 'iv-sect' }, el('h2', null, t('l_title'))), Object.keys(CATEGORIES).map(k => item(catName(k), catWhat(k, lang).split(' — ').slice(1).join(' — '))),
+    el('div', { class: 'iv-sect' }, el('h2', null, 'Tools')), VENDORS.map(([n, w]) => item(n, w[lang] || w.en)),
+  ]));
+}
+// SVG ring gauge — pct 0..100
+function ring(pct, cls, label) {
+  const r = 26, c = 2 * Math.PI * r, v = Math.max(0, Math.min(100, Number(pct || 0)));
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 64 64'); svg.setAttribute('class', 'iv-ring ' + (cls || ''));
+  svg.innerHTML = '<circle cx="32" cy="32" r="' + r + '" class="bg"/><circle cx="32" cy="32" r="' + r + '" class="fg" stroke-dasharray="' + c + '" stroke-dashoffset="' + (c * (1 - v / 100)) + '" transform="rotate(-90 32 32)"/><text x="32" y="36" text-anchor="middle">' + Math.round(v) + '%</text>';
+  return el('div', { class: 'iv-ringwrap' }, [svg, label ? el('span', null, label) : null]);
+}
+// SVG sparkline from [{month,n}]
+function spark(series) {
+  const pts = (series || []).map(x => Number(x.n || 0)); if (pts.length < 2) return null;
+  const max = Math.max(1, ...pts), w = 80, h = 24;
+  const d = pts.map((n, i) => (i ? 'L' : 'M') + (i * (w / (pts.length - 1))).toFixed(1) + ' ' + (h - 2 - (n / max) * (h - 4)).toFixed(1)).join(' ');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h); svg.setAttribute('class', 'iv-spark');
+  svg.innerHTML = '<path d="' + d + '"/>'; return svg;
+}
+function trend(series) {
+  const p = (series || []).map(x => Number(x.n || 0)); if (p.length < 2) return null;
+  const a = p[p.length - 1], b = p[p.length - 2]; const cls = a > b ? 'up' : a < b ? 'down' : 'flat';
+  return el('span', { class: 'iv-trend ' + cls }, (a > b ? '▲ ' : a < b ? '▼ ' : '● ') + t('trend_' + cls));
+}
 
 // ---------- HOME ----------
+function journey(p) {
+  const steps = [['j_commit', true], ['j_funded', Number(p.funded) > 0], ['j_spent', Number(p.spent) > 0], ['j_profit', Number(p.share_paid) > 0 || Number(p.recovered) > 0], ['j_recover', p.phase === 'recovering' && Number(p.recovered) > 0], ['j_share', p.phase === 'recovered' || p.phase === 'permanent']];
+  let cur = 0; steps.forEach((st, i) => { if (st[1]) cur = i; });
+  return el('div', { class: 'iv-card' }, [
+    el('p', { class: 'iv-eyebrow' }, t('journey')),
+    el('div', { class: 'iv-journey' }, steps.map(([k, done], i) => el('div', { class: (done ? 'done' : '') + (i === cur ? ' now' : '') }, [el('i'), el('span', null, t(k)), i === cur ? el('small', null, t('j_now')) : null]))),
+  ]);
+}
+function linksCard() {
+  const L = Object.assign({}, PUBLIC_LINKS, (S.settings && S.settings.links) || {});
+  const row = (k, key, ic) => L[k] ? el('a', { class: 'iv-link', href: L[k], target: '_blank', rel: 'noopener' }, [el('span', { class: 'ic' }, ic), t(key), el('span', { class: 'go' }, '↗')]) : null;
+  return el('div', { class: 'iv-card' }, [
+    el('p', { class: 'iv-eyebrow' }, t('links_title')), el('p', { class: 'iv-muted', style: 'margin:0 0 10px' }, t('links_sub')),
+    el('div', { class: 'iv-links' }, [row('play', 'lk_play', '▶'), row('site', 'lk_site', '⌂'), row('linkedin', 'lk_linkedin', 'in'), row('trustpilot', 'lk_trustpilot', '★'), row('facebook', 'lk_facebook', 'f'), row('capterra', 'lk_capterra', 'C'), row('instagram', 'lk_instagram', 'ig'), row('youtube', 'lk_youtube', '▶')]),
+  ]);
+}
 function renderHome(host) {
   const p = S.agr.position || {};
   const recovering = p.phase === 'recovering';
   const open = p.open_questions || [];
   const shareTypeVal = p.share_type === 'equity' ? pct(p.equity_vested_pct) : p.share_type === 'profit_share' ? t('h_profit_share') : t('h_undecided');
-  mount(host, [
-    agrPicker(),
-    el('h1', { class: 'iv-h1' }, t('h_title')), el('p', { class: 'iv-sub' }, t('h_sub')),
+  const navRow = (ic, title, sub, fn, id) => el('button', { class: 'iv-row', onClick: fn }, [el('div', { class: 'ic' }, icon(ic)), el('div', null, [el('div', { class: 't' }, title), el('div', { class: 's', id: id || null }, sub)]), el('div', { class: 'amt' }, '›')]);
+  const left = el('div', { class: 'iv-col' }, [
     stateBanner(p),
     el('div', { class: 'iv-card hero' }, [
-      el('p', { class: 'iv-eyebrow' }, t('h_funded')),
-      el('div', { class: 'iv-big' }, [money(p.funded), el('small', null, t('of') + ' ' + money(p.commitment_cap))]), usdLine(p.funded),
-      el('div', { class: 'iv-prog' }, [
-        el('div', { class: 'row' }, [el('span', null, t('h_commit_used')), el('b', null, pct(p.funded_pct))]),
-        el('div', { class: 'bar' }, el('i', { style: 'width:' + Math.min(100, Number(p.funded_pct || 0)) + '%' })),
+      el('div', { class: 'iv-hero-grid' }, [
+        el('div', null, [
+          el('p', { class: 'iv-eyebrow' }, [t('h_funded'), ' ', qBtn('funded')]),
+          el('div', { class: 'iv-big' }, [money(p.funded), el('small', null, t('of') + ' ' + money(p.commitment_cap))]), usdLine(p.funded),
+        ]),
+        ring(p.funded_pct, '', t('h_commit_used')),
       ]),
       el('div', { class: 'iv-kv' }, [
-        kv(t('h_unfunded'), money(p.unfunded)),
-        kv(t('h_fund_cash'), money(p.fund_cash), Number(p.fund_cash) < 0 ? 'warn' : 'ok'),
-        kv(t('h_spent'), money(p.spent)),
-        kv(t('h_total_paid'), money(p.total_paid_out)),
+        kv(t('h_unfunded'), money(p.unfunded), '', 'commitment'),
+        kv(t('h_fund_cash'), money(p.fund_cash), Number(p.fund_cash) < 0 ? 'warn' : 'ok', 'fund_cash'),
+        kv(t('h_spent'), money(p.spent), '', 'spent'),
+        kv(t('h_total_paid'), money(p.total_paid_out), '', 'payout'),
       ]),
     ]),
     el('div', { class: 'iv-card' }, [
-      el('div', { class: 'iv-sec-row' }, [el('p', { class: 'iv-eyebrow', style: 'margin:0' }, t('h_recovery')),
-        p.phase === 'wound_down' ? pill(t('h_wound'), 'due') : p.commitment_closed && recovering ? pill(t('h_stopped'), 'wait') : recovering ? pill(t('h_recovering'), 'blue') : pill(t('h_recovered'), 'ok')]),
-      el('div', { class: 'iv-prog' }, [
-        el('div', { class: 'row' }, [el('span', null, money(p.recovered) + ' ' + t('of') + ' ' + money(p.recovery_target)), el('b', null, pct(p.recovered_pct))]),
-        el('div', { class: 'bar' }, el('i', { class: recovering ? '' : 'done', style: 'width:' + Math.min(100, Number(p.recovered_pct || 0)) + '%' })),
+      el('div', { class: 'iv-hero-grid' }, [
+        el('div', null, [
+          el('div', { class: 'iv-sec-row' }, [el('p', { class: 'iv-eyebrow', style: 'margin:0' }, [t('h_recovery'), ' ', qBtn('recovery')]),
+            p.phase === 'wound_down' ? pill(t('h_wound'), 'due') : p.commitment_closed && recovering ? pill(t('h_stopped'), 'wait') : recovering ? pill(t('h_recovering'), 'blue') : pill(t('h_recovered'), 'ok')]),
+          el('div', { class: 'iv-big sm' }, [money(p.recovered), el('small', null, t('of') + ' ' + money(p.recovery_target))]),
+        ]),
+        ring(p.recovered_pct, recovering ? '' : 'done', t('h_recovery')),
       ]),
       el('div', { class: 'iv-kv' }, [
-        kv(t('h_outstanding'), money(p.outstanding)),
-        kv(t('h_monthly'), recovering ? (pct(p.payback_rate_pct) + ' + ' + pct(p.effective_share_pct)) : pct(p.effective_share_pct)),
-        kv(t('h_share_paid'), money(p.share_paid)),
-        kv(p.share_type === 'equity' ? t('h_equity_vested') : t('h_share_type'), shareTypeVal),
+        kv(t('h_outstanding'), money(p.outstanding), '', 'recovery'),
+        kv(t('h_monthly'), recovering ? (pct(p.payback_rate_pct) + ' + ' + pct(p.effective_share_pct)) : pct(p.effective_share_pct), '', 'share'),
+        kv(t('h_share_paid'), money(p.share_paid), '', 'share'),
+        kv(p.share_type === 'equity' ? t('h_equity_vested') : t('h_share_type'), shareTypeVal, '', 'share'),
       ]),
       p.exit_participation_pct != null ? el('p', { class: 'iv-muted', style: 'margin:10px 0 0' }, t('h_exit') + ': ' + t('h_exit_val', pct(p.exit_participation_pct))) : null,
       recovering ? el('p', { class: 'iv-muted', style: 'margin:10px 0 0' }, t('h_note_recovering', pct(p.payback_rate_pct), pct(p.effective_share_pct))) : null,
     ]),
+    journey(p),
     open.length ? el('div', { class: 'iv-open' }, [el('b', null, t('h_open')), el('ul', null, open.map(q => el('li', null, t('oq_' + q, pct(p.permanent_share_pct)))))]) : null,
-    projectionCard(), growthCard(),
-    el('button', { class: 'iv-row', onClick: () => showAgreement() }, [
-      el('div', { class: 'ic' }, icon('doc')),
-      el('div', null, [el('div', { class: 't' }, t('h_agreement')), el('div', { class: 's' }, S.agr.signed_date ? t('h_signed', fmtDate(S.agr.signed_date)) : t('h_draft'))]),
-      el('div', { class: 'amt' }, '›'),
-    ]),
-    el('button', { class: 'iv-row', style: 'margin-top:8px', onClick: () => showSecurity() }, [
-      el('div', { class: 'ic' }, icon('shield')),
-      el('div', null, [el('div', { class: 't' }, t('sec_title')), el('div', { class: 's', id: 'iv-sec-sub' }, '…')]),
-      el('div', { class: 'amt' }, '›'),
-    ]),
+    projectionCard(),
+  ]);
+  const right = el('div', { class: 'iv-col' }, [
+    growthCard(), linksCard(),
+    navRow('doc', t('h_agreement'), S.agr.signed_date ? t('h_signed', fmtDate(S.agr.signed_date)) : t('h_draft'), () => showAgreement()),
+    el('div', { style: 'height:8px' }),
+    navRow('shield', t('sec_title'), '…', () => showSecurity(), 'iv-sec-sub'),
+    el('div', { style: 'height:8px' }),
+    navRow('inbox', t('gl_title'), t('gl_row'), () => showGlossary()),
     el('div', { class: 'iv-actions', style: 'justify-content:center;margin-top:20px' }, el('button', { class: 'iv-btn sm', onClick: async () => { await signOut(); renderLogin(); } }, t('sign_out'))),
   ]);
+  mount(host, [agrPicker(), el('h1', { class: 'iv-h1' }, t('h_title')), el('p', { class: 'iv-sub' }, t('h_sub')), el('div', { class: 'iv-home' }, [left, right])]);
   mfaListFactors().then(f => { const on = (f.all || []).concat(f.totp || [], f.phone || []).some(x => x.status === 'verified'); const s = document.getElementById('iv-sec-sub'); if (s) s.textContent = on ? t('sec_on') : t('sec_off'); }).catch(() => {});
 }
 
@@ -385,6 +445,7 @@ async function renderLedger(host) {
   const max = cats.length ? Math.max(...cats.map(c => Number(c[1]))) : 1;
   const exp = L.expenses || [];
   const expSheet = (x) => openSheet(catName(x.category), el('div', null, [
+    el('p', { class: 'iv-gl-p' }, vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang())),
     dl([[t('amount'), money(x.amount)], [t('date'), fmtDate(x.date)], [t('l_vendor'), x.vendor], [t('l_details'), x.description],
         [t('l_paid_from'), x.tranche ? t('l_tranche', fmtDate(x.tranche)) : null], [t('l_recurring'), x.recurring ? t('l_yes') : t('l_no')]]),
     x.receipt_url ? el('a', { class: 'iv-btn block', href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(x.receipt_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, t('view') + ' ' + t('receipt')) : el('p', { class: 'iv-muted' }, t('l_no_receipt')),
@@ -395,11 +456,14 @@ async function renderLedger(host) {
     el('div', { class: 'iv-card hero' }, [
       el('p', { class: 'iv-eyebrow' }, t('l_remaining')), el('div', { class: 'iv-big' }, money(p.fund_cash)),
       el('p', { class: 'iv-muted', style: 'margin:6px 0 0' }, t('l_came_spent', money(p.funded), money(p.spent))),
-      cats.length ? el('div', { class: 'iv-cats' }, cats.map(([c, v]) => el('div', { class: 'iv-cat' }, [el('span', null, catName(c)), el('div', { class: 'bar' }, el('i', { style: 'width:' + Math.round(100 * Number(v) / max) + '%' })), el('b', null, money(v))]))) : null,
     ]),
+    cats.length ? el('div', { class: 'iv-card' }, [
+      el('p', { class: 'iv-eyebrow' }, t('spend_mix')),
+      el('div', { class: 'iv-donut-wrap' }, [donut(cats, Number(p.spent)), el('div', { class: 'iv-cats' }, cats.map(([c, v], i) => el('div', { class: 'iv-cat' }, [el('span', null, [el('i', { class: 'dot', style: 'background:' + DONUT[i % DONUT.length] }), catName(c), ' ', qBtn(null, c)]), el('div', { class: 'bar' }, el('i', { style: 'width:' + Math.round(100 * Number(v) / max) + '%;background:' + DONUT[i % DONUT.length] })), el('b', null, money(v))])))]),
+    ]) : null,
     exp.length ? el('div', { class: 'iv-list' }, exp.map(x => el('button', { class: 'iv-row', onClick: () => expSheet(x) }, [
       el('div', { class: 'ic ' + (x.reversed ? 'in' : 'out') }, x.reversed ? icon('arrowBack') : catIcon(x.category)),
-      el('div', null, [el('div', { class: 't' }, x.reversed ? t('l_reversal') + ' · ' + catName(x.category) : (x.vendor || catName(x.category))), el('div', { class: 's' }, fmtDate(x.date) + (x.description ? ' · ' + x.description : ''))]),
+      el('div', null, [el('div', { class: 't' }, x.reversed ? t('l_reversal') + ' · ' + catName(x.category) : (x.vendor || catName(x.category))), el('div', { class: 's' }, fmtDate(x.date) + (x.description ? ' · ' + x.description : '')), el('div', { class: 's what' }, vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang()))]),
       el('div', { class: 'amt ' + (x.reversed ? 'pos' : 'neg') }, [(x.reversed ? '+' : '−') + money(x.amount), x.receipt_url ? el('small', null, t('receipt') + ' ✓') : null]),
     ]))) : empty(t('l_empty')),
     el('div', { class: 'iv-actions', style: 'justify-content:center' }, el('button', { class: 'iv-btn sm', onClick: exportCsv }, [icon('download'), t('l_export')])),
@@ -556,7 +620,7 @@ function projectionCard() {
 
 function growthCard() {
   const box = el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('growth')), el('div', { class: 'iv-sk', style: 'height:14px;width:70%' })]);
-  const tile = (n, l) => el('div', null, [el('div', { class: 'n' }, String(Number(n || 0).toLocaleString('en-US'))), el('div', { class: 'l' }, l)]);
+  const tile = (n, l, series, term) => el('div', { class: series ? 'wide' : '' }, [el('div', { class: 'n' }, [String(Number(n || 0).toLocaleString('en-US')), series ? spark(series) : null]), el('div', { class: 'l' }, term ? [l, ' ', qBtn(term)] : l), series ? trend(series) : null]);
   const bars = (series, label) => {
     if (!series || !series.length) return null;
     const max = Math.max(1, ...series.map(s => Number(s.n || 0)));
@@ -568,9 +632,9 @@ function growthCard() {
   const paint = (g) => mount(box, [
     el('p', { class: 'iv-eyebrow' }, t('growth')), el('p', { class: 'iv-muted', style: 'margin:0' }, t('growth_sub')),
     el('div', { class: 'iv-growth' }, [
-      tile(g.carriers_total, t('g_carriers')), tile(g.carriers_active, t('g_active')), tile(g.carriers_in_review, t('g_review')),
-      tile(g.trucks_active, t('g_trucks')), tile(g.dispatcher_assignments_active, t('g_assigned')), tile(g.brokers_total, t('g_brokers')),
-      tile(g.loads_booked, t('g_loads')), tile(g.trips_delivered, t('g_delivered')), tile(g.trips_delivered_30d, t('g_del30')),
+      tile(g.carriers_total, t('g_carriers'), g.carriers_by_month, 'carrier'), tile(g.trips_delivered, t('g_delivered'), g.trips_by_month, 'load'),
+      tile(g.carriers_active, t('g_active')), tile(g.carriers_in_review, t('g_review')), tile(g.trucks_active, t('g_trucks')),
+      tile(g.dispatcher_assignments_active, t('g_assigned'), null, 'dispatcher'), tile(g.brokers_total, t('g_brokers'), null, 'broker'), tile(g.loads_booked, t('g_loads')), tile(g.trips_delivered_30d, t('g_del30')),
     ]),
     el('div', { class: 'iv-kv', style: 'margin-top:10px' }, [kv(t('g_fees'), money(g.fees_collected_total, 'USD')), kv(t('g_fees30'), money(g.fees_collected_30d, 'USD'))]),
     bars(g.carriers_by_month, t('g_new_carriers')),
@@ -591,7 +655,8 @@ async function securityV3() {
   const done = () => { mount(body, [el('div', { class: 'iv-ok' }, t('sec_done')), el('button', { class: 'iv-btn primary block', onClick: () => { close(); renderShell(); } }, t('done'))]); };
   const codeField = () => inp('iv-otp2', { type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 6, pattern: '[0-9]{6}', required: true, placeholder: '000000', style: 'letter-spacing:.3em;font-size:1.3rem;text-align:center' });
 
-  const chooser = () => mount(body, [
+  const chooser = () => SMS_2FA_ENABLED ? chooserFull() : appFlow();
+  const chooserFull = () => mount(body, [
     el('p', { class: 'iv-muted' }, t('sec_why')),
     on.length ? el('div', { class: 'iv-ok' }, t('sec_on') + ' · ' + on.map(x => (x.factor_type || x.type) === 'phone' ? t('sec_phone') : t('sec_app')).join(', ')) : el('div', { class: 'iv-warn' }, t('sec_off')),
     el('p', { class: 'iv-eyebrow', style: 'margin:14px 0 0' }, t('sec_choose')),
@@ -612,8 +677,9 @@ async function securityV3() {
     const secret = el('div', { class: 'iv-pay' }, [el('span', { class: 'iv-muted', style: 'font-size:.75rem' }, 'Secret (manual entry)'), el('b', { style: 'display:block;word-break:break-all;font-family:monospace;font-size:.85rem' }, [en.totp.secret, copyBtn(en.totp.secret)])]);
     mount(body, el('form', { onSubmit: async (e) => { e.preventDefault(); btn.disabled = true; mount(msg, '');
       try { await mfaVerify(en.id, code.value); done(); } catch (ex) { mount(msg, el('div', { class: 'iv-err' }, err(ex))); btn.disabled = false; } } }, [
+      SMS_2FA_ENABLED ? null : el('div', null, [el('p', { class: 'iv-muted' }, t('sec_why')), on.length ? el('div', { class: 'iv-ok' }, t('sec_on')) : el('div', { class: 'iv-warn' }, t('sec_off'))]),
       guide, el('div', { style: 'text-align:center' }, qr), secret, msg, field(t('sec_code'), code), btn,
-      el('div', { class: 'iv-actions' }, el('button', { class: 'iv-btn sm', type: 'button', onClick: chooser }, '‹ ' + t('sec_choose'))),
+      el('div', { class: 'iv-actions' }, el('button', { class: 'iv-btn sm', type: 'button', onClick: SMS_2FA_ENABLED ? chooser : () => close() }, SMS_2FA_ENABLED ? '‹ ' + t('sec_choose') : t('sec_skip'))),
     ]));
     setTimeout(() => code.focus(), 50);
   }

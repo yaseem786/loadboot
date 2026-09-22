@@ -16,6 +16,7 @@ import { ccInvList, ccInvDetail, ccInvSaveInvestor, ccInvLinkUser, ccInvSaveAgre
          ccInvRejectReceipt, ccInvCloseCommitment, ccInvReopenCommitment, ccInvWindDown, ccInvAnswerFlag,
          ccInvSettingsGet, ccInvSettingsSet, ccInvPublishDoc, ccInvCountersign, invProofUrl, invCurrentDoc } from '../../shared/api.js';
 import { buildAgreement, hasPlaceholders, mdToHtml, DEFAULT_EXTRA } from '../../investor/agreement-template.js';
+import { VENDOR_NAMES, vendorWhat } from '../../investor/glossary.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -28,7 +29,7 @@ const CATS = ['office', 'rent', 'utilities', 'salary', 'equipment', 'tools', 'le
 const today = () => new Date().toISOString().slice(0, 10);
 const CURRENCIES = ['PKR', 'USD', 'AED', 'GBP', 'EUR', 'SAR'];
 // Tools & services LoadBoot pays for — pre-listed in the expense form. Editable in Settings → Vendors.
-const DEFAULT_VENDORS = ['Netlify', 'Supabase', 'Resend', 'Retell AI', 'Telnyx', 'Claude (Anthropic)', 'ChatGPT (OpenAI)', 'Google Workspace', 'Domain / DNS', 'Apple Developer', 'Google Play', 'Namecheap', 'Canva', 'Zoom', 'Office rent', 'Electricity', 'Internet', 'Dispatcher salary', 'Coordinator salary', 'Furniture', 'Computers'];
+const DEFAULT_VENDORS = VENDOR_NAMES; // names + plain-language meaning live in app/investor/glossary.js (3 languages)
 let SETTINGS = null;
 async function settings(force) { if (!SETTINGS || force) { try { SETTINGS = await ccInvSettingsGet(); } catch (_) { SETTINGS = {}; } } return SETTINGS; }
 const isStorageRef = (u) => typeof u === 'string' && u.startsWith('storage:');
@@ -285,7 +286,9 @@ function expenseForm(agrId, receipts, cur, onDone) {
   const vendors = ((SETTINGS && SETTINGS.vendors && SETTINGS.vendors.list) || DEFAULT_VENDORS);
   const vendorSel = sel([['', '— choose —']].concat(vendors.map(v => [v, v])).concat([['__other', 'Other…']]), '');
   const vendorOther = inp({ placeholder: 'Who was paid', style: 'width:100%;display:none;margin-top:6px' });
-  vendorSel.onchange = () => { vendorOther.style.display = vendorSel.value === '__other' ? '' : 'none'; if (vendorSel.value === '__other') vendorOther.focus(); };
+  vendorSel.onchange = () => { vendorOther.style.display = vendorSel.value === '__other' ? '' : 'none'; if (vendorSel.value === '__other') vendorOther.focus();
+    const w = vendorWhat(vendorSel.value, 'en'); mount(whatHint, w ? ('Investor sees: “' + w + '” — in their own language.') : (vendorSel.value === '__other' ? 'No preset meaning — write in Description, in plain words, what it is and why it was needed.' : '')); };
+  const whatHint = el('div', { style: 'font-size:.8rem;color:#0762C4;margin-top:4px;min-height:1em' });
   const vendor = { get value() { return vendorSel.value === '__other' ? vendorOther.value : vendorSel.value; } };
   const desc = inp({ placeholder: 'What exactly (plan, month, invoice #)' });
   const receipt = inp({ type: 'url', placeholder: 'https://… receipt photo' });
@@ -295,7 +298,7 @@ function expenseForm(agrId, receipts, cur, onDone) {
   const d = openDrawer('Log an expense', el('div', null, [
     f('Paid from tranche', tranche, 'TAG 1 — which money paid for it'), f('Category', cat, 'TAG 2 — what it was'),
     el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Amount', amount), f('Date', date)]),
-    f('Vendor / service', el('div', null, [vendorSel, vendorOther]), 'Tools and services LoadBoot pays for are pre-listed. Manage the list in Settings.'), f('Description', desc), f('Receipt photo link', receipt, 'The investor can open this.'),
+    f('Vendor / service', el('div', null, [vendorSel, vendorOther, whatHint]), 'Pre-listed tools carry a plain-language meaning the investor reads automatically. Manage the list in Settings.'), f('Description', desc, 'Plain words a non-technical person understands: what was bought and why. No jargon.'), f('Receipt photo link', receipt, 'The investor can open this.'),
     el('label', { style: 'display:flex;gap:8px;align-items:center;margin:6px 0 12px' }, [rec, 'Recurring monthly (rent, subscription)']), btn,
   ]), { subtitle: 'Shows in the investor portal the moment you save. Log it within 48 hours of paying.' });
   btn.onclick = () => submit(btn, () => ccInvExpense({ agreement_id: agrId, receipt_id: tranche.value, category: cat.value, amount: amount.value, expense_date: date.value, vendor: vendor.value, description: desc.value, receipt_url: receipt.value, is_recurring: rec.checked }), () => { d.close(); onDone(); });
@@ -479,6 +482,7 @@ function settingsDrawer(onDone) {
     const rate = num({ value: fx.pkr_per_usd || '', placeholder: '280', step: '0.01' }), asOf = inp({ type: 'date', value: fx.as_of || today() });
     const emp = num({ value: fc.expected_monthly_profit || '', placeholder: 'e.g. 150000' }), fpm = inp({ type: 'month', value: fc.first_payout_month ? String(fc.first_payout_month).slice(0, 7) : '' }), fnote = ta({ value: fc.note || '', rows: 2, placeholder: 'What this forecast assumes (office open, 2 dispatchers, 15 active carriers…)' });
     const vlist = ta({ value: vend.join('\n'), rows: 8 });
+    const lk = S.links || {}; const lkFb = inp({ type: 'url', value: lk.facebook || '', placeholder: 'https://facebook.com/…' }), lkCap = inp({ type: 'url', value: lk.capterra || '', placeholder: 'https://www.capterra.com/p/…' }), lkIg = inp({ type: 'url', value: lk.instagram || '' }), lkYt = inp({ type: 'url', value: lk.youtube || '' });
     mount(body, [
       card('Where investors send money', 'Appears on every capital request with copy buttons. Leave a field blank to hide it.',
         el('div', { class: 'cc-inv-set' }, [f('Bank', bank), f('Account title', title), f('Account number', acct), f('IBAN', iban), f('Branch', branch), f('Easypaisa', ep), f('JazzCash', jc), f('Note', pnote)]),
@@ -489,7 +493,10 @@ function settingsDrawer(onDone) {
       card('Your forecast', 'Until two real months are published, the portal shows this — clearly labelled as LoadBoot\'s estimate, not proven. After that it switches to the trailing 3-month average automatically.',
         el('div', { class: 'cc-inv-set' }, [f('Expected monthly profit', emp), f('First payout expected (month)', fpm), f('Assumptions', fnote)]),
         () => ccInvSettingsSet('forecast', { expected_monthly_profit: Number(emp.value) || null, first_payout_month: fpm.value ? fpm.value + '-01' : null, note: fnote.value })),
-      card('Vendors & services', 'One per line. Pre-listed in the expense form; "Other" is always available.',
+      card('Public links', 'Shown to investors as "LoadBoot online". Google Play, website, LinkedIn and Trustpilot are built in; add the rest here. Leave blank to hide.',
+        el('div', { class: 'cc-inv-set' }, [f('Facebook page', lkFb), f('Capterra listing', lkCap), f('Instagram', lkIg), f('YouTube', lkYt)]),
+        () => ccInvSettingsSet('links', { facebook: lkFb.value.trim() || null, capterra: lkCap.value.trim() || null, instagram: lkIg.value.trim() || null, youtube: lkYt.value.trim() || null })),
+      card('Vendors & services', 'One per line. Pre-listed in the expense form; "Other" is always available. Names that match the glossary carry a plain-language meaning in 3 languages.',
         f('List', vlist), () => ccInvSettingsSet('vendors', { list: vlist.value.split('\n').map(x => x.trim()).filter(Boolean) })),
     ]);
   });

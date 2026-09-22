@@ -156,6 +156,10 @@ D.ur = {
 
 // ---- v3 additions ----
 Object.assign(D.en, {
+  gl_title: 'What do these words mean?', gl_what: 'What is this?', gl_sub: 'Plain-language meaning of every word on your screens.', gl_row: 'Word list — tools, categories, money terms',
+  links_title: 'LoadBoot online', links_sub: 'Where the business lives — visit, download, follow.', lk_site: 'Website', lk_play: 'Google Play — download', lk_linkedin: 'LinkedIn', lk_trustpilot: 'Trustpilot reviews', lk_facebook: 'Facebook page', lk_capterra: 'Capterra listing', lk_instagram: 'Instagram', lk_youtube: 'YouTube',
+  journey: 'Where your money is', j_commit: 'Committed', j_funded: 'Funded', j_spent: 'Put to work', j_profit: 'First profit', j_recover: 'Recovering', j_share: 'Permanent share', j_now: 'now',
+  trend_up: 'up vs last month', trend_down: 'down vs last month', trend_flat: 'same as last month', spend_mix: 'Where it went',
   sel_lang: 'Select language', growth: 'LoadBoot progress', growth_sub: 'Live counts from the business — this is what your money is building.',
   g_carriers: 'Carriers', g_active: 'Active carriers', g_review: 'In review', g_trucks: 'Trucks', g_assigned: 'Dispatcher assignments', g_brokers: 'Brokers',
   g_loads: 'Loads booked', g_delivered: 'Trips delivered', g_del30: 'Delivered · 30 days', g_fees: 'Fees collected', g_fees30: 'Fees · 30 days', g_new_carriers: 'New carriers per month', g_as_of: 'as of',
@@ -173,6 +177,10 @@ Object.assign(D.en, {
   usd_hint: 'approx., at {0} PKR/USD on {1}',
 });
 Object.assign(D.ur_roman, {
+  gl_title: 'In lafzon ka matlab kya hai?', gl_what: 'Ye kya hai?', gl_sub: 'Aap ki screens ke har lafz ka saada matlab.', gl_row: 'Lafzon ki fehrist — tools, categories, paise ki baatein',
+  links_title: 'LoadBoot online', links_sub: 'Kaarobar yahan hai — dekhein, download karein, follow karein.', lk_site: 'Website', lk_play: 'Google Play — download', lk_linkedin: 'LinkedIn', lk_trustpilot: 'Trustpilot reviews', lk_facebook: 'Facebook page', lk_capterra: 'Capterra listing', lk_instagram: 'Instagram', lk_youtube: 'YouTube',
+  journey: 'Aap ka paisa kahan hai', j_commit: 'Wada', j_funded: 'Diya hua', j_spent: 'Kaam par laga', j_profit: 'Pehla munafa', j_recover: 'Wapsi jari', j_share: 'Mustaqil hissa', j_now: 'abhi',
+  trend_up: 'pichle mahine se zyada', trend_down: 'pichle mahine se kam', trend_flat: 'pichle mahine jitna', spend_mix: 'Kahan gaya',
   sel_lang: 'Zubaan chunein', growth: 'LoadBoot ki taraqqi', growth_sub: 'Kaarobar ki live ginti — aap ka paisa yehi bana raha hai.',
   g_carriers: 'Carriers', g_active: 'Active carriers', g_review: 'Review mein', g_trucks: 'Trucks', g_assigned: 'Dispatcher assignments', g_brokers: 'Brokers',
   g_loads: 'Loads booked', g_delivered: 'Trips deliver', g_del30: 'Deliver · 30 din', g_fees: 'Fee wasool', g_fees30: 'Fee · 30 din', g_new_carriers: 'Har mahine naye carriers', g_as_of: 'tak',
@@ -190,6 +198,10 @@ Object.assign(D.ur_roman, {
   usd_hint: 'andazan, {1} ko {0} PKR/USD par',
 });
 Object.assign(D.ur, {
+  gl_title: 'ان لفظوں کا مطلب کیا ہے؟', gl_what: 'یہ کیا ہے؟', gl_sub: 'آپ کی اسکرینز کے ہر لفظ کا سادہ مطلب۔', gl_row: 'لفظوں کی فہرست — ٹولز، زمرے، پیسے کی باتیں',
+  links_title: 'لوڈ بوٹ آن لائن', links_sub: 'کاروبار یہاں ہے — دیکھیں، ڈاؤن لوڈ کریں، فالو کریں۔', lk_site: 'ویب سائٹ', lk_play: 'گوگل پلے — ڈاؤن لوڈ', lk_linkedin: 'لنکڈ اِن', lk_trustpilot: 'ٹرسٹ پائلٹ ریویوز', lk_facebook: 'فیس بک پیج', lk_capterra: 'کیپٹیرا لسٹنگ', lk_instagram: 'انسٹاگرام', lk_youtube: 'یوٹیوب',
+  journey: 'آپ کا پیسہ کہاں ہے', j_commit: 'وعدہ', j_funded: 'دیا ہوا', j_spent: 'کام پر لگا', j_profit: 'پہلا منافع', j_recover: 'واپسی جاری', j_share: 'مستقل حصہ', j_now: 'ابھی',
+  trend_up: 'پچھلے مہینے سے زیادہ', trend_down: 'پچھلے مہینے سے کم', trend_flat: 'پچھلے مہینے جتنا', spend_mix: 'کہاں گیا',
   sel_lang: 'زبان چنیں', growth: 'لوڈ بوٹ کی ترقی', growth_sub: 'کاروبار کی لائیو گنتی — آپ کا پیسہ یہی بنا رہا ہے۔',
   g_carriers: 'کیریئرز', g_active: 'فعال کیریئرز', g_review: 'جائزے میں', g_trucks: 'ٹرک', g_assigned: 'ڈسپیچر تفویض', g_brokers: 'بروکرز',
   g_loads: 'بُک شدہ لوڈز', g_delivered: 'ڈیلیور ٹرپس', g_del30: 'ڈیلیور · 30 دن', g_fees: 'وصول فیس', g_fees30: 'فیس · 30 دن', g_new_carriers: 'ہر مہینے نئے کیریئرز', g_as_of: 'تک',
