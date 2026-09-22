@@ -263,6 +263,17 @@ export function renderShell(root, user, flags) {
       return b;
     })(),
   ]);
+  // bl_ui_0396 — the bar is a PHONE element and must not exist on a desktop even for a moment.
+  // It was hidden by one CSS rule (.cc-tabbar{display:none} outside the 780px block), so any
+  // browser holding an older command-center.css — the ?v= on that stylesheet had not been bumped
+  // since 2 Sep — laid the five items out as plain inline links in the middle of the page. A
+  // stylesheet that has not arrived yet can no longer put a phone bar on a desk screen: the
+  // element carries inline display:none until the media query itself says otherwise.
+  const mqPhone = window.matchMedia('(max-width:780px)');
+  const syncTabbar = () => { tabbar.style.display = mqPhone.matches ? '' : 'none'; };
+  syncTabbar();
+  try { mqPhone.addEventListener('change', syncTabbar); } catch (_) { try { mqPhone.addListener(syncTabbar); } catch (_) {} }
+
   const scrim = el('div', { class: 'cc-nav-scrim' });
   scrim.addEventListener('click', () => shell.classList.remove('cc-nav-open'));
 
