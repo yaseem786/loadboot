@@ -141,7 +141,11 @@ hard-coded `sys_email` call with a brand-new key nobody registered.** In practic
    filed as `undocumented` on first use and shows up in the CC screen — that is a bug to
    fix, not a normal state.
 4. Preference groups are the only opt-out mechanism. `account_critical` and
-   `staff_internal` can never be blocked; everything else must be opt-out-able.
+   `staff_internal` can never be blocked; everything else must be opt-out-able —
+   except billing notices about the person's own money (`billing` group with
+   `unsub_allowed=false`: invoices, receipts, settlement and dispute notices), which
+   always send (owner decision, 22 Sep 2026, `bl_comm_0402`). Billing *reminders* stay
+   opt-out-able.
 
 Docs: `claude/EMAIL-AUDIT-0391.md` (the audit) and `claude/EMAIL-CATALOG-PROD-0395.md`
 (what is live, and what is left).

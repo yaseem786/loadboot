@@ -220,7 +220,8 @@ export function renderCampaignManager(host) {
       confirmBtn.setAttribute('disabled', 'disabled'); confirmBtn.textContent = 'Queuing…';
       try {
         const r = await campaignEnqueue(c.id, finalCount);
-        toast('Queued ' + r.newly_queued + ' of ' + r.final_recipients + ' — status: ' + r.status, 'success');
+        if (r && r.test_mode) toast('Test mode: 1 copy sent to ' + r.test_to + ' instead of ' + r.final_recipients + ' recipients. Switch this email to Live in Email catalog to send for real.', 'success');
+        else toast('Queued ' + r.newly_queued + ' of ' + r.final_recipients + ' — status: ' + r.status, 'success');
         document.getElementById('cc-drawer-root')?.remove(); load();
       } catch (e) { confirmBtn.removeAttribute('disabled'); confirmBtn.textContent = 'Confirm & queue send'; toast(humanizeError(e), 'error'); }
     }
