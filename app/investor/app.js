@@ -16,10 +16,11 @@ import { getSession, signInWithPassword, signOut, onAuthChange, resetPassword,
 import { el, mount } from '../shared/ui/dom.js';
 import { invMe, invMyRequests, invDeclarePayment, invLedger, invStatements, invConfirmPayout,
          invSetLang, invFlag, invMyFlags, invSettings, invCurrentDoc, invSignDoc, invGrowth, invProjection,
-         invUploadProof, invProofUrl, invProposeAmendment, invWithdrawAmendment, invMyAmendments, invAckExpense } from '../shared/api.js';
+         invUploadProof, invProofUrl, invProposeAmendment, invWithdrawAmendment, invMyAmendments, invAckExpense,
+         invNotifications, invMarkRead, invUpdates, invAudit } from '../shared/api.js';
 import { mdToHtml, buildFromParams } from './agreement-template.js';
 import { t, setLang, getLang, LANGS } from './i18n.js';
-import { vendorWhat, catWhat, termWhat, TERMS, CATEGORIES, VENDORS } from './glossary.js';
+import { vendorWhat, catWhat, termWhat, impactWhat, TERMS, CATEGORIES, VENDORS } from './glossary.js';
 // SMS second factor is OFF until an SMS provider is wired into Supabase Auth (Telnyx via the
 // "Send SMS" auth hook is possible). Authenticator app is the default and needs nothing.
 const SMS_2FA_ENABLED = false;
@@ -177,7 +178,7 @@ function renderShell() {
   mount(root, el('div', { class: 'iv-shell' }, [
     el('div', { class: 'iv-top' }, [
       el('img', { src: '/logo-text-dark.png', alt: 'LoadBoot' }),
-      el('div', { class: 'iv-topright' }, [langSwitch(), el('button', { class: 'iv-avatar', style: 'border:0;cursor:pointer', title: S.me.name, 'aria-label': t('sec_title'), onClick: () => showSecurity() }, initials)]),
+      el('div', { class: 'iv-topright' }, [langSwitch(), bellBtn(), el('button', { class: 'iv-avatar', style: 'border:0;cursor:pointer', title: S.me.name, 'aria-label': t('sec_title'), onClick: () => showSecurity() }, initials)]),
     ]),
     pane,
     el('nav', { class: 'iv-tabs', 'aria-label': 'Sections' }, TABS.map(id =>
@@ -297,17 +298,19 @@ function renderHome(host) {
       p.exit_participation_pct != null ? el('p', { class: 'iv-muted', style: 'margin:10px 0 0' }, t('h_exit') + ': ' + t('h_exit_val', pct(p.exit_participation_pct))) : null,
       recovering ? el('p', { class: 'iv-muted', style: 'margin:10px 0 0' }, t('h_note_recovering', pct(p.payback_rate_pct), pct(p.effective_share_pct))) : null,
     ]),
-    journey(p), amendCard(p),
+    journey(p), updatesCard(), planCard(p), amendCard(p),
     open.length ? el('div', { class: 'iv-open' }, [el('b', null, t('h_open')), el('ul', null, open.map(q => el('li', null, t('oq_' + q, pct(p.permanent_share_pct)))))]) : null,
     projectionCard(),
   ]);
   const right = el('div', { class: 'iv-col' }, [
-    growthCard(), linksCard(),
+    growthCard(), revenueCard(), trafficCard(), linksCard(),
     navRow('doc', t('h_agreement'), S.agr.signed_date ? t('h_signed', fmtDate(S.agr.signed_date)) : t('h_draft'), () => showAgreement()),
     el('div', { style: 'height:8px' }),
     navRow('shield', t('sec_title'), '…', () => showSecurity(), 'iv-sec-sub'),
     el('div', { style: 'height:8px' }),
     navRow('inbox', t('gl_title'), t('gl_row'), () => showGlossary()),
+    el('div', { style: 'height:8px' }),
+    navRow('doc', t('log_title'), t('log_sub'), () => showAudit()),
     el('div', { class: 'iv-actions', style: 'justify-content:center;margin-top:20px' }, el('button', { class: 'iv-btn sm', onClick: async () => { await signOut(); renderLogin(); } }, t('sign_out'))),
   ]);
   mount(host, [agrPicker(), el('h1', { class: 'iv-h1' }, t('h_title')), el('p', { class: 'iv-sub' }, t('h_sub')), el('div', { class: 'iv-home' }, [left, right])]);
@@ -449,6 +452,7 @@ async function renderLedger(host) {
     dl([[t('amount'), money(x.amount)], [t('date'), fmtDate(x.date)], [t('l_vendor'), x.vendor], [t('l_details'), x.description],
         [t('l_paid_from'), x.tranche ? t('l_tranche', fmtDate(x.tranche)) : null], [t('l_recurring'), x.recurring ? t('l_yes') : t('l_no')]]),
     x.receipt_url ? el('a', { class: 'iv-btn block', href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(x.receipt_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, t('view') + ' ' + t('receipt')) : el('p', { class: 'iv-muted' }, t('l_no_receipt')),
+    el('button', { class: 'iv-btn block', onClick: () => expenseReceipt(x) }, [icon('download'), t('dl_receipt')]),
     x.reversed ? null : x.acknowledged_at ? el('div', { class: 'iv-ok' }, t('ack_done', fmtDate(x.acknowledged_at))) : el('div', null, [
       el('button', { class: 'iv-btn primary block', onClick: async (e) => { e.target.disabled = true; try { await invAckExpense(x.id); x.acknowledged_at = new Date().toISOString(); S.ledger = null; renderShell(); } catch (ex) { alert(err(ex)); e.target.disabled = false; } } }, t('ack_btn')),
       el('p', { class: 'iv-muted', style: 'font-size:.75rem' }, t('ack_hint'))]),
@@ -466,10 +470,10 @@ async function renderLedger(host) {
     ]) : null,
     exp.length ? el('div', { class: 'iv-list' }, exp.map(x => el('button', { class: 'iv-row', onClick: () => expSheet(x) }, [
       el('div', { class: 'ic ' + (x.reversed ? 'in' : 'out') }, x.reversed ? icon('arrowBack') : catIcon(x.category)),
-      el('div', null, [el('div', { class: 't' }, x.reversed ? t('l_reversal') + ' · ' + catName(x.category) : (x.vendor || catName(x.category))), el('div', { class: 's' }, fmtDate(x.date) + (x.description ? ' · ' + x.description : '')), el('div', { class: 's what' }, vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang()))]),
+      el('div', null, [el('div', { class: 't' }, x.reversed ? t('l_reversal') + ' · ' + catName(x.category) : vendorLinks(x.vendor || catName(x.category))), el('div', { class: 's' }, fmtDate(x.date) + (x.description ? ' · ' + x.description : '')), el('div', { class: 's what' }, vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang()))]),
       el('div', { class: 'amt ' + (x.reversed ? 'pos' : 'neg') }, [(x.reversed ? '+' : '−') + money(x.amount), (!x.reversed && !x.acknowledged_at) ? el('small', { class: 'iv-new' }, t('ack_new')) : x.receipt_url ? el('small', null, t('receipt') + ' ✓') : null]),
     ]))) : empty(t('l_empty')),
-    el('div', { class: 'iv-actions', style: 'justify-content:center' }, el('button', { class: 'iv-btn sm', onClick: exportCsv }, [icon('download'), t('l_export')])),
+    el('div', { class: 'iv-actions', style: 'justify-content:center;flex-wrap:wrap' }, [el('button', { class: 'iv-btn sm', onClick: exportCsv }, [icon('download'), t('l_export')]), el('button', { class: 'iv-btn sm', onClick: () => expenseReport(L) }, [icon('download'), t('dl_all_expenses')])]),
     await flagsSection(),
   ]);
 }
@@ -485,6 +489,7 @@ async function renderPayments(host) {
         [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : null], [t('p_lb_confirmed'), r.confirmed_at ? fmtDate(r.confirmed_at) : t('not_yet')],
         r.rejected_reason ? [t('p_rejected_why'), r.rejected_reason] : [t('note'), r.note],
         [t('proof'), r.proof_url ? el('a', { href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(r.proof_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, t('view')) : null]]),
+    r.confirmed_at ? el('button', { class: 'iv-btn block', onClick: () => paymentConfirmation(r) }, [icon('download'), t('dl_confirm')]) : null,
     flagButton('receipt', r.id),
   ]));
   mount(host, [
@@ -522,6 +527,7 @@ async function renderStatements(host) {
           [t('s_payback'), po ? money(po.payback) : null], [t('s_share'), po ? money(po.share) : null], [t('s_to_you'), po ? money(po.total) : null],
           [t('s_paid_on'), po && po.paid_date && !zero ? fmtDate(po.paid_date) : (zero ? t('s_nothing') : t('not_yet'))], [t('note'), s.note]]),
       (S.agr.loss_carry_forward && Number(s.profit) > 0 && po && Number(po.total) === 0) ? el('p', { class: 'iv-muted' }, t('s_basis_note')) : null,
+      el('button', { class: 'iv-btn block', onClick: () => statementDoc(s) }, [icon('download'), t('dl_statement')]),
       (po && po.status === 'paid' && !po.confirmed_at && !zero) ? el('button', { class: 'iv-btn primary block', onClick: async (ev) => {
         ev.target.disabled = true; try { await invConfirmPayout(po.id); S.statements = S.ledger = null; refresh(); } catch (ex) { alert(err(ex)); ev.target.disabled = false; }
       } }, t('s_confirm')) : null,
@@ -621,32 +627,6 @@ function projectionCard() {
   return box;
 }
 
-function growthCard() {
-  const box = el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('growth')), el('div', { class: 'iv-sk', style: 'height:14px;width:70%' })]);
-  const tile = (n, l, series, term) => el('div', { class: series ? 'wide' : '' }, [el('div', { class: 'n' }, [String(Number(n || 0).toLocaleString('en-US')), series ? spark(series) : null]), el('div', { class: 'l' }, term ? [l, ' ', qBtn(term)] : l), series ? trend(series) : null]);
-  const bars = (series, label) => {
-    if (!series || !series.length) return null;
-    const max = Math.max(1, ...series.map(s => Number(s.n || 0)));
-    return el('div', { class: 'iv-bars-wrap' }, [
-      el('p', { class: 'iv-muted', style: 'margin:12px 0 0;font-size:.78rem' }, label),
-      el('div', { class: 'iv-bars' }, series.map(s => el('div', { style: 'height:' + Math.max(5, Math.round(100 * Number(s.n || 0) / max)) + '%', title: s.n }, el('span', null, new Date(s.month).toLocaleDateString('en-GB', { month: 'short' }))))),
-    ]);
-  };
-  const paint = (g) => mount(box, [
-    el('p', { class: 'iv-eyebrow' }, t('growth')), el('p', { class: 'iv-muted', style: 'margin:0' }, t('growth_sub')),
-    el('div', { class: 'iv-growth' }, [
-      tile(g.carriers_total, t('g_carriers'), g.carriers_by_month, 'carrier'), tile(g.trips_delivered, t('g_delivered'), g.trips_by_month, 'load'),
-      tile(g.carriers_active, t('g_active')), tile(g.carriers_in_review, t('g_review')), tile(g.trucks_active, t('g_trucks')),
-      tile(g.dispatcher_assignments_active, t('g_assigned'), null, 'dispatcher'), tile(g.brokers_total, t('g_brokers'), null, 'broker'), tile(g.loads_booked, t('g_loads')), tile(g.trips_delivered_30d, t('g_del30')),
-    ]),
-    el('div', { class: 'iv-kv', style: 'margin-top:10px' }, [kv(t('g_fees'), money(g.fees_collected_total, 'USD')), kv(t('g_fees30'), money(g.fees_collected_30d, 'USD'))]),
-    bars(g.carriers_by_month, t('g_new_carriers')),
-    el('p', { class: 'iv-muted', style: 'margin:10px 0 0;font-size:.72rem' }, t('g_as_of') + ' ' + new Date(g.as_of).toLocaleString('en-GB')),
-  ]);
-  (S.growth ? Promise.resolve(S.growth) : invGrowth().then(g => { S.growth = g; return g; })).then(paint)
-    .catch(ex => mount(box, [el('p', { class: 'iv-eyebrow' }, t('growth')), el('p', { class: 'iv-muted' }, err(ex))]));
-  return box;
-}
 
 // ---------- security: authenticator app (guided) or phone SMS ----------
 async function securityV3() {
@@ -835,4 +815,166 @@ function amendSheet(kind, p) {
     catch (ex) { mount(msg, el('div', { class: 'iv-err' }, err(ex))); btn.disabled = false; } } }, [
     msg, kind === 'stop_funding' ? el('p', { class: 'iv-muted' }, termWhat('recovery', getLang())) : field(t('am_new_cap'), cap, money(p.funded) + ' ≤ … '), prev, field(t('am_reason'), reason), btn,
   ]));
+}
+
+// ============================================================================
+// v4 — notifications, founder updates, plan, revenue model, traffic, growth v2,
+//      branded printable documents, audit trail, glossary links in expense rows
+// ============================================================================
+function bellBtn() {
+  const b = el('button', { class: 'iv-bell', type: 'button', 'aria-label': t('nt_title'), onClick: () => showNotifications() }, [icon('inbox', ''), el('i', { class: 'n', id: 'iv-bell-n', style: 'display:none' })]);
+  invNotifications(50).then(r => { S.notif = r; const n = document.getElementById('iv-bell-n'); if (n && r.unread > 0) { n.textContent = r.unread > 99 ? '99+' : String(r.unread); n.style.display = ''; } }).catch(() => {});
+  return b;
+}
+function showNotifications() {
+  const body = el('div'); openSheet(t('nt_title'), body); mount(body, skeleton());
+  invNotifications(50).then(r => {
+    S.notif = r; const items = r.items || [];
+    mount(body, [
+      items.length ? el('div', { class: 'iv-actions', style: 'justify-content:flex-end' }, el('button', { class: 'iv-btn sm', onClick: async () => { await invMarkRead(null); const n = document.getElementById('iv-bell-n'); if (n) n.style.display = 'none'; body.querySelectorAll('.iv-new').forEach(x => x.remove()); } }, t('nt_read_all'))) : null,
+      items.length ? el('div', { class: 'iv-list' }, items.map(n => el('div', { class: 'iv-row', style: 'cursor:default' }, [
+        el('div', { class: 'ic' }, icon({ request: 'requests', expense: 'ledger', receipt: 'payments', payout: 'payments', statement: 'statements', document: 'doc', amendment: 'doc', flag: 'flag', update: 'inbox' }[n.kind] || 'inbox')),
+        el('div', null, [el('div', { class: 't' }, [n.title, !n.read_at ? el('small', { class: 'iv-new', style: 'margin-left:6px' }, t('nt_new')) : null]), el('div', { class: 's' }, n.body || ''), el('div', { class: 's', style: 'opacity:.6' }, new Date(n.created_at).toLocaleString('en-GB'))]),
+      ]))) : empty(t('nt_none')),
+    ]);
+  }).catch(ex => mount(body, el('div', { class: 'iv-err' }, err(ex))));
+}
+function updatesCard() {
+  const box = el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('upd_title')), el('div', { class: 'iv-sk', style: 'height:14px;width:60%' })]);
+  const kindPill = (k) => pill(t('upd_' + k), k === 'milestone' ? 'ok' : k === 'daily' ? 'blue' : 'wait');
+  const item = (u) => el('div', { class: 'iv-upd' }, [el('div', { class: 'h' }, [kindPill(u.kind), el('span', null, new Date(u.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }))]), el('b', null, u.title), el('p', null, u.body)]);
+  invUpdates(S.agr.id, 30).then(r => {
+    const list = r.updates || [];
+    mount(box, [el('p', { class: 'iv-eyebrow' }, t('upd_title')), el('p', { class: 'iv-muted', style: 'margin:0 0 10px' }, t('upd_sub')),
+      list.length ? list.slice(0, 3).map(item) : el('p', { class: 'iv-muted', style: 'margin:0' }, t('upd_none')),
+      list.length > 3 ? el('button', { class: 'iv-btn sm', style: 'margin-top:8px', onClick: () => openSheet(t('upd_all'), el('div', null, list.map(item))) }, t('upd_all')) : null]);
+  }).catch(ex => mount(box, [el('p', { class: 'iv-eyebrow' }, t('upd_title')), el('p', { class: 'iv-muted' }, err(ex))]));
+  return box;
+}
+function planCard(p) {
+  const plan = S.settings && S.settings.plan; const items = (plan && plan.items) || [];
+  if (!plan || (!items.length && !plan.summary)) return el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('plan_title')), el('p', { class: 'iv-muted', style: 'margin:0' }, t('plan_none'))]);
+  const total = items.reduce((a, i) => a + Number(i.amount || 0), 0);
+  return el('div', { class: 'iv-card' }, [
+    el('p', { class: 'iv-eyebrow' }, t('plan_title')), el('p', { class: 'iv-muted', style: 'margin:0 0 10px' }, plan.summary || t('plan_sub')),
+    total ? el('div', { class: 'iv-prog' }, [el('div', { class: 'row' }, [el('span', null, t('plan_total') + ' ' + money(total)), el('b', null, money(p.spent) + ' ' + t('plan_vs'))]), el('div', { class: 'bar' }, el('i', { style: 'width:' + Math.min(100, Math.round(100 * Number(p.spent || 0) / total)) + '%' }))]) : null,
+    el('div', { class: 'iv-plan' }, items.map(i => el('div', { class: 'iv-plan-item' }, [
+      el('div', { class: 'h' }, [el('b', null, i.title), el('span', { class: 'amt' }, money(i.amount))]),
+      i.when ? el('div', { class: 'r' }, [el('span', null, t('plan_item_when')), i.when]) : null,
+      i.why ? el('div', { class: 'r' }, [el('span', null, t('plan_item_why')), i.why]) : null,
+      i.growth ? el('div', { class: 'r g' }, [el('span', null, t('plan_item_growth')), i.growth]) : null,
+    ]))),
+  ]);
+}
+function revenueCard() {
+  const rm = S.settings && S.settings.revenue_model;
+  return el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('rev_title')),
+    rm && rm.text ? el('p', { class: 'iv-gl-p', style: 'white-space:pre-line' }, rm.text) : el('p', { class: 'iv-muted', style: 'margin:0' }, t('rev_none')),
+    el('p', { class: 'iv-muted', style: 'margin:8px 0 0;font-size:.78rem' }, termWhat('dispatcher', getLang()) + ' ' + termWhat('load', getLang()))]);
+}
+function trafficCard() {
+  const tr = S.settings && S.settings.traffic; if (!tr || (!tr.gsc_clicks && !tr.ga_users && !tr.gsc_impressions)) return null;
+  return el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, [t('tr_title'), ' ', impactBtn('traffic')]), el('p', { class: 'iv-muted', style: 'margin:0' }, t('tr_sub', tr.as_of ? fmtDate(tr.as_of) : '—')),
+    el('div', { class: 'iv-growth' }, [tr.gsc_clicks != null ? tileN(tr.gsc_clicks, t('tr_clicks')) : null, tr.gsc_impressions != null ? tileN(tr.gsc_impressions, t('tr_impr')) : null, tr.ga_users != null ? tileN(tr.ga_users, t('tr_users')) : null]),
+    tr.note ? el('p', { class: 'iv-muted', style: 'margin:8px 0 0' }, tr.note) : null]);
+}
+const tileN = (n, l) => el('div', null, [el('div', { class: 'n' }, String(Number(n || 0).toLocaleString('en-US'))), el('div', { class: 'l' }, l)]);
+function impactBtn(k) { return el('button', { class: 'iv-q', type: 'button', 'aria-label': t('g_impact'), onClick: (e) => { e.stopPropagation(); openSheet(t('g_impact'), el('p', { class: 'iv-gl-p' }, impactWhat(k, getLang()))); } }, '±'); }
+// override the v3 growth card with the v2 data shape (daily / monthly / verified split)
+function growthCard() {
+  const box = el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('growth')), el('div', { class: 'iv-sk', style: 'height:14px;width:70%' })]);
+  const tile = (n, l, imp, term) => el('div', null, [el('div', { class: 'n' }, String(Number(n || 0).toLocaleString('en-US'))), el('div', { class: 'l' }, [l, ' ', term ? qBtn(term) : null, imp ? impactBtn(imp) : null])]);
+  const bars = (series, label, key, fmt) => {
+    if (!series || !series.length) return null;
+    const max = Math.max(1, ...series.map(s => Number(s.n || 0)));
+    return el('div', { class: 'iv-bars-wrap' }, [el('p', { class: 'iv-muted', style: 'margin:12px 0 0;font-size:.78rem' }, label),
+      el('div', { class: 'iv-bars' }, series.map((s, i) => el('div', { style: 'height:' + Math.max(4, Math.round(100 * Number(s.n || 0) / max)) + '%', title: (fmt ? fmt(s.n) : s.n) + ' · ' + s[key] }, (series.length <= 8 || i % 5 === 0) ? el('span', null, key === 'month' ? new Date(s.month).toLocaleDateString('en-GB', { month: 'short' }) : new Date(s.day).getDate()) : null)))]);
+  };
+  const paint = (g) => {
+    let mode = 'daily';
+    const chart = el('div');
+    const paintChart = () => mount(chart, mode === 'daily'
+      ? [bars(g.carriers_by_day, t('g_d_carriers'), 'day'), bars(g.trips_by_day, t('g_d_trips'), 'day'), bars(g.fees_by_day, t('g_d_fees'), 'day', (n) => 'USD ' + n)]
+      : [bars(g.carriers_by_month, t('g_new_carriers'), 'month'), bars(g.trips_by_month, t('g_delivered'), 'month')]);
+    const seg = el('div', { class: 'iv-seg' }, [['daily', t('g_daily')], ['monthly', t('g_monthly')]].map(([m, l]) => el('button', { class: m === mode ? 'on' : '', type: 'button', onClick: (e) => { mode = m; seg.querySelectorAll('button').forEach(b => b.classList.remove('on')); e.currentTarget.classList.add('on'); paintChart(); } }, l)));
+    paintChart();
+    mount(box, [
+      el('p', { class: 'iv-eyebrow' }, t('growth')), el('p', { class: 'iv-muted', style: 'margin:0' }, t('growth_sub')),
+      el('div', { class: 'iv-sect' }, el('h2', null, t('g_carriers'))),
+      el('div', { class: 'iv-growth' }, [tile(g.carriers_total, t('g_carriers'), null, 'carrier'), tile(g.carriers_verified, t('g_verified'), 'carriers_verified'), tile(g.carriers_in_review, t('g_review')), tile(g.carriers_unverified, t('g_unverified'), 'carriers_unverified'), tile(g.carriers_assigned, t('g_assigned'), 'carriers_assigned'), tile(g.trucks_active, t('g_trucks'))]),
+      el('div', { class: 'iv-sect' }, el('h2', null, t('g_brokers'))),
+      el('div', { class: 'iv-growth' }, [tile(g.brokers_total, t('g_brokers'), null, 'broker'), tile(g.brokers_active, t('g_b_active'), 'brokers_active'), tile(g.brokers_pending, t('g_b_pending')), tile(g.brokers_identity_verified, t('g_b_identity')), tile(g.dispatchers_active, t('g_dispatchers'), 'dispatchers_active', 'dispatcher'), tile(g.loads_booked, t('g_loads'), null, 'load')]),
+      el('div', { class: 'iv-sect' }, el('h2', null, t('g_delivered'))),
+      el('div', { class: 'iv-growth' }, [tile(g.trips_delivered, t('g_delivered'), 'trips_delivered'), tile(g.trips_delivered_30d, t('g_del30')), tile(g.trips_in_transit, 'In transit')]),
+      el('div', { class: 'iv-kv', style: 'margin-top:10px' }, [kv(t('g_fees'), money(g.fees_collected_total, 'USD'), '', null), kv(t('g_fees30'), money(g.fees_collected_30d, 'USD')), kv(t('g_gross30'), money(g.gross_moved_30d, 'USD')), kv('Fees not yet paid', money(g.fees_outstanding, 'USD'))]),
+      el('div', { style: 'display:flex;gap:6px;margin-top:6px' }, [impactBtn('fees_collected'), el('span', { class: 'iv-muted', style: 'font-size:.78rem' }, t('g_impact'))]),
+      seg, chart,
+      el('p', { class: 'iv-muted', style: 'margin:10px 0 0;font-size:.72rem' }, t('g_as_of') + ' ' + new Date(g.as_of).toLocaleString('en-GB')),
+    ]);
+  };
+  (S.growth ? Promise.resolve(S.growth) : invGrowth().then(g => { S.growth = g; return g; })).then(paint)
+    .catch(ex => mount(box, [el('p', { class: 'iv-eyebrow' }, t('growth')), el('p', { class: 'iv-muted' }, err(ex))]));
+  return box;
+}
+
+// ---------- branded printable documents (receipt / confirmation / statement / reports) ----------
+// Opens a print-ready page (the browser's "Save as PDF" makes the file). Real logo + tagline, record id, hash of the rows.
+function brandDoc(title, subtitle, rows, table, footerNote) {
+  const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const rtl = getLang() === 'ur';
+  const w = window.open('', '_blank'); if (!w) { alert('Popup blocked'); return; }
+  const rowsHtml = (rows || []).map(([k, v]) => '<tr><th>' + esc(k) + '</th><td>' + esc(v) + '</td></tr>').join('');
+  const tableHtml = table ? '<table class="grid"><thead><tr>' + table.head.map(h => '<th>' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' + table.rows.map(r => '<tr>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table>' : '';
+  w.document.write('<!doctype html><html' + (rtl ? ' dir="rtl"' : '') + '><head><meta charset="utf-8"><title>' + esc(title) + '</title>' +
+    '<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">' +
+    '<style>body{font-family:Manrope,Arial,sans-serif;color:#10223B;margin:0;background:#fff}' + (rtl ? 'body{font-family:"Noto Nastaliq Urdu",Manrope,serif;line-height:1.9}' : '') +
+    '.page{max-width:800px;margin:0 auto;padding:36px 40px}.head{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #FC5305;padding-bottom:16px;margin-bottom:22px}' +
+    '.head img{height:34px}.tag{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#0883F7;margin-top:6px}.meta{text-align:' + (rtl ? 'left' : 'right') + ';font-size:12px;color:#64748B}' +
+    'h1{font-size:22px;margin:0 0 4px}.sub{color:#64748B;margin:0 0 18px}table{border-collapse:collapse;width:100%;margin:10px 0 18px}th,td{padding:9px 10px;border-bottom:1px solid #E6EDF5;text-align:' + (rtl ? 'right' : 'left') + ';font-size:13.5px;vertical-align:top}' +
+    'th{width:34%;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#64748B;font-weight:700}.grid th{width:auto;background:#F5F8FC}.grid td:last-child,.grid th:last-child{text-align:' + (rtl ? 'left' : 'right') + ';font-variant-numeric:tabular-nums}' +
+    '.foot{margin-top:26px;padding-top:14px;border-top:1px solid #E6EDF5;font-size:11px;color:#94A3B8;line-height:1.6}.stamp{display:inline-block;border:2px solid #2ED18A;color:#0B7551;font-weight:800;padding:4px 10px;border-radius:8px;font-size:12px;letter-spacing:.06em}' +
+    '@media print{.page{padding:0}button{display:none}}</style></head><body><div class="page">' +
+    '<div class="head"><div><img src="https://loadboot.com/logo-full.png" alt="LoadBoot"><div class="tag">The Operating System for Trucking</div></div><div class="meta">LoadBoot LLC<br>Investor Portal · loadboot.com/app/investor<br>' + esc(new Date().toLocaleString('en-GB')) + '</div></div>' +
+    '<h1>' + esc(title) + '</h1><p class="sub">' + esc(subtitle || '') + '</p>' + (rowsHtml ? '<table>' + rowsHtml + '</table>' : '') + tableHtml +
+    '<div class="foot">' + esc(footerNote || '') + '<br>Investor: ' + esc(S.me.name) + ' · Agreement: ' + esc(S.agr.title || '') + ' · ' + esc(S.agr.id) + '<br>This document is generated from the portal record, which is the record both parties rely on. Every entry can be questioned in the portal.</div>' +
+    '<p style="margin-top:20px"><button onclick="window.print()" style="background:#0883F7;color:#fff;border:0;border-radius:10px;padding:10px 18px;font:700 14px Manrope,Arial">Print / Save as PDF</button></p></div></body></html>');
+  w.document.close();
+}
+function expenseReceipt(x) {
+  brandDoc(t('receipt') + ' — ' + (x.vendor || catName(x.category)), vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang()),
+    [[t('amount'), money(x.amount)], [t('date'), fmtDate(x.date)], [t('l_vendor'), x.vendor || '—'], [t('l_details'), x.description || '—'], ['Category', catName(x.category)],
+     [t('l_paid_from'), x.tranche ? t('l_tranche', fmtDate(x.tranche)) : '—'], [t('l_recurring'), x.recurring ? t('l_yes') : t('l_no')], [t('receipt'), x.receipt_url ? 'On file in the portal' : t('l_no_receipt')], ['Record id', x.id], [t('ack_btn'), x.acknowledged_at ? fmtDate(x.acknowledged_at) : '—']],
+    null, x.reversed ? 'REVERSAL ENTRY' : '');
+}
+function paymentConfirmation(r) {
+  brandDoc(t('dl_confirm'), t('p_lb_confirmed') + ' ' + fmtDate(r.confirmed_at),
+    [[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method || '—'], [t('reference'), r.reference || '—'], [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : '—'], [t('p_lb_confirmed'), fmtDate(r.confirmed_at)], ['Record id', r.id]],
+    null, 'CONFIRMED BY BOTH PARTIES — counts toward the funded amount.');
+}
+function statementDoc(s) {
+  const po = s.payout || {};
+  brandDoc(t('nav_statements') + ' — ' + fmtMonth(s.month), t('profit') + ': ' + money(s.profit),
+    [[t('revenue'), money(s.revenue)], [t('expenses'), money(s.expenses)], [t('profit'), money(s.profit)], [t('s_payback'), money(po.payback)], [t('s_share'), money(po.share)], [t('s_to_you'), money(po.total)], [t('s_paid_on'), po.paid_date ? fmtDate(po.paid_date) : '—'], [t('note'), s.note || '—']], null, '');
+}
+function expenseReport(L) {
+  const p = L.position || {};
+  brandDoc(t('dl_all_expenses'), money(p.spent) + ' ' + t('h_spent').toLowerCase() + ' · ' + money(p.fund_cash) + ' ' + t('h_fund_cash').toLowerCase(),
+    [[t('h_funded'), money(p.funded)], [t('h_spent'), money(p.spent)], [t('h_fund_cash'), money(p.fund_cash)]],
+    { head: [t('date'), t('l_vendor'), t('l_details'), 'Category', t('amount')], rows: (L.expenses || []).map(x => [fmtDate(x.date), x.vendor || '—', (x.description || '') + (x.reversed ? ' (' + t('l_reversal') + ')' : ''), catName(x.category), (x.reversed ? '+' : '−') + money(x.amount)]) }, '');
+}
+// vendor names → glossary links ("Netlify + Resend" becomes two links)
+function vendorLinks(text) {
+  const parts = String(text || '').split(/(\s*[+,/&]\s*)/);
+  return el('span', null, parts.map(pt => {
+    const w = vendorWhat(pt.trim(), getLang());
+    return w ? el('a', { href: '#', class: 'iv-term', onClick: (e) => { e.preventDefault(); e.stopPropagation(); openSheet(pt.trim(), el('p', { class: 'iv-gl-p' }, w)); } }, pt) : pt;
+  }));
+}
+// full audit trail
+function showAudit() {
+  const body = el('div'); openSheet(t('log_title'), body); mount(body, skeleton());
+  invAudit(S.agr.id, 200).then(r => {
+    const ev = r.events || [];
+    mount(body, [el('p', { class: 'iv-muted' }, t('log_sub')), ev.length ? el('div', { class: 'iv-tl' }, ev.map(e => el('div', null, [el('b', null, e.summary || e.action), el('small', null, new Date(e.at).toLocaleString('en-GB') + ' · ' + e.by + ' · ' + e.action)]))) : empty(t('log_none'))]);
+  }).catch(ex => mount(body, el('div', { class: 'iv-err' }, err(ex))));
 }

@@ -14,7 +14,8 @@ import { sectionHead, statCard, toolbar, openDrawer, fmtDate, askReason, askConf
 import { ccInvList, ccInvDetail, ccInvSaveInvestor, ccInvLinkUser, ccInvSaveAgreement, ccInvRequest,
          ccInvConfirmReceipt, ccInvReverseReceipt, ccInvExpense, ccInvReverseExpense, ccInvPublishMonth, ccInvPay,
          ccInvRejectReceipt, ccInvCloseCommitment, ccInvReopenCommitment, ccInvWindDown, ccInvAnswerFlag,
-         ccInvSettingsGet, ccInvSettingsSet, ccInvPublishDoc, ccInvCountersign, invProofUrl, invCurrentDoc, ccInvAmendments, ccInvDecideAmendment } from '../../shared/api.js';
+         ccInvSettingsGet, ccInvSettingsSet, ccInvPublishDoc, ccInvCountersign, invProofUrl, invCurrentDoc, ccInvAmendments, ccInvDecideAmendment,
+         ccInvPostUpdate, ccInvUpdates, invUploadProof } from '../../shared/api.js';
 import { buildAgreement, hasPlaceholders, mdToHtml, DEFAULT_EXTRA } from '../../investor/agreement-template.js';
 import { VENDOR_NAMES, vendorWhat } from '../../investor/glossary.js';
 import { can } from '../../shared/permissions.js';
@@ -104,7 +105,8 @@ export function renderInvestors(host) {
   function header() {
     const actions = [el('button', { class: 'lb-btn lb-btn-sm', onClick: load }, 'Refresh')];
     if (manage) {
-      actions.push(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => settingsDrawer(load) }, 'Settings · bank, FX, forecast, vendors'));
+      actions.push(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => settingsDrawer(load) }, 'Settings · bank, FX, forecast, plan, links'));
+      actions.push(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => updatesDrawer(rows) }, 'Post an update'));
       actions.push(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => publishMonthForm(load) }, 'Publish month'));
       actions.push(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => agreementForm(null, rows, load) }, '+ Agreement'));
       actions.push(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => investorForm(null, load) }, '+ Investor'));
@@ -291,17 +293,23 @@ function expenseForm(agrId, receipts, cur, onDone) {
   const whatHint = el('div', { style: 'font-size:.8rem;color:#0762C4;margin-top:4px;min-height:1em' });
   const vendor = { get value() { return vendorSel.value === '__other' ? vendorOther.value : vendorSel.value; } };
   const desc = inp({ placeholder: 'What exactly (plan, month, invoice #)' });
-  const receipt = inp({ type: 'url', placeholder: 'https://… receipt photo' });
+  const receipt = inp({ type: 'url', placeholder: 'https://… receipt photo (optional if you attach a file)' });
+  const rfile = el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp,application/pdf', class: 'lb-input', style: 'width:100%' });
   const rec = el('input', { type: 'checkbox' });
   const btn = el('button', { class: 'lb-btn lb-btn-primary' }, 'Log expense');
   settings();
   const d = openDrawer('Log an expense', el('div', null, [
     f('Paid from tranche', tranche, 'TAG 1 — which money paid for it'), f('Category', cat, 'TAG 2 — what it was'),
     el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Amount', amount), f('Date', date)]),
-    f('Vendor / service', el('div', null, [vendorSel, vendorOther, whatHint]), 'Pre-listed tools carry a plain-language meaning the investor reads automatically. Manage the list in Settings.'), f('Description', desc, 'Plain words a non-technical person understands: what was bought and why. No jargon.'), f('Receipt photo link', receipt, 'The investor can open this.'),
+    f('Vendor / service', el('div', null, [vendorSel, vendorOther, whatHint]), 'Pre-listed tools carry a plain-language meaning the investor reads automatically. Manage the list in Settings.'), f('Description', desc, 'Plain words a non-technical person understands: what was bought and why. No jargon.'),
+    f('Receipt / invoice file', rfile, 'JPG, PNG, WebP or PDF up to 10 MB — stored privately; the investor opens it from the expense.'), f('…or receipt link', receipt),
     el('label', { style: 'display:flex;gap:8px;align-items:center;margin:6px 0 12px' }, [rec, 'Recurring monthly (rent, subscription)']), btn,
   ]), { subtitle: 'Shows in the investor portal the moment you save. Log it within 48 hours of paying.' });
-  btn.onclick = () => submit(btn, () => ccInvExpense({ agreement_id: agrId, receipt_id: tranche.value, category: cat.value, amount: amount.value, expense_date: date.value, vendor: vendor.value, description: desc.value, receipt_url: receipt.value, is_recurring: rec.checked }), () => { d.close(); onDone(); });
+  btn.onclick = () => submit(btn, async () => {
+    let ref = receipt.value; const fl = rfile.files && rfile.files[0];
+    if (fl) { if (fl.size > 10 * 1024 * 1024) throw new Error('File is larger than 10 MB'); ref = await invUploadProof(agrId, fl); }
+    return ccInvExpense({ agreement_id: agrId, receipt_id: tranche.value, category: cat.value, amount: amount.value, expense_date: date.value, vendor: vendor.value, description: desc.value, receipt_url: ref, is_recurring: rec.checked });
+  }, () => { d.close(); onDone(); });
 }
 
 function publishMonthForm(onDone) {
@@ -494,6 +502,9 @@ function settingsDrawer(onDone) {
     const rate = num({ value: fx.pkr_per_usd || '', placeholder: '280', step: '0.01' }), asOf = inp({ type: 'date', value: fx.as_of || today() });
     const emp = num({ value: fc.expected_monthly_profit || '', placeholder: 'e.g. 150000' }), fpm = inp({ type: 'month', value: fc.first_payout_month ? String(fc.first_payout_month).slice(0, 7) : '' }), fnote = ta({ value: fc.note || '', rows: 2, placeholder: 'What this forecast assumes (office open, 2 dispatchers, 15 active carriers…)' });
     const vlist = ta({ value: vend.join('\n'), rows: 8 });
+    const pl = S.plan || {}; const planSum = ta({ value: pl.summary || '', rows: 3 }); const planItems = ta({ value: (pl.items || []).map(i => [i.title, i.amount, i.when, i.why, i.growth].join(' | ')).join('\n'), rows: 8, placeholder: 'Islamabad office deposit | 200000 | Oct 2026 | Dispatchers must sit together for the US night shift | Lets us hire 2 dispatchers → 8–10 more carriers served' });
+    const rm = S.revenue_model || {}; const revText = ta({ value: rm.text || '', rows: 5, placeholder: 'LoadBoot earns a dispatch fee on every load it books for a carrier …' });
+    const tr = S.traffic || {}; const trClicks = num({ value: tr.gsc_clicks || '', step: '1' }), trImpr = num({ value: tr.gsc_impressions || '', step: '1' }), trUsers = num({ value: tr.ga_users || '', step: '1' }), trAsOf = inp({ type: 'date', value: tr.as_of || '' }), trNote = inp({ value: tr.note || '' });
     const lk = S.links || {}; const lkFb = inp({ type: 'url', value: lk.facebook || '', placeholder: 'https://facebook.com/…' }), lkCap = inp({ type: 'url', value: lk.capterra || '', placeholder: 'https://www.capterra.com/p/…' }), lkIg = inp({ type: 'url', value: lk.instagram || '' }), lkYt = inp({ type: 'url', value: lk.youtube || '' });
     mount(body, [
       card('Where investors send money', 'Appears on every capital request with copy buttons. Leave a field blank to hide it.',
@@ -508,6 +519,14 @@ function settingsDrawer(onDone) {
       card('Public links', 'Shown to investors as "LoadBoot online". Google Play, website, LinkedIn and Trustpilot are built in; add the rest here. Leave blank to hide.',
         el('div', { class: 'cc-inv-set' }, [f('Facebook page', lkFb), f('Capterra listing', lkCap), f('Instagram', lkIg), f('YouTube', lkYt)]),
         () => ccInvSettingsSet('links', { facebook: lkFb.value.trim() || null, capterra: lkCap.value.trim() || null, instagram: lkIg.value.trim() || null, youtube: lkYt.value.trim() || null })),
+      card('The plan — where the money goes and why', 'Shown to investors as "Where your money goes". One line per item: title | amount | when | why | growth effect. Spending is tracked against the total.',
+        el('div', null, [f('Summary (2–3 sentences)', planSum), f('Items (one per line: title | amount | when | why | growth effect)', planItems)]),
+        () => ccInvSettingsSet('plan', { summary: planSum.value, items: planItems.value.split('\n').map(l => l.split('|').map(x => x.trim())).filter(a => a[0]).map(a => ({ title: a[0], amount: Number(a[1] || 0) || 0, when: a[2] || '', why: a[3] || '', growth: a[4] || '' })) })),
+      card('How LoadBoot earns', 'Plain words: where income comes from (dispatch fee per load, who pays, when). The investor sees this next to the live numbers.',
+        f('Text', revText), () => ccInvSettingsSet('revenue_model', { text: revText.value })),
+      card('Website traffic (Search Console / Analytics)', 'Enter the figures you read in Google — the portal labels them with the date. Leave blank to hide.',
+        el('div', { class: 'cc-inv-set' }, [f('Search clicks (28 days)', trClicks), f('Search impressions (28 days)', trImpr), f('Visitors (28 days)', trUsers), f('As of', trAsOf), f('Note', trNote)]),
+        () => ccInvSettingsSet('traffic', { gsc_clicks: Number(trClicks.value) || null, gsc_impressions: Number(trImpr.value) || null, ga_users: Number(trUsers.value) || null, as_of: trAsOf.value || null, note: trNote.value })),
       card('Vendors & services', 'One per line. Pre-listed in the expense form; "Other" is always available. Names that match the glossary carry a plain-language meaning in 3 languages.',
         f('List', vlist), () => ccInvSettingsSet('vendors', { list: vlist.value.split('\n').map(x => x.trim()).filter(Boolean) })),
     ]);
@@ -601,4 +620,30 @@ function timeline(D, cur) {
   ev.sort((x, y) => new Date(y.t) - new Date(x.t));
   if (!ev.length) return el('p', { style: 'opacity:.6' }, 'Nothing yet.');
   return el('div', { class: 'cc-inv-tl' }, ev.slice(0, 40).map(e => el('div', null, [e.s, el('small', null, e.t ? new Date(e.t).toLocaleString('en-GB') : '')])));
+}
+
+// ─────────────────────────────────────────────────────────── founder updates (bl_inv_0406)
+// Daily / weekly / milestone notes. Every investor gets an in-app notification and (optionally) the
+// premium e-mail. Pick one agreement to write to one investor only.
+function updatesDrawer(rows) {
+  const body = el('div');
+  const d = openDrawer('Updates to investors', body, { subtitle: 'What you write here lands in their portal feed — and in their inbox with the LoadBoot header.' });
+  const agrs = rows.flatMap(r => (r.agreements || []).map(a => [a.id, r.investor.name + ' — ' + (a.title || 'Agreement')]));
+  const to = sel([['', 'All investors']].concat(agrs), '');
+  const kind = sel([['daily', 'Daily progress'], ['weekly', 'Weekly summary'], ['milestone', 'Milestone'], ['note', 'Note']], 'daily');
+  const title = inp({ placeholder: 'e.g. Office lease signed — dispatchers start Monday' });
+  const text = ta({ rows: 6, placeholder: 'Plain words. What happened, what it means for the money, what is next. Numbers in the portal update themselves — write the story.' });
+  const mail = el('input', { type: 'checkbox', checked: true });
+  const btn = el('button', { class: 'lb-btn lb-btn-primary' }, 'Post');
+  const list = el('div');
+  const paintList = () => ccInvUpdates(30).then(r => mount(list, (r.updates || []).length ? el('div', null, (r.updates || []).map(u => el('div', { style: 'padding:10px 0;border-bottom:1px solid #eef2f7' }, [
+    el('div', { style: 'display:flex;justify-content:space-between;font-size:.76rem;opacity:.65' }, [u.kind + (u.agreement_id ? ' · one investor' : ' · all investors'), fmtDate(u.created_at)]), el('b', null, u.title), el('div', { style: 'white-space:pre-line;font-size:.9rem' }, u.body)]))) : el('p', { style: 'opacity:.6' }, 'No updates yet.'))).catch(() => {});
+  btn.onclick = () => submit(btn, () => ccInvPostUpdate({ agreement_id: to.value || null, kind: kind.value, title: title.value, body: text.value, send_email: mail.checked }), () => { toast('Posted'); title.value = ''; text.value = ''; paintList(); });
+  mount(body, [
+    el('div', { class: 'cc-inv-set' }, [f('To', to), f('Kind', kind)]), f('Title', title), f('Update', text),
+    el('label', { style: 'display:flex;gap:8px;align-items:center;margin:6px 0 12px' }, [mail, 'Also e-mail it (LoadBoot header, logo + tagline)']), btn,
+    el('h4', { style: 'margin:22px 0 8px' }, 'Posted'), list,
+  ]);
+  paintList();
+  return d;
 }

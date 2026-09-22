@@ -1548,3 +1548,11 @@ export const invMyAmendments      = (agreementId) => rpc('inv_my_amendments', { 
 export const invAckExpense        = (id) => rpc('inv_ack_expense', { p_expense: id });
 export const ccInvDecideAmendment = (id, accept, note) => rpc('cc_inv_decide_amendment', { p_id: id, p_accept: !!accept, p_note: note || null });
 export const ccInvAmendments      = (agreementId) => rpc('cc_inv_amendments', { p_agreement: agreementId });
+
+// bl_inv_0406 — updates, notifications, audit trail
+export const invNotifications = (limit) => rpc('inv_notifications', { p_limit: limit || 50 });
+export const invMarkRead      = (ids) => rpc('inv_mark_read', { p_ids: ids || null });
+export const invUpdates       = (agreementId, limit) => rpc('inv_updates', { p_agreement: agreementId, p_limit: limit || 30 });
+export const invAudit         = (agreementId, limit) => rpc('inv_audit', { p_agreement: agreementId, p_limit: limit || 200 });
+export const ccInvPostUpdate  = (p) => rpc('cc_inv_post_update', { p });
+export const ccInvUpdates     = (limit) => rpc('cc_inv_updates', { p_limit: limit || 50 });
