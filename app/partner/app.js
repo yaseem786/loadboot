@@ -33,7 +33,7 @@ import {
   partnerGetProfile, partnerUpdateProfile,
   getPaymentInstructions, partnerSubmitInvoicePayment,
   loadChecklist, partnerChecklistSubmit, partnerUpdateRequests, partnerRespondUpdate,
-  isFlagEnabled, myReferral, claimReferral,
+  isFlagEnabled, myReferral, claimReferral, claimPendingReferral,
   requestAccountDeletion, cancelAccountDeletion, myAccountDeletionStatus,
   deviceSeen, myDevices,
 } from '../shared/api.js';
@@ -5213,6 +5213,12 @@ async function facilityDash(user, ov) {
 
 /* ---------- app view ---------- */
 async function appView(user) {
+  // bl_agent_0402 — brokers/shippers referred through a partner link were never tied to the referrer
+  // (only a manual code box existed). Claim profiles.signup_ref / the stored ?ref code silently, once.
+  (async () => {
+    let code = null; try { code = localStorage.getItem('lb_ref'); } catch (_) {}
+    try { const r = await claimPendingReferral(code); if (r && (r.ok || r.reason !== 'no_org')) { try { localStorage.removeItem('lb_ref'); } catch (_) {} } } catch (_) {}
+  })();
   let ov;
   try { ov = await partnerOverview(); }
   catch (e) {

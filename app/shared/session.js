@@ -115,6 +115,10 @@ export async function signUp(email, password, meta = {}) {
   // silently registered every agent-portal signup as a carrier instead of an agent.
   const data = { company: meta.company || '', name: meta.name || '', partner_kind: meta.partner_kind || '', phone: meta.phone || '' };
   if (meta.role) data.role = meta.role;
+  // bl_agent_0402 — the track the person chose on the agent portal (dispatcher | referral) and the
+  // ?ref= code captured before signup, stored server-side so the referral survives a device change.
+  if (meta.intent) data.intent = meta.intent;
+  if (meta.ref) data.ref = meta.ref;
   return sb.auth.signUp({ email, password, options: { data } });
 }
 

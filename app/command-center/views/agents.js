@@ -11,7 +11,11 @@ import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 export function renderAgents(host) {
-  const state = { q: '', st: 'all', rows: [] };
+  // bl_agent_0402 — TRACK filter. Every agent-portal signup used to get a referral row, so this
+  // list showed 131 "partners" of whom ~100 were dispatcher applicants who never chose the
+  // program. Default = people who opted in (opted_in_at set). The rest stay one filter away.
+  const state = { q: '', st: 'all', track: 'opted', rows: [] };
+  const trackOf = (x) => x.kind !== 'affiliate' ? 'codes' : (x.opted_in_at ? 'opted' : 'auto');
   const body = el('div');
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Referral Partners', 'The referral sales force — applications, chains, downlines, earnings, payouts and direct comms. (Salaried dispatchers are managed under Dispatchers.)'),
@@ -28,7 +32,7 @@ export function renderAgents(host) {
 
   function paint() {
     const q = state.q.toLowerCase();
-    let list = state.rows.filter((x) => (state.st === 'all' || x.status === state.st)
+    let list = state.rows.filter((x) => (state.track === 'all' || trackOf(x) === state.track) && (state.st === 'all' || x.status === state.st)
       && (!q || ((x.name || '') + ' ' + (x.email || '') + ' ' + (x.code || '')).toLowerCase().includes(q)));
     const stPill = (st) => {
       const m = { approved: ['approved', 'green'], under_review: ['UNDER REVIEW', 'amber'], info_needed: ['info needed', 'amber'], rejected: ['rejected', 'red'], draft: ['draft', 'violet'], 'no-profile': ['no profile', 'violet'] }[st] || [st, 'violet'];
@@ -38,9 +42,13 @@ export function renderAgents(host) {
       onInput: (e) => { state.q = e.target.value; paint(); } });
     const stSel = el('select', { class: 'lb-input', style: 'max-width:170px', onChange: (e) => { state.st = e.target.value; paint(); } },
       [['all', 'All statuses'], ['under_review', 'Under review'], ['approved', 'Approved'], ['info_needed', 'Info needed'], ['rejected', 'Rejected'], ['draft', 'Draft']].map(([v, l]) => el('option', { value: v, selected: state.st === v ? '' : undefined }, l)));
+    const nOpt = state.rows.filter((x) => trackOf(x) === 'opted').length, nAuto = state.rows.filter((x) => trackOf(x) === 'auto').length, nCodes = state.rows.filter((x) => trackOf(x) === 'codes').length;
+    const trSel = el('select', { class: 'lb-input', style: 'max-width:290px', onChange: (e) => { state.track = e.target.value; paint(); } },
+      [['opted', 'Referral partners — opted in (' + nOpt + ')'], ['auto', 'Never opted in — dispatcher applicants & idle signups (' + nAuto + ')'], ['codes', 'Carrier / broker own codes (' + nCodes + ')'], ['all', 'Everyone (' + state.rows.length + ')']].map(([v, l]) => el('option', { value: v, selected: state.track === v }, l)));
     mount(body, el('div', null, [
-      el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center' }, [qIn, stSel,
-        el('span', { class: 'cc-sub' }, list.length + ' of ' + state.rows.length + ' agents')]),
+      el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center' }, [qIn, trSel, stSel,
+        el('span', { class: 'cc-sub' }, list.length + ' shown')]),
+      state.track === 'auto' ? el('div', { class: 'cc-sub', style: 'margin:-4px 0 10px' }, 'These rows were auto-created at signup before 22 Sep 2026. Their referral links are OFF until the person activates the program from their portal (or you approve them here). Nothing to action unless they ask.') : '',
       card([el('div', { class: 'cc-doclist' }, list.length ? list.map(row) : [el('div', { class: 'cc-sub' }, 'No agents match.')])]),
     ]));
   }
@@ -51,7 +59,11 @@ export function renderAgents(host) {
         el('div', { style: 'font-weight:700' }, (x.name || '(no name)') + ' · ' + (x.email || '')),
         el('div', { class: 'cc-sub' }, 'code ' + (x.code || '—') + ' · ' + (x.country || '—') + ' · joined ' + fmtDate(x.joined_at) + ' · ' + (x.referred || 0) + ' referred · ' + (x.downline || 0) + ' downline agents'),
       ]),
+      x.dispatcher_status ? el('span', { class: 'cc-pill cc-pill-blue', title: 'Dispatcher application status' }, '🧑‍✈️ ' + x.dispatcher_status) : '',
+      x.kind === 'affiliate' ? (x.opted_in_at ? el('span', { class: 'cc-pill cc-pill-green', title: 'Chose the referral program' }, '⚡ opted in ' + fmtDate(x.opted_in_at)) : el('span', { class: 'cc-pill', title: 'Auto-created at signup; link inactive' }, 'link off')) : el('span', { class: 'cc-pill' }, x.kind + ' code'),
+      x.last_referral_at ? el('span', { class: 'cc-sub' }, 'last referral ' + fmtDate(x.last_referral_at)) : '',
       el('b', { style: 'color:#12a150' }, money(x.earned || 0)),
+      Number(x.accrued) ? el('span', { class: 'cc-pill cc-pill-amber' }, money(x.accrued) + ' clearing') : '',
       Number(x.payable) ? el('span', { class: 'cc-pill cc-pill-green' }, money(x.payable) + ' payable') : '',
       x.open_payout ? el('span', { class: 'cc-pill cc-pill-amber' }, [icon('dollar',15),' payout pending']) : '',
       (() => { const m = { approved: ['approved', 'green'], under_review: ['UNDER REVIEW', 'amber'], info_needed: ['info needed', 'amber'], rejected: ['rejected', 'red'] }[x.status] || [x.status, 'violet']; return el('span', { class: 'cc-pill cc-pill-' + m[1] }, m[0]); })(),

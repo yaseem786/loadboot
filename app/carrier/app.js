@@ -20,7 +20,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline, dispatcherApply, dispatcherMyStatus, dispatcherReapply, dispatcherSubmitId,
+  isFlagEnabled, myReferral, claimReferral, claimPendingReferral, agentReferralOptIn, agentSetIntent, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline, dispatcherApply, dispatcherMyStatus, dispatcherReapply, dispatcherSubmitId,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringRemitUpdate, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
@@ -122,6 +122,10 @@ try { localStorage.setItem('lb_last_portal', window.__LB_AGENT ? '/app/agent/' :
 
 // inDrive-style theme system — Off (light) / On (dark) / System. Official palette only.
 // bl_disp_0302: '?ack=<assignment>' from the "meet your dispatcher" e-mail survives the in-app login → dispatcher-card.js acknowledges it.
+// bl_agent_0402: partners share portal links directly (/app/carrier/?ref=CODE, /app/agent/?join=referral) —
+// capture ?ref= like the marketing site does, and remember the track picked from careers / agents.html.
+try { const _q0 = new URLSearchParams(location.search); const _r0 = (_q0.get('ref') || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase(); if (_r0) localStorage.setItem('lb_ref', _r0);
+  const _j0 = _q0.get('join'); if (_j0 === 'dispatcher' || _j0 === 'referral') localStorage.setItem('lb_join', _j0); } catch (_) {}
 try { const _ack0 = new URLSearchParams(location.search).get('ack'); if (_ack0) sessionStorage.setItem('lb_disp_ack', _ack0); } catch (_) {}
 const THEME_KEY = 'lb_theme';
 function themeMode() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; } }
@@ -565,13 +569,24 @@ function authScreen() {
     driver: 'Driver sign-in — use the email and password you set when your carrier invited you.',
     oo: 'Owner-operator — sign in with your carrier login. It already covers the driving side (trips, GPS check-in, POD); never create a separate driver account for yourself.',
   };
-  const descr = h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Agent' : ROLE === 'driver' ? 'Driver' : ROLE === 'oo' ? 'Owner-operator' : 'Carrier');
+  let AGINTENT = (function () { try { return localStorage.getItem('lb_join') || ''; } catch (_) { return ''; } })();
+  const _agFresh = /[?&]join=(dispatcher|referral)\b/.test(location.search);
+  const descr = h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? (AGINTENT === 'referral' ? 'Referral Partner' : AGINTENT === 'dispatcher' ? 'Dispatcher' : 'Partner portal') : ROLE === 'driver' ? 'Driver' : ROLE === 'oo' ? 'Owner-operator' : 'Carrier');
   const _urlRole = /[?&#]role=(driver|oo|carrier)\b/.exec(location.href);
-  let roleChosen = !!window.__LB_AGENT || !!_urlRole || /#signup\b/.test(location.hash);
-  const chooser = window.__LB_AGENT ? null : h('div', { class: 'cp-rolechoose' });
-  const changeRole = window.__LB_AGENT ? null : h('button', { type: 'button', class: 'cp-rolechange' }, '‹ Change role');
+  // bl_agent_0402 — AGENT PORTAL TRACK: one login, one explicit choice. 'dispatcher' = apply for the
+  // salaried/commission dispatcher role; 'referral' = the 1% Referral Partner program. The choice
+  // rides along on signup (intent) so the server creates ONLY that track — no more auto-created
+  // referral rows for dispatcher applicants. ?join=… from careers / agents.html pre-selects it.
+  let roleChosen = window.__LB_AGENT ? !!AGINTENT : (!!_urlRole || /#signup\b/.test(location.hash));
+  const chooser = h('div', { class: 'cp-rolechoose' });
+  const changeRole = h('button', { type: 'button', class: 'cp-rolechange' }, window.__LB_AGENT ? '‹ Change track' : '‹ Change role');
   const title = h('h1', null, 'Welcome back');
-  const sub = h('p', { class: 'cp-auth-sub' }, window.__LB_AGENT ? 'Sign in to your dispatcher portal — your assigned carriers, loads and salary.' : ROLE_COPY[ROLE]);
+  const AG_COPY = {
+    dispatcher: ['Apply as a LoadBoot Dispatcher', 'Create your account, then apply to dispatch for US carriers — commission trial first, then a written package.', 'Sign in to your dispatcher portal — your application, assigned carriers and loads.'],
+    referral: ['Join as a Referral Partner', 'Create your account and get your personal link — earn 1% of every delivered load from the carriers, brokers and shippers you bring in. Forever.', 'Sign in to your Referral Partner portal — your link, referrals and earnings.'],
+    '': ['Create your account', 'Pick a track above first.', 'Sign in to your LoadBoot partner portal — dispatchers and referral partners.'],
+  };
+  const sub = h('p', { class: 'cp-auth-sub' }, window.__LB_AGENT ? AG_COPY[AGINTENT][2] : ROLE_COPY[ROLE]);
   const btn = h('button', { class: 'cp-btn cp-btn-lg' }, 'Sign in');
   const toggle = h('p', { class: 'cp-auth-toggle' });
   const forgot = h('p', { class: 'cp-auth-toggle', style: 'margin-top:8px' },
@@ -592,9 +607,10 @@ function authScreen() {
     if (s && !sgOn) { sgOn = true; pushLayer(sgGuard); }
     else if (!s && sgOn) { sgOn = false; popLayer(sgGuard); }
     const AG = !!window.__LB_AGENT;
-    title.textContent = s ? (AG ? 'Apply as a LoadBoot Dispatcher' : 'Create your account') : 'Welcome back';
-    sub.textContent = s ? (AG ? 'Create your account, then apply to dispatch for US carriers — salaried, base + per-truck + performance.' : 'Set up your carrier profile — it’s free.')
-                        : (AG ? 'Sign in to your dispatcher portal — your assigned carriers, loads and salary.' : ROLE_COPY[ROLE]);
+    const agc = AG_COPY[AGINTENT] || AG_COPY[''];
+    title.textContent = s ? (AG ? agc[0] : 'Create your account') : 'Welcome back';
+    sub.textContent = s ? (AG ? agc[1] : 'Set up your carrier profile — it’s free.')
+                        : (AG ? agc[2] : ROLE_COPY[ROLE]);
     extra.style.display = s ? 'block' : 'none';
     btn.textContent = s ? 'Create account' : 'Sign in';
     err.textContent = ''; err.className = 'cp-err';
@@ -608,14 +624,25 @@ function authScreen() {
     ['driver', 'Driver', 'Invited by a carrier — your loads, GPS check-in, POD', 'rgba(8,131,247,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.6-1.6 1.7-2.3 3-2.3s2.4.7 3 2.3M14 10h4M14 13h4"/></svg>'],
     ['oo', 'I own & drive', 'Owner-operator — same carrier login, no separate driver account needed', 'rgba(34,197,94,.14)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3v6.5M4 14l5.8-1.5M20 14l-5.8-1.5"/></svg>'],
   ];
+  const AGROLES = [
+    ['dispatcher', 'Work as a Dispatcher', 'Book loads for US carriers under LoadBoot — commission trial, then a written package. Own load-board access required.', 'rgba(8,131,247,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 9h5M7 12h8"/></svg>'],
+    ['referral', 'Earn 1% as a Referral Partner', 'Share your link. Every carrier, broker or shipper you bring in pays you 1% of every delivered load — for as long as they move freight.', 'rgba(252,83,5,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FC5305" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>'],
+  ];
   const showStep = () => { if (!chooser) return; chooser.style.display = roleChosen ? 'none' : ''; formWrap.style.display = roleChosen ? '' : 'none'; descr.style.visibility = roleChosen ? '' : 'hidden'; };
-  const paintRoles = () => { if (!chooser) return; mount(chooser, [
-    h('h1', null, 'Sign in'), h('p', { class: 'cp-auth-sub' }, 'Who are you signing in as?'),
-    ...ROLES.map(([k, l, s, bg, svg]) => h('button', { type: 'button', class: 'cp-rolecard' + (_roleHint === k ? ' last' : ''), onClick: () => setRole(k) }, [
-      h('span', { class: 'ic', style: 'background:' + bg, html: svg }), h('span', { class: 'tx' }, [h('b', null, l), h('span', null, s)]), _roleHint === k ? h('em', null, 'Last time') : null, h('span', { class: 'chev', html: '›' }),
+  const paintRoles = () => { if (!chooser) return; const AG9 = !!window.__LB_AGENT; mount(chooser, [
+    h('h1', null, AG9 ? 'Welcome to LoadBoot' : 'Sign in'), h('p', { class: 'cp-auth-sub' }, AG9 ? 'What brings you here? One account — you can add the other track any time.' : 'Who are you signing in as?'),
+    ...(AG9 ? AGROLES : ROLES).map(([k, l, s, bg, svg]) => h('button', { type: 'button', class: 'cp-rolecard' + (_roleHint === k ? ' last' : ''), onClick: () => setRole(k) }, [
+      h('span', { class: 'ic', style: 'background:' + bg, html: svg }), h('span', { class: 'tx' }, [h('b', null, l), h('span', null, s)]), (!AG9 && _roleHint === k) ? h('em', null, 'Last time') : null, h('span', { class: 'chev', html: '›' }),
     ].filter(Boolean))),
-  ]); };
+    AG9 ? h('p', { class: 'cp-auth-toggle', style: 'margin-top:6px' }, [document.createTextNode('Already have an account? '), h('a', { onClick: () => { roleChosen = true; setMode(false); showStep(); } }, 'Sign in')]) : null,
+  ].filter(Boolean)); };
   const setRole = (k) => {
+    if (window.__LB_AGENT) {
+      AGINTENT = k; roleChosen = true; try { localStorage.setItem('lb_join', k); } catch (_) {}
+      descr.textContent = k === 'referral' ? 'Referral Partner' : 'Dispatcher';
+      setMode(true); showStep(); try { name.focus({ preventScroll: true }); } catch (_) {}
+      return;
+    }
     ROLE = k; DRVH = k === 'driver'; roleChosen = true;
     try { localStorage.setItem('lb_role_hint', k); } catch (_) {}
     descr.textContent = k === 'driver' ? 'Driver' : k === 'oo' ? 'Owner-operator' : 'Carrier';
@@ -631,7 +658,7 @@ function authScreen() {
     btn.disabled = true; btn.textContent = signup ? 'Creating…' : 'Signing in…';
     try {
       if (signup) {
-        const { data, error } = await signUp(em, pw, Object.assign({ company: company.value.trim(), name: name.value.trim(), phone: (ccSel.value + ' ' + phone.value.trim()), sms_consent: !!smsOk.checked, sms_consent_at: (smsOk.checked ? new Date().toISOString() : null), sms_consent_source: 'carrier_portal_signup_checkbox' }, window.__LB_AGENT ? { role: 'agent' } : {}));
+        const { data, error } = await signUp(em, pw, Object.assign({ company: company.value.trim(), name: name.value.trim(), phone: (ccSel.value + ' ' + phone.value.trim()), sms_consent: !!smsOk.checked, sms_consent_at: (smsOk.checked ? new Date().toISOString() : null), sms_consent_source: 'carrier_portal_signup_checkbox' }, window.__LB_AGENT ? { role: 'agent', intent: (AGINTENT || null), ref: (function () { try { return localStorage.getItem('lb_ref') || null; } catch (_) { return null; } })() } : { ref: (function () { try { return localStorage.getItem('lb_ref') || null; } catch (_) { return null; } })() }));
         if (error) throw error;
         // Supabase returns success with an empty identities array when the address is
         // already registered — it will not error, and no email is sent. Without this the
@@ -689,6 +716,7 @@ function authScreen() {
     h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')])].filter(Boolean));
   if (changeRole) changeRole.onclick = () => { roleChosen = false; paintRoles(); showStep(); };
   paintRoles(); showStep();
+  if (window.__LB_AGENT && _agFresh && AGINTENT) setMode(true);  // straight from careers / agents.html → create-account form
   const brandPanel = window.__LB_AGENT ? h('div', { class: 'cpx-auth-brand', html: AGENT_BRAND }) : h('div', { class: 'cpx-auth-brand', html:
     '<svg viewBox="0 0 300 90" style="width:100%;max-width:300px;overflow:visible" aria-hidden="true">'
     + '<path d="M8 74 C 80 74, 90 18, 170 18 S 282 52, 292 30" fill="none" stroke="rgba(148,163,184,.35)" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round"/>'
@@ -821,7 +849,17 @@ async function agentPortal(user) {
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
   const isVerified = obStatus === 'approved'; // profile approval is the ONLY verification truth (legacy referrer flags don't count)
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['referral', 'Referral (1%)', 'zap'], ['chain', 'My Referrals', 'users'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'wallet'], ['verify', 'Verification', 'shield'], ['settings', 'Settings', 'cog']];
+  // bl_agent_0402 — TRACKS. optedIn = chose the referral program (row has opted_in_at); the
+  // dispatcher track = has an application or said so at signup. Referral tabs exist only for
+  // people who opted in; the dashboard is whichever home fits; nobody sees a track they never chose.
+  const optedIn = !!feed.opted_in;
+  const hasDisp = !!feed.has_dispatcher;
+  const intent9 = feed.intent || '';
+  const refOnly = optedIn && !hasDisp && intent9 !== 'dispatcher' && intent9 !== 'both';
+  const noTrack = !optedIn && !hasDisp && !intent9;
+  const trackLabel9 = refOnly ? 'Referral Partner' : noTrack ? 'Partner portal' : (optedIn ? 'Dispatcher · Partner' : 'Dispatcher');
+  const AGNAV_ALL = [['dashboard', 'Dashboard', 'dash'], ['referral', 'Referral (1%)', 'zap'], ['chain', 'My Referrals', 'users'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'wallet'], ['verify', 'Verification', 'shield'], ['settings', 'Settings', 'cog']];
+  const AGNAV = optedIn ? AGNAV_ALL : AGNAV_ALL.filter((n) => n[0] === 'dashboard' || n[0] === 'settings');
   let tab = (location.hash || '').replace('#', '') || 'dashboard';
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
@@ -834,7 +872,8 @@ async function agentPortal(user) {
   // Mobile bottom tab bar — same pattern as the carrier shell (.cp-tabbar shows <=900px,
   // sidebar hides). Without this the agent portal had NO navigation on phones.
   const tabLinks = {};
-  const MOBTABS = [['dashboard', 'Home', 'dash'], ['chain', 'Referrals', 'users'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'wallet'], ['verify', 'Verify', 'shield']];
+  const MOBTABS = optedIn ? [['dashboard', 'Home', 'dash'], ['chain', 'Referrals', 'users'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'wallet'], ['verify', 'Verify', 'shield']]
+    : [['dashboard', 'Home', 'dash'], ['settings', 'Settings', 'cog']];
   const tabbar = h('nav', { class: 'cp-tabbar' }, MOBTABS.map(([id, label, ic]) => {
     const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: (e) => { e.preventDefault(); go(id); } }, [icon(ic, 20), h('span', null, label)]);
     tabLinks[id] = a; return a;
@@ -1221,7 +1260,7 @@ async function agentPortal(user) {
       h('div', { style: 'font-size:1.25rem;font-weight:900;color:#fff;margin:6px 0 4px' }, 'Your trucking network is worth 1% of every load \u2014 forever'),
       h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'You clearly know trucking \u2014 that network is money. Refer carriers or brokers with your personal link: every load they run on LoadBoot pays you 1% of gross, for as long as they keep running. No cap, no cost to them, paid monthly. Many of our dispatcher candidates earn from referrals before their first shift.'),
       h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [
-        h('button', { class: 'cp-btn', onClick: () => go('referral') }, '\ud83d\ude80 Activate my referral link \u2192'),
+        h('button', { class: 'cp-btn', onClick: async (e9) => { if (optedIn) { go('referral'); return; } e9.currentTarget.disabled = true; e9.currentTarget.textContent = 'Activating…'; try { await agentReferralOptIn(); location.hash = '#referral'; location.reload(); } catch (_) { e9.currentTarget.disabled = false; e9.currentTarget.textContent = 'Try again'; } } }, '\ud83d\ude80 Activate my referral link \u2192'),
         h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('earnings') }, 'See how earnings work'),
       ]),
     ]) : null;
@@ -1357,11 +1396,34 @@ async function agentPortal(user) {
     mount(host, h('div', null, cards));
   }
 
+  // bl_agent_0402 — Referral Partner home (../agent/referral-home.js) and the first-visit track chooser.
+  async function renderReferralHome(host) {
+    try {
+      const mod = await import('../agent/referral-home.js');
+      await mod.mountReferralHome(host, { h, mount, icon, feed, go, isVerified, api: { agentChainStatus, agentPayoutCenter, agentSetIntent, agentReferralOptIn } });
+    } catch (e9) { try { console.warn('[referral-home] failed to load', e9); } catch (_) {} mount(host, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, h('h3', null, 'Referral home unavailable')), h('div', { class: 'cp-row-s' }, 'Could not open the referral home. Reload the page; if it persists, write to hello@loadboot.com.')])); }
+  }
+  function renderTrackChooser(host) {
+    const card9 = (ic9, t9, s9, b9, cls9, on9) => h('div', { class: 'cp-card', style: 'padding:22px' }, [
+      h('div', { style: 'font-size:2rem' }, ic9), h('div', { style: 'font-size:1.15rem;font-weight:900;color:#fff;margin:6px 0 4px' }, t9), h('div', { class: 'cp-row-s', style: 'line-height:1.6' }, s9),
+      h('button', { class: 'cp-btn' + cls9, style: 'margin-top:14px', onClick: on9 }, b9)]);
+    mount(host, h('div', null, [
+      h('div', { style: 'margin:4px 0 14px' }, [h('div', { style: 'font-size:1.35rem;font-weight:900;color:#fff' }, 'Welcome — pick your track'), h('div', { class: 'cp-row-s' }, 'One account, two ways to work with LoadBoot. Choose one now; you can add the other any time from your dashboard.')]),
+      h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px' }, [
+        card9('🧑‍✈️', 'Work as a Dispatcher', 'Book loads for US carriers under LoadBoot. Commission trial first, then a written package. Own load-board access required.', 'Start my application →', '', async (e9) => { e9.currentTarget.disabled = true; try { await agentSetIntent('dispatcher'); } catch (_) {} location.reload(); }),
+        card9('⚡', 'Earn 1% as a Referral Partner', 'Share your personal link. Every carrier, broker or shipper you bring in pays you 1% of every delivered load — for as long as they move freight.', 'Activate my referral link →', ' ghost', async (e9) => { e9.currentTarget.disabled = true; try { await agentReferralOptIn(); location.hash = '#dashboard'; } catch (_) {} location.reload(); }),
+      ]),
+    ]));
+  }
   async function render() {
     const k = feed.kpis || {}; const tt = feed.totals || {};
     if (tab === 'dashboard') {
-      await renderDispatcherHome(content);
+      if (refOnly) await renderReferralHome(content);
+      else if (noTrack) renderTrackChooser(content);
+      else await renderDispatcherHome(content);
     } else if (tab === 'referral') {
+      // dispatcher + referral partner: the live money home sits on top of the program tab
+      const refHome9 = h('div'); if (!refOnly) { refHome9.style.marginBottom = '14px'; renderReferralHome(refHome9); }
       const notices = (Array.isArray(feed.notices) ? feed.notices : []).slice(0, 8);
       // ---- verification status card — front and centre until fully approved ----
       const obDone = {
@@ -1395,7 +1457,7 @@ async function agentPortal(user) {
             h('div', { style: 'height:6px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden' },
               h('div', { style: 'height:100%;width:' + (obCount * 25) + '%;border-radius:99px;background:linear-gradient(90deg,#FC5305,#4ade80)' })),
           ]);
-      mount(content, h('div', null, [
+      mount(content, h('div', null, [refHome9,
         verifyCard,
         h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px' }, [
           tile9('Referred', String(k.referred || 0)), tile9('Brokers', String(k.brokers || 0)), tile9('Shippers', String(k.shippers || 0)), tile9('Carriers', String(k.carriers || 0)),
@@ -2012,8 +2074,8 @@ async function agentPortal(user) {
       h('div', { class: 'cpx-d-head', onClick: () => { close9(); go('settings'); } }, [
         h('div', { class: 'cpx-d-ava' }, (feed.name || 'A').trim().charAt(0).toUpperCase()),
         h('div', { style: 'min-width:0;flex:1' }, [
-          h('div', { class: 'cpx-d-name' }, feed.name || 'Dispatcher'),
-          h('div', { class: 'cpx-d-rating' }, isVerified ? '\u2713 Dispatcher' : 'Application pending'),
+          h('div', { class: 'cpx-d-name' }, feed.name || trackLabel9),
+          h('div', { class: 'cpx-d-rating' }, refOnly ? (isVerified ? '\u2713 Verified partner' : 'Verification pending') : noTrack ? 'Pick your track' : (isVerified ? '\u2713 Dispatcher' : 'Application pending')),
           h('div', { class: 'cpx-d-sub', style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, (user && user.email) || ''),
         ]),
         h('div', { class: 'cpx-d-chev' }, '\u203a'),
@@ -2037,10 +2099,10 @@ async function agentPortal(user) {
 
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Dispatcher' })),
+      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: trackLabel9 })),
       nav,
       h('div', { class: 'cp-side-foot' }, [
-        h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, feed.name || 'Dispatcher'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
+        h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, feed.name || trackLabel9), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
         h('button', { class: 'cp-side-out', onClick: async (ev) => { ev.currentTarget.disabled = true; await signOut(); location.reload(); } }, [icon('logout', 16), h('span', null, 'Sign out')]),
       ]),
     ]),
@@ -2186,6 +2248,9 @@ async function appView(user) {
   // once, silently, on first portal entry (server enforces one-referrer-per-org + no self-claim).
   (async () => {
     let code = null; try { code = localStorage.getItem('lb_ref'); } catch (_) {}
+    // bl_agent_0402 — profiles.signup_ref (captured at signup, maybe on another device) is claimed
+    // server-side first; the localStorage code is the fallback. Both are silent and idempotent.
+    try { await claimPendingReferral(code); } catch (_) {}
     if (!code) return;
     try { await claimReferral(code); } catch (_) {}
     try { localStorage.removeItem('lb_ref'); } catch (_) {}

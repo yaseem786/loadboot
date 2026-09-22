@@ -388,6 +388,10 @@ export const agentMsgList = () => rpc('agent_msg_list', {});
 export const ccAgentMsgs = (user) => rpc('cc_agent_msgs', { p_user: user });
 export const ccAgentMsgSend = (user, body) => rpc('cc_agent_msg_send', { p_user: user, p_body: body });
 export const agentClaimUpline = (code) => rpc('agent_claim_upline', { p_code: code });
+// bl_agent_0402 — referral track opt-in / intent, and the silent post-login claim of a signup ?ref code
+export const agentReferralOptIn = () => rpc('agent_referral_opt_in', {});
+export const agentSetIntent = (intent) => rpc('agent_set_intent', { p_intent: intent });
+export const claimPendingReferral = (code) => rpc('claim_pending_referral', { p_code: code || null });
 export const ccAgentsList = () => rpc('cc_agents_list', {});
 export const ccAgent360 = (user) => rpc('cc_agent_360', { p_user: user });
 export const ccAgentNotifySend = (user, title, body, email) => rpc('cc_agent_notify_send', { p_user: user, p_title: title, p_body: body, p_email: !!email });
