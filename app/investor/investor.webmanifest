@@ -1,0 +1,16 @@
+{
+  "id": "/app/investor/",
+  "name": "LoadBoot Investor Portal",
+  "short_name": "LB Investor",
+  "description": "Private investor portal — capital, spending, statements and payouts, live.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0A1526",
+  "theme_color": "#0A1526",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

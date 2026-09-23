@@ -205,3 +205,38 @@ export async function requireSession(loginUrl) {
   if (!s) { window.location.replace(loginUrl); return null; }
   return s;
 }
+
+/* ---- bl_inv_0403: phone (SMS) second factor. Requires an SMS provider to be
+   configured under Supabase Auth → Phone; until it is, enroll() returns an error
+   the UI shows verbatim. Same challenge/verify shape as TOTP. ---- */
+export async function mfaEnrollPhone(phone) {
+  const sb = await getClient();
+  const { data, error } = await sb.auth.mfa.enroll({ factorType: 'phone', phone: String(phone || '').trim(), friendlyName: 'Phone' });
+  if (error) throw error;
+  return data; // { id, type:'phone', phone }
+}
+export async function mfaChallenge(factorId) {
+  const sb = await getClient();
+  const { data, error } = await sb.auth.mfa.challenge({ factorId });
+  if (error) throw error;
+  return data; // { id } — for phone factors this sends the SMS
+}
+export async function mfaVerifyChallenge(factorId, challengeId, code) {
+  const sb = await getClient();
+  const { error } = await sb.auth.mfa.verify({ factorId, challengeId, code: String(code || '').trim() });
+  if (error) throw error;
+  return true;
+}
+// Any verified factor (totp or phone) that is needed to reach aal2 — returns { id, type } or null.
+export async function mfaRequiredAny() {
+  try {
+    const a = await getAAL();
+    if (a.next === 'aal2' && a.current !== 'aal2') {
+      const f = await mfaListFactors();
+      const all = (f.all || []).concat(f.totp || [], f.phone || []);
+      const v = all.find((x) => x.status === 'verified');
+      return v ? { id: v.id, type: v.factor_type || v.type || 'totp' } : null;
+    }
+  } catch (_) {}
+  return null;
+}

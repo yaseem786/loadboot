@@ -1562,3 +1562,5 @@ export const invUpdates       = (agreementId, limit) => rpc('inv_updates', { p_a
 export const invAudit         = (agreementId, limit) => rpc('inv_audit', { p_agreement: agreementId, p_limit: limit || 200 });
 export const ccInvPostUpdate  = (p) => rpc('cc_inv_post_update', { p });
 export const ccInvUpdates     = (limit) => rpc('cc_inv_updates', { p_limit: limit || 50 });
+// 0408 — attachments on capital requests (invoice / quote / screenshot)
+export const ccInvRequestAttach = (id, attachments) => rpc('cc_inv_request_attach', { p_request: id, p_attachments: attachments });
