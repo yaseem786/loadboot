@@ -374,6 +374,7 @@ export const tripStopsProgress = (trip) => rpc('cc_trip_stops_progress', { p_tri
 export const agentCarrierDirectory = () => rpc('cc_agent_carrier_directory');
 export const agentChainStatus = () => rpc('agent_chain_status', {});
 export const agentFeed = () => rpc('agent_feed', {});
+export const agentReferralActivity = (limit) => rpc('agent_referral_activity', { p_limit: limit || 40 });  // bl_agent_0403
 export const agentOnboardingStatus = () => rpc('agent_onboarding_status', {});
 export const agentSaveOnboarding = (p, submit) => rpc('agent_save_onboarding', { p, p_submit: !!submit });
 export const ccAgentsQueue = () => rpc('cc_agents_queue', {});
@@ -394,6 +395,7 @@ export const agentSetIntent = (intent) => rpc('agent_set_intent', { p_intent: in
 export const claimPendingReferral = (code) => rpc('claim_pending_referral', { p_code: code || null });
 export const ccAgentsList = () => rpc('cc_agents_list', {});
 export const ccAgent360 = (user) => rpc('cc_agent_360', { p_user: user });
+export const ccAgentReferralActivity = (user, limit) => rpc('cc_agent_referral_activity', { p_user: user, p_limit: limit || 60 });  // bl_agent_0406
 export const ccAgentNotifySend = (user, title, body, email) => rpc('cc_agent_notify_send', { p_user: user, p_title: title, p_body: body, p_email: !!email });
 export const ccAgentDocReview = (user, doc, action, reason) => rpc('cc_agent_doc_review', { p_user: user, p_doc: doc, p_action: action, p_reason: reason ?? null });
 // Per-item packet reminder from Broker 360 (in-app + branded email to every member).

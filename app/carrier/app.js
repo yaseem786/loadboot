@@ -1,3 +1,5 @@
+// bl_agent_0403 — remember a #tab/<deep> hash before any router normalises it (referral-home reads lb_deep_hash).
+try { if (/^#[a-z_-]+\/.+/i.test(location.hash || '')) sessionStorage.setItem('lb_deep_hash', location.hash); } catch (_) {}
 import { validSharedResponse } from '../shared/share-inbox.js';
 // lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // app.js — LoadBoot Carrier Portal. A full, responsive carrier-facing web app:
@@ -20,7 +22,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, claimPendingReferral, agentReferralOptIn, agentSetIntent, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline, dispatcherApply, dispatcherMyStatus, dispatcherReapply, dispatcherSubmitId,
+  isFlagEnabled, myReferral, claimReferral, claimPendingReferral, agentReferralOptIn, agentSetIntent, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentReferralActivity, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline, dispatcherApply, dispatcherMyStatus, dispatcherReapply, dispatcherSubmitId,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringRemitUpdate, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
@@ -570,7 +572,7 @@ function authScreen() {
     oo: 'Owner-operator — sign in with your carrier login. It already covers the driving side (trips, GPS check-in, POD); never create a separate driver account for yourself.',
   };
   let AGINTENT = (function () { try { return localStorage.getItem('lb_join') || ''; } catch (_) { return ''; } })();
-  const _agFresh = /[?&]join=(dispatcher|referral)\b/.test(location.search);
+  const _agFresh = /[?&]join=(dispatcher|referral|both)\b/.test(location.search);
   const descr = h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? (AGINTENT === 'referral' ? 'Referral Partner' : AGINTENT === 'dispatcher' ? 'Dispatcher' : 'Partner portal') : ROLE === 'driver' ? 'Driver' : ROLE === 'oo' ? 'Owner-operator' : 'Carrier');
   const _urlRole = /[?&#]role=(driver|oo|carrier)\b/.exec(location.href);
   // bl_agent_0402 — AGENT PORTAL TRACK: one login, one explicit choice. 'dispatcher' = apply for the
@@ -583,6 +585,7 @@ function authScreen() {
   const title = h('h1', null, 'Welcome back');
   const AG_COPY = {
     dispatcher: ['Apply as a LoadBoot Dispatcher', 'Create your account, then apply to dispatch for US carriers — commission trial first, then a written package.', 'Sign in to your dispatcher portal — your application, assigned carriers and loads.'],
+    both: ['Join as a Dispatcher + Referral Partner', 'Create your account — apply to dispatch for US carriers AND get your personal 1% referral link. Both on one login.', 'Sign in to your LoadBoot partner portal — dispatching and referrals on one account.'],
     referral: ['Join as a Referral Partner', 'Create your account and get your personal link — earn 1% of every delivered load from the carriers, brokers and shippers you bring in. Forever.', 'Sign in to your Referral Partner portal — your link, referrals and earnings.'],
     '': ['Create your account', 'Pick a track above first.', 'Sign in to your LoadBoot partner portal — dispatchers and referral partners.'],
   };
@@ -627,6 +630,7 @@ function authScreen() {
   const AGROLES = [
     ['dispatcher', 'Work as a Dispatcher', 'Book loads for US carriers under LoadBoot — commission trial, then a written package. Own load-board access required.', 'rgba(8,131,247,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 9h5M7 12h8"/></svg>'],
     ['referral', 'Earn 1% as a Referral Partner', 'Share your link. Every carrier, broker or shipper you bring in pays you 1% of every delivered load — for as long as they move freight.', 'rgba(252,83,5,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FC5305" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>'],
+    ['both', 'Do both — Dispatch & refer', 'Apply as a dispatcher AND get your personal 1% referral link — two ways to earn, one login.', 'rgba(34,197,94,.14)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M12 4v16"/><circle cx="12" cy="12" r="9"/></svg>'],
   ];
   const showStep = () => { if (!chooser) return; chooser.style.display = roleChosen ? 'none' : ''; formWrap.style.display = roleChosen ? '' : 'none'; descr.style.visibility = roleChosen ? '' : 'hidden'; };
   const paintRoles = () => { if (!chooser) return; const AG9 = !!window.__LB_AGENT; mount(chooser, [
@@ -634,12 +638,12 @@ function authScreen() {
     ...(AG9 ? AGROLES : ROLES).map(([k, l, s, bg, svg]) => h('button', { type: 'button', class: 'cp-rolecard' + (_roleHint === k ? ' last' : ''), onClick: () => setRole(k) }, [
       h('span', { class: 'ic', style: 'background:' + bg, html: svg }), h('span', { class: 'tx' }, [h('b', null, l), h('span', null, s)]), (!AG9 && _roleHint === k) ? h('em', null, 'Last time') : null, h('span', { class: 'chev', html: '›' }),
     ].filter(Boolean))),
-    AG9 ? h('p', { class: 'cp-auth-toggle', style: 'margin-top:6px' }, [document.createTextNode('Already have an account? '), h('a', { onClick: () => { roleChosen = true; setMode(false); showStep(); } }, 'Sign in')]) : null,
+    null,  // bl_agent_0405: no sign-in until a track is chosen — the account is locked to that track
   ].filter(Boolean)); };
   const setRole = (k) => {
     if (window.__LB_AGENT) {
       AGINTENT = k; roleChosen = true; try { localStorage.setItem('lb_join', k); } catch (_) {}
-      descr.textContent = k === 'referral' ? 'Referral Partner' : 'Dispatcher';
+      descr.textContent = k === 'referral' ? 'Referral Partner' : k === 'both' ? 'Dispatcher · Partner' : 'Dispatcher';
       setMode(true); showStep(); try { name.focus({ preventScroll: true }); } catch (_) {}
       return;
     }
@@ -755,7 +759,8 @@ function authScreen() {
   // Deep link: /app/carrier/#signup (and /app/agent/#signup) opens straight in
   // create-account mode — used by the in-app signup page so new users sign
   // up INSIDE the app instead of being bounced to the marketing site.
-  setMode(location.hash === '#signup');
+  // bl_agent_0402: ?join=dispatcher|referral also lands in create-account mode (this line used to undo line ~719).
+  setMode(location.hash === '#signup' || !!(window.__LB_AGENT && _agFresh && AGINTENT));
   if (location.hash === '#signup') { try { history.replaceState(null, '', location.pathname); } catch (_) {} }
   root.setAttribute('aria-busy', 'false');
 }
@@ -819,6 +824,7 @@ async function agentPortal(user) {
   // agent recruited by another agent: claim the upline from the stored ?ref code (levels 2–5)
   try { const up9 = localStorage.getItem('lb_ref'); if (up9) { await agentClaimUpline(up9); localStorage.removeItem('lb_ref'); } } catch (_) {}
   let feed = null; try { feed = await agentFeed(); } catch (_) {}
+  if (!feed || typeof feed !== 'object') feed = {};
   let r0 = null; try { r0 = await myReferral(); } catch (_) {}
   if (!feed || !feed.has_code) { notCarrier(); return; }
   const money9 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -852,6 +858,17 @@ async function agentPortal(user) {
   // bl_agent_0402 — TRACKS. optedIn = chose the referral program (row has opted_in_at); the
   // dispatcher track = has an application or said so at signup. Referral tabs exist only for
   // people who opted in; the dashboard is whichever home fits; nobody sees a track they never chose.
+  // bl_agent_0405 — LOCK: an account with no recorded track (pre-0402 signups) takes the track it
+  // picked at sign-in; if its data already spans both tracks, it is 'both'. Written once via
+  // agent_set_intent (which also opts the referral row in); CC shows the same value.
+  if (feed && !feed.intent) {
+    let pick9 = ''; try { pick9 = localStorage.getItem('lb_join') || ''; } catch (_) {}
+    if (pick9 && pick9 !== 'dispatcher' && pick9 !== 'referral' && pick9 !== 'both') pick9 = '';
+    if (feed.has_dispatcher && feed.opted_in) pick9 = 'both';
+    else if (pick9 === 'dispatcher' && feed.opted_in) pick9 = 'both';
+    else if (pick9 === 'referral' && feed.has_dispatcher) pick9 = 'both';
+    if (pick9) { try { await agentSetIntent(pick9); const f9 = await agentFeed(); if (f9 && typeof f9 === 'object') Object.assign(feed, f9); } catch (_) {} }
+  }
   const optedIn = !!feed.opted_in;
   const hasDisp = !!feed.has_dispatcher;
   const intent9 = feed.intent || '';
@@ -861,6 +878,7 @@ async function agentPortal(user) {
   const AGNAV_ALL = [['dashboard', 'Dashboard', 'dash'], ['referral', 'Referral (1%)', 'zap'], ['chain', 'My Referrals', 'users'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'wallet'], ['verify', 'Verification', 'shield'], ['settings', 'Settings', 'cog']];
   const AGNAV = optedIn ? AGNAV_ALL : AGNAV_ALL.filter((n) => n[0] === 'dashboard' || n[0] === 'settings');
   let tab = (location.hash || '').replace('#', '') || 'dashboard';
+  if (tab.indexOf('/') > 0) { const _dl9 = tab.split('/'); tab = _dl9[0]; if (_dl9[1]) window.__lbDeepEnt = { tab: _dl9[0], id: _dl9.slice(1).join('/') }; }  // bl_agent_0403: #referral/activity/<org>
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
   const content = h('div', { class: 'cp-content' });
@@ -1400,7 +1418,7 @@ async function agentPortal(user) {
   async function renderReferralHome(host) {
     try {
       const mod = await import('../agent/referral-home.js');
-      await mod.mountReferralHome(host, { h, mount, icon, feed, go, isVerified, api: { agentChainStatus, agentPayoutCenter, agentSetIntent, agentReferralOptIn } });
+      await mod.mountReferralHome(host, { h, mount, icon, feed, go, isVerified, api: { agentChainStatus, agentPayoutCenter, agentSetIntent, agentReferralOptIn, agentReferralActivity } });
     } catch (e9) { try { console.warn('[referral-home] failed to load', e9); } catch (_) {} mount(host, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, h('h3', null, 'Referral home unavailable')), h('div', { class: 'cp-row-s' }, 'Could not open the referral home. Reload the page; if it persists, write to hello@loadboot.com.')])); }
   }
   function renderTrackChooser(host) {
@@ -1412,6 +1430,7 @@ async function agentPortal(user) {
       h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px' }, [
         card9('🧑‍✈️', 'Work as a Dispatcher', 'Book loads for US carriers under LoadBoot. Commission trial first, then a written package. Own load-board access required.', 'Start my application →', '', async (e9) => { e9.currentTarget.disabled = true; try { await agentSetIntent('dispatcher'); } catch (_) {} location.reload(); }),
         card9('⚡', 'Earn 1% as a Referral Partner', 'Share your personal link. Every carrier, broker or shipper you bring in pays you 1% of every delivered load — for as long as they move freight.', 'Activate my referral link →', ' ghost', async (e9) => { e9.currentTarget.disabled = true; try { await agentReferralOptIn(); location.hash = '#dashboard'; } catch (_) {} location.reload(); }),
+        card9('🤝', 'Do both', 'Apply as a dispatcher and activate your 1% referral link on the same account — two ways to earn.', 'Start both →', ' ghost', async (e9) => { e9.currentTarget.disabled = true; try { await agentSetIntent('both'); } catch (_) {} location.reload(); }),
       ]),
     ]));
   }
@@ -1980,7 +1999,7 @@ async function agentPortal(user) {
       ]));
     }
   }
-  function go(id) { tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+  function go(id) { tab = id; if (location.hash !== '#' + id && location.hash.indexOf('#' + id + '/') !== 0) history.replaceState(null, '', '#' + id);  // keep #tab/<deep> (bl_agent_0403)
     Object.entries(links).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
     Object.entries(tabLinks).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
     const it = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it ? it[1] : 'Dashboard';
@@ -2486,7 +2505,7 @@ async function appView(user) {
   try { attachPullToRefresh(content, async () => { render(); refreshUnread(); }); } catch (_) {}
 
   function go(id) {
-    tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);  // replace, not push — keeps Back working / no hash pile-up
+    tab = id; if (location.hash !== '#' + id && location.hash.indexOf('#' + id + '/') !== 0) history.replaceState(null, '', '#' + id);  // keep #tab/<deep> (bl_agent_0403); replace, not push — keeps Back working / no hash pile-up
     Object.keys(navLinks).forEach(k => navLinks[k].forEach(a => {
       const on9 = (k === tab); a.classList.toggle('active', on9);
       if (on9) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');   // bl_ui_0393

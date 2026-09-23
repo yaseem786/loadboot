@@ -1235,7 +1235,7 @@ function referralCard() {
       row('Paid out', h('span', null, money2(r.paid))),
       h('div', { style: 'margin-top:10px' }, copyBtn),
       h('div', { class: 'cp-inlineform', style: 'margin-top:8px' }, [claimIn, claimBtn]),
-      h('div', { class: 'cp-sub', style: 'margin-top:8px' }, 'You earn a share of LoadBoot\'s own dispatch fee on every booked trip of carriers or brokers you refer — they never pay extra. Commissions unlock 15 days after accrual; every payout is reviewed by a person.'),
+      h('div', { class: 'cp-sub', style: 'margin-top:8px' }, 'You earn 1% of every delivered load moved by the carriers, brokers and shippers you refer — paid from LoadBoot\'s own fee, they never pay extra. Credits clear 15 days after delivery; every payout is reviewed by a person.'),
     ]);
   })();
   return card;

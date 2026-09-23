@@ -438,6 +438,7 @@ export function renderRoster(host, ctx) {
     if (Number(x.carriers)) sig.push(el('span', { class: 'dv-sig g' }, x.carriers + ' carrier' + (x.carriers > 1 ? 's' : '') + ' · ' + num(x.active_trucks) + ' truck' + (Number(x.active_trucks) === 1 ? '' : 's')));
     if (x.status === 'trial') sig.push(el('span', { class: 'dv-sig a' }, num(x.delivered) + ' delivered'));
     if (Number(x.owed) > 0) sig.push(el('span', { class: 'dv-sig a' }, money(x.owed) + ' to pay'));
+    if (x.referral_opted) sig.push(el('span', { class: 'dv-sig', title: 'Also a Referral Partner (1%) — same account' }, '⚡ Referral partner' + (Number(x.referred_n) > 0 ? ' · ' + x.referred_n + ' referred' : '')));  // bl_agent_0405
     try { (ctx.signals ? ctx.signals(x) : []).forEach((n) => { if (n) sig.push(n); }); } catch (_) {}
     const sd = days(x.stage_since);
     return el('tr', { class: (i === st.cur ? 'cur' : '') + (checked ? ' sel' : ''), onClick: () => { st.cur = i; ctx.open360(x); } }, [

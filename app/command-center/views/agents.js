@@ -6,6 +6,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm } from '../../shared/ui/components.js';
+import { ccAgentReferralActivity } from '../../shared/api.js';  // bl_agent_0406
 import { ccAgentsList, ccAgent360, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend, ccAgentNotifySend, ccAgentDocReview, referralPayoutDecide, referralPayoutQueue, agentSuspend, ccAgentPayoutVerify, ccAgentPayoutRequestDetails, ccAgentPayoutApproveMethod } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError, toast } from '../../shared/errors.js';
@@ -14,11 +15,11 @@ export function renderAgents(host) {
   // bl_agent_0402 — TRACK filter. Every agent-portal signup used to get a referral row, so this
   // list showed 131 "partners" of whom ~100 were dispatcher applicants who never chose the
   // program. Default = people who opted in (opted_in_at set). The rest stay one filter away.
-  const state = { q: '', st: 'all', track: 'opted', rows: [] };
-  const trackOf = (x) => x.kind !== 'affiliate' ? 'codes' : (x.opted_in_at ? 'opted' : 'auto');
+  const state = { q: '', st: 'all', track: 'opted', rows: [], sort: 'joined', asc: false, need: false };
+  // bl_agent_0405: sole partners vs dual-track (dispatcher + partner → listed under Dispatchers) vs dispatcher-only vs idle
+  const trackOf = (x) => x.kind !== 'affiliate' ? 'codes' : (x.dispatcher_status || x.intent === 'both' || x.intent === 'dispatcher') ? (x.opted_in_at ? 'both' : 'disp') : (x.opted_in_at ? 'opted' : 'auto');
   const body = el('div');
   mount(host, el('div', { class: 'cc-view' }, [
-    sectionHead('Referral Partners', 'The referral sales force — applications, chains, downlines, earnings, payouts and direct comms. (Salaried dispatchers are managed under Dispatchers.)'),
     body,
   ]));
   load();
@@ -30,49 +31,194 @@ export function renderAgents(host) {
     paint();
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // bl_agent_0406 — PREMIUM LIST. One glance answers: how big is the partner force, who is
+  // earning, whose link is live, who owes a decision, and where the money sits (clearing →
+  // payable → paid). Segmented tracks, KPI strip, dense table, mobile cards. Nothing hidden:
+  // every field cc_agents_list returns is on the row or one click away in the 360.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  const TRACKS = [
+    ['opted', 'Partners', 'Referral partners only — no dispatcher application'],
+    ['both', 'Dispatcher + Partner', 'Also listed under Dispatchers (merged there)'],
+    ['disp', 'Dispatcher only', 'Never chose the referral program — see Dispatchers'],
+    ['auto', 'Idle signups', 'Signed up before 22 Sep 2026 and never picked a track — link OFF'],
+    ['codes', 'Own codes', 'Carrier / broker referral codes (not partners)'],
+    ['all', 'Everyone', ''],
+  ];
+  const TRACK_PILL = { opted: ['⚡ Partner', 'green'], both: ['⚡🧑‍✈️ Both', 'blue'], disp: ['🧑‍✈️ Dispatcher', 'blue'], auto: ['link off', ''], codes: ['own code', 'violet'] };
+  const ST = { approved: ['Approved', 'green'], under_review: ['Under review', 'amber'], info_needed: ['Info needed', 'amber'], rejected: ['Rejected', 'red'], draft: ['Draft', 'violet'], 'no-profile': ['No profile', ''], suspended: ['Suspended', 'red'] };
+  const stPill = (st) => { const m = ST[st] || [st || '—', '']; return el('span', { class: 'cc-pill' + (m[1] ? ' cc-pill-' + m[1] : '') }, m[0]); };
+  const trackPill = (t) => { const m = TRACK_PILL[t]; return m ? el('span', { class: 'cc-pill' + (m[1] ? ' cc-pill-' + m[1] : ''), title: (TRACKS.find((z) => z[0] === t) || [])[2] || '' }, m[0]) : ''; };
+  const initials = (s) => (String(s || '?').trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2) || '?').toUpperCase();
+  const hue = (id) => { let h = 0; for (const c of String(id || '')) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+  const n = (v) => Number(v || 0);
+  const csvEsc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  let cssDone = false;
+  function css() {
+    if (cssDone) return; cssDone = true;
+    document.head.appendChild(el('style', null, `
+.rp{--ink:#0f172a;--mut:#64748b;--line:#e5e9f0;--soft:#f8fafc;--ok:#12803c;--warn:#b45309;--bad:#b91c1c;--b:var(--lb-blue,#0883F7);--o:var(--lb-orange,#FC5305);color:var(--ink)}
+.rp-hdr{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.rp-hdr h2{margin:0;font-size:1.35rem;font-weight:800;letter-spacing:-.02em}.rp-hdr p{margin:3px 0 0;color:var(--mut);font-size:.86rem;max-width:720px}
+.rp-act{display:flex;gap:8px;flex-wrap:wrap}
+.rp-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.rp-kpi{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 15px;min-width:0;cursor:pointer;transition:border-color .15s}
+.rp-kpi:hover{border-color:#bfd6f5}.rp-kpi.on{border-color:var(--b);box-shadow:0 0 0 2px rgba(8,131,247,.14)}
+.rp-kpi small{display:block;color:var(--mut);font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-kpi b{display:block;font-size:24px;font-weight:800;letter-spacing:-.025em;margin-top:5px;font-variant-numeric:tabular-nums;line-height:1.1}
+.rp-kpi i{display:block;font-style:normal;font-size:11.5px;font-weight:600;color:var(--mut);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-kpi.money b{color:var(--ok)}.rp-kpi.hot{border-color:#fdba74;background:#fff8f3}.rp-kpi.hot b{color:var(--o)}
+.rp-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.rp-tabs{display:flex;gap:2px;background:#e9edf3;padding:3px;border-radius:10px;flex-wrap:wrap}
+.rp-tabs button{border:0;background:transparent;padding:7px 13px;border-radius:8px;font:inherit;font-weight:600;color:var(--mut);cursor:pointer;white-space:nowrap}
+.rp-tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(16,34,59,.12)}.rp-tabs button em{font-style:normal;font-weight:800;margin-left:5px;font-variant-numeric:tabular-nums}
+.rp-hint{font-size:.8rem;color:var(--mut);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:12px}
+.rp-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.rp-t{width:100%;border-collapse:collapse;font-size:.86rem}
+.rp-t th{position:sticky;top:0;background:var(--soft);text-align:left;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+.rp-t th.num,.rp-t td.num{text-align:right;font-variant-numeric:tabular-nums}
+.rp-t th.s::after{content:' ↓';color:var(--b)}.rp-t th.s.asc::after{content:' ↑'}
+.rp-t td{padding:10px 12px;border-bottom:1px solid #f1f4f8;vertical-align:middle}.rp-t td .cc-pill{white-space:nowrap}.rp-t td.dt{white-space:nowrap}
+.rp-t tr:last-child td{border-bottom:0}.rp-t tbody tr{cursor:pointer;transition:background .12s}.rp-t tbody tr:hover{background:#f6f9fe}
+.rp-who{display:flex;gap:10px;align-items:center;min-width:0}
+.rp-av{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:11px;flex:none}
+.rp-who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}.rp-who small{display:block;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.rp-code{font-family:ui-monospace,Menlo,monospace;font-size:.78rem;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:1px 6px;cursor:copy}
+.rp-m{display:flex;flex-direction:column;align-items:flex-end;gap:2px;line-height:1.2}.rp-m b{color:var(--ok);font-variant-numeric:tabular-nums}.rp-m small{color:var(--mut);font-size:.74rem;white-space:nowrap}
+.rp-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}.rp-dot.on{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18)}.rp-dot.off{background:#cbd5e1}
+.rp-need{display:inline-flex;align-items:center;gap:4px;background:#fff7ed;color:var(--warn);border:1px solid #fed7aa;border-radius:999px;padding:2px 9px;font-size:.74rem;font-weight:700;white-space:nowrap}
+.rp-empty{padding:34px 20px;text-align:center;color:var(--mut)}.rp-empty b{display:block;color:var(--ink);font-size:1.05rem;margin-bottom:4px}
+.rp-back{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--line);border-radius:9px;padding:6px 12px;font:inherit;font-weight:700;color:var(--ink);cursor:pointer;margin-bottom:12px}
+.rp-track{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:8px 0 6px}.rp-tk{height:5px;border-radius:99px;background:#e5e9f0}.rp-tk.on{background:linear-gradient(90deg,var(--b),#22c55e)}
+.rp-org{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px;background:#fff}
+.rp-org-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap;cursor:pointer}.rp-org-h b{font-size:.95rem}
+.rp-why{font-size:.8rem;margin-top:6px;color:var(--warn)}.rp-why.ok{color:var(--ok)}
+.rp-ev{display:grid;grid-template-columns:20px 1fr auto;gap:8px;padding:6px 0;border-bottom:1px solid #f1f4f8;font-size:.82rem;align-items:start}.rp-ev:last-child{border-bottom:0}
+.rp-ev small{display:block;color:var(--mut);font-size:.72rem}.rp-ev b{color:var(--ok);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rp-more{background:none;border:0;color:var(--b);font-weight:700;cursor:pointer;font:inherit;padding:4px 0}
+@media (max-width:1100px){.rp-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){.rp-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rp-t thead{display:none}.rp-t,.rp-t tbody,.rp-t tr,.rp-t td{display:block;width:100%}.rp-t tr{border-bottom:1px solid var(--line);padding:8px 4px}.rp-t td{padding:4px 8px;border:0}.rp-t td.num{text-align:left}.rp-m{align-items:flex-start}.rp-who b,.rp-who small{max-width:none}}
+`));
+  }
+
   function paint() {
+    css();
     const q = state.q.toLowerCase();
-    let list = state.rows.filter((x) => (state.track === 'all' || trackOf(x) === state.track) && (state.st === 'all' || x.status === state.st)
-      && (!q || ((x.name || '') + ' ' + (x.email || '') + ' ' + (x.code || '')).toLowerCase().includes(q)));
-    const stPill = (st) => {
-      const m = { approved: ['approved', 'green'], under_review: ['UNDER REVIEW', 'amber'], info_needed: ['info needed', 'amber'], rejected: ['rejected', 'red'], draft: ['draft', 'violet'], 'no-profile': ['no profile', 'violet'] }[st] || [st, 'violet'];
-      return el('span', { class: 'cc-pill cc-pill-' + m[1] }, m[0]);
-    };
-    const qIn = el('input', { class: 'lb-input', placeholder: '🔍 name / email / code', value: state.q, style: 'max-width:240px',
-      onInput: (e) => { state.q = e.target.value; paint(); } });
+    const inTrack = (x) => state.track === 'all' || trackOf(x) === state.track;
+    const counts = {}; state.rows.forEach((x) => { const t = trackOf(x); counts[t] = (counts[t] || 0) + 1; }); counts.all = state.rows.length;
+    let list = state.rows.filter((x) => inTrack(x) && (state.st === 'all' || x.status === state.st)
+      && (!state.need || needs(x)) && (!q || ((x.name || '') + ' ' + (x.email || '') + ' ' + (x.code || '')).toLowerCase().includes(q)));
+    const SORT = { name: (x) => (x.name || x.email || '').toLowerCase(), referred: (x) => n(x.referred), earned: (x) => n(x.earned), payable: (x) => n(x.payable), last: (x) => x.last_referral_at || '', joined: (x) => x.joined_at || '' };
+    const sf = SORT[state.sort] || SORT.joined;
+    list = list.slice().sort((a, b) => { const va = sf(a), vb = sf(b); const c = va < vb ? -1 : va > vb ? 1 : 0; return state.asc ? c : -c; });
+
+    // KPI strip — over the partner force (opted + both), money over everyone with a row
+    const force = state.rows.filter((x) => ['opted', 'both'].includes(trackOf(x)));
+    const sum = (rows, k) => rows.reduce((a, x) => a + n(x[k]), 0);
+    const needRows = state.rows.filter(needs);
+    const kpi = (label, val, sub, cls, onClick, on) => el('div', { class: 'rp-kpi' + (cls ? ' ' + cls : '') + (on ? ' on' : ''), onClick }, [el('small', null, label), el('b', null, val), el('i', null, sub)]);
+    const setTrack = (t) => { state.track = t; state.need = false; paint(); };
+    const kpis = el('div', { class: 'rp-kpis' }, [
+      kpi('Partner force', String(force.length), (counts.opted || 0) + ' partners · ' + (counts.both || 0) + ' also dispatch', '', () => setTrack('opted'), state.track === 'opted' && !state.need),
+      kpi('Links live', String(force.filter((x) => x.opted_in_at).length), (counts.auto || 0) + ' idle signups, link off', '', () => setTrack('auto'), state.track === 'auto'),
+      kpi('Referrals', String(sum(force, 'referred')), force.filter((x) => n(x.referred) > 0).length + ' partners have ≥1', '', () => { state.sort = 'referred'; state.asc = false; setTrack('opted'); }),
+      kpi('Clearing', money(sum(state.rows, 'accrued')), '15-day window', 'money', () => { state.sort = 'earned'; state.asc = false; setTrack('all'); }),
+      kpi('Payable now', money(sum(state.rows, 'payable')), sum(state.rows, 'paid') ? money(sum(state.rows, 'paid')) + ' paid to date' : 'nothing paid yet', 'money', () => { state.sort = 'payable'; state.asc = false; setTrack('all'); }),
+      kpi('Needs you', String(needRows.length), needRows.length ? 'reviews + payout requests' : 'queue is clear', needRows.length ? 'hot' : '', () => { state.need = !state.need; state.track = 'all'; paint(); }, state.need),
+    ]);
+
+    const qIn = el('input', { class: 'lb-input', placeholder: '🔍 name / email / code', value: state.q, style: 'max-width:240px', onInput: (e) => { state.q = e.target.value; paint(); } });
     const stSel = el('select', { class: 'lb-input', style: 'max-width:170px', onChange: (e) => { state.st = e.target.value; paint(); } },
-      [['all', 'All statuses'], ['under_review', 'Under review'], ['approved', 'Approved'], ['info_needed', 'Info needed'], ['rejected', 'Rejected'], ['draft', 'Draft']].map(([v, l]) => el('option', { value: v, selected: state.st === v ? '' : undefined }, l)));
-    const nOpt = state.rows.filter((x) => trackOf(x) === 'opted').length, nAuto = state.rows.filter((x) => trackOf(x) === 'auto').length, nCodes = state.rows.filter((x) => trackOf(x) === 'codes').length;
-    const trSel = el('select', { class: 'lb-input', style: 'max-width:290px', onChange: (e) => { state.track = e.target.value; paint(); } },
-      [['opted', 'Referral partners — opted in (' + nOpt + ')'], ['auto', 'Never opted in — dispatcher applicants & idle signups (' + nAuto + ')'], ['codes', 'Carrier / broker own codes (' + nCodes + ')'], ['all', 'Everyone (' + state.rows.length + ')']].map(([v, l]) => el('option', { value: v, selected: state.track === v }, l)));
-    mount(body, el('div', null, [
-      el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center' }, [qIn, trSel, stSel,
-        el('span', { class: 'cc-sub' }, list.length + ' shown')]),
-      state.track === 'auto' ? el('div', { class: 'cc-sub', style: 'margin:-4px 0 10px' }, 'These rows were auto-created at signup before 22 Sep 2026. Their referral links are OFF until the person activates the program from their portal (or you approve them here). Nothing to action unless they ask.') : '',
-      card([el('div', { class: 'cc-doclist' }, list.length ? list.map(row) : [el('div', { class: 'cc-sub' }, 'No agents match.')])]),
+      [['all', 'All statuses'], ['under_review', 'Under review'], ['approved', 'Approved'], ['info_needed', 'Info needed'], ['rejected', 'Rejected'], ['draft', 'Draft']].map(([v, l]) => el('option', { value: v, selected: state.st === v }, l)));
+    const tabs = el('div', { class: 'rp-tabs' }, TRACKS.map(([k, l, tip]) => el('button', { type: 'button', class: state.track === k && !state.need ? 'on' : '', title: tip, onClick: () => setTrack(k) }, [document.createTextNode(l), el('em', null, String(counts[k] || 0))])));
+    const exportBtn = el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: () => {
+      const H = ['name', 'email', 'code', 'track', 'status', 'country', 'joined_at', 'opted_in_at', 'dispatcher_status', 'referred', 'downline', 'last_referral_at', 'earned', 'accrued', 'payable', 'paid', 'open_payout'];
+      const csv = [H.join(',')].concat(list.map((x) => H.map((k) => csvEsc(k === 'track' ? trackOf(x) : x[k])).join(','))).join('\n');
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'referral-partners-' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+    } }, '⬇ CSV (' + list.length + ')');
+    const refreshBtn = el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: load }, '↻ Refresh');
+
+    const th = (label, key, num) => el('th', { class: (num ? 'num ' : '') + (state.sort === key ? 's' + (state.asc ? ' asc' : '') : ''), onClick: key ? () => { if (state.sort === key) state.asc = !state.asc; else { state.sort = key; state.asc = key === 'name'; } paint(); } : null }, label);
+    const HINT = {
+      auto: 'Signed up before 22 Sep 2026 and never picked a track. Their links are OFF; nothing accrues until they choose the program in their portal (or a dispatcher activates "my referral link").',
+      disp: 'Dispatcher applicants who never chose the referral program. Manage them under Dispatchers — they are listed here only so nobody is lost.',
+      both: 'Dispatcher applicants who also run a referral link. Their dispatcher work lives under Dispatchers (badge ⚡ there); referral money is here.',
+      codes: 'Codes owned by carrier / broker accounts (their own "refer a friend"). Not partners; no application to review.',
+    }[state.track];
+
+    mount(body, el('div', { class: 'rp' }, [
+      el('div', { class: 'rp-hdr' }, [
+        el('div', null, [el('h2', null, 'Referral partners'), el('p', null, 'Everyone who can earn 1% of a referred load — who is live, who is earning, who needs a decision, and where the money sits. Dispatchers are managed under Dispatchers; anyone doing both shows in both places.')]),
+        el('div', { class: 'rp-act' }, [refreshBtn, exportBtn]),
+      ]),
+      kpis,
+      el('div', { class: 'rp-bar' }, [tabs, qIn, stSel, el('span', { class: 'cc-sub' }, list.length + ' shown')]),
+      HINT && !state.need ? el('div', { class: 'rp-hint' }, HINT) : '',
+      state.need ? el('div', { class: 'rp-hint' }, 'Showing only rows that need a staff decision: applications under review / info needed, and open payout requests.') : '',
+      el('div', { class: 'rp-card' }, [list.length ? el('table', { class: 'rp-t' }, [
+        el('thead', null, el('tr', null, [th('Partner', 'name'), th('Track', null), th('Status', null), th('Referrals', 'referred', true), th('Last referral', 'last'), th('Earned · clearing · payable', 'earned', true), th('Joined', 'joined')])),
+        el('tbody', null, list.map(row)),
+      ]) : el('div', { class: 'rp-empty' }, [el('b', null, state.need ? 'Nothing needs you right now' : 'No one here'), document.createTextNode(state.need ? 'Every application is decided and no payout request is waiting.' : 'Try another track tab, clear the search, or set status to "All statuses".')])]),
     ]));
   }
 
+  function needs(x) { return ['under_review', 'info_needed'].includes(String(x.status || '')) || !!x.open_payout; }
+
   function row(x) {
-    return el('div', { class: 'cc-row', style: 'display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:10px 0;border-bottom:1px solid #eef2f7;cursor:pointer', onClick: () => open360(x) }, [
-      el('div', { style: 'flex:1;min-width:220px' }, [
-        el('div', { style: 'font-weight:700' }, (x.name || '(no name)') + ' · ' + (x.email || '')),
-        el('div', { class: 'cc-sub' }, 'code ' + (x.code || '—') + ' · ' + (x.country || '—') + ' · joined ' + fmtDate(x.joined_at) + ' · ' + (x.referred || 0) + ' referred · ' + (x.downline || 0) + ' downline agents'),
+    const t = trackOf(x);
+    const code = el('span', { class: 'rp-code', title: 'Click to copy the referral link', onClick: (e) => { e.stopPropagation(); const u = 'https://loadboot.com/?ref=' + (x.code || ''); if (navigator.clipboard) navigator.clipboard.writeText(u).then(() => toast('Link copied — ' + u, 'success'), () => window.prompt('Referral link', u)); else window.prompt('Referral link', u); } }, x.code || '—');
+    const linkOn = !!x.opted_in_at && String(x.status || '') !== 'suspended';
+    return el('tr', { onClick: () => open360(x) }, [
+      el('td', null, el('div', { class: 'rp-who' }, [
+        el('div', { class: 'rp-av', style: 'background:hsl(' + hue(x.user_id) + ' 55% 42%)' }, initials(x.name || x.email)),
+        el('div', { style: 'min-width:0' }, [el('b', null, x.name || '(no name)'), el('small', null, [document.createTextNode((x.email || '') + ' · '), code, document.createTextNode(x.country ? ' · ' + x.country : '')])]),
+      ])),
+      el('td', null, [trackPill(t), x.dispatcher_status && t !== 'opted' ? el('small', { class: 'cc-sub', style: 'display:block;margin-top:3px' }, 'dispatcher: ' + x.dispatcher_status) : '',
+        el('small', { style: 'display:block;margin-top:3px;font-size:.74rem;color:#64748b' }, [el('span', { class: 'rp-dot ' + (linkOn ? 'on' : 'off') }), document.createTextNode(linkOn ? 'link live since ' + fmtDate(x.opted_in_at) : 'link off')])]),
+      el('td', null, [stPill(x.status), needs(x) ? el('div', { style: 'margin-top:4px' }, el('span', { class: 'rp-need' }, x.open_payout ? '💵 payout request' : '✋ decision needed')) : '']),
+      el('td', { class: 'num' }, [el('b', null, String(n(x.referred))), n(x.downline) ? el('small', { class: 'cc-sub', style: 'display:block' }, n(x.downline) + ' downline') : '']),
+      el('td', null, x.last_referral_at ? el('span', { title: fmtDateTime(x.last_referral_at) }, fmtDate(x.last_referral_at)) : el('span', { class: 'cc-sub' }, 'none yet')),
+      el('td', { class: 'num' }, el('div', { class: 'rp-m' }, [el('b', null, money(n(x.earned))),
+        el('small', null, (n(x.accrued) ? money(n(x.accrued)) + ' clearing' : '—') + ' · ' + (n(x.payable) ? money(n(x.payable)) + ' payable' : '—') + (n(x.paid) ? ' · ' + money(n(x.paid)) + ' paid' : ''))])),
+      el('td', { class: 'cc-sub dt', title: x.joined_at ? fmtDateTime(x.joined_at) : '' }, x.joined_at ? fmtDate(x.joined_at) : '—'),
+    ]);
+  }
+
+  // bl_agent_0406 — one referral, its stage bar, the plain "why $0" line and its timeline
+  const EV_ICON = { joined: '👋', packet: '📋', verified: '✅', packet_issue: '⚠️', doc: '📄', doc_approved: '✔️', doc_rejected: '↩️', truck: '🚛', posted: '📦', booked: '📌', transit: '🛣️', delivered: '🏁', cancelled: '✖️', credited: '💰', payable: '🏦', paid: '💸' };
+  function refCard(c, actv) {
+    const a = actv.find((z) => z.org === c.org && (!z.side || !c.side || z.side === c.side)) || { events: [] };
+    const ev = a.events || [];
+    const ver = ['active', 'verified', 'approved'].includes(String(c.status || ''));
+    const hasLoad = n(c.loads_posted) > 0 || n(c.trips_delivered) > 0 || ev.some((e) => ['booked', 'posted', 'transit'].includes(e.kind));
+    const del = n(c.trips_delivered) > 0 || ev.some((e) => e.kind === 'delivered');
+    const earn = c.your_earnings != null ? n(c.your_earnings) : ev.filter((e) => e.kind === 'credited').reduce((a, e) => a + n(e.amount), 0);  // cc chain has no per-org money → sum the 1% credits
+    const steps = [true, ver, hasLoad, del, earn > 0];
+    const why = !ver ? 'Waiting on their verification — the partner earns from their first delivered load.'
+      : !hasLoad ? ('Verified, but no load ' + (c.side === 'carrier' ? 'booked' : 'posted') + ' yet — that is why the partner has $0 from them.')
+      : !del ? 'Loads in progress, none delivered yet — 1% credits on delivery.'
+      : earn <= 0 ? 'Delivered — the 1% credit is pending (partner verification or the accrual run).'
+      : 'Earning — 1% of every delivered load.';
+    let open = false; const listEl = el('div'); const more = el('button', { class: 'rp-more', type: 'button', onClick: (e) => { e.stopPropagation(); open = !open; paintEv(); } });
+    const paintEv = () => { const rows = open ? ev : ev.slice(0, 3); mount(listEl, rows.length ? rows.map((e) => el('div', { class: 'rp-ev' }, [el('span', null, EV_ICON[e.kind] || '•'), el('div', null, [document.createTextNode(e.title || e.kind), el('small', null, fmtDateTime(e.at))]), e.amount != null ? el('b', null, money(e.amount)) : el('span')])) : [el('div', { class: 'cc-sub' }, 'Nothing beyond signing up yet.')]); more.textContent = ev.length > 3 ? (open ? 'Show less' : 'All ' + ev.length + ' events →') : ''; };
+    paintEv();
+    return el('div', { class: 'rp-org' }, [
+      el('div', { class: 'rp-org-h', onClick: () => { open = !open; paintEv(); } }, [
+        el('span', { style: 'font-size:1.1rem' }, c.side === 'carrier' ? '🚛' : c.side === 'shipper' ? '🏭' : '🏢'), el('b', null, c.org || 'New account'),
+        el('span', { class: 'cc-pill' }, c.side || 'partner'), el('span', { class: 'cc-pill' + (ver ? ' cc-pill-green' : ' cc-pill-amber') }, ver ? 'verified' : (c.status || 'onboarding')),
+        el('span', { class: 'cc-sub' }, 'joined ' + fmtDate(c.joined_at) + ' · ' + n(c.trips_delivered) + ' delivered' + (c.side !== 'carrier' ? ' · ' + n(c.loads_posted) + ' posted' : '')),
+        el('b', { style: 'margin-left:auto;color:' + (earn > 0 ? '#12803c' : '#94a3b8') }, money(earn)),
       ]),
-      x.dispatcher_status ? el('span', { class: 'cc-pill cc-pill-blue', title: 'Dispatcher application status' }, '🧑‍✈️ ' + x.dispatcher_status) : '',
-      x.kind === 'affiliate' ? (x.opted_in_at ? el('span', { class: 'cc-pill cc-pill-green', title: 'Chose the referral program' }, '⚡ opted in ' + fmtDate(x.opted_in_at)) : el('span', { class: 'cc-pill', title: 'Auto-created at signup; link inactive' }, 'link off')) : el('span', { class: 'cc-pill' }, x.kind + ' code'),
-      x.last_referral_at ? el('span', { class: 'cc-sub' }, 'last referral ' + fmtDate(x.last_referral_at)) : '',
-      el('b', { style: 'color:#12a150' }, money(x.earned || 0)),
-      Number(x.accrued) ? el('span', { class: 'cc-pill cc-pill-amber' }, money(x.accrued) + ' clearing') : '',
-      Number(x.payable) ? el('span', { class: 'cc-pill cc-pill-green' }, money(x.payable) + ' payable') : '',
-      x.open_payout ? el('span', { class: 'cc-pill cc-pill-amber' }, [icon('dollar',15),' payout pending']) : '',
-      (() => { const m = { approved: ['approved', 'green'], under_review: ['UNDER REVIEW', 'amber'], info_needed: ['info needed', 'amber'], rejected: ['rejected', 'red'] }[x.status] || [x.status, 'violet']; return el('span', { class: 'cc-pill cc-pill-' + m[1] }, m[0]); })(),
+      el('div', { class: 'rp-track' }, steps.map((on) => el('div', { class: 'rp-tk' + (on ? ' on' : '') }))),
+      el('div', { class: 'rp-why' + (earn > 0 ? ' ok' : '') }, why),
+      el('div', { style: 'margin-top:8px' }, [listEl, more]),
     ]);
   }
 
   async function open360(x) {
     mount(body, el('div', { class: 'lb-state lb-loading' }, 'Loading ' + (x.name || 'agent') + '…'));
     let d; try { d = await ccAgent360(x.user_id); } catch (e) { mount(body, el('div', { class: 'lb-state lb-error' }, humanizeError(e))); return; }
+    let actv = []; try { const a9 = await ccAgentReferralActivity(x.user_id, 60); actv = Array.isArray(a9) ? a9 : []; } catch (_) {}  // bl_agent_0406
     const p = d.profile || {}; const pd = p.payout_details || {};
     const kv = (k, v) => el('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed #eef2f7;font-size:.86rem' }, [el('span', { style: 'color:#64748b' }, k), el('b', null, String(v ?? '—'))]);
     const docRow = (label, path, docKey) => {
@@ -110,8 +256,16 @@ export function renderAgents(host) {
     const ntSend = el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { if (!ntT.value.trim()) return;
       try { await ccAgentNotifySend(x.user_id, ntT.value.trim(), ntB.value.trim(), ntE.checked); toast('Sent ✓'); ntT.value = ''; ntB.value = ''; } catch (e) { toast(humanizeError(e)); } } }, 'Send');
     const e9 = d.earnings || {};
-    mount(body, el('div', null, [
-      el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'margin-bottom:12px', onClick: load }, '← All agents'),
+    mount(body, el('div', { class: 'rp' }, [
+      el('button', { class: 'rp-back', onClick: load }, '← All referral partners'),
+      el('div', { class: 'rp-hdr', style: 'margin-bottom:14px' }, [
+        el('div', { class: 'rp-who' }, [
+          el('div', { class: 'rp-av', style: 'width:44px;height:44px;font-size:15px;background:hsl(' + hue(x.user_id) + ' 55% 42%)' }, initials(x.name || x.email)),
+          el('div', null, [el('h2', { style: 'margin:0;font-size:1.25rem;font-weight:800' }, x.name || '(no name)'), el('p', { style: 'margin:2px 0 0;color:#64748b;font-size:.84rem' }, [document.createTextNode((x.email || '') + ' · code '), el('span', { class: 'rp-code' }, x.code || '—'), document.createTextNode(' · joined ' + fmtDate(x.joined_at) + (x.country ? ' · ' + x.country : ''))])]),
+        ]),
+        el('div', { class: 'rp-act', style: 'align-items:center' }, [trackPill(trackOf(x)), stPill(x.status), x.dispatcher_status ? el('span', { class: 'cc-pill cc-pill-blue' }, '🧑‍✈️ ' + x.dispatcher_status) : '',
+          el('span', { class: 'cc-pill' + (x.opted_in_at ? ' cc-pill-green' : '') }, x.opted_in_at ? '⚡ link live · ' + fmtDate(x.opted_in_at) : 'link off')]),
+      ]),
       el('div', { class: 'cc-grid-2' }, [
         card([el('h4', { class: 'cc-card-title' }, [icon('users',15),' Application — everything submitted']),
           kv('Name', p.full_name), kv('Email', d.email), kv('Phone', p.phone),
@@ -261,9 +415,9 @@ export function renderAgents(host) {
         ]),
       ]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [
-        card([el('h4', { class: 'cc-card-title' }, '🔗 Chain (direct referrals)'),
-          ...(d.chain && d.chain.length ? d.chain.map((c) => el('div', { class: 'cc-sub', style: 'padding:3px 0' },
-            (c.side === 'carrier' ? '🚛 ' : c.side === 'shipper' ? '🏭 ' : '🏢 ') + c.org + ' · ' + c.side + ' · joined ' + fmtDate(c.joined_at) + ' · ' + (c.loads_posted || 0) + ' posted · ' + (c.trips_delivered || 0) + ' delivered')) : [el('div', { class: 'cc-sub' }, 'No referrals yet.')]),
+        card([el('h4', { class: 'cc-card-title' }, '🔗 Referrals — every step, as the partner sees it'),
+          el('div', { class: 'cc-sub', style: 'margin-bottom:4px' }, 'Signup → verification → trucks / loads → booked → delivered → 1% credited → cleared → paid. Same feed the partner sees in their portal.'),
+          ...((d.chain && d.chain.length) ? d.chain.map((c) => refCard(c, actv)) : [el('div', { class: 'rp-empty', style: 'padding:18px' }, [el('b', null, 'No referrals yet'), document.createTextNode('Nobody has signed up through this link so far.')])]),
           el('div', { class: 'cc-sub', style: 'margin-top:10px;font-weight:700' }, '🌳 Downline agents (levels 2–5)'),
           ...(d.downline && d.downline.length ? d.downline.map((a) => el('div', { class: 'cc-sub', style: 'padding:2px 0' },
             'L' + a.level + ' · ' + (a.name || a.code) + ' (' + a.code + ') · ' + a.status + ' · earned for this agent: ' + money(a.earned_for_you || 0))) : [el('div', { class: 'cc-sub' }, 'No recruited agents yet.')]),

@@ -42,7 +42,7 @@ const CSS = `
 .rh-t{text-align:center;font-size:.68rem;font-weight:700;color:#64748b;line-height:1.3}
 .rh-t em{display:block;height:6px;border-radius:99px;background:rgba(255,255,255,.1);margin-bottom:6px;font-style:normal}
 .rh-t.on{color:#e2e8f0}.rh-t.on em{background:linear-gradient(90deg,#0883F7,#4ade80)}
-.rh-meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:.8rem;color:#94a3b8}.rh-meta b{color:#fff}
+.rhj-tl{margin-top:10px;border-top:1px dashed rgba(255,255,255,.1);padding-top:8px}.rhj-tl-h{display:flex;align-items:center;justify-content:space-between;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#7cc0ff}.rhj-tl-h button{background:none;border:0;color:#7cc0ff;font-weight:800;font-size:.72rem;cursor:pointer;padding:0}.rhj-ev{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:start;padding:5px 0;font-size:.8rem;color:#cbd5e1;border-bottom:1px solid rgba(255,255,255,.05)}.rhj-ev:last-child{border-bottom:0}.rhj-ev em{font-style:normal;font-size:.9rem;line-height:1.2}.rhj-ev small{display:block;color:#64748b;font-size:.7rem;margin-top:1px}.rhj-ev b{color:#4ade80;white-space:nowrap}.rhj-ev.money{color:#fff}.rhj-click{cursor:pointer;user-select:none}.rhj-caret{display:inline-block;color:#7cc0ff;font-weight:900;font-size:1.1rem;line-height:1;transition:transform .15s;transform:rotate(0)}.rhj-caret.on{transform:rotate(90deg)}.rhj-body{display:none}.rhj-body.on{display:block}.rhj-why{font-size:.8rem;margin-top:8px;line-height:1.45}.rhj-link{background:none;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#cbd5e1;font-size:.72rem;padding:3px 7px;cursor:pointer}.rhj-link:hover{border-color:#7cc0ff}.rh-org.rhj-target{border-color:rgba(124,192,255,.6);box-shadow:0 0 0 2px rgba(124,192,255,.18)}.rh-meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:.8rem;color:#94a3b8}.rh-meta b{color:#fff}
 .rh-empty{text-align:center;padding:22px 10px}.rh-empty .big{font-size:2.2rem}
 .rh-script{margin-top:10px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:12px;font-size:.84rem;color:#cbd5e1;line-height:1.6;white-space:pre-wrap}
 .rh-act{display:grid;gap:8px;margin-top:10px}.rh-act div{display:flex;gap:10px;font-size:.84rem;color:#cbd5e1;line-height:1.5}.rh-act time{color:#64748b;white-space:nowrap;font-size:.76rem}
@@ -63,6 +63,16 @@ export async function mountReferralHome(host, ctx) {
   let cs = null, pc = null;
   try { cs = await api.agentChainStatus(); } catch (_) {}
   try { pc = await api.agentPayoutCenter(); } catch (_) {}
+  let actv = [];                                       // bl_agent_0403 — every milestone of every referral
+  try { const a = await api.agentReferralActivity(40); actv = Array.isArray(a) ? a : []; } catch (_) {}
+  const actFor = (o) => { const m = actv.find((x) => x.org === (o.org || o.name) && (!o.side || !x.side || x.side === o.side)); return m ? { org_id: m.org_id, events: m.events || [] } : { org_id: null, events: [] }; };
+  // Deep link: /app/agent/#referral/activity/<org_id> → that card opens with its full activity and scrolls into view.
+  const _dlEnt = window.__lbDeepEnt && window.__lbDeepEnt.tab === 'referral' && /^activity\//.test(String(window.__lbDeepEnt.id || '')) ? String(window.__lbDeepEnt.id).slice(9) : '';
+  let _dlRaw = location.hash || ''; try { const k9 = sessionStorage.getItem('lb_deep_hash') || ''; if (/^#referral\/activity\//i.test(k9)) { _dlRaw = k9; sessionStorage.removeItem('lb_deep_hash'); } } catch (_) {}
+  const _dlHash = (/^#referral\/activity\/([0-9a-f-]{8,})/i.exec(_dlRaw) || [])[1] || '';
+  const _dl = _dlEnt || _dlHash;
+  if (_dl) { try { window.__lbDeepEnt = null; } catch (_) {} }
+  const deepLinkFor = (orgId) => location.origin + location.pathname + '#referral/activity/' + orgId;
   const code = feed.code || (cs && cs.code) || '';
   const link = feed.link || ('https://loadboot.com/?ref=' + code);
   const chain = Array.isArray(feed.chain) ? feed.chain : (cs && Array.isArray(cs.referred) ? cs.referred : []);
@@ -132,6 +142,26 @@ export async function mountReferralHome(host, ctx) {
     ]),
   ].filter(Boolean));
 
+  // bl_agent_0403 — the referral's full journey, newest first: signup, packet, docs, trucks,
+  // loads posted, booked / in transit / delivered / cancelled, and every 1% credit → cleared → paid.
+  const EV_ICON = { joined: '👋', packet: '📋', verified: '✅', packet_issue: '⚠️', doc: '📄', doc_approved: '✔️', doc_rejected: '↩️', truck: '🚛', posted: '📦', booked: '📌', transit: '🛣️', delivered: '🏁', cancelled: '✖️', credited: '💰', payable: '🏦', paid: '💸' };
+  const activityBlock = (events, startOpen) => {
+    if (!events.length) return h('div', { class: 'rhj-tl' }, [h('div', { class: 'rhj-tl-h' }, 'Activity'), h('div', { style: 'font-size:.78rem;color:#64748b;margin-top:4px' }, 'Nothing yet beyond signing up. Every step they take shows up here.')]);
+    let open = !!startOpen;
+    const list = h('div');
+    const btn = h('button', { type: 'button', onClick: () => { open = !open; paint(); } });
+    const paint = () => {
+      const rows = open ? events : events.slice(0, 4);
+      mount(list, rows.map((e) => h('div', { class: 'rhj-ev' + (e.amount != null ? ' money' : '') }, [
+        h('em', null, EV_ICON[e.kind] || '•'),
+        h('div', null, [document.createTextNode(e.title || e.kind), h('small', null, day(e.at) + ' · ' + ago(e.at))]),
+        e.amount != null ? h('b', null, money(e.amount)) : h('span'),
+      ])));
+      btn.textContent = events.length > 4 ? (open ? 'Show less' : 'All ' + events.length + ' →') : '';
+    };
+    paint();
+    return h('div', { class: 'rhj-tl' }, [h('div', { class: 'rhj-tl-h' }, [h('span', null, 'Activity · ' + events.length), btn]), list]);
+  };
   const orgCard = (o) => {
     const st = String(o.status || '');
     const ver = ['active', 'verified', 'approved'].includes(st);
@@ -139,27 +169,55 @@ export async function mountReferralHome(host, ctx) {
     const del = Number(o.trips_delivered || 0) > 0;
     const earn = Number(o.your_earnings || 0);
     const steps = [['Joined', true], ['Verified', ver], ['First load', hasLoad], ['Delivered', del], ['1% credited', earn > 0]];
-    return h('div', { class: 'rh-org' }, [
-      h('div', { class: 'rh-org-h' }, [
+    const a = actFor(o);
+    const isTarget = !!(_dl && a.org_id && a.org_id === _dl);
+    let open = isTarget;                                  // collapsed by default; header click toggles
+    const body = h('div', { class: 'rhj-body' + (open ? ' on' : '') });
+    const caret = h('span', { class: 'rhj-caret' + (open ? ' on' : ''), title: 'Show / hide details' }, '›');
+    const toggle = () => { open = !open; body.classList.toggle('on', open); caret.classList.toggle('on', open); };
+    const linkBtn = a.org_id ? h('button', { type: 'button', class: 'rhj-link', title: 'Copy a direct link to this referral\'s activity', onClick: (e9) => {
+      e9.stopPropagation();
+      const u = deepLinkFor(a.org_id);
+      try { history.replaceState(null, '', '#referral/activity/' + a.org_id); } catch (_) {}
+      const done = () => { linkBtn.textContent = '✓ copied'; setTimeout(() => { linkBtn.textContent = '🔗'; }, 1600); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { window.prompt('Direct link', u); });
+      else window.prompt('Direct link', u);
+    } }, '🔗') : null;
+    const card = h('div', { class: 'rh-org' + (isTarget ? ' rhj-target' : ''), id: a.org_id ? 'rhj-org-' + a.org_id : undefined }, [
+      h('div', { class: 'rh-org-h rhj-click', onClick: toggle }, [
+        caret,
         h('span', { style: 'font-size:1.2rem' }, SIDE[o.side] || '🤝'), h('b', null, o.org || o.name || 'New account'),
         h('span', { class: 'rh-pill' }, o.side || 'partner'),
         h('span', { class: 'rh-pill ' + (ver ? 'g' : 'a') }, ver ? 'verified' : (st || 'onboarding')),
         h('span', { style: 'margin-left:auto;font-weight:900;color:' + (earn > 0 ? '#4ade80' : '#94a3b8') }, money(earn)),
-      ]),
+        linkBtn,
+      ].filter(Boolean)),
+      body,
+    ]);
+    mount(body, [
       h('div', { class: 'rh-track' }, steps.map(([l, on]) => h('div', { class: 'rh-t' + (on ? ' on' : '') }, [h('em'), l]))),
       h('div', { class: 'rh-meta' }, [
         h('span', null, ['Joined ', h('b', null, day(o.joined_at))]),
-        h('span', null, [h('b', null, String(o.loads_posted || 0)), ' loads posted']),
+        o.side !== 'carrier' ? h('span', null, [h('b', null, String(o.loads_posted || 0)), ' loads posted']) : null,  // carriers book, they don't post
         h('span', null, [h('b', null, String(o.trips_delivered || 0)), ' delivered']),
-        !ver ? h('span', { style: 'color:#fbbf24' }, 'Waiting on their verification — you earn from their first delivered load.') : null,
       ].filter(Boolean)),
+      activityBlock(a.events, isTarget),
     ]);
+    // Say plainly WHY the number is $0 — every stage, not just the unverified one. Always visible, even collapsed.
+    card.insertBefore(h('div', { class: 'rhj-why', style: 'color:' + (earn > 0 ? '#4ade80' : '#fbbf24') },
+          !ver ? 'Waiting on their verification — you earn from their first delivered load.'
+          : !hasLoad ? ('Verified, but no load ' + (o.side === 'carrier' ? 'booked' : 'posted') + ' yet — that is why your earnings from them are $0. Your 1% starts with their first delivered load.')
+          : !del ? 'Loads in progress, none delivered yet — 1% is credited the moment a load is delivered.'
+          : earn <= 0 ? (pending ? 'Deliveries done — your 1% is credited (back-dated) as soon as your own verification is approved.' : 'Delivered — the 1% credit is on its way.')
+          : 'Earning — 1% of every delivered load, for as long as they move freight.'), body);
+    if (isTarget) setTimeout(() => { try { const y9 = card.getBoundingClientRect().top + window.scrollY - 84; window.scrollTo({ top: Math.max(0, y9), behavior: 'smooth' }); } catch (_) {} }, 250);
+    return card;
   };
 
   const refs = h('div', { class: 'rh-card' }, [
     h('div', { class: 'rh-x' }, [h('div', null, [h('h3', null, '👥 Your referrals — live'), h('div', { class: 'rh-sub' }, 'Each one is tied to you the moment they sign up through your link. Their progress updates here as it happens.')]),
       chain.length ? h('button', { class: 'rh-btn ghost', onClick: () => go('chain') }, 'Full list →') : null].filter(Boolean)),
-    chain.length ? h('div', { class: 'rh-ref' }, chain.slice(0, 6).map(orgCard))
+    chain.length ? h('div', { class: 'rh-ref' }, (_dl ? [...chain].sort((x9, y9) => (actFor(y9).org_id === _dl) - (actFor(x9).org_id === _dl)) : chain).slice(0, 6).map(orgCard))
       : h('div', { class: 'rh-empty' }, [
         h('div', { class: 'big' }, '🚀'),
         h('div', { style: 'font-weight:900;color:#fff;font-size:1.05rem;margin-top:4px' }, 'No referrals yet — your first one is one message away'),

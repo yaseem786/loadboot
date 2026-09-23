@@ -40,7 +40,7 @@ export function renderReferrals(host) {
       accrueBtn),
     kpis,
     el('div', { class: 'lb-card', style: 'background:#fffbeb;margin:10px 0;font-size:.85rem' },
-      el('div', { class: 'cc-sub' }, 'This program is feature-flagged (referral_program) and OFF in production until owner + legal sign-off. Percentages and payout terms are confirmed in writing before anything is owed.')),
+      el('div', { class: 'cc-sub' }, 'Referral program is LIVE (flag referral_program ON since 22 Sep 2026). Terms: 1% of every delivered load from a referred carrier, broker or shipper, paid from LoadBoot\'s fee; credits clear 15 days after delivery; payouts from $100, human-approved here. Turn the flag off to hide the broker-portal card and this screen — partner links and accrual keep running regardless.')),
     payoutCard,
     body,
   ]));
