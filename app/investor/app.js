@@ -996,7 +996,8 @@ function renderPlan(host) {
   const setupT = sum(bp.setup || [], 'low', 'high'), m1 = sum((bp.monthly || []).filter(r => r.phase !== '2'), 'low', 'high'), m2 = sum(bp.monthly || [], 'low', 'high');
   const lvl = (l) => pill(t('bp_risk_' + (l || 'med')), l === 'high' ? 'due' : l === 'low' ? 'ok' : 'wait');
   const stStatus = (st) => st === 'done' ? 'done' : st === 'now' ? 'now' : '';
-  const toc = [['stand', t('bp_stand')], ['city', t('bp_city')], ['setup', t('bp_setup')], ['monthly', t('bp_monthly')], ['team', t('bp_team')], ['unit', t('bp_unit')], ['growth', t('bp_growth')], ['milestones', t('bp_milestones')], ['scen', t('bp_scen')], ['risks', t('bp_risks')], ['comp', t('bp_comp')], ['strat', t('bp_strat')], ['share', t('bp_share')]];
+  const pos = S.agr.position || {};
+  const toc = [['stand', t('bp_stand')], ['runway', t('bp_runway')], ['calc', t('bp_calc')], ['solver', t('bp_solver')], ['city', t('bp_city')], ['setup', t('bp_setup')], ['monthly', t('bp_monthly')], ['team', t('bp_team')], ['unit', t('bp_unit')], ['growth', t('bp_growth')], ['milestones', t('bp_milestones')], ['scen', t('bp_scen')], ['risks', t('bp_risks')], ['comp', t('bp_comp')], ['strat', t('bp_strat')], ['share', t('bp_share')]];
   mount(host, [
     agrPicker(), el('h1', { class: 'iv-h1' }, t('bp_title')), el('p', { class: 'iv-sub' }, t('bp_sub')),
     bp.status !== 'final' ? el('div', { class: 'iv-warn' }, [t('bp_draft'), bp.note ? el('div', { style: 'margin-top:6px;opacity:.85' }, bp.note) : null]) : null,
@@ -1009,6 +1010,7 @@ function renderPlan(host) {
     ]),
     el('div', { class: 'iv-home iv-bp-grid' }, [
       bp.stand ? sect('stand', t('bp_stand'), [el('p', { class: 'iv-bp-h' }, bp.stand.headline || ''), el('ul', { class: 'iv-bp-ul' }, (bp.stand.points || []).map(x => el('li', null, x)))], 'home') : null,
+      planRunway(bp, pos), planCalc(bp, pos), planSolver(), planOptions(bp),
       bp.city ? sect('city', t('bp_city'), [el('p', { class: 'iv-bp-h' }, bp.city.chosen || '—'), el('ul', { class: 'iv-bp-ul' }, (bp.city.why || []).map(x => el('li', null, x))),
         (bp.city.alternatives || []).length ? el('div', null, [el('p', { class: 'iv-muted', style: 'margin:10px 0 4px;font-weight:700' }, t('bp_city_alt')), tbl(['', '+', '−'], bp.city.alternatives.map(a => [el('b', null, a.city), a.pros || '', a.cons || '']))]) : null], 'flag') : null,
       (bp.setup || []).length ? sect('setup', t('bp_setup'), [tbl(['', t('bp_range'), ''], bp.setup.map(r => [el('b', null, r.item), range(r.low, r.high), el('span', { class: 'iv-muted' }, r.note || '')])), el('div', { class: 'iv-bp-total' }, [el('span', null, t('bp_total_setup')), el('b', null, range(setupT[0], setupT[1]))])], 'office') : null,
@@ -1046,4 +1048,50 @@ function planDoc(bp) {
   if ((bp.strategies || []).length) tables.push({ title: t('bp_strat'), head: ['', ''], rows: bp.strategies.map(s => [s.title, s.detail || '']) });
   brandDoc(t('bp_title'), (bp.status !== 'final' ? 'DRAFT · ' : '') + (bp.stand && bp.stand.headline || ''),
     [[t('bp_city'), bp.city && bp.city.chosen || '—'], [t('bp_unit'), bp.unit && bp.unit.per_truck || '—'], [t('bp_share'), bp.share && bp.share.text || '—']], tables, bp.note || '');
+}
+
+// ---------- plan: runway chart, two-ways table, what-if calculator, problem solver ----------
+function planRunway(bp, p) {
+  const sumHi = (rows) => rows.reduce((a, r) => a + Number(r.high || r.low || 0), 0), sumLo = (rows) => rows.reduce((a, r) => a + Number(r.low || 0), 0);
+  const setupLo = sumLo(bp.setup || []), setupHi = sumHi(bp.setup || []);
+  const m1 = (bp.monthly || []).filter(r => r.phase !== '2'); const mLo = sumLo(m1), mHi = sumHi(m1);
+  if (!setupHi && !mHi) return null;
+  const cap = Number(p.original_cap || p.commitment_cap || 0), funded = Number(p.funded || 0);
+  const monthsHi = mLo ? Math.max(0, (cap - setupHi) / mLo) : 0, monthsLo = mHi ? Math.max(0, (cap - setupLo) / mHi) : 0;
+  const pctSetup = cap ? Math.min(100, 100 * setupHi / cap) : 0, pctFunded = cap ? Math.min(100, 100 * funded / cap) : 0;
+  return el('div', { class: 'iv-card iv-bp', id: 'bp-runway' }, [
+    el('p', { class: 'iv-eyebrow' }, t('bp_runway')), el('p', { class: 'iv-muted', style: 'margin:0 0 10px' }, t('bp_runway_sub')),
+    el('div', { class: 'iv-runway' }, [el('i', { class: 'setup', style: 'width:' + pctSetup + '%' }), el('i', { class: 'run', style: 'left:' + pctSetup + '%;width:' + (100 - pctSetup) + '%' }), el('b', { class: 'mark', style: 'left:' + pctFunded + '%' })]),
+    el('div', { class: 'iv-kv' }, [kv(t('bp_runway_setup'), money(setupLo) + ' – ' + money(setupHi)), kv(t('bp_total_month') + ' · ' + t('bp_phase1'), money(mLo) + ' – ' + money(mHi)), kv(t('bp_runway_months') + ' (' + t('bp_runway_from') + ' ' + money(cap) + ')', Math.floor(monthsLo) + ' – ' + Math.floor(monthsHi)), kv(t('h_funded'), money(funded), 'ok')]),
+  ]);
+}
+function planOptions(bp) {
+  const o = bp.options || []; if (!o.length) return null;
+  return el('div', { class: 'iv-card iv-bp', id: 'bp-options' }, [el('p', { class: 'iv-eyebrow' }, t('bp_options')),
+    el('div', { class: 'iv-tblwrap' }, el('table', { class: 'iv-tbl' }, [el('thead', null, el('tr', null, ['', t('bp_runway_setup'), t('bp_total_month'), 'Ask', 'Max loss'].map(h => el('th', null, h)))),
+      el('tbody', null, o.map(x => el('tr', null, [el('td', null, [el('b', null, x.name), el('div', { class: 'iv-muted', style: 'font-size:.76rem' }, x.note || '')]), el('td', null, x.setup || ''), el('td', null, x.monthly || ''), el('td', null, x.ask || ''), el('td', null, x.max_loss || '')])))]))]);
+}
+function planCalc(bp, p) {
+  const u = bp.unit || {}; const m1 = (bp.monthly || []).filter(r => r.phase !== '2'); const costDef = m1.reduce((a, r) => a + Number(r.high || r.low || 0), 0) || 250000;
+  const st = { trucks: 2, fee: Number(u.per_truck_pkr) || 400000, cost: costDef, collect: 85 };
+  const pay = Number(p.payback_rate_pct || 0), share = Number(p.effective_share_pct || p.permanent_share_pct || 0), outstanding = Number(p.outstanding || p.recovery_target || 0);
+  const out = el('div', { class: 'iv-kv' }); const line = el('div', { class: 'iv-calc-line' });
+  const slider = (key, label, min, max, step, fmt) => { const v = el('b', null, fmt(st[key])); const r = el('input', { type: 'range', min, max, step, value: st[key] }); r.oninput = () => { st[key] = Number(r.value); v.textContent = fmt(st[key]); paint(); }; return el('div', { class: 'iv-slider' }, [el('div', { class: 'row' }, [el('span', null, label), v]), r]); };
+  const paint = () => {
+    const income = st.trucks * st.fee * st.collect / 100, profit = income - st.cost;
+    const toYou = profit > 0 ? profit * (pay + share) / 100 : 0, rec = profit > 0 ? profit * pay / 100 : 0;
+    const months = rec > 0 && outstanding > 0 ? Math.ceil(outstanding / rec) : null;
+    mount(out, [kv(t('bp_c_collect'), money(income)), kv(t('bp_c_profit'), profit >= 0 ? money(profit) : t('bp_c_loss'), profit >= 0 ? 'ok' : 'warn'), kv(t('bp_c_you'), money(toYou), toYou ? 'ok' : ''), kv(t('bp_c_months'), months ? String(months) : '—')]);
+    const w = Math.min(100, Math.max(0, 100 * income / Math.max(1, st.cost * 3)));
+    mount(line, [el('i', { class: 'cost', style: 'width:' + Math.min(100, 100 * st.cost / Math.max(1, st.cost * 3)) + '%' }), el('i', { class: 'inc', style: 'width:' + w + '%' })]);
+  };
+  paint();
+  return el('div', { class: 'iv-card iv-bp', id: 'bp-calc' }, [el('p', { class: 'iv-eyebrow' }, t('bp_calc')), el('p', { class: 'iv-muted', style: 'margin:0 0 8px' }, t('bp_calc_sub')),
+    slider('trucks', t('bp_c_trucks'), 0, 10, 1, (v) => String(v)), slider('fee', t('bp_c_fee'), 100000, 800000, 25000, (v) => money(v)), slider('cost', t('bp_c_cost'), 50000, 800000, 10000, (v) => money(v)), slider('collect', t('bp_c_collect'), 40, 100, 5, (v) => v + '%'),
+    line, out, el('p', { class: 'iv-muted', style: 'margin:8px 0 0;font-size:.74rem' }, pct(pay) + ' + ' + pct(share) + ' · ' + t('proj_note'))]);
+}
+function planSolver() {
+  const go = { 1: () => { S.tab = 'ledger'; renderShell(); }, 2: () => { S.tab = 'home'; renderShell(); }, 3: () => showAgreement(), 4: () => { S.tab = 'home'; renderShell(); }, 5: () => { S.tab = 'ledger'; renderShell(); }, 6: () => showAgreement(), 7: () => showAgreement(), 8: () => showTerm('share'), 9: () => showAudit(), 10: () => { S.tab = 'statements'; renderShell(); } };
+  return el('div', { class: 'iv-card iv-bp', id: 'bp-solver' }, [el('p', { class: 'iv-eyebrow' }, t('bp_solver')), el('p', { class: 'iv-muted', style: 'margin:0 0 8px' }, t('bp_solver_sub')),
+    el('div', { class: 'iv-solver' }, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => el('button', { type: 'button', onClick: go[i] }, [el('b', null, t('ps_' + i + 'q')), el('span', null, t('ps_' + i + 'a')), el('i', null, '›')])))]);
 }

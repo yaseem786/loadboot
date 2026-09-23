@@ -668,6 +668,8 @@ function planDrawer() {
     const monthly = ta({ value: rows(bp.monthly, ['item', 'low', 'high', 'phase', 'note']), rows: 8, placeholder: 'Rent | 50000 | 60000 | 1 | note   (phase 1 = trial, 2 = once trucks earn)' });
     const team = ta({ value: rows(bp.team, ['role', 'person', 'status', 'salary_low', 'salary_high', 'why']), rows: 6, placeholder: 'Dispatcher 1 | to hire | hiring | 20000 | 100000 | why' });
     const unitT = inp({ value: (bp.unit || {}).per_truck || '' }), unitB = inp({ value: (bp.unit || {}).breakeven || '' }), unitA = ta({ value: lines((bp.unit || {}).assumptions), rows: 3 });
+    const unitPkr = num({ value: (bp.unit || {}).per_truck_pkr || '', step: '1000', placeholder: '400000' }), unitLoads = num({ value: (bp.unit || {}).loads_per_truck || '', step: '1', placeholder: '22' });
+    const opts = ta({ value: rows(bp.options, ['name', 'note', 'setup', 'monthly', 'ask', 'max_loss']), rows: 3, placeholder: 'Lean plan | note | setup | monthly | ask | max loss' });
     const growth = ta({ value: rows(bp.growth, ['month', 'carriers', 'dispatchers', 'loads', 'revenue', 'note']), rows: 5, placeholder: 'Month 2 | 6–8 | 2 | 10–20 | PKR 1–2 lakh | note' });
     const ms = ta({ value: rows(bp.milestones, ['title', 'status', 'note']), rows: 7, placeholder: 'First truck dispatched | next | note   (status: done / now / next / later)' });
     const scen = ta({ value: rows(bp.scenarios, ['name', 'chance', 'description', 'investor_effect']), rows: 4, placeholder: 'Best | 30% | what happens | what it means for the investor' });
@@ -682,7 +684,8 @@ function planDrawer() {
       setup: parse(setup.value, ['item', 'low', 'high', 'note'], ['low', 'high']),
       monthly: parse(monthly.value, ['item', 'low', 'high', 'phase', 'note'], ['low', 'high']),
       team: parse(team.value, ['role', 'person', 'status', 'salary_low', 'salary_high', 'why'], ['salary_low', 'salary_high']),
-      unit: { per_truck: unitT.value, breakeven: unitB.value, assumptions: unlines(unitA.value) },
+      unit: { per_truck: unitT.value, breakeven: unitB.value, assumptions: unlines(unitA.value), per_truck_pkr: Number(unitPkr.value) || null, loads_per_truck: Number(unitLoads.value) || null },
+      options: parse(opts.value, ['name', 'note', 'setup', 'monthly', 'ask', 'max_loss']),
       growth: parse(growth.value, ['month', 'carriers', 'dispatchers', 'loads', 'revenue', 'note']),
       milestones: parse(ms.value, ['title', 'status', 'note']), scenarios: parse(scen.value, ['name', 'chance', 'description', 'investor_effect']),
       risks: parse(risks.value, ['risk', 'level', 'mitigation']), competitors: parse(comp.value, ['name', 'what', 'why_we_win']), strategies: parse(strat.value, ['title', 'detail']),
@@ -696,7 +699,8 @@ function planDrawer() {
       h('One-time setup costs'), f('item | low | high | note', setup),
       h('Monthly running costs'), f('item | low | high | phase (1/2) | note', monthly),
       h('Team'), f('role | person | status | pay low | pay high | why this role', team),
-      h('Unit economics'), f('How one truck becomes income', unitT), f('Break-even', unitB), f('Assumptions (one per line)', unitA),
+      h('Unit economics'), f('How one truck becomes income', unitT), el('div', { class: 'cc-inv-set' }, [f('Fee per truck per month (PKR) — drives the what-if calculator', unitPkr), f('Loads per truck per month', unitLoads)]), f('Break-even', unitB), f('Assumptions (one per line)', unitA),
+      h('Two ways to run it'), f('name | note | setup | monthly | ask | max loss', opts),
       h('Growth targets'), f('month | active carriers | dispatchers | loads | fee income | note', growth),
       h('Road to first profit'), f('title | status (done/now/next/later) | note', ms),
       h('Scenarios'), f('name | chance | description | what it means for the investor', scen),
