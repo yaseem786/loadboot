@@ -733,7 +733,53 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         s.min_rate ? h('div', null, ['Min rate/mile: ', h('b', { style: 'color:#fff' }, '$' + Number(s.min_rate).toFixed(2)), s.min_rate_note ? ' — ' + s.min_rate_note : '']) : null,
         s.equipment ? h('div', null, 'Equipment: ' + s.equipment) : null, s.home_time ? h('div', null, 'Home time: ' + s.home_time) : null, s.rules ? h('div', null, 'Rules: ' + s.rules) : null,
       ])]) : null,
-      (a.drivers || []).length ? h('div', { style: 'margin-top:10px' }, [h('div', { class: 'dw-f' }, [h('div', { class: 'k' }, 'Drivers on file'), h('div', { class: 'v' }, a.drivers.map((d, i) => h('span', null, [i ? '  |  ' : '', d.name || '?', d.phone ? [' · ', tel(d.phone, { name: (d.name || 'Driver') + ' (driver)' })] : null])))])]) : null,
+      prefsBlock(a.prefs),
+      driversBlock(a.drivers || []),
+    ]);
+  }
+  // bl_disp_0409 — the carrier's real preference set (what the carrier typed in Account → Dispatch), operating prefs only.
+  function prefsBlock(pf) {
+    if (!pf) return h('div', { class: 'dw-avail', style: 'margin-top:10px' }, [h('b', { style: 'color:#fbbf24' }, [ic('alert', 16), ' No preferences set by the carrier yet']), h('div', { class: 'dw-muted' }, 'Ask the owner for rate floor, lanes and home time in the thread — do not guess them.')]);
+    const arr = (v) => (Array.isArray(v) && v.length ? v.join(', ') : null);
+    const money = (v) => (v == null || v === '' ? null : '$' + Number(v).toFixed(2));
+    const rows = [
+      ['Rate floor', pf.min_rpm != null ? money(pf.min_rpm) + '/mi' + (pf.min_rpm_basis ? ' (' + pf.min_rpm_basis + ')' : '') : pf.min_total_rate != null ? money(pf.min_total_rate) + ' minimum' : null],
+      ['Target rate', pf.target_rpm != null ? money(pf.target_rpm) + '/mi' : null],
+      ['Home base', pf.home_base], ['Home time', pf.home_time],
+      ['Preferred lanes', arr(pf.preferred_lanes)], ['Avoid states', arr(pf.avoid_states)],
+      ['Equipment', arr(pf.preferred_equipment)], ['Haul type', arr(pf.haul_types)], ['Load size', pf.load_size],
+      ['Operating radius', pf.operating_radius_miles != null ? num(pf.operating_radius_miles) + ' mi' : null], ['Max deadhead', pf.max_deadhead_miles != null ? num(pf.max_deadhead_miles) + ' mi' : null],
+      ['Trip length', pf.min_trip_miles != null || pf.max_trip_miles != null ? (pf.min_trip_miles != null ? num(pf.min_trip_miles) : '0') + ' – ' + (pf.max_trip_miles != null ? num(pf.max_trip_miles) : '∞') + ' mi' : null],
+      ['Max weight', pf.max_weight_lbs != null ? num(pf.max_weight_lbs) + ' lb' : null],
+      ['Hazmat', yn(pf.hazmat)], ['Team drivers', yn(pf.team_drivers)], ['Weekends', yn(pf.weekend_ok)], ['Round trips', pf.round_trip_pref],
+      ['Notice needed', pf.min_notice_hours != null ? pf.min_notice_hours + ' h' : null], ['Services', arr(pf.services)],
+      ['Likes', arr(pf.facility_likes)], ['Avoids', arr(pf.facility_dislikes)],
+    ];
+    return h('div', { style: 'margin-top:12px' }, [
+      h('div', { class: 'dw-row', style: 'justify-content:space-between;align-items:baseline;margin-bottom:4px' }, [h('b', { style: 'color:#7cc0ff' }, [ic('filter', 16), ' Carrier preferences — set by the owner']), h('span', { class: 'dw-muted', style: 'font-size:.78rem' }, pf.updated_at ? 'updated ' + whenDay(pf.updated_at) : '')]),
+      h('div', { class: 'dw-grid' }, rows.map((r) => f(r[0], r[1]))),
+      pf.notes ? h('div', { class: 'dw-muted', style: 'margin-top:6px;white-space:pre-wrap' }, ['Owner note: ', pf.notes]) : null,
+    ]);
+  }
+  // bl_disp_0409 — drivers with licence / medical / app status and which unit they are on.
+  function driversBlock(ds) {
+    if (!ds.length) return h('div', { class: 'dw-avail', style: 'margin-top:10px' }, [h('b', { style: 'color:#fbbf24' }, [ic('alert', 16), ' No driver on file']), h('div', { class: 'dw-muted' }, 'Brokers need a driver name and phone for every load — ask the owner to add one in Fleet.')]);
+    const soon = (d) => { if (!d) return ''; const days = Math.round((new Date(d).getTime() - Date.now()) / 864e5); return days < 0 ? ' · EXPIRED' : days < 30 ? ' · expires in ' + days + ' d' : ''; };
+    return h('div', { style: 'margin-top:12px' }, [
+      h('b', { style: 'color:#7cc0ff' }, [ic('user', 16), ' Drivers on file (' + ds.length + ')']),
+      h('div', { class: 'dw-grid', style: 'margin-top:4px' }, ds.map((d) => h('div', { class: 'dw-f wide' }, [
+        h('div', { class: 'k' }, [d.name || '?', d.driving ? ' · on ' + d.driving : ' · not on a truck', d.status && d.status !== 'active' ? ' · ' + d.status : '']),
+        h('div', { class: 'v' }, [
+          d.phone ? tel(d.phone, { name: (d.name || 'Driver') + ' (driver)' }) : h('span', { class: 'dw-muted' }, 'no phone'),
+          d.email ? ' · ' + d.email : '',
+          h('div', { class: 'dw-muted', style: 'font-size:.78rem;margin-top:2px' }, [
+            'CDL ' + (d.license_state || '—') + (d.license_exp ? ' · exp ' + whenDay(d.license_exp) + soon(d.license_exp) : ''),
+            d.medical_exp ? ' · medical ' + whenDay(d.medical_exp) + soon(d.medical_exp) : '',
+            ' · app ' + (d.app_installed ? 'installed' : 'not installed') + (d.location_on ? ' · GPS on' : ''),
+            d.last_seen_at ? ' · seen ' + whenDay(d.last_seen_at) : '',
+          ]),
+        ]),
+      ]))),
     ]);
   }
   function tel(n, d) { d = d || {}; return h('a', { href: 'tel:' + n, class: 'dw-tel', 'data-name': d.name || null, 'data-broker': d.broker || null, 'data-booking': d.booking || null, title: 'Call with your LoadBoot phone' }, [ic('phone', 13), ' ' + n]); }

@@ -19,7 +19,7 @@ const ago = (v) => { if (!v) return ''; const m = Math.round((Date.now() - new D
 const money = (v) => '$' + Number(v || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
 const mins = (s) => { s = Number(s || 0); if (s < 60) return s + 's'; const m = Math.floor(s / 60); return m + 'm ' + (s % 60) + 's'; };
 const initials = (n) => (n || 'LB').split(/\s+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join('') || 'LB';
-const nav = (tab) => { try { location.hash = '#' + tab; } catch (_) {} };
+const nav = (tab) => { try { if (location.hash === '#' + tab) { window.dispatchEvent(new HashChangeEvent('hashchange')); } else location.hash = '#' + tab; } catch (_) {} };   // 'tab/target' deep links are parsed by the carrier router (LB_DEEP)
 const toast = (m, kind) => { try { (window.__lbUI && window.__lbUI.lbToast) ? window.__lbUI.lbToast(m, kind) : alert(m); } catch (_) {} };
 
 const CSS = `
@@ -61,6 +61,17 @@ const CSS = `
 .dd-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 .dd-act.off{opacity:.55;pointer-events:none}
 .dd-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+.dd-block{border-radius:20px;padding:16px 18px;background:linear-gradient(135deg,rgba(252,83,5,.16),rgba(252,83,5,.05) 60%,rgba(255,255,255,.02));border:1px solid rgba(252,83,5,.45)}
+.dd-block .hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dd-block .hd b{color:#fff;font-size:1.02rem}
+.dd-block .hd span{color:#f8c9b0;font-size:.86rem}
+.dd-blist{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:12px}
+.dd-bitem{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:rgba(10,19,34,.55);border:1px solid rgba(252,83,5,.35);color:#eaf1fb;text-decoration:none;transition:transform .12s,border-color .12s}
+.dd-bitem:hover{transform:translateY(-1px);border-color:#FC5305}
+.dd-bitem .n{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:#FC5305;color:#fff;font-weight:900;font-size:.8rem;flex:none}
+.dd-bitem .m{flex:1;min-width:0}.dd-bitem .m b{display:block;font-size:.9rem}.dd-bitem .m span{display:block;font-size:.76rem;color:#f8c9b0;margin-top:1px}
+.dd-bitem .go{font-weight:800;color:#ffb38a;white-space:nowrap;font-size:.82rem}
+.dd-allok{display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:16px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.4);color:#d1fae5;font-size:.9rem}
 .dd-sec{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7fb4ff;margin:14px 0 4px}
 .dd-sec:first-child{margin-top:0}
 .dd-thread.empty{height:auto}
@@ -230,6 +241,21 @@ export async function renderDispatcherDesk(host) {
     ]))) : h('div', { class: 'cp-muted' }, 'No calls logged yet. Broker and shipper calls for your trucks will show here, with duration and outcome.'));
   }
 
+  // ---------- blockers: what stops the dispatcher from working today, each with its exact deep link ----------
+  const missing = ready.filter((r) => !r.done);
+  const hard = missing.filter((r) => r.blocker !== false);
+  const soft = missing.filter((r) => r.blocker === false);
+  const linkOf = (r) => r.link || r.tab || 'account';
+  const bitem = (r, i) => h('a', { class: 'dd-bitem', href: '#' + linkOf(r), onClick: (e) => { e.preventDefault(); nav(linkOf(r)); } }, [
+    h('span', { class: 'n' }, String(i + 1)), h('span', { class: 'm' }, [h('b', null, r.label), h('span', null, r.detail || r.why || '')]), h('span', { class: 'go' }, 'Fix now →')]);
+  const blockers = stage === 'not_started' || stage === 'rejected' ? null
+    : hard.length ? h('div', { class: 'dd-block' }, [
+        h('div', { class: 'hd' }, [icon('alert', 18), h('b', null, hard.length === 1 ? '1 thing is stopping your dispatcher from booking' : hard.length + ' things are stopping your dispatcher from booking'), h('span', null, '— each link opens the exact field')]),
+        h('div', { class: 'dd-blist' }, hard.map(bitem)),
+        soft.length ? h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#f8c9b0' }, ['Also worth setting: ', soft.map((r, i) => [i ? ' · ' : '', h('a', { href: '#' + linkOf(r), style: 'color:#ffb38a;font-weight:700', onClick: (e) => { e.preventDefault(); nav(linkOf(r)); } }, r.label)])]) : null,
+      ])
+    : h('div', { class: 'dd-allok' }, [icon('check', 18), h('div', null, [h('b', { style: 'color:#fff' }, 'Nothing is blocking your dispatcher. '), soft.length ? ['Optional: ', soft.map((r, i) => [i ? ' · ' : '', h('a', { href: '#' + linkOf(r), style: 'color:#6ee7b7;font-weight:700', onClick: (e) => { e.preventDefault(); nav(linkOf(r)); } }, r.label)])] : 'Every item on the checklist is done.'])]);
+
   // ---------- setup card: rules (if assigned) + readiness, one card, rows in two columns ----------
   const row = (on, label, why, fixTab) => h('div', { class: 'dd-row' }, [
     h('div', { class: 'dd-check' + (on ? ' on' : '') }, icon(on ? 'check' : 'dot', 13)),
@@ -250,7 +276,7 @@ export async function renderDispatcherDesk(host) {
       sopRows.length ? h('div', { class: 'dd-sec' }, 'Rules your dispatcher works to · change them in Account → Dispatch') : null,
       sopRows.length ? h('div', { class: 'dd-cols' }, sopRows.map((r) => row(true, r[0], r[1]))) : null,
       sopRows.length ? h('div', { class: 'dd-sec' }, 'What your dispatcher needs from you') : null,
-      h('div', { class: 'dd-cols' }, ready.map((r) => row(!!r.done, r.label, r.why, r.tab || 'account'))),
+      h('div', { class: 'dd-cols' }, ready.map((r) => row(!!r.done, r.label, r.detail ? r.detail + ' · ' + (r.why || '') : r.why, r.link || r.tab || 'account'))),
     ]), h('div', { class: 'dd-ring', style: '--p:' + readyPct + ';width:52px;height:52px' }, h('i', { style: 'width:40px;height:40px;font-size:.78rem' }, readyPct + '%')));
   const readiness = setup; const sop = null;
 
@@ -296,6 +322,7 @@ export async function renderDispatcherDesk(host) {
 
   mount(host, h('div', { class: 'dd-wrap' }, [
     hero,
+    blockers,
     contact,
     stats,
     thread,

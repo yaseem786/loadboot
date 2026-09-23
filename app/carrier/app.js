@@ -189,6 +189,8 @@ const LB_DEEP = {
     'add-truck': '[data-lb="add-truck"]!', truck: '[data-lb="trucks-card"]', trucks: '[data-lb="trucks-card"]',
     'add-driver': '[data-lb="add-driver"]!', driver: '[data-lb="drivers-card"]', drivers: '[data-lb="drivers-card"]',
   },
+  dashboard: { availability: '[data-lb="avail-card"]', avail: '[data-lb="avail-card"]' },   // bl_disp_0409 — Dispatcher-tab blockers land on the availability card
+  loads: { availability: '[data-lb="avail-card"]' },
   documents: {
     checklist: '[data-lb="doc-checklist"]', upload: '[data-lb="doc-upload"]',
     w9: '[data-lb="docbtn-w9"]!', agreement: '[data-lb="docbtn-dispatch_agreement"]!',
