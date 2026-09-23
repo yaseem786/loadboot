@@ -27,7 +27,22 @@ export function mountChatWidget(opts = {}) {
   });
 }
 
+// 23 Sep 2026 (owner): in the portals the launcher lives in the premium header, not as a floating bubble.
+// The header mounts after auth, so poll for it briefly; the marketing site keeps the floating FAB.
+export function dockChatInHeader(selector, tries) {
+  let n = 0; const max = tries || 60;                      // 60 × 250 ms = 15 s, then give up quietly
+  const iv = setInterval(() => {
+    n++;
+    const host = document.querySelector(selector || '.cp-top-right');
+    if (host && window.LBChat && window.LBChat.dock && window.LBChat.dock(host)) { clearInterval(iv); return; }
+    if (n >= max) clearInterval(iv);
+  }, 250);
+  // the header is rebuilt on sign-in / role switch — re-dock whenever a new one appears
+  try { new MutationObserver(() => { const host = document.querySelector(selector || '.cp-top-right'); const f = document.getElementById('lbc-fab'); if (host && f && f.parentNode !== host) window.LBChat.dock(host); }).observe(document.body, { childList: true, subtree: true }); } catch (_) {}
+}
+
 // Auto-mount everywhere except the Command Center.
 if (typeof location !== 'undefined' && location.pathname.indexOf('/command-center') < 0) {
   try { mountChatWidget(); } catch (e) { /* never break the app for a chat widget */ }
+  try { dockChatInHeader('.cp-top-right'); } catch (_) {}
 }

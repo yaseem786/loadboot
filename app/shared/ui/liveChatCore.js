@@ -23,6 +23,11 @@
     '#lbc-fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;z-index:2147483646;',
     'background:linear-gradient(135deg,#0883F7,#065fb8);color:#fff;box-shadow:0 10px 30px rgba(8,131,247,.45);display:flex;align-items:center;justify-content:center;transition:transform .18s,opacity .2s}',
     '#lbc-fab:hover{transform:scale(1.07)}',
+    // 23 Sep 2026 — portals dock the launcher into the premium header (window.LBChat.dock(host)); the floating FAB stays for the marketing site
+    '#lbc-fab.lbc-docked{position:relative;right:auto;bottom:auto;width:38px;height:38px;border-radius:10px;box-shadow:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#8ec5ff;z-index:1}',
+    '#lbc-fab.lbc-docked:hover{transform:none;background:rgba(8,131,247,.22);color:#fff}',
+    '#lbc-fab.lbc-docked svg{width:20px;height:20px}',
+    '#lbc-fab.lbc-docked #lbc-badge{top:-6px;right:-6px;min-width:18px;height:18px;line-height:18px;font-size:10px}',
     '#lbc-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;background:#FC5305;color:#fff;font:800 11px/20px Inter,Arial;padding:0 5px;display:none}',
     '#lbc-panel{position:fixed;right:18px;bottom:86px;width:378px;max-width:calc(100vw - 24px);height:600px;max-height:calc(100vh - 110px);',
     'background:#fff;border-radius:20px;box-shadow:0 24px 80px rgba(2,6,23,.4);z-index:2147483647;display:none;flex-direction:column;overflow:hidden;',
@@ -766,5 +771,11 @@
     schedulePoll();
   }
 
-  window.LBChat = { mount: mount };
+  function dock(host) {
+    if (!host) return false;
+    var f = document.getElementById('lbc-fab'); if (!f) return false;
+    if (f.parentNode === host) return true;
+    f.classList.add('lbc-docked'); f.setAttribute('title', 'Chat with LoadBoot'); host.appendChild(f); return true;
+  }
+  window.LBChat = { mount: mount, dock: dock };
 })();
