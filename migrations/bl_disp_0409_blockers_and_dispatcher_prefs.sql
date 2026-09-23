@@ -12,7 +12,7 @@ declare
   v_org uuid; v_uid uuid := auth.uid();
   v_ob record; v_a record; v_dp record;
   v_sla int := coalesce((select value::int from app_private.disp_desk_config where key = 'assign_sla_business_days'), 3);
-  v_wa text := coalesce((select nullif(btrim(value),'') from app_private.disp_desk_config where key = 'whatsapp_number'), (select nullif(btrim(wa_number),'') from app_private.dialer_config where coalesce(wa_enabled,false) limit 1));
+  v_wa text := coalesce((select nullif(btrim(value),'') from app_private.disp_desk_config where key = 'whatsapp_number'), (select nullif(btrim(wa_number),'') from app_private.dialer_config order by updated_at desc nulls last limit 1));
   v_esc text := (select nullif(btrim(value),'') from app_private.disp_desk_config where key = 'escalation_email');
   v_released boolean := false;
   v_assign jsonb := null; v_contact jsonb := null; v_calls jsonb := null; v_perf jsonb := null; v_thread jsonb := null;
