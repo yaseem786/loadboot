@@ -2288,6 +2288,9 @@ async function appView(user) {
   // built from cc_my_driver_context() + the owner's permissions. Everything below that is owner-only is
   // guarded with `if (DRV)`; the server denies it anyway.
   let DRV = null; let DM = null;
+  // bl_perf_0415: the overview request leaves at the same time as the driver-context one (they never depended on each
+  // other) — one round trip fewer before the shell can draw. A driver's overview result is simply ignored.
+  const ovP9 = pocketOverview().then((v) => ({ v }), (e) => ({ e }));
   try { const dctx = await myDriverContext(); if (dctx && dctx.role === 'driver') DRV = dctx; } catch (_) {}
   window.__lbDriver = DRV;
   try { if (DRV) localStorage.setItem('lb_role_hint', 'driver'); } catch (_) {}
@@ -2302,7 +2305,7 @@ async function appView(user) {
     DM.startHeartbeat(DRV);
     DM.subscribe(DRV, () => location.reload());
   } else {
-  try { ov = await pocketOverview(); }
+  try { const r9 = await ovP9; if (r9.e) throw r9.e; ov = r9.v; }
   catch (e) { if (/carrier account/i.test((e && e.message) || '')) { notCarrier(); return; } mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [h('h1', null, 'Could not load'), h('p', { class: 'cp-auth-sub' }, 'Please refresh and try again.'), h('button', { class: 'cp-btn cp-btn-lg', onClick: () => boot() }, 'Retry')]))); return; }
   }
 
@@ -4005,15 +4008,20 @@ async function appView(user) {
   async function loadLoads() {
     // \ud83d\udd12 LOCATION IS MANDATORY for the Load Board — real deadhead, geofenced check-ins,
     // anti-fraud. No GPS permission = the tab stays locked.
-    const pos9 = await new Promise((res9) => {
+    // bl_perf_0415: the board used to wait up to 10 s for a GPS fix before drawing anything. Now it waits 1.2 s at
+    // most; a fix that lands later still fills the deadhead badges in place (enrichDh9 re-runs, renderList repaints).
+    let enrichDh9 = null;
+    const geoP9 = new Promise((res9) => {
       if (!navigator.geolocation) return res9(null);
       navigator.geolocation.getCurrentPosition((p9) => res9(p9), () => res9(null), { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
     });
+    const pos9 = await Promise.race([geoP9, new Promise((res9) => setTimeout(() => res9(undefined), 1200))]);
+    if (pos9 === undefined) geoP9.then((p9) => { if (p9 && !window.__lbPos) { window.__lbPos = p9; try { if (enrichDh9) enrichDh9(); } catch (_) {} } });
     // \ud83d\udccd BOARD-FIRST: location is now OPTIONAL for BROWSING (soft banner below) and
     // REQUIRED at BOOKING time (see lbEnsurePos in the book flow) \u2014 anti-fraud stays intact:
     // no booking request leaves without live GPS, geofenced check-ins unchanged.
     window.__lbPos = pos9 || null;
-    const gpsBanner = pos9 ? null : h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+    const gpsBanner = (pos9 || pos9 === undefined) ? null : h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
       h('div', { style: 'min-width:200px;flex:1' }, [
         h('div', { class: 'cp-row-t' }, '\ud83d\udccd Turn on location to see your real deadhead'),
         h('div', { class: 'cp-row-s' }, 'Browse freely \u2014 with location ON, every load shows true road miles from your truck to pickup. GPS is required when you book (it powers your detention pay proof).'),
@@ -4279,7 +4287,7 @@ async function appView(user) {
     let rows; try { rows = await pocketAvailableLoads(60); } catch (e) { rows = []; }
     // \ud83d\udccd REAL deadhead: one OSRM table call (live GPS \u2192 every pickup pin, road miles)
     window.__lbDh = window.__lbDh || {};
-    (async () => {
+    enrichDh9 = async () => {
       const p9 = window.__lbPos; if (!p9 || !rows.length) return;
       const pts9 = rows.filter(r9 => r9.pickup_lat != null && r9.pickup_lng != null).slice(0, 45);
       if (!pts9.length) return;
@@ -4298,7 +4306,8 @@ async function appView(user) {
         if (mi9 != null) { window.__lbDh[r9.id] = mi9; any9 = true; }
       });
       if (any9 && typeof renderList === 'function') renderList();
-    })();
+    };
+    enrichDh9();
     // Advanced filters (client-side, instant — DAT-style)
     const fOrigin = h('input', { class: 'cp-in', placeholder: 'Origin (city/ST)', style: 'margin:0' });
     const fDest = h('input', { class: 'cp-in', placeholder: 'Destination', style: 'margin:0' });
@@ -7182,7 +7191,6 @@ function tripStepper(status) {
     // dismissed for good — a carrier already keeping books never sees it.
     const bookIntro9 = h('div');
     (async () => {
-      try { if (localStorage.getItem('lb:bookintro:off') === '1') return; } catch (_) {}
       let qb9 = null, pr9 = null, ex9 = null;
       try { [qb9, pr9, ex9] = await Promise.all([
         qboStatus().catch(() => null), payrollList().catch(() => null), expenseList(null).catch(() => null)]); } catch (_) {}
@@ -7194,6 +7202,18 @@ function tripStepper(status) {
       const item9 = (ic9, t9, d9, go9) => h('button', { class: 'cp-rowbtn', style: 'text-align:left', onClick: go9 }, [
         h('span', null, [h('span', { style: 'margin-right:8px' }, ic9), h('b', null, t9), h('span', { class: 'cp-row-s', style: 'display:block;margin-top:2px' }, d9)]),
         h('span', { class: 'cp-go' }, '\u203a')]);
+      // bl_ui_0414 (owner, 23 Sep 2026): "Hide" used to remove the card for good with no way back. It now COLLAPSES to a
+      // one-line row with a Show button, and the choice is remembered (lb:bookintro:off = '1' → collapsed).
+      const paintIntro9 = () => {
+        let off9 = false; try { off9 = localStorage.getItem('lb:bookintro:off') === '1'; } catch (_) {}
+        const setOff9 = (v9) => { try { localStorage.setItem('lb:bookintro:off', v9 ? '1' : '0'); } catch (_) {} paintIntro9(); };
+        if (off9) {
+          mount(bookIntro9, h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;background:rgba(8,131,247,.06);display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px' }, [
+            h('div', { class: 'cp-row-s', style: 'color:#3b9dff;font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:.72rem' }, '\ud83d\udcd2 Your books live here too'),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Show the books guide', onClick: () => setOff9(false) }, 'Show \u25be'),
+          ]));
+          return;
+        }
       mount(bookIntro9, h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;background:rgba(8,131,247,.06)' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:10px' }, [
           h('div', null, [
@@ -7201,7 +7221,7 @@ function tripStepper(status) {
             h('div', { class: 'cp-row-t', style: 'margin-top:2px' }, 'You are already paying for this \u2014 most of it takes one minute'),
             h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.55' }, 'Every load you run already produces the numbers. Turn them into books your accountant can use at tax time, instead of a shoebox in March.'),
           ]),
-          h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Hide this', onClick: () => { try { localStorage.setItem('lb:bookintro:off', '1'); } catch (_) {} bookIntro9.innerHTML = ''; } }, 'Hide'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Collapse this', onClick: () => setOff9(true) }, 'Hide \u25b4'),
         ]),
         h('div', { style: 'margin-top:10px' }, [
           item9('\ud83d\udfe2', 'Connect QuickBooks', 'Delivered-load invoices and every expense push across automatically, and payments pull back. Set it once.', () => jump9('acct')),
@@ -7211,6 +7231,8 @@ function tripStepper(status) {
         ]),
         h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8;font-size:.78rem;line-height:1.5' }, 'Only you see any of this. LoadBoot staff can view it read-only for support \u2014 nobody can edit your books.'),
       ]));
+      };
+      paintIntro9();
     })();
     mount(content, h('div', null, [
       nav,

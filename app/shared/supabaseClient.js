@@ -7,7 +7,11 @@ import ENV from './env.js';
 // Pinned, integrity-scoped dependency. Bump deliberately (never float to @latest).
 // Two independent CDNs: if the first is unreachable (CDN outage / DNS blip),
 // the second is tried automatically before surfacing an error.
+// bl_perf_0415 (23 Sep 2026): the SAME pinned build is vendored under /app/shared/vendor/ so a cold start on a phone
+// never waits on a third-party DNS+TLS+download before the first RPC can go out — and the app service worker precaches
+// it like every other /app/ file. The CDNs remain as fallbacks only.
 const SUPABASE_JS_URLS = [
+  '/app/shared/vendor/supabase-js.js',
   'https://esm.sh/@supabase/supabase-js@2.45.4',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm',
 ];
