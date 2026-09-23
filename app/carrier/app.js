@@ -2256,7 +2256,7 @@ function notCarrier() {
 /* ---------- main app ---------- */
 let NAV = [
   ['dashboard', 'Dashboard', 'dash'], ['health', 'Ratings', 'shield'], ['loads', 'Load Board', 'loads'], ['trips', 'My Loads', 'trips'],
-  ['profile', 'My Profile', 'idcard'], ['fleet', 'Fleet', 'truck'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
+  ['dispatcher', 'Dispatcher', 'handshake'], ['profile', 'My Profile', 'idcard'], ['fleet', 'Fleet', 'truck'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
   ['rates', 'Market Rates', 'tag'],
   ['notifications', 'Alerts', 'bell'],
   ['support', 'Support', 'support'], ['safety', 'Safety', 'sos'], ['account', 'Account', 'user'],
@@ -2539,6 +2539,7 @@ async function appView(user) {
     else if (tab === 'account') loadAccount();
     else if (tab === 'onboarding') loadOnboarding();
     else if (tab === 'profile') import('./profile-view.js').then(function (m) { m.renderMyProfile(content); }).catch(function () { mount(content, h('div', { class: 'cp-muted' }, 'Could not load your profile.')); });
+    else if (tab === 'dispatcher') import('./dispatcher-desk.js').then(function (m) { m.renderDispatcherDesk(content); }).catch(function (e9) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-err' }, 'Could not open the Dispatcher tab (' + ((e9 && e9.message) || 'load error') + '). Clear the app cache and sign in again.'))); });   // bl_disp_0408
     else if (tab === 'notifications') loadNotifications();
     else if (tab === 'health') loadHealth();
     else if (tab === 'reinstate') loadReinstate();

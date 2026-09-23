@@ -486,6 +486,10 @@ export const ccDispatcherCommissionPay = (ids, p) => rpc('cc_dispatcher_commissi
 export const carrierMyDispatcherBookings = (limit) => rpc('carrier_my_dispatcher_bookings', { p_limit: limit ?? 100 });
 export const carrierDispatcherAck = (assignment) => rpc('carrier_dispatcher_ack', { p_assignment: assignment });
 export const carrierDispatcherPause = (assignment, pause, reason) => rpc('carrier_dispatcher_pause', { p_assignment: assignment, p_pause: !!pause, p_reason: reason ?? null });
+// bl_disp_0408 — carrier Dispatcher tab (dedicated-dispatcher desk) + CC contact release
+export const carrierDispatcherDesk = () => rpc('carrier_dispatcher_desk', {});
+export const carrierDispatcherChangeRequest = (reason) => rpc('carrier_dispatcher_change_request', { p_reason: reason ?? null });
+export const ccDispatcherContactRelease = (assignment, release, note) => rpc('cc_dispatcher_contact_release', { p_assignment: assignment, p_release: release !== false, p_note: note ?? null });
 export const ccDispatcherResendIntro = (assignment) => rpc('cc_dispatcher_resend_intro', { p_assignment: assignment });
 export const carrierBookingAck = (booking, ok, note) => rpc('carrier_booking_ack', { p_booking: booking, p_ok: !!ok, p_note: note ?? null });
 // ---- Dispatcher Workspace P1 (bl_disp_0289) — board / posting / KPIs, acting for an assigned carrier ----
