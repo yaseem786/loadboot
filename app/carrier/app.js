@@ -128,7 +128,7 @@ try { localStorage.setItem('lb_last_portal', window.__LB_AGENT ? '/app/agent/' :
 // capture ?ref= like the marketing site does, and remember the track picked from careers / agents.html.
 try { const _q0 = new URLSearchParams(location.search); const _r0 = (_q0.get('ref') || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase(); if (_r0) localStorage.setItem('lb_ref', _r0);
   const _j0 = _q0.get('join'); if (_j0 === 'dispatcher' || _j0 === 'referral') localStorage.setItem('lb_join', _j0); } catch (_) {}
-try { const _ack0 = new URLSearchParams(location.search).get('ack'); if (_ack0) sessionStorage.setItem('lb_disp_ack', _ack0); } catch (_) {}
+try { const _ack0 = new URLSearchParams(location.search).get('ack'); if (_ack0) { sessionStorage.setItem('lb_disp_ack', _ack0); if (!location.hash) history.replaceState(null, '', location.pathname + '#dispatcher'); } } catch (_) {}   // bl_disp_0409: the intro e-mail's "Got it" link lands on the Dispatcher tab (no confirm step any more)
 const THEME_KEY = 'lb_theme';
 function themeMode() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; } }
 function setThemeMode(m) { try { localStorage.setItem(THEME_KEY, m); } catch (_) {} applyTheme(); }
@@ -3750,7 +3750,7 @@ async function appView(user) {
     mount(content, h('div', null, [tripHero9, rateCard9, onbHero, noaDash9, ...topBanners, kpis, availHostD, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     const econHost = h('div', null); prefsHost.parentNode.insertBefore(econHost, prefsHost.nextSibling);
     try { import('./economics.js').then((m) => m.mountBreakevenCard(econHost)).catch(() => {}); } catch (_) {}
-    // Dispatcher card (bl_disp_0288): only renders when this carrier has an active LoadBoot dispatcher.
+    // Dispatcher card (bl_disp_0409): compact "Meet your dispatcher" + status; the full desk is the Dispatcher tab.
     const dispHost = h('div', null); econHost.parentNode.insertBefore(dispHost, econHost.nextSibling);
     try { import('./dispatcher-card.js').then((m) => m.mountDispatcherCard(dispHost)).catch(() => { try { dispHost.remove(); } catch (_) {} }); } catch (_) {}
     try { mountStrengthCard(prefsHost); setTimeout(function () { try { maybeShowMicroAsk(); } catch (_) {} }, 1600); } catch (_) {}
