@@ -275,3 +275,14 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
   card, confirmation mail, upload freeze (documents 403 + Storage 403), inventory 15, cc_erasure_items suggestions, gate refusal all PASS.
   Found the twin-item trap (documents row + storage object per file) → bl_audit_0368 on staging+prod (9/9 both, rollback byte-exact,
   anon 32/33 unchanged, zero residue). ChatGPT sheet: CC screen may show `applied_to`; frozen-message item still open. Request 11 open.
+- **2026-09-22 — Claude:** Yaseen delegated the wording gates ("suggest and implement"). Applied in build_site.py against his 5 Sep decisions
+  (OWNER decisions: shipper-direct, no broker authority, 5% of line-haul earned at delivery, month-to-month DSA): F12 — every "no contract"
+  (80) → "no long-term contract", fee FAQs → "5% of line-haul on loads we book and you deliver, FSC/accessorials excluded", 5% stat →
+  "Of line-haul, cancel anytime"; F13 — hero "cover loads … in minutes" dropped, load-board page got a plain volume note (young board,
+  dispatcher sources external boards meanwhile); F04 — home shipper card no longer says "under licensed brokerage", ship-direct page got
+  a "Who you contract with — LoadBoot is not a broker" section (attorney review still pending, per Yaseen's own constraint list).
+  F17 = supply, no wording change (board empty-state already truthful). BUILD OK locally (LOADBOOT_CONTEXT=production check only; Netlify
+  deploys from main on push). Prod residue: ZZ TEST chat rows deleted (conv b31e5c21, ob row, 14 msgs); 5 Storage objects left for Yaseen's
+  dashboard delete (debugtest/2, lbtest_visitor_001/1, va60d7175faec…/2). NOTE a REAL guest onboarding landed 22 Sep 21:26–21:30 UTC:
+  Clockwork Cargo and Freight LLC (clockworkcargo@gmail.com, MC46642697, W-9 + DSA signed, account created, 2 docs logged) — do not
+  touch its lc-onboarding/v6048d617…/ prefix. Yaseen did today: push, request 11 cancelled, prod OTP expiry ≤ 1h + password rules.
