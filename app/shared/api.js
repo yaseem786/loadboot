@@ -490,6 +490,7 @@ export const carrierDispatcherPause = (assignment, pause, reason) => rpc('carrie
 export const carrierDispatcherDesk = () => rpc('carrier_dispatcher_desk', {});
 export const carrierDispatcherChangeRequest = (reason) => rpc('carrier_dispatcher_change_request', { p_reason: reason ?? null });
 export const ccDispatcherContactRelease = (assignment, release, note) => rpc('cc_dispatcher_contact_release', { p_assignment: assignment, p_release: release !== false, p_note: note ?? null });
+export const ccDispatcherDelaySet = (carrierOrg, reason, note, etaDays) => rpc('cc_dispatcher_delay_set', { p_carrier_org: carrierOrg, p_reason: reason ?? null, p_note: note ?? null, p_eta_days: etaDays ?? null });   // bl_disp_0410
 export const ccDispatcherResendIntro = (assignment) => rpc('cc_dispatcher_resend_intro', { p_assignment: assignment });
 export const carrierBookingAck = (booking, ok, note) => rpc('carrier_booking_ack', { p_booking: booking, p_ok: !!ok, p_note: note ?? null });
 // ---- Dispatcher Workspace P1 (bl_disp_0289) — board / posting / KPIs, acting for an assigned carrier ----
@@ -1519,3 +1520,45 @@ export const ccInvCloseCommitment = (agreementId, reason) => rpc('cc_inv_close_c
 export const ccInvReopenCommitment = (agreementId, newCap) => rpc('cc_inv_reopen_commitment', { p_agreement: agreementId, p_new_cap: newCap });
 export const ccInvWindDown       = (p) => rpc('cc_inv_wind_down', { p });
 export const ccInvAnswerFlag     = (id, answer, resolve = true) => rpc('cc_inv_answer_flag', { p_flag: id, p_answer: answer, p_resolve: resolve });
+// bl_inv_0403 — settings, e-sign, growth, projection, proofs
+export const invSettings        = () => rpc('inv_settings');
+export const invCurrentDoc      = (agreementId) => rpc('inv_current_doc', { p_agreement: agreementId });
+export const invSignDoc         = (p) => rpc('inv_sign_doc', { p });
+export const invGrowth          = () => rpc('inv_growth');
+export const invProjection      = (agreementId) => rpc('inv_projection', { p_agreement: agreementId });
+export const ccInvSettingsGet   = () => rpc('cc_inv_settings_get');
+export const ccInvSettingsSet   = (key, value) => rpc('cc_inv_settings_set', { p_key: key, p_value: value });
+export const ccInvPublishDoc    = (p) => rpc('cc_inv_publish_doc', { p });
+export const ccInvCountersign   = (p) => rpc('cc_inv_countersign', { p });
+// Private proofs bucket. Path = <agreement_id>/<timestamp>-<safe name>. Returns 'storage:<path>'.
+export async function invUploadProof(agreementId, file) {
+  const sb = await getClient();
+  const safe = String(file.name || 'proof').replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 80);
+  const path = agreementId + '/' + Date.now() + '-' + safe;
+  const { error } = await sb.storage.from('investor-proofs').upload(path, file, { upsert: false, contentType: file.type || undefined });
+  if (error) throw error;
+  return 'storage:' + path;
+}
+export async function invProofUrl(ref, seconds = 600) {
+  if (!ref || ref.indexOf('storage:') !== 0) return ref || null;
+  const sb = await getClient();
+  const { data, error } = await sb.storage.from('investor-proofs').createSignedUrl(ref.slice(8), seconds);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+// bl_inv_0405 — investor-initiated amendments, expense acknowledgement, doc params
+export const invProposeAmendment  = (p) => rpc('inv_propose_amendment', { p });
+export const invWithdrawAmendment = (id) => rpc('inv_withdraw_amendment', { p_id: id });
+export const invMyAmendments      = (agreementId) => rpc('inv_my_amendments', { p_agreement: agreementId });
+export const invAckExpense        = (id) => rpc('inv_ack_expense', { p_expense: id });
+export const ccInvDecideAmendment = (id, accept, note) => rpc('cc_inv_decide_amendment', { p_id: id, p_accept: !!accept, p_note: note || null });
+export const ccInvAmendments      = (agreementId) => rpc('cc_inv_amendments', { p_agreement: agreementId });
+
+// bl_inv_0406 — updates, notifications, audit trail
+export const invNotifications = (limit) => rpc('inv_notifications', { p_limit: limit || 50 });
+export const invMarkRead      = (ids) => rpc('inv_mark_read', { p_ids: ids || null });
+export const invUpdates       = (agreementId, limit) => rpc('inv_updates', { p_agreement: agreementId, p_limit: limit || 30 });
+export const invAudit         = (agreementId, limit) => rpc('inv_audit', { p_agreement: agreementId, p_limit: limit || 200 });
+export const ccInvPostUpdate  = (p) => rpc('cc_inv_post_update', { p });
+export const ccInvUpdates     = (limit) => rpc('cc_inv_updates', { p_limit: limit || 50 });

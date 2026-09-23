@@ -5,6 +5,7 @@
 // timeline — each section linking back into the module it came from. Read-only aggregate
 // via cc_carrier_360 (keyed on the carrier organization id), RBAC-gated on carriers.view.
 import { el, mount } from '../../shared/ui/dom.js';
+import { ccDispatcherDelaySet } from '../../shared/api.js';   // bl_disp_0410
 import { icon } from '../../shared/ui/icons.js';
 
 import { showError } from '../../shared/loading.js';
@@ -125,6 +126,20 @@ export function renderCarrier360(host, orgId) {
       ]));
     })();
 
+    // bl_disp_0410 — why no dispatcher yet: the reason the carrier reads on their Dispatcher tab once the 3-business-day window passes.
+    (() => {
+      const REASONS = [['authority_new', 'Authority too new — brokers not releasing freight yet'], ['capacity', 'All dispatchers at full load'], ['docs_pending', 'A document is still in verification'], ['working', 'Working on it — needs more time'], ['other', 'Other (write the note)']];
+      const sel = el('select', { class: 'cc-input', style: 'max-width:340px' }, [el('option', { value: '' }, '— no reason set (carrier sees the default) —'), ...REASONS.map((r) => el('option', { value: r[0] }, r[1]))]);
+      const note = el('input', { class: 'cc-input', placeholder: 'One line the carrier will read (optional)', style: 'flex:1;min-width:220px' });
+      const eta = el('input', { class: 'cc-input', type: 'number', min: '1', max: '30', placeholder: 'ETA days', style: 'width:96px' });
+      const save = el('button', { class: 'lb-btn lb-btn-primary', type: 'button', onClick: async () => {
+        save.disabled = true; try { const r = await ccDispatcherDelaySet(orgId, sel.value || 'clear', note.value || null, eta.value ? Number(eta.value) : null); if (r && r.error) throw new Error(r.error); save.textContent = sel.value ? 'Saved — carrier sees it now' : 'Cleared'; } catch (e) { save.textContent = (e && e.message) || 'Failed'; } setTimeout(() => { save.textContent = 'Save reason'; save.disabled = false; }, 1800);
+      } }, 'Save reason');
+      body.appendChild(card('Dispatcher assignment delay — what the carrier is told', el('div', null, [
+        el('div', { class: 'cc-sub', style: 'margin-bottom:8px' }, 'Shown on the carrier’s Dispatcher tab only after the 3-business-day window passes with no dispatcher assigned. Pick the honest reason; the portal writes the full explanation.'),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [sel, note, eta, save]),
+      ])));
+    })();
     const jumpTo = (elGetter) => () => { try { const e2 = elGetter(); e2 && e2.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} };
     const clickable = (node, on) => { const w = el('div', { style: 'cursor:pointer', onClick: on }); w.appendChild(node); return w; };
     const kpis = el('div', { class: 'cc-kpi-grid' }, [

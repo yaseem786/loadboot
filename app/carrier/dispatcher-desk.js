@@ -103,12 +103,21 @@ const CSS = `
 .dd-call .dir.in{color:#6ee7b7}.dd-call .dir.out{color:#8ec5ff}
 .dd-call .m{flex:1;min-width:0}.dd-call .m b{display:block;color:#eaf1fb;font-size:.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dd-call .m span{color:#8ea2c3;font-size:.74rem}
 .dd-call .d{font-size:.78rem;color:#b9c8e2;white-space:nowrap}
+.dd-delay{margin-top:16px;padding:16px 18px;border-radius:18px;background:rgba(10,19,34,.55);border:1px solid rgba(245,158,11,.45);display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+.dd-delay .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(245,158,11,.16);color:#fcd34d}
+.dd-delay h3{margin:0 0 4px;font-size:1rem;color:#fff}
+.dd-delay p{margin:0;color:#dfe9fb;font-size:.9rem;line-height:1.55}
+.dd-delay .why{margin-top:10px;display:grid;gap:6px}
+.dd-delay .why div{display:flex;gap:8px;align-items:flex-start;font-size:.84rem;color:#b9c8e2}
+.dd-delay .why b{color:#fcd34d;flex:none}
+.dd-delay .note{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(245,158,11,.08);border:1px dashed rgba(245,158,11,.4);font-size:.86rem;color:#fde68a}
+.dd-delay .eta{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-weight:800;color:#fff;font-size:.9rem}
 .dd-cta{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:14px;background:#0883F7;color:#fff;font-weight:800;border:0;cursor:pointer;font-size:.92rem;box-shadow:0 12px 26px -12px rgba(8,131,247,.9)}
 .dd-cta.ghost{background:rgba(255,255,255,.07);box-shadow:none;border:1px solid rgba(255,255,255,.14)}
 .dd-cta.danger{background:rgba(239,68,68,.14);color:#fca5a5;border:1px solid rgba(239,68,68,.4);box-shadow:none}
 .dd-btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .dd-wrap{container-type:inline-size}
-@container (max-width:760px){.dd-grid2,.dd-cols{grid-template-columns:1fr}.dd-thread{height:260px}.dd-actions{grid-template-columns:1fr}.dd-steps{grid-template-columns:repeat(5,minmax(0,1fr))}.dd-step{font-size:.62rem}.dd-hero{padding:18px 16px}.dd-h1{font-size:1.25rem}.dd-count b{font-size:2.1rem}.dd-stats{grid-template-columns:1fr 1fr}.dd-blist{grid-template-columns:1fr}.dd-btnrow{flex-direction:column;align-items:stretch}.dd-btnrow>div{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}.dd-btnrow .dd-cta{width:100%;justify-content:center}.dd-person{flex-direction:row}.dd-avatar{width:52px;height:52px;border-radius:16px;font-size:1.1rem}.dd-act .v{font-size:.78rem}.dd-row .l b{font-size:.86rem}.dd-faq p{margin-left:0}}
+@container (max-width:760px){.dd-delay{grid-template-columns:1fr}.dd-grid2,.dd-cols{grid-template-columns:1fr}.dd-thread{height:260px}.dd-actions{grid-template-columns:1fr}.dd-steps{grid-template-columns:repeat(5,minmax(0,1fr))}.dd-step{font-size:.62rem}.dd-hero{padding:18px 16px}.dd-h1{font-size:1.25rem}.dd-count b{font-size:2.1rem}.dd-stats{grid-template-columns:1fr 1fr}.dd-blist{grid-template-columns:1fr}.dd-btnrow{flex-direction:column;align-items:stretch}.dd-btnrow>div{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}.dd-btnrow .dd-cta{width:100%;justify-content:center}.dd-person{flex-direction:row}.dd-avatar{width:52px;height:52px;border-radius:16px;font-size:1.1rem}.dd-act .v{font-size:.78rem}.dd-row .l b{font-size:.86rem}.dd-faq p{margin-left:0}}
 @supports not (container-type:inline-size){@media (max-width:760px){.dd-grid2,.dd-cols{grid-template-columns:1fr}.dd-thread{height:260px}.dd-actions{grid-template-columns:1fr}.dd-steps{grid-template-columns:repeat(5,minmax(0,1fr))}.dd-step{font-size:.62rem}.dd-hero{padding:18px 16px}.dd-h1{font-size:1.25rem}.dd-count b{font-size:2.1rem}.dd-stats{grid-template-columns:1fr 1fr}.dd-blist{grid-template-columns:1fr}.dd-btnrow{flex-direction:column;align-items:stretch}.dd-btnrow>div{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}.dd-btnrow .dd-cta{width:100%;justify-content:center}.dd-person{flex-direction:row}.dd-avatar{width:52px;height:52px;border-radius:16px;font-size:1.1rem}.dd-act .v{font-size:.78rem}.dd-row .l b{font-size:.86rem}.dd-faq p{margin-left:0}}}
 `;
 function ensureCss() { if (document.getElementById('dd-css')) return; const s = document.createElement('style'); s.id = 'dd-css'; s.textContent = CSS; document.head.appendChild(s); }
@@ -139,6 +148,38 @@ const HOW = [
   ['award', 'How are they screened?', 'Government photo ID on file · an 18-question written skills test (75 minutes; at least 70% overall and 60% on compliance; must catch a double-brokering set-up and refuse an illegal-hours plan) · a spoken broker-negotiation drill · a signed Independent Dispatcher Agreement · then a 10-working-day monitored trial before they are confirmed.'],
   ['shield', 'Who supervises them?', 'LoadBoot dispatch. Calls go through a LoadBoot line and messages through the shared thread, so everything is logged and read. Every rate confirmation is approved by LoadBoot before your driver moves. Your dispatcher books under YOUR authority as your agent (FMCSA 88 FR 39368): never touches your money, never re-brokers, never books below your floor.'],
 ];
+
+// ---------- why a match is taking longer than the promised window (reason set by CC; honest default otherwise) ----------
+const DELAY_COPY = {
+  authority_new: { title: 'Your authority is new — brokers are the bottleneck, not you',
+    body: 'Most brokers will not tender freight to an MC younger than 90–180 days, and a dispatcher cannot book what brokers will not release. We are matching you with a dispatcher who works the brokers that do take new authorities, and that pool is smaller — so the match takes longer.',
+    why: [['What we are doing', 'Placing you with a dispatcher who has active new-authority broker relationships and DAT/Truckstop access.'], ['What helps most', 'Keep insurance, W-9 and availability current — a complete packet is what those brokers check first.']] },
+  capacity: { title: 'All our dispatchers are at full load right now',
+    body: 'Every LoadBoot dispatcher carries a fixed number of trucks so your truck gets real attention, and every seat is taken this week. New dispatchers are in the final stage of screening.',
+    why: [['What we are doing', 'Onboarding the next screened dispatchers and freeing a seat for you first.'], ['What helps most', 'Nothing on your side — you are next in line.']] },
+  docs_pending: { title: 'One of your documents is still being verified',
+    body: 'A dispatcher is assigned only once the packet brokers ask for is approved. One item is still with compliance; the countdown resumes the moment it clears.',
+    why: [['What we are doing', 'Compliance is reviewing it now.'], ['What helps most', 'Check the Documents page — if something was sent back, a corrected copy clears it same day.']] },
+  working: { title: 'We are working on it',
+    body: 'Your match is taking longer than our usual window. Some matches need more time — the right dispatcher for your equipment and lanes is worth a day or two more than the wrong one.',
+    why: [['What we are doing', 'LoadBoot dispatch is matching you by hand and checks in daily.'], ['What helps most', 'Keep availability current so the dispatcher can start the day they are assigned.']] },
+  other: { title: 'Your match is taking longer than planned',
+    body: 'LoadBoot dispatch has a specific reason on file for your account — it is in the note below.',
+    why: [['What we are doing', 'Matching you by hand.'], ['What helps most', 'Reply on WhatsApp if anything on your side has changed.']] },
+};
+function delayCard(sla, program) {
+  const dl = sla.delay || {}; const c = DELAY_COPY[dl.reason] || DELAY_COPY.working;
+  return h('div', { class: 'dd-delay' }, [
+    h('div', { class: 'ic' }, icon('clock', 22)),
+    h('div', null, [
+      h('h3', null, c.title), h('p', null, c.body),
+      h('div', { class: 'why' }, c.why.map((r) => h('div', null, [h('b', null, r[0] + ':'), h('span', null, r[1])]))),
+      dl.note ? h('div', { class: 'note' }, ['From LoadBoot dispatch: ', dl.note]) : null,
+      dl.eta_days ? h('div', { class: 'eta' }, [icon('cal', 14), ' We expect to match you within ' + dl.eta_days + ' business day' + (dl.eta_days === 1 ? '' : 's')]) : null,
+      h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, ['Questions? WhatsApp us or write to ', h('a', { href: 'mailto:' + (program && program.escalation_email || 'dispatch@loadboot.com'), style: 'color:#8ec5ff' }, program && program.escalation_email || 'dispatch@loadboot.com'), ' — a person answers the same day.']),
+    ]),
+  ]);
+}
 
 export async function renderDispatcherDesk(host) {
   ensureCss();
@@ -187,11 +228,11 @@ export async function renderDispatcherDesk(host) {
     const left = sla.business_days_left; const overdue = !!sla.overdue;
     hero = h('div', { class: 'dd-hero' }, [
       h('div', { class: 'dd-eyebrow' }, 'Dedicated dispatcher'),
-      h('h2', { class: 'dd-h1' }, overdue ? 'We are matching your dispatcher now' : 'Assigning your dedicated dispatcher'),
+      h('h2', { class: 'dd-h1' }, overdue ? 'Your match is taking longer than ' + slaDays + ' business days' : 'Assigning your dedicated dispatcher'),
       h('p', { class: 'dd-sub' }, overdue
-        ? 'Your ' + slaDays + '-business-day window has passed — LoadBoot dispatch is matching you by hand. Write to ' + (d.program && d.program.escalation_email || 'dispatch@loadboot.com') + ' and we answer the same day.'
+        ? 'The usual window (' + slaDays + ' business days from approval, ' + day(sla.assign_by) + ') has passed. Here is exactly why, and what happens next.'
         : 'You are verified. A screened LoadBoot dispatcher is assigned to your trucks within ' + slaDays + ' business days of approval — you will get an e-mail and an in-app notice the moment it happens.'),
-      overdue ? null : h('div', { class: 'dd-count' }, [h('b', null, String(left == null ? slaDays : left)), h('span', null, (left === 1 ? 'business day' : 'business days') + ' left · by ' + day(sla.assign_by))]),
+      overdue ? delayCard(sla, d.program) : h('div', { class: 'dd-count' }, [h('b', null, String(left == null ? slaDays : left)), h('span', null, (left === 1 ? 'business day' : 'business days') + ' left · by ' + day(sla.assign_by))]),
       stepper,
     ]);
   } else if (stage === 'rejected') {

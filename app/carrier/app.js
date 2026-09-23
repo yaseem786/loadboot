@@ -2501,7 +2501,7 @@ async function appView(user) {
   if (DRV) { try { availPill.hidden = true; shell.querySelectorAll('.cp-top-right .cp-chip-btn, .cp-top-right [title="Settings"]').forEach((x) => { x.hidden = true; }); } catch (_) {} }
   // bl_ux_0320: pin/collapse sidebar. Labels stay while the account is still being set up; once
   // compliant the rail collapses by default (the carrier can pin it open any time).
-  mountSideRail(shell, { key: window.__LB_AGENT ? 'agent' : 'carrier', defaultCollapsed: !!ov.compliance_ok });
+  mountSideRail(shell, { key: window.__LB_AGENT ? 'agent' : 'carrier', defaultCollapsed: false });   // owner 23 Sep 2026: always open wide; the carrier's own toggle is remembered
   root.setAttribute('aria-busy', 'false');
   // Pull-to-refresh (big-brand standard): re-runs the current view + unread count.
   try { attachPullToRefresh(content, async () => { render(); refreshUnread(); }); } catch (_) {}

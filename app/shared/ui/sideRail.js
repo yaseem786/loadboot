@@ -18,7 +18,7 @@
 import { el } from './dom.js';
 
 const RAIL_CLASS = 'cp-shell--rail';
-const AUTO_MQ = '(max-width: 1279px)';
+const AUTO_MQ = '(max-width: 1023px)';   // 23 Sep 2026: laptops (1280–1366) open wide; only tablets auto-collapse
 const SVG = (d) => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
 const IC_COLLAPSE = SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 10l-2 2 2 2"/>');
 const IC_EXPAND = SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M14 10l2 2-2 2"/>');
