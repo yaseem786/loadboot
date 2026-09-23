@@ -24,7 +24,7 @@
     'background:linear-gradient(135deg,#0883F7,#065fb8);color:#fff;box-shadow:0 10px 30px rgba(8,131,247,.45);display:flex;align-items:center;justify-content:center;transition:transform .18s,opacity .2s}',
     '#lbc-fab:hover{transform:scale(1.07)}',
     // 23 Sep 2026 — portals dock the launcher into the premium header (window.LBChat.dock(host)); the floating FAB stays for the marketing site
-    '#lbc-fab.lbc-docked{position:relative;right:auto;bottom:auto;width:38px;height:38px;border-radius:10px;box-shadow:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#8ec5ff;z-index:1}',
+    '#lbc-fab.lbc-docked{position:relative;right:auto!important;bottom:auto!important;top:auto!important;margin:0;width:38px;height:38px;border-radius:10px;box-shadow:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#8ec5ff;z-index:1}',
     '#lbc-fab.lbc-docked:hover{transform:none;background:rgba(8,131,247,.22);color:#fff}',
     '#lbc-fab.lbc-docked svg{width:20px;height:20px}',
     '#lbc-fab.lbc-docked #lbc-badge{top:-6px;right:-6px;min-width:18px;height:18px;line-height:18px;font-size:10px}',
@@ -740,7 +740,7 @@
           var visible = br.height > 0 && br.top < window.innerHeight && getComputedStyle(bar).display !== 'none';
           if (visible) off = Math.max(18, Math.round(window.innerHeight - br.top) + 12);
         }
-        fab.style.bottom = 'calc(' + off + 'px + env(safe-area-inset-bottom, 0px))';
+        if (!fab.classList.contains('lbc-docked')) fab.style.bottom = 'calc(' + off + 'px + env(safe-area-inset-bottom, 0px))';   // docked in a header: never offset
         if (window.innerWidth > 520) panel.style.bottom = (off + 68) + 'px';
         var tz = document.getElementById('lbc-teaser');
         if (tz) tz.style.bottom = (off + 68) + 'px';
@@ -775,7 +775,9 @@
     if (!host) return false;
     var f = document.getElementById('lbc-fab'); if (!f) return false;
     if (f.parentNode === host) return true;
-    f.classList.add('lbc-docked'); f.setAttribute('title', 'Chat with LoadBoot'); host.appendChild(f); return true;
+    f.classList.add('lbc-docked'); f.style.bottom = ''; f.removeAttribute('title');
+    f.setAttribute('aria-label', 'Live chat — LoadBoot support'); f.setAttribute('data-lb-tip', 'Live chat · LoadBoot support');
+    host.appendChild(f); return true;
   }
   window.LBChat = { mount: mount, dock: dock };
 })();

@@ -337,6 +337,10 @@ body.cp-modal-open { position: fixed; left: 0; right: 0; width: 100%; overflow: 
 
 /* ---- Theme: light (default) / dark, switchable Off/On/System ---- */
 html[data-lbtheme="dark"] body { background: #0b1220; color: #e2e8f0; }
+/* bl_ui_0412 — the canvas (html) was never themed, so wherever the viewport out-runs the body for a moment — iOS
+   toolbar collapse, overscroll, the strip under the fixed tab bar — a white band showed. Paint the canvas too. */
+html { background: var(--lb-bg, #f4f6fb); }
+html[data-lbtheme="dark"] { background: #0b1220; }
 html[data-lbtheme="dark"] .cp-main { background: #0b1220; }
 html[data-lbtheme="dark"] .cp-top { background: rgba(11,18,32,.9); border-bottom-color: rgba(255,255,255,.08); }
 html[data-lbtheme="dark"] .cp-top-title { color: #fff; }
