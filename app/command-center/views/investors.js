@@ -51,6 +51,27 @@ function ensureStyle() {
     '.cc-drawer-panel .cc-kpi-val{font-size:clamp(1.05rem,3.2vw,1.45rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}',
     '.cc-drawer-panel .cc-kpi-sub{overflow-wrap:anywhere}',
     '.cc-inv-page .cc-kpi-val{font-size:clamp(1.2rem,1.6vw,1.9rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}',
+    '.cc-drawer-panel .cc-pill{white-space:nowrap}',
+    '.cc-req-head{display:flex;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#0B1B33,#0E3A6B);color:#fff;border-radius:14px;padding:14px 16px}',
+    '.cc-req-k{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;opacity:.75}',
+    '.cc-req-v{font-size:1.35rem;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}.cc-req-v.dim{opacity:.7;font-size:1.05rem}',
+    '.cc-req-bar{position:relative;height:12px;border-radius:999px;background:#e5e9f0;margin:12px 0 6px;overflow:hidden}',
+    '.cc-req-bar i{position:absolute;top:0;left:0;height:100%;display:block}.cc-req-bar i.f{background:#2ED18A}.cc-req-bar i.a{background:#0883F7;left:auto}.cc-req-bar i.a.over{background:#dc2626}',
+    '.cc-req-bar i.a{left:var(--l,0)}',
+    '.cc-req-barlbl{display:flex;justify-content:space-between;gap:8px;font-size:.78rem;color:#64748b;margin-bottom:14px;flex-wrap:wrap}.cc-req-barlbl b{color:#10223B}.cc-req-barlbl b.bad{color:#dc2626}',
+    '.cc-req-chips{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}',
+    '.cc-req-chip{text-align:left;border:1px solid #dbe2ec;background:#fff;border-radius:12px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;transition:.15s}',
+    '.cc-req-chip b{font-size:.88rem;color:#10223B}.cc-req-chip span{font-size:.74rem;color:#64748b}',
+    '.cc-req-chip:hover{border-color:#0883F7}.cc-req-chip.on{border-color:#0883F7;background:rgba(8,131,247,.08);box-shadow:0 0 0 2px rgba(8,131,247,.18)}',
+    '.cc-req-chip.plan b:before{content:\'★ \';color:#FC5305}.cc-req-chip.custom{border-style:dashed}',
+    '.cc-req-hint{font-size:.74rem;color:#64748b;margin-top:6px}',
+    '.cc-req-quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}',
+    '.cc-req-q{border:1px solid #dbe2ec;background:#f6f8fb;border-radius:999px;padding:5px 11px;font-size:.78rem;font-weight:700;color:#10223B;cursor:pointer}.cc-req-q.on{background:#0883F7;border-color:#0883F7;color:#fff}',
+    '.cc-req-preview{margin:6px 0 16px}.cc-req-pv-h{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:6px}',
+    '.cc-req-pv-card{background:#0A1526;color:#E6EDF7;border-radius:14px;padding:14px 16px;border:1px solid rgba(255,255,255,.08)}',
+    '.cc-req-pv-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.cc-req-pv-top b{font-size:1.15rem;font-variant-numeric:tabular-nums}',
+    '.cc-req-pv-tag{font-size:.66rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:rgba(252,83,5,.18);color:#FFB08A;border-radius:999px;padding:3px 8px}',
+    '.cc-req-pv-title{font-weight:800;font-size:1rem}.cc-req-pv-card p{margin:6px 0 0;font-size:.84rem;color:#B7C3D6;line-height:1.45}.cc-req-pv-meta{margin-top:8px;font-size:.76rem;color:#8FA1BA}',
     '.cc-inv-hero:before{content:"";position:absolute;inset:auto -60px -120px auto;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(8,131,247,.45),transparent 65%)}',
     '.cc-inv-hero h2{margin:0;font-size:1.35rem;font-weight:800;letter-spacing:-.01em}',
     '.cc-inv-hero p{margin:4px 0 0;color:rgba(255,255,255,.72);font-size:.86rem;max-width:720px}',
@@ -260,17 +281,74 @@ function agreementForm(agr, rows, onDone, presetInvestor) {
   }), () => { d.close(); onDone(); });
 }
 
-function requestForm(agrId, unfunded, cur, onDone) {
-  const amount = num({ required: true, placeholder: 'max ' + pkr(unfunded, cur) });
-  const reason = inp({ required: true, placeholder: 'e.g. Office deposit + 2 computers' });
+// Premium capital-request drawer: presets (from the business plan + built-ins) or custom, amount chips,
+// remaining-commitment bar, needed-by quick picks, live preview of what the investor will read.
+const REQ_PRESETS = [
+  { key: 'office_deposit', title: 'Office deposit', cat: 'office', why: 'Security deposit for the office so dispatchers can work together on the US night shift.' },
+  { key: 'rent', title: 'Office rent (1 month)', cat: 'rent', why: 'Monthly rent for the office.' },
+  { key: 'salary', title: 'Dispatcher salary', cat: 'salary', why: 'Monthly pay for a dispatcher who books loads for our carriers.' },
+  { key: 'equipment', title: 'Computers / equipment', cat: 'equipment', why: 'Laptops, headsets and a UPS for the dispatch desk.' },
+  { key: 'tools', title: 'Software & phone lines', cat: 'tools', why: 'Monthly subscriptions the team uses (hosting, email, phone lines).' },
+  { key: 'legal', title: 'Legal / registration', cat: 'legal', why: 'Lawyer, registration or filing fees.' },
+  { key: 'marketing', title: 'Marketing', cat: 'marketing', why: 'Ads and outreach to bring more carriers and brokers.' },
+  { key: 'relocation', title: 'Relocation', cat: 'relocation', why: 'Moving costs for setting up in the new city.' },
+];
+function requestForm(agrId, unfunded, cur, onDone, pos) {
+  pos = pos || {};
+  const cap = Number(pos.commitment_cap || 0), funded = Number(pos.funded || 0), rem = Number(unfunded || 0);
+  const planItems = (((SETTINGS || {}).plan || {}).items || []).filter(i => i && i.title).map((i, n) => ({ key: 'plan' + n, title: i.title, amount: Number(i.amount) || 0, cat: guessCat(i.title), why: i.why || '', plan: true }));
+  const presets = planItems.concat(REQ_PRESETS);
+  let picked = null;
+  const amount = num({ required: true, placeholder: 'max ' + pkr(rem, cur), max: String(rem) });
+  const reason = inp({ required: true, placeholder: 'Short title the investor sees, e.g. Office deposit + 2 computers' });
+  const why = ta({ rows: 3, placeholder: 'Why now, what it buys, what it unlocks (optional — shown to the investor under the title)' });
   const cat = sel(CATS.map(c => [c, c]), 'office');
   const by = inp({ type: 'date' });
   const btn = el('button', { class: 'lb-btn lb-btn-primary' }, 'Raise request');
-  const d = openDrawer('Raise a capital request', el('div', null, [
-    f('Amount', amount, 'Remaining commitment: ' + pkr(unfunded, cur)), f('What for', reason), f('Category', cat), f('Needed by', by), btn,
-  ]), { subtitle: 'The investor sees this in their portal immediately and marks it paid from there.' });
-  btn.onclick = () => submit(btn, () => ccInvRequest({ agreement_id: agrId, amount: amount.value, reason: reason.value, category: cat.value, needed_by: by.value }), () => { d.close(); onDone(); });
+  const chipsHost = el('div', { class: 'cc-req-chips' });
+  const bar = el('div', { class: 'cc-req-bar' }), barLbl = el('div', { class: 'cc-req-barlbl' });
+  const preview = el('div', { class: 'cc-req-preview' });
+  const amtChips = el('div', { class: 'cc-req-quick' });
+  const byChips = el('div', { class: 'cc-req-quick' });
+  const isoIn = (days) => { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); };
+  const monthEnd = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10); };
+  function paint() {
+    const a = Number(amount.value) || 0, over = a > rem, after = Math.max(0, rem - a);
+    mount(chipsHost, presets.map(p => el('button', { type: 'button', class: 'cc-req-chip' + (picked === p.key ? ' on' : '') + (p.plan ? ' plan' : ''), onClick: () => pick(p) }, [
+      el('b', null, p.title), p.amount ? el('span', null, pkr(p.amount, cur)) : (p.plan ? null : el('span', null, p.cat)),
+    ])).concat(el('button', { type: 'button', class: 'cc-req-chip custom' + (picked === 'custom' ? ' on' : ''), onClick: () => { picked = 'custom'; reason.value = ''; why.value = ''; paint(); reason.focus(); } }, [el('b', null, '+ Custom'), el('span', null, 'write your own')])));
+    const pF = cap ? 100 * funded / cap : 0, pA = cap ? 100 * Math.min(a, rem) / cap : 0;
+    mount(bar, [el('i', { class: 'f', style: 'width:' + pF + '%' }), el('i', { class: 'a' + (over ? ' over' : ''), style: 'width:' + pA + '%;--l:' + pF + '%' })]);
+    mount(barLbl, [el('span', null, ['Given ', el('b', null, pkr(funded, cur))]), el('span', null, ['This request ', el('b', { class: over ? 'bad' : '' }, pkr(a, cur))]), el('span', null, ['Left after ', el('b', null, over ? 'over the commitment' : pkr(after, cur))])]);
+    mount(amtChips, [25000, 50000, 100000, 200000].filter(v => v <= rem).map(v => el('button', { type: 'button', class: 'cc-req-q' + (a === v ? ' on' : ''), onClick: () => { amount.value = v; paint(); } }, pkr(v, cur).replace(cur + ' ', ''))).concat(rem ? el('button', { type: 'button', class: 'cc-req-q' + (a === rem ? ' on' : ''), onClick: () => { amount.value = rem; paint(); } }, 'All remaining') : null));
+    mount(byChips, [['1 week', isoIn(7)], ['2 weeks', isoIn(14)], ['Month end', monthEnd()], ['30 days', isoIn(30)]].map(([l, v]) => el('button', { type: 'button', class: 'cc-req-q' + (by.value === v ? ' on' : ''), onClick: () => { by.value = v; paint(); } }, l)));
+    mount(preview, [
+      el('div', { class: 'cc-req-pv-h' }, 'What the investor will see'),
+      el('div', { class: 'cc-req-pv-card' }, [
+        el('div', { class: 'cc-req-pv-top' }, [el('span', { class: 'cc-req-pv-tag' }, 'Capital request'), el('b', null, a ? pkr(a, cur) : '—')]),
+        el('div', { class: 'cc-req-pv-title' }, reason.value || 'Title…'),
+        why.value ? el('p', null, why.value) : null,
+        el('div', { class: 'cc-req-pv-meta' }, [cat.value, by.value ? ' · needed by ' + fmtDate(by.value) : ' · no deadline', ' · after this ' + (over ? 'over commitment' : pkr(after, cur) + ' still to give')]),
+      ]),
+    ]);
+    btn.disabled = !a || over || !reason.value.trim();
+  }
+  function pick(p) { picked = p.key; reason.value = p.title; cat.value = p.cat; if (p.amount) amount.value = p.amount; if (p.why) why.value = p.why; paint(); amount.focus(); }
+  [amount, reason, why, cat, by].forEach(x => x.addEventListener('input', paint));
+  const d = openDrawer('Raise a capital request', el('div', { class: 'cc-req' }, [
+    el('div', { class: 'cc-req-head' }, [el('div', null, [el('div', { class: 'cc-req-k' }, 'Remaining commitment'), el('div', { class: 'cc-req-v' }, pkr(rem, cur))]), el('div', null, [el('div', { class: 'cc-req-k' }, 'Commitment'), el('div', { class: 'cc-req-v dim' }, pkr(cap, cur))])]),
+    bar, barLbl,
+    f('What for', el('div', null, [chipsHost, planItems.length ? el('div', { class: 'cc-req-hint' }, '★ = from the business plan the investor already sees') : null])),
+    f('Title', reason), f('Details (optional)', why),
+    f('Amount', el('div', null, [amount, amtChips])),
+    f('Category', cat),
+    f('Needed by', el('div', null, [by, byChips])),
+    preview, btn,
+  ]), { subtitle: 'The investor gets a notification, sees it in the portal immediately and marks it paid from there. They can also decline.' });
+  paint();
+  btn.onclick = () => submit(btn, () => ccInvRequest({ agreement_id: agrId, amount: amount.value, reason: reason.value.trim() + (why.value.trim() ? ' — ' + why.value.trim() : ''), category: cat.value, needed_by: by.value || null }), () => { d.close(); onDone(); });
 }
+function guessCat(t) { t = String(t || '').toLowerCase(); return /rent/.test(t) ? 'rent' : /salary|dispatcher|pay/.test(t) ? 'salary' : /laptop|computer|equip|headset|ups/.test(t) ? 'equipment' : /software|tool|phone|line|hosting/.test(t) ? 'tools' : /legal|lawyer|regist/.test(t) ? 'legal' : /market|ads/.test(t) ? 'marketing' : /reloc|move|shift/.test(t) ? 'relocation' : /deposit|office/.test(t) ? 'office' : 'misc'; }
 
 function receiptForm(agrId, requests, cur, onDone) {
   const req = sel([['', '— not tied to a request —']].concat(requests.filter(r => r.status !== 'funded' && r.status !== 'cancelled').map(r => [r.id, '#' + r.seq + ' · ' + pkr(r.amount, cur) + ' · ' + r.reason])), '');
@@ -424,7 +502,7 @@ async function openDetail(agrId, onListChange) {
 
     ];
     const ledger = [
-      sec('Capital requests', manage ? [el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => requestForm(agrId, p.unfunded, cur, reload) }, '+ Request')] : null,
+      sec('Capital requests', manage ? [el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => requestForm(agrId, p.unfunded, cur, reload, p) }, '+ Request')] : null,
         tbl(['#', 'Amount', 'For', 'Status', 'Seen'], (D.requests || []).map(r => row([
           r.seq, pkr(r.amount, cur), r.reason + (r.category ? ' · ' + r.category : ''),
           pill({ pending: 'Awaiting investor', declared: 'Declared — confirm below', funded: 'Funded', declined: 'Declined', cancelled: 'Cancelled' }[r.status] || r.status, { pending: 'amber', declared: 'blue', funded: 'green' }[r.status] || 'gray'),
@@ -448,7 +526,7 @@ async function openDetail(agrId, onListChange) {
           tbl(['Date', 'Category', 'Vendor / what', 'Amount', 'Receipt', 'Investor', ''], (D.expenses || []).map(x => row([
             fmtDate(x.date), x.category, (x.vendor || '—') + (x.description ? ' · ' + x.description : '') + (x.recurring ? ' · monthly' : ''),
             el('b', { style: x.reversed ? 'color:#16a34a' : '' }, (x.reversed ? '+' : '−') + pkr(x.amount, cur)), link(x.receipt_url, 'view'),
-            x.reversed ? '' : (D.acks || {})[x.id] ? pill('Seen ' + fmtDate((D.acks || {})[x.id]), 'green') : pill('Not yet seen', 'gray'),
+            x.reversed ? '' : (D.acks || {})[x.id] ? pill('Seen · ' + fmtDate((D.acks || {})[x.id]), 'green') : pill('Not yet seen', 'gray'),
             (manage && !x.reversed) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async () => { const why = await askReason('Reverse this expense', { placeholder: 'Why?' }); if (!why) return; try { await ccInvReverseExpense(x.id, why); toast('Reversed'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Reverse') : ''], x.reversed ? 'cc-row-muted' : ''))),
         ])),
 
