@@ -9061,6 +9061,10 @@ if os.path.isdir(APP_SRC):
                 continue
             p = os.path.join(dirpath, fn)
             url = '/app/' + os.path.relpath(p, APP_OUT).replace(os.sep, '/')
+            # bl_inv_0409: the investor portal is never precached — a stale cache-first copy under the
+            # carrier app's /app/ service worker left investors stuck on the splash after a deploy.
+            if url.startswith('/app/investor/'):
+                continue
             _precache.append(url)
     _precache = sorted(set(_precache))
     _cc_shell = '/app/command-center/index.html'
