@@ -55,6 +55,7 @@ const err = (e) => (e && (e.message || String(e))) || t('err_generic');
 // ---------- icons (inline SVG, stroke = currentColor) ----------
 const P = {
   plan: 'M4 4h16v16H4zM8 9h8M8 13h6M8 17h4',
+  agreement: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15l2 2 4-4',
   home: 'M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z',
   requests: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
   ledger: 'M2 7h20v12H2zM2 11h20M6 15h4',
@@ -171,7 +172,10 @@ function renderNotLinked() {
 }
 
 // ---------- shell + tabs ----------
-const TABS = ['home', 'plan', 'requests', 'ledger', 'payments', 'statements'];
+// SIMPLE mode (Yaseen, 23 Sep): the portal's one job is a provable record — what came in, where it went,
+// why, with proof. Everything else (plan, projections, growth, links) stays in the code but off the screen.
+const SIMPLE = true;
+const TABS = SIMPLE ? ['home', 'ledger', 'payments', 'agreement'] : ['home', 'plan', 'requests', 'ledger', 'payments', 'statements'];
 function renderShell() {
   const pendingReq = (S.requests || []).filter(r => r.status === 'pending').length;
   const initials = (S.me.name || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -184,11 +188,11 @@ function renderShell() {
     pane,
     el('nav', { class: 'iv-tabs', 'aria-label': 'Sections' }, TABS.map(id =>
       el('button', { class: 'iv-tab' + (S.tab === id ? ' on' : ''), 'aria-current': S.tab === id ? 'page' : null, onClick: () => { S.tab = id; renderShell(); } }, [
-        icon(id, ''), t('nav_' + id), (id === 'requests' && pendingReq) ? el('i', { class: 'dot', 'aria-label': pendingReq + ' pending' }) : null,
+        icon(id, ''), (SIMPLE && id === 'home') ? t('nav_record') : t('nav_' + id), ((id === 'requests' || (SIMPLE && id === 'home')) && pendingReq) ? el('i', { class: 'dot', 'aria-label': pendingReq + ' pending' }) : null,
       ]))),
   ]));
   root.removeAttribute('aria-busy');
-  ({ home: renderHome, plan: renderPlan, requests: renderRequests, ledger: renderLedger, payments: renderPayments, statements: renderStatements })[S.tab](pane);
+  ({ home: SIMPLE ? renderRecord : renderHome, plan: renderPlan, requests: renderRequests, ledger: renderLedger, payments: renderPayments, statements: renderStatements, agreement: renderAgreementTab })[S.tab](pane);
 }
 function agrPicker() {
   if (S.agreements.length < 2) return null;
@@ -1094,4 +1098,64 @@ function planSolver() {
   const go = { 1: () => { S.tab = 'ledger'; renderShell(); }, 2: () => { S.tab = 'home'; renderShell(); }, 3: () => showAgreement(), 4: () => { S.tab = 'home'; renderShell(); }, 5: () => { S.tab = 'ledger'; renderShell(); }, 6: () => showAgreement(), 7: () => showAgreement(), 8: () => showTerm('share'), 9: () => showAudit(), 10: () => { S.tab = 'statements'; renderShell(); } };
   return el('div', { class: 'iv-card iv-bp', id: 'bp-solver' }, [el('p', { class: 'iv-eyebrow' }, t('bp_solver')), el('p', { class: 'iv-muted', style: 'margin:0 0 8px' }, t('bp_solver_sub')),
     el('div', { class: 'iv-solver' }, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => el('button', { type: 'button', onClick: go[i] }, [el('b', null, t('ps_' + i + 'q')), el('span', null, t('ps_' + i + 'a')), el('i', null, '›')])))]);
+}
+
+// ============================================================================
+// SIMPLE mode — Home = the record. Three numbers, one list, one download.
+// ============================================================================
+async function renderRecord(host) {
+  mount(host, skeleton());
+  if (!S.ledger) { try { S.ledger = await invLedger(S.agr.id); } catch (e) { mount(host, el('div', { class: 'iv-err' }, err(e))); return; } }
+  if (!S.requests) { try { S.requests = (await invMyRequests(S.agr.id)).requests || []; } catch (_) { S.requests = []; } }
+  const L = S.ledger, p = L.position || S.agr.position || {};
+  const ev = [];
+  (L.receipts || []).forEach(r => { if (r.state === 'confirmed' || r.state === 'awaiting_confirmation') ev.push({ t: r.received_date, kind: 'in', title: t('rec_in') + ' ' + money(r.amount), sub: (r.method || '') + (r.reference ? ' · ' + r.reference : '') + (r.state === 'confirmed' ? ' · ' + t('p_lb_confirmed') + ' ' + fmtDate(r.confirmed_at) : ' · ' + t('not_yet')), proof: !!r.proof_url, amt: '+' + money(r.amount), cls: 'pos', open: () => paymentConfirmation(r), ok: r.state === 'confirmed' }); });
+  (L.expenses || []).forEach(x => ev.push({ t: x.date, kind: 'out', title: (x.reversed ? t('l_reversal') + ' · ' : '') + (x.vendor || catName(x.category)), sub: (vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang())) + (x.description ? ' — ' + x.description : ''), proof: !!x.receipt_url, amt: (x.reversed ? '+' : '−') + money(x.amount), cls: x.reversed ? 'pos' : 'neg', open: () => { S.tab = 'ledger'; renderShell(); }, ok: true, ack: x.acknowledged_at }));
+  (L.payouts || []).forEach(po => { if (po.status === 'paid' && Number(po.total) > 0) ev.push({ t: po.paid_date, kind: 'payout', title: t('rec_payout') + ' ' + money(po.total), sub: (po.month ? fmtMonth(po.month) : t('h_wound')) + (po.confirmed_at ? ' · ✓' : ' · ' + t('not_yet')), proof: !!po.proof_url, amt: '+' + money(po.total), cls: 'pos', open: () => { S.tab = 'payments'; renderShell(); }, ok: !!po.confirmed_at }); });
+  (S.requests || []).forEach(r => { if (r.status === 'pending') ev.push({ t: r.requested_at, kind: 'req', title: t('rec_req') + ' ' + money(r.amount), sub: r.reason || '', proof: false, amt: money(r.amount), cls: '', open: () => openRequest(r), ok: false }); });
+  ev.sort((a, b) => new Date(b.t) - new Date(a.t));
+  const ic = { in: 'payments', out: 'ledger', payout: 'statements', req: 'requests' };
+  const pendingReq = (S.requests || []).filter(r => r.status === 'pending').length;
+  mount(host, [
+    agrPicker(), el('h1', { class: 'iv-h1' }, t('rec_title')), el('p', { class: 'iv-sub' }, t('rec_sub')),
+    stateBanner(p),
+    pendingReq ? el('button', { class: 'iv-warn', style: 'width:100%;text-align:start;cursor:pointer;font:inherit', onClick: () => openRequest((S.requests || []).find(r => r.status === 'pending')) }, [el('b', null, t('rec_req') + ' ' + money((S.requests || []).find(r => r.status === 'pending').amount)), ' — ', (S.requests || []).find(r => r.status === 'pending').reason || '', ' ›']) : null,
+    el('div', { class: 'iv-card hero iv-rec-hero' }, [
+      el('div', { class: 'iv-rec-3' }, [
+        el('div', null, [el('span', null, t('rec_given')), el('b', null, money(p.funded))]),
+        el('div', null, [el('span', null, t('rec_spent')), el('b', null, money(p.spent))]),
+        el('div', { class: 'left' }, [el('span', null, t('rec_left')), el('b', null, money(p.fund_cash))]),
+      ]),
+      el('div', { class: 'iv-prog' }, [el('div', { class: 'bar' }, el('i', { style: 'width:' + (Number(p.funded) ? Math.min(100, Math.round(100 * Number(p.spent || 0) / Number(p.funded))) : 0) + '%' }))]),
+      Number(p.total_paid_out) ? el('p', { class: 'iv-muted', style: 'margin:8px 0 0' }, t('rec_back') + ': ' + money(p.total_paid_out)) : null,
+      el('p', { class: 'iv-muted', style: 'margin:8px 0 0;font-size:.78rem' }, t('of') + ' ' + money(p.commitment_cap) + ' ' + t('h_commit_used').toLowerCase() + ' · ' + pct(p.funded_pct)),
+    ]),
+    el('div', { class: 'iv-sect' }, el('h2', null, t('rec_all'))),
+    ev.length ? el('div', { class: 'iv-list' }, ev.map(e => el('button', { class: 'iv-row', onClick: e.open }, [
+      el('div', { class: 'ic ' + (e.kind === 'out' ? 'out' : 'in') }, icon(ic[e.kind])),
+      el('div', null, [el('div', { class: 't' }, e.title), el('div', { class: 's' }, fmtDate(e.t) + ' · ' + e.sub), el('div', { class: 's what' }, [e.proof ? el('span', { class: 'iv-proof ok' }, '📎 ' + t('rec_proof')) : el('span', { class: 'iv-proof' }, t('rec_noproof')), e.kind === 'out' && !e.ack ? el('small', { class: 'iv-new', style: 'margin-left:6px' }, t('ack_new')) : null])]),
+      el('div', { class: 'amt ' + e.cls }, e.amt),
+    ]))) : empty(t('l_empty')),
+    el('div', { class: 'iv-actions', style: 'justify-content:center;margin-top:14px' }, el('button', { class: 'iv-btn', onClick: () => expenseReport(L) }, [icon('download'), t('rec_dl')])),
+    el('div', { class: 'iv-actions', style: 'justify-content:center;margin-top:18px' }, el('button', { class: 'iv-btn sm', onClick: async () => { await signOut(); renderLogin(); } }, t('sign_out'))),
+  ]);
+}
+// Agreement tab — the document, your signature, what you can change, security, the audit log.
+function renderAgreementTab(host) {
+  const p = S.agr.position || {};
+  const navRow = (ic, title, sub, fn, id) => el('button', { class: 'iv-row', onClick: fn }, [el('div', { class: 'ic' }, icon(ic)), el('div', null, [el('div', { class: 't' }, title), el('div', { class: 's', id: id || null }, sub)]), el('div', { class: 'amt' }, '›')]);
+  mount(host, [
+    agrPicker(), el('h1', { class: 'iv-h1' }, t('h_agreement')), el('p', { class: 'iv-sub' }, t('ag_tab_sub')),
+    (p.open_questions || []).length ? el('div', { class: 'iv-open' }, [el('b', null, t('h_open')), el('ul', null, p.open_questions.map(q => el('li', null, t('oq_' + q, pct(p.permanent_share_pct)))))]) : null,
+    el('div', { class: 'iv-card' }, [el('div', { class: 'iv-kv', style: 'margin-top:0' }, [kv(t('h_monthly'), (p.phase === 'recovering' ? pct(p.payback_rate_pct) + ' + ' : '') + pct(p.effective_share_pct), '', 'share'), kv(t('h_recovery'), money(p.recovered) + ' / ' + money(p.recovery_target), '', 'recovery'), kv(t('h_outstanding'), money(p.outstanding)), kv(t('h_share_type'), p.share_type === 'equity' ? pct(p.equity_vested_pct) : p.share_type === 'profit_share' ? t('h_profit_share') : t('h_undecided'))])]),
+    navRow('doc', t('doc_title'), S.agr.signed_date ? t('h_signed', fmtDate(S.agr.signed_date)) : t('h_draft'), () => showAgreement()),
+    el('div', { style: 'height:8px' }),
+    amendCard(p),
+    navRow('shield', t('sec_title'), '…', () => showSecurity(), 'iv-sec-sub'),
+    el('div', { style: 'height:8px' }),
+    navRow('inbox', t('log_title'), t('log_sub'), () => showAudit()),
+    el('div', { style: 'height:8px' }),
+    navRow('inbox', t('gl_title'), t('gl_row'), () => showGlossary()),
+  ]);
+  mfaListFactors().then(f => { const on = (f.all || []).concat(f.totp || [], f.phone || []).some(x => x.status === 'verified'); const s = document.getElementById('iv-sec-sub'); if (s) s.textContent = on ? t('sec_on') : t('sec_off'); }).catch(() => {});
 }
