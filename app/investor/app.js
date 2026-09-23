@@ -11,10 +11,10 @@
 // enrollment, skeleton loading, SVG icons, questions ("flags") on entries, CSV
 // export, and honest screens for the situations that happen: commitment closed
 // early, agreement wound down, month with no profit, rejected payment.
-import { getSession, signInWithPassword, signOut, onAuthChange, resetPassword,
+import { getSession, signInWithPassword, signUp, signOut, onAuthChange, resetPassword,
          mfaVerify, mfaListFactors, mfaEnrollTotp, mfaEnrollPhone, mfaChallenge, mfaVerifyChallenge, mfaRequiredAny } from '../shared/session.js';
 import { el, mount } from '../shared/ui/dom.js';
-import { invMe, invMyRequests, invDeclarePayment, invLedger, invStatements, invConfirmPayout,
+import { invMe, invClaimByEmail, invMyRequests, invDeclarePayment, invLedger, invStatements, invConfirmPayout,
          invSetLang, invFlag, invMyFlags, invSettings, invCurrentDoc, invSignDoc, invGrowth, invProjection,
          invUploadProof, invProofUrl, invProposeAmendment, invWithdrawAmendment, invMyAmendments, invAckExpense,
          invNotifications, invMarkRead, invUpdates, invAudit } from '../shared/api.js';
@@ -146,6 +146,32 @@ function renderLogin(msg) {
       } }, t('lg_forgot')),
     ]),
     el('p', { class: 'iv-muted', style: 'margin:12px 0 0;text-align:center' }, t('lg_private')),
+    el('div', { class: 'iv-switch' }, [t('su_have_no'), ' ', el('a', { href: '#signup', onClick: (e) => { e.preventDefault(); renderSignup(); } }, t('su_create'))]),
+  ]));
+}
+// ---------- investor's own sign-up page (0409): role='investor' → no carrier org, auto-linked to the CC record by e-mail ----------
+function renderSignup(msg) {
+  const name = inp('iv-su-name', { type: 'text', autocomplete: 'name', placeholder: 'Hamza Ali', required: true });
+  const email = inp('iv-su-email', { type: 'email', autocomplete: 'username', placeholder: 'you@example.com', required: true });
+  const pass = inp('iv-su-pass', { type: 'password', autocomplete: 'new-password', placeholder: '••••••••', required: true, minlength: 8 });
+  const pass2 = inp('iv-su-pass2', { type: 'password', autocomplete: 'new-password', placeholder: '••••••••', required: true });
+  const note = el('div'); if (msg) mount(note, el('div', { class: 'iv-err' }, msg));
+  const btn = el('button', { class: 'iv-btn primary block', type: 'submit' }, t('su_btn'));
+  loginFrame(el('form', { onSubmit: async (e) => {
+    e.preventDefault(); mount(note, '');
+    if (pass.value.length < 8) { mount(note, el('div', { class: 'iv-err' }, t('su_short'))); return; }
+    if (pass.value !== pass2.value) { mount(note, el('div', { class: 'iv-err' }, t('su_mismatch'))); return; }
+    btn.disabled = true;
+    try {
+      const { data, error } = await signUp(email.value.trim(), pass.value, { name: name.value.trim(), role: 'investor' });
+      if (error) throw error;
+      if (data && data.session) { await boot(); return; }
+      mount(note, el('div', { class: 'iv-ok' }, t('su_check_mail')));
+    } catch (ex) { mount(note, el('div', { class: 'iv-err' }, err(ex))); btn.disabled = false; }
+  } }, [
+    el('div', { class: 'iv-su-head' }, [el('b', null, t('su_title')), el('p', { class: 'iv-muted', style: 'margin:4px 0 0' }, t('su_sub'))]),
+    note, field(t('su_name'), name), field(t('lg_email'), email), field(t('lg_password'), pass), field(t('su_pass2'), pass2), btn,
+    el('div', { class: 'iv-switch' }, [t('su_have'), ' ', el('a', { href: '#', onClick: (e) => { e.preventDefault(); renderLogin(); } }, t('lg_sign_in'))]),
   ]));
 }
 function renderMfaGate(factor) {
@@ -661,6 +687,7 @@ async function renderStatements(host) {
 async function refresh() {
   try {
     const gate = await mfaRequiredAny(); if (gate) { renderMfaGate(gate); return; }
+    try { await invClaimByEmail(); } catch (_) {}
     const me = await invMe();
     if (!me || me.ok === false) { renderNotLinked(); return; }
     S.me = me.investor; S.agreements = me.agreements || [];
@@ -678,7 +705,7 @@ async function boot() {
   let saved = null; try { saved = localStorage.getItem('lb-inv-lang'); } catch (_) {}
   setLang(saved || 'en');
   const s = await getSession();
-  if (!s) { renderLogin(); return; }
+  if (!s) { if (location.hash === '#signup') renderSignup(); else renderLogin(); return; }
   await refresh();
 }
 onAuthChange((ev) => { if (ev === 'SIGNED_OUT') renderLogin(); });

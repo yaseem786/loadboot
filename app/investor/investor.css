@@ -345,3 +345,7 @@ a{color:var(--iv-blue2)}
 .iv-att-row{display:flex;align-items:center;gap:10px;border:1px solid var(--iv-line);border-radius:var(--iv-r2);padding:9px 12px;margin-bottom:6px;color:var(--iv-ink);text-decoration:none;background:rgba(255,255,255,.03)}
 .iv-att-row:hover{border-color:var(--iv-blue2)}.iv-att-row svg{flex:0 0 auto;color:var(--iv-blue2)}
 .iv-att-row span{min-width:0}.iv-att-row b{display:block;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.iv-att-row i{display:block;font-style:normal;font-size:.78rem;color:var(--iv-ink3)}
+
+/* ---- signup (0409) ---- */
+.iv-switch{margin-top:14px;text-align:center;font-size:.86rem;color:var(--iv-ink3)}.iv-switch a{color:var(--iv-blue2);font-weight:700;text-decoration:none}
+.iv-su-head{margin-bottom:12px}.iv-su-head b{font-size:1.05rem}

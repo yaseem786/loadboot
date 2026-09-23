@@ -77,6 +77,7 @@ function ensureStyle() {
     '.cc-req-att-body{flex:1;min-width:0}.cc-req-att-body b{display:block;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px}.cc-req-att-body .lb-input{width:100%;font-size:.8rem;padding:5px 8px}',
     '.cc-req-pv-files{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}.cc-req-pv-files span{font-size:.72rem;background:rgba(255,255,255,.08);border-radius:999px;padding:3px 8px}',
     '.cc-req-att-list{display:flex;flex-direction:column;gap:2px;margin-top:3px}.cc-req-att-list a{font-size:.76rem}.cc-req-att-add{font-size:.72rem;opacity:.7;display:inline-block;margin-top:3px}',
+    '.cc-inv-invite{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}.cc-inv-invite code{font-size:.78rem;background:#f1f5f9;border-radius:8px;padding:6px 8px;overflow-wrap:anywhere}',
     '.cc-inv-hero:before{content:"";position:absolute;inset:auto -60px -120px auto;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(8,131,247,.45),transparent 65%)}',
     '.cc-inv-hero h2{margin:0;font-size:1.35rem;font-weight:800;letter-spacing:-.01em}',
     '.cc-inv-hero p{margin:4px 0 0;color:rgba(255,255,255,.72);font-size:.86rem;max-width:720px}',
@@ -228,7 +229,12 @@ function investorForm(inv, onDone) {
     f('Portal language', lang, 'What their portal opens in. They can switch it themselves.'), f('Notes', notes), btn,
     inv ? el('div', { style: 'margin-top:22px;padding-top:14px;border-top:1px solid rgba(128,128,128,.25)' }, [
       el('b', null, 'Portal login'), el('p', { style: 'font-size:.85rem;opacity:.75;margin:4px 0 10px' },
-        inv.linked ? 'Linked — they can sign in at /app/investor/.' : 'Not linked yet. They must sign up (any LoadBoot signup page) with an email, then you link it here.'),
+        inv.linked ? 'Linked — they can sign in at /app/investor/.' : 'Not linked yet. Send them their own sign-up page — an account created there with the e-mail above links automatically. Or link an existing login below.'),
+      inv.linked ? null : el('div', { class: 'cc-inv-invite' }, [
+        el('code', null, location.origin + '/app/investor/#signup'),
+        el('button', { type: 'button', class: 'lb-btn lb-btn-sm', onClick: () => { navigator.clipboard.writeText(location.origin + '/app/investor/#signup').then(() => toast('Link copied')); } }, 'Copy link'),
+        el('a', { class: 'lb-btn lb-btn-sm', href: 'https://wa.me/' + String(inv.phone || '').replace(/[^0-9]/g, '') + '?text=' + encodeURIComponent('Assalam o Alaikum ' + (inv.name || '') + ', LoadBoot investor portal ka account yahan banayein (isi e-mail se: ' + (inv.email || '') + '): ' + location.origin + '/app/investor/#signup'), target: '_blank', rel: 'noopener' }, 'WhatsApp'),
+      ]),
       f('Link login by email', linkEmail),
       el('button', { class: 'lb-btn', onClick: (e) => submit(e.target, () => ccInvLinkUser(inv.id, linkEmail.value), (r) => {
         if (r && r.ok === false) { toast(r.note || 'No account with that email yet', 'error'); e.target.disabled = false; return; }

@@ -1493,6 +1493,7 @@ export const emailSends = (key, o = {}) => rpc('cc_email_sends', { p_key: key, p
 // ---- investor capital module (bl_inv_0401) ----
 // Investor side (portal). Read-only except declaring a payment / confirming a payout.
 export const invMe             = () => rpc('inv_me');
+export const invClaimByEmail   = () => rpc('inv_claim_by_email'); // 0409 — link a self-signed-up investor by e-mail
 export const invMyRequests     = (agreementId) => rpc('inv_my_requests', { p_agreement: agreementId });
 export const invDeclarePayment = (p) => rpc('inv_declare_payment', { p });
 export const invLedger         = (agreementId) => rpc('inv_ledger', { p_agreement: agreementId });
