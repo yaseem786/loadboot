@@ -89,12 +89,12 @@ export function renderAvailabilityCard(host, opts) {
 
   const card = h('div', { class: 'cp-card', 'data-lb': 'avail-card', style: 'border-left:4px solid ' + tone.c + ';background:' + tone.bg + (variant === 'board' ? ';margin-bottom:12px' : '') }, [
     h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap' }, [
-      h('div', { style: 'min-width:0;flex:1' }, [
+      h('div', { style: 'min-width:min(100%,260px);flex:1 1 260px' }, [   // 23 Sep 2026: real minimum so the buttons wrap under the text on phones instead of crushing it
         h('div', { class: 'cp-row-s', style: 'color:' + tone.c + ';font-weight:800;letter-spacing:.02em;text-transform:uppercase;font-size:.72rem' }, tone.label),
         h('div', { class: 'cp-row-t', style: 'margin-top:2px' }, title),
         h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.5' }, body),
       ]),
-      h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:center' }, actions.filter(Boolean)),
+      h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:0 1 auto;max-width:100%' }, actions.filter(Boolean)),
     ]),
     h('div', { class: 'cp-row-s', style: 'margin-top:10px;padding-top:8px;border-top:1px solid rgba(148,163,184,.18);font-size:.78rem;color:#94a3b8;line-height:1.5' }, [
       h('span', { style: 'font-weight:800;color:#cbd5e1' }, 'The rule: '), AVAIL_RULE,
