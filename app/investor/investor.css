@@ -339,3 +339,9 @@ a{color:var(--iv-blue2)}
 .iv-ex-opt-h{display:flex;align-items:center;gap:8px;font-weight:800;margin-bottom:4px}
 .iv-ex-opt p{margin:0;font-size:.84rem;line-height:1.5;color:var(--iv-ink2)}
 [dir=rtl] .iv-ex-row{flex-direction:row-reverse}
+
+/* ---- request attachments (0408) ---- */
+.iv-att{margin:12px 0}.iv-att-h{font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--iv-blue2);margin-bottom:4px}
+.iv-att-row{display:flex;align-items:center;gap:10px;border:1px solid var(--iv-line);border-radius:var(--iv-r2);padding:9px 12px;margin-bottom:6px;color:var(--iv-ink);text-decoration:none;background:rgba(255,255,255,.03)}
+.iv-att-row:hover{border-color:var(--iv-blue2)}.iv-att-row svg{flex:0 0 auto;color:var(--iv-blue2)}
+.iv-att-row span{min-width:0}.iv-att-row b{display:block;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.iv-att-row i{display:block;font-style:normal;font-size:.78rem;color:var(--iv-ink3)}

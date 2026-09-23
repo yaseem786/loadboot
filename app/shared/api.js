@@ -395,6 +395,7 @@ export const agentSetIntent = (intent) => rpc('agent_set_intent', { p_intent: in
 export const claimPendingReferral = (code) => rpc('claim_pending_referral', { p_code: code || null });
 export const ccAgentsList = () => rpc('cc_agents_list', {});
 export const ccAgent360 = (user) => rpc('cc_agent_360', { p_user: user });
+export const ccAgentReferralActivity = (user, limit) => rpc('cc_agent_referral_activity', { p_user: user, p_limit: limit || 60 });  // bl_agent_0406
 export const ccAgentNotifySend = (user, title, body, email) => rpc('cc_agent_notify_send', { p_user: user, p_title: title, p_body: body, p_email: !!email });
 export const ccAgentDocReview = (user, doc, action, reason) => rpc('cc_agent_doc_review', { p_user: user, p_doc: doc, p_action: action, p_reason: reason ?? null });
 // Per-item packet reminder from Broker 360 (in-app + branded email to every member).
@@ -485,6 +486,11 @@ export const ccDispatcherCommissionPay = (ids, p) => rpc('cc_dispatcher_commissi
 export const carrierMyDispatcherBookings = (limit) => rpc('carrier_my_dispatcher_bookings', { p_limit: limit ?? 100 });
 export const carrierDispatcherAck = (assignment) => rpc('carrier_dispatcher_ack', { p_assignment: assignment });
 export const carrierDispatcherPause = (assignment, pause, reason) => rpc('carrier_dispatcher_pause', { p_assignment: assignment, p_pause: !!pause, p_reason: reason ?? null });
+// bl_disp_0408 — carrier Dispatcher tab (dedicated-dispatcher desk) + CC contact release
+export const carrierDispatcherDesk = () => rpc('carrier_dispatcher_desk', {});
+export const carrierDispatcherChangeRequest = (reason) => rpc('carrier_dispatcher_change_request', { p_reason: reason ?? null });
+export const ccDispatcherContactRelease = (assignment, release, note) => rpc('cc_dispatcher_contact_release', { p_assignment: assignment, p_release: release !== false, p_note: note ?? null });
+export const ccDispatcherDelaySet = (carrierOrg, reason, note, etaDays) => rpc('cc_dispatcher_delay_set', { p_carrier_org: carrierOrg, p_reason: reason ?? null, p_note: note ?? null, p_eta_days: etaDays ?? null });   // bl_disp_0410
 export const ccDispatcherResendIntro = (assignment) => rpc('cc_dispatcher_resend_intro', { p_assignment: assignment });
 export const carrierBookingAck = (booking, ok, note) => rpc('carrier_booking_ack', { p_booking: booking, p_ok: !!ok, p_note: note ?? null });
 // ---- Dispatcher Workspace P1 (bl_disp_0289) — board / posting / KPIs, acting for an assigned carrier ----
@@ -1556,3 +1562,5 @@ export const invUpdates       = (agreementId, limit) => rpc('inv_updates', { p_a
 export const invAudit         = (agreementId, limit) => rpc('inv_audit', { p_agreement: agreementId, p_limit: limit || 200 });
 export const ccInvPostUpdate  = (p) => rpc('cc_inv_post_update', { p });
 export const ccInvUpdates     = (limit) => rpc('cc_inv_updates', { p_limit: limit || 50 });
+// 0408 — attachments on capital requests (invoice / quote / screenshot)
+export const ccInvRequestAttach = (id, attachments) => rpc('cc_inv_request_attach', { p_request: id, p_attachments: attachments });

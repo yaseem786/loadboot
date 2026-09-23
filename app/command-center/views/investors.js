@@ -15,7 +15,7 @@ import { ccInvList, ccInvDetail, ccInvSaveInvestor, ccInvLinkUser, ccInvSaveAgre
          ccInvConfirmReceipt, ccInvReverseReceipt, ccInvExpense, ccInvReverseExpense, ccInvPublishMonth, ccInvPay,
          ccInvRejectReceipt, ccInvCloseCommitment, ccInvReopenCommitment, ccInvWindDown, ccInvAnswerFlag,
          ccInvSettingsGet, ccInvSettingsSet, ccInvPublishDoc, ccInvCountersign, invProofUrl, invCurrentDoc, ccInvAmendments, ccInvDecideAmendment,
-         ccInvPostUpdate, ccInvUpdates, invUploadProof } from '../../shared/api.js';
+         ccInvPostUpdate, ccInvUpdates, invUploadProof, ccInvRequestAttach } from '../../shared/api.js';
 import { buildAgreement, hasPlaceholders, mdToHtml, DEFAULT_EXTRA } from '../../investor/agreement-template.js';
 import { VENDOR_NAMES, vendorWhat } from '../../investor/glossary.js';
 import { can } from '../../shared/permissions.js';
@@ -72,6 +72,11 @@ function ensureStyle() {
     '.cc-req-pv-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.cc-req-pv-top b{font-size:1.15rem;font-variant-numeric:tabular-nums}',
     '.cc-req-pv-tag{font-size:.66rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:rgba(252,83,5,.18);color:#FFB08A;border-radius:999px;padding:3px 8px}',
     '.cc-req-pv-title{font-weight:800;font-size:1rem}.cc-req-pv-card p{margin:6px 0 0;font-size:.84rem;color:#B7C3D6;line-height:1.45}.cc-req-pv-meta{margin-top:8px;font-size:.76rem;color:#8FA1BA}',
+    '.cc-req-att-row{display:flex;gap:10px;align-items:flex-start;border:1px solid #dbe2ec;border-radius:12px;padding:8px 10px;margin-bottom:6px;background:#fff}',
+    '.cc-req-att-ic{font-size:.62rem;font-weight:800;letter-spacing:.08em;background:#0883F7;color:#fff;border-radius:6px;padding:4px 6px;margin-top:2px}',
+    '.cc-req-att-body{flex:1;min-width:0}.cc-req-att-body b{display:block;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px}.cc-req-att-body .lb-input{width:100%;font-size:.8rem;padding:5px 8px}',
+    '.cc-req-pv-files{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}.cc-req-pv-files span{font-size:.72rem;background:rgba(255,255,255,.08);border-radius:999px;padding:3px 8px}',
+    '.cc-req-att-list{display:flex;flex-direction:column;gap:2px;margin-top:3px}.cc-req-att-list a{font-size:.76rem}.cc-req-att-add{font-size:.72rem;opacity:.7;display:inline-block;margin-top:3px}',
     '.cc-inv-hero:before{content:"";position:absolute;inset:auto -60px -120px auto;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(8,131,247,.45),transparent 65%)}',
     '.cc-inv-hero h2{margin:0;font-size:1.35rem;font-weight:800;letter-spacing:-.01em}',
     '.cc-inv-hero p{margin:4px 0 0;color:rgba(255,255,255,.72);font-size:.86rem;max-width:720px}',
@@ -310,6 +315,10 @@ function requestForm(agrId, unfunded, cur, onDone, pos) {
   const preview = el('div', { class: 'cc-req-preview' });
   const amtChips = el('div', { class: 'cc-req-quick' });
   const byChips = el('div', { class: 'cc-req-quick' });
+  // attachments: invoice / quote / screenshot the request is based on (uploaded on submit)
+  const files = [];
+  const fileIn = el('input', { type: 'file', multiple: true, accept: 'image/*,application/pdf', style: 'display:none', onChange: () => { Array.from(fileIn.files || []).forEach(f => { if (f.size > 10 * 1024 * 1024) { toast(f.name + ' is larger than 10 MB', 'error'); return; } files.push({ file: f, note: '' }); }); fileIn.value = ''; paint(); } });
+  const attHost = el('div', { class: 'cc-req-att' });
   const isoIn = (days) => { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); };
   const monthEnd = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10); };
   function paint() {
@@ -322,6 +331,11 @@ function requestForm(agrId, unfunded, cur, onDone, pos) {
     mount(barLbl, [el('span', null, ['Given ', el('b', null, pkr(funded, cur))]), el('span', null, ['This request ', el('b', { class: over ? 'bad' : '' }, pkr(a, cur))]), el('span', null, ['Left after ', el('b', null, over ? 'over the commitment' : pkr(after, cur))])]);
     mount(amtChips, [25000, 50000, 100000, 200000].filter(v => v <= rem).map(v => el('button', { type: 'button', class: 'cc-req-q' + (a === v ? ' on' : ''), onClick: () => { amount.value = v; paint(); } }, pkr(v, cur).replace(cur + ' ', ''))).concat(rem ? el('button', { type: 'button', class: 'cc-req-q' + (a === rem ? ' on' : ''), onClick: () => { amount.value = rem; paint(); } }, 'All remaining') : null));
     mount(byChips, [['1 week', isoIn(7)], ['2 weeks', isoIn(14)], ['Month end', monthEnd()], ['30 days', isoIn(30)]].map(([l, v]) => el('button', { type: 'button', class: 'cc-req-q' + (by.value === v ? ' on' : ''), onClick: () => { by.value = v; paint(); } }, l)));
+    mount(attHost, files.length ? files.map((x, i) => el('div', { class: 'cc-req-att-row' }, [
+      el('span', { class: 'cc-req-att-ic' }, /pdf/i.test(x.file.type) ? 'PDF' : 'IMG'),
+      el('div', { class: 'cc-req-att-body' }, [el('b', null, x.file.name), el('input', { class: 'lb-input', placeholder: 'What is this? e.g. Landlord quote for deposit', value: x.note, onInput: (e) => { x.note = e.target.value; } })]),
+      el('button', { type: 'button', class: 'lb-btn lb-btn-sm', onClick: () => { files.splice(i, 1); paint(); } }, '✕'),
+    ])) : el('p', { class: 'cc-req-hint', style: 'margin:0' }, 'No files yet — add the invoice, quote or screenshot this request is based on. The investor can open them.'));
     mount(preview, [
       el('div', { class: 'cc-req-pv-h' }, 'What the investor will see'),
       el('div', { class: 'cc-req-pv-card' }, [
@@ -329,6 +343,7 @@ function requestForm(agrId, unfunded, cur, onDone, pos) {
         el('div', { class: 'cc-req-pv-title' }, reason.value || 'Title…'),
         why.value ? el('p', null, why.value) : null,
         el('div', { class: 'cc-req-pv-meta' }, [cat.value, by.value ? ' · needed by ' + fmtDate(by.value) : ' · no deadline', ' · after this ' + (over ? 'over commitment' : pkr(after, cur) + ' still to give')]),
+        files.length ? el('div', { class: 'cc-req-pv-files' }, files.map(x => el('span', null, '📎 ' + x.file.name))) : null,
       ]),
     ]);
     btn.disabled = !a || over || !reason.value.trim();
@@ -343,10 +358,15 @@ function requestForm(agrId, unfunded, cur, onDone, pos) {
     f('Amount', el('div', null, [amount, amtChips])),
     f('Category', cat),
     f('Needed by', el('div', null, [by, byChips])),
+    f('Attachments', el('div', null, [attHost, el('button', { type: 'button', class: 'lb-btn lb-btn-sm', style: 'margin-top:8px', onClick: () => fileIn.click() }, '+ Add invoice / quote / screenshot'), fileIn])),
     preview, btn,
   ]), { subtitle: 'The investor gets a notification, sees it in the portal immediately and marks it paid from there. They can also decline.' });
   paint();
-  btn.onclick = () => submit(btn, () => ccInvRequest({ agreement_id: agrId, amount: amount.value, reason: reason.value.trim() + (why.value.trim() ? ' — ' + why.value.trim() : ''), category: cat.value, needed_by: by.value || null }), () => { d.close(); onDone(); });
+  btn.onclick = () => submit(btn, async () => {
+    const attachments = [];
+    for (const x of files) { const ref = await invUploadProof(agrId, x.file); attachments.push({ ref, name: x.file.name, note: x.note }); }
+    return ccInvRequest({ agreement_id: agrId, amount: amount.value, reason: reason.value.trim() + (why.value.trim() ? ' — ' + why.value.trim() : ''), category: cat.value, needed_by: by.value || null, attachments });
+  }, () => { d.close(); onDone(); });
 }
 function guessCat(t) { t = String(t || '').toLowerCase(); return /rent/.test(t) ? 'rent' : /salary|dispatcher|pay/.test(t) ? 'salary' : /laptop|computer|equip|headset|ups/.test(t) ? 'equipment' : /software|tool|phone|line|hosting/.test(t) ? 'tools' : /legal|lawyer|regist/.test(t) ? 'legal' : /market|ads/.test(t) ? 'marketing' : /reloc|move|shift/.test(t) ? 'relocation' : /deposit|office/.test(t) ? 'office' : 'misc'; }
 
@@ -504,7 +524,9 @@ async function openDetail(agrId, onListChange) {
     const ledger = [
       sec('Capital requests', manage ? [el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => requestForm(agrId, p.unfunded, cur, reload, p) }, '+ Request')] : null,
         tbl(['#', 'Amount', 'For', 'Status', 'Seen'], (D.requests || []).map(r => row([
-          r.seq, pkr(r.amount, cur), r.reason + (r.category ? ' · ' + r.category : ''),
+          r.seq, pkr(r.amount, cur), el('div', null, [r.reason + (r.category ? ' · ' + r.category : ''),
+            (r.attachments || []).length ? el('div', { class: 'cc-req-att-list' }, (r.attachments || []).map(a => proofLink(a.ref, '📎 ' + (a.name || 'file') + (a.note ? ' — ' + a.note : '')))) : null,
+            manage && r.status !== 'cancelled' ? el('a', { href: '#', class: 'cc-req-att-add', onClick: (e) => { e.preventDefault(); const fi = el('input', { type: 'file', accept: 'image/*,application/pdf' }); fi.onchange = async () => { const fl = fi.files && fi.files[0]; if (!fl) return; try { const ref = await invUploadProof(agrId, fl); await ccInvRequestAttach(r.id, [{ ref, name: fl.name, note: '' }]); toast('Attached'); reload(); } catch (ex) { toast(humanizeError(ex), 'error'); } }; fi.click(); } }, '+ attach') : null]),
           pill({ pending: 'Awaiting investor', declared: 'Declared — confirm below', funded: 'Funded', declined: 'Declined', cancelled: 'Cancelled' }[r.status] || r.status, { pending: 'amber', declared: 'blue', funded: 'green' }[r.status] || 'gray'),
           r.seen_at ? fmtDate(r.seen_at) : '—'])))),
 

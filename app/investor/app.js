@@ -498,6 +498,8 @@ function openRequest(r) {
   let close;
   close = openSheet(t('r_request') + ' #' + r.seq, el('div', null, [
     dl([[t('amount'), money(r.amount)], [t('r_for'), r.reason], [t('r_category'), catName(r.category)], [t('r_needed_by'), fmtDate(r.needed_by)], [t('r_raised'), fmtDate(r.requested_at)], [t('r_funded_so_far'), money(r.funded)]]),
+    (r.attachments || []).length ? el('div', { class: 'iv-att' }, [el('div', { class: 'iv-att-h' }, t('r_attachments')), el('p', { class: 'iv-muted', style: 'margin:0 0 8px' }, t('r_attach_hint')),
+      ...(r.attachments || []).map(a => { const b = el('a', { class: 'iv-att-row', href: '#' }, [icon('doc'), el('span', null, [el('b', null, a.name || 'file'), a.note ? el('i', null, a.note) : null])]); b.onclick = async (e) => { e.preventDefault(); try { window.open(await invProofUrl(a.ref), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } }; return b; })]) : null,
     r.status === 'pending' ? payTo() : null,
     r.status === 'pending' ? el('button', { class: 'iv-btn primary block', onClick: () => { close(); declareForm(r); } }, t('r_mark_paid')) : null,
     r.status === 'declared' ? el('div', { class: 'iv-ok' }, t('r_declared')) : null,
