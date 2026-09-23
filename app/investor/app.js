@@ -21,6 +21,7 @@ import { invMe, invMyRequests, invDeclarePayment, invLedger, invStatements, invC
 import { mdToHtml, buildFromParams } from './agreement-template.js';
 import { t, setLang, getLang, LANGS } from './i18n.js';
 import { vendorWhat, catWhat, termWhat, impactWhat, TERMS, CATEGORIES, VENDORS } from './glossary.js';
+const TAGLINE = 'The Operating System for Trucking';
 // SMS second factor is OFF until an SMS provider is wired into Supabase Auth (Telnyx via the
 // "Send SMS" auth hook is possible). Authenticator app is the default and needs nothing.
 const SMS_2FA_ENABLED = false;
@@ -119,7 +120,7 @@ function langSwitch() {
 // ---------- login + 2FA ----------
 function loginFrame(inner) {
   mount(root, el('div', { class: 'iv-login' }, el('div', { class: 'box' }, [
-    el('div', { class: 'brand' }, [el('img', { src: '/logo-text-dark.png', alt: 'LoadBoot' }), el('div', null, 'Investor Portal')]),
+    el('div', { class: 'brand' }, [el('img', { src: '/logo-full-dark.png', alt: 'LoadBoot' }), el('div', { class: 'iv-tagline' }, TAGLINE), el('div', null, 'Investor Portal')]),
     el('div', { style: 'display:flex;justify-content:center;margin-bottom:14px' }, langSwitch()),
     el('div', { class: 'iv-card' }, inner),
     el('p', { class: 'iv-muted', style: 'text-align:center;display:flex;gap:6px;justify-content:center;align-items:center' }, [icon('shield'), t('lg_secure')]),
@@ -182,7 +183,7 @@ function renderShell() {
   const pane = el('div');
   mount(root, el('div', { class: 'iv-shell' }, [
     el('div', { class: 'iv-top' }, [
-      el('img', { src: '/logo-text-dark.png', alt: 'LoadBoot' }),
+      el('div', { class: 'iv-brand' }, [el('img', { src: '/logo-full-dark.png', alt: 'LoadBoot' }), el('div', { class: 'iv-tagline' }, TAGLINE)]),
       el('div', { class: 'iv-topright' }, [langSwitch(), bellBtn(), el('button', { class: 'iv-avatar', style: 'border:0;cursor:pointer', title: S.me.name, 'aria-label': t('sec_title'), onClick: () => showSecurity() }, initials)]),
     ]),
     pane,
@@ -941,7 +942,7 @@ function brandDoc(title, subtitle, rows, table, footerNote, extraHtml) {
     'th{width:34%;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#64748B;font-weight:700}.grid th{width:auto;background:#F5F8FC}.grid td:last-child,.grid th:last-child{text-align:' + (rtl ? 'left' : 'right') + ';font-variant-numeric:tabular-nums}' +
     '.foot{margin-top:26px;padding-top:14px;border-top:1px solid #E6EDF5;font-size:11px;color:#94A3B8;line-height:1.6}.stamp{display:inline-block;border:2px solid #2ED18A;color:#0B7551;font-weight:800;padding:4px 10px;border-radius:8px;font-size:12px;letter-spacing:.06em}' +
     '@media print{.page{padding:0}button{display:none}}</style></head><body><div class="page">' +
-    '<div class="head"><div><img src="https://loadboot.com/logo-full.png" alt="LoadBoot"><div class="tag">The Operating System for Trucking</div></div><div class="meta">LoadBoot LLC<br>Investor Portal · loadboot.com/app/investor<br>' + esc(new Date().toLocaleString('en-GB')) + '</div></div>' +
+    '<div class="head"><div><img src="https://loadboot.com/logo-full.png" alt="LoadBoot"><div class="tag">' + TAGLINE + '</div></div><div class="meta">LoadBoot LLC<br>Investor Portal · loadboot.com/app/investor<br>' + esc(new Date().toLocaleString('en-GB')) + '</div></div>' +
     '<h1>' + esc(title) + '</h1><p class="sub">' + esc(subtitle || '') + '</p>' + (rowsHtml ? '<table>' + rowsHtml + '</table>' : '') + tableHtml +
     (extraHtml || '') + '<div class="foot">' + esc(footerNote || '') + '<br>Investor: ' + esc(S.me.name) + ' · Agreement: ' + esc(S.agr.title || '') + ' · ' + esc(S.agr.id) + '<br>This document is generated from the portal record, which is the record both parties rely on. Every entry can be questioned in the portal.</div>' +
     '<p style="margin-top:20px"><button onclick="window.print()" style="background:#0883F7;color:#fff;border:0;border-radius:10px;padding:10px 18px;font:700 14px Manrope,Arial">Print / Save as PDF</button></p></div></body></html>');
