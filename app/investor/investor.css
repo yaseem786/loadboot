@@ -349,3 +349,7 @@ a{color:var(--iv-blue2)}
 /* ---- signup (0409) ---- */
 .iv-switch{margin-top:14px;text-align:center;font-size:.86rem;color:var(--iv-ink3)}.iv-switch a{color:var(--iv-blue2);font-weight:700;text-decoration:none}
 .iv-su-head{margin-bottom:12px}.iv-su-head b{font-size:1.05rem}
+
+/* ---- self onboarding (0410) ---- */
+.iv-doc-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 10px}.iv-doc-top .iv-select{max-width:180px}
+.iv-doc-intro{display:flex;gap:12px;align-items:flex-start;background:rgba(8,131,247,.10);border:1px solid rgba(8,131,247,.45);border-radius:var(--iv-r2);padding:12px 14px;margin:0 0 12px}.iv-doc-intro svg{flex:0 0 auto;color:var(--iv-blue2);margin-top:2px}.iv-doc-intro b{display:block;margin-bottom:3px}.iv-doc-intro p{margin:0;font-size:.86rem;line-height:1.5;color:var(--iv-ink2)}

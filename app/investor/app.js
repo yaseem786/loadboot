@@ -14,11 +14,11 @@
 import { getSession, signInWithPassword, signUp, signOut, onAuthChange, resetPassword,
          mfaVerify, mfaListFactors, mfaEnrollTotp, mfaEnrollPhone, mfaChallenge, mfaVerifyChallenge, mfaRequiredAny } from '../shared/session.js';
 import { el, mount } from '../shared/ui/dom.js';
-import { invMe, invClaimByEmail, invMyRequests, invDeclarePayment, invLedger, invStatements, invConfirmPayout,
+import { invMe, invClaimByEmail, invSelfOnboard, invPublishSelfDoc, invMyRequests, invDeclarePayment, invLedger, invStatements, invConfirmPayout,
          invSetLang, invFlag, invMyFlags, invSettings, invCurrentDoc, invSignDoc, invGrowth, invProjection,
          invUploadProof, invProofUrl, invProposeAmendment, invWithdrawAmendment, invMyAmendments, invAckExpense,
          invNotifications, invMarkRead, invUpdates, invAudit } from '../shared/api.js';
-import { mdToHtml, buildFromParams } from './agreement-template.js';
+import { mdToHtml, buildFromParams, buildAgreement, DEFAULT_EXTRA } from './agreement-template.js';
 import { t, setLang, getLang, LANGS } from './i18n.js';
 import { vendorWhat, catWhat, termWhat, impactWhat, TERMS, CATEGORIES, VENDORS } from './glossary.js';
 const TAGLINE = 'The Operating System for Trucking';
@@ -163,6 +163,7 @@ function renderSignup(msg) {
     if (pass.value !== pass2.value) { mount(note, el('div', { class: 'iv-err' }, t('su_mismatch'))); return; }
     btn.disabled = true;
     try {
+      S.signupName = name.value.trim();
       const { data, error } = await signUp(email.value.trim(), pass.value, { name: name.value.trim(), role: 'investor' });
       if (error) throw error;
       if (data && data.session) { await boot(); return; }
@@ -340,6 +341,20 @@ function explainBody(term) {
   if (term === 'request') out_.push(exSec(yours, [exRow(t('rc_togive'), money(toGive)), el('p', { class: 'iv-ex-note' }, L3('Each request names an amount and a purpose. Pay it, or decline — declining does not break the agreement.', 'Har darkhwast mein raqam aur maqsad likha hota hai. Dein, ya mana kar dein — mana karne se agreement nahi tootta.', 'ہر درخواست میں رقم اور مقصد لکھا ہوتا ہے۔ دیں یا منع کریں۔'))]));
   out_.push(el('button', { class: 'iv-btn sm', style: 'margin-top:14px', onClick: () => showGlossary() }, t('gl_row')));
   return el('div', { class: 'iv-explain' }, out_);
+}
+// 0410: build version 1 of the agreement from the standard offer (English governing text) and publish it.
+async function publishSelfDoc(ob) {
+  const o = ob.offer || {};
+  const agreement = { id: ob.agreement_id, title: o.title || 'Investment agreement', currency: o.currency || 'PKR', commitment_cap: Number(o.commitment_cap || 0),
+    payback_rate_pct: Number(o.payback_rate_pct || 0), permanent_share_pct: Number(o.permanent_share_pct || 0), payback_basis: 'actual_funded',
+    share_type: o.share_type || 'profit_share', exit_participation_pct: o.exit_participation_pct != null && o.exit_participation_pct !== '' ? Number(o.exit_participation_pct) : null,
+    early_stop_share_mode: o.early_stop_share_mode || 'pro_rata', loss_carry_forward: !!o.loss_carry_forward, profit_definition: o.profit_definition || '',
+    exit_treatment: o.exit_treatment || '', early_stop_terms: o.early_stop_terms || '', buyout_terms: o.buyout_terms || '', status: 'active',
+    position: { funded: 0, commitment_cap: Number(o.commitment_cap || 0) } };
+  const investor = { name: S.signupName || '' };
+  const extra = Object.assign({}, DEFAULT_EXTRA, o.extra || {}, { company_signer: o.company_signer || DEFAULT_EXTRA.company_signer, company_signer_title: o.company_signer_title || DEFAULT_EXTRA.company_signer_title });
+  const md = buildAgreement(agreement, investor, extra, 'en');
+  await invPublishSelfDoc({ agreement_id: ob.agreement_id, body_md: md, title: 'Investment Agreement — ' + agreement.title, params: { agreement, investor, extra } });
 }
 function showTerm(term) { openSheet(TERM_TITLE[term] ? TERM_TITLE[term]() : t('gl_what'), explainBody(term)); }
 function showGlossary() {
@@ -687,7 +702,9 @@ async function renderStatements(host) {
 async function refresh() {
   try {
     const gate = await mfaRequiredAny(); if (gate) { renderMfaGate(gate); return; }
-    try { await invClaimByEmail(); } catch (_) {}
+    // 0410: link by e-mail, or create investor + agreement on the standard offer, then publish v1 (pre-signed by LoadBoot)
+    let ob = null; try { ob = await invSelfOnboard({ name: S.signupName || '', lang: getLang() }); } catch (_) { try { await invClaimByEmail(); } catch (__) {} }
+    if (ob && ob.ok && ob.needs_doc && ob.agreement_id) { try { await publishSelfDoc(ob); } catch (ex) { console.warn('self doc', ex); } }
     const me = await invMe();
     if (!me || me.ok === false) { renderNotLinked(); return; }
     S.me = me.investor; S.agreements = me.agreements || [];
@@ -696,6 +713,7 @@ async function refresh() {
     let saved = null; try { saved = localStorage.getItem('lb-inv-lang'); } catch (_) {}
     setLang(saved || S.me.lang || 'en');
     S.agr = S.agreements.find(a => S.agr && a.id === S.agr.id) || S.agreements[0];
+    if (!S.agr.signed_date && !S.autoDoc) { S.autoDoc = true; S.tab = SIMPLE ? 'agreement' : S.tab; setTimeout(() => showAgreement(), 400); }
     if (!S.requests) { try { S.requests = (await invMyRequests(S.agr.id)).requests || []; } catch (_) { S.requests = []; } }
     if (!S.settings) { try { S.settings = await invSettings(); } catch (_) { S.settings = {}; } }
     renderShell();
@@ -886,7 +904,10 @@ async function agreementV3() {
       btn,
     ]);
   };
+  const langSel = el('select', { class: 'iv-select', 'aria-label': t('sel_lang'), onChange: async (e) => { const code = e.target.value; setLang(code); try { localStorage.setItem('lb-inv-lang', code); } catch (_) {} try { await invSetLang(code); } catch (_) {} close(); setTimeout(() => showAgreement(), 50); } }, LANGS.map(([code, label]) => el('option', { value: code, selected: code === getLang() }, label)));
   mount(body, [
+    el('div', { class: 'iv-doc-top' }, [el('span', { class: 'iv-muted' }, t('doc_read_in')), langSel]),
+    (!mine && co) ? el('div', { class: 'iv-doc-intro' }, [icon('doc'), el('div', null, [el('b', null, t('doc_intro_t')), el('p', null, t('doc_intro_b', co.signer_name))])]) : null,
     el('p', { class: 'iv-muted', style: 'margin:0 0 8px' }, [el('b', null, doc.title), ' · ', t('doc_v', doc.version), ' · ', fmtDate(doc.published_at)]),
     stale ? el('div', { class: 'iv-warn' }, t('doc_stale', fmtDate(res.terms_changed_at))) : null,
     translated ? el('div', { class: 'iv-gl-p' }, t('doc_translated', doc.version, t('doc_lang_' + lang))) : null,
