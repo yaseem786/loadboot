@@ -46,6 +46,11 @@ function ensureStyle() {
   const st = document.createElement('style'); st.id = STYLE_ID;
   st.textContent = [
     '.cc-inv-hero{position:relative;overflow:hidden;border-radius:18px;padding:22px 24px;margin:0 0 18px;color:#fff;background:linear-gradient(135deg,#0B1B33 0%,#10223B 45%,#0E3A6B 100%);box-shadow:0 18px 40px -24px rgba(16,34,59,.6)}',
+    '.cc-drawer-panel .cc-kpi-grid{grid-template-columns:repeat(2,1fr);gap:12px}',
+    '.cc-drawer-panel .cc-kpi{min-width:0;padding:16px}',
+    '.cc-drawer-panel .cc-kpi-val{font-size:clamp(1.05rem,3.2vw,1.45rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}',
+    '.cc-drawer-panel .cc-kpi-sub{overflow-wrap:anywhere}',
+    '.cc-inv-page .cc-kpi-val{font-size:clamp(1.2rem,1.6vw,1.9rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}',
     '.cc-inv-hero:before{content:"";position:absolute;inset:auto -60px -120px auto;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(8,131,247,.45),transparent 65%)}',
     '.cc-inv-hero h2{margin:0;font-size:1.35rem;font-weight:800;letter-spacing:-.01em}',
     '.cc-inv-hero p{margin:4px 0 0;color:rgba(255,255,255,.72);font-size:.86rem;max-width:720px}',
@@ -177,6 +182,7 @@ export function renderInvestors(host) {
   }
 
   ensureStyle();
+  host.classList.add('cc-inv-page');
   mount(host, [header(), bodyHost]);
   load();
 }
