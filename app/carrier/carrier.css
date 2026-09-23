@@ -90,6 +90,14 @@ body { background: var(--lb-bg, #f4f6fb); margin: 0; font-family: var(--lb-font,
    inline margin-top overrides exactly as they were; cp-grid children keep their own gap. */
 .cp-content .cp-card + .cp-card { margin-top: 14px; }
 .cp-grid > .cp-card + .cp-card { margin-top: 0; }
+/* bl_ui_0411 — dashboard: one flex column, one gap. Inline margin-top/bottom on the direct children and the
+   sibling rule above are neutralised so async host divs (availability, dispatcher, break-even, NOA) space exactly
+   like bare cards; a host that stays empty takes no room. Cards inside a host drop their own outer margins. */
+.cp-dash { display: flex; flex-direction: column; gap: 14px; }
+.cp-dash > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+.cp-dash > :empty { display: none; }
+.cp-dash > div > :first-child { margin-top: 0; }
+.cp-dash > div > :last-child { margin-bottom: 0; }
 .cp-col2 { grid-column: span 2; }
 .cp-cardhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .cp-cardhead h3 { font-size: 1rem; margin: 0; }
@@ -274,7 +282,11 @@ textarea.cp-in { resize: vertical; }
 /* Modal (self-service forms: fleet, etc.) */
 .cp-modal { position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,.55); display: flex; align-items: flex-end; justify-content: center; padding: 0; animation: cpfade .15s ease; }
 @keyframes cpfade { from { opacity: 0 } to { opacity: 1 } }
-.cp-modal-card { background: #fff; width: 100%; max-width: 520px; border-radius: 18px 18px 0 0; max-height: 92vh; overflow-y: auto; box-shadow: 0 -20px 60px -20px rgba(0,0,0,.4); }
+.cp-modal-card { background: #fff; width: 100%; max-width: 520px; border-radius: 18px 18px 0 0; max-height: 92vh; max-height: 92dvh; overflow-y: auto; box-shadow: 0 -20px 60px -20px rgba(0,0,0,.4); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+/* bl_ui_0411 — while a sheet is open the page behind it is frozen in place (position:fixed at the current scroll
+   offset, restored on close by openModal). Stops iOS scroll chaining + rubber-band shake behind the Add-truck sheet. */
+body.cp-modal-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; overscroll-behavior: none; }
+.cp-modal { overscroll-behavior: contain; }
 /* 29 Aug 2026 — the modal scrolls with the browser's default fat grey bar, which looks
    broken against the dark theme. Same thin treatment .cp-side already uses. */
 .cp-modal-card { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.35) transparent; }

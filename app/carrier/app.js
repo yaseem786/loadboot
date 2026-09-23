@@ -328,9 +328,26 @@ function lbToast(msg, tone, title) {
   setTimeout(() => { card.style.opacity = '0'; card.style.transform = 'translateY(-8px)'; setTimeout(() => card.remove(), 250); }, 7000);
 }
 // Lightweight modal used by self-service forms (fleet, etc.). Closes on backdrop click or ✕.
+// bl_ui_0411 (23 Sep 2026): iOS scrolls the PAGE behind a fixed sheet once the sheet's own scroll reaches its end
+// (scroll chaining), and rubber-bands the whole thing — the "drawer shakes / page underneath scrolls" report. The
+// fix is the standard one: while any modal is open the body is position:fixed at its current scroll offset, and
+// the offset is restored on close. Ref-counted so nested dialogs (confirm inside a form) unlock only at the end.
+let _lbModalDepth = 0, _lbModalScrollY = 0;
+function lbLockPage() {
+  if (_lbModalDepth++ > 0) return;
+  _lbModalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  document.body.style.top = (-_lbModalScrollY) + 'px';
+  document.body.classList.add('cp-modal-open');
+}
+function lbUnlockPage() {
+  if (_lbModalDepth <= 0 || --_lbModalDepth > 0) return;
+  document.body.classList.remove('cp-modal-open');
+  document.body.style.top = '';
+  try { window.scrollTo(0, _lbModalScrollY); } catch (_) {}
+}
 function openModal(title, children) {
   let closed = false;
-  const realClose = () => { if (closed) return; closed = true; ov.remove(); document.removeEventListener('keydown', onEsc); };
+  const realClose = () => { if (closed) return; closed = true; ov.remove(); document.removeEventListener('keydown', onEsc); lbUnlockPage(); };
   const guard = () => realClose();                              // back gesture → just close
   const close = () => { if (closed) return; realClose(); popLayer(guard); };  // ✕/backdrop/Esc/after-save → close + unwind history
   const onEsc = (e) => { if (e.key === 'Escape') close(); };
@@ -350,6 +367,7 @@ function openModal(title, children) {
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   };
   card.addEventListener('keydown', onTrap);
+  lbLockPage();
   document.body.appendChild(ov);
   document.addEventListener('keydown', onEsc);
   pushLayer(guard);
@@ -3747,7 +3765,10 @@ async function appView(user) {
           } catch (e9) { lbToast((e9 && e9.message) || 'Could not confirm.', 'urgent', 'Not confirmed'); }
         } });
     })();
-    mount(content, h('div', null, [tripHero9, rateCard9, onbHero, noaDash9, ...topBanners, kpis, availHostD, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    // bl_ui_0411 (23 Sep 2026): the dashboard is a flex column with one gap. Cards that live inside async host divs
+    // (availability, NOA, dispatcher, break-even) never matched the `.cp-card + .cp-card` sibling rule, so on phones
+    // three cards sat flush with their rounded corners touching — read as overlapping. Empty hosts collapse to no gap.
+    mount(content, h('div', { class: 'cp-dash' }, [tripHero9, rateCard9, onbHero, noaDash9, ...topBanners, kpis, availHostD, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     const econHost = h('div', null); prefsHost.parentNode.insertBefore(econHost, prefsHost.nextSibling);
     try { import('./economics.js').then((m) => m.mountBreakevenCard(econHost)).catch(() => {}); } catch (_) {}
     // Dispatcher card (bl_disp_0409): compact "Meet your dispatcher" + status; the full desk is the Dispatcher tab.
@@ -4209,8 +4230,8 @@ async function appView(user) {
       ]),
       (postings && postings.length) ? h('div', { style: 'margin-top:10px' }, postings.map(p => {
         const mWrap = h('div');
-        return h('div', null, [h('div', { class: 'cp-row' }, [
-          h('div', null, [
+        return h('div', null, [h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [   // bl_ui_0411: on phones the action row wraps under the text instead of pushing 'Not available' out of the card
+          h('div', { style: 'flex:1 1 220px;min-width:0' }, [
             h('div', { class: 'cp-row-t' }, [p.post_kind === 'backhaul' ? h('span', { class: 'cp-pill amber', style: 'margin-right:6px' }, 'BACKHAUL') : null, (p.post_kind === 'backhaul' ? 'Delivers ' : '') + p.origin + (p.dest_pref ? ' → ' + p.dest_pref : ' → anywhere')].filter(Boolean)),
             h('div', { class: 'cp-row-s' }, (p.unit_no ? 'Unit ' + p.unit_no + ' · ' : '') + (p.origin_zip ? 'ZIP ' + p.origin_zip + ' · ' : '') + String(p.from) + ' – ' + String(p.to) + ((p.equipment || []).length ? ' · ' + p.equipment.join('/') : '') + (p.min_rpm ? ' · min $' + p.min_rpm + '/mi' : '') + (p.auto_request ? ' · auto-request ON' : '') + (p.status === 'paused' ? ' · NOT AVAILABLE' : p.status === 'expired' ? ' · EXPIRED' : '')),
             // A posting past its end date is off the board even though nothing on screen
@@ -4220,7 +4241,7 @@ async function appView(user) {
                   '\u26a0 Not on the board' + (p.days_ago ? ' — ended ' + p.days_ago + ' day' + (p.days_ago === 1 ? '' : 's') + ' ago' : '') + '. Extend it to go live again.')
               : (expiryLine(h, p) || (p.is_live ? h('div', { class: 'cp-row-s', style: 'color:#4ade80;font-weight:700;margin-top:2px' }, '\u25cf Live on the board') : null)),
           ]),
-          h('div', { style: 'display:flex;gap:6px;align-items:center' }, [
+          h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;max-width:100%;justify-content:flex-end' }, [
             h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
               if (mWrap.firstChild) { mWrap.innerHTML = ''; return; }
               mWrap.appendChild(h('div', { class: 'cp-muted' }, 'Loading matches…'));
