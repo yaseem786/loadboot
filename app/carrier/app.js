@@ -147,7 +147,7 @@ const root = document.getElementById('lb-app');
 const _notDriving = new Set();   // trips where the server told this device: the assigned driver's phone reports the truck
 async function postLoc(trip, lat, lng, label) {
   if (_notDriving.has(trip)) return false;
-  try { await postLoc(trip, lat, lng, label); return true; }
+  try { await pocketPostLocation(trip, lat, lng, label); return true; }   // bl_drv_0344 typo: called itself → infinite recursion, no ping ever reached the server (fixed 23 Sep 2026)
   catch (e) {
     const m = (e && e.message) || '';
     if (/their phone reports the truck|owner marked this load as driven by them/i.test(m)) {
