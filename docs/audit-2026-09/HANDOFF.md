@@ -286,3 +286,8 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
   dashboard delete (debugtest/2, lbtest_visitor_001/1, va60d7175faec…/2). NOTE a REAL guest onboarding landed 22 Sep 21:26–21:30 UTC:
   Clockwork Cargo and Freight LLC (clockworkcargo@gmail.com, MC46642697, W-9 + DSA signed, account created, 2 docs logged) — do not
   touch its lc-onboarding/v6048d617…/ prefix. Yaseen did today: push, request 11 cancelled, prod OTP expiry ≤ 1h + password rules.
+- **2026-09-22 — Claude:** CLOSING SWEEP (drift baseline) recorded in anon-secdef-baseline.md: prod anon SECDEF 33 / staging 32, mutable
+  search_path 0/0, policies 38/37, audit-function bodies 14/15 identical (retell_hook_verify differs by one comment line only). Claude's
+  fix lane has nothing actionable left; every remaining item is gated on Yaseen (Storage residue delete, attorney review of F04 copy),
+  ChatGPT (0342/0343 report, frozen-user message, CC erasure screen, F19–F27) or Retell credit (enforce mode). SEO items F21–F23 are
+  ChatGPT's measure-and-report; the SEO growth programme itself is outside the audit (supply_seo_project / seo-loop lane).

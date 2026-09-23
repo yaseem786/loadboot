@@ -104,3 +104,28 @@ Production is now **33**, staging **32**. Production before/after catalog name a
 ### 19 Sep 2026 — live-chat package promoted to prod (bl_sec_0335 / bl_sec_0336 / bl_audit_0344)
 
 Production migrations `20260919195205`, `20260919195240`, `20260919195311`. Prod count **33 → 33** but the NAME set changed exactly as designed: `lc_ob_doc_log` lost anon+authenticated (service_role only, and its body now refuses any non-service JWT with 42501) and `lc_ob_upload_check(text,uuid)` was added (anon/authenticated/service_role). Full 33-name catalog after: all_flags, cc_get_public_form, dispatcher_submit_id, eld_ingest, get_active_public_announcements, get_public_load_opportunities, get_public_market_rates, lb_contact_channel, lb_email_claim_get, lb_email_claim_sign, lb_email_ping_confirm, lb_email_ping_get, lc_brain_write, lc_chat_request_call, lc_history, lc_identify, lc_ob_get, lc_ob_save, lc_ob_upload_check, lc_poll, lc_rate, lc_request_call, lc_send, lc_start, outreach_unsubscribe, partner_agent_confirm, partner_agent_confirm_get, partner_claim_confirm, partner_claim_get, retell_inbound, retell_webhook, submit_web_form, track_web_event. Staging remains 32 (no `retell_inbound`). See `REVIEW-LIVECHAT-PROMOTION-2026-09-19.md`.
+
+## Closing snapshot — 2026-09-22 23:59 UTC (after bl_audit_0368 + retell-inbound-hook v3)
+Method (re-runnable on either env; compare the hashes, not the lists):
+```sql
+with f as (select p.oid, n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')' sig, md5(pg_get_functiondef(p.oid)) h,
+  p.prosecdef, has_function_privilege('anon',p.oid,'execute') anon_ok,
+  (select count(*) from unnest(coalesce(p.proconfig,'{}')) c where c like 'search_path=%') sp
+  from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','app_private') and p.prokind='f')
+select (select count(*) from f where prosecdef and anon_ok and sig like 'public.%') anon_secdef_n,
+       (select md5(string_agg(sig, ',' order by sig)) from f where prosecdef and anon_ok and sig like 'public.%') anon_names_md5,
+       (select md5(string_agg(sig||':'||h, ',' order by sig)) from f where prosecdef and anon_ok and sig like 'public.%') anon_bodies_md5,
+       (select count(*) from f where sp=0 and prosecdef) mutable_search_path,
+       (select count(*) from pg_policies where schemaname in ('public','app_private','storage')) policies;
+```
+| env | anon SECDEF n | names md5 | bodies md5 | mutable search_path | policies | newest migration |
+|---|---|---|---|---|---|---|
+| prod rwscphuhpjoudvljvmdk | 33 | 953886bff239ddeeb039d1c060eb4cec | 5a4904e3b501e09986451da717303061 | 0 | 38 | 20260922235612 bl_audit_0368 |
+| staging snslhvmkjusozgjelghi | 32 | dfda9a34f957f9522a351db2a93935c4 | 18fc41b2e6d13907a60aef8d19521fa3 | 0 | 37 | 20260923000804 bl_inv_0407 (investor lane) |
+
+(The names md5 here uses schema-qualified signatures with identity args, so it is NOT comparable with the earlier 8736b2d7…/6a7bd230… values, which hashed bare names. Counts are the same 33/32.)
+
+Audit-function body parity (15 functions: cc_erasure_*, erasure_removal_*, erasure_suggest, cc_lc_doc_*, lc_doc_recon_log_add, my_uploads_frozen,
+lc_ob_upload_check, cc_account_deletion_process, capture_account_erasure_inventory, cc_retention_classes, retell_hook_verify):
+14/15 byte-identical across envs; the one difference is `retell_hook_verify` — staging carries ONE extra comment line
+("-- try the dedicated webhook signing key first, then the general api key"), code identical. Accepted, no action.
