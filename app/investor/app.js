@@ -208,14 +208,114 @@ function stateBanner(p) {
   if (p.phase === 'permanent_share' && Number(p.recovered) > 0) return el('div', { class: 'iv-banner done' }, [icon('check'), el('span', null, t('h_note_recovered', pct(p.effective_share_pct)))]);
   return null;
 }
-const kv = (k, v, cls, term) => el('div', null, [el('div', { class: 'k' }, term ? [k, ' ', qBtn(term)] : k), el('div', { class: 'v ' + (cls || '') }, v)]);
-const qBtn = (term, cat) => el('button', { class: 'iv-q', type: 'button', 'aria-label': t('gl_what'), onClick: (e) => { e.stopPropagation(); e.preventDefault(); cat ? openSheet(t('gl_what'), el('p', { class: 'iv-gl-p' }, catWhat(cat, getLang()))) : showTerm(term); } }, '?');
+const kv = (k, v, cls, term) => el('div', term ? { class: 'has-q', title: termShort(term) || null, onClick: () => showTerm(term) } : null, [el('div', { class: 'k' }, term ? [k, ' ', qBtn(term)] : k), el('div', { class: 'v ' + (cls || '') }, v)]);
+const qBtn = (term, cat) => el('button', { class: 'iv-q', type: 'button', 'aria-label': t('gl_what'), 'data-tip': cat ? null : (termShort(term) || null), onClick: (e) => { e.stopPropagation(); e.preventDefault(); cat ? openSheet(t('gl_what'), el('p', { class: 'iv-gl-p' }, catWhat(cat, getLang()))) : showTerm(term); } }, '?');
 const DONUT = ['#0883F7', '#2ED18A', '#F5B942', '#FC5305', '#A78BFA', '#38BDF8', '#F472B6', '#94A3B8', '#FB923C', '#4ADE80'];
 function donut(cats, total) {
   let acc = 0; const stops = cats.map(([c, v], i) => { const a = acc; acc += 100 * Number(v) / Math.max(1, Number(total)); return DONUT[i % DONUT.length] + ' ' + a.toFixed(1) + '% ' + acc.toFixed(1) + '%'; });
   return el('div', { class: 'iv-donut', style: 'background:conic-gradient(' + stops.join(',') + (acc < 100 ? ',rgba(255,255,255,.06) ' + acc.toFixed(1) + '% 100%' : '') + ')' }, el('div', null, [el('b', null, money(total)), el('span', null, t('h_spent'))]));
 }
-function showTerm(term) { openSheet(t('gl_what'), el('div', null, [el('p', { class: 'iv-gl-p' }, termWhat(term, getLang())), el('button', { class: 'iv-btn sm', onClick: () => showGlossary() }, t('gl_row'))])); }
+// ---------- premium "what is this?" explainer (v5.4) ----------
+// Every "?" opens this: plain meaning + "aap ke case mein" with the REAL numbers + a small visual.
+const L3 = (en, ur_roman, ur) => { const l = getLang(); return l === 'ur_roman' ? ur_roman : l === 'ur' ? ur : en; };
+const TERM_TITLE = {
+  commitment: () => L3('Commitment', 'Commitment (wada)', 'کمٹمنٹ'),
+  funded: () => L3('Given so far', 'Ab tak diya', 'اب تک دیا'),
+  fund_cash: () => L3('Still with LoadBoot', 'Abhi LoadBoot ke paas', 'ابھی لوڈ بوٹ کے پاس'),
+  spent: () => L3('Spent', 'Kharch hua', 'خرچ ہوا'),
+  to_give: () => L3('Still to give', 'Abhi dena baqi', 'ابھی دینا باقی'),
+  share: () => L3('Each month: your %', 'Har mahine: aap ka hissa', 'ہر مہینے: آپ کا حصہ'),
+  recovery: () => L3('Recovery of your money', 'Aap ke paise ki wapsi', 'آپ کے پیسے کی واپسی'),
+  outstanding: () => L3('Still to recover', 'Baqi wapsi', 'باقی واپسی'),
+  share_type: () => L3('Share type', 'Hisse ki qisam', 'حصے کی قسم'),
+  payout: () => L3('Payout', 'Payout (adayegi)', 'پے آؤٹ'),
+  profit: () => L3('Profit', 'Munafa', 'منافع'),
+  statement: () => L3('Monthly statement', 'Mahine ka hisaab', 'ماہانہ حساب'),
+  request: () => L3('Capital request', 'Paise ki darkhwast', 'پیسے کی درخواست'),
+  no_profit: () => L3('No-profit month', 'Jis mahine munafa na ho', 'بغیر منافع کا مہینہ'),
+};
+const TERM_SHORT = { // one-line hover tooltip
+  commitment: () => L3('Max you agreed to put in', 'Zyada se zyada jitna dene ka wada', 'زیادہ سے زیادہ جتنا دینے کا وعدہ'),
+  funded: () => L3('Received and confirmed by LoadBoot', 'Jo mila aur LoadBoot ne confirm kiya', 'جو ملا اور تصدیق ہوئی'),
+  fund_cash: () => L3('Your money not yet spent', 'Aap ka paisa jo abhi kharch nahi hua', 'آپ کا پیسہ جو ابھی خرچ نہیں ہوا'),
+  spent: () => L3('Used from your money — each has a receipt', 'Aap ke paise se istemal hua — har ek ki raseed hai', 'آپ کے پیسے سے استعمال ہوا'),
+  to_give: () => L3('Commitment minus given', 'Commitment mein se jo abhi nahi diya', 'کمٹمنٹ میں سے جو ابھی نہیں دیا'),
+  share: () => L3('Your % of each month\'s profit', 'Har mahine ke munafay mein aap ka %', 'ہر مہینے کے منافع میں آپ کا %'),
+  recovery: () => L3('Profit share paid back until your money returns', 'Munafay se aap ka paisa wapas hone tak', 'منافع سے آپ کا پیسہ واپس ہونے تک'),
+  outstanding: () => L3('How much of your money is still to come back', 'Aap ka kitna paisa abhi wapas aana baqi hai', 'کتنا پیسہ ابھی واپس آنا باقی ہے'),
+  share_type: () => L3('Profit share (not ownership) or equity', 'Munafay mein hissa (malkiyat nahi) ya equity', 'منافع میں حصہ یا ایکویٹی'),
+  payout: () => L3('Money LoadBoot paid you', 'Jo paisa LoadBoot ne aap ko diya', 'جو پیسہ لوڈ بوٹ نے آپ کو دیا'),
+  profit: () => L3('Collected minus expenses in a month', 'Mahine ki aamdani minus kharcha', 'مہینے کی آمدنی منفی خرچہ'),
+  statement: () => L3('Monthly profit sheet your payout comes from', 'Mahine ka hisaab jis se payout nikalta hai', 'ماہانہ حساب جس سے پے آؤٹ بنتا ہے'),
+  request: () => L3('LoadBoot asks for an amount for a purpose', 'LoadBoot ek raqam ek kaam ke liye maangta hai', 'ایک رقم ایک مقصد کے لیے'),
+  no_profit: () => L3('Nothing owed that month', 'Us mahine kuch nahi banta', 'اس مہینے کچھ واجب نہیں'),
+};
+const termShort = (k) => TERM_SHORT[k] ? TERM_SHORT[k]() : '';
+const exRow = (label, val, cls) => el('div', { class: 'iv-ex-row' }, [el('span', null, label), el('b', { class: cls || '' }, val)]);
+const exBar = (parts) => el('div', { class: 'iv-ex-bar' }, parts.filter(x => x.w > 0).map(x => el('div', { class: 'seg ' + x.cls, style: 'width:' + x.w + '%' }, x.w >= 12 ? x.label : '')));
+const chip = (txt, cls) => el('span', { class: 'iv-chip ' + (cls || '') }, txt);
+const exSec = (title, kids) => el('div', { class: 'iv-ex-sec' }, [el('div', { class: 'iv-ex-h' }, title), ...kids]);
+function explainBody(term) {
+  const p = S.pos || {}, lang = getLang();
+  const cap = Number(p.commitment_cap || 0), funded = Number(p.funded || 0), spent = Number(p.spent || 0), fund = Number(p.fund_cash || 0);
+  const toGive = Math.max(0, cap - funded), rate = Number(p.payback_rate_pct || 0), share = Number(p.effective_share_pct || 0);
+  const target = Number(p.recovery_target || funded), rec = Number(p.recovered || 0), out = Number(p.outstanding || 0);
+  const recovering = p.phase === 'recovering' || out > 0;
+  const pc = (n, d) => d ? Math.max(0, Math.min(100, 100 * n / d)) : 0;
+  const yours = L3('In your case', 'Aap ke case mein', 'آپ کے کیس میں'), ex = L3('Example', 'Misal', 'مثال');
+  const base = term === 'to_give' ? 'commitment' : term === 'outstanding' ? 'recovery' : term === 'share_type' ? 'share' : term;
+  const out_ = [el('p', { class: 'iv-ex-mean' }, termWhat(base, lang))];
+  if (['commitment', 'funded', 'fund_cash', 'spent', 'to_give'].includes(term)) {
+    const note = term === 'commitment' ? L3('You are never obliged to pay the remaining amount — each request can be declined, and you can change or stop the commitment from the Agreement tab.', 'Baqi raqam dena aap par lazim nahi — har darkhwast par mana kar sakte hain, aur Agreement tab se commitment barha, ghata ya rok sakte hain.', 'باقی رقم دینا لازم نہیں — ہر درخواست پر منع کر سکتے ہیں، اور ایگریمنٹ ٹیب سے کمٹمنٹ بدل یا روک سکتے ہیں۔')
+      : term === 'funded' ? L3('Only money you declared AND LoadBoot confirmed counts. Each confirmed tranche has a downloadable confirmation.', 'Sirf wo paisa ginta hai jo aap ne declare kiya AUR LoadBoot ne confirm kiya. Har confirmed qist ki tasdeeq download ho sakti hai.', 'صرف وہ پیسہ گنتا ہے جو آپ نے بتایا اور لوڈ بوٹ نے تصدیق کی۔')
+      : term === 'spent' ? L3('Every expense shows which tranche it came from, why, where — with a receipt.', 'Har kharcha batata hai kis qist se, kyun, kahan — raseed ke saath.', 'ہر خرچہ بتاتا ہے کس قسط سے، کیوں، کہاں — رسید کے ساتھ۔')
+      : term === 'fund_cash' ? L3('Given minus spent. If LoadBoot winds down, unspent cash is returned to you.', 'Diya hua minus kharch hua. Agar LoadBoot band ho to jo kharch nahi hua wo aap ko wapas milta hai.', 'دیا ہوا منفی خرچ ہوا۔ اگر لوڈ بوٹ بند ہو تو بچا ہوا پیسہ واپس ملتا ہے۔')
+      : L3('Commitment minus given. Sent only when LoadBoot requests and you agree.', 'Commitment minus diya hua. Sirf tab jata hai jab LoadBoot maange aur aap haan karein.', 'کمٹمنٹ منفی دیا ہوا۔ صرف تب جب لوڈ بوٹ مانگے اور آپ ہاں کریں۔');
+    out_.push(exSec(yours, [
+      exRow(t('rc_commit'), money(cap)), exRow(t('rec_given'), money(funded), 'ok'), exRow(t('rc_togive'), money(toGive)),
+      exRow(t('rec_spent'), money(spent), 'warn'), exRow(t('rec_left'), money(fund), 'ok'),
+      exBar([{ cls: 'spent', w: pc(spent, cap), label: t('rc_seg_spent') }, { cls: 'fund', w: pc(fund, cap), label: t('rc_seg_fund') }, { cls: 'left', w: pc(toGive, cap), label: t('rc_seg_left') }]),
+      el('p', { class: 'iv-ex-note' }, note),
+    ]));
+  }
+  if (['share', 'recovery', 'outstanding', 'payout', 'profit', 'statement', 'no_profit'].includes(term)) {
+    const total = recovering ? rate + share : share, sample = 100000, a = Math.round(sample * rate / 100), b = Math.round(sample * share / 100);
+    out_.push(exSec(yours, [
+      el('div', { class: 'iv-chips' }, [recovering ? chip(pct(rate) + ' ' + L3('recovery', 'wapsi', 'واپسی'), 'blue') : null, chip(pct(share) + ' ' + L3('permanent share', 'pakka hissa', 'مستقل حصہ'), 'orange'), chip(pct(100 - total) + ' LoadBoot', 'dim')]),
+      exBar([{ cls: 'fund', w: recovering ? rate : 0, label: pct(rate) }, { cls: 'spent', w: share, label: pct(share) }, { cls: 'dim', w: 100 - total, label: 'LoadBoot' }]),
+      el('p', { class: 'iv-ex-note' }, recovering
+        ? L3('Right now: ' + pct(rate) + ' of each month\'s profit comes back to you until ' + money(target) + ' is fully returned, PLUS ' + pct(share) + ' is your permanent share — ' + pct(total) + ' in total. After recovery: only the ' + pct(share) + ', for as long as LoadBoot earns profit.',
+             'Abhi: har mahine ke munafay ka ' + pct(rate) + ' aap ki wapsi mein jata hai jab tak ' + money(target) + ' poora wapas na ho, AUR ' + pct(share) + ' aap ka pakka hissa — kul ' + pct(total) + '. Wapsi poori hone ke baad sirf ' + pct(share) + ', jab tak LoadBoot munafa kamaye.',
+             'ابھی: ہر مہینے کے منافع کا ' + pct(rate) + ' آپ کی واپسی میں جاتا ہے جب تک ' + money(target) + ' پورا واپس نہ ہو، اور ' + pct(share) + ' آپ کا مستقل حصہ — کل ' + pct(total) + '۔ واپسی کے بعد صرف ' + pct(share) + '۔')
+        : L3('Your money is recovered. From now on ' + pct(share) + ' of each month\'s profit is yours, for as long as LoadBoot earns profit.', 'Aap ka paisa wapas ho chuka. Ab se har mahine ke munafay ka ' + pct(share) + ' aap ka hai, jab tak LoadBoot munafa kamaye.', 'آپ کا پیسہ واپس ہو چکا۔ اب سے ہر مہینے کے منافع کا ' + pct(share) + ' آپ کا ہے۔')),
+    ]));
+    out_.push(exSec(ex + ' · ' + L3('if one month\'s profit were', 'agar kisi mahine munafa ho', 'اگر کسی مہینے منافع ہو') + ' ' + money(sample), [
+      recovering ? exRow(pct(rate) + ' ' + L3('recovery', 'wapsi', 'واپسی'), money(a), 'ok') : null,
+      exRow(pct(share) + ' ' + L3('permanent share', 'pakka hissa', 'مستقل حصہ'), money(b), 'ok'),
+      exRow(L3('You receive', 'Aap ko milta hai', 'آپ کو ملتا ہے'), money(recovering ? a + b : b), 'ok big'),
+      exRow(L3('Stays with LoadBoot', 'LoadBoot ke paas rehta hai', 'لوڈ بوٹ کے پاس رہتا ہے'), money(sample - (recovering ? a + b : b))),
+      el('p', { class: 'iv-ex-note' }, L3('Illustration only — real payouts come from the published monthly statement. A month with no profit owes nothing.', 'Sirf samajhne ke liye — asli payout har mahine ke published hisaab se nikalta hai. Jis mahine munafa na ho, kuch nahi banta.', 'صرف سمجھنے کے لیے — اصل پے آؤٹ ماہانہ حساب سے بنتا ہے۔ بغیر منافع کے مہینے میں کچھ واجب نہیں۔')),
+    ]));
+    if (term === 'recovery' || term === 'outstanding') out_.push(exSec(L3('Recovery progress', 'Wapsi kahan tak pohnchi', 'واپسی کہاں تک پہنچی'), [
+      exRow(t('h_recovery'), money(rec) + ' / ' + money(target), 'ok'), exRow(t('h_outstanding'), money(out), out ? 'warn' : 'ok'),
+      exBar([{ cls: 'fund', w: pc(rec, target), label: pct(Math.round(pc(rec, target))) }, { cls: 'dim', w: 100 - pc(rec, target), label: '' }]),
+      el('p', { class: 'iv-ex-note' }, L3('The target is what you actually gave (' + money(target) + '), not the commitment. It grows only when a new tranche is confirmed.', 'Target wo hai jo aap ne sach mein diya (' + money(target) + '), commitment nahi. Nayi qist confirm ho to hi barhta hai.', 'ہدف وہ ہے جو آپ نے اصل میں دیا (' + money(target) + ')، کمٹمنٹ نہیں۔')),
+    ]));
+  }
+  if (term === 'share_type') {
+    const cur = p.share_type === 'equity' ? 'equity' : p.share_type === 'profit_share' ? 'profit' : 'open';
+    const card = (title, body, on) => el('div', { class: 'iv-ex-opt' + (on ? ' on' : '') }, [el('div', { class: 'iv-ex-opt-h' }, [title, on ? chip(L3('yours', 'aap ka', 'آپ کا'), 'orange') : null]), el('p', null, body)]);
+    out_.push(exSec(L3('Two kinds', 'Do qismein', 'دو قسمیں'), [
+      card('Profit share', L3('A % of profit every month. No ownership, no voting, no company paperwork in your name — and if the company is ever sold, an agreed % of the sale (if written in the agreement).', 'Har mahine munafay ka %. Company mein malkiyat nahi, vote nahi, aap ke naam par kagzi kaam nahi — aur agar company kabhi bike to bikri ka tay-shuda % (agar agreement mein likha ho).', 'ہر مہینے منافع کا %۔ ملکیت نہیں، ووٹ نہیں — اور اگر کمپنی بکے تو طے شدہ % (اگر ایگریمنٹ میں ہو)۔'), cur === 'profit'),
+      card('Equity', L3('A % ownership of the company itself. Comes with ownership rights and obligations, and is filed in the company\'s records.', 'Company ki khud malkiyat ka %. Is ke saath malik ke haqooq aur zimmedariyan aati hain, aur ye company ke record mein darj hota hai.', 'کمپنی کی ملکیت کا %۔ حقوق اور ذمہ داریاں ساتھ آتی ہیں۔'), cur === 'equity'),
+      cur === 'open' ? el('p', { class: 'iv-ex-note warn' }, L3('Not decided yet — it will show here once written into the agreement.', 'Abhi tay nahi — agreement mein likhte hi yahan nazar aayega.', 'ابھی طے نہیں — ایگریمنٹ میں لکھتے ہی یہاں نظر آئے گا۔')) : null,
+    ]));
+  }
+  if (term === 'request') out_.push(exSec(yours, [exRow(t('rc_togive'), money(toGive)), el('p', { class: 'iv-ex-note' }, L3('Each request names an amount and a purpose. Pay it, or decline — declining does not break the agreement.', 'Har darkhwast mein raqam aur maqsad likha hota hai. Dein, ya mana kar dein — mana karne se agreement nahi tootta.', 'ہر درخواست میں رقم اور مقصد لکھا ہوتا ہے۔ دیں یا منع کریں۔'))]));
+  out_.push(el('button', { class: 'iv-btn sm', style: 'margin-top:14px', onClick: () => showGlossary() }, t('gl_row')));
+  return el('div', { class: 'iv-explain' }, out_);
+}
+function showTerm(term) { openSheet(TERM_TITLE[term] ? TERM_TITLE[term]() : t('gl_what'), explainBody(term)); }
 function showGlossary() {
   const lang = getLang(); const item = (title, text) => el('div', { class: 'iv-gl' }, [el('b', null, title), el('span', null, text)]);
   openSheet(t('gl_title'), el('div', null, [
@@ -1147,7 +1247,7 @@ function renderAgreementTab(host) {
   mount(host, [
     agrPicker(), el('h1', { class: 'iv-h1' }, t('h_agreement')), el('p', { class: 'iv-sub' }, t('ag_tab_sub')),
     (p.open_questions || []).length ? el('div', { class: 'iv-open' }, [el('b', null, t('h_open')), el('ul', null, p.open_questions.map(q => el('li', null, t('oq_' + q, pct(p.permanent_share_pct)))))]) : null,
-    el('div', { class: 'iv-card' }, [el('div', { class: 'iv-kv', style: 'margin-top:0' }, [kv(t('h_monthly'), (p.phase === 'recovering' ? pct(p.payback_rate_pct) + ' + ' : '') + pct(p.effective_share_pct), '', 'share'), kv(t('h_recovery'), money(p.recovered) + ' / ' + money(p.recovery_target), '', 'recovery'), kv(t('h_outstanding'), money(p.outstanding)), kv(t('h_share_type'), p.share_type === 'equity' ? pct(p.equity_vested_pct) : p.share_type === 'profit_share' ? t('h_profit_share') : t('h_undecided'))])]),
+    el('div', { class: 'iv-card' }, [el('div', { class: 'iv-kv', style: 'margin-top:0' }, [kv(t('h_monthly'), (p.phase === 'recovering' ? pct(p.payback_rate_pct) + ' + ' : '') + pct(p.effective_share_pct), '', 'share'), kv(t('h_recovery'), money(p.recovered) + ' / ' + money(p.recovery_target), '', 'recovery'), kv(t('h_outstanding'), money(p.outstanding), '', 'outstanding'), kv(t('h_share_type'), p.share_type === 'equity' ? pct(p.equity_vested_pct) : p.share_type === 'profit_share' ? t('h_profit_share') : t('h_undecided'), '', 'share_type')])]),
     navRow('doc', t('doc_title'), S.agr.signed_date ? t('h_signed', fmtDate(S.agr.signed_date)) : t('h_draft'), () => showAgreement()),
     el('div', { style: 'height:8px' }),
     amendCard(p),
@@ -1170,11 +1270,11 @@ function recHero(p) {
     el('div', { class: 'iv-rec-top' }, [
       ring(p.funded_pct, '', t('rc_used')),
       el('div', { class: 'iv-rec-nums' }, [
-        el('div', { class: 'n1' }, [el('span', null, t('rc_commit')), el('b', null, money(cap))]),
-        el('div', null, [el('span', null, t('rec_given')), el('b', { class: 'ok' }, money(funded))]),
-        el('div', null, [el('span', null, t('rc_togive')), el('b', null, money(toGive))]),
-        el('div', null, [el('span', null, t('rec_spent')), el('b', { class: 'warn' }, money(spent))]),
-        el('div', null, [el('span', null, t('rec_left')), el('b', { class: 'ok' }, money(fund))]),
+        el('div', { class: 'n1' }, [el('span', null, [t('rc_commit'), ' ', qBtn('commitment')]), el('b', null, money(cap))]),
+        el('div', null, [el('span', null, [t('rec_given'), ' ', qBtn('funded')]), el('b', { class: 'ok' }, money(funded))]),
+        el('div', null, [el('span', null, [t('rc_togive'), ' ', qBtn('to_give')]), el('b', null, money(toGive))]),
+        el('div', null, [el('span', null, [t('rec_spent'), ' ', qBtn('spent')]), el('b', { class: 'warn' }, money(spent))]),
+        el('div', null, [el('span', null, [t('rec_left'), ' ', qBtn('fund_cash')]), el('b', { class: 'ok' }, money(fund))]),
       ]),
     ]),
     el('div', { class: 'iv-segbar' }, [seg('spent', pc(spent), t('rc_seg_spent'), money(spent)), seg('fund', pc(fund), t('rc_seg_fund'), money(fund)), seg('left', pc(toGive), t('rc_seg_left'), money(toGive))]),

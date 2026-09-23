@@ -310,3 +310,32 @@ a{color:var(--iv-blue2)}
 .iv-ring{width:96px;height:96px}
 @media (min-width:900px){.iv-rec-nums{grid-template-columns:repeat(4,1fr)}.iv-rec-nums .n1{grid-column:auto}.iv-rec-nums b{font-size:1.25rem}.iv-ring{width:120px;height:120px}}
 @media (max-width:420px){.iv-rec-top{grid-template-columns:1fr;justify-items:center}.iv-rec-nums{width:100%}}
+
+/* ---- v5.4 tooltips + "ye kya hai?" explainer ---- */
+.iv-q{position:relative}
+.iv-q[data-tip]:hover::after,.iv-q[data-tip]:focus-visible::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:#0F1F36;color:#E6EDF7;border:1px solid var(--iv-line2);border-radius:10px;padding:7px 10px;font:600 .72rem/1.35 Manrope,sans-serif;letter-spacing:0;text-transform:none;white-space:normal;width:max-content;max-width:220px;text-align:center;box-shadow:0 12px 30px rgba(0,0,0,.45);z-index:20;pointer-events:none}
+.iv-q[data-tip]:hover::before{content:'';position:absolute;left:50%;bottom:calc(100% + 3px);transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--iv-line2);z-index:20}
+.iv-kv > div.has-q{cursor:pointer;transition:border-color .15s,background .15s}
+.iv-kv > div.has-q:hover{border-color:var(--iv-blue2);background:rgba(8,131,247,.06)}
+.iv-rec-nums .iv-q{width:14px;height:14px;font-size:.56rem;opacity:.75}
+.iv-explain .iv-ex-mean{font-size:1rem;line-height:1.55;color:var(--iv-ink);margin:0 0 14px}
+.iv-ex-sec{background:rgba(255,255,255,.03);border:1px solid var(--iv-line);border-radius:var(--iv-r2);padding:12px 14px;margin-top:12px}
+.iv-ex-h{font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--iv-blue2);margin-bottom:8px}
+.iv-ex-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:6px 0;border-bottom:1px dashed var(--iv-line)}
+.iv-ex-row:last-of-type{border-bottom:0}
+.iv-ex-row span{color:var(--iv-ink3);font-size:.86rem}
+.iv-ex-row b{font-variant-numeric:tabular-nums;font-weight:800}
+.iv-ex-row b.ok{color:var(--iv-green)} .iv-ex-row b.warn{color:var(--iv-amber)} .iv-ex-row b.big{font-size:1.15rem}
+.iv-ex-bar{display:flex;height:22px;border-radius:999px;overflow:hidden;margin:12px 0 4px;background:rgba(255,255,255,.05)}
+.iv-ex-bar .seg{display:grid;place-items:center;font-size:.62rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden}
+.iv-ex-bar .seg.spent{background:var(--iv-orange,#FC5305)} .iv-ex-bar .seg.fund{background:var(--iv-blue,#0883F7)} .iv-ex-bar .seg.left{background:rgba(255,255,255,.14)} .iv-ex-bar .seg.dim{background:rgba(255,255,255,.10);color:var(--iv-ink3)}
+.iv-ex-note{font-size:.84rem;line-height:1.5;color:var(--iv-ink2);margin:10px 0 0}
+.iv-ex-note.warn{color:var(--iv-amber)}
+.iv-chips{display:flex;flex-wrap:wrap;gap:6px}
+.iv-chip{display:inline-flex;align-items:center;border-radius:999px;padding:5px 10px;font-size:.74rem;font-weight:800;border:1px solid var(--iv-line2);color:var(--iv-ink)}
+.iv-chip.blue{background:rgba(8,131,247,.16);border-color:rgba(8,131,247,.5)} .iv-chip.orange{background:rgba(252,83,5,.16);border-color:rgba(252,83,5,.5)} .iv-chip.dim{color:var(--iv-ink3)}
+.iv-ex-opt{border:1px solid var(--iv-line);border-radius:var(--iv-r2);padding:10px 12px;margin-top:8px}
+.iv-ex-opt.on{border-color:rgba(252,83,5,.55);background:rgba(252,83,5,.06)}
+.iv-ex-opt-h{display:flex;align-items:center;gap:8px;font-weight:800;margin-bottom:4px}
+.iv-ex-opt p{margin:0;font-size:.84rem;line-height:1.5;color:var(--iv-ink2)}
+[dir=rtl] .iv-ex-row{flex-direction:row-reverse}
