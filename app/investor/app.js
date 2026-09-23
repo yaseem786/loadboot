@@ -925,7 +925,7 @@ function growthCard() {
 
 // ---------- branded printable documents (receipt / confirmation / statement / reports) ----------
 // Opens a print-ready page (the browser's "Save as PDF" makes the file). Real logo + tagline, record id, hash of the rows.
-function brandDoc(title, subtitle, rows, table, footerNote) {
+function brandDoc(title, subtitle, rows, table, footerNote, extraHtml) {
   const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const rtl = getLang() === 'ur';
   const w = window.open('', '_blank'); if (!w) { alert('Popup blocked'); return; }
@@ -943,15 +943,21 @@ function brandDoc(title, subtitle, rows, table, footerNote) {
     '@media print{.page{padding:0}button{display:none}}</style></head><body><div class="page">' +
     '<div class="head"><div><img src="https://loadboot.com/logo-full.png" alt="LoadBoot"><div class="tag">The Operating System for Trucking</div></div><div class="meta">LoadBoot LLC<br>Investor Portal · loadboot.com/app/investor<br>' + esc(new Date().toLocaleString('en-GB')) + '</div></div>' +
     '<h1>' + esc(title) + '</h1><p class="sub">' + esc(subtitle || '') + '</p>' + (rowsHtml ? '<table>' + rowsHtml + '</table>' : '') + tableHtml +
-    '<div class="foot">' + esc(footerNote || '') + '<br>Investor: ' + esc(S.me.name) + ' · Agreement: ' + esc(S.agr.title || '') + ' · ' + esc(S.agr.id) + '<br>This document is generated from the portal record, which is the record both parties rely on. Every entry can be questioned in the portal.</div>' +
+    (extraHtml || '') + '<div class="foot">' + esc(footerNote || '') + '<br>Investor: ' + esc(S.me.name) + ' · Agreement: ' + esc(S.agr.title || '') + ' · ' + esc(S.agr.id) + '<br>This document is generated from the portal record, which is the record both parties rely on. Every entry can be questioned in the portal.</div>' +
     '<p style="margin-top:20px"><button onclick="window.print()" style="background:#0883F7;color:#fff;border:0;border-radius:10px;padding:10px 18px;font:700 14px Manrope,Arial">Print / Save as PDF</button></p></div></body></html>');
   w.document.close();
 }
-function expenseReceipt(x) {
-  brandDoc(t('receipt') + ' — ' + (x.vendor || catName(x.category)), vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang()),
-    [[t('amount'), money(x.amount)], [t('date'), fmtDate(x.date)], [t('l_vendor'), x.vendor || '—'], [t('l_details'), x.description || '—'], ['Category', catName(x.category)],
-     [t('l_paid_from'), x.tranche ? t('l_tranche', fmtDate(x.tranche)) : '—'], [t('l_recurring'), x.recurring ? t('l_yes') : t('l_no')], [t('receipt'), x.receipt_url ? 'On file in the portal' : t('l_no_receipt')], ['Record id', x.id], [t('ack_btn'), x.acknowledged_at ? fmtDate(x.acknowledged_at) : '—']],
-    null, x.reversed ? 'REVERSAL ENTRY' : '');
+async function expenseReceipt(x) {
+  const L = S.ledger || {}; const tr = (L.receipts || []).find(r => r.received_date === x.tranche && r.state === 'confirmed');
+  let img = '';
+  if (x.receipt_url) { try { const u = await invProofUrl(x.receipt_url, 900); if (!/\.pdf(\?|$)/i.test(x.receipt_url)) img = '<h2 style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#64748B;margin:18px 0 6px">' + t('rcpt_img') + '</h2><img src="' + u + '" style="max-width:100%;max-height:520px;border:1px solid #E6EDF5;border-radius:10px">'; else img = '<p style="font-size:12px;color:#64748B">' + t('rcpt_img') + ': PDF (' + t('view') + ' in portal)</p>'; } catch (_) {} }
+  brandDoc(t('receipt') + ' — ' + (x.vendor || catName(x.category)), money(x.amount) + ' · ' + fmtDate(x.date) + (x.reversed ? ' · REVERSAL' : ''),
+    [[t('rcpt_no'), x.id.slice(0, 8).toUpperCase()], [t('amount'), money(x.amount)], [t('rcpt_when'), fmtDate(x.date)],
+     [t('rcpt_where'), (x.vendor || '—') + ' · ' + catName(x.category)],
+     [t('rcpt_why'), (x.description ? x.description + ' — ' : '') + (vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang()))],
+     [t('rcpt_which'), tr ? (t('rec_in') + ' ' + money(tr.amount) + ' · ' + fmtDate(tr.received_date) + ' · ' + t('p_lb_confirmed') + ' ' + fmtDate(tr.confirmed_at)) : (x.tranche ? t('l_tranche', fmtDate(x.tranche)) : '—')],
+     [t('l_recurring'), x.recurring ? t('l_yes') : t('l_no')], [t('rcpt_by'), 'Command Center · ' + fmtDate(x.date)], [t('rcpt_ack'), x.acknowledged_at ? fmtDate(x.acknowledged_at) : '—'], [t('proof'), x.receipt_url ? '✓' : t('l_no_receipt')]],
+    null, '', img);
 }
 function paymentConfirmation(r) {
   brandDoc(t('dl_confirm'), t('p_lb_confirmed') + ' ' + fmtDate(r.confirmed_at),
@@ -1111,7 +1117,7 @@ async function renderRecord(host) {
   const L = S.ledger, p = L.position || S.agr.position || {};
   const ev = [];
   ups.forEach(u => ev.push({ t: u.created_at, kind: 'update', tag: u.kind === 'milestone' ? t('tag_milestone') : /team|hire|bharti|join/i.test(u.title + ' ' + u.body) ? t('tag_team') : t('tag_update'), title: u.title, sub: u.body, proof: null, amt: '', cls: '', open: () => openSheet(u.title, el('div', null, [el('p', { class: 'iv-muted' }, new Date(u.created_at).toLocaleString('en-GB')), el('p', { style: 'white-space:pre-line' }, u.body)])), ok: true }));
-  (L.receipts || []).forEach(r => { if (r.state === 'confirmed' || r.state === 'awaiting_confirmation') ev.push({ t: r.received_date, kind: 'in', tag: t('tag_investment'), title: t('rec_in') + ' ' + money(r.amount), sub: (r.method || '') + (r.reference ? ' · ' + r.reference : '') + (r.state === 'confirmed' ? ' · ' + t('p_lb_confirmed') + ' ' + fmtDate(r.confirmed_at) : ' · ' + t('not_yet')), proof: !!r.proof_url, amt: '+' + money(r.amount), cls: 'pos', open: () => paymentConfirmation(r), ok: r.state === 'confirmed' }); });
+  (L.receipts || []).forEach(r => { if (r.state === 'confirmed' || r.state === 'awaiting_confirmation') ev.push({ t: r.received_date, kind: 'in', tag: t('tag_investment'), title: t('rec_in') + ' ' + money(r.amount), sub: (r.method || '') + (r.reference ? ' · ' + r.reference : '') + (r.state === 'confirmed' ? ' · ' + t('p_lb_confirmed') + ' ' + fmtDate(r.confirmed_at) : ' · ' + t('not_yet')), proof: !!r.proof_url, amt: '+' + money(r.amount), cls: 'pos', open: () => investmentSheet(r), ok: r.state === 'confirmed' }); });
   (L.expenses || []).forEach(x => ev.push({ t: x.date, kind: 'out', tag: catName(x.category), title: (x.reversed ? t('l_reversal') + ' · ' : '') + (x.vendor || catName(x.category)), sub: (vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang())) + (x.description ? ' — ' + x.description : ''), proof: !!x.receipt_url, amt: (x.reversed ? '+' : '−') + money(x.amount), cls: x.reversed ? 'pos' : 'neg', open: () => { S.tab = 'ledger'; renderShell(); }, ok: true, ack: x.acknowledged_at }));
   (L.payouts || []).forEach(po => { if (po.status === 'paid' && Number(po.total) > 0) ev.push({ t: po.paid_date, kind: 'payout', tag: t('tag_payout'), title: t('rec_payout') + ' ' + money(po.total), sub: (po.month ? fmtMonth(po.month) : t('h_wound')) + (po.confirmed_at ? ' · ✓' : ' · ' + t('not_yet')), proof: !!po.proof_url, amt: '+' + money(po.total), cls: 'pos', open: () => { S.tab = 'payments'; renderShell(); }, ok: !!po.confirmed_at }); });
   (S.requests || []).forEach(r => { if (r.status === 'pending') ev.push({ t: r.requested_at, kind: 'req', tag: t('tag_request'), title: t('rec_req') + ' ' + money(r.amount), sub: r.reason || '', proof: false, amt: money(r.amount), cls: '', open: () => openRequest(r), ok: false }); });
@@ -1122,16 +1128,7 @@ async function renderRecord(host) {
     agrPicker(), el('h1', { class: 'iv-h1' }, t('rec_title')), el('p', { class: 'iv-sub' }, t('rec_sub')),
     stateBanner(p),
     pendingReq ? el('button', { class: 'iv-warn', style: 'width:100%;text-align:start;cursor:pointer;font:inherit', onClick: () => openRequest((S.requests || []).find(r => r.status === 'pending')) }, [el('b', null, t('rec_req') + ' ' + money((S.requests || []).find(r => r.status === 'pending').amount)), ' — ', (S.requests || []).find(r => r.status === 'pending').reason || '', ' ›']) : null,
-    el('div', { class: 'iv-card hero iv-rec-hero' }, [
-      el('div', { class: 'iv-rec-3' }, [
-        el('div', null, [el('span', null, t('rec_given')), el('b', null, money(p.funded))]),
-        el('div', null, [el('span', null, t('rec_spent')), el('b', null, money(p.spent))]),
-        el('div', { class: 'left' }, [el('span', null, t('rec_left')), el('b', null, money(p.fund_cash))]),
-      ]),
-      el('div', { class: 'iv-prog' }, [el('div', { class: 'bar' }, el('i', { style: 'width:' + (Number(p.funded) ? Math.min(100, Math.round(100 * Number(p.spent || 0) / Number(p.funded))) : 0) + '%' }))]),
-      Number(p.total_paid_out) ? el('p', { class: 'iv-muted', style: 'margin:8px 0 0' }, t('rec_back') + ': ' + money(p.total_paid_out)) : null,
-      el('p', { class: 'iv-muted', style: 'margin:8px 0 0;font-size:.78rem' }, t('of') + ' ' + money(p.commitment_cap) + ' ' + t('h_commit_used').toLowerCase() + ' · ' + pct(p.funded_pct)),
-    ]),
+    recHero(p),
     el('div', { class: 'iv-sect' }, el('h2', null, t('rec_all'))),
     ev.length ? el('div', { class: 'iv-list' }, ev.map(e => el('button', { class: 'iv-row', onClick: e.open }, [
       el('div', { class: 'ic ' + (e.kind === 'out' ? 'out' : 'in') }, icon(ic[e.kind])),
@@ -1160,4 +1157,39 @@ function renderAgreementTab(host) {
     navRow('inbox', t('gl_title'), t('gl_row'), () => showGlossary()),
   ]);
   mfaListFactors().then(f => { const on = (f.all || []).concat(f.totp || [], f.phone || []).some(x => x.status === 'verified'); const s = document.getElementById('iv-sec-sub'); if (s) s.textContent = on ? t('sec_on') : t('sec_off'); }).catch(() => {});
+}
+
+// ---------- Record hero v2: ring + five numbers + segmented bar + change-investment ----------
+function recHero(p) {
+  const cap = Number(p.commitment_cap || 0), funded = Number(p.funded || 0), spent = Number(p.spent || 0), fund = Number(p.fund_cash || 0);
+  const toGive = Math.max(0, cap - funded);
+  const pc = (n) => cap ? Math.max(0, Math.min(100, 100 * n / cap)) : 0;
+  const seg = (cls, w, label, val) => el('div', { class: 'seg ' + cls, style: 'width:' + w + '%', title: label + ' · ' + val });
+  return el('div', { class: 'iv-card hero iv-rec-hero' }, [
+    el('div', { class: 'iv-rec-top' }, [
+      ring(p.funded_pct, '', t('rc_used')),
+      el('div', { class: 'iv-rec-nums' }, [
+        el('div', { class: 'n1' }, [el('span', null, t('rc_commit')), el('b', null, money(cap))]),
+        el('div', null, [el('span', null, t('rec_given')), el('b', { class: 'ok' }, money(funded))]),
+        el('div', null, [el('span', null, t('rc_togive')), el('b', null, money(toGive))]),
+        el('div', null, [el('span', null, t('rec_spent')), el('b', { class: 'warn' }, money(spent))]),
+        el('div', null, [el('span', null, t('rec_left')), el('b', { class: 'ok' }, money(fund))]),
+      ]),
+    ]),
+    el('div', { class: 'iv-segbar' }, [seg('spent', pc(spent), t('rc_seg_spent'), money(spent)), seg('fund', pc(fund), t('rc_seg_fund'), money(fund)), seg('left', pc(toGive), t('rc_seg_left'), money(toGive))]),
+    el('div', { class: 'iv-legend' }, [el('span', { class: 'spent' }, t('rc_seg_spent') + ' ' + money(spent)), el('span', { class: 'fund' }, t('rc_seg_fund') + ' ' + money(fund)), el('span', { class: 'left' }, t('rc_seg_left') + ' ' + money(toGive))]),
+    Number(p.total_paid_out) ? el('p', { class: 'iv-muted', style: 'margin:10px 0 0' }, t('rec_back') + ': ' + money(p.total_paid_out)) : null,
+    (S.agr.status === 'wound_down' || S.agr.status === 'closed') ? null : el('button', { class: 'iv-btn block', style: 'margin-top:14px', onClick: () => { S.tab = 'agreement'; renderShell(); setTimeout(() => { const n = document.querySelector('.iv-choice'); if (n) n.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 120); } }, [icon('doc'), t('rc_change')]),
+  ]);
+}
+// investment (tranche) detail sheet — status, proof, downloadable confirmation once LoadBoot confirmed
+function investmentSheet(r) {
+  const st = r.state === 'confirmed' ? pill(t('in_confirmed'), 'ok') : r.state === 'rejected' ? pill(t('in_rejected'), 'due') : pill(t('in_waiting'), 'wait');
+  openSheet(t('in_title'), el('div', null, [
+    el('div', { style: 'margin-bottom:10px' }, st),
+    dl([[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method || '—'], [t('reference'), r.reference || '—'], [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : '—'], [t('p_lb_confirmed'), r.confirmed_at ? fmtDate(r.confirmed_at) : t('not_yet')], r.rejected_reason ? [t('p_rejected_why'), r.rejected_reason] : [t('note'), r.note || '—']]),
+    r.proof_url ? el('a', { class: 'iv-btn block', href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(r.proof_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, [icon('doc'), t('view') + ' ' + t('proof')]) : null,
+    r.confirmed_at ? el('button', { class: 'iv-btn primary block', onClick: () => paymentConfirmation(r) }, [icon('download'), t('dl_confirm')]) : el('p', { class: 'iv-muted' }, t('d_two')),
+    flagButton('receipt', r.id),
+  ]));
 }

@@ -294,3 +294,11 @@ a{color:var(--iv-blue2)}
 .iv-tag{display:inline-block;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-right:8px;vertical-align:middle;background:rgba(255,255,255,.08);color:var(--iv-ink2)}
 .iv-tag.in{background:rgba(46,209,138,.16);color:var(--iv-green)}.iv-tag.out{background:rgba(252,83,5,.16);color:#FFB08A}.iv-tag.payout{background:rgba(8,131,247,.18);color:var(--iv-blue2)}.iv-tag.req{background:rgba(245,185,66,.18);color:var(--iv-amber)}.iv-tag.update{background:rgba(167,139,250,.18);color:#C4B5FD}
 .iv-row .s{white-space:pre-line}
+/* ---- record hero v2 ---- */
+.iv-rec-top{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.iv-rec-nums{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}.iv-rec-nums span{display:block;font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--iv-ink3)}.iv-rec-nums b{display:block;font-size:1.05rem;font-variant-numeric:tabular-nums;margin-top:1px}.iv-rec-nums .n1{grid-column:1/-1}.iv-rec-nums .n1 b{font-size:1.4rem}.iv-rec-nums b.ok{color:var(--iv-green)}.iv-rec-nums b.warn{color:#FFB08A}
+.iv-segbar{display:flex;height:14px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.06);margin:16px 0 8px;gap:2px}.iv-segbar .seg{height:100%;transition:width .6s cubic-bezier(.2,.8,.2,1)}.iv-segbar .spent{background:linear-gradient(90deg,#FC5305,#FFB08A)}.iv-segbar .fund{background:linear-gradient(90deg,#2ED18A,#7CF0BE)}.iv-segbar .left{background:rgba(255,255,255,.08)}
+.iv-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.74rem;color:var(--iv-ink3)}.iv-legend span:before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}.iv-legend .spent:before{background:#FC5305}.iv-legend .fund:before{background:#2ED18A}.iv-legend .left:before{background:rgba(255,255,255,.25)}
+.iv-ring{width:96px;height:96px}
+@media (min-width:900px){.iv-rec-nums{grid-template-columns:repeat(4,1fr)}.iv-rec-nums .n1{grid-column:auto}.iv-rec-nums b{font-size:1.25rem}.iv-ring{width:120px;height:120px}}
+@media (max-width:420px){.iv-rec-top{grid-template-columns:1fr;justify-items:center}.iv-rec-nums{width:100%}}
