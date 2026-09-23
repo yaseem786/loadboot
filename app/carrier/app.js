@@ -98,6 +98,7 @@ import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.j
 import { printDispatchSheet, openPrintable, openInvoicePdf } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
+import '../shared/ui/waSupport.js';   // bl_wa_0411: WhatsApp support button in the premium header (official line, via lb_contact_channel)
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountStrengthCard, maybeShowMicroAsk } from './prefs-strength.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';

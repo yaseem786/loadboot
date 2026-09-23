@@ -42,6 +42,7 @@ import { mountOfflineBanner } from '../shared/connectivity.js';
 import { openPrintable } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
+import '../shared/ui/waSupport.js';   // bl_wa_0411: WhatsApp support button in the premium header (official line, via lb_contact_channel)
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { payInstructions, payMarkSent, payDueItems, payTripMarkSent, ccLoadStops, isMyOrgAgent } from '../shared/api.js';
 import { initTelemetry } from '../shared/telemetry.js';
