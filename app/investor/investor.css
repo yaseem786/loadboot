@@ -291,3 +291,6 @@ a{color:var(--iv-blue2)}
 .iv-proof{font-size:.72rem;color:var(--iv-ink3)}.iv-proof.ok{color:var(--iv-green)}
 @media (min-width:900px){.iv-rec-3 b{font-size:1.6rem}.iv-tabs{grid-template-columns:repeat(4,auto)}}
 @media (max-width:899px){.iv-tabs{grid-template-columns:repeat(4,1fr)}.iv-tab{font-size:.66rem}}
+.iv-tag{display:inline-block;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-right:8px;vertical-align:middle;background:rgba(255,255,255,.08);color:var(--iv-ink2)}
+.iv-tag.in{background:rgba(46,209,138,.16);color:var(--iv-green)}.iv-tag.out{background:rgba(252,83,5,.16);color:#FFB08A}.iv-tag.payout{background:rgba(8,131,247,.18);color:var(--iv-blue2)}.iv-tag.req{background:rgba(245,185,66,.18);color:var(--iv-amber)}.iv-tag.update{background:rgba(167,139,250,.18);color:#C4B5FD}
+.iv-row .s{white-space:pre-line}
