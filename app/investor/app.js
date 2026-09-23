@@ -54,6 +54,7 @@ const err = (e) => (e && (e.message || String(e))) || t('err_generic');
 
 // ---------- icons (inline SVG, stroke = currentColor) ----------
 const P = {
+  plan: 'M4 4h16v16H4zM8 9h8M8 13h6M8 17h4',
   home: 'M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z',
   requests: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
   ledger: 'M2 7h20v12H2zM2 11h20M6 15h4',
@@ -170,7 +171,7 @@ function renderNotLinked() {
 }
 
 // ---------- shell + tabs ----------
-const TABS = ['home', 'requests', 'ledger', 'payments', 'statements'];
+const TABS = ['home', 'plan', 'requests', 'ledger', 'payments', 'statements'];
 function renderShell() {
   const pendingReq = (S.requests || []).filter(r => r.status === 'pending').length;
   const initials = (S.me.name || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -187,7 +188,7 @@ function renderShell() {
       ]))),
   ]));
   root.removeAttribute('aria-busy');
-  ({ home: renderHome, requests: renderRequests, ledger: renderLedger, payments: renderPayments, statements: renderStatements })[S.tab](pane);
+  ({ home: renderHome, plan: renderPlan, requests: renderRequests, ledger: renderLedger, payments: renderPayments, statements: renderStatements })[S.tab](pane);
 }
 function agrPicker() {
   if (S.agreements.length < 2) return null;
@@ -853,7 +854,8 @@ function updatesCard() {
 }
 function planCard(p) {
   const plan = S.settings && S.settings.plan; const items = (plan && plan.items) || [];
-  if (!plan || (!items.length && !plan.summary)) return el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('plan_title')), el('p', { class: 'iv-muted', style: 'margin:0' }, t('plan_none'))]);
+  const bp = S.settings && S.settings.business_plan;
+  if (!plan || (!items.length && !plan.summary)) return el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('plan_title')), el('p', { class: 'iv-muted', style: 'margin:0 0 10px' }, bp ? t('bp_sub') : t('plan_none')), bp ? el('button', { class: 'iv-btn primary block', onClick: () => { S.tab = 'plan'; renderShell(); } }, t('bp_title') + ' ›') : null]);
   const total = items.reduce((a, i) => a + Number(i.amount || 0), 0);
   return el('div', { class: 'iv-card' }, [
     el('p', { class: 'iv-eyebrow' }, t('plan_title')), el('p', { class: 'iv-muted', style: 'margin:0 0 10px' }, plan.summary || t('plan_sub')),
@@ -924,7 +926,8 @@ function brandDoc(title, subtitle, rows, table, footerNote) {
   const rtl = getLang() === 'ur';
   const w = window.open('', '_blank'); if (!w) { alert('Popup blocked'); return; }
   const rowsHtml = (rows || []).map(([k, v]) => '<tr><th>' + esc(k) + '</th><td>' + esc(v) + '</td></tr>').join('');
-  const tableHtml = table ? '<table class="grid"><thead><tr>' + table.head.map(h => '<th>' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' + table.rows.map(r => '<tr>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table>' : '';
+  const one = (tb) => (tb.title ? '<h2 style="font-size:15px;margin:22px 0 6px;color:#0883F7;text-transform:uppercase;letter-spacing:.08em">' + esc(tb.title) + '</h2>' : '') + '<table class="grid"><thead><tr>' + tb.head.map(h => '<th>' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' + tb.rows.map(r => '<tr>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+  const tableHtml = Array.isArray(table) ? table.map(one).join('') : table ? one(table) : '';
   w.document.write('<!doctype html><html' + (rtl ? ' dir="rtl"' : '') + '><head><meta charset="utf-8"><title>' + esc(title) + '</title>' +
     '<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">' +
     '<style>body{font-family:Manrope,Arial,sans-serif;color:#10223B;margin:0;background:#fff}' + (rtl ? 'body{font-family:"Noto Nastaliq Urdu",Manrope,serif;line-height:1.9}' : '') +
@@ -977,4 +980,70 @@ function showAudit() {
     const ev = r.events || [];
     mount(body, [el('p', { class: 'iv-muted' }, t('log_sub')), ev.length ? el('div', { class: 'iv-tl' }, ev.map(e => el('div', null, [el('b', null, e.summary || e.action), el('small', null, new Date(e.at).toLocaleString('en-GB') + ' · ' + e.by + ' · ' + e.action)]))) : empty(t('log_none'))]);
   }).catch(ex => mount(body, el('div', { class: 'iv-err' }, err(ex))));
+}
+
+// ============================================================================
+// PLAN tab — the full plan behind the investor's money (settings.business_plan, written in CC)
+// ============================================================================
+function renderPlan(host) {
+  const bp = S.settings && S.settings.business_plan;
+  if (!bp) { mount(host, [el('h1', { class: 'iv-h1' }, t('bp_title')), empty(t('bp_none'), 'doc')]); return; }
+  const range = (lo, hi) => (Number(lo) || Number(hi)) ? (Number(lo) === Number(hi) || !Number(hi) ? money(lo) : money(lo) + ' – ' + money(hi)) : '—';
+  const sum = (rows, k1, k2) => rows.reduce((a, r) => [a[0] + Number(r[k1] || 0), a[1] + Number(r[k2] || r[k1] || 0)], [0, 0]);
+  const sect = (id, title, body, ic) => el('section', { class: 'iv-card iv-bp', id: 'bp-' + id }, [el('div', { class: 'iv-sec-row' }, [el('p', { class: 'iv-eyebrow', style: 'margin:0' }, title), ic ? icon(ic, '') : null]), body]);
+  const tbl = (head, rows, cls) => el('div', { class: 'iv-tblwrap' }, el('table', { class: 'iv-tbl ' + (cls || '') }, [el('thead', null, el('tr', null, head.map(h => el('th', null, h)))), el('tbody', null, rows.map(r => el('tr', null, r.map(c => el('td', null, c)))))]));
+  const jump = (id) => () => { const n = document.getElementById(id); if (n) n.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  const setupT = sum(bp.setup || [], 'low', 'high'), m1 = sum((bp.monthly || []).filter(r => r.phase !== '2'), 'low', 'high'), m2 = sum(bp.monthly || [], 'low', 'high');
+  const lvl = (l) => pill(t('bp_risk_' + (l || 'med')), l === 'high' ? 'due' : l === 'low' ? 'ok' : 'wait');
+  const stStatus = (st) => st === 'done' ? 'done' : st === 'now' ? 'now' : '';
+  const toc = [['stand', t('bp_stand')], ['city', t('bp_city')], ['setup', t('bp_setup')], ['monthly', t('bp_monthly')], ['team', t('bp_team')], ['unit', t('bp_unit')], ['growth', t('bp_growth')], ['milestones', t('bp_milestones')], ['scen', t('bp_scen')], ['risks', t('bp_risks')], ['comp', t('bp_comp')], ['strat', t('bp_strat')], ['share', t('bp_share')]];
+  mount(host, [
+    agrPicker(), el('h1', { class: 'iv-h1' }, t('bp_title')), el('p', { class: 'iv-sub' }, t('bp_sub')),
+    bp.status !== 'final' ? el('div', { class: 'iv-warn' }, [t('bp_draft'), bp.note ? el('div', { style: 'margin-top:6px;opacity:.85' }, bp.note) : null]) : null,
+    el('div', { class: 'iv-toc' }, toc.map(([id, l]) => el('button', { type: 'button', onClick: jump('bp-' + id) }, l))),
+    el('div', { class: 'iv-actions', style: 'margin:8px 0 14px;flex-wrap:wrap' }, [
+      el('button', { class: 'iv-btn sm', onClick: () => planDoc(bp) }, [icon('download'), t('bp_download')]),
+      el('button', { class: 'iv-btn sm', onClick: () => { S.tab = 'home'; renderShell(); setTimeout(() => { const n = document.querySelector('.iv-growth'); if (n) n.scrollIntoView({ behavior: 'smooth' }); }, 100); } }, t('bp_see_growth')),
+      el('button', { class: 'iv-btn sm', onClick: () => showAgreement() }, t('bp_see_agreement')),
+      el('button', { class: 'iv-btn sm', onClick: () => { S.tab = 'ledger'; renderShell(); } }, t('bp_see_ledger')),
+    ]),
+    el('div', { class: 'iv-home iv-bp-grid' }, [
+      bp.stand ? sect('stand', t('bp_stand'), [el('p', { class: 'iv-bp-h' }, bp.stand.headline || ''), el('ul', { class: 'iv-bp-ul' }, (bp.stand.points || []).map(x => el('li', null, x)))], 'home') : null,
+      bp.city ? sect('city', t('bp_city'), [el('p', { class: 'iv-bp-h' }, bp.city.chosen || '—'), el('ul', { class: 'iv-bp-ul' }, (bp.city.why || []).map(x => el('li', null, x))),
+        (bp.city.alternatives || []).length ? el('div', null, [el('p', { class: 'iv-muted', style: 'margin:10px 0 4px;font-weight:700' }, t('bp_city_alt')), tbl(['', '+', '−'], bp.city.alternatives.map(a => [el('b', null, a.city), a.pros || '', a.cons || '']))]) : null], 'flag') : null,
+      (bp.setup || []).length ? sect('setup', t('bp_setup'), [tbl(['', t('bp_range'), ''], bp.setup.map(r => [el('b', null, r.item), range(r.low, r.high), el('span', { class: 'iv-muted' }, r.note || '')])), el('div', { class: 'iv-bp-total' }, [el('span', null, t('bp_total_setup')), el('b', null, range(setupT[0], setupT[1]))])], 'office') : null,
+      (bp.monthly || []).length ? sect('monthly', t('bp_monthly'), [
+        el('p', { class: 'iv-muted', style: 'margin:0 0 4px;font-weight:700' }, t('bp_phase1')), tbl(['', t('bp_range'), ''], bp.monthly.filter(r => r.phase !== '2').map(r => [el('b', null, r.item), range(r.low, r.high), el('span', { class: 'iv-muted' }, r.note || '')])),
+        el('div', { class: 'iv-bp-total' }, [el('span', null, t('bp_total_month') + ' · ' + t('bp_phase1')), el('b', null, range(m1[0], m1[1]))]),
+        bp.monthly.some(r => r.phase === '2') ? el('div', null, [el('p', { class: 'iv-muted', style: 'margin:12px 0 4px;font-weight:700' }, t('bp_phase2')), tbl(['', t('bp_range'), ''], bp.monthly.filter(r => r.phase === '2').map(r => [el('b', null, r.item), range(r.low, r.high), el('span', { class: 'iv-muted' }, r.note || '')])), el('div', { class: 'iv-bp-total' }, [el('span', null, t('bp_total_month') + ' · ' + t('bp_phase2')), el('b', null, range(m2[0], m2[1]))])]) : null], 'rent') : null,
+      (bp.team || []).length ? sect('team', t('bp_team'), el('div', { class: 'iv-team' }, bp.team.map(m => el('div', { class: 'iv-member' }, [
+        el('div', { class: 'av' }, String(m.person || m.role || '?').split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()),
+        el('div', null, [el('b', null, m.role), el('div', { class: 's' }, [m.person || '—', ' · ', m.status || '']), el('div', { class: 's' }, [el('span', { class: 'k' }, t('bp_salary')), ' ', range(m.salary_low, m.salary_high)]), m.why ? el('div', { class: 's why' }, m.why) : null]),
+      ]))), 'salary') : null,
+      bp.unit ? sect('unit', t('bp_unit'), [el('p', { class: 'iv-gl-p' }, bp.unit.per_truck || ''), el('p', { class: 'iv-bp-h', style: 'font-size:.95rem' }, bp.unit.breakeven || ''), (bp.unit.assumptions || []).length ? el('div', null, [el('p', { class: 'iv-muted', style: 'margin:8px 0 2px;font-weight:700' }, t('bp_assump')), el('ul', { class: 'iv-bp-ul' }, bp.unit.assumptions.map(x => el('li', null, x)))]) : null], 'ledger') : null,
+      (bp.growth || []).length ? sect('growth', t('bp_growth'), tbl([t('bp_col_month'), t('bp_col_carriers'), t('bp_col_disp'), t('bp_col_loads'), t('bp_col_rev'), ''], bp.growth.map(g => [el('b', null, g.month), g.carriers, g.dispatchers, g.loads, g.revenue, el('span', { class: 'iv-muted' }, g.note || '')]), 'wide'), 'statements') : null,
+      (bp.milestones || []).length ? sect('milestones', t('bp_milestones'), el('div', { class: 'iv-tl iv-ms' }, bp.milestones.map(m => el('div', { class: stStatus(m.status) }, [el('b', null, m.title), el('small', null, m.note || '')]))), 'flag') : null,
+      (bp.scenarios || []).length ? sect('scen', t('bp_scen'), el('div', { class: 'iv-scen' }, bp.scenarios.map((sc, i) => el('div', { class: 'iv-scen-item ' + (i === 0 ? 'best' : i === (bp.scenarios.length - 1) ? 'worst' : 'base') }, [el('div', { class: 'h' }, [el('b', null, sc.name), el('span', null, t('bp_chance') + ': ' + (sc.chance || '—'))]), el('p', null, sc.description || ''), el('p', { class: 'eff' }, [el('span', null, t('bp_effect') + ' — '), sc.investor_effect || ''])]))), 'shield') : null,
+      (bp.risks || []).length ? sect('risks', t('bp_risks'), el('div', { class: 'iv-list' }, bp.risks.map(r => el('div', { class: 'iv-row', style: 'cursor:default' }, [el('div', { class: 'ic' }, lvl(r.level)), el('div', null, [el('div', { class: 't' }, r.risk), el('div', { class: 's' }, [el('b', null, t('bp_mitig') + ': '), r.mitigation || ''])])]))), 'shield') : null,
+      (bp.competitors || []).length ? sect('comp', t('bp_comp'), tbl(['', t('bp_what'), t('bp_win')], bp.competitors.map(c => [el('b', null, c.name), c.what || '', el('span', { style: 'color:var(--iv-green)' }, c.why_we_win || '')])), 'flag') : null,
+      (bp.strategies || []).length ? sect('strat', t('bp_strat'), el('div', { class: 'iv-plan' }, bp.strategies.map(st => el('div', { class: 'iv-plan-item' }, [el('div', { class: 'h' }, el('b', null, st.title)), el('div', { class: 'r' }, st.detail || '')]))), 'doc') : null,
+      bp.share ? sect('share', t('bp_share'), [el('p', { class: 'iv-gl-p' }, bp.share.text || ''), el('div', { class: 'iv-actions' }, [el('button', { class: 'iv-btn sm', onClick: () => showTerm('share') }, t('gl_what')), el('button', { class: 'iv-btn sm', onClick: () => showAgreement() }, t('bp_see_agreement'))])], 'payments') : null,
+    ]),
+    el('p', { class: 'iv-muted', style: 'font-size:.75rem' }, t('bp_asof') + ' ' + (bp.as_of ? fmtDate(bp.as_of) : '—')),
+  ]);
+}
+function planDoc(bp) {
+  const range = (lo, hi) => (Number(lo) || Number(hi)) ? (Number(lo) === Number(hi) || !Number(hi) ? money(lo) : money(lo) + ' – ' + money(hi)) : '—';
+  const tables = [];
+  if ((bp.setup || []).length) tables.push({ title: t('bp_setup'), head: ['', t('bp_range'), ''], rows: bp.setup.map(r => [r.item, range(r.low, r.high), r.note || '']) });
+  if ((bp.monthly || []).length) tables.push({ title: t('bp_monthly'), head: ['', t('bp_range'), 'Phase', ''], rows: bp.monthly.map(r => [r.item, range(r.low, r.high), r.phase || '1', r.note || '']) });
+  if ((bp.team || []).length) tables.push({ title: t('bp_team'), head: [t('bp_role'), t('bp_person'), t('bp_status'), t('bp_salary'), t('bp_why')], rows: bp.team.map(m => [m.role, m.person || '', m.status || '', range(m.salary_low, m.salary_high), m.why || '']) });
+  if ((bp.growth || []).length) tables.push({ title: t('bp_growth'), head: [t('bp_col_month'), t('bp_col_carriers'), t('bp_col_disp'), t('bp_col_loads'), t('bp_col_rev'), ''], rows: bp.growth.map(g => [g.month, g.carriers, g.dispatchers, g.loads, g.revenue, g.note || '']) });
+  if ((bp.milestones || []).length) tables.push({ title: t('bp_milestones'), head: ['', t('bp_status'), ''], rows: bp.milestones.map(m => [m.title, m.status, m.note || '']) });
+  if ((bp.scenarios || []).length) tables.push({ title: t('bp_scen'), head: ['', t('bp_chance'), '', t('bp_effect')], rows: bp.scenarios.map(s => [s.name, s.chance || '', s.description || '', s.investor_effect || '']) });
+  if ((bp.risks || []).length) tables.push({ title: t('bp_risks'), head: ['', '', t('bp_mitig')], rows: bp.risks.map(r => [r.risk, r.level, r.mitigation || '']) });
+  if ((bp.competitors || []).length) tables.push({ title: t('bp_comp'), head: ['', t('bp_what'), t('bp_win')], rows: bp.competitors.map(c => [c.name, c.what || '', c.why_we_win || '']) });
+  if ((bp.strategies || []).length) tables.push({ title: t('bp_strat'), head: ['', ''], rows: bp.strategies.map(s => [s.title, s.detail || '']) });
+  brandDoc(t('bp_title'), (bp.status !== 'final' ? 'DRAFT · ' : '') + (bp.stand && bp.stand.headline || ''),
+    [[t('bp_city'), bp.city && bp.city.chosen || '—'], [t('bp_unit'), bp.unit && bp.unit.per_truck || '—'], [t('bp_share'), bp.share && bp.share.text || '—']], tables, bp.note || '');
 }

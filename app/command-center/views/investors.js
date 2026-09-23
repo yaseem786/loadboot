@@ -107,6 +107,7 @@ export function renderInvestors(host) {
     if (manage) {
       actions.push(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => settingsDrawer(load) }, 'Settings · bank, FX, forecast, plan, links'));
       actions.push(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => updatesDrawer(rows) }, 'Post an update'));
+      actions.push(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => planDrawer() }, 'Business plan'));
       actions.push(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => publishMonthForm(load) }, 'Publish month'));
       actions.push(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => agreementForm(null, rows, load) }, '+ Agreement'));
       actions.push(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => investorForm(null, load) }, '+ Investor'));
@@ -645,5 +646,66 @@ function updatesDrawer(rows) {
     el('h4', { style: 'margin:22px 0 8px' }, 'Posted'), list,
   ]);
   paintList();
+  return d;
+}
+
+// ─────────────────────────────────────────────────────────── the business plan (bl_inv_0407)
+// One structured document the investor reads as the "Plan" tab. Tables are typed one row per
+// line with | between columns. Keep status = draft until every [tay karna hai] is resolved.
+function planDrawer() {
+  const body = el('div');
+  const d = openDrawer('Business plan — what the investor reads', body, { subtitle: 'Numbers are yours. Write "[tay karna hai]" where a decision is still open — the portal shows it as open.' });
+  showLoading(body, 'Loading…');
+  settings(true).then(S => {
+    const bp = S.business_plan || {};
+    const rows = (arr, keys) => (arr || []).map(o => keys.map(k => o[k] == null ? '' : o[k]).join(' | ')).join('\n');
+    const parse = (txt, keys, nums) => txt.split('\n').map(l => l.split('|').map(x => x.trim())).filter(a => a[0]).map(a => { const o = {}; keys.forEach((k, i) => { o[k] = (nums || []).includes(k) ? (Number(a[i]) || 0) : (a[i] || ''); }); return o; });
+    const lines = (arr) => (arr || []).join('\n'); const unlines = (txt) => txt.split('\n').map(x => x.trim()).filter(Boolean);
+    const status = sel([['draft', 'Draft — shown with a warning'], ['final', 'Final']], bp.status || 'draft'), asOf = inp({ type: 'date', value: bp.as_of || today() }), note = inp({ value: bp.note || '' });
+    const standH = inp({ value: (bp.stand || {}).headline || '' }), standP = ta({ value: lines((bp.stand || {}).points), rows: 5 });
+    const cityC = inp({ value: (bp.city || {}).chosen || '' }), cityW = ta({ value: lines((bp.city || {}).why), rows: 4 }), cityA = ta({ value: rows((bp.city || {}).alternatives, ['city', 'pros', 'cons']), rows: 3, placeholder: 'Lahore | pros | cons' });
+    const setup = ta({ value: rows(bp.setup, ['item', 'low', 'high', 'note']), rows: 6, placeholder: 'Deposit | 150000 | 200000 | note' });
+    const monthly = ta({ value: rows(bp.monthly, ['item', 'low', 'high', 'phase', 'note']), rows: 8, placeholder: 'Rent | 50000 | 60000 | 1 | note   (phase 1 = trial, 2 = once trucks earn)' });
+    const team = ta({ value: rows(bp.team, ['role', 'person', 'status', 'salary_low', 'salary_high', 'why']), rows: 6, placeholder: 'Dispatcher 1 | to hire | hiring | 20000 | 100000 | why' });
+    const unitT = inp({ value: (bp.unit || {}).per_truck || '' }), unitB = inp({ value: (bp.unit || {}).breakeven || '' }), unitA = ta({ value: lines((bp.unit || {}).assumptions), rows: 3 });
+    const growth = ta({ value: rows(bp.growth, ['month', 'carriers', 'dispatchers', 'loads', 'revenue', 'note']), rows: 5, placeholder: 'Month 2 | 6–8 | 2 | 10–20 | PKR 1–2 lakh | note' });
+    const ms = ta({ value: rows(bp.milestones, ['title', 'status', 'note']), rows: 7, placeholder: 'First truck dispatched | next | note   (status: done / now / next / later)' });
+    const scen = ta({ value: rows(bp.scenarios, ['name', 'chance', 'description', 'investor_effect']), rows: 4, placeholder: 'Best | 30% | what happens | what it means for the investor' });
+    const risks = ta({ value: rows(bp.risks, ['risk', 'level', 'mitigation']), rows: 6, placeholder: 'Fee collection | high | mitigation   (level: high / med / low)' });
+    const comp = ta({ value: rows(bp.competitors, ['name', 'what', 'why_we_win']), rows: 5 }), strat = ta({ value: rows(bp.strategies, ['title', 'detail']), rows: 5 });
+    const share = ta({ value: (bp.share || {}).text || '', rows: 4 });
+    const btn = el('button', { class: 'lb-btn lb-btn-primary' }, 'Save plan');
+    btn.onclick = () => submit(btn, () => ccInvSettingsSet('business_plan', {
+      status: status.value, as_of: asOf.value, note: note.value,
+      stand: { headline: standH.value, points: unlines(standP.value) },
+      city: { chosen: cityC.value, why: unlines(cityW.value), alternatives: parse(cityA.value, ['city', 'pros', 'cons']) },
+      setup: parse(setup.value, ['item', 'low', 'high', 'note'], ['low', 'high']),
+      monthly: parse(monthly.value, ['item', 'low', 'high', 'phase', 'note'], ['low', 'high']),
+      team: parse(team.value, ['role', 'person', 'status', 'salary_low', 'salary_high', 'why'], ['salary_low', 'salary_high']),
+      unit: { per_truck: unitT.value, breakeven: unitB.value, assumptions: unlines(unitA.value) },
+      growth: parse(growth.value, ['month', 'carriers', 'dispatchers', 'loads', 'revenue', 'note']),
+      milestones: parse(ms.value, ['title', 'status', 'note']), scenarios: parse(scen.value, ['name', 'chance', 'description', 'investor_effect']),
+      risks: parse(risks.value, ['risk', 'level', 'mitigation']), competitors: parse(comp.value, ['name', 'what', 'why_we_win']), strategies: parse(strat.value, ['title', 'detail']),
+      share: { text: share.value },
+    }), () => { toast('Plan saved — investors see it now'); settings(true); });
+    const h = (t_) => el('h4', { style: 'margin:18px 0 6px' }, t_);
+    mount(body, [
+      el('div', { class: 'cc-inv-set' }, [f('Status', status), f('Plan dated', asOf)]), f('Note shown at the top', note),
+      h('Where LoadBoot stands today'), f('Headline', standH), f('Points (one per line)', standP),
+      h('City decision'), f('Chosen city', cityC), f('Why (one per line)', cityW), f('Alternatives (city | pros | cons)', cityA),
+      h('One-time setup costs'), f('item | low | high | note', setup),
+      h('Monthly running costs'), f('item | low | high | phase (1/2) | note', monthly),
+      h('Team'), f('role | person | status | pay low | pay high | why this role', team),
+      h('Unit economics'), f('How one truck becomes income', unitT), f('Break-even', unitB), f('Assumptions (one per line)', unitA),
+      h('Growth targets'), f('month | active carriers | dispatchers | loads | fee income | note', growth),
+      h('Road to first profit'), f('title | status (done/now/next/later) | note', ms),
+      h('Scenarios'), f('name | chance | description | what it means for the investor', scen),
+      h('Risks'), f('risk | level (high/med/low) | what is done about it', risks),
+      h('Competitors'), f('name | what they do | why we win', comp),
+      h('Strategy'), f('title | detail', strat),
+      h('The investor\'s share, in one example'), f('Text', share),
+      el('div', { style: 'margin-top:14px' }, btn),
+    ]);
+  });
   return d;
 }
