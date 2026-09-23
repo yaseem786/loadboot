@@ -15,7 +15,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { money, fmtDate, fmtDateTime, askReason, askConfirm, openDrawer } from '../../shared/ui/components.js';
 import { ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSop, ccDispatcherUnassign,
          getCarriersDirectory, ccCarrierPrefs, ccDispatcherSetTerms, ccDispatcherBookings, ccDispatcherBookingDecide,
-         ccDispatcherCommissionStatus, ccDispatcherCommissionList, ccDispatcherCommissionPay, ccDispatcherResendIntro,
+         ccDispatcherCommissionStatus, ccDispatcherCommissionList, ccDispatcherCommissionPay, ccDispatcherResendIntro, ccDispatcherContactRelease,
          ccDispatcherTestInvite, ccDispatcherTestReview, dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead,
          ccDispatcherKpis, ccDispatcherActivity } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
@@ -503,6 +503,14 @@ export async function renderDispatcher360(host, query) {
           el('div', { class: 'd3-mut', style: 'font-size:11.8px;margin-top:2px' }, 'Assigned ' + dShort(a.assigned_at) + (a.carrier_ack_at ? ' · owner confirmed ' + dShort(a.carrier_ack_at) : a.carrier_notified_at ? ' · intro sent ' + dShort(a.carrier_notified_at) + ', not confirmed yet' : ' · intro e-mail not sent') + (a.end_reason && a.status === 'paused' ? ' · ' + a.end_reason : ''))]),
         lnk('#/carriers?id=' + encodeURIComponent(a.carrier_org_id), 'carrier 360'),
         btn('SOP', () => editSop(a), 'sm g', 'doc'), btn('Thread' + (a.unread ? ' · ' + a.unread : ''), () => go('messages'), 'sm g', 'chat'),
+        // bl_disp_0408 — release / withdraw the dispatcher's LoadBoot line + mailbox + WhatsApp in the carrier's Dispatcher tab
+        a.status !== 'ended' ? btn(a.contact_released_at ? 'Contact released ✓' : 'Release contact', async () => {
+          const rel = !a.contact_released_at;
+          if (!(await askConfirm(rel ? 'Release contact details to ' + (a.carrier || 'the carrier') + '?' : 'Hide the contact details again?', { body: rel ? 'The carrier\'s Dispatcher tab shows the LoadBoot line, the @loadboot.com mailbox and the company WhatsApp, plus the call log and loads. The owner gets an in-app notice and one e-mail (dispatcher.contact.released). Only do this once the line and mailbox are provisioned.' : 'The carrier loses the call / WhatsApp / e-mail buttons and the call log until you release again. No e-mail is sent.', danger: !rel }))) return;
+          const note = await askReason(rel ? 'Note for the audit log (optional)' : 'Why hide it? (audit log)'); if (note === null) return;
+          const r = await ccDispatcherContactRelease(a.id, rel, note || null).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; }
+          toast(rel ? 'Released — carrier notified.' : 'Contact details hidden.'); await load(); rerender('dd');
+        }, 'sm ' + (a.contact_released_at ? 'g' : ''), a.contact_released_at ? 'check' : 'phone') : null,
         btn(a.carrier_notified_at ? 'Re-send intro' : 'Send intro', async () => { if (!(await askConfirm('Send the intro e-mail to ' + (a.carrier || 'the carrier') + '?', { body: 'Branded e-mail to the owner: what the dispatcher can and cannot see, how a load moves, the one-channel rule, the SOP rules, and a one-tap "Got it" link.' }))) return; const r = await ccDispatcherResendIntro(a.id).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ intro sent to ' + r.to); rerender('dd'); }, 'sm g', 'send'),
         a.status === 'active' ? btn('Pause', async () => { const reason = await askReason('Pause this assignment — why? (dispatcher + carrier see it)'); if (reason === null) return; const r = await ccDispatcherUnassign(a.id, reason, true).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ paused'); rerender('dd'); }, 'sm g', 'pause') : '',
         btn('End', async () => { if (!(await askConfirm('End this assignment?', { body: 'The carrier frees up for reassignment and is told LoadBoot dispatch covers the truck. Blocked while loads are moving unless you add "force".', danger: true }))) return; const reason = await askReason('Reason (dispatcher + carrier see it)'); if (reason === null) return; const r = await ccDispatcherUnassign(a.id, reason, false).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ ended'); rerender('dd'); }, 'sm danger', 'x')]),
