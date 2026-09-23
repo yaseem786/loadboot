@@ -17,6 +17,7 @@
 // items (counted, and the candidate is told), flag-for-review, and section progress in the bar.
 // The save / clock / telemetry logic below is unchanged from v1.
 import { dispatcherTestMy, dispatcherTestStart, dispatcherTestSave, dispatcherTestSubmit } from '../shared/api.js';
+import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
 
 const h = (tag, attrs, kids) => {
   const e = document.createElement(tag);
@@ -62,7 +63,7 @@ function confirmBox(title, body, okLabel) {
         ]),
       ]),
     ]);
-    document.body.appendChild(back);
+    document.body.appendChild(back); lockPage(back);
   });
 }
 

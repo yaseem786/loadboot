@@ -8,6 +8,7 @@
 import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updateEmail, mfaListFactors, mfaEnrollTotp, mfaVerify, mfaUnenroll, mfaRequired, signOutEverywhere } from '../shared/session.js';
 import { brandLogo } from '../shared/ui/components.js';
+import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
 import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collapsible sidebar
 import { printExecutedW9 } from '../carrier/w9-form.js';
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
@@ -198,6 +199,7 @@ function openModal(title, children, opts) {
   document.body.appendChild(ov);
   document.addEventListener('keydown', onEsc);
   pushLayer(guard);
+  lockPage(ov);   // after pushLayer (see carrier openModal)
   return close;
 }
 
@@ -909,7 +911,7 @@ function invoicesCard() {
         const scrim = h('div', { style: 'position:fixed;inset:0;background:rgba(2,6,23,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px' });
         const panel = h('div', { class: 'cp-card', style: 'position:relative;max-width:520px;width:92%;max-height:88vh;overflow:auto' }, [h('button', { style: 'position:absolute;top:10px;right:12px;border:none;background:none;font-size:1.1rem;cursor:pointer', onClick: () => scrim.remove() }, '\u2715'), h('h3', { style: 'margin:0 0 10px' }, title), ...children]);
         scrim.appendChild(panel); scrim.addEventListener('click', (e) => { if (e.target === scrim) scrim.remove(); });
-        document.body.appendChild(scrim); return () => scrim.remove();
+        document.body.appendChild(scrim); lockPage(scrim); return () => scrim.remove();
       };
       const invPdf = (i) => openPrintable('Invoice ' + i.number, 'INVOICE', [
         { rows: [['Invoice #', i.number], ['Amount', money(i.amount)], ['Description', i.description || '\u2014'], ['Due', fmtDate(i.due_date)], ['Status', String(i.status || '').replace(/_/g, ' ')], i.expected_pay_date ? ['Expected pay date', fmtDate(i.expected_pay_date)] : null, i.payment_ref ? ['Payment reference', i.payment_ref] : null].filter(Boolean) },

@@ -98,7 +98,8 @@ import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.j
 import { printDispatchSheet, openPrintable, openInvoicePdf } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
-import '../shared/ui/waSupport.js';   // bl_wa_0411: WhatsApp support button in the premium header (official line, via lb_contact_channel)
+import '../shared/ui/waSupport.js';
+import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer   // bl_wa_0411: WhatsApp support button in the premium header (official line, via lb_contact_channel)
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountStrengthCard, maybeShowMicroAsk } from './prefs-strength.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -333,22 +334,10 @@ function lbToast(msg, tone, title) {
 // (scroll chaining), and rubber-bands the whole thing — the "drawer shakes / page underneath scrolls" report. The
 // fix is the standard one: while any modal is open the body is position:fixed at its current scroll offset, and
 // the offset is restored on close. Ref-counted so nested dialogs (confirm inside a form) unlock only at the end.
-let _lbModalDepth = 0, _lbModalScrollY = 0;
-function lbLockPage() {
-  if (_lbModalDepth++ > 0) return;
-  _lbModalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-  document.body.style.top = (-_lbModalScrollY) + 'px';
-  document.body.classList.add('cp-modal-open');
-}
-function lbUnlockPage() {
-  if (_lbModalDepth <= 0 || --_lbModalDepth > 0) return;
-  document.body.classList.remove('cp-modal-open');
-  document.body.style.top = '';
-  try { window.scrollTo(0, _lbModalScrollY); } catch (_) {}
-}
+// bl_ui_0413: the lock now lives in app/shared/ui/scrollLock.js (lockPage/unlockPage) and is shared by every sheet in every portal.
 function openModal(title, children) {
   let closed = false;
-  const realClose = () => { if (closed) return; closed = true; ov.remove(); document.removeEventListener('keydown', onEsc); lbUnlockPage(); };
+  const realClose = () => { if (closed) return; closed = true; ov.remove(); document.removeEventListener('keydown', onEsc); unlockPage(ov); };
   const guard = () => realClose();                              // back gesture → just close
   const close = () => { if (closed) return; realClose(); popLayer(guard); };  // ✕/backdrop/Esc/after-save → close + unwind history
   const onEsc = (e) => { if (e.key === 'Escape') close(); };
@@ -368,10 +357,10 @@ function openModal(title, children) {
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   };
   card.addEventListener('keydown', onTrap);
-  lbLockPage();
   document.body.appendChild(ov);
   document.addEventListener('keydown', onEsc);
   pushLayer(guard);
+  lockPage(ov);   // after pushLayer: history.back() on close restores the scroll saved at pushState time, which reads 0 while locked
   const first = card.querySelector('input,select,textarea'); if (first) first.focus();
   return close;
 }
@@ -2471,7 +2460,7 @@ async function appView(user) {
     ]);
     function close() { scrim.classList.remove('show'); drawer.classList.remove('show'); setTimeout(() => { scrim.remove(); drawer.remove(); }, 220); }
     scrim.onclick = close;
-    document.body.appendChild(scrim); document.body.appendChild(drawer);
+    document.body.appendChild(scrim); lockPage(scrim); document.body.appendChild(drawer);
     requestAnimationFrame(() => { scrim.classList.add('show'); drawer.classList.add('show'); });
   }
 

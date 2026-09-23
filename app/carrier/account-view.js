@@ -3,6 +3,7 @@
 // Renders hero + metric strip + sub-tab nav + rich section cards, wired to real data.
 import { openSignModal, printExecutedAgreement } from './dispatch-agreement.js';
 import { printExecutedW9 } from './w9-form.js';
+import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
 import { uploadDocument } from '../shared/storage.js';
 import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile, myHazmatReadiness, carrierRequestReverify, carrierAgreementSignature, setMyAvatar, myAvatar, requestAccountAction } from '../shared/api.js';
@@ -34,7 +35,7 @@ function lbConfirm(title, body, okLabel) {
       + '<div style="font-size:.86rem;color:#b9c6db;line-height:1.65;white-space:pre-line;margin-bottom:16px">' + body + '</div>'
       + '<div style="display:flex;gap:9px;justify-content:flex-end"><button id="lbc-no" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#eaf1fb;border-radius:11px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:inherit">Cancel</button>'
       + '<button id="lbc-ok" style="background:linear-gradient(135deg,#d97706,#f59e0b);border:0;color:#fff;border-radius:11px;padding:10px 16px;font-weight:800;cursor:pointer;font-family:inherit">' + (okLabel || 'Continue') + '</button></div></div>';
-    document.body.appendChild(ov);
+    document.body.appendChild(ov); lockPage(ov);
     const done = (v) => { ov.remove(); res(v); };
     ov.querySelector('#lbc-ok').onclick = () => done(true);
     ov.querySelector('#lbc-no').onclick = () => done(false);

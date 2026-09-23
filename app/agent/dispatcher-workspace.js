@@ -21,6 +21,7 @@ import {
 } from '../shared/api.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { el, mount, clear } from '../shared/ui/dom.js';
+import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
 import { roadMiles } from '../shared/usGeo.js';
 import { icon as sharedIcon } from '../shared/ui/icons.js';
 import { dispatchLiveJoin } from '../shared/dispatch-live.js';
@@ -475,10 +476,10 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const m = h('div', { class: 'dw-modal', onClick: (e) => { if (e.target === m && !o.sticky) close(); } }, box);
     const prev = document.activeElement;
     const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
-    function close() { m.remove(); document.removeEventListener('keydown', onKey); if (prev && prev.focus) try { prev.focus(); } catch (_) {} if (o.onClose) o.onClose(); }
+    function close() { m.remove(); unlockPage(m); document.removeEventListener('keydown', onKey); if (prev && prev.focus) try { prev.focus(); } catch (_) {} if (o.onClose) o.onClose(); }
     mount(box, [h('h3', null, [typeof title === 'string' ? h('span', null, title) : title, h('button', { class: 'dw-x', 'aria-label': 'Close', onClick: close }, ic('x', 16))]), content]);
     document.addEventListener('keydown', onKey);
-    root.appendChild(m); setTimeout(() => { const f0 = box.querySelector('input,textarea,select,button.dw-btn'); (f0 || box).focus(); }, 0);
+    root.appendChild(m); lockPage(m); setTimeout(() => { const f0 = box.querySelector('input,textarea,select,button.dw-btn'); (f0 || box).focus(); }, 0);
     m.close = close; return m;
   }
   function toast(msg, bad) { const t = h('div', { class: 'dw-toast' + (bad ? ' bad' : ''), role: 'status' }, msg); document.body.appendChild(t); setTimeout(() => t.remove(), bad ? 6000 : 3500); }
@@ -616,7 +617,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       ]),
     ]);
     scrim.onclick = () => close();
-    document.body.append(scrim, dr); document.addEventListener('keydown', onKey);
+    document.body.append(scrim, dr); lockPage(scrim); document.addEventListener('keydown', onKey);
     requestAnimationFrame(() => { scrim.classList.add('show'); dr.classList.add('show'); });
   }
   function restoreChrome() {

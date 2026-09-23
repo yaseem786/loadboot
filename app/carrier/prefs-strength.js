@@ -7,6 +7,7 @@
 // Backend: cc_prefs_profile_strength() + cc_prefs_save_section() + cc_get_dispatch_prefs().
 import { prefsProfileStrength, prefsSaveSection, getDispatchPrefs } from '../shared/api.js';
 import { pushLayer, popLayer } from '../shared/backnav.js';
+import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
 
 const SEC = {
   lanes:      { icon: '🛣️', title: 'Your favorite lanes', sub: 'We push loads on these lanes to the top of your board.', pct: 15 },
@@ -105,7 +106,7 @@ function sheet(innerHTML) {
   document.body.appendChild(wrap);
   // Android back closes this sheet (instead of leaving the portal); manual closes unwind.
   const psxGuard = () => { const m9 = document.getElementById('psxModal'); if (m9) m9.remove(); };
-  wrap.__psxGuard = psxGuard; pushLayer(psxGuard);
+  wrap.__psxGuard = psxGuard; pushLayer(psxGuard); lockPage(wrap);
   const psxUnwind = () => popLayer(psxGuard);
   wrap.querySelector('.psx-ov').addEventListener('click', (e) => { if (e.target === e.currentTarget) { wrap.remove(); psxUnwind(); } });
   return wrap;

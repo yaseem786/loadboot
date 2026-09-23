@@ -10,6 +10,7 @@
 //   navigate anywhere, proof always lands in LoadBoot
 // • Manual buttons remain as fallback when GPS is flaky
 import { tripArriveGps, tripDepart, pocketAdvanceTrip, tripSetStopCoords, tripCheckin, pocketPostLocation, pocketUploadTripDoc, ccLoadStops, tripStopsProgress } from '../shared/api.js';
+import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
 
 const RADIUS_M = 800;
 const ORANGE = '#FC5305', BLUE = '#0883F7';
@@ -115,7 +116,7 @@ const money = (n) => '$' + Number(n || 0).toLocaleString();
 export async function openTripMap(t, opts = {}) {
   ensurePulseCss();
   const ov = el('div', 'position:fixed;inset:0;height:100dvh;z-index:9999;background:#0f1114;display:flex;flex-direction:column;font-family:Manrope,system-ui,sans-serif');
-  document.body.appendChild(ov);
+  document.body.appendChild(ov); lockPage(ov);
   const mapWrap = el('div', 'position:relative;flex:1;min-height:0');
   const mapDiv = el('div', 'position:absolute;inset:0');
   mapWrap.appendChild(mapDiv);

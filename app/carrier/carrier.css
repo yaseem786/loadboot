@@ -285,7 +285,7 @@ textarea.cp-in { resize: vertical; }
 .cp-modal-card { background: #fff; width: 100%; max-width: 520px; border-radius: 18px 18px 0 0; max-height: 92vh; max-height: 92dvh; overflow-y: auto; box-shadow: 0 -20px 60px -20px rgba(0,0,0,.4); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 /* bl_ui_0411 — while a sheet is open the page behind it is frozen in place (position:fixed at the current scroll
    offset, restored on close by openModal). Stops iOS scroll chaining + rubber-band shake behind the Add-truck sheet. */
-body.cp-modal-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; overscroll-behavior: none; }
+body.cp-modal-open, body.lb-page-locked { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; overscroll-behavior: none; }
 .cp-modal { overscroll-behavior: contain; }
 /* 29 Aug 2026 — the modal scrolls with the browser's default fat grey bar, which looks
    broken against the dark theme. Same thin treatment .cp-side already uses. */
