@@ -127,3 +127,29 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
 @media (max-width: 900px) {
   .cp-btn, .cp-btn-sm, .cp-chip2, .cp-iconbtn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
 }
+
+/* ---- ux-audit 2026-09-24 (broker portal, Amazon/Uber bar) ----
+   1. Card heads: carrier.css sets justify-content:space-between, so a head with only an
+      icon + title shoved the title to the right edge on every card. Title now sits beside
+      its icon and takes the free space; a trailing pill/button still ends up on the right.
+   2. Long pills (e.g. "Company-domain check passed · <domain>") pushed the Requests page
+      wider than the phone. Pills may wrap inside the content column.
+   3. Phone top bar: the Broker/Shipper pill + bell + avatar + WhatsApp + chat left ~30px
+      for the page title ("Re…", "Cl…"). The kind pill is already in the drawer header. */
+.cp-cardhead { justify-content: flex-start; }
+.cp-cardhead > h3 { flex: 1 1 auto; min-width: 0; text-align: left; }
+.cp-content .cp-pill { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.cp-staff { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; }
+@media (max-width: 560px) {
+  .cp-top-right > .cp-pill { display: none; }
+  .cp-top-left { min-width: 0; flex: 1 1 auto; }
+  .cp-top-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cp-auth-card { padding-bottom: 88px; } /* floating chat button no longer sits on "Create account" */
+}
+/* 4. Dashboard shows a peek of My loads (newest two, no search bar — the bar carries an inline
+      display:flex, hence !important) + "View all loads"; the full list, search and filters
+      live on the My Loads tab (same DOM node). */
+.bd-peek > .cp-card > :nth-child(2) > div > :first-child,
+.bd-peek > .cp-card > :nth-child(2) > div > :nth-child(n+4) { display: none !important; }
+.bd-peek { margin-top: 14px; }
+.bd-peek-all { width: 100%; margin-top: 8px; }

@@ -592,6 +592,11 @@
       if (sessionStorage.getItem('lb_lc_teased')) return;
       setTimeout(function () {
         if (open || sessionStorage.getItem('lb_lc_teased')) return;
+        // ux-audit 2026-09-24: on a portal's sign-in / sign-up screen there is no account yet, so the
+        // "I can see your verification…" promise is false and the bubble covers the primary button.
+        // Portals therefore tease only once a session exists; the website keeps its own openers.
+        Promise.resolve(cfg.origin !== 'website' && cfg.getToken ? cfg.getToken() : 'web').then(function (tok) {
+        if (!tok || open || sessionStorage.getItem('lb_lc_teased')) return;
         sessionStorage.setItem('lb_lc_teased', '1');
         var t = document.createElement('div'); t.id = 'lbc-teaser';
         t.style.cssText = 'position:fixed;right:18px;bottom:' + (((window.__lbcFabOffset || 18) + 68)) + 'px;max-width:260px;background:#fff;border:1px solid #e6edf5;border-radius:16px;border-bottom-right-radius:6px;box-shadow:0 16px 50px rgba(2,6,23,.25);padding:13px 15px;z-index:2147483645;font-family:Inter,system-ui,Arial;font-size:13px;color:#0f172a;line-height:1.5;cursor:pointer;animation:lbcUp .3s ease';
@@ -602,8 +607,12 @@
           '<b>🚀 New here?</b><br>I can set up your whole account right in this chat — about 5 minutes, done.',
           '<b>📄 Document questions?</b><br>Upload your COI here — I read it on the spot and tell you if anything\'s wrong.',
           '<b>💰 Curious what loads pay?</b><br>Ask me for live rates per mile — real numbers, no login needed.'
-        ] : [
+        ] : cfg.origin === 'carrier' ? [
           '<b>👋 Stuck on something?</b><br>I can see your verification, trucks and payment setup — ask me what\'s left.',
+          '<b>🙋 Need a person?</b><br>Say "talk to a person" — a real LoadBoot teammate joins right here.'
+        ] : [
+          // ux-audit 2026-09-24: brokers, shippers and agents were shown the carrier promise above.
+          '<b>👋 Question about a load?</b><br>Ask here — posting, offers, claims or payments.',
           '<b>🙋 Need a person?</b><br>Say "talk to a person" — a real LoadBoot teammate joins right here.'
         ];
         var oi = 0;
@@ -612,6 +621,7 @@
         t.onclick = function (e) { t.remove(); if (!(e.target && e.target.hasAttribute && e.target.hasAttribute('data-x'))) togglePanel(true); };
         document.body.appendChild(t);
         setTimeout(function () { if (t.parentNode) t.remove(); }, 25000);
+        }).catch(function () {});
       }, 5000);
     } catch (e) {}
   }

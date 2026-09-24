@@ -533,6 +533,8 @@ function authScreen() {
   const sub = h('p', { class: 'cp-auth-sub' }, 'Sign in to your partner portal.');
   const btn = h('button', { class: 'cp-btn cp-btn-lg' }, 'Sign in');
   const toggle = h('p', { class: 'cp-auth-toggle' });
+  // ux-audit 2026-09-24: sign-up had no Terms/Privacy notice at the point of consent.
+  const terms = h('p', { class: 'cp-auth-terms', style: 'display:none;font-size:.78rem;color:#64748b;margin:10px 0 0;line-height:1.5', html: 'By creating an account you agree to LoadBoot\u2019s <a href="/terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.' });
   // System back while in create-account mode returns to sign-in.
   let sgOn = false;
   const sgGuard = () => { sgOn = false; if (document.body.contains(email)) setMode(false); };
@@ -545,6 +547,9 @@ function authScreen() {
     extra.style.display = s ? 'block' : 'none';
     typeBlock.style.display = s ? 'block' : 'none';
     btn.textContent = s ? 'Create account' : 'Sign in';
+    terms.style.display = s ? 'block' : 'none';
+    try { const fg9 = document.querySelector('.cp-forgot'); if (fg9) fg9.style.display = s ? 'none' : ''; } catch (_) {}
+    try { pass.setAttribute('autocomplete', s ? 'new-password' : 'current-password'); } catch (_) {}
     err.textContent = ''; err.className = 'cp-err';
     mount(toggle, s ? [document.createTextNode('Already have an account? '), h('a', { onClick: () => setMode(false) }, 'Sign in')]
       : [document.createTextNode('New partner? '), h('a', { onClick: () => setMode(true) }, 'Create an account')]);
@@ -555,6 +560,7 @@ function authScreen() {
     if (!em || !pw) { err.textContent = 'Enter your email and password.'; return; }
     if (signup && !name.value.trim()) { err.textContent = 'Enter your name.'; return; }
     if (signup && !chosenKind) { err.textContent = 'Pick whether you are a broker, shipper or facility.'; return; }
+    if (signup && pw.length < 8) { err.textContent = 'Use at least 8 characters for your password.'; return; }
     btn.disabled = true; btn.textContent = signup ? 'Creating…' : 'Signing in…';
     try {
       if (signup) {
@@ -574,7 +580,15 @@ function authScreen() {
         boot(); return;
       }
       const { error } = await signInWithPassword(em, pw); if (error) throw error; boot(); return;
-    } catch (e) { err.textContent = (e && e.message) || 'Something went wrong.'; btn.disabled = false; btn.textContent = signup ? 'Create account' : 'Sign in'; }
+    } catch (e) {
+      const m9 = String((e && e.message) || '');
+      // ux-audit 2026-09-24: raw Supabase auth errors reached the user verbatim.
+      err.textContent = /sending confirmation email/i.test(m9) ? 'We could not send the confirmation email just now. Check the address and try again in a minute \u2014 or tap chat and we\u2019ll help.'
+        : /invalid login credentials/i.test(m9) ? 'Email or password is incorrect. Try again, or use \u201cForgot password?\u201d.'
+        : /email not confirmed/i.test(m9) ? 'Please confirm your email first \u2014 open the link we sent you (check spam too), then sign in.'
+        : (m9 || 'Something went wrong.');
+      btn.disabled = false; btn.textContent = signup ? 'Create account' : 'Sign in';
+    }
   };
   // Premium split auth — same owner-approved design family as the carrier login, broker story on the left.
   const brandPanel = h('div', { class: 'cpx-auth-brand', html:
@@ -615,9 +629,9 @@ function authScreen() {
     h('div', { class: 'cp-auth-card' }, [
       h('a', { href: '/app/?choose=1', style: 'display:inline-flex;align-items:center;gap:6px;color:#64748b;font-weight:700;font-size:.82rem;text-decoration:none;margin:-4px 0 12px;padding:4px 0', html: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>All portals</span>' }),
       h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#94A3B8;line-height:1;margin-top:5px" }, 'Partner')]),
-      title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, typeBlock, err, btn,
+      title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, typeBlock, err, btn, terms,
       // 2026-08 audit: locked-out brokers had NO recovery path from the sign-in screen.
-      h('button', { style: 'background:none;border:0;color:#0883F7;font-weight:700;font-size:.85rem;cursor:pointer;padding:8px 0 0;text-align:left', onClick: async (ev9) => {
+      h('button', { class: 'cp-forgot', style: 'background:none;border:0;color:#0883F7;font-weight:700;font-size:.85rem;cursor:pointer;padding:8px 0 0;text-align:left', onClick: async (ev9) => {
         const em9 = email.value.trim();
         if (!em9 || em9.indexOf('@') < 1) { err.className = 'cp-err'; err.textContent = 'Type your email above first, then tap \u201cForgot password?\u201d.'; return; }
         const _fb9 = ev9.currentTarget; _fb9.disabled = true;
@@ -2850,7 +2864,8 @@ async function brokerDash(user, ov) {
               h('div', { style: 'font-weight:800;font-size:15px' }, (l.origin || '—') + ' → ' + (l.destination || '—')),
               h('div', { class: 'cp-sub' }, [l.equipment || null, l.rate ? money(l.rate) : null, l.carrier ? 'Carrier: ' + l.carrier : null].filter(Boolean).join(' · ')),
             ]),
-            pill(l.status),
+            // ux-audit 2026-09-24: an expired posting showed a green "Posted" pill next to a red EXPIRED banner.
+            lbExpiredP(l) ? h('span', { class: 'cp-pill red' }, 'Expired') : pill(l.status),
           ]),
           stepper,
           h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center' }, [
@@ -4414,10 +4429,13 @@ function packetAgreementCards(skipPacket) {
   })();
   // ---- 💰 Payables: every dollar this broker owes right now (freight + approved claims),
   //      each with the same procedure: bank details → pay → receipt → carrier ✓ Received ----
-  function payablesCard() {
-    const host9 = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('finance',15),' Payables — money you owe carriers'])]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+  // ux-audit 2026-09-24: compact=true on the Dashboard — the full per-item ledger (every freight line and
+  // claim with its own Pay button) made the phone dashboard ~4,000px tall. The Dashboard now shows the two
+  // most urgent unpaid trips + one link to the full list in Invoices; nothing is removed from Invoices.
+  function payablesCard(compact) {
+    const host9 = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, 'Payables — money you owe carriers')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
     (async () => {
-      let d9; try { d9 = await payDueItems(); } catch (e9) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('finance',15),' Payables — money you owe carriers'])]), h('div', { class: 'cp-sub' }, (e9 && e9.message) || 'Could not load.')]); return; }
+      let d9; try { d9 = await payDueItems(); } catch (e9) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, 'Payables — money you owe carriers')]), h('div', { class: 'cp-sub' }, (e9 && e9.message) || 'Could not load.')]); return; }
       const items9 = (d9 && Array.isArray(d9.payables)) ? d9.payables : [];
       const openIt = items9.filter((x9) => x9.transfer_status !== 'received');
       const doneIt = items9.filter((x9) => x9.transfer_status === 'received').slice(0, 5);
@@ -4516,10 +4534,30 @@ function packetAgreementCards(skipPacket) {
         ]);
       };
       mount(host9, [
-        h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('finance',15),' Payables — money you owe carriers']),
+        h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, 'Payables — money you owe carriers'),
           totalDue ? h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c;margin-left:8px' }, money(totalDue) + ' due') : h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-left:8px' }, 'all settled')]),
-        h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Grouped per trip: each block is ONE load — its freight plus every approved claim (detention, lumper, TONU…) with the trip\u2019s own total. Pay each item, attach the receipt — the carrier (or their factor) confirms and the row turns green.'),
-        gArr9.length ? h('div', null, gArr9.map(gBlock9)) : h('div', { class: 'cp-muted' }, 'Nothing owed right now — delivered loads and approved claims appear here automatically.'),
+        compact ? null : h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Grouped per trip: each block is ONE load — its freight plus every approved claim (detention, lumper, TONU…) with the trip\u2019s own total. Pay each item, attach the receipt — the carrier (or their factor) confirms and the row turns green.'),
+        (() => {
+          if (!gArr9.length) return null;
+          if (!compact) return h('div', null, gArr9.map(gBlock9));
+          const unpaid9 = gArr9.filter((g9) => g9.items.some((x9) => !x9.transfer_status));
+          // one slim, tappable line per unpaid trip; paying happens on the full list in Invoices
+          const slim9 = (g9) => {
+            const due9 = g9.items.filter((x9) => !x9.transfer_status).reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
+            return h('button', { type: 'button', onClick: () => bgo('invoices'), style: 'display:flex;width:100%;gap:10px;align-items:center;justify-content:space-between;text-align:left;background:#fff;border:1px solid #eef2f7;border-radius:12px;padding:10px 12px;margin-top:8px;cursor:pointer;font:inherit;color:inherit' }, [
+              h('span', { style: 'min-width:0' }, [
+                h('span', { class: 'cp-row-t', style: 'display:block' }, g9.lane || 'Other charges'),
+                h('span', { class: 'cp-row-s', style: 'display:block' }, (g9.carrier || 'carrier') + ' \u00b7 ' + g9.items.length + (g9.items.length === 1 ? ' item' : ' items')),
+              ]),
+              h('span', { style: 'white-space:nowrap;font-weight:800;color:#b91c1c' }, money(due9) + ' \u203a'),
+            ]);
+          };
+          return h('div', null, [
+            ...unpaid9.slice(0, 3).map(slim9),
+            h('button', { class: 'cp-btn cp-btn-sm', style: 'width:100%;margin-top:10px;background:#0883F7;color:#fff', onClick: () => bgo('invoices') },
+              unpaid9.length ? 'Review & pay ' + unpaid9.length + (unpaid9.length === 1 ? ' trip' : ' trips') + ' \u2192' : 'View payment history \u2192'),
+          ]);
+        })() || h('div', { class: 'cp-muted' }, 'Nothing owed right now — delivered loads and approved claims appear here automatically.'),
       ]);
     })();
     return host9;
@@ -4907,7 +4945,7 @@ function packetAgreementCards(skipPacket) {
         bdRate9.appendChild(card9);
       })();
       const trustGate = () => { const trustGateHost = h('div'); mountBrokerTrust(trustGateHost, { goPacket: () => bgo('onboarding'), goPost: () => { __trustCanPost = true; postFoldOpen = true; brender(); }, onStatus: (s9) => { if (s9) __trustSt = s9; if (s9 && s9.can_post && !__trustCanPost) { __trustCanPost = true; brender(); } } }); return trustGateHost; };
-      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : verifyGateCard(ov))]), myLoadsCard, bdNetwork(), bdActivity()]));
+      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(true), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : verifyGateCard(ov))]), h('div', { class: 'bd-peek' }, [myLoadsCard, h('button', { class: 'cp-btn cp-btn-sm ghost bd-peek-all', onClick: () => bgo('loads') }, 'View all loads \u2192')]), bdNetwork(), bdActivity()]));
       return;
     }
     mount(bContent, h('div', null, PAGES[btab] || []));
