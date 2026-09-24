@@ -264,6 +264,10 @@ get-started, carriers, brokers, the dispatch-service pages), then the weekly rat
   `GA4_PROPERTY_ID`, `GSC_SITE_URL` (`sc-domain:loadboot.com`). The session reads them from the environment only.
 - Fallback if he would rather keep the key out of the environment: export GSC Pages + Queries (28 d, 90 d) and the GA4
   landing-page report as CSV into `docs/seo-audit-2026-10/data/` before each session. Works, but it is his time every session.
+- **Cheapest route (found in Session 0, 24 Sep):** the weekly SEO rounds already pull GSC through the `seo-pull` edge function via
+  `net.http_post` from SQL (`docs/seo/WEEKLY-LOG.md`) — that runs inside Postgres, so the container network rule does not apply.
+  Put its v4 token in the environment as `SEO_PULL_TOKEN` and a session can pull `query` / `page` / `query,page` at rowLimit 5000
+  through the Supabase MCP. The CC → Google data screen also has Export CSV per table (50 queries / 20 pages cap).
 
 ## LOG (append only)
 - 2026-09-24 — Claude (cloud session): broker portal pass 1. Fixed B1–B11 in app/partner/app.js, app/partner/partner-premium.css, app/shared/ui/liveChatCore.js. esbuild OK, BUILD OK, re-shot. NEXT: O1 (load-card actions) then the unwalked flows above.
@@ -304,3 +308,12 @@ get-started, carriers, brokers, the dispatch-service pages), then the weekly rat
   status 5,752 → 3,710 · pricing 14,081 → 12,201. Harness `mk-walk.mjs` + `mk-sections.mjs` committed. UX order is DONE (broker → carrier → CC
   → agent → marketing). NEXT: **Phase 2 SEO, Session 0** (needs the googleapis network rule + GOOGLE_SA_KEY / GA4_PROPERTY_ID / GSC_SITE_URL
   secrets, or the CSV fallback — see the Access list above); OM1–OM5 + the earlier O*/OC*/OCC*/OA* lists stay open.
+- 2026-09-24 — Claude (cloud, branch claude/pensive-wozniak-5uxqi9, ff from dazzling-dijkstra): **Phase 2 SEO — Session 0 (crawl half) DONE.**
+  `docs/seo-audit-2026-10/BASELINE.md` (crawl of 131 URLs source + live, rendered pass, brand-vs-non-brand answer, priority order),
+  `KEYWORD-PLAN.md` (clusters → owner pages → moves, 12-week calendar, GSC vs GUESS tagged), `LEDGER.md` (queue + first row),
+  `harness/seo-crawl.py` (stdlib, re-runnable). GSC live still blocked here; used R10's real pull (131 clicks / 14,227 impr / pos 18.4;
+  homepage = 55 clicks = the brand share) + prod `web_sessions` 90 d (Google organic 344 sessions: 111 home, 107 market-rates, 126 rest;
+  Bing+DDG+Yahoo 563). Site-wide fixes only: `referral.html` out of the sitemap (live 301), `create-agent-account` links off it,
+  `unsub.html` X-Robots noindex. No page titles/descriptions touched (R9/R10 windows intact). NEXT: Yaseen picks an access route
+  (SEO_PULL_TOKEN env secret is cheapest) → page session #1 per LEDGER queue (market-rates hub index or hotshot description; flatbed
+  waits for 16 Oct). Open: OS1–OS6 in BASELINE §6, OM1–OM5 and the earlier O* lists.
