@@ -124,7 +124,7 @@ const num = (attrs) => inp(Object.assign({ type: 'number', inputmode: 'decimal',
 
 async function submit(btn, fn, onOk) {
   btn.disabled = true;
-  try { const r = await fn(); toast('Saved'); if (onOk) onOk(r); }
+  try { const r = await fn(); toast('Saved'); if (onOk) onOk(r); btn.disabled = false; }
   catch (e) { toast(humanizeError(e), 'error'); btn.disabled = false; }
 }
 
@@ -640,7 +640,7 @@ function settingsDrawer(onDone) {
     const pi = S.payment_instructions || {}, fx = S.fx || {}, fc = S.forecast || {}, vend = (S.vendors && S.vendors.list) || DEFAULT_VENDORS;
     const card = (title, hint, rows, onSave) => {
       const btn = el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary' }, 'Save');
-      btn.onclick = () => submit(btn, onSave, () => { toast('Saved'); settings(true); onDone && onDone(); });
+      btn.onclick = () => submit(btn, onSave, () => { settings(true); onDone && onDone(); });
       return el('div', { class: 'lb-card', style: 'padding:16px;margin-bottom:14px' }, [
         el('h4', { style: 'margin:0 0 2px' }, title), el('p', { style: 'opacity:.65;font-size:.82rem;margin:0 0 12px' }, hint), rows, btn]);
     };
