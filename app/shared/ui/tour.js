@@ -6,7 +6,8 @@
 //   const help = mountHelp(tour, { supportRoute:'#support' });   // floating "?" — replay, screen guides, tips
 //   tour.autoStart();                                             // first visit only; remembers progress
 //
-// A step:  { id, screen:'loads', route:'#loads', target:['[data-tour="x"]', '.fallback'], title, text (trusted HTML),
+// A step:  { id, screen:'loads', route:'#loads', target:['[data-tour="x"]'], anchor:'.cp-content', title, text (trusted HTML),
+//            optional:true (drop the stop when target is missing) | emptyTitle/emptyText (show instead, centred),
 //            tip, tipKind:'warn', icon:'loads', tone:'orange', chapter:'Finding loads', placement:'auto',
 //            interact:true, advanceOn:'click', hero:true, kind:'welcome'|'done', roles:['owner'], padding:8, radius:14 }
 // Title/text/tip are code-defined markup from the portal's tour-content file — never user data.
@@ -77,7 +78,7 @@ const prefersReduced = () => { try { return matchMedia('(prefers-reduced-motion:
 
 // =====================================================================================
 export function createTour(opts) {
-  const o = Object.assign({ key: 'portal', version: 1, role: 'owner', flows: null, steps: [], screens: {}, padding: 8, radius: 14, waitMs: 4500, userName: '' }, opts || {});
+  const o = Object.assign({ key: 'portal', version: 1, role: 'owner', flows: null, steps: [], screens: {}, padding: 8, radius: 14, waitMs: 3000, userName: '' }, opts || {});
   const ico = (name, size) => (isFn(o.icon) ? o.icon(name, size) : lbIcon(name, size));   // a portal may pass its own icon set
   const S = Object.assign({}, STR, o.strings || {});
   const st = store(o.key + '.v' + o.version);
@@ -110,6 +111,20 @@ export function createTour(opts) {
       else if (e.key === 'Tab') trap(e);
     };
     document.addEventListener('keydown', keyH, true);
+    // touch: swipe the card left for next, right for back; a tap on the veil outside the target just nudges the card
+    let tx = 0, ty = 0, dx = 0, swiping = false;
+    card.addEventListener('touchstart', (e) => { if (!e.touches.length) return; tx = e.touches[0].clientX; ty = e.touches[0].clientY; dx = 0; swiping = false; }, { passive: true });
+    card.addEventListener('touchmove', (e) => {
+      if (!e.touches.length) return; const mx = e.touches[0].clientX - tx, my = e.touches[0].clientY - ty;
+      if (!swiping && Math.abs(mx) > 14 && Math.abs(mx) > Math.abs(my) * 1.4) swiping = true;
+      if (!swiping) return; dx = mx; card.classList.add('lbt-drag'); card.style.transform = 'translateX(' + Math.round(dx * .35) + 'px)';
+    }, { passive: true });
+    card.addEventListener('touchend', () => {
+      card.classList.remove('lbt-drag'); card.style.transform = '';
+      if (!swiping) return; const step = steps[i] || {};
+      if (step.kind === 'welcome' || step.kind === 'done') return;
+      if (dx < -60) next(); else if (dx > 60) back();
+    });
     window.addEventListener('resize', schedule, { passive: true });
     window.addEventListener('scroll', schedule, { passive: true, capture: true });
   }
@@ -190,12 +205,12 @@ export function createTour(opts) {
   function render(step) {
     card.className = 'lbt-card' + (step.hero ? ' lbt-hero' : '');
     card.innerHTML = '';
-    const real = steps.filter((x) => !x.hero), n = real.length, idx = step.hero ? (step.kind === 'done' ? n : 0) : real.indexOf(step) + 1;
+    const real = steps.filter((x) => !x.hero), n = real.length, idx = step.hero ? (step.kind === 'done' ? n : 0) : real.findIndex((x) => x.id === step.id) + 1;
     const body = h('div', { class: 'lbt-body' });
     if (step.hero) body.appendChild(heroArt(step));
     else {
       body.appendChild(h('div', { class: 'lbt-eyebrow' }, [h('span', { class: 'lbt-chapter' }, step.chapter || ' '), h('span', { class: 'lbt-count' }, `${idx} ${S.of} ${n}`)]));
-      if (step.icon) { const ic = h('div', { class: 'lbt-ico ' + (step.tone || '') }); ic.appendChild(ico(step.icon, 22)); body.appendChild(ic); }
+      if (step.icon) { const ic = h('div', { class: 'lbt-ico ' + (step.empty ? 'navy' : (step.tone || '')) }); ic.appendChild(ico(step.icon, 22)); body.appendChild(ic); }
     }
     body.appendChild(h('h3', { class: 'lbt-title', html: step.title || '' }));
     body.appendChild(h('div', { class: 'lbt-text', html: step.text || '' }));
@@ -208,7 +223,7 @@ export function createTour(opts) {
     card.appendChild(h('div', { class: 'lbt-bar' }, h('i', { style: `width:${Math.round((idx / n) * 100)}%` })));
     card.appendChild(body);
     card.appendChild(h('button', { class: 'lbt-x', type: 'button', 'aria-label': S.skip, html: SVG.x, onClick: () => stop(step.kind === 'done' ? 'done' : 'skipped') }));
-    const dots = h('div', { class: 'lbt-dots' }, real.map((x, k) => h('i', { class: x === step ? 'on' : k < idx - 1 ? 'done' : '' })));
+    const dots = h('div', { class: 'lbt-dots' }, real.map((x, k) => h('i', { class: x.id === step.id ? 'on' : k < idx - 1 ? 'done' : '' })));
     const btns = h('div', { class: 'lbt-btns' });
     if (step.kind === 'welcome') { btns.append(h('button', { class: 'lbt-btn ghost', type: 'button', onClick: () => stop('skipped') }, S.later), h('button', { class: 'lbt-btn pri big', type: 'button', onClick: next }, [S.start, h('span', { html: SVG.chev })])); }
     else if (step.kind === 'done') btns.append(h('button', { class: 'lbt-btn pri big', type: 'button', onClick: () => stop('done') }, [h('span', { html: SVG.tick }), S.done]));
@@ -238,17 +253,25 @@ export function createTour(opts) {
   }
 
   // ---------- flow ----------
-  let showing = 0;
+  let showing = 0, dir = 1;
   async function show(k) {
     if (!alive) return;
-    const my = ++showing; i = k; const step = steps[i]; if (!step) return stop('done');
-    unbind();
+    const my = ++showing; i = k; let step = steps[i]; if (!step) return stop('done');
+    unbind(); card.classList.remove('lbt-in');   // the old card fades while the next screen loads
     if (step.route && isFn(o.navigate) && route() !== String(step.route).replace('#', '')) { try { await o.navigate(step.route); } catch (_) {} }
     let el9 = null;
     if (!step.hero && step.target) el9 = await waitFor(step.target, step.wait != null ? step.wait : o.waitMs);
     if (!alive || my !== showing) return;
+    if (!step.hero && !el9 && step.anchor) el9 = find(step.anchor);   // generic place to point at when the precise hook is missing (normal copy)
+    if (!step.hero && !el9 && (step.optional || step.missing === 'skip')) {
+      // nothing to point at (empty board, setup already finished, no active load): drop the stop and move on
+      emit('tour.skipstep', { id: step.id, index: i }); steps.splice(i, 1);
+      if (!steps.length) return stop('done');
+      return show(dir < 0 ? Math.max(0, i - 1) : Math.min(i, steps.length - 1));
+    }
     target = el9; mode = step.hero || !el9 ? 'hero' : 'spot';
-    if (el9) { try { const tall = vwSmall() && el9.getBoundingClientRect().height > innerHeight * 0.38; el9.scrollIntoView({ block: tall ? 'start' : 'center', inline: 'nearest', behavior: prefersReduced() ? 'auto' : 'smooth' }); } catch (_) {} }
+    if (!step.hero && !el9 && (step.emptyTitle || step.emptyText)) step = Object.assign({}, step, { title: step.emptyTitle || step.title, text: step.emptyText || step.text, tip: step.emptyTip != null ? step.emptyTip : step.tip, advanceOn: null, empty: true });
+    if (el9) { try { const tall = vwSmall() && el9.getBoundingClientRect().height > innerHeight * 0.38; el9.style.scrollMarginTop = '78px'; el9.scrollIntoView({ block: tall ? 'start' : 'center', inline: 'nearest', behavior: prefersReduced() ? 'auto' : 'smooth' }); } catch (_) {} }   // scroll-margin keeps it clear of the sticky header
     card.classList.remove('lbt-in'); render(step); veil.classList.add('lbt-on'); veil.classList.toggle('lbt-pass', !!(step.interact || step.advanceOn === 'click'));
     hole.querySelectorAll('.lbt-tapme').forEach((x) => x.remove()); if (step.advanceOn === 'click') hole.appendChild(h('i', { class: 'lbt-tapme' }));
     document.body.classList.add('lbt-lock');
@@ -264,8 +287,8 @@ export function createTour(opts) {
     emit(runMode === 'screen' ? 'screen.step' : 'tour.step', { id: step.id, index: i, total: steps.length });
   }
   function unbind() { if (unbindTarget) { unbindTarget(); unbindTarget = null; } if (ro) { try { ro.disconnect(); } catch (_) {} ro = null; } }
-  function next() { if (!alive) return; if (i >= steps.length - 1) return stop('done'); show(i + 1); }
-  function back() { if (!alive || i <= 0) return; show(i - 1); }
+  function next() { if (!alive) return; dir = 1; if (i >= steps.length - 1) return stop('done'); show(i + 1); }
+  function back() { if (!alive || i <= 0) return; dir = -1; show(i - 1); }
   let runMode = 'tour', runScreen = null;
   function begin(list, m, screen, from) {
     if (!list.length) return false;

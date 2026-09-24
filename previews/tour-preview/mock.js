@@ -9,6 +9,7 @@ import { CARRIER_TOUR } from './lib/tour-content.js';
 const q = new URLSearchParams(location.search);
 const ROLE = ['owner', 'driver', 'dispatcher'].includes(q.get('role')) ? q.get('role') : 'owner';
 const THEME = q.get('theme') === 'light' ? 'light' : 'dark';
+const EMPTY = q.get('data') === 'empty';   // brand-new account: nothing booked, no loads near, setup finished
 document.documentElement.setAttribute('data-lbtheme', THEME);
 const NAME = { owner: 'Mike', driver: 'Luis', dispatcher: 'Dana' }[ROLE];
 const CO = 'Redline Freight LLC';
@@ -96,7 +97,7 @@ const V = {
     return h('div', { class: 'cp-dash' }, [
       h('div', { class: 'cp-kpis', 'data-tour': 'dash-kpis' }, [stat('4', 'Loads in transit', 'route'), stat(money(12840), 'Revenue this week', 'dollar'), stat('2', 'Booking requests', 'inbox', 'amber'), stat('4.8', 'Rating', 'star')]),
       h('div', { class: 'cp-grid' }, [
-        h('div', { class: 'cp-card', 'data-tour': 'dash-setup' }, [cardHead('Complete your setup', 'Action needed'),
+        EMPTY ? null : h('div', { class: 'cp-card', 'data-tour': 'dash-setup' }, [cardHead('Complete your setup', 'Action needed'),
           ...[['Required', 'Insurance certificate expires in 12 days', '#d97706', '#fffbeb'], ['Required', 'W-9 not uploaded yet', '#dc2626', '#fef2f2'], ['Optional', 'Add your bank account for faster payouts', '#0883F7', '#eff6ff']].map(([l, t, c, bg]) =>
             h('button', { class: 'cp-rowbtn', style: 'border-left:4px solid ' + c + ';background:' + bg, onClick: () => go('documents') }, [h('span', null, [h('span', { style: 'color:' + c + ';font-weight:700;margin-right:8px' }, l), t]), h('span', { class: 'cp-go', style: 'color:' + c }, '›')]))]),
         h('div', { class: 'cp-card' }, [cardHead('On the road', '4 loads', true), ...[['Dallas → Atlanta', 'Luis · delivered 14:10', 'Delivered'], ['Houston → Memphis', 'Ray · at pickup', 'Loading'], ['Laredo → Chicago', 'Maria · 320 mi to go', 'In transit']].map(([a, b, s]) =>
@@ -111,7 +112,7 @@ const V = {
         h('div', { class: 'cp-wiz-grid', style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px' }, [
           h('input', { class: 'cp-in', value: 'Dallas, TX', placeholder: 'Origin' }), h('input', { class: 'cp-in', placeholder: 'Destination (any)' }),
           h('select', { class: 'cp-in' }, [h('option', null, 'Dry van'), h('option', null, 'Reefer'), h('option', null, 'Flatbed')]), h('input', { class: 'cp-in', placeholder: 'Min $/mi', value: '2.50' })])]),
-      h('div', { class: 'cp-loadgrid', 'data-tour': 'loads-list' }, LOADS.map(loadCard)),
+      EMPTY ? h('div', { class: 'cp-card' }, [cardHead('No loads match your filters'), h('p', { class: 'cp-muted' }, 'Try a wider radius or another equipment type.')]) : h('div', { class: 'cp-loadgrid', 'data-tour': 'loads-list' }, LOADS.map(loadCard)),
     ]);
   },
   trips() {
@@ -120,6 +121,7 @@ const V = {
       act ? h('div', { class: 'cp-trip-actions', 'data-tour': 'trip-actions' }, [h('button', { class: 'cp-btn cp-btn-sm' }, [icon('check', 16), ' Arrived']), h('button', { class: 'cp-btn cp-btn-sm ghost' }, 'Loaded'), h('button', { class: 'cp-btn cp-btn-sm ghost' }, 'Delivered'), h('button', { class: 'cp-btn cp-btn-sm ghost' }, 'Call broker')]) : null,
       act ? h('div', { class: 'cp-podzone', 'data-tour': 'trip-pod', style: 'margin-top:10px' }, [h('div', { class: 'cp-podzone-t' }, '📷 Upload signed delivery receipt'), h('div', { class: 'cp-muted', style: 'font-size:.8rem' }, 'Photo or PDF · the invoice goes out the same day')]) : null,
     ]);
+    if (EMPTY) return h('div', { class: 'cp-card' }, [cardHead('My loads'), h('p', { class: 'cp-muted' }, 'Nothing booked yet. Loads you take from the board show up here.')]);
     return h('div', { class: 'cp-card', 'data-tour': 'trips-list' }, [cardHead('My loads', '3 active'),
       trip('Dallas, TX', 'Atlanta, GA', ROLE === 'driver' ? 'You' : 'Luis', 'At pickup', true), trip('Houston, TX', 'Memphis, TN', 'Ray', 'In transit', false), trip('Laredo, TX', 'Chicago, IL', 'Maria', 'Booked', false)]);
   },
@@ -166,7 +168,7 @@ function go(id) {
 function toast(m) { const t = h('div', { style: 'position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#0b1220;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;font-size:.9rem;z-index:9500;box-shadow:0 12px 30px -10px rgba(0,0,0,.6)' }, m); document.body.appendChild(t); setTimeout(() => t.remove(), 1800); }
 
 // ---------- the tour ----------
-const tour = createTour({ key: 'carrier-preview-' + ROLE, version: 1, role: ROLE, flows: CARRIER_TOUR.flows, screens: CARRIER_TOUR.screens, userName: NAME,
+const tour = createTour({ key: 'carrier-preview-' + ROLE + (EMPTY ? '-empty' : ''), version: 1, role: ROLE, flows: CARRIER_TOUR.flows, screens: CARRIER_TOUR.screens, userName: NAME,
   navigate: (r) => go(String(r).replace('#', '')), currentRoute: () => tab,
   onEvent: (n, d) => { try { parent.postMessage({ type: 'tour.event', name: n, data: d }, '*'); } catch (_) {} } });
 const help = mountHelp(tour, { supportRoute: '#support', navigate: (r) => go(String(r).replace('#', '')) });

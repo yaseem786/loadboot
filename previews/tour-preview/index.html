@@ -51,6 +51,7 @@
   <div class="brand"><svg width="22" height="23" viewBox="16 14 68 72" aria-hidden="true"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#fff"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#fff"/></svg><div>Tour preview<small>Carrier portal</small></div></div>
   <div class="grp"><span>Role</span><div class="seg" id="role"><button data-v="owner" class="on">Owner</button><button data-v="driver">Driver</button><button data-v="dispatcher">Dispatcher</button></div></div>
   <div class="grp"><span>Device</span><div class="seg" id="device"><button data-v="desktop" class="on">Desktop</button><button data-v="phone">Phone</button></div></div>
+  <div class="grp"><span>Data</span><div class="seg" id="data"><button data-v="sample" class="on">Sample</button><button data-v="empty">Empty</button></div></div>
   <div class="grp"><span>Theme</span><div class="seg" id="theme"><button data-v="dark" class="on">Dark</button><button data-v="light">Light</button></div></div>
   <div class="spacer"></div>
   <button class="act ghost" id="guide" title="Runs only the steps for the screen that is open">Screen guide</button>
@@ -69,6 +70,7 @@
         <li>Tour <b>khud screen badalta</b> hai: Load Board, My Loads, Documents, Finance.</li>
         <li>Neeche daayen <b>?</b> button: replay, screen guide, quick tips, support.</li>
         <li>Tour ke baad naye screen par ek baar <b>nudge</b> aata hai: "New here?"</li>
+        <li><b>Empty</b> data: naya account, kuch booked nahi. Setup card aur "three taps" wale stops khud hat jate hain, load board aur My Loads apna khali-halat text dikhate hain.</li>
         <li>Desktop par &larr; &rarr; Esc chalte hain. Spotlight ke bahar click block hai.</li>
       </ul>
     </div>
@@ -78,20 +80,20 @@
 </div>
 <script>
   (function () {
-    var state = { role: 'owner', device: 'desktop', theme: 'dark' };
+    var state = { role: 'owner', device: 'desktop', theme: 'dark', data: 'sample' };
     var frame = document.getElementById('frame'), view = document.getElementById('view'), log = document.getElementById('log');
     var count = 0;
-    function src() { return 'mock.html?role=' + state.role + '&theme=' + state.theme + '&t=' + Date.now(); }
+    function src() { return 'mock.html?role=' + state.role + '&theme=' + state.theme + '&data=' + state.data + '&t=' + Date.now(); }
     function seg(id, key) {
       var box = document.getElementById(id);
       box.addEventListener('click', function (e) {
         var b = e.target.closest('button'); if (!b) return;
         box.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
         state[key] = b.dataset.v;
-        if (key === 'device') { render(); } else { frame.src = src(); note('start', 'Reloaded as ' + state.role + ' \u00b7 ' + state.theme, 'tour restarts from the welcome card'); }
+        if (key === 'device') { render(); } else { frame.src = src(); note('start', 'Reloaded as ' + state.role + ' \u00b7 ' + state.theme + ' \u00b7 ' + state.data + ' data', 'tour restarts from the welcome card'); }
       });
     }
-    seg('role', 'role'); seg('device', 'device'); seg('theme', 'theme');
+    seg('role', 'role'); seg('device', 'device'); seg('theme', 'theme'); seg('data', 'data');
     function render() {
       view.className = 'view ' + state.device;
       view.innerHTML = '';
@@ -117,7 +119,7 @@
       var m = e.data || {}; if (m.type !== 'tour.event') return;
       var n = m.name, d = m.data || {}, kind = /start/.test(n) ? 'start' : /done/.test(n) ? 'done' : /skip/.test(n) ? 'skip' : 'step';
       var label = { 'tour.start': 'Tour started', 'tour.step': 'Step ' + ((d.index | 0) + 1) + ' of ' + d.total, 'tour.done': 'Tour finished', 'tour.skip': 'Tour skipped at step ' + ((d.at | 0) + 1),
-        'screen.start': 'Screen guide: ' + d.screen, 'screen.step': 'Guide step ' + ((d.index | 0) + 1) + ' of ' + d.total, 'screen.done': 'Screen guide finished', 'screen.skip': 'Screen guide closed', 'help.open': 'Help panel opened' }[n] || n;
+        'screen.start': 'Screen guide: ' + d.screen, 'screen.step': 'Guide step ' + ((d.index | 0) + 1) + ' of ' + d.total, 'screen.done': 'Screen guide finished', 'screen.skip': 'Screen guide closed', 'help.open': 'Help panel opened', 'tour.skipstep': 'Stop dropped (nothing to point at)' }[n] || n;
       note(kind, label, d.id ? d.id + (d.role ? ' \u00b7 ' + d.role : '') : (d.role || ''));
     });
   })();
