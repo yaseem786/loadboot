@@ -3044,8 +3044,8 @@ async function brokerDash(user, ov) {
               const booked9 = /book|transit|deliver|complete|invoiced/.test((String(l.status || '') + ' ' + String(l.board_status || '')).toLowerCase());
               if (!(idx < 2 || booked9)) return null;
               return booked9
-                ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: () => openCarrierPacket(l) }, '\ud83d\udd13 Carrier packet \u2014 UNLOCKED')
-                : h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'opacity:.75', title: 'W-9, COI, authority, signed agreement \u2014 released the moment a carrier accepts', onClick: () => openCarrierPacket(l) }, '\ud83d\udd12 Carrier packet \u2014 unlocks on acceptance');
+                ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: () => openCarrierPacket(l) }, '\ud83d\udd13 Carrier packet')
+                : h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'opacity:.75', title: 'W-9, COI, authority, signed agreement \u2014 released the moment a carrier accepts', onClick: () => openCarrierPacket(l) }, '\ud83d\udd12 Packet after booking');
             })(),
             (idx < 2 && !lbExpiredP(l) && !/cancel/.test(String(l.status || '').toLowerCase())) ? h('button', { class: 'cp-btn cp-btn-sm', title: String(l.board_status || '') === 'available' ? 'Send direct offers on top of the board listing' : 'Direct offers unlock once dispatch posts the load', onClick: () => openOfferPicker(l, loadList) }, '\ud83c\udfaf Offer to specific carriers') : null,
             (!/cancel|deliver|complete|invoiced/.test(String(l.status || '').toLowerCase())) ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#b91c1c', onClick: () => {
@@ -4018,7 +4018,7 @@ async function brokerDash(user, ov) {
               h('div', { class: 'cp-sub' }, [r.equipment, r.weight ? r.weight + ' lb' : null, r.commodity, r.ready_date ? 'ready ' + r.ready_date : null].filter(Boolean).join(' · ')),
               h('div', { class: 'cp-sub' }, 'Facility: ' + (r.facility_notes || '—') + ' · Dock: ' + (r.dock_hours || '—') + (r.appointment_required ? ' · appointment required' : '') + (r.terms ? ' · terms: ' + r.terms : '')),
               h('div', { class: 'cp-sub' }, 'Ref: ' + (r.ref_po || '—') + ' · Cargo value: ' + (r.cargo_value ? '$' + Number(r.cargo_value).toLocaleString() : '—') + (r.temperature ? ' · temp: ' + r.temperature : '') + (r.hazmat ? ' · ⚠ HAZMAT: ' + (r.hazmat_info || '') : '') + (r.seal_required ? ' · seal req.' : '')),
-              h('div', { class: 'cp-sub' }, 'PU: ' + (r.pickup_contact || '—') + ' · DEL: ' + (r.delivery_contact || '—')),
+              h('div', { class: 'cp-sub' }, r.contacts_hidden ? '\ud83d\udd12 Pickup & delivery contacts unlock when you claim this freight.' : 'PU: ' + (r.pickup_contact || '—') + ' · DEL: ' + (r.delivery_contact || '—')), // bl_ux_0430
               r.quote_amount ? h('div', { class: 'cp-sub', style: 'color:#16a34a' }, 'Your quote: $' + r.quote_amount) : null,
             ].filter(Boolean)),
             h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [

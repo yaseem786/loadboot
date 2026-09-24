@@ -28,8 +28,11 @@ provider settings still need his explicit yes. Screens are judged at 390px (phon
 | B10 | P2 | Expired load showed green "Posted" pill beside a red EXPIRED banner | header pill reads "Expired" |
 | B11 | P2 | Payables card had two ⇞ icons in its title | one |
 
+| B12 | P1 | Load cards: every action button on its own line on phone (My loads was a card inside a card → 290px action row; "Update pickup time"+"Docs" = 293px) | outer card chrome off on phone; packet labels shortened ("Carrier packet", "Packet after booking"). My Loads 4,212 → 3,589px. No action removed or rewired. |
+| B13 | P1 | Open-pool shipper freight exposed the shipper's pickup/delivery contacts to every approved broker before anyone claimed it | **`bl_ux_0430_shipper_pool_contacts`** — `cc_broker_shipment_inbox` returns contacts NULL + `contacts_hidden=true` while `assigned_broker is null`; the claiming broker sees them as before. Staging: rollback-txn test both cases (pool → null, assigned → shown). Prod: pre-flight md5 `c0879c50…` = staging, applied, `anon` still has no EXECUTE. UI says "Pickup & delivery contacts unlock when you claim this freight." |
+
 ## Broker portal — OPEN (next)
-- **O1 (P1)** Load cards stack up to 7 full-width buttons (Edit, Update pickup, Docs, Carrier packet, Cancel…) with notices interleaved. Needs one primary action + "More ⋯" menu. Touches booking/cancel engines → do carefully, test each action on staging.
+- **O1b (P2)** Load cards still carry up to 5 actions; a "More ⋯" menu for Docs / Cancel would take one more row off each card. Delivered loads still offer "Request change" — confirm with Yaseen what that is for after delivery.
 - **O2 (P2)** Payables rows on Invoices carry three status indicators each ("$X Still DUE" + "DUE" + "OVERDUE"); one is enough.
 - **O3 (P1, security/config)** Supabase Auth minimum password length is 6 on staging (check prod in dashboard → Auth → Providers → Email). Raising it is a provider setting → Yaseen's yes. Pairs with open F15 (leaked-password protection).
 - **O4 (P2)** Claims timestamps show seconds ("7/18/2026, 6:16:30 AM"); use "Jul 18, 6:16 AM".
@@ -37,8 +40,9 @@ provider settings still need his explicit yes. Screens are judged at 390px (phon
 - **O6 (P2)** Market rates: origin/destination inputs too narrow on phone (placeholder cut: "ORIGIN S'").
 - **O7 (P3)** `is_my_org_agent` RPC is called before sign-in → 401 on every login page load.
 - **O8 (P3, env drift)** STAGING lacks `app_private.tele_ingest` (`bl_obs_0213_client_telemetry` never applied there) → every web-vital from a staging build 404s. Prod is fine.
-- **O9 (question for Yaseen)** Requests → "Shipper freight — open pool" shows the shipper's dock-office and receiving phone numbers to every approved broker before anyone claims the load. Intended?
+- **O10 (observation)** Prod `anon`-executable SECURITY DEFINER count in `public` reads **37** (staging 36); CLAUDE.md §4 / the baseline doc say 33/32. Not caused by bl_ux_0430 (that function is not anon-executable before or after). Compare NAMES against `docs/audit-2026-09/anon-secdef-baseline.md` — security lane.
 - Not yet walked: Post-a-load wizard end to end, Track live modal, Carrier packet, Claims evidence/approve flow, Developers key create, Account/security/2FA, desktop layouts of each tab, shipper + facility variants.
 
 ## LOG (append only)
 - 2026-09-24 — Claude (cloud session): broker portal pass 1. Fixed B1–B11 in app/partner/app.js, app/partner/partner-premium.css, app/shared/ui/liveChatCore.js. esbuild OK, BUILD OK, re-shot. NEXT: O1 (load-card actions) then the unwalked flows above.
+- 2026-09-24 — Claude: Yaseen said "suggest and implement". O9 → B13 (bl_ux_0430 staging+prod), O1 → B12. O3 (Auth min password 8) needs the Supabase dashboard — no API from here; steps given to Yaseen.
