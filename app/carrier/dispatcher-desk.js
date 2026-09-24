@@ -361,7 +361,7 @@ export async function renderDispatcherDesk(host) {
 
   // ---------- what you get + how it works ----------
   const youGet = card('What your dispatcher does for you', 'The standard every LoadBoot dispatcher is held to', h('div', { class: 'dd-list' }, YOU_GET.map((r) => h('div', { class: 'dd-row' }, [h('div', { class: 'dd-check on' }, icon('check', 13)), h('div', { class: 'l' }, [h('b', null, r[0]), h('span', null, r[1])])]))));
-  const how = card('How the LoadBoot dispatcher program works', 'Plain answers to the four questions every carrier asks', h('div', null, HOW.map((r, i) => h('details', { class: 'dd-faq', open: '' }, [h('summary', null, [h('span', { class: 'ic' }, icon(r[0], 15)), r[1]]), h('p', null, r[2])]))));
+  const how = card('How the LoadBoot dispatcher program works', 'Plain answers to the four questions every carrier asks', h('div', null, HOW.map((r, i) => h('details', { class: 'dd-faq', open: window.innerWidth > 560 }, [h('summary', null, [h('span', { class: 'ic' }, icon(r[0], 15)), r[1]]), h('p', null, r[2])]))));
 
   mount(host, h('div', { class: 'dd-wrap' }, [
     hero,
