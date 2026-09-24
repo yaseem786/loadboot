@@ -353,3 +353,21 @@ a{color:var(--iv-blue2)}
 /* ---- self onboarding (0410) ---- */
 .iv-doc-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 10px}.iv-doc-top .iv-select{max-width:180px}
 .iv-doc-intro{display:flex;gap:12px;align-items:flex-start;background:rgba(8,131,247,.10);border:1px solid rgba(8,131,247,.45);border-radius:var(--iv-r2);padding:12px 14px;margin:0 0 12px}.iv-doc-intro svg{flex:0 0 auto;color:var(--iv-blue2);margin-top:2px}.iv-doc-intro b{display:block;margin-bottom:3px}.iv-doc-intro p{margin:0;font-size:.86rem;line-height:1.5;color:var(--iv-ink2)}
+
+/* bl_inv_0412 — bank-app style day headers + time on every line */
+.iv-day{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.6;margin:16px 4px 6px}
+.iv-list>.iv-day:first-child{margin-top:4px}
+.iv-tm{font-weight:700;font-variant-numeric:tabular-nums}
+.iv-tm.none{font-weight:500;opacity:.7;font-style:italic}
+
+/* signed by investor, waiting for LoadBoot countersign */
+.iv-open.wait{border-color:rgba(8,131,247,.45);background:rgba(8,131,247,.08)}.iv-open.wait b{color:#93c5fd}
+/* phones: logo keeps its full size, tagline gets its own line, compact language select */
+@media (max-width:560px){
+  .iv-top{flex-wrap:wrap;row-gap:2px;align-items:center}
+  .iv-top .iv-brand{display:contents}
+  .iv-top .iv-brand img{order:1;height:26px;width:auto;max-width:none;flex:0 0 auto}
+  .iv-top .iv-topright{order:2;margin-left:auto;gap:8px}
+  .iv-top .iv-brand .iv-tagline{order:3;flex:1 0 100%;font-size:.56rem;letter-spacing:.12em;white-space:normal;overflow:visible}
+  .iv-top .iv-lang-sel{padding:6px 8px;min-height:34px;font-size:.78rem;max-width:92px}
+}

@@ -127,7 +127,11 @@ export async function signUp(email, password, meta = {}) {
   // ?ref= code captured before signup, stored server-side so the referral survives a device change.
   if (meta.intent) data.intent = meta.intent;
   if (meta.ref) data.ref = meta.ref;
-  return sb.auth.signUp({ email, password, options: { data } });
+  const options = { data };
+  // optional: where the e-mail confirmation link lands (must be in Supabase's redirect allow-list,
+  // otherwise Supabase falls back to the Site URL — harmless).
+  if (meta.redirectTo) options.emailRedirectTo = meta.redirectTo;
+  return sb.auth.signUp({ email, password, options });
 }
 
 // Driver invite signup — role='driver' + invite_token tell handle_new_user to SKIP carrier-org
