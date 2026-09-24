@@ -168,3 +168,24 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
 /* ux-audit 2026-09-24: carrier.css gives .lb-state min-height:70vh for full-page states; inside a card
    ("No invoices yet.") that left ~540px of white space above four words. */
 .cp-card .lb-state, .cp-tablewrap .lb-state { min-height: 0; padding: 28px 16px; }
+
+/* ux-audit 2026-09-24: shipper / facility still use the one-column shell. On a phone its top bar
+   (logo + company name + kind chip + bell + avatar + Sign out) ran to 567px and the whole page
+   scrolled sideways. Company name may shrink; the kind chip is decorative and goes. */
+@media (max-width: 560px) {
+  .cp-shell-1col .cp-top { gap: 8px; }
+  .cp-shell-1col .cp-brandrow { min-width: 0; flex: 1 1 auto; }
+  .cp-shell-1col .cp-brandrow > div { min-width: 0; }
+  .cp-shell-1col .cp-brandrow .cp-carrier-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cp-shell-1col .cp-brandrow img { height: 24px !important; }
+  .cp-shell-1col .cp-top-right { gap: 6px; }
+  .cp-shell-1col .cp-top-right .cp-chip { display: none; }
+}
+
+/* ux-audit 2026-09-24: Carriers on a phone was 7,272px — twelve cards, each a full profile
+   (four-KPI band, capacity chips, coverage chips). A directory row shows who and whether
+   they are verified; the rest is one tap away behind "View full profile". */
+@media (max-width: 560px) {
+  .cn-card .cn-kpis, .cn-card .cn-sec { display: none; }
+  .cn-card .cn-body { padding-bottom: 6px; }
+}

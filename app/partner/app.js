@@ -4894,7 +4894,7 @@ function packetAgreementCards(skipPacket) {
         ]),
         h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
           if (!confirm('Revoke "' + (r.name || 'this key') + '"? Anything using it stops posting immediately.')) return;
-          try { await revokeApiKey(r.id); await paint9(); } catch (e) { alert((e && e.message) || 'Could not revoke.'); }
+          try { await revokeApiKey(r.id); mount(out9, null); await paint9(); } catch (e) { alert((e && e.message) || 'Could not revoke.'); }   // ux-audit 2026-09-24: a revoked key's secret no longer stays on screen
         } }, 'Revoke'),
       ]))));
     };
@@ -4913,10 +4913,12 @@ function packetAgreementCards(skipPacket) {
           h('div', { class: 'cp-row-t', style: 'margin-bottom:6px' }, 'Copy this key now — we cannot show it again'),
           h('div', { class: 'cp-row-s', style: 'color:#94a3b8;margin-bottom:10px' }, 'We only store a hash of it. If you lose it, revoke the key and make a new one.'),
           h('code', { style: 'display:block;word-break:break-all;background:#0b1524;color:#dce6f2;padding:12px 14px;border-radius:8px;font-size:.85rem' }, full),
-          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px', onClick: () => { try { navigator.clipboard.writeText(full); } catch (_) {} } }, 'Copy key'),
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px', onClick: (ev9) => { const b9 = ev9.currentTarget; try { navigator.clipboard.writeText(full); b9.textContent = 'Copied \u2713'; setTimeout(() => { b9.textContent = 'Copy key'; }, 1800); } catch (_) {} } }, 'Copy key'),
         ]));
         nameIn.value = ''; wWrite.checked = false;
         await paint9();
+        // ux-audit 2026-09-24: on a phone the one-time secret landed below the fold, under the form; bring it into view.
+        try { out9.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
       } catch (e) { err9.textContent = (e && e.message) || 'Could not create the key.'; }
       makeBtn.disabled = false; makeBtn.textContent = 'Create key';
     } }, 'Create key');
