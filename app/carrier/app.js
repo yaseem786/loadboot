@@ -3373,11 +3373,19 @@ async function appView(user) {
                 h('div', { class: 'cpx-set-s', style: 'line-height:1.6' },
                   'Permanently deletes your profile, contact details, uploaded documents, banking details and location history. Delivered load paperwork and settlement records are kept where US law requires (3 years for load documents, 7 for tax records), with your personal details removed from them. '),
                 h('a', { href: 'https://loadboot.com/delete-account.html', target: '_blank', rel: 'noopener', style: 'color:#0883F7;font-size:.86rem;display:inline-block;margin:12px 14px 0 0' }, 'Read the full policy →'),
-                h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:12px;background:#b91c1c;border-color:#b91c1c', onClick: async (ev) => {
-                  if (!confirm('Request deletion of your LoadBoot account and personal data?\n\nA person completes this within 30 days. You can cancel any time before then.')) return;
-                  const b = ev.currentTarget; b.disabled = true;
-                  try { await requestAccountDeletion(null); lbToast('Request received — check your email', 'ok'); load(); }
-                  catch (e) { b.disabled = false; lbToast((e && e.message) || 'Failed.', 'urgent'); }
+                // ux-audit C11 (24 Sep 2026): was a native confirm() — same pattern as broker O11. In-app sheet:
+                // says what happens, the destructive button is the only red thing, and the request fires only from it.
+                h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:12px;background:#b91c1c;border-color:#b91c1c', onClick: () => {
+                  const goBtn = h('button', { class: 'cp-btn', style: 'background:#b91c1c;border-color:#b91c1c;flex:1', onClick: async (ev) => {
+                    const b = ev.currentTarget; b.disabled = true; b.textContent = 'Sending…';
+                    try { await requestAccountDeletion(null); closeD(); lbToast('Request received — check your email', 'ok'); load(); }
+                    catch (e) { b.disabled = false; b.textContent = 'Yes, delete my account'; lbToast((e && e.message) || 'Failed.', 'urgent'); }
+                  } }, 'Yes, delete my account');
+                  const closeD = openModal('Delete your account?', [
+                    h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, 'This asks LoadBoot to delete your account and personal data. A person completes it within 30 days, and you can cancel any time before then from this screen.'),
+                    h('div', { class: 'cp-row-s', style: 'line-height:1.65;margin-top:8px;color:#94a3b8' }, 'Delivered load paperwork and settlement records stay for the period US law requires; everything else goes.'),
+                    h('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'flex:1', onClick: () => closeD() }, 'Keep my account'), goBtn]),
+                  ]);
                 } }, 'Delete my account'),
               ]),
         ]);
