@@ -73,7 +73,12 @@ public class LauncherActivity extends Activity {
                     i.putExtra(EXTRA_LAUNCH_AS_TWA, true);
                     startActivity(i);
                     launched = true;
-                    finishSoon();
+                    // v1.0.2 (24 Sep 2026): do NOT finish here. Chrome ties the TWA's trust to this
+                    // app's live session binder. Finishing 0.5 s after launch left the process with no
+                    // activity, and aggressive Android skins killed it — the session died with it and
+                    // Chrome fell back to a Custom Tab: the "X · loadboot.com · share" bar on top.
+                    // The official android-browser-helper launcher stays in the back stack the same way
+                    // and closes itself when the user comes back from the web app (onRestart below).
                 } catch (Exception e) {
                     fallback();
                 }
@@ -90,6 +95,23 @@ public class LauncherActivity extends Activity {
         handler.postDelayed(new Runnable() {
             @Override public void run() { if (!launched) fallback(); }
         }, 2000);
+    }
+
+    /** User pressed Back out of the web app and landed here: close the app, as the official launcher does. */
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        if (launched) finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        // Only drop the Custom Tabs session when the app is really closing, never on a config change.
+        if (isFinishing() && sConnection != null) {
+            try { unbindService(sConnection); } catch (Exception ignored) {}
+            sConnection = null;
+        }
+        super.onDestroy();
     }
 
     /** Prefer Chrome; otherwise any browser exposing the Custom Tabs service. */
