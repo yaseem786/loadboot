@@ -315,7 +315,7 @@ export function renderDeletionRequests(host) {
       el('div', { class: 'dd-k' }, 'Retention class'), sel,
       el('div', { class: 'dd-k', style: 'margin-top:10px' }, 'Keep until'), date,
       el('div', { class: 'dd-actions' }, [save, el('button', { class: 'lb-btn', onClick: () => { sheet.close(); reopen(r); } }, 'Cancel')]),
-    ]), { subtitle: 'Deletion request #' + r.id });
+    ]), { subtitle: 'Deletion request #' + r.id, size: 'sm' });
     save.addEventListener('click', async () => {
       save.disabled = true;
       const ok = await decide(r, null, null, it, 'hold', sel.value, date.value);
@@ -373,7 +373,7 @@ export function renderDeletionRequests(host) {
       hasFiles ? el('div', { class: 'dd-banner blue' }, 'This account has files. If any still need a decision you go to the file review first — nothing is erased until every file is decided.') : null,
       el('div', { class: 'dd-k' }, 'To confirm, type DELETE'), input,
       el('div', { class: 'dd-actions' }, [go, el('button', { class: 'lb-btn', onClick: () => { sheet.close(); openOne(r); } }, 'Keep the account')]),
-    ]), { subtitle: 'Deletion request #' + r.id + (r.email ? ' · ' + r.email : '') });
+    ]), { subtitle: 'Deletion request #' + r.id + (r.email ? ' · ' + r.email : ''), size: 'sm' });
     setTimeout(() => { try { input.focus(); } catch (_) {} }, 60);
     go.addEventListener('click', async () => {
       go.disabled = true; go.textContent = 'Erasing…';
