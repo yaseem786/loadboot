@@ -167,6 +167,10 @@ function renderSignup(msg) {
       const { data, error } = await signUp(email.value.trim(), pass.value, { name: name.value.trim(), role: 'investor' });
       if (error) throw error;
       if (data && data.session) { await boot(); return; }
+      // Supabase answers an already-registered e-mail with a user that has NO identities (and sends nothing)
+      if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        mount(note, el('div', { class: 'iv-warn' }, [t('su_exists'), ' ', el('a', { href: '#', onClick: (ev) => { ev.preventDefault(); renderLogin(); } }, t('lg_sign_in'))])); btn.disabled = false; return;
+      }
       mount(note, el('div', { class: 'iv-ok' }, t('su_check_mail')));
     } catch (ex) { mount(note, el('div', { class: 'iv-err' }, err(ex))); btn.disabled = false; }
   } }, [
