@@ -657,7 +657,7 @@ function createDialer() {
         h('div', { class: 'lbd-note', style: 'margin:8px 0 0;opacity:.9' }, 'A call is not a text, so there is nothing stopping you calling again or leaving a voicemail. Ask them to text YOU back on this line \u2014 the moment they do, that is their permission and this thread opens by itself.'),
         h('div', { style: 'font-style:italic;padding:8px 10px;margin-top:6px;border-left:3px solid var(--or,#FC5305);background:rgba(252,83,5,.08);border-radius:6px;font-size:12.5px;line-height:1.5' },
           'Hi, this is LoadBoot dispatch calling about your load. You can call me back on this number, or if it is easier just text this same number and I will send you the details straight away. Thanks.'),
-        h('div', { class: 'lbd-note', style: 'margin:6px 0 0;opacity:.75' }, 'Email works too \u2014 email is not covered by these rules. Or send them loadboot.com/text-us, which tells them how to start a text thread themselves.'),
+        h('div', { class: 'lbd-note', style: 'margin:6px 0 0;opacity:.75' }, 'Email works too \u2014 email is not covered by these rules. Texting a broker needs its own approved opt-in first.'),
       ]),
     ]);
   }

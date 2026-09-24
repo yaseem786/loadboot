@@ -488,7 +488,7 @@ def footer():
 <div style="border-top:1px solid #1e293b;padding-top:18px;margin-bottom:20px;font-size:.86rem;line-height:1.8;color:#94a3b8"><b style="color:#e2e8f0">Security notice.</b> LoadBoot never asks for your password by email, and never asks you to &ldquo;confirm&rdquo; or &ldquo;reactivate&rdquo; one. Our mail only ever comes from <b style="color:#e2e8f0">@loadboot.com</b> &mdash; if a message wants you to log in from a link, ignore it and open loadboot.com yourself. <a href="security.html" style="display:inline">How we contact you &rarr;</a></div>
 <div style="border-top:1px solid #1e293b;padding-top:18px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap"><a href="https://play.google.com/store/apps/details?id=com.loadboot.app" rel="noopener" target="_blank" aria-label="Get the LoadBoot app on Google Play" style="display:inline-block;margin:0"><img src="/google-play-badge.svg" alt="Get it on Google Play" width="150" height="45" style="display:block;height:45px;width:auto"></a><span style="font-size:.86rem;color:#94a3b8">The LoadBoot app &mdash; carrier, broker, shipper and agent portals in one install. iPhone: <a href="apps.html" style="display:inline">add to Home Screen</a>.</span></div>
 <div class="foot-bottom"><span>&copy; 2026 LoadBoot LLC &middot; 30 N Gould St Ste N, Sheridan, WY 82801 &middot; D-U-N-S&reg; 149880967 &middot; Serving carriers in all 48 states.</span>
-<span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="delete-account.html" style="display:inline">Delete account</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="text-us.html" style="display:inline">Text us</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
+<span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="delete-account.html" style="display:inline">Delete account</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="sms.html" style="display:inline">Text messages</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
 </div>''' + (AI_RESEARCH_JS if AI_RESEARCH_FOOTER_ENABLED else '') + '''</footer>
 <div class="mcta"><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="contact.html#create" class="btn btn-primary">Get Started</a></div>
 '''
@@ -5010,48 +5010,16 @@ _unsub_js = ('<script>(function(){var q=new URLSearchParams(location.search);var
 page('unsub.html', 'Unsubscribe | LoadBoot', 'Unsubscribe from LoadBoot outreach emails - one click, no questions asked.',
  'contact.html', '<section><div class="wrap" style="max-width:640px;text-align:center;padding:90px 24px"><h1>Unsubscribe</h1><p class="lead center" id="unsubMsg" style="margin-top:16px">Working&hellip;</p><p style="margin-top:26px;color:#64748B;font-size:.9rem">Changed your mind? You can always find our free tools at <a href="market-rates.html" style="color:#0883F7">loadboot.com/market-rates</a>.</p></div></section>' + _unsub_js, '')
 
-# ---- Text us (10DLC inbound call-to-action) ----
-# This page IS the "verifiable inbound CTA with required disclosures" a 10DLC campaign has to point at.
-# A broker who texts this number is opting in by doing so, which is what lets a dispatcher reply.
-# If the wording here changes, the Telnyx campaign's Message Flow must change with it, word for word.
-_txt = ('<section><div class="wrap" style="max-width:760px;padding:80px 24px">'
- '<h1>Text LoadBoot dispatch</h1>'
- '<p class="lead" style="margin-top:14px">Brokers and carriers: if it is easier to text than to talk, text us. '
- 'A real dispatcher reads it \u2014 not a bot.</p>'
- '<div style="margin:28px 0;padding:22px 24px;border-radius:16px;background:#10223B;color:#e7eefb">'
-   '<div style="font-size:13px;letter-spacing:.09em;text-transform:uppercase;opacity:.7;font-weight:700">Text</div>'
-   '<div style="font-size:30px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px">'
-     '<a href="sms:+14692537575?&amp;body=LOADS" style="color:#fff">LOADS to +1 (469) 253-7575</a></div>'
-   '<div style="font-size:14px;opacity:.85">Monday to Friday, and on the weekend when a load is moving.</div>'
- '</div>'
- '<h2>What we will text you about</h2>'
- '<p>One-to-one operational dispatch messages only: load details, pickup and delivery times and addresses, '
- 'check-call and status updates while a load is moving, paperwork requests such as the rate confirmation or '
- 'the signed POD, and replies to what you send us. <b>We do not send marketing or promotional texts, ever.</b></p>'
- '<h2>How you opt in</h2>'
- '<p>Three ways, and nothing else counts:</p>'
- '<ul>'
- '<li><b>You text us first.</b> Sending a message to the number above is your permission for us to reply to that number.</li>'
- '<li><b>You tell a dispatcher on a call.</b> They will read you a short consent line and log your answer before anything is sent.</li>'
- '<li><b>Carriers:</b> tick the optional SMS box under the mobile number when you register at '
- '<a href="/app/carrier/">loadboot.com/app/carrier</a>, or answer the one-time question in your portal. '
- 'It is unchecked by default and your account works exactly the same if you leave it alone.</li>'
- '</ul>'
- '<p><b>A number we found somewhere is not permission.</b> We do not text numbers taken from load boards, '
- 'rate confirmations, email signatures or public listings. If we have not been asked, we do not text.</p>'
- '<h2>Stopping messages</h2>'
- '<p>Reply <b>STOP</b> to any message and everything stops immediately \u2014 reply <b>START</b> if you want them '
- 'back. Reply <b>HELP</b>, call <a href="tel:+14692537575">+1 (469) 253-7575</a> or email '
- '<a href="mailto:hello@loadboot.com">hello@loadboot.com</a> for help.</p>'
- '<p style="color:#64748B;font-size:.92rem;margin-top:26px">Message frequency varies. Message and data rates may apply. '
- 'Consent to receive text messages is not a condition of any purchase or of working with LoadBoot. '
- 'Mobile carriers are not liable for delayed or undelivered messages. Mobile numbers and text-message consent '
- 'records are never shared with third parties for marketing \u2014 see our '
- '<a href="privacy.html#sms">Privacy Policy</a> and <a href="terms.html#s11">Terms</a>.</p>'
- '</div></section>')
-page('text-us.html', 'Text LoadBoot Dispatch \u2014 SMS Opt-In, Keywords and Disclosures | LoadBoot',
- 'Text LOADS to +1 (469) 253-7575 to reach a LoadBoot dispatcher. How SMS opt-in works, what we send, and how to stop messages.',
- 'contact.html', _txt, '')
+# ---- SMS program page (10DLC CTA verification) ----
+# Replaces text-us.html (24 Sep 2026). Campaign CS3VIAJ declares ONE opt-in method — the
+# carrier signup checkbox — and this crawlable, no-JS page is what the MNO reviewer verifies.
+# The old text-us page advertised three opt-in routes, which contradicted the campaign.
+# Checkbox wording lives in sms_module.CONSENT_LABEL and must match app/carrier/app.js.
+import sms_module as _smm
+_sms, _sms_schema = _smm.sms_page({'SRC': SRC, 'OUT': OUT})
+page('sms.html', 'Text Messages from LoadBoot \u2014 SMS Opt-In, Keywords and Disclosures | LoadBoot',
+ 'How carriers opt in to LoadBoot dispatch texts (an optional, unchecked box on the registration form), what we send, message frequency, rates, and how to reply STOP or HELP.',
+ 'contact.html', _sms, _sms_schema)
 
 # ---- Partner Program ----
 pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.', tert_label='How it works', tert_href='how-it-works.html', cta_href='/app/partner/', cta_label='Open the Partner Portal &rarr;', cta2_href='create-broker-account.html', cta2_label='Create a broker account')
@@ -8946,6 +8914,7 @@ with open(os.path.join(OUT,'_headers'),'w',encoding='utf-8') as f: f.write(HEADE
 # Publish dir is /site and contains ONLY built output — no Python/Markdown/SQL/source files
 # are ever copied here, so nothing sensitive can be fetched. This file is intentionally minimal.
 REDIRECTS = "/referral.html /agents.html 301!\n"
+REDIRECTS += "/text-us.html /sms.html 301!\n"
 # Outreach open pixel. Served from loadboot.com rather than *.supabase.co so the tracker
 # rides the same domain as the rest of the email's images — a third-party host in a cold
 # email is one more thing for a spam filter to dislike. 200 = proxy (not a redirect):
