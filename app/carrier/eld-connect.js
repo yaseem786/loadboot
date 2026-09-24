@@ -110,6 +110,7 @@ export async function mountEldCard(host, opts = {}) {
     const provSel = h('select', { class: 'cp-in', style: 'max-width:260px' }, Object.keys(STEPS).map((k) => h('option', { value: k, selected: k === prov ? 'selected' : null }, STEPS[k].label)));
     provSel.onchange = () => { prov = provSel.value; paint(); };
     const mine = rows.find((r) => r.provider === prov);
+    const PHONE9 = window.innerWidth <= 560;
 
     const connectBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
       const b = ev.currentTarget; const tok = tokIn.value.trim();
@@ -190,13 +191,21 @@ export async function mountEldCard(host, opts = {}) {
 
     mount(host, [head(), benefitBox(),
       active.length ? h('div', { style: 'display:flex;flex-direction:column;gap:6px;margin-bottom:10px' }, active.map((r) => h('div', null, [h('div', { class: 'cp-row-t', style: 'font-size:.8rem;margin-bottom:3px' }, STEPS[r.provider] ? STEPS[r.provider].label : r.provider), statusLine(r),
-        r.provider !== 'generic' ? h('button', { class: 'cp-link', style: 'margin-top:4px', onClick: async () => { if (!confirm('Disconnect ' + STEPS[r.provider].label + '? LoadBoot stops polling and forgets the token.')) return; await carrierEldDisconnect(r.provider); toast('Disconnected.', 'action', STEPS[r.provider].label); paint(); } }, 'Disconnect') : null]))) : h('div', { class: 'cp-row-s', style: 'margin-bottom:10px;line-height:1.6' }, 'Connect your ELD once and LoadBoot reads truck positions and each driver’s remaining drive time every 5 minutes — your trips track themselves with the app closed, and your dispatcher plans from real hours instead of asking.'),
+        r.provider !== 'generic' ? h('button', { class: 'cp-link', style: 'margin-top:4px', onClick: async () => { if (!confirm('Disconnect ' + STEPS[r.provider].label + '? LoadBoot stops polling and forgets the token.')) return; await carrierEldDisconnect(r.provider); toast('Disconnected.', 'action', STEPS[r.provider].label); paint(); } }, 'Disconnect') : null]))) : PHONE9 ? null : h('div', { class: 'cp-row-s', style: 'margin-bottom:10px;line-height:1.6' }, 'Connect your ELD once and LoadBoot reads truck positions and each driver’s remaining drive time every 5 minutes — your trips track themselves with the app closed, and your dispatcher plans from real hours instead of asking.'),
       h('div', { style: 'border-top:1px solid rgba(255,255,255,.08);padding-top:10px' }, [
         h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px' }, [h('span', { class: 'cp-row-t', style: 'font-size:.85rem' }, 'Provider'), provSel]),
-        h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, [icon('shield', 13), ' ', S.who]),
-        h('ol', { style: 'margin:0 0 10px;padding-left:20px;line-height:1.7;font-size:.86rem;color:#c9d4e5' }, S.steps.map((s) => h('li', null, s))),
+        // ux-audit OC1 (24 Sep 2026): on a phone the six vendor steps + the admin-login note sat open for a
+        // provider nobody had picked yet (Fleet tab 5,489px). Folded behind a summary on ≤560px, open on desktop;
+        // the steps themselves are unchanged (vendor-published, see STEPS).
+        h('details', { open: !PHONE9, style: 'margin-bottom:10px' }, [
+          h('summary', { style: 'cursor:pointer;font-weight:700;font-size:.85rem;color:#c9d4e5;list-style:none;display:flex;align-items:center;gap:6px' }, [
+            h('span', { style: 'display:inline-block;transition:transform .15s', class: 'eld-caret' }, '▸'),
+            prov === 'generic' ? 'How to set up the webhook (' + S.steps.length + ' steps)' : 'How to get your ' + S.label.replace(/ \(.*\)$/, '') + ' token (' + S.steps.length + ' steps)']),
+          h('div', { class: 'cp-row-s', style: 'margin:8px 0 6px' }, [icon('shield', 13), ' ', S.who]),
+          h('ol', { style: 'margin:0;padding-left:20px;line-height:1.7;font-size:.86rem;color:#c9d4e5' }, S.steps.map((s) => h('li', null, s))),
+        ]),
         prov === 'generic' ? webhookBox() : h('div', null, [
-          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [tokIn, eye, connectBtn]),
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [tokIn, h('div', { style: 'display:flex;gap:8px;align-items:center' }, [eye, connectBtn])]),
           mine && mine.status === 'active' && mine.has_api_token ? h('div', { class: 'cp-muted', style: 'margin-top:4px;font-size:.78rem' }, 'Pasting a new token replaces the saved one after it passes the test.') : null,
           result,
           h('div', { class: 'cp-muted', style: 'margin-top:8px;font-size:.76rem;line-height:1.5' }, 'Read-only. LoadBoot never changes anything in your ELD, never shares the token, and you can disconnect any time. Renting a truck? The ELD inside a rental belongs to the rental company — use your own account, or skip this and keep your dispatcher updated in the group.'),

@@ -597,9 +597,11 @@
         // Portals therefore tease only once a session exists; the website keeps its own openers.
         Promise.resolve(cfg.origin !== 'website' && cfg.getToken ? cfg.getToken() : 'web').then(function (tok) {
         if (!tok || open || sessionStorage.getItem('lb_lc_teased')) return;
+        // ux-audit O15 (2026-09-24): never pop over an open dialog (2FA, Track live, claim review) — try again later.
+        if (document.querySelector('[role="dialog"],[aria-modal="true"]')) { setTimeout(teaser, 20000); return; }
         sessionStorage.setItem('lb_lc_teased', '1');
         var t = document.createElement('div'); t.id = 'lbc-teaser';
-        t.style.cssText = 'position:fixed;right:18px;bottom:' + (((window.__lbcFabOffset || 18) + 68)) + 'px;max-width:260px;background:#fff;border:1px solid #e6edf5;border-radius:16px;border-bottom-right-radius:6px;box-shadow:0 16px 50px rgba(2,6,23,.25);padding:13px 15px;z-index:2147483645;font-family:Inter,system-ui,Arial;font-size:13px;color:#0f172a;line-height:1.5;cursor:pointer;animation:lbcUp .3s ease';
+        t.style.cssText = 'position:fixed;right:18px;bottom:' + (((window.__lbcFabOffset || 18) + 68)) + 'px;max-width:260px;background:#fff;border:1px solid #e6edf5;border-radius:16px;border-bottom-right-radius:6px;box-shadow:0 16px 50px rgba(2,6,23,.25);padding:13px 15px;z-index:999;font-family:Inter,system-ui,Arial;font-size:13px;color:#0f172a;line-height:1.5;cursor:pointer;animation:lbcUp .3s ease';
         // Only promise what this surface can do: the in-chat setup + COI read live on the website
         // (lcOnboard.js); inside the portals the chat knows the account instead.
         var openers = cfg.origin === 'website' ? [
