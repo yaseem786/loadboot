@@ -161,6 +161,38 @@ buttons (`.lcv-fsel` r=1639), which sit in their own scroller.
   line after the first walk. Two ways out: Yaseen adds a Bash permission rule for `node …/cc-*.mjs`, or he runs the first
   (state-saving) login himself and the session only reuses the state file.
 
+## PHASE 2 — SEO audit & fix, marketing site (Yaseen's word, 24 Sep 2026)
+Starts when the UX order above is finished (CC re-shoot → Agent/Dispatcher → Marketing site UX). His rule: **one page per
+session**, judged on LIVE Google Analytics 4 + Google Search Console data for that page, then fixed in the same session.
+Scope: the 131 URLs in `site/sitemap.xml` (137 built html; `build_site.py` is the source of truth, never edit `site/`).
+
+**Session 0 — site-wide baseline (one session, before page 1):** crawl all 131 URLs (status, redirect chains, duplicate titles
+/ descriptions / H1s, canonical, OG, JSON-LD, broken internal links, orphans, image alt, sitemap vs crawl diff); GSC site totals
++ top queries + pages by impressions (28 d and 90 d); GA4 landing pages 28 d. Output = `docs/seo-audit-2026-10/BASELINE.md` and
+a **priority order**: highest impressions × worst position first (pos 11–40 = page-2 money), then the money pages (pricing,
+get-started, carriers, brokers, the dispatch-service pages), then the weekly rate reports. Write the order into the ledger.
+
+**Each page session (1 page):**
+1. Pull GA4 (28 d: sessions, users, engagement, conversions, entrances) and GSC (28 d + 90 d: queries, impressions, CTR,
+   position; "opportunities" = impressions ≥ 20 and pos 11–40) for that URL. Record BEFORE numbers in the ledger.
+2. On-page: title / meta / H1 / headings vs the queries GSC actually shows; intent match; canonical; OG + Twitter; JSON-LD
+   validity; internal links in and out (anchor text); image alt + weight; CWV via Lighthouse (Playwright Chromium, phone);
+   cannibalisation with sibling pages; rendered vs source HTML.
+3. Fix in the build source → `build_site.py` → verify the built page + live page after deploy.
+4. Ledger row: `docs/seo-audit-2026-10/LEDGER.md` — URL · date · BEFORE (impr / clicks / CTR / pos for the top 3 queries) ·
+   what changed · re-check date (+28 d). The re-check is what proves the fix; never skip the BEFORE row.
+
+**Access — needed from Yaseen before Session 0 (checked 24 Sep from the cloud container):**
+- `analyticsdata.googleapis.com`, `searchconsole.googleapis.com`, `oauth2.googleapis.com` are **denied** by the environment's
+  network policy (CONNECT 403). Add `*.googleapis.com` to the environment's allowed domains (cloud environment menu → Edit →
+  Network access). `loadboot.com` itself is reachable, so live-page checks and Lighthouse work already.
+- No Google Analytics / Search Console connector is installed in the org (ListConnectors → none).
+- Credentials, as **environment secrets, never pasted in chat**: `GOOGLE_SA_KEY` (service-account JSON — the same SA prod's
+  `ga4-insights` / `gsc-insights` edge functions already use is fine: Viewer on the GA4 property, user on the GSC property),
+  `GA4_PROPERTY_ID`, `GSC_SITE_URL` (`sc-domain:loadboot.com`). The session reads them from the environment only.
+- Fallback if he would rather keep the key out of the environment: export GSC Pages + Queries (28 d, 90 d) and the GA4
+  landing-page report as CSV into `docs/seo-audit-2026-10/data/` before each session. Works, but it is his time every session.
+
 ## LOG (append only)
 - 2026-09-24 — Claude (cloud session): broker portal pass 1. Fixed B1–B11 in app/partner/app.js, app/partner/partner-premium.css, app/shared/ui/liveChatCore.js. esbuild OK, BUILD OK, re-shot. NEXT: O1 (load-card actions) then the unwalked flows above.
 - 2026-09-24 — Claude: Yaseen said "suggest and implement". O9 → B13 (bl_ux_0430 staging+prod), O1 → B12. O3 (Auth min password 8) needs the Supabase dashboard — no API from here; steps given to Yaseen.
@@ -179,3 +211,7 @@ buttons (`.lcv-fsel` r=1639), which sit in their own scroller.
   Staging `owner@lb.test` password reset to the SS-pipeline value. Re-shoot blocked by the classifier (see Harness). NEXT: get the
   harness running again → re-shoot the 9 tabbed routes + Task queue + Email catalog → CC4 stack trace → then **Agent/Dispatcher
   portal** per the order.
+- 2026-09-24 — Claude (cloud): Yaseen added **Phase 2 — SEO audit** (one marketing page per session on live GA4 + GSC data, after the
+  UX order). Plan + access list written above. From here googleapis.com is network-denied and no Google connector exists; he
+  needs to open `*.googleapis.com` and add `GOOGLE_SA_KEY` / `GA4_PROPERTY_ID` / `GSC_SITE_URL` as environment secrets (or
+  drop CSV exports) before Session 0.
