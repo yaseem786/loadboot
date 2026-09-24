@@ -17,7 +17,7 @@ LS_CSS = r'''
 .ls-f .q{display:inline-flex;width:16px;height:16px;border-radius:50%;background:#e2e8f0;color:#475569;font-size:.68rem;align-items:center;justify-content:center;cursor:help;font-weight:700}
 .ls-f input,.ls-f select{padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:1rem;color:var(--navy);background:#fff;width:100%}
 .ls-f input:focus,.ls-f select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 4px #EFF6FF}
-.ls-est-toggle{background:none;border:none;color:var(--blue);font-weight:600;font-size:.8rem;cursor:pointer;padding:0;margin:-6px 0 14px;text-align:left;display:inline-flex;align-items:center;gap:5px}
+.ls-est-toggle{background:none;border:none;color:var(--blue);font-weight:600;font-size:.8rem;cursor:pointer;padding:8px 0;min-height:32px;margin:-12px 0 8px;text-align:left;display:inline-flex;align-items:center;gap:5px}
 .ls-est{display:none;margin:-4px 0 16px;padding:15px;border:1px dashed #cbd5e1;border-radius:13px;background:#F8FAFC}
 .ls-est.open{display:block}
 .ls-est .ls-row{margin-bottom:11px}

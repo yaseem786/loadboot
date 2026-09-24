@@ -202,6 +202,37 @@ Desktop heights after: dashboard 1,563 · referral 2,166 · board 2,258 · truck
 - Not walked (writes / fixtures): Log a booking, Request to book, Post the truck, Add broker, RC upload, Messages send, ID upload, payout request, Nudge, Invite by email, the "More" sheet, Board "Details" modal, truck "Update availability" sheet; the dispatcher **application form** and **skills test** (need a persona in `applied` / `screening` / `skills_test` — none on staging); the first-visit track chooser (needs an account with no intent). Staging `track_web_event` 404 on every page = O8 (unchanged).
 - **Harness:** `docs/ux-audit-2026-09/harness/ag-walk.mjs` (+ `crop.mjs`, a Playwright-only PNG slicer — no PIL / ImageMagick in the container). `CC_EMAIL` (default agent@lb.test), `CC_TRACK` (both | referral | dispatcher — the login page's track chooser), `CC_PASS` from the environment; state saved per email. Three things it had to learn: (1) the agent shell has **no hashchange listener**, so every route is `about:blank` → fresh load (a same-page `goto('#tab')` just changes the hash and shoots the old screen); (2) `carrier-dark.css` gives `body` a `background-attachment:fixed` gradient and Chromium's fullPage capture paints it for the first viewport only — the harness injects `body{background-attachment:scroll}` for the shot (white page below the fold = artifact, not a bug); (3) the sign-in button has no `type=submit` — it clicks `button.cp-btn-lg` "Sign in", and the login is done once "Do both" (or the track from `CC_TRACK`) is chosen and "Already have an account? Sign in" toggled.
 
+## Marketing site (signed-out, the 131 sitemap URLs, 390 + 1366) — pass 1, 24 Sep
+Harness: `harness/mk-walk.mjs` (no login; per page: height, horizontal overflow, console, 4xx, H1 count, missing alt,
+tap targets < 24px, title/description length; `MK_SHOT=0` = fast full-site pass, `MK_SKIP=".lbh-drawer,.aurora,.mq-track"`
+silences the off-canvas drawer / hero glow / marquee) + `harness/mk-sections.mjs <w> <page>` (which block eats the phone).
+Both full passes: **0 of 131 pages overflow sideways at either width**; no page errors beyond the proxy-blocked tags (clarity,
+gtag, Trustpilot `//widget…` is a 405 only on localhost http) and status.html's deliberate `rest/v1/` 401 probe (OM4).
+
+| # | Sev | Finding | Fix |
+|---|---|---|---|
+| M1 | **P1 (prod bug)** | Every **first-time visitor** got "🚀 A new version of Loadboot is available — Update ×" on their first pageview: `sw.js` calls `clients.claim()`, which fires `controllerchange` on the initial install, and PWA_JS treated any `controllerchange` as an update. On phone the banner was capped ~200px wide (`left:50%` shrink-to-fit → one word per line) and sat on the hero's second CTA. | PWA_JS remembers whether a controller existed at page load and swallows the first claim. Banner `width:max-content;max-width:min(92vw,520px)`, × gets a 36px hit area, lifts above the sticky bar. |
+| M2 | P1 | Phone, bottom 200px at scroll 0: sticky "Get a Quote / Get Started" bar (the hero's own two buttons + the header's Get Started are on the same screen), "⬇ Get the app" pill sitting ON the bar's Get a Quote, read-through ⌄⌄ button, chat FAB, M1's banner; after one screen back-to-top joined the tower. Desktop 1366×768: the "Get the app" pill covered the hero paragraph. With the drawer open, ⌄⌄ and the FAB floated over its Get Started button (z-index 2147483644 > 300). | Sticky bar slides in only after 480px of scroll (`body.lb-mcta-on`, UX_JS); "Get the app" hidden ≥881px and lifted above the bar on phone; read-through hidden on touch (`hover:none and pointer:coarse` — backToTop.js is shared with the portals, so they lose it on phone too); every float `visibility:hidden` while `.lbh-drawer.open`. liveChatCore's `placeFab` re-measures on a dispatched resize after the bar toggles. |
+| M3 | P1 | Footer = **4,570px / 92 links on every page** on phone (status.html: 1,182px of page under 4,570px of footer). Eight link groups, 2-col grid, 48px a row. | ≤700px each group folds under its heading (`role=button`, `aria-expanded`, Enter/Space). Footer 4,570 → **2,528**. Desktop untouched (6 columns). The second "Company" heading (over the e-mail block) → "Contact". |
+| M4 | P2 | `.cmp` comparison tables ≤880px had `white-space:nowrap` on the whole table: should-i-buy-a-truck… 3,231px wide (eight phone screens sideways), protect-freight 1,241, spot-market 1,201, truck-dispatcher-vs-broker 1,150. | Cells wrap, `min-width:150px` → 600–750px (one swipe). Privacy `.pv-t` URLs `overflow-wrap:anywhere`. |
+| M5 | P2 | Home on phone 36,146px / 30 sections; "How we find your freight" alone 4,002px (six link-cards at 316px + the 1,589px Standard band). | Generic `data-fold="N"` + `data-fold-label` (UX_JS): the six sourcing cards show 3 + "Show 3 more freight sources" ≤700px. Home 36,146 → 33,227; the rest is content (OM1). |
+| M6 | P2 | pricing / create-*-account: the "Questions? Call us 24/7 … or we call you" strip above the hero wrapped to three lines on phone → H1 at 387px. | ≤560px the callback half hides (`[data-lb-callonly]`), the number stays. H1 at 330. |
+| M7 | P3 | Load-score estimator toggle was a 270×15px tap target. | 32px min height. |
+
+Source: `build_site.py` (PWA_JS, `UX_CSS`, `UX_JS`, `_networks()`, footer()), `app/shared/ui/backToTop.js`, `load_score_module.py`. No DB change.
+
+**Open — marketing (OM):**
+- **OM1 (content, his call)** Home phone still 33k px: For carriers 2,039 · For brokers 1,725 · Load-score tool 3,094 · Free-for-drivers
+  2,013 · Standard band 1,589 · FAQ 1,368. `data-fold` makes any grid foldable in one attribute; which sections earn the phone scroll is his.
+- **OM2** Footer social: Facebook and Instagram icons are `href="#"` on every page (tap = jump to top). Real URLs, or drop the two icons.
+- **OM3 (→ Phase 2 baseline)** title > 65 chars on ~25 pages (tonu-policy 137, truckload-freight-rates 125, spot-market 95); meta
+  description > 170 on ~50 (tonu-policy 389, layover 373, truckload 350 — policy pages pasting their first paragraph).
+- **OM4 (P3)** status.html probes `rest/v1/` with the anon key and reads the 401 as "up" → a console error on every visit;
+  `/auth/v1/health` answers 200 without a key.
+- **OM5** `PLATFORM_NAMES = []` — the home sourcing section still shows no source chips (owner-confirmed list pending).
+- Not walked: form submits (contact / lead forms / newsletter — they write leads), the chat concierge (lcOnboard), cookie consent,
+  404.html, `/forms/*` (not in the sitemap), login.html's sign-in (the portal passes covered it).
+
 ## PHASE 2 — SEO audit & fix, marketing site (Yaseen's word, 24 Sep 2026)
 Starts when the UX order above is finished (CC re-shoot → Agent/Dispatcher → Marketing site UX). His rule: **one page per
 session**, judged on LIVE Google Analytics 4 + Google Search Console data for that page, then fixed in the same session.
@@ -267,3 +298,9 @@ get-started, carriers, brokers, the dispatch-service pages), then the weekly rat
   app/shared/dmail.js, app/shared/dialer.js, app/carrier/carrier.css. No DB change. Phone: dashboard 2,155 → 1,768 · referral 4,969 → 3,605 ·
   board 3,179 → 2,791 · email 1,205 → 844. Harness `ag-walk.mjs` + `crop.mjs` committed. NEXT per the order: **Marketing site UX**
   (signed-out pages, 390 + 1366), then Phase 2 SEO. Still open: OA1–OA4, the unwalked writes above, OCC1–OCC3, O3 (Yaseen).
+- 2026-09-24 — Claude (cloud, branch claude/dazzling-dijkstra-bx4k0y): **Marketing site pass 1** — M1–M7 (M1 = first-visit "new version"
+  banner, a prod bug since the SW got `clients.claim()`). UI only: build_site.py (PWA_JS, UX_CSS/UX_JS appended to styles.css/app.js),
+  app/shared/ui/backToTop.js, load_score_module.py. No DB change. Phone: footer 4,570 → 2,528 on every page · home 36,146 → 33,227 ·
+  status 5,752 → 3,710 · pricing 14,081 → 12,201. Harness `mk-walk.mjs` + `mk-sections.mjs` committed. UX order is DONE (broker → carrier → CC
+  → agent → marketing). NEXT: **Phase 2 SEO, Session 0** (needs the googleapis network rule + GOOGLE_SA_KEY / GA4_PROPERTY_ID / GSC_SITE_URL
+  secrets, or the CSV fallback — see the Access list above); OM1–OM5 + the earlier O*/OC*/OCC*/OA* lists stay open.

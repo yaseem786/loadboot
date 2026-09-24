@@ -468,7 +468,7 @@ def footer():
 <div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" width="146" height="32" decoding="async" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
 <p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no long-term contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+14692537575" data-lb-contact="footer">&#128222; +1 (469) 253-7575 &middot; 24/7</a><a class="foot-cb" href="contact.html#call" data-lb-callonly>We call you &rarr;</a></div>
-<div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
+<div class="foot-h" style="margin-top:16px">Contact</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
 <div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
 <a href="https://www.linkedin.com/company/135138228/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M6 9H3v9h3V9zM4.5 3a1.8 1.8 0 100 3.6 1.8 1.8 0 000-3.6zM18 9c-1.6 0-2.5.8-3 1.5V9H12v9h3v-5c0-1 .7-1.7 1.6-1.7s1.4.7 1.4 1.7v5h3v-5.4C21 10 19.7 9 18 9z"/></svg></a></div></div>
@@ -683,8 +683,8 @@ def faq_block(items):
 # ---- write shared assets ----
 PWA_JS = r'''
 var lbUpdateApproved=false;
-if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').then(function(reg){function n(w){if(w&&navigator.serviceWorker.controller)lbUpdBanner(w);}if(reg.waiting)n(reg.waiting);reg.addEventListener('updatefound',function(){var w=reg.installing;if(w)w.addEventListener('statechange',function(){if(w.state==='installed')n(w);});});setInterval(function(){reg.update();},60000);}).catch(function(){});var r=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(r)return;if(!lbUpdateApproved){lbUpdBanner(null);return;}r=true;location.reload();});});}
-function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;max-width:92%';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of Loadboot is available.</span><button id="lbUpdBtn" style="background:#FC5305;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){if(!confirm('Update and reload this tab? Save any unfinished work first.'))return;lbUpdateApproved=true;this.textContent='Updating…';if(!w||w.state==='activated')location.reload();else w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
+if('serviceWorker' in navigator){var lbHadSW=!!navigator.serviceWorker.controller;addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').then(function(reg){function n(w){if(w&&navigator.serviceWorker.controller)lbUpdBanner(w);}if(reg.waiting)n(reg.waiting);reg.addEventListener('updatefound',function(){var w=reg.installing;if(w)w.addEventListener('statechange',function(){if(w.state==='installed')n(w);});});setInterval(function(){reg.update();},60000);}).catch(function(){});var r=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(r)return;if(!lbHadSW){lbHadSW=true;return;}if(!lbUpdateApproved){lbUpdBanner(null);return;}r=true;location.reload();});});}
+function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;width:max-content;max-width:min(92vw,520px)';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of Loadboot is available.</span><button id="lbUpdBtn" style="background:#FC5305;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){if(!confirm('Update and reload this tab? Save any unfinished work first.'))return;lbUpdateApproved=true;this.textContent='Updating…';if(!w||w.state==='activated')location.reload();else w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
 (function(){function mk(){if(document.getElementById('pwaBtn'))return null;var b=document.createElement('button');b.id='pwaBtn';b.className='lb-float-ctl';b.setAttribute('aria-label','Get the LoadBoot app');b.innerHTML='&#11015; Get the app';b.style.cssText='position:fixed;bottom:20px;left:20px;z-index:90;background:#0883F7;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-weight:700;font-family:Manrope,sans-serif;font-size:.9rem;box-shadow:0 12px 30px -8px rgba(37,99,235,.6);cursor:pointer;transition:opacity .2s ease,visibility .2s ease';b.onclick=function(){location.href='/apps.html';};document.body.appendChild(b);try{if(window.lbFloatRegister)window.lbFloatRegister(b);}catch(e){}return b;}/* Chrome offers its own install prompt through beforeinstallprompt. We suppress the mini-infobar but never
    fire an install from this button: nothing should download straight off the floating button. Its whole job is
    to take the visitor to /apps.html, where the Google Play badge sits next to the iOS instructions and they can
@@ -1021,8 +1021,45 @@ a[href^="tel:"]{display:inline-flex;align-items:center;min-height:40px}
 /* ===================== end LB-MOBILE-FIXES v1 ===================== */
 """
 
-with open(os.path.join(OUT,'styles.css'),'w',encoding='utf-8') as f: f.write(_mincss(CSS + TOOLS_CSS + LS_CSS + LOADBOARD_CSS + SPLASH_CSS + ART_CSS + RESP_CSS + MOBILE_FIX_CSS + LBH_CSS + HS_CSS))
-with open(os.path.join(OUT,'app.js'),'w',encoding='utf-8') as f: f.write(JS + PWA_JS)
+
+# ---------- UX audit 24 Sep 2026 (docs/ux-audit-2026-09/HANDOFF.md, M1–M6) — additive, phone-first ----------
+UX_CSS = r"""
+@media(max-width:880px){
+  .mcta{transform:translateY(110%);transition:transform .25s ease}
+  body.lb-mcta-on .mcta{transform:none}
+  body.lb-mcta-on #pwaBtn,body.lb-mcta-on #lbUpd{bottom:calc(96px + env(safe-area-inset-bottom,0px))!important}
+  .cmp{white-space:normal}.cmp th,.cmp td{min-width:150px;white-space:normal}
+}
+@media(min-width:881px){#pwaBtn{display:none!important}}
+.lbh-drawer.open~#lb-btt,.lbh-drawer.open~#lb-rt,.lbh-drawer.open~#lbc-fab,.lbh-drawer.open~#pwaBtn,.lbh-drawer.open~.mcta,.lbh-drawer.open~#lbUpd{visibility:hidden!important}
+#lbUpdX{min-width:36px;min-height:36px}
+@media(max-width:700px){
+  footer .links5{grid-template-columns:1fr;gap:0;margin-bottom:28px}
+  footer .links5>div.fold{border-bottom:1px solid #1e293b}
+  footer .links5>div.fold>.foot-h{display:flex;align-items:center;justify-content:space-between;margin:0;padding:14px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  footer .links5>div.fold>.foot-h::after{content:"+";font-weight:400;font-size:1.3rem;color:#94a3b8;line-height:1}
+  footer .links5>div.fold.open>.foot-h::after{content:"-"}
+  footer .links5>div.fold>a{display:none}
+  footer .links5>div.fold.open>a{display:block;margin:0 0 12px}
+  footer .links5>div.fold.open{padding-bottom:6px}
+  .fold-hidden{display:none!important}
+  .fold-more{display:block;width:100%;margin:14px 0 0;padding:14px;border:1px solid var(--border);border-radius:14px;background:#fff;color:var(--blue);font-family:'Manrope',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer}
+}
+@media(max-width:560px){.call-strip [data-lb-callonly]{display:none}}
+.pv-t td,.pv-t th{overflow-wrap:anywhere}
+"""
+UX_JS = r"""
+(function(){var mq=window.matchMedia?window.matchMedia('(max-width:880px)'):null,ph=window.matchMedia?window.matchMedia('(max-width:700px)'):null;
+/* M2: the sticky Get a Quote / Get Started bar waits until the hero (with the same two buttons) has scrolled away */
+var bar=document.querySelector('.mcta');if(bar){var on=null;function upd(){var v=(!mq||mq.matches)&&scrollY>480;if(v!==on){on=v;document.body.classList.toggle('lb-mcta-on',v);setTimeout(function(){try{dispatchEvent(new Event('resize'));}catch(e){}},320);}}addEventListener('scroll',upd,{passive:true});addEventListener('resize',upd);upd();}
+/* M3: footer link groups fold on phone (8 groups, 60+ links, 3,000px) */
+if(ph&&ph.matches){document.querySelectorAll('footer .links5>div').forEach(function(c){var h=c.querySelector('.foot-h');if(!h)return;c.classList.add('fold');h.setAttribute('role','button');h.setAttribute('tabindex','0');h.setAttribute('aria-expanded','false');function t(){var o=c.classList.toggle('open');h.setAttribute('aria-expanded',o?'true':'false');}h.addEventListener('click',t);h.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();t();}});});
+/* M5: <div data-fold="3"> shows its first 3 children on phone + a "Show N more" button */
+document.querySelectorAll('[data-fold]').forEach(function(g){var n=parseInt(g.getAttribute('data-fold'),10)||3,kids=[].slice.call(g.children);if(kids.length<=n+1)return;kids.slice(n).forEach(function(k){k.classList.add('fold-hidden');});var b=document.createElement('button');b.type='button';b.className='fold-more';b.textContent=(g.getAttribute('data-fold-label')||'Show {n} more').replace('{n}',kids.length-n);b.onclick=function(){kids.forEach(function(k){k.classList.remove('fold-hidden');});b.remove();};g.insertAdjacentElement('afterend',b);});}
+})();
+"""
+with open(os.path.join(OUT,'styles.css'),'w',encoding='utf-8') as f: f.write(_mincss(CSS + TOOLS_CSS + LS_CSS + LOADBOARD_CSS + SPLASH_CSS + ART_CSS + RESP_CSS + MOBILE_FIX_CSS + LBH_CSS + HS_CSS + UX_CSS))
+with open(os.path.join(OUT,'app.js'),'w',encoding='utf-8') as f: f.write(JS + PWA_JS + UX_JS)
 with open(os.path.join(OUT,'manifest.webmanifest'),'w',encoding='utf-8') as f: f.write(MANIFEST)
 with open(os.path.join(OUT,'sw.js'),'w',encoding='utf-8') as f: f.write(SW)
 
@@ -1161,7 +1198,7 @@ def _networks():
            ('&#128260;','Reloads off your own trail','Delivered where? The fleet plan scans the board from your actual drop point and chains the next load with the least deadhead.','fleet-management.html','Fleet plan'),
            ('&#128266;','Post your truck','Tell the board when and where a truck frees up &mdash; matching loads alert you instead of you watching a screen all day.','book-truck-loads.html','One-tap booking'),
            ('&#9889;','Direct offers to you','Verified carriers get loads offered directly with a countdown &mdash; first acceptance wins, no double-booking, no bidding war.','load-board.html','See the board')]
-    grid=('<div class="grid g3 reveal" style="margin-top:26px">'
+    grid=('<div class="grid g3 reveal" style="margin-top:26px" data-fold="3" data-fold-label="Show {n} more freight sources">'
       + ''.join('<a class="linkcard" href="'+u+'"><div class="icon">'+ic+'</div><h3>'+t+'</h3><p>'+d+'</p><span class="arw">'+lk+' &rarr;</span></a>' for ic,t,d,u,lk in cards)
       + '</div>')
     band = STANDARD_V2 if HOME_V2 else ('<div class="reveal" style="margin-top:24px;background:#10223B;border-radius:18px;padding:22px 24px;color:#e2e8f0">'
