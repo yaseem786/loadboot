@@ -17,7 +17,8 @@ import { el, mount } from '../shared/ui/dom.js';
 import { invMe, invClaimByEmail, invSelfOnboard, invPublishSelfDoc, invMyRequests, invDeclarePayment, invLedger, invStatements, invConfirmPayout,
          invSetLang, invFlag, invMyFlags, invSettings, invCurrentDoc, invSignDoc, invGrowth, invProjection,
          invUploadProof, invProofUrl, invProposeAmendment, invWithdrawAmendment, invMyAmendments, invAckExpense,
-         invNotifications, invMarkRead, invUpdates, invAudit } from '../shared/api.js';
+         invNotifications, invMarkRead, invUpdates, invAudit, invSetNotifyPref } from '../shared/api.js';
+import { pushSupported, enablePush, disablePush, isPushEnabled, ensurePushHealthy } from '../shared/push.js';
 import { mdToHtml, buildFromParams, buildAgreement, DEFAULT_EXTRA } from './agreement-template.js';
 import { t, setLang, getLang, LANGS } from './i18n.js';
 import { vendorWhat, catWhat, termWhat, impactWhat, TERMS, CATEGORIES, VENDORS } from './glossary.js';
@@ -733,6 +734,7 @@ async function refresh() {
     if (!S.requests) { try { S.requests = (await invMyRequests(S.agr.id)).requests || []; } catch (_) { S.requests = []; } }
     if (!S.settings) { try { S.settings = await invSettings(); } catch (_) { S.settings = {}; } }
     renderShell();
+    ntAfterShell();
   } catch (e) { renderLogin(err(e)); }
 }
 async function boot() {
@@ -993,24 +995,7 @@ function amendSheet(kind, p) {
 // v4 — notifications, founder updates, plan, revenue model, traffic, growth v2,
 //      branded printable documents, audit trail, glossary links in expense rows
 // ============================================================================
-function bellBtn() {
-  const b = el('button', { class: 'iv-bell', type: 'button', 'aria-label': t('nt_title'), onClick: () => showNotifications() }, [icon('inbox', ''), el('i', { class: 'n', id: 'iv-bell-n', style: 'display:none' })]);
-  invNotifications(50).then(r => { S.notif = r; const n = document.getElementById('iv-bell-n'); if (n && r.unread > 0) { n.textContent = r.unread > 99 ? '99+' : String(r.unread); n.style.display = ''; } }).catch(() => {});
-  return b;
-}
-function showNotifications() {
-  const body = el('div'); openSheet(t('nt_title'), body); mount(body, skeleton());
-  invNotifications(50).then(r => {
-    S.notif = r; const items = r.items || [];
-    mount(body, [
-      items.length ? el('div', { class: 'iv-actions', style: 'justify-content:flex-end' }, el('button', { class: 'iv-btn sm', onClick: async () => { await invMarkRead(null); const n = document.getElementById('iv-bell-n'); if (n) n.style.display = 'none'; body.querySelectorAll('.iv-new').forEach(x => x.remove()); } }, t('nt_read_all'))) : null,
-      items.length ? el('div', { class: 'iv-list' }, items.map(n => el('div', { class: 'iv-row', style: 'cursor:default' }, [
-        el('div', { class: 'ic' }, icon({ request: 'requests', expense: 'ledger', receipt: 'payments', payout: 'payments', statement: 'statements', document: 'doc', amendment: 'doc', flag: 'flag', update: 'inbox' }[n.kind] || 'inbox')),
-        el('div', null, [el('div', { class: 't' }, [n.title, !n.read_at ? el('small', { class: 'iv-new', style: 'margin-left:6px' }, t('nt_new')) : null]), el('div', { class: 's' }, n.body || ''), el('div', { class: 's', style: 'opacity:.6' }, new Date(n.created_at).toLocaleString('en-GB'))]),
-      ]))) : empty(t('nt_none')),
-    ]);
-  }).catch(ex => mount(body, el('div', { class: 'iv-err' }, err(ex))));
-}
+// bellBtn / showNotifications moved to the v5 section (bl_inv_0414) at the end of this file.
 function updatesCard() {
   const box = el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('upd_title')), el('div', { class: 'iv-sk', style: 'height:14px;width:60%' })]);
   const kindPill = (k) => pill(t('upd_' + k), k === 'milestone' ? 'ok' : k === 'daily' ? 'blue' : 'wait');
@@ -1370,3 +1355,166 @@ function investmentSheet(r) {
     flagButton('receipt', r.id),
   ]));
 }
+
+// ============================================================================
+// v5 (bl_inv_0414) — premium notification centre, deep links (#n/<id>), phone push
+// (works with the app closed), welcome toast, e-mail preference.
+// ============================================================================
+const NT_ICON = { expense: 'ledger', request: 'requests', receipt: 'payments', payout: 'payments', statement: 'statements', document: 'doc', amendment: 'doc', flag: 'flag', update: 'inbox' };
+const NT_GROUP = { expense: 'exp', request: 'req', receipt: 'pay', payout: 'pay', statement: 'pay', document: 'doc', amendment: 'doc', flag: 'doc', update: 'doc' };
+function ntView(n) {
+  const d = n.data || {}; const ev = d.ev || n.kind; const cur = d.cur;
+  const m = (v, sign) => (v == null || v === '') ? null : (sign || '') + money(v, cur);
+  const what = d.description || d.vendor || (d.category ? catName(d.category) : '');
+  const V = (tt, s, amt, cls, act, tone) => ({ t: tt, s, amt, cls, act, tone });
+  switch (ev) {
+    case 'expense.new': return V(t('nt_e_exp', what), [d.vendor && d.vendor !== what ? d.vendor : null, d.category ? catName(d.category) : null, d.proof ? '📎 ' + t('nt_proof') : null].filter(Boolean).join(' · '), m(d.amount, '−'), 'neg', d.proof ? t('nt_a_receipt') : null, 'exp');
+    case 'expense.proof': return V(t('nt_e_proof', what), d.vendor || '', m(d.amount), 'neg', t('nt_a_receipt'), 'exp');
+    case 'expense.reversal': return V(t('nt_e_rev', d.vendor || ''), '', m(d.amount, '+'), 'pos', null, 'warn');
+    case 'request.new': return V(t('nt_e_req', d.reason || ''), d.files ? '📎 ' + d.files : '', m(d.amount), 'ask', t('nt_a_reply'), 'req');
+    case 'request.file': return V(t('nt_e_rfile', d.seq), d.reason || '', m(d.amount), 'ask', t('nt_a_open'), 'req');
+    case 'receipt.confirmed': return V(t('nt_e_rc'), [d.from, d.into].filter(Boolean).join(' → '), m(d.amount, '+'), 'pos', t('nt_a_pdf'), 'in');
+    case 'receipt.rejected': return V(t('nt_e_rj'), d.reason || '', m(d.amount), '', null, 'warn');
+    case 'document.published': return V(t('nt_e_doc', d.version), '', null, '', t('nt_a_read'), 'doc');
+    case 'document.signed': return V(t('nt_e_sig'), 'v' + (d.version || ''), null, '', t('nt_a_signed'), 'doc');
+    case 'payout.paid': return V(t('nt_e_po'), '', m(d.amount, '+'), 'pos', null, 'in');
+    case 'statement': return V(t('nt_e_st', d.month ? fmtMonth(d.month) : ''), '', Number(d.total) > 0 ? m(d.total, '+') : null, 'pos', null, 'in');
+    case 'amendment': return V(t('nt_e_am_' + (d.status === 'accepted' ? 'accepted' : 'declined')), d.note || '', null, '', null, 'doc');
+    case 'flag': return V(t('nt_e_fl'), d.answer || n.body || '', null, '', null, 'info');
+    default: return V(n.title, n.body || '', null, '', null, 'info');
+  }
+}
+function ntBadge(count) {
+  const b = document.getElementById('iv-bell-n'); if (!b) return;
+  const c = count != null ? count : ((S.notif && S.notif.unread) || 0);
+  b.textContent = c > 99 ? '99+' : String(c); b.style.display = c > 0 ? '' : 'none';
+  const bell = b.parentNode; if (bell && bell.classList) bell.classList.toggle('ring', c > 0);
+}
+function bellBtn() {
+  const b = el('button', { class: 'iv-bell', type: 'button', 'aria-label': t('nt_title'), onClick: () => showNotifications() }, [icon('inbox', ''), el('i', { class: 'n', id: 'iv-bell-n', style: 'display:none' })]);
+  invNotifications(100).then(r => { S.notif = r; ntBadge(r.unread); }).catch(() => {});
+  return b;
+}
+function ntToast(text, onClick) {
+  document.querySelectorAll('.iv-toast').forEach(x => x.remove());
+  const x = el('button', { class: 'iv-toast', type: 'button', onClick: () => { x.remove(); if (onClick) onClick(); } }, text);
+  document.body.appendChild(x); requestAnimationFrame(() => x.classList.add('in'));
+  setTimeout(() => { x.classList.remove('in'); setTimeout(() => x.remove(), 400); }, 7000);
+}
+async function ntOpen(n) {
+  if (!n) { ntToast(t('nt_notfound')); return; }
+  if (!n.read_at) { n.read_at = new Date().toISOString(); if (S.notif) S.notif.unread = Math.max(0, (S.notif.unread || 1) - 1); ntBadge(); invMarkRead([n.id]).catch(() => {}); }
+  const d = n.data || {}; const id = n.ref_id;
+  try {
+    if (n.agreement_id && S.agr && n.agreement_id !== S.agr.id) { const a = (S.agreements || []).find(x => x.id === n.agreement_id); if (a) { S.agr = a; S.ledger = S.requests = S.statements = null; } }
+    const tab = (x) => { S.tab = TABS.includes(x) ? x : 'home'; renderShell(); };
+    if (n.kind === 'expense') {
+      if (!S.ledger) S.ledger = await invLedger(S.agr.id);
+      const x = (S.ledger.expenses || []).find(e => e.id === (d.id || id));
+      if (x) { tab('ledger'); return expenseReceipt(x); }
+      return tab('ledger');
+    }
+    if (n.kind === 'request') {
+      S.requests = (await invMyRequests(S.agr.id)).requests || [];
+      const r = S.requests.find(q => q.id === id); renderShell();
+      return r ? openRequest(r) : ntToast(t('nt_notfound'));
+    }
+    if (n.kind === 'receipt') {
+      S.ledger = await invLedger(S.agr.id);
+      const r = (S.ledger.receipts || []).find(q => q.id === id); tab('payments');
+      if (r && r.confirmed_at) return paymentConfirmation(r);
+      return;
+    }
+    if (n.kind === 'payout' || n.kind === 'statement') return tab(TABS.includes('statements') ? 'statements' : 'payments');
+    if (n.kind === 'document' || n.kind === 'amendment') return tab('agreement');
+    return showNotifications();
+  } catch (e) { ntToast(err(e)); }
+}
+function ntDeepId() {
+  const m = (location.hash || '').match(/^#n\/([\w-]+)/);
+  if (m) { try { sessionStorage.setItem('lb-inv-deep', m[1]); } catch (_) {} try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {} return m[1]; }
+  try { return sessionStorage.getItem('lb-inv-deep'); } catch (_) { return null; }
+}
+async function ntDeep() {
+  const id = ntDeepId(); if (!id || !S.me) return;
+  try { sessionStorage.removeItem('lb-inv-deep'); } catch (_) {}
+  if (id === 'list') return showNotifications();
+  let r = S.notif; try { r = await invNotifications(200); S.notif = r; ntBadge(r.unread); } catch (_) {}
+  const n = ((r && r.items) || []).find(x => x.id === id);
+  return ntOpen(n);
+}
+function ntAfterShell() {
+  // the portal shares the /app/ service worker — make sure it is installed (needed for phone alerts and install)
+  try { if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration('/app/').then(reg => { if (!reg) navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' }).catch(() => {}); }).catch(() => {}); } catch (_) {}
+  ensurePushHealthy('Investor portal').catch(() => {});
+  if (ntDeepId()) { setTimeout(() => ntDeep(), 250); return; }
+  if (S.ntWelcomed) return; S.ntWelcomed = true;
+  setTimeout(() => { const u = S.notif && S.notif.unread; if (u > 0) ntToast([el('b', null, t('nt_welcome_t')), el('span', null, t('nt_welcome', u) + '  ' + t('nt_see'))], () => showNotifications()); }, 1200);
+}
+window.addEventListener('hashchange', () => { if (/^#n\//.test(location.hash)) ntDeep(); });
+
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_STANDALONE = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+function pushCard() {
+  const box = el('div', { class: 'nc-push' });
+  const draw = async () => {
+    let on = false; try { on = await isPushEnabled(); } catch (_) {}
+    const perm = ('Notification' in window) ? Notification.permission : 'default';
+    if (on) { mount(box, [el('div', { class: 'nc-push-ic ok' }, '🔔'), el('div', null, [el('b', null, t('nt_push_ok')), el('span', null, t('nt_push_s'))]), el('button', { class: 'nc-mini', onClick: async () => { try { await disablePush(); } catch (_) {} draw(); } }, t('nt_push_off'))]); box.classList.add('on'); return; }
+    box.classList.remove('on');
+    if (!pushSupported()) { mount(box, [el('div', { class: 'nc-push-ic' }, '📲'), el('div', null, [el('b', null, t('nt_push_t')), el('span', null, IS_IOS && !IS_STANDALONE ? t('nt_push_ios') : t('nt_push_na'))])]); return; }
+    if (perm === 'denied') { mount(box, [el('div', { class: 'nc-push-ic' }, '🔕'), el('div', null, [el('b', null, t('nt_push_t')), el('span', null, t('nt_push_denied'))])]); return; }
+    const btn = el('button', { class: 'iv-btn primary sm', onClick: async () => {
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        if (!(await navigator.serviceWorker.getRegistration('/app/'))) await navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' });
+        await enablePush('Investor · ' + (IS_IOS ? 'iPhone' : /Android/.test(navigator.userAgent) ? 'Android' : 'Browser'));
+        draw();
+      } catch (e) { btn.disabled = false; btn.textContent = t('nt_push_on'); ntToast(Notification.permission === 'denied' ? t('nt_push_denied') : err(e)); }
+    } }, t('nt_push_on'));
+    mount(box, [el('div', { class: 'nc-push-ic' }, '🔔'), el('div', null, [el('b', null, t('nt_push_t')), el('span', null, t('nt_push_s'))]), btn]);
+  };
+  draw(); return box;
+}
+function prefCard(pref) {
+  let cur = pref || 'all';
+  const box = el('div', { class: 'nc-pref' });
+  const draw = () => mount(box, [
+    el('div', { class: 'nc-pref-h' }, ['✉️ ', t('nt_email')]),
+    el('div', { class: 'nc-seg', role: 'radiogroup' }, ['all', 'important', 'off'].map(k => el('button', { class: cur === k ? 'on' : '', role: 'radio', 'aria-checked': String(cur === k), onClick: async () => {
+      if (cur === k) return; const prev = cur; cur = k; draw();
+      try { await invSetNotifyPref(k); if (S.notif) S.notif.pref = k; ntToast(t('nt_saved')); } catch (e) { cur = prev; draw(); ntToast(err(e)); }
+    } }, t('nt_pref_' + k)))),
+    el('p', { class: 'nc-pref-s' }, t('nt_pref_hint')),
+  ]);
+  draw(); return box;
+}
+function showNotifications(filter) {
+  const body = el('div', { class: 'nc' }); const close = openSheet(t('nt_title'), body); mount(body, skeleton());
+  let F = filter || 'all';
+  const cell = (k, v, cls) => el('div', { class: 'nc-bal-c ' + (cls || '') }, [el('span', null, t(k)), el('b', null, v)]);
+  const draw = (r) => {
+    const items = r.items || [];
+    const p = (S.ledger && S.ledger.position) || (S.agr && S.agr.position) || null;
+    const cnt = (g) => items.filter(n => !n.read_at && (g === 'all' || NT_GROUP[n.kind] === g)).length;
+    const shown = items.filter(n => F === 'all' || NT_GROUP[n.kind] === F).map(n => Object.assign(n, { day: pktDay(n.created_at) }));
+    mount(body, [
+      pushCard(),
+      p && p.funded != null ? el('div', { class: 'nc-bal' }, [cell('nt_given', money(p.funded)), cell('nt_spent', money(p.spent)), cell('nt_left', money(p.fund_cash), 'g')]) : null,
+      el('div', { class: 'nc-head' }, [
+        el('div', { class: 'nc-chips' }, [['all', 'nt_all'], ['exp', 'nt_f_exp'], ['req', 'nt_f_req'], ['pay', 'nt_f_pay'], ['doc', 'nt_f_doc']].map(([g, k]) => { const c = cnt(g);
+          return el('button', { class: 'nc-chip' + (F === g ? ' on' : ''), onClick: () => { F = g; draw(r); } }, [t(k), c ? el('b', null, String(c)) : null]); })),
+        r.unread ? el('button', { class: 'nc-readall', onClick: async () => { try { await invMarkRead(null); } catch (_) {} items.forEach(n => { n.read_at = n.read_at || new Date().toISOString(); }); r.unread = 0; ntBadge(0); draw(r); } }, '✓ ' + t('nt_read_all')) : null,
+      ]),
+      shown.length ? el('div', { class: 'nc-list' }, groupDays(shown, (n) => { const v = ntView(n);
+        return el('button', { class: 'nc-row' + (n.read_at ? '' : ' unread'), type: 'button', onClick: () => { close(); ntOpen(n); } }, [
+          el('div', { class: 'nc-ic ' + v.tone }, icon(NT_ICON[n.kind] || 'inbox')),
+          el('div', { class: 'nc-mid' }, [el('div', { class: 'nc-t' }, v.t), v.s ? el('div', { class: 'nc-s' }, v.s) : null, v.act ? el('span', { class: 'nc-act' }, v.act) : null]),
+          el('div', { class: 'nc-r' }, [v.amt ? el('div', { class: 'nc-amt ' + v.cls }, v.amt) : null, el('div', { class: 'nc-tm' }, fmtTime(n.created_at))]),
+        ]); })) : empty(t('nt_none')),
+      prefCard(r.pref),
+    ]);
+  };
+  invNotifications(100).then(r => { S.notif = r; ntBadge(r.unread); draw(r); }).catch(ex => mount(body, el('div', { class: 'iv-err' }, err(ex))));
+}
+ntDeepId();

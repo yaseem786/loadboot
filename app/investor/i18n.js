@@ -282,6 +282,53 @@ Object.assign(D.ur, {
   usd_hint: 'اندازاً، {1} کو {0} PKR/USD پر',
 });
 
+// v5 (bl_inv_0414) — notification centre, phone alerts, e-mail preference
+Object.assign(D.en, {
+  nt_all: 'All', nt_f_exp: 'Spending', nt_f_req: 'Requests', nt_f_pay: 'Payments', nt_f_doc: 'Documents',
+  nt_given: 'You invested', nt_spent: 'Spent', nt_left: 'Left',
+  nt_e_exp: 'Expense: {0}', nt_e_proof: 'Receipt added: {0}', nt_e_rev: 'Expense reversed {0}', nt_e_req: 'LoadBoot asks for money: {0}', nt_e_rfile: 'File added to request #{0}',
+  nt_e_rc: 'Your payment was confirmed', nt_e_rj: 'Payment not found', nt_e_doc: 'Agreement v{0} is ready to read', nt_e_sig: 'Agreement signed by both sides',
+  nt_e_po: 'Payout sent', nt_e_st: 'Statement for {0}', nt_e_am_accepted: 'Your proposal was accepted', nt_e_am_declined: 'Your proposal was declined', nt_e_fl: 'Your question was answered',
+  nt_a_receipt: '⬇ Receipt', nt_a_reply: 'Reply →', nt_a_pdf: '⬇ Confirmation', nt_a_signed: '⬇ Signed PDF', nt_a_read: 'Read →', nt_a_open: 'Open →', nt_proof: 'receipt',
+  nt_welcome_t: 'Welcome back', nt_welcome: '{0} new since your last visit.', nt_see: 'See →', nt_notfound: 'This item is no longer available.',
+  nt_push_t: 'Get alerts on this phone', nt_push_s: 'Even when the app is closed — like your bank app.', nt_push_on: 'Turn on', nt_push_ok: 'Phone alerts are on for this device', nt_push_off: 'Turn off',
+  nt_push_ios: 'On iPhone: tap Share → "Add to Home Screen", open LoadBoot from the home screen, then turn alerts on here.',
+  nt_push_denied: 'Alerts are blocked for this site in your browser settings. Allow notifications for loadboot.com, then try again.',
+  nt_push_na: 'This browser cannot show alerts. Use Chrome on Android, or install the app to your home screen.',
+  nt_email: 'E-mail me', nt_pref_all: 'Everything', nt_pref_important: 'Only important', nt_pref_off: 'Off',
+  nt_pref_hint: 'Important = money requests, payments, documents and answers. The portal always keeps everything.', nt_saved: 'Saved',
+});
+Object.assign(D.ur_roman, {
+  nt_all: 'Sab', nt_f_exp: 'Kharche', nt_f_req: 'Darkhwastein', nt_f_pay: 'Payments', nt_f_doc: 'Documents',
+  nt_given: 'Aap ne diya', nt_spent: 'Kharch hua', nt_left: 'Baqi',
+  nt_e_exp: 'Kharcha darj: {0}', nt_e_proof: 'Raseed lag gayi: {0}', nt_e_rev: 'Kharcha wapas liya gaya {0}', nt_e_req: 'Paise ki darkhwast: {0}', nt_e_rfile: 'Darkhwast #{0} mein file lagi',
+  nt_e_rc: 'Aap ki payment confirm ho gayi', nt_e_rj: 'Payment nahi mili', nt_e_doc: 'Agreement v{0} parhne ke liye tayyar', nt_e_sig: 'Agreement dono taraf se sign ho gaya',
+  nt_e_po: 'Payout bhej diya gaya', nt_e_st: '{0} ka hisaab', nt_e_am_accepted: 'Aap ki tajweez qabool ho gayi', nt_e_am_declined: 'Aap ki tajweez qabool nahi hui', nt_e_fl: 'Aap ke sawal ka jawab aa gaya',
+  nt_a_receipt: '⬇ Raseed', nt_a_reply: 'Jawab dein →', nt_a_pdf: '⬇ Tasdeeq', nt_a_signed: '⬇ Signed PDF', nt_a_read: 'Parhein →', nt_a_open: 'Kholein →', nt_proof: 'raseed',
+  nt_welcome_t: 'Khush aamdeed', nt_welcome: 'Aap ke pichhle login ke baad {0} nayi cheezein.', nt_see: 'Dekhein →', nt_notfound: 'Ye cheez ab mojood nahi.',
+  nt_push_t: 'Is phone par alert paayein', nt_push_s: 'App band ho tab bhi — bilkul bank app ki tarah.', nt_push_on: 'Chalu karein', nt_push_ok: 'Is device par phone alerts chalu hain', nt_push_off: 'Band karein',
+  nt_push_ios: 'iPhone par: Share dabayein → "Add to Home Screen", phir home screen se LoadBoot kholein aur yahan alert chalu karein.',
+  nt_push_denied: 'Browser settings mein is site ke notifications band hain. loadboot.com ke liye notifications allow karein, phir dobara koshish karein.',
+  nt_push_na: 'Ye browser alert nahi dikha sakta. Android par Chrome use karein, ya app ko home screen par install karein.',
+  nt_email: 'Email bhejein', nt_pref_all: 'Har cheez', nt_pref_important: 'Sirf zaroori', nt_pref_off: 'Band',
+  nt_pref_hint: 'Zaroori = paise ki darkhwast, payments, documents aur jawab. Portal mein sab kuch hamesha rehta hai.', nt_saved: 'Save ho gaya',
+});
+Object.assign(D.ur, {
+  nt_all: 'سب', nt_f_exp: 'اخراجات', nt_f_req: 'درخواستیں', nt_f_pay: 'ادائیگیاں', nt_f_doc: 'دستاویزات',
+  nt_given: 'آپ نے دیا', nt_spent: 'خرچ ہوا', nt_left: 'باقی',
+  nt_e_exp: 'خرچ درج: {0}', nt_e_proof: 'رسید لگ گئی: {0}', nt_e_rev: 'خرچ واپس لیا گیا {0}', nt_e_req: 'پیسوں کی درخواست: {0}', nt_e_rfile: 'درخواست #{0} میں فائل لگی',
+  nt_e_rc: 'آپ کی ادائیگی کنفرم ہو گئی', nt_e_rj: 'ادائیگی نہیں ملی', nt_e_doc: 'معاہدہ v{0} پڑھنے کے لیے تیار', nt_e_sig: 'معاہدہ دونوں طرف سے دستخط ہو گیا',
+  nt_e_po: 'منافع بھیج دیا گیا', nt_e_st: '{0} کا حساب', nt_e_am_accepted: 'آپ کی تجویز قبول ہو گئی', nt_e_am_declined: 'آپ کی تجویز قبول نہیں ہوئی', nt_e_fl: 'آپ کے سوال کا جواب آ گیا',
+  nt_a_receipt: '⬇ رسید', nt_a_reply: 'جواب دیں ←', nt_a_pdf: '⬇ تصدیق', nt_a_signed: '⬇ دستخط شدہ PDF', nt_a_read: 'پڑھیں ←', nt_a_open: 'کھولیں ←', nt_proof: 'رسید',
+  nt_welcome_t: 'خوش آمدید', nt_welcome: 'آپ کے پچھلے لاگ ان کے بعد {0} نئی چیزیں۔', nt_see: 'دیکھیں ←', nt_notfound: 'یہ چیز اب موجود نہیں۔',
+  nt_push_t: 'اس فون پر الرٹ پائیں', nt_push_s: 'ایپ بند ہو تب بھی — بالکل بینک ایپ کی طرح۔', nt_push_on: 'چالو کریں', nt_push_ok: 'اس ڈیوائس پر فون الرٹ چالو ہیں', nt_push_off: 'بند کریں',
+  nt_push_ios: 'آئی فون پر: Share دبائیں ← "Add to Home Screen"، پھر ہوم اسکرین سے لوڈ بوٹ کھولیں اور یہاں الرٹ چالو کریں۔',
+  nt_push_denied: 'براؤزر سیٹنگز میں اس سائٹ کی اطلاعات بند ہیں۔ loadboot.com کے لیے اطلاعات کی اجازت دیں، پھر دوبارہ کوشش کریں۔',
+  nt_push_na: 'یہ براؤزر الرٹ نہیں دکھا سکتا۔ اینڈرائیڈ پر کروم استعمال کریں، یا ایپ کو ہوم اسکرین پر انسٹال کریں۔',
+  nt_email: 'ای میل بھیجیں', nt_pref_all: 'ہر چیز', nt_pref_important: 'صرف ضروری', nt_pref_off: 'بند',
+  nt_pref_hint: 'ضروری = پیسوں کی درخواست، ادائیگیاں، دستاویزات اور جواب۔ پورٹل میں سب کچھ ہمیشہ رہتا ہے۔', nt_saved: 'محفوظ ہو گیا',
+});
+
 export const LANGS = [['en', 'English'], ['ur_roman', 'Roman Urdu'], ['ur', 'اردو']];
 let cur = 'en';
 export function setLang(l) {
