@@ -98,6 +98,7 @@ const CSS = `
 .lbd{--nv:#10223B;--nv2:#0b1830;--bl:#0883F7;--or:#FC5305;--ok:#22c55e;--bad:#ef4444;--tx:#e8eefc;--mu:#93a4c3;--ln:rgba(255,255,255,.09);
  position:fixed;right:104px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:2147483000;font:14px/1.4 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--tx)}
 .lbd-ic{display:inline-flex;vertical-align:middle}
+.lbd.lbd-solo{right:18px}
 .lbd-fab{display:flex;align-items:center;gap:10px;height:52px;padding:0 18px 0 14px;border-radius:999px;border:1px solid var(--ln);cursor:pointer;color:#fff;
  background:linear-gradient(135deg,#132a4a,#0b1830);box-shadow:0 10px 30px rgba(3,10,24,.55),inset 0 1px 0 rgba(255,255,255,.06);transition:transform .15s ease,box-shadow .15s ease}
 .lbd-fab:hover{transform:translateY(-1px);box-shadow:0 14px 36px rgba(3,10,24,.6)}
@@ -195,6 +196,7 @@ const CSS = `
 .lbd-audio{position:fixed;width:0;height:0;opacity:0;pointer-events:none}
 @media (max-width:560px){
  .lbd{right:88px;bottom:calc(84px + env(safe-area-inset-bottom))}
+ .lbd.lbd-solo{right:14px}
  .lbd.open{left:0;right:0;bottom:0}
  .lbd-panel{width:100%;max-height:92vh;border-radius:22px 22px 0 0;padding-bottom:env(safe-area-inset-bottom)}
  .lbd-fab .t{display:none}.lbd-fab{padding:0 9px;height:52px}
@@ -214,6 +216,10 @@ function createDialer() {
   const audio = h('audio', { class: 'lbd-audio', autoplay: true, id: 'lbd-remote' });
   const live = h('div', { 'aria-live': 'polite', style: 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)' });
   document.body.append(root, audio);
+  // ux-audit A8 (24 Sep 2026): right:104px / 88px keeps clear of the live-chat bubble — but the portals dock
+  // that bubble in the header (#lbc-fab.lbc-docked), so the phone sat 100px into the content for nothing.
+  const solo = () => { try { const f = document.getElementById('lbc-fab'); S.solo = !f || f.classList.contains('lbc-docked') || getComputedStyle(f).display === 'none'; root.classList.toggle('lbd-solo', !!S.solo); } catch (_) {} };
+  setTimeout(solo, 0); setTimeout(solo, 3000); setTimeout(solo, 9000);
 
   const S = {
     boot: null, open: false, tab: 'keypad', conn: 'idle',            // idle | connecting | ready | offline | error | elsewhere
@@ -822,8 +828,8 @@ function createDialer() {
 
   function paintDock() {
     const b = S.boot;
-    if (!b || b.reason === 'off' || b.reason === 'not_active') { mount(root, null); root.className = 'lbd'; return; }
-    root.className = 'lbd' + (S.open ? ' open' : '');
+    if (!b || b.reason === 'off' || b.reason === 'not_active') { mount(root, null); root.className = 'lbd' + (S.solo ? ' lbd-solo' : ''); return; }
+    root.className = 'lbd' + (S.open ? ' open' : '') + (S.solo ? ' lbd-solo' : '');
     const justOpened = S.open && !wasOpen; wasOpen = !!S.open;
     const cbN = (b.callbacks || []).length;
     const smsN = ((S.sms && S.sms.unread) || 0) + waPanel.unread();

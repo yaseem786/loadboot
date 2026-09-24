@@ -114,6 +114,7 @@ const STATUS = {
 const OPEN = ['pending_rc', 'rc_received', 'approved', 'dispatched', 'picked_up'];
 const MOVING = ['approved', 'dispatched', 'picked_up'];
 const DONE = ['delivered', 'invoiced', 'paid', 'cancelled', 'rejected'];
+const dwDay = (s) => { if (!s) return '?'; const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(String(s)) ? s + 'T12:00:00' : s); return isNaN(d) ? String(s) : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };   // ux-audit A11
 const pill = (s) => { const m = STATUS[s] || [s, '#cbd5e1']; return h('span', { class: 'dw-pill', style: 'color:' + m[1] + ';border-color:' + m[1] + '55' }, m[0]); };
 
 const CSS = `
@@ -221,6 +222,9 @@ const CSS = `
 @media(max-width:760px){
 .dw-clock{flex-wrap:nowrap;gap:12px;font-size:.72rem;margin:0 0 8px;padding:0 2px;white-space:nowrap;overflow:hidden}
 .dw-clock-note{display:none}
+}
+@media(max-width:900px){.dw.dw-barred .dw-tabs{display:none}}   /* ux-audit A2: the bottom bar carries the ten tabs on phone (≤900, where .cp-tabbar shows) — one nav, not two */
+@media(max-width:760px){
 .dw-tabs{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;position:sticky;top:var(--dw-top,0px);z-index:15;margin:0 -14px 12px;padding:8px 14px;gap:8px;border-radius:0;border-width:0 0 1px;background:rgba(11,18,32,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .dw-tabs::-webkit-scrollbar{display:none}
 .dw-tab{flex:0 0 auto;min-height:40px;white-space:nowrap;border-radius:99px;padding:8px 14px;font-size:.84rem;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07)}
@@ -621,7 +625,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     requestAnimationFrame(() => { scrim.classList.add('show'); dr.classList.add('show'); });
   }
   function restoreChrome() {
-    try { if (shellBar && shellBarKids) { shellBar.replaceChildren(...shellBarKids); shellBar.classList.remove('dw-bar'); } } catch (_) {}
+    try { if (shellBar && shellBarKids) { shellBar.replaceChildren(...shellBarKids); shellBar.classList.remove('dw-bar'); } root.classList.remove('dw-barred'); } catch (_) {}
     try { if (shellTitle && shellTitleText != null && shellTitle.dataset.dw) { shellTitle.textContent = shellTitleText; delete shellTitle.dataset.dw; } } catch (_) {}
     shellBarKids = null;
     try { if (headEl) { headEl.classList.remove('dw-head'); headEl.removeEventListener('click', onBurger, true); } if (avaEl) avaEl.remove(); document.querySelectorAll('.dw-dr,.dw-dr-scrim').forEach((x) => x.remove()); } catch (_) {}
@@ -659,7 +663,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         const fab = h('button', { class: 'cp-fab', type: 'button', 'aria-label': 'Log a booking', onClick: () => { try { if (navigator.vibrate) navigator.vibrate(8); } catch (_) {} dwGo('bookings', 'new'); } }, [
           h('span', { class: 'cp-fab-in' }, ic('plus', 24)), h('span', null, 'Log'),
         ]);
-        shellBar.classList.add('dw-bar');
+        shellBar.classList.add('dw-bar'); root.classList.add('dw-barred');
         const kids = main.map((id) => item(id, by[id][1], by[id][2], by[id][3], () => setTab(id), tab === id));
         kids.splice(2, 0, fab);
         kids.push(item('more', 'More', 'more', moreN, () => openMore(TABS), !main.includes(tab)));
@@ -667,7 +671,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       }
       lastTabs = TABS;
       if (!headEl) { headEl = document.querySelector('.cp-top'); if (headEl) { headEl.classList.add('dw-head'); headEl.addEventListener('click', onBurger, true); const right = headEl.querySelector('.cp-top-right'); if (right) { const nm0 = ((feed && feed.profile && feed.profile.full_name) || 'D').trim(); avaEl = h('button', { class: 'dw-ava', 'aria-label': 'Open menu', onClick: () => openDrawer() }, nm0.split(/\s+/).slice(0, 2).map((x) => x.charAt(0).toUpperCase()).join('')); right.appendChild(avaEl); } } }
-      if (!shellTitle) { shellTitle = document.querySelector('.cp-top-title'); if (shellTitle) shellTitleText = shellTitle.textContent; }
+      if (!shellTitle) { shellTitle = document.querySelector('.cp-top-title, .cp-title'); if (shellTitle) shellTitleText = shellTitle.textContent; }
       if (shellTitle) {
         if (isPhone()) { const t = TABS.find((x) => x[0] === tab); shellTitle.textContent = t ? t[1] : 'Today'; shellTitle.dataset.dw = '1'; }
         else if (shellTitle.dataset.dw) { shellTitle.textContent = shellTitleText; delete shellTitle.dataset.dw; }
@@ -839,7 +843,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     }
     const min = minFor(t);
     mount(card, [
-      h('h3', null, [h('span', null, [ic('truck'), ' Unit ' + (t.unit_no || '?') + ' — ' + [t.year, t.make, t.model].filter(Boolean).join(' ') + (t.equipment ? ' · ' + t.equipment : '')]), h('span', { class: 'dw-pill', style: 'color:' + (act.length ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, act.length ? act.length + ' LOAD' + (act.length > 1 ? 'S' : '') + ' MOVING' : pend ? pend + ' BOOKING' + (pend > 1 ? 'S' : '') + ' PENDING' : (av.status || 'EMPTY').toUpperCase())]),
+      h('h3', null, [h('span', null, [ic('truck'), ' Unit ' + (t.unit_no || '?') + (function () { const d9 = [[t.year, t.make, t.model].filter(Boolean).join(' '), t.equipment].filter(Boolean); return d9.length ? ' — ' + d9.join(' · ') : ''; })()]), h('span', { class: 'dw-pill', style: 'color:' + (act.length ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, act.length ? act.length + ' LOAD' + (act.length > 1 ? 'S' : '') + ' MOVING' : pend ? pend + ' BOOKING' + (pend > 1 ? 'S' : '') + ' PENDING' : (av.status || 'EMPTY').toUpperCase())]),
       h('div', { class: 'dw-muted' }, (t._a.carrier && t._a.carrier.name) || ''),
       h('div', { class: 'dw-grid', style: 'margin-top:8px' }, [
         f('Payload', t.payload_lbs != null ? num(t.payload_lbs) + ' lb' : null), f('Interior L × W × H', (t.cargo_len_in || t.cargo_width_in || t.cargo_height_in) ? ftin(t.cargo_len_in) + ' × ' + inches(t.cargo_width_in) + ' × ' + inches(t.cargo_height_in) : null),
@@ -1123,7 +1127,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       h('div', { class: 'dw-card' }, [h('h3', null, 'How you get paid'), h('div', { class: 'dw-muted', style: 'line-height:1.8' }, [
         h('div', null, 'A commission line is created the moment you mark a load Delivered — ' + (p.commission_pct || 0) + '% of the gross line-haul on that load, at the rate in force when LoadBoot approved it.'),
         h('div', null, 'Pending → LoadBoot approves it once the broker is invoiced → Paid, with the real payout' + (p.currency ? ' in ' + p.currency : '') + ', the exchange rate used and the transfer reference. Cancelled or rejected loads never earn.'),
-        p.trial_end ? h('div', null, 'Trial window: ' + (p.trial_start || '?') + ' → ' + p.trial_end + ' (commission only during the trial).') : null,
+        p.trial_end ? h('div', null, 'Trial window: ' + dwDay(p.trial_start) + ' → ' + dwDay(p.trial_end) + ' (commission only during the trial).') : null,
       ])]),
       h('div', { class: 'dw-card' }, [h('h3', null, 'Commission ledger'), h('div', { class: 'dw-tablewrap' }, rows.length ? h('table', { class: 'dw-table' }, [h('thead', null, h('tr', null, ['Load', 'Gross', '%', 'Commission', 'Status', 'Paid', 'When'].map((x) => h('th', null, x)))), h('tbody', null, rows.map((r) => h('tr', null, [h('td', null, r.lane || r.booking_id), h('td', null, money(r.gross)), h('td', null, r.pct + '%'), h('td', null, h('b', { style: 'color:#fff' }, money(r.amount))), h('td', null, [h('span', { class: 'dw-pill', style: 'color:' + (PC[r.status] || '#cbd5e1') + ';border-color:currentColor' }, ({ draft: 'PENDING', approved: 'APPROVED', paid: 'PAID', void: 'VOID' })[r.status] || String(r.status).toUpperCase()), r.note ? h('div', { class: 'dw-muted' }, r.note) : null]), h('td', null, r.status === 'paid' ? [r.paid_amount != null ? Number(r.paid_amount).toLocaleString('en-US') + ' ' + (r.paid_currency || '') : '—', r.fx_rate ? h('div', { class: 'dw-muted' }, '@ ' + r.fx_rate) : null, r.payout_ref ? h('div', { class: 'dw-muted' }, 'ref ' + r.payout_ref) : null] : '—'), h('td', null, r.paid_at ? when(r.paid_at) : when(r.created_at))])))]) : h('div', { class: 'dw-muted' }, 'Nothing yet — your first delivered load appears here.'))]),
     ]);
@@ -1187,7 +1191,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       const req = (loadId, lane) => async () => { const v = await ask({ title: 'Request to book', text: lane + ' — the broker gets a 30-minute booking request under ' + ((cur.carrier && cur.carrier.name) || 'the carrier') + '’s MC.', ok: 'Send request', fields: [{ key: 'note', label: 'Note to the broker (optional)', type: 'textarea', placeholder: 'e.g. can pick up today 14:00, liftgate on board' }] }); if (!v) return; const r = await dispatcherRequestBook(cur.carrier_org_id, loadId, v.note).catch((e) => ({ error: e.message })); if (r && r.error) { toast(r.error, true); return; } toast('Request sent — the broker has ' + (r.expires_in_minutes || 30) + ' minutes to respond.'); paint(true); };
       const detail = (loadId) => async () => { const box = h('div', { class: 'dw-muted' }, 'Loading…'); modal('Load details', box); const d2 = await dispatcherLoadDetail(cur.carrier_org_id, loadId).catch((e) => ({ error: e.message })); if (!d2 || d2.error) { mount(box, err((d2 && d2.error) || 'Could not load.')); return; } const t = d2.terms || {}; const dx = t.details || {}; mount(box, [h('div', { class: 'dw-lane' }, (d2.origin || '') + ' → ' + (d2.destination || '')), h('div', { class: 'dw-grid', style: 'margin-top:8px' }, [f('Rate', money(d2.rate) + (d2.rpm != null ? ' · $' + Number(d2.rpm).toFixed(2) + '/mi' : '')), f('Miles', d2.miles), f('Equipment', d2.equipment), f('Commodity', d2.commodity), f('Weight', d2.weight), f('Pickup', [d2.pickup_date, t.pickup_window].filter(Boolean).join(' · ')), f('Delivery', [d2.delivery_date, t.delivery_window].filter(Boolean).join(' · ')), f('Scheduling', t.scheduling), f('Reference', t.reference), f('Posted by', d2.posted_by), f('Load size', dx.load_size), f('Pallets', dx.pallets), f('Tarps', dx.tarps), f('Pickup loading', dx.load_method_pickup), f('Delivery unloading', dx.load_method_delivery), f('Pickup hours', dx.dock_hours_pickup), f('Delivery hours', dx.dock_hours_delivery), dx.driver_assist_required ? f('Driver assist', 'REQUIRED') : null, dx.team_required ? f('Drivers', 'TEAM required') : null]), t.instructions ? h('div', { class: 'dw-muted', style: 'margin-top:8px;white-space:pre-wrap' }, t.instructions) : null, h('div', { class: 'dw-info', style: 'margin-top:10px' }, 'Exact addresses, pickup numbers and the executed RC are released the moment the broker accepts the request.'), h('div', { class: 'dw-row', style: 'margin-top:10px' }, [h('button', { class: 'dw-btn', onClick: req(loadId, (d2.origin || '') + ' → ' + (d2.destination || '')) }, 'Request to book')])]); };
       const loadRow = (x, scored) => h('div', { class: 'dw-book', style: 'cursor:default' }, [
-        h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, x.lane || (x.origin + ' → ' + x.destination)), scored ? h('span', { class: 'dw-pill', style: 'color:' + (x.score >= 70 ? '#4ade80' : x.score >= 45 ? '#fbbf24' : '#94a3b8') + ';border-color:currentColor' }, 'FIT ' + x.score + '/100') : (x.direct_to_you ? h('span', { class: 'dw-pill', style: 'color:#7cc0ff;border-color:currentColor' }, 'DIRECT OFFER') : null)]),
+        h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, String(x.lane || (x.origin + ' → ' + x.destination)).replace(/[\s,]+$/, '')), scored ? h('span', { class: 'dw-pill', style: 'color:' + (x.score >= 70 ? '#4ade80' : x.score >= 45 ? '#fbbf24' : '#94a3b8') + ';border-color:currentColor' }, 'FIT ' + x.score + '/100') : (x.direct_to_you ? h('span', { class: 'dw-pill', style: 'color:#7cc0ff;border-color:currentColor' }, 'DIRECT OFFER') : null)]),
         h('div', { class: 'dw-muted', style: 'margin-top:4px' }, [x.equipment, x.rate != null ? money(x.rate) : 'rate on request', x.miles ? num(x.miles) + ' mi' : null, (x.loaded_rpm || x.rpm) ? '$' + Number(x.loaded_rpm || x.rpm).toFixed(2) + '/mi' : null, x.deadhead_miles != null ? 'DH ~' + x.deadhead_miles + ' mi' : null, x.all_in_rpm ? 'all-in $' + x.all_in_rpm : null, x.pickup_date ? 'PU ' + x.pickup_date : null, x.broker, x.commodity, x.weight].filter(Boolean).join(' · ')),
         scored && Array.isArray(x.factors) ? h('div', { style: 'margin-top:4px' }, x.factors.map((f0) => h('span', { class: 'dw-chip', title: f0.detail || '' }, f0.factor + ' ' + f0.points + '/' + f0.max))) : null,
         x.requirements ? h('div', { class: 'dw-muted' }, 'Req: ' + x.requirements) : null,
@@ -1248,7 +1252,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const trialDays = p.trial_start && p.trial_end ? Math.max(1, Math.ceil((new Date(p.trial_end) - new Date(p.trial_start)) / 86400000) + 1) : null;
     let days = trialDays && p.status === 'trial' ? trialDays : 30;
     const body = h('div', { class: 'dw-muted' }, 'Loading…');
-    const opts = [[7, 'Last 7 days'], trialDays ? [trialDays, 'Trial window (' + p.trial_start + ' → ' + p.trial_end + ')'] : null, [30, 'Last 30 days'], [90, 'Last 90 days']].filter(Boolean);
+    const opts = [[7, 'Last 7 days'], trialDays ? [trialDays, 'Trial window (' + dwDay(p.trial_start) + ' → ' + dwDay(p.trial_end) + ')'] : null, [30, 'Last 30 days'], [90, 'Last 90 days']].filter(Boolean);
     const sel = h('select', { class: 'dw-in', style: 'width:auto', 'aria-label': 'Period', onChange: () => { days = Number(sel.value); paint(); } }, opts.map(([v, l]) => h('option', { value: v, selected: v === days }, l)));
     async function paint() {
       let k; try { k = await dispatcherMyKpis(days); } catch (e) { mount(body, err(e.message)); return; }

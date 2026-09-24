@@ -168,6 +168,40 @@ buttons (`.lcv-fsel` r=1639), which sit in their own scroller.
   Both scripts already read `process.env.CC_PASS`, so the command becomes `node …/cc-one.mjs 390 /dispatchers` with no credential
   on the line. Optional extra: a committed `.claude/settings.json` with `"permissions":{"allow":["Bash(node /tmp/claude-0/*)"]}`.
 
+## Agent / Dispatcher portal — pass 1 (24 Sep, cloud session; agent@lb.test, staging build)
+Personas on staging (auth.users, all `@lb.test`, SS-pipeline password): **agent** = both tracks (referral opted in + `dispatcher_profiles.status = verified`,
+one assigned carrier, two trucks — the widest persona, used for every shot), **agent2** and **dispatcher** = referral only (no dispatcher profile).
+`/app/agent/` is `app/carrier/app.js` in `__LB_AGENT` mode: shell tabs dashboard / referral / chain / earnings / payouts / verify / settings
+(`AGNAV_ALL`), and the dashboard hosts `app/agent/dispatcher-workspace.js` (today / board / trucks / bookings / brokers / money / messages /
+email / packet / kpis) once the status is trial / verified / active. Walked all 17 routes at 390 and 1366: full-page shot, height, buttons,
+overflow probe, console + 4xx. **No horizontal overflow anywhere, no 4xx beyond O8's `track_web_event`, no page error.** The `.dw-tabs` strip
+the probe flags (r=1146) scrolls inside itself; the page stays 390. Re-shot after every fix below.
+
+| # | Sev | Finding | Fix |
+|---|---|---|---|
+| A1 | P1 | **Every workspace tab on phone opened ~560px down**: the ID-verification card (400px, "Upload a government ID **to continue** … Applications without a verified ID are not moved to the skills test") + status accordion + clock sat above the tabs on Today, Board, Trucks, … — and the persona is already VERIFIED, so the copy was wrong for it | `app.js` ID card: past the skills test (trial / verified / active) the heading is "Upload a government ID before your first carrier hand-over" and the skills-test sentence is dropped; on phone (≤900) it folds to one line "⚠ Government ID still needed — tap to upload" (`<details>`). Desktop keeps the full card. Phone: dashboard 2,155 → **1,768**, board 3,179 → 2,791, trucks 3,519 → 3,132, kpis 1,387 → 999. |
+| A2 | P2 | Two navigations on phone: the sticky `.dw-tabs` strip (all ten tabs, scrolls sideways) AND the bottom bar the workspace paints into `.cp-tabbar` (Today · Board · Log · Bookings · More) | `.dw.dw-barred .dw-tabs{display:none}` ≤900px — `paintChrome` adds `dw-barred` when it takes the bar, `restoreChrome` removes it. Desktop strip unchanged. |
+| A9 | P2 | Phone top bar said **"Dashboard"** on every workspace tab — `paintChrome` looked for `.cp-top-title` (the carrier shell) but the agent shell's title is `.cp-title` | selector `.cp-top-title, .cp-title`. Titles now Today / Board / Trucks / … (harness column). |
+| A3 | P1 | **Referral tab = 4,969px on phone** for a dispatcher+partner: the live referral home (bl_agent_0402: link card, six tiles, "Where your money is", live referrals, Recent activity) with the legacy program block stacked under it — the same link a second time, the same seven KPI tiles, the same eight events again as "Latest activity" | with the home on top (`!refOnly`) the legacy block keeps only what the home lacks: the pending-verification card (hidden once approved), **Invite by email** (the in-app invite modal the home does not have) and "How your money works". Phone **4,969 → 3,605**, desktop 2,904 → 2,166. Referral-only accounts (home on the dashboard, program on this tab) are untouched — see OA1. |
+| A4 | P3 | Money as `$7.6`, `$9.9`, `$22.3`, `$98.1` (maximumFractionDigits only); "Latest activity" / verification chat / alerts as `7/19/2026, 1:04:07 PM` | `money9` min+max 2 decimals; `fmtWhen9` → "Jul 19, 1:04 PM" (year only when not this year) at the three `toLocaleString()` call sites in the agent shell. |
+| A6 | P2 | Email tab "Mailbox paused" empty state in a 72vh / 540px box (phone 1,205px, desktop 1,272px of nothing) | `dmail.js`: `.dm-main.dm-off` height auto, `.dm:has(>.dm-off)` min-height 0. Phone 1,205 → 844, desktop 1,272 → 968. |
+| A7 | P2 | Desktop sidebar: "Dispatcher · Partner" ran under the rail-collapse toggle ("Dispatcher · Partn⊟") | brand row gets `min-width:0` + ellipsis (carrier.css), and the agent shell passes the short family name (`Dispatcher` / `Partner`) — the full track label already sits in the side foot. |
+| A8 | P2 | Softphone dock (`dialer.js`) sat at `right:104px` (desktop) / `88px` (phone) to clear the live-chat bubble — but the portals dock that bubble in the header (`#lbc-fab.lbc-docked`), so the phone pill floated 100px into the content, over the KPI tiles | `lbd-solo` when the bubble is absent / docked / hidden (checked at 0 / 3 / 9 s): `right:18px`, phone `14px`. The "Reconnecting…" in the shots is the session proxy refusing `wss://rtc.telnyx.com` — harness noise. |
+| A10 | P3 | Trucks: "Unit T-101 **— ·** Dry Van" when year / make / model are empty | parts joined only when present |
+| A11 | P3 | Money: "Trial window: 2026-08-29 → 2026-09-11"; KPI range option the same | `dwDay` → "Aug 29 → Sep 11" |
+| A12 | P3 | Board: "Austin, TX → Nashville, **TN,**" (lane string from the feed ends in a comma) | trailing `[\s,]` trimmed on the board row |
+
+Walked clean (both widths): My Referrals, Earnings, Payouts, Verification (tracker + dispatch thread), Settings, Bookings, Brokers, Money, Messages, Packet, My KPIs.
+Desktop heights after: dashboard 1,563 · referral 2,166 · board 2,258 · trucks 2,580 · chain 768 · earnings 1,160 · payouts 948 · verify 1,234 · settings 1,056.
+
+## Agent / Dispatcher portal — OPEN (next)
+- **OA1 (P3)** Referral-only accounts (agent2@lb.test): the dashboard is the live referral home and the Referral tab is the legacy program block, so link / tiles / activity appear once per tab (phone 2,798 + 2,417). Cross-tab, not same-page — left alone; the same trim as A3 would apply if Yaseen wants the program tab to be explainer + invite only.
+- **OA2 (P3)** Trucks → "Last GPS 32.777, -96.797 · 2 h ago" — raw coordinates; no reverse geocoder in the feed.
+- **OA3 (P3, data)** Payouts: "✓ Verified By LoadBoot" beside "Documents Missing" (bank proof missing on the persona) reads contradictory; the account is verified, the proof document is not. Copy could say "Bank proof missing".
+- **OA4 (P3)** `#dashboard` reopens the workspace on the last tab (`sessionStorage.dw_tab`) — by design, but a deep link to `#dashboard` after Email lands on Email.
+- Not walked (writes / fixtures): Log a booking, Request to book, Post the truck, Add broker, RC upload, Messages send, ID upload, payout request, Nudge, Invite by email, the "More" sheet, Board "Details" modal, truck "Update availability" sheet; the dispatcher **application form** and **skills test** (need a persona in `applied` / `screening` / `skills_test` — none on staging); the first-visit track chooser (needs an account with no intent). Staging `track_web_event` 404 on every page = O8 (unchanged).
+- **Harness:** `docs/ux-audit-2026-09/harness/ag-walk.mjs` (+ `crop.mjs`, a Playwright-only PNG slicer — no PIL / ImageMagick in the container). `CC_EMAIL` (default agent@lb.test), `CC_TRACK` (both | referral | dispatcher — the login page's track chooser), `CC_PASS` from the environment; state saved per email. Three things it had to learn: (1) the agent shell has **no hashchange listener**, so every route is `about:blank` → fresh load (a same-page `goto('#tab')` just changes the hash and shoots the old screen); (2) `carrier-dark.css` gives `body` a `background-attachment:fixed` gradient and Chromium's fullPage capture paints it for the first viewport only — the harness injects `body{background-attachment:scroll}` for the shot (white page below the fold = artifact, not a bug); (3) the sign-in button has no `type=submit` — it clicks `button.cp-btn-lg` "Sign in", and the login is done once "Do both" (or the track from `CC_TRACK`) is chosen and "Already have an account? Sign in" toggled.
+
 ## PHASE 2 — SEO audit & fix, marketing site (Yaseen's word, 24 Sep 2026)
 Starts when the UX order above is finished (CC re-shoot → Agent/Dispatcher → Marketing site UX). His rule: **one page per
 session**, judged on LIVE Google Analytics 4 + Google Search Console data for that page, then fixed in the same session.
@@ -228,3 +262,8 @@ get-started, carriers, brokers, the dispatch-service pages), then the weekly rat
   CC2/CC3 confirmed. Harness committed to `docs/ux-audit-2026-09/harness/`. No DB change this session. NEXT per the order:
   **Agent/Dispatcher portal** (needs an agent/dispatcher staging persona — check docs/SS-PIPELINE-HANDOFF.md), then Marketing site UX,
   then Phase 2 SEO (Session 0 needs the googleapis network rule + secrets listed above). Still open: OCC1–OCC3, CC unwalked writes.
+- 2026-09-24 — Claude (cloud, branch claude/peaceful-volta-7aejxr, CC_PASS from the environment): merged funny-hamilton (CC re-shoot + CC4).
+  **Agent/Dispatcher portal pass 1** — A1–A12 (A5 folded into A1). UI only: app/carrier/app.js, app/agent/dispatcher-workspace.js,
+  app/shared/dmail.js, app/shared/dialer.js, app/carrier/carrier.css. No DB change. Phone: dashboard 2,155 → 1,768 · referral 4,969 → 3,605 ·
+  board 3,179 → 2,791 · email 1,205 → 844. Harness `ag-walk.mjs` + `crop.mjs` committed. NEXT per the order: **Marketing site UX**
+  (signed-out pages, 390 + 1366), then Phase 2 SEO. Still open: OA1–OA4, the unwalked writes above, OCC1–OCC3, O3 (Yaseen).
