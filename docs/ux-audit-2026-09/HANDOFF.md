@@ -128,14 +128,17 @@ Persona: `owner@lb.test` (staff_members active, widest permissions). Its staging
 24 nav routes at 390 and 1366: full-page shot, height, button count, overflow probe, console + 4xx. **Re-shoot after the fixes
 below is NOT done** — the auto-mode classifier blocked every Bash command that carried the fixture password (three tries), so
 the fixes are build-checked (`node --check`, BUILD OK) but not re-walked. See "Harness" at the end.
+**Re-shot 24 Sep (later cloud session, CC_PASS as an environment secret — it worked):** all 24 routes at 390 and 1366, every one
+sw=390 / 1366, no page error, no 4xx beyond O8 + OCC1. CC1's first diagnosis was wrong (see the row); CC4 is fixed.
 
 | # | Sev | Finding | Fix |
 |---|---|---|---|
-| CC1 | P1 | **Every tabbed screen scrolled sideways on phone** — Brokers & shippers 809px, Partner intake 788, Forms 710, Finance 562, Support 557, CRM 497, Settings 473, Email catalog 470, Compliance 404. `views/_tabbed.js` gave its in-page tab strip the classes `.cc-tabbar/.cc-tab` — the same names the shell gives the fixed phone bottom bar (`command-center.css` ≤780px), so each tabbed screen grew a second fixed bar (Directory / Broker trust / Broker SLA drawn over Today / Carriers / Post) | strip renamed `.cc-vtabs/.cc-vtab/.cc-vtab-n` (only `_tabbed.js` used them). Not re-shot. |
-| CC2 | P1 | **Task queue** = 15,996px on phone and 15,890 on desktop, 200 buttons: `listTasks(limit 200)` drawn in full | fetch unchanged; 25 rows + "Show 25 more · N left" from the cached list (`automation.js`) |
-| CC3 | P1 | **Email catalog** = 21,046px (228 emails in 8 preference groups, every group open) | each group is a `<details>`: closed ≤780px, open on desktop, open/closed remembered per group in sessionStorage; search still narrows every group. Desktop height unchanged by design (his own registry screen). |
+| CC1 | P1 | **Nine screens scrolled sideways on phone** — Brokers & shippers 809px, Partner intake 788, Forms 710, Finance 562, Support 557, CRM 497, Settings 473, Email catalog 470, Compliance 404. Pass 1 blamed the `_tabbed.js` strip sharing `.cc-tabbar/.cc-tab` with the shell's fixed phone bar; the rename was right (a second fixed bar) but the re-shoot showed **the same nine numbers** — the width came from elsewhere. Real causes (probe with the shell chrome excluded): (a) **17 views mount a bare `table.cc-table` with no `.cc-table-wrap` scroller** (partners, partnerIntake, forms, support, finance ×6, announcements, automationsAdmin, bi, emailLoads, formBuilder, notifications, outreach, pluginMarketplace, reports, seo, verificationCenter) — the table's min-content width (up to 1,351px on Email catalog) became the page width; (b) `.cc-seg` segmented filter is `inline-flex` with no wrap (Finance / CRM / Email catalog / Compliance); (c) Settings `.cc-set-row` = label + 240px input + Save on one line. | `command-center.css` ≤780px: unwrapped `.cc-content table.cc-table` gets `display:block;overflow-x:auto` (wrapped tables untouched — `:not(.cc-table-wrap > *)`), `.cc-seg` wraps, `.cc-set-row` stacks. Strip rename kept. **Re-shot: all 24 routes sw=390.** Desktop unchanged (1366 everywhere). |
+| CC2 | P1 | **Task queue** = 15,996px on phone and 15,890 on desktop, 200 buttons: `listTasks(limit 200)` drawn in full | fetch unchanged; 25 rows + "Show 25 more · N left" from the cached list (`automation.js`). Re-shot: **5,406 / 4,460px, 63 buttons.** |
+| CC3 | P1 | **Email catalog** = 21,046px (228 emails in 8 preference groups, every group open) | each group is a `<details>`: closed ≤780px, open on desktop, open/closed remembered per group in sessionStorage; search still narrows every group. Desktop height unchanged by design (his own registry screen). Re-shot: **phone 21,046 → 1,876px**; desktop 21,060. |
 | CC5 | **P1 (prod bug)** | **Website & marketing → "Top referrers"** 400 on every open: `cc_web_referrers` RETURNS TABLE(referrer_host …) and selected the bare column → 42702 "referrer_host is ambiguous", prod and staging alike (md5 `7f481f68…`). Same shape as C1. The four sibling `cc_web_*` RPCs were called as the staff persona on staging and return rows. | **`bl_ux_0437_web_referrers_ambiguous`** — table aliased, columns qualified. Staging: applied + called as owner@lb.test in the same txn ("(direct) · direct · 1 · 0"), committed. Prod: applied, md5 now `a88c830a…`, ACL unchanged (authenticated + service_role, anon never had it), anon-SECDEF count 33. |
-| CC6 | P2 (code-read, not runtime-verified) | Dispatchers & agents: the teardown `MutationObserver` checked `document.body.contains(presenceBox)`, but since bl_disp_0316 the presence/queue/feed nodes stay detached until the Work-queue tab opens → the first DOM mutation on the Roster tab cleared the 90 s poll and left the realtime channel | observer checks `host.isConnected` (what `dqTimer` already does). One-line change in `dispatchers.js`. |
+| CC6 | P2 (code-read, not runtime-verified) | Dispatchers & agents: the teardown `MutationObserver` checked `document.body.contains(presenceBox)`, but since bl_disp_0316 the presence/queue/feed nodes stay detached until the Work-queue tab opens → the first DOM mutation on the Roster tab cleared the 90 s poll and left the realtime channel | observer checks `host.isConnected` (what `dqTimer` already does). One-line change in `dispatchers.js`. Re-shot: the teardown now fires on leaving the screen (which is what exposed CC4's real trigger). |
+| CC4 | **P1 (prod bug, shared module)** | **`Maximum call stack size exceeded`** — pass 1 saw it on `/dispatchers` load; after CC6 it moved to the *next* route (`/dispatchers` → `/finance`). Stack: supabase-js `RealtimeClient._remove` ↔ `channel._trigger` recursing. `app/shared/dispatch-live.js` `ch.subscribe(cb)` called `sb.removeChannel(ch)` whenever `state.closed` — but `removeChannel` → `unsubscribe` → the same callback with `CLOSED` → `removeChannel` → … Fires on every CC teardown of the Dispatchers screen, and on any channel whose socket never connected (`leave()` could not reach a channel that had not reached SUBSCRIBED, so it lived on and recursed on its next status). Same module serves the dispatcher workspace. | `state.pending = ch` right after `sb.channel()`; `leave()` removes `state.ch \|\| state.pending` once (idempotent); the status callback just returns when closed — it never removes. Re-shot `/dispatchers` → `/finance`: no page error at 390 or 1366. |
 
 Walked clean (no overflow, no console error, no 4xx beyond O8's `track_web_event`): Today (3,147 / 1,966), Loads & trips, Market
 rates, Rate standards, Carriers, Document review, Carrier reminders, Live chat, Mailbox, Business, Templates, Integrations.
@@ -144,10 +147,7 @@ Wide `table.cc-table` elements on phone (Loads 753px, Task queue 1,028, Carriers
 buttons (`.lcv-fsel` r=1639), which sit in their own scroller.
 
 ## Command Center — OPEN (next)
-- **CC4 (P1, needs a stack trace)** `/dispatchers` throws `Maximum call stack size exceeded` on load at both widths (page still renders,
-  1,802 / 1,016px). Static read of dispatchers.js / dispatchers-roster.js / dispatch-live.js found no synchronous cycle
-  (paintPresence↔dqTick is guarded by `state.liveShown`; roster fetches are async). Run `cc-one.mjs 390 /dispatchers` — it prints
-  the stack — then fix.
+- ~~CC4~~ → fixed (see the table; `app/shared/dispatch-live.js`).
 - **OCC1 (P3, env drift, staging only)** staging edge functions `ga4-insights` (v14) and `gsc-insights` are deployed WITHOUT `x-lb-app` in
   `Access-Control-Allow-Headers`; the repo and prod (`gsc-insights` v20) have it. Every GA4/GSC card on Website & marketing fails
   CORS on a staging build. Fix = redeploy both to staging (`supabase functions deploy`), Yaseen's call. Pairs with O8.
@@ -155,9 +155,13 @@ buttons (`.lcv-fsel` r=1639), which sit in their own scroller.
 - **OCC3 (P3)** Loads & trips phone 5,827px (six sub-tabs + board table). Not looked at closely.
 - Not walked: any write (task Start/Done, approvals, staff invites, flags), the six Loads sub-tabs, Carrier 360 / Broker 360 drawers,
   Live chat conversation view, Settings sub-tabs beyond the first, drawer navigation (More → menu) on phone.
-- **Harness (read before the next CC run):** scripts are in the session scratchpad (`cc-walk.mjs` = all routes, `cc-one.mjs` = one
-  route + stack traces + optional `CC_ACTIONS`); both reuse a saved Playwright `storageState` (`cc-state.json`) when it exists,
-  so the password is needed once per session. The Bash auto-mode classifier denied every command with `CC_PASS='…'` on the
+- **Harness (read before the next CC run):** `docs/ux-audit-2026-09/harness/cc-walk.mjs` (committed 24 Sep — the scratchpad copy
+  died with its session). Copy it to the scratchpad and run `node cc-walk.mjs <390|1366> [route …]`: no routes = all 24 nav routes;
+  one route = full stack traces; `CC_STACKS=1` prints stacks for any run; `CC_SKIP=<selector>` excludes matches from the overflow
+  probe (it already excludes the shell bar / drawer / svg); `CC_ACTIONS=<js>` runs on the page before measuring. Shots land in
+  `./cc-shots/<width>-<route>.png`; it saves `cc-state.json` (Playwright storageState) after the first login, so the password is
+  needed once per session. Overflow probe compares against the requested width, NOT `innerWidth` — with `isMobile` Chromium zooms
+  out on overflow and `innerWidth` follows the content (the first probe called 809px "no overflow"). The Bash auto-mode classifier denied every command with `CC_PASS='…'` on the
   line after the first walk, and (later the same day) also blocked the session from writing its own `.claude/settings.local.json`
   allow rule (self-modification). **The way that works: Yaseen adds `CC_PASS` as an environment secret** (cloud environment →
   Edit → Environment variables / secrets; value = the staging test-account password in docs/SS-PIPELINE-HANDOFF.md §3, staging only).
@@ -218,3 +222,9 @@ get-started, carriers, brokers, the dispatch-service pages), then the weekly rat
   UX order). Plan + access list written above. From here googleapis.com is network-denied and no Google connector exists; he
   needs to open `*.googleapis.com` and add `GOOGLE_SA_KEY` / `GA4_PROPERTY_ID` / `GSC_SITE_URL` as environment secrets (or
   drop CSV exports) before Session 0.
+- 2026-09-24 — Claude (cloud, branch claude/funny-hamilton-517yvd, CC_PASS from the environment): merged upbeat-maxwell's CC pass 1,
+  **re-shot all 24 CC routes at 390 + 1366**. CC1's real cause = 17 bare `.cc-table`s + `.cc-seg` + Settings rows → three CSS rules,
+  all nine screens now 390 wide. **CC4 fixed** (`dispatch-live.js` removeChannel recursion — a prod bug on every Dispatchers teardown).
+  CC2/CC3 confirmed. Harness committed to `docs/ux-audit-2026-09/harness/`. No DB change this session. NEXT per the order:
+  **Agent/Dispatcher portal** (needs an agent/dispatcher staging persona — check docs/SS-PIPELINE-HANDOFF.md), then Marketing site UX,
+  then Phase 2 SEO (Session 0 needs the googleapis network rule + secrets listed above). Still open: OCC1–OCC3, CC unwalked writes.
