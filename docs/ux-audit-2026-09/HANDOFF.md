@@ -30,6 +30,8 @@ provider settings still need his explicit yes. Screens are judged at 390px (phon
 
 | B12 | P1 | Load cards: every action button on its own line on phone (My loads was a card inside a card → 290px action row; "Update pickup time"+"Docs" = 293px) | outer card chrome off on phone; packet labels shortened ("Carrier packet", "Packet after booking"). My Loads 4,212 → 3,589px. No action removed or rewired. |
 | B13 | P1 | Open-pool shipper freight exposed the shipper's pickup/delivery contacts to every approved broker before anyone claimed it | **`bl_ux_0430_shipper_pool_contacts`** — `cc_broker_shipment_inbox` returns contacts NULL + `contacts_hidden=true` while `assigned_broker is null`; the claiming broker sees them as before. Staging: rollback-txn test both cases (pool → null, assigned → shown). Prod: pre-flight md5 `c0879c50…` = staging, applied, `anon` still has no EXECUTE. UI says "Pickup & delivery contacts unlock when you claim this freight." |
+| B14 | P1 | "Post" (tab-bar FAB, hero button, dashboard banner) scrolled to a wizard buried under payables/KPIs/loads; async cards kept pushing it off-screen | wizard opens on its own at the top with "✕ Close" (focus view); trust-gate's goPost left as before |
+| B15 | P1 | Wizard validation = one red paragraph under the form; nothing on the fields | missing lane fields outlined red + `aria-invalid`, first one focused and scrolled to centre; steps 2–3 scroll the message into view |
 
 ## Broker portal — OPEN (next)
 - **O1b (P2)** Load cards still carry up to 5 actions; a "More ⋯" menu for Docs / Cancel would take one more row off each card. Delivered loads still offer "Request change" — confirm with Yaseen what that is for after delivery.
@@ -46,3 +48,4 @@ provider settings still need his explicit yes. Screens are judged at 390px (phon
 ## LOG (append only)
 - 2026-09-24 — Claude (cloud session): broker portal pass 1. Fixed B1–B11 in app/partner/app.js, app/partner/partner-premium.css, app/shared/ui/liveChatCore.js. esbuild OK, BUILD OK, re-shot. NEXT: O1 (load-card actions) then the unwalked flows above.
 - 2026-09-24 — Claude: Yaseen said "suggest and implement". O9 → B13 (bl_ux_0430 staging+prod), O1 → B12. O3 (Auth min password 8) needs the Supabase dashboard — no API from here; steps given to Yaseen.
+- 2026-09-24 — Claude: B14 focus-view post wizard, B15 field-level validation (step 1). Verified on staging build: 8 fields flagged, focus o_street, Close returns to dashboard.

@@ -2529,6 +2529,20 @@ async function brokerDash(user, ov) {
     }
     const back = h('button', { class: 'cp-btn ghost', onClick: () => { if (step > 0) { step--; renderStep(); } } }, 'Back');
     const nextLbl = step < STEPS.length - 1 ? 'Next' : (confirmDup ? 'Submit anyway' : 'Submit load');
+    // ux-audit 2026-09-24: a missing field used to produce one red paragraph under the form and nothing
+    // on the field itself. Now the fields are outlined, the first one gets focus, and the message scrolls in.
+    const plFlag = (keys) => {
+      let first9 = null;
+      try {
+        stepHost.querySelectorAll('[data-fkey]').forEach((el9) => {
+          const bad9 = keys.indexOf(el9.getAttribute('data-fkey')) >= 0;
+          el9.style.borderColor = bad9 ? '#dc2626' : ''; el9.setAttribute('aria-invalid', bad9 ? 'true' : 'false');
+          if (bad9 && !first9) first9 = el9;
+        });
+        if (first9) { first9.focus({ preventScroll: true }); first9.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        else if (err.isConnected) err.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } catch (_) {}
+    };
     const next = h('button', { class: 'cp-btn', onClick: async () => {
       err.textContent = ''; err.className = 'cp-err';
       if (step === 0) {
@@ -2555,7 +2569,13 @@ async function brokerDash(user, ov) {
           if (!(sp0.city || '').trim()) need.push('extra stop ' + (i0 + 1) + ' city');
           if (!/^[A-Za-z]{2}$/.test((sp0.state || '').trim())) need.push('extra stop ' + (i0 + 1) + ' state (2 letters)');
         });
-        if (need.length) { err.textContent = 'Required: ' + need.join(', ') + '.'; return; }
+        if (need.length) {
+          err.textContent = 'Required: ' + need.join(', ') + '.';
+          const zip9 = (v9) => /^\d{5}(-\d{4})?$/.test((v9 || '').trim()), st9 = (v9) => /^[A-Za-z]{2}$/.test((v9 || '').trim());
+          plFlag([['o_street', !(w.o_street || '').trim()], ['o_city', !(w.o_city || '').trim()], ['o_state', !st9(w.o_state)], ['o_zip', !zip9(w.o_zip)],
+            ['d_street', !(w.d_street || '').trim()], ['d_city', !(w.d_city || '').trim()], ['d_state', !st9(w.d_state)], ['d_zip', !zip9(w.d_zip)]].filter((x9) => x9[1]).map((x9) => x9[0]));
+          return;
+        }
         const stU = (x) => String(x || '').trim().toUpperCase();
         w.origin_full = [w.o_street.trim(), w.o_city.trim(), stU(w.o_state) + ' ' + w.o_zip.trim()].join(', ');
         w.destination_full = [w.d_street.trim(), w.d_city.trim(), stU(w.d_state) + ' ' + w.d_zip.trim()].join(', ');
@@ -2578,7 +2598,7 @@ async function brokerDash(user, ov) {
         if (!w.delivery_date) m1.push('delivery date');
         if (w.sched_del === 'FCFS' && !/\d{2}:\d{2}\u2013\d{2}:\d{2}/.test(w.delivery_window || '')) m1.push('delivery FCFS window (from & to)');
         if (w.sched_del === 'Appointment' && !(w.del_appt || '').trim()) m1.push('delivery appointment time');
-        if (m1.length) { err.textContent = 'Required: ' + m1.join(', ') + '.'; return; }
+        if (m1.length) { err.textContent = 'Required: ' + m1.join(', ') + '.'; plFlag([]); return; }
         if (w.delivery_date < w.pickup_date) { err.textContent = 'Delivery date cannot be before the pickup date.'; return; }
         const tod9 = new Date().toISOString().slice(0, 10);
         if (w.pickup_date < tod9) { err.textContent = 'Pickup date is in the past.'; return; }
@@ -2688,7 +2708,7 @@ async function brokerDash(user, ov) {
         }
         const anySvc9 = w.load_method_pickup === 'Drop & hook' || w.load_method_delivery === 'Drop trailer' || w.lumper_any || w.driver_assist_required || w.team_required;
         if (anySvc9 && !w.svc_rates_ok) m2.push('agree to the industry-standard rates for the extra services you selected (checkbox)');
-        if (m2.length) { err.textContent = 'Required: ' + m2.join(', ') + '.'; return; }
+        if (m2.length) { err.textContent = 'Required: ' + m2.join(', ') + '.'; plFlag([]); return; }
       }
       if (step === 3) {
         const missing = [];
@@ -4680,8 +4700,9 @@ function packetAgreementCards(skipPacket) {
     document.head.appendChild(st);
   }
   let postFoldOpen = false;
+  let __postFocus = false; // ux-audit 2026-09-24 — see openPostFromBar
   if (typeof __openPostOnBoot !== 'undefined' && __openPostOnBoot) { postFoldOpen = true; setTimeout(() => { try { const f = document.getElementById('bd-postload'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} }, 700); }
-  const postFoldBanner = () => h('div', { style: 'cursor:pointer;border-radius:18px;overflow:hidden;background:#fff;border:1px solid #e6ebf3;box-shadow:0 12px 32px -24px rgba(16,34,59,.18);margin-bottom:14px', onClick: () => { postFoldOpen = true; brender(); } }, [
+  const postFoldBanner = () => h('div', { style: 'cursor:pointer;border-radius:18px;overflow:hidden;background:#fff;border:1px solid #e6ebf3;box-shadow:0 12px 32px -24px rgba(16,34,59,.18);margin-bottom:14px', onClick: () => { __postFocus = true; postFoldOpen = true; brender(); } }, [
     h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;flex-wrap:wrap' }, [
       h('div', { style: 'display:flex;gap:12px;align-items:center' }, [
         h('div', { style: 'width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:linear-gradient(135deg,#0883F7,#0967d2);color:#fff;box-shadow:0 8px 18px -8px rgba(8,131,247,.6)' }, '\u26a1'),
@@ -4701,7 +4722,7 @@ function packetAgreementCards(skipPacket) {
       h('h2', null, greet + (ov.company ? ', ' + ov.company : '')),
       h('div', { class: 'sub' }, new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' \u00b7 Your freight command center \u2014 post, track, and settle every load with GPS proof.'),
       h('div', { class: 'bd-qa' }, [
-        h('button', { class: 'p', onClick: () => { postFoldOpen = true; brender(); setTimeout(() => { const f = document.getElementById('bd-postload'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); } }, '\u26a1 Post a load'),
+        h('button', { class: 'p', onClick: () => { __postFocus = true; postFoldOpen = true; brender(); } }, '\u26a1 Post a load'),
         h('button', { class: 'g', onClick: () => bgo('carriers') }, '\ud83d\ude9b Browse carriers'),
         h('button', { class: 'g', onClick: () => bgo('claims') }, '\ud83d\udcb0 Claims'),
         h('button', { class: 'g', onClick: () => bgo('onboarding') }, '\ud83d\udcc4 Documents'),
@@ -4831,7 +4852,11 @@ function packetAgreementCards(skipPacket) {
   // "post to this carrier", the #post deep link and the bar's centre action. If the partner
   // is not cleared to post yet, #bd-postload holds the gate card and they land on that —
   // which is the honest answer, not a dead button.
+  // ux-audit 2026-09-24: the Post button used to scroll the dashboard to a wizard buried under the
+  // payables, KPIs and loads (and async cards kept pushing it down mid-scroll). It now opens the
+  // wizard on its own, top of the page, with a Close — the Uber "one task on screen" pattern.
   function openPostFromBar() {
+    __postFocus = true;
     postFoldOpen = true;
     if (btab !== 'dashboard') bgo('dashboard'); else brender();
     setTimeout(() => { const f = document.getElementById('bd-postload'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80);
@@ -4945,7 +4970,14 @@ function packetAgreementCards(skipPacket) {
         bdRate9.appendChild(card9);
       })();
       const trustGate = () => { const trustGateHost = h('div'); mountBrokerTrust(trustGateHost, { goPacket: () => bgo('onboarding'), goPost: () => { __trustCanPost = true; postFoldOpen = true; brender(); }, onStatus: (s9) => { if (s9) __trustSt = s9; if (s9 && s9.can_post && !__trustCanPost) { __trustCanPost = true; brender(); } } }); return trustGateHost; };
-      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(true), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : verifyGateCard(ov))]), h('div', { class: 'bd-peek' }, [myLoadsCard, h('button', { class: 'cp-btn cp-btn-sm ghost bd-peek-all', onClick: () => bgo('loads') }, 'View all loads \u2192')]), bdNetwork(), bdActivity()]));
+      if (__postFocus && postFoldOpen && (ov.onboarded || (ov.kind === 'broker' && __trustCanPost))) {
+        mount(bContent, h('div', { id: 'bd-postload' }, [
+          h('div', { style: 'display:flex;justify-content:flex-end;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { __postFocus = false; postFoldOpen = false; brender(); } }, '\u2715 Close')),
+          form]));
+        try { window.scrollTo(0, 0); } catch (_) {}
+        return;
+      }
+      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(true), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { __postFocus = false; postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : verifyGateCard(ov))]), h('div', { class: 'bd-peek' }, [myLoadsCard, h('button', { class: 'cp-btn cp-btn-sm ghost bd-peek-all', onClick: () => bgo('loads') }, 'View all loads \u2192')]), bdNetwork(), bdActivity()]));
       return;
     }
     mount(bContent, h('div', null, PAGES[btab] || []));
