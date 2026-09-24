@@ -122,6 +122,45 @@ heights: dashboard 3,086 · trips 4,889 · documents 6,207 (pre-C3; re-shoot) ·
   Request-to-book / Propose-rate SENDS, Safety incident sheet (needs an active trip), Account → Verification/Business
   form submits.
 
+## Command Center — pass 1 (24 Sep, cloud session; owner@lb.test, staging build)
+Persona: `owner@lb.test` (staff_members active, widest permissions). Its staging password was reset to the SS-pipeline value
+(staging only). Same harness as the carrier pass; the CC login form is plain email + password (no role picker). Walked all
+24 nav routes at 390 and 1366: full-page shot, height, button count, overflow probe, console + 4xx. **Re-shoot after the fixes
+below is NOT done** — the auto-mode classifier blocked every Bash command that carried the fixture password (three tries), so
+the fixes are build-checked (`node --check`, BUILD OK) but not re-walked. See "Harness" at the end.
+
+| # | Sev | Finding | Fix |
+|---|---|---|---|
+| CC1 | P1 | **Every tabbed screen scrolled sideways on phone** — Brokers & shippers 809px, Partner intake 788, Forms 710, Finance 562, Support 557, CRM 497, Settings 473, Email catalog 470, Compliance 404. `views/_tabbed.js` gave its in-page tab strip the classes `.cc-tabbar/.cc-tab` — the same names the shell gives the fixed phone bottom bar (`command-center.css` ≤780px), so each tabbed screen grew a second fixed bar (Directory / Broker trust / Broker SLA drawn over Today / Carriers / Post) | strip renamed `.cc-vtabs/.cc-vtab/.cc-vtab-n` (only `_tabbed.js` used them). Not re-shot. |
+| CC2 | P1 | **Task queue** = 15,996px on phone and 15,890 on desktop, 200 buttons: `listTasks(limit 200)` drawn in full | fetch unchanged; 25 rows + "Show 25 more · N left" from the cached list (`automation.js`) |
+| CC3 | P1 | **Email catalog** = 21,046px (228 emails in 8 preference groups, every group open) | each group is a `<details>`: closed ≤780px, open on desktop, open/closed remembered per group in sessionStorage; search still narrows every group. Desktop height unchanged by design (his own registry screen). |
+| CC5 | **P1 (prod bug)** | **Website & marketing → "Top referrers"** 400 on every open: `cc_web_referrers` RETURNS TABLE(referrer_host …) and selected the bare column → 42702 "referrer_host is ambiguous", prod and staging alike (md5 `7f481f68…`). Same shape as C1. The four sibling `cc_web_*` RPCs were called as the staff persona on staging and return rows. | **`bl_ux_0437_web_referrers_ambiguous`** — table aliased, columns qualified. Staging: applied + called as owner@lb.test in the same txn ("(direct) · direct · 1 · 0"), committed. Prod: applied, md5 now `a88c830a…`, ACL unchanged (authenticated + service_role, anon never had it), anon-SECDEF count 33. |
+| CC6 | P2 (code-read, not runtime-verified) | Dispatchers & agents: the teardown `MutationObserver` checked `document.body.contains(presenceBox)`, but since bl_disp_0316 the presence/queue/feed nodes stay detached until the Work-queue tab opens → the first DOM mutation on the Roster tab cleared the 90 s poll and left the realtime channel | observer checks `host.isConnected` (what `dqTimer` already does). One-line change in `dispatchers.js`. |
+
+Walked clean (no overflow, no console error, no 4xx beyond O8's `track_web_event`): Today (3,147 / 1,966), Loads & trips, Market
+rates, Rate standards, Carriers, Document review, Carrier reminders, Live chat, Mailbox, Business, Templates, Integrations.
+Wide `table.cc-table` elements on phone (Loads 753px, Task queue 1,028, Carriers 738, Reminders 674, Templates 659) scroll inside
+`.cc-table-wrap`; the page itself does not (sw=390) — left alone. Desktop: nothing wider than 1366 except Live chat's filter
+buttons (`.lcv-fsel` r=1639), which sit in their own scroller.
+
+## Command Center — OPEN (next)
+- **CC4 (P1, needs a stack trace)** `/dispatchers` throws `Maximum call stack size exceeded` on load at both widths (page still renders,
+  1,802 / 1,016px). Static read of dispatchers.js / dispatchers-roster.js / dispatch-live.js found no synchronous cycle
+  (paintPresence↔dqTick is guarded by `state.liveShown`; roster fetches are async). Run `cc-one.mjs 390 /dispatchers` — it prints
+  the stack — then fix.
+- **OCC1 (P3, env drift, staging only)** staging edge functions `ga4-insights` (v14) and `gsc-insights` are deployed WITHOUT `x-lb-app` in
+  `Access-Control-Allow-Headers`; the repo and prod (`gsc-insights` v20) have it. Every GA4/GSC card on Website & marketing fails
+  CORS on a staging build. Fix = redeploy both to staging (`supabase functions deploy`), Yaseen's call. Pairs with O8.
+- **OCC2 (P3)** Templates 4,868 / 4,502px and Carrier reminders 4,092px on phone — long tables, nothing broken; not looked at closely.
+- **OCC3 (P3)** Loads & trips phone 5,827px (six sub-tabs + board table). Not looked at closely.
+- Not walked: any write (task Start/Done, approvals, staff invites, flags), the six Loads sub-tabs, Carrier 360 / Broker 360 drawers,
+  Live chat conversation view, Settings sub-tabs beyond the first, drawer navigation (More → menu) on phone.
+- **Harness (read before the next CC run):** scripts are in the session scratchpad (`cc-walk.mjs` = all routes, `cc-one.mjs` = one
+  route + stack traces + optional `CC_ACTIONS`); both reuse a saved Playwright `storageState` (`cc-state.json`) when it exists,
+  so the password is needed once per session. The Bash auto-mode classifier denied every command with `CC_PASS='…'` on the
+  line after the first walk. Two ways out: Yaseen adds a Bash permission rule for `node …/cc-*.mjs`, or he runs the first
+  (state-saving) login himself and the session only reuses the state file.
+
 ## LOG (append only)
 - 2026-09-24 — Claude (cloud session): broker portal pass 1. Fixed B1–B11 in app/partner/app.js, app/partner/partner-premium.css, app/shared/ui/liveChatCore.js. esbuild OK, BUILD OK, re-shot. NEXT: O1 (load-card actions) then the unwalked flows above.
 - 2026-09-24 — Claude: Yaseen said "suggest and implement". O9 → B13 (bl_ux_0430 staging+prod), O1 → B12. O3 (Auth min password 8) needs the Supabase dashboard — no API from here; steps given to Yaseen.
@@ -134,3 +173,9 @@ heights: dashboard 3,086 · trips 4,889 · documents 6,207 (pre-C3; re-shoot) ·
   GPS row ever). DB: bl_ux_0434 (staging + prod, DDL), bl_ux_0435 (staging + prod, app_private cron copy). UI: C11 delete
   sheet. Prod anon-SECDEF names: 39, unchanged. NEXT: the "not yet walked" list needs personas/fixtures (driver login, an
   active consented trip, a throwaway carrier for onboarding 5–6) — then **Command Center** per the order. O10 closed (bl_sec_0436). Still waiting on Yaseen: O3 (Auth min password 8 — dashboard, steps given).
+- 2026-09-24 — Claude (cloud, branch claude/upbeat-maxwell-fqrpbq): **Command Center pass 1** — CC1 (tab-strip class collision → every
+  tabbed screen sideways on phone), CC2 (task queue paging), CC3 (email catalog folds), CC6 (dispatchers teardown guard). DB:
+  **bl_ux_0437** (staging + prod; `cc_web_referrers` 42702 — a prod bug, Top referrers never loaded). Prod anon-SECDEF count 33.
+  Staging `owner@lb.test` password reset to the SS-pipeline value. Re-shoot blocked by the classifier (see Harness). NEXT: get the
+  harness running again → re-shoot the 9 tabbed routes + Task queue + Email catalog → CC4 stack trace → then **Agent/Dispatcher
+  portal** per the order.

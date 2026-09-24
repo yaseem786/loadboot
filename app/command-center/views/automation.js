@@ -58,7 +58,10 @@ function goFor(t) {
 
 
 export function renderAutomation(host) {
-  let state = { status: 'open' };
+  // UX audit CC2 (24 Sep 2026): the queue fetched 200 tasks and drew every one (phone 15,996px, 200 buttons).
+  // The fetch is unchanged; the table shows PAGE rows and grows from the cached list on "Show more".
+  const PAGE = 25;
+  let state = { status: 'open', all: [], shown: PAGE };
   const healthHost = el('div');
   const listHost = el('div', { class: 'cc-table-wrap' });
 
@@ -80,6 +83,13 @@ export function renderAutomation(host) {
     try { rows = await listTasks({ status: state.status || null, limit: 200 }); }
     catch (e) { showError(listHost, humanizeError(e), loadTasks); return; }
     if (!rows || !rows.length) { showEmpty(listHost, 'No tasks in this queue.'); return; }
+    state.all = rows; state.shown = PAGE;
+    drawTasks();
+  }
+
+  function drawTasks() {
+    const rows = state.all.slice(0, state.shown);
+    const left = state.all.length - rows.length;
     const table = el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, [
         el('th', null, 'Task'), el('th', null, 'Type'), el('th', null, 'Priority'),
@@ -117,7 +127,9 @@ export function renderAutomation(host) {
         ]);
       })),
     ]);
-    mount(listHost, table);
+    mount(listHost, [table, left > 0 ? el('div', { style: 'padding:12px 0 2px;text-align:center' },
+      el('button', { class: 'cc-chip-btn', type: 'button', onClick: () => { state.shown += PAGE; drawTasks(); } },
+        'Show ' + Math.min(PAGE, left) + ' more · ' + left + ' left')) : '']);
   }
 
   const tbHost = el('div');
