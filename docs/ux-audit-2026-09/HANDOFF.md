@@ -81,15 +81,26 @@ session proxy: harness noise, not a product bug.
 | C7 | P3 | Dashboard "Active trips" row read `in_transit · 781 mi · $2,850` beside an "On The Road" pill | raw status dropped from the subtitle |
 | C8 | P3 | Settings → Delete account: "Read the full policy →" glued to the red button | link inline-block with a 14px gap |
 | C9 | P3 | Active trip countdown read "⚠ DELIVERY OVERDUE BY **-130:26:25**" | ≥48 h shows "5 d 10 h"; the minus is gone (the label already says overdue) |
+| C10 | **P1 (prod bug)** | **No phone or ELD GPS ping has landed since bl_drv_0345a.** `cc_pocket_post_location` writes `source = owner_app / driver_app` and `eld_ingest` writes `eld:<provider>`, but `trip_locations_source_check` (cvy_trip_tracking) still allowed only the original seven values → 23514 on every insert. The client swallows it (`postLoc` → false, trip-map `.catch(() => {})`), so it was invisible: prod holds **one** `trip_locations` row ever (1 Jul), staging only `carrier` rows; the "Tracking dark" reminders fire because nothing ever lands. Found by the Request-to-book walk with geolocation granted (400 on the ping). | **`bl_ux_0434_trip_locations_source_check`** — check widened to the nine names + `like 'eld:%'`. DDL only. Staging: rollback-txn insert of owner_app / driver_app / eld:samsara / eld:generic accepted, `portal` still rejected; carrier-owner walk re-run → no 400 (harness rows deleted after). Prod applied; constraint def verified; anon-SECDEF names = 39, unchanged (same six investor names as O10). Prod had 0 consented active trips at the time, so no live trip lost pings today. |
+| C11 | P3 (native dialog) | Settings → "Delete my account" was a native `confirm()` | In-app sheet (`openModal`): what happens, "Keep my account" beside the red "Yes, delete my account"; the request fires only from the red button. Opened + closed on staging; write NOT exercised. |
+| C12 | P3 (copy) | Alerts: "🛰 Tracking dark for **9275 min** — turn GPS back on" (×52 on the staging persona); same raw minutes in the broker notice, staff notice and audit line | **`bl_ux_0435_tracking_blackout_span`** — anchor replace on `app_private.cron_tracking_blackout` (4 anchors, counted before execute; staging md5 `9bf40ce9…`, prod `af29d6fb…` differ elsewhere but the four lines matched): ≥48 h "6 d 10 h" · ≥2 h "2 h 15 min" · else "45 min". Staging + prod applied; span expression checked for 45/119/135/2879/9275. Existing notification rows keep the old text. |
+| OC1 → C13 | P2 | Fleet phone 5,489px: ELD card carried the six Samsara/Motive steps + admin note open before a provider was picked | Steps + note behind "How to get your Samsara token (6 steps)" `<details>` — closed ≤560px, open on desktop; phone drops the intro line the benefit box repeats; Show + Test & connect on one row. Copy, steps, benefit box and WhatsApp box unchanged. Fleet phone **5,489 → 5,032px**; ELD card 1,641 → 1,184. |
 
 Walked (phone 390 + desktop 1366, every nav tab + onboarding/notifications/settings): no horizontal overflow anywhere
 (Account's nav chips scroll inside their own strip — the overflow probe flags them, the page does not scroll). Desktop
 heights: dashboard 3,086 · trips 4,889 · documents 6,207 (pre-C3; re-shoot) · fleet 3,630 · finance 3,102 · account 3,009.
 
 ## Carrier portal — OPEN (next)
-- **OC1 (P2)** Fleet on phone = 5,489px: the ELD & telematics card carries the whole Samsara/Motive token guide, the
-  benefit box and the WhatsApp help box inline even before a provider is picked. Owner-crafted conversion copy
-  (eld-connect.js) — fold the numbered steps behind the provider select, keep the benefit box. Not touched.
+- ~~OC1~~ → C13 (done).
+- **OC5 (P3, no fix)** Account tab on phone = **5,727px**, but it is every section in one column (Profile 286 · Verification 381 ·
+  Business 390 · **Dispatch preferences 1,667** · Security 315 · Notifications 628 · Payments 412 · Support 195 · Legal 307 ·
+  Danger 333) and the chip strip jumps between them. The 1,667px is a real form (equipment, lanes, rates, toggles), not dead
+  space — left alone. Desktop 3,009.
+- **OC6 (P3)** Safety → "+ Add contact" with empty fields shows the server's "name and phone required" inline — plain enough,
+  but no client-side check; and the "Report a problem on this trip" incident sheet only renders with an active trip (none on
+  the persona) — not walked.
+- **OC7 (P3)** `/app/carrier/#driver` sets ROLE=driver but still shows the role picker (`roleChosen` only reads `?role=`).
+  Driver mode itself needs a driver persona on staging — none in SS-PIPELINE-HANDOFF; not walked.
 - **OC2 (P3)** Ratings/Health on phone = 4,573px (score, breakdown, reviews, trust profile, "how your score works" all in
   one column). Nothing broken; a fold on the explainer would take ~600px off.
 - **OC3 (P3)** Desktop My Loads still renders the full cancellation panel + GPS evidence on months-old cancelled loads
@@ -98,10 +109,15 @@ heights: dashboard 3,086 · trips 4,889 · documents 6,207 (pre-C3; re-shoot) ·
   non-owner carrier login (staff / a second admin, if those exist) would get "not a carrier account" on Support and
   announcements. I did not verify whether such logins exist; C1 did not change the scoping.
 - Staging `track_web_event` 404 on every page = O8 (unchanged).
-- Not yet walked: driver mode (`Driver` sign-in choice, driver-mode.js), Post availability form (centre FAB), Load Board
-  "Request to book" / "Propose rate" writes, W-9 wizard and agreement e-sign, ELD connect, Safety SOS, referral link
-  copy, Alerts tab actions, Account → Verification/Business forms, Delete-account request (confirm() — same native
-  dialog pattern as O11 was on the broker side).
+- Walked this session (phone 390): Post availability sheet (opens full-screen; empty submit → "Truck required" toast +
+  field outline, fine), Request to book + Propose rate modals (open, no overflow; sends NOT exercised), Safety tab, Alerts tab
+  (filters / Mark all read / Open → layout fine), Settings (referral code + Copy my link, devices list, delete sheet),
+  Onboarding step 1 (94%; steps 2–6 "Save & continue" would rewrite the persona's onboarding — not walked), ELD card fold
+  open/closed. Harness needs `geolocation` + `permissions:['geolocation']` on the context or Request-to-book waits on the
+  location modal.
+- Not yet walked: driver mode (needs a driver persona), W-9 wizard + agreement e-sign (onboarding steps 5–6, writes),
+  Request-to-book / Propose-rate SENDS, Safety incident sheet (needs an active trip), Account → Verification/Business
+  form submits.
 
 ## LOG (append only)
 - 2026-09-24 — Claude (cloud session): broker portal pass 1. Fixed B1–B11 in app/partner/app.js, app/partner/partner-premium.css, app/shared/ui/liveChatCore.js. esbuild OK, BUILD OK, re-shot. NEXT: O1 (load-card actions) then the unwalked flows above.
@@ -110,3 +126,9 @@ heights: dashboard 3,086 · trips 4,889 · documents 6,207 (pre-C3; re-shoot) ·
 - 2026-09-24 — Claude (cloud): B16–B28. DB: bl_ux_0431 (staging + prod, additive `board.load_id`). Staging passwords for shipper@lb.test / facility@lb.test reset to the SS-pipeline value (staging only). Harness note: global Playwright at /opt/node22/lib/node_modules/playwright, Chromium needs `--ignore-certificate-errors --disable-http2` behind the session proxy. NEXT: O11 (claim review sheet) → O14 (shipper phone length) → then Carrier portal per the order.
 - 2026-09-24 — Claude (cloud): B29–B34 (O11–O15 closed). DB: bl_ux_0432 (staging + prod, copy only, app_private). Prod anon-SECDEF names diffed: 39 = baseline 33 + 6 investor-lane names (see O10). Broker/shipper/facility pass is DONE except O1b/O3/O7/O8. NEXT: **Carrier portal** (carrier-owner@lb.test, /app/carrier/) — same harness, same per-tab shot loop; first pass = phone height + overflow + console per tab, then fix.
 - 2026-09-24 — Claude (cloud): **Carrier portal pass 1** — C1–C9. DB: bl_ux_0433 (staging + prod; two `public` SECURITY DEFINER RPCs re-created with the org lookup qualified — a real prod bug, every carrier's Support tickets and announcements were failing since wave K). UI: app/carrier/app.js, carrier-dark.css, dispatcher-desk.js. Phone: trips 6,777 → 2,775 · documents 7,364 → 4,141 · dispatcher 5,259 → 4,657 · dashboard 4,933 → 4,669. NEXT: OC1 (Fleet ELD fold) → unwalked carrier flows above → then Command Center per the order.
+- 2026-09-24 — Claude (cloud, branch claude/gallant-johnson-9qvo91): OC1 → C13 (eld-connect.js fold). Flow walk found **C10**
+  — `trip_locations_source_check` rejected every owner_app / driver_app / eld:<provider> ping since bl_drv_0345a (prod: one
+  GPS row ever). DB: bl_ux_0434 (staging + prod, DDL), bl_ux_0435 (staging + prod, app_private cron copy). UI: C11 delete
+  sheet. Prod anon-SECDEF names: 39, unchanged. NEXT: the "not yet walked" list needs personas/fixtures (driver login, an
+  active consented trip, a throwaway carrier for onboarding 5–6) — then **Command Center** per the order. Still waiting on
+  Yaseen: O3 (Auth min password), O10 (39 vs 33 baseline).
