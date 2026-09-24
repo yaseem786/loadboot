@@ -97,5 +97,10 @@ export async function disablePush() {
 export async function isPushEnabled() {
   if (_native()) { let on = false; try { on = localStorage.getItem('lb_push_on') === '1' && !!_apnsKey(); } catch (_) {} return on; }
   if (!pushSupported()) return false;
-  try { const reg = await navigator.serviceWorker.ready; return !!(await reg.pushManager.getSubscription()); } catch (_) { return false; }
+  // ux-audit 2026-09-24: `serviceWorker.ready` never settles when no worker is registered
+  // (dev servers, some in-app browsers), and the Account page's push button then sat on "…" for ever.
+  try {
+    const reg = await Promise.race([navigator.serviceWorker.ready, new Promise((_, rej) => setTimeout(() => rej(new Error('sw-timeout')), 4000))]);
+    return !!(await reg.pushManager.getSubscription());
+  } catch (_) { return false; }
 }

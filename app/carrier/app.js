@@ -3275,7 +3275,7 @@ async function appView(user) {
                 const em9 = h('div', { class: 'cp-err' });
                 const close9 = openModal('🔐 Set up two-factor', [
                   h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, '1. Open Google Authenticator (or any TOTP app) → add account → scan this code.'),
-                  en9.totp && en9.totp.qr_code ? h('div', { style: 'background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center', html: en9.totp.qr_code }) : null,
+                  en9.totp && en9.totp.qr_code ? h('div', { style: 'background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center' }, /^data:/i.test(en9.totp.qr_code) ? h('img', { src: en9.totp.qr_code, alt: 'Scan with your authenticator app', width: 200, height: 200 }) : h('div', { html: en9.totp.qr_code })) : null,  // ux-audit 2026-09-24: Supabase sends a data: URI; injecting it as HTML printed the prefix beside the code
                   h('div', { class: 'cp-row-s', style: 'margin:8px 0;word-break:break-all' }, 'Can’t scan? Enter this key manually: ' + ((en9.totp && en9.totp.secret) || '')),
                   h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, '2. Type the 6-digit code the app shows:'),
                   code9, em9,

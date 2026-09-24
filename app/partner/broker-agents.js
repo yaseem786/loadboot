@@ -45,7 +45,16 @@ export function mountBrokerAgents(host) {
   mount(host, h('div', { class: 'bt-wrap' }, [
     h('div', { class: 'bt-card' }, [
       h('h3', null, 'Agents & team'),
-      h('div', { class: 'bt-sub' }, 'Agents post loads under your MC. Every posting shows your legal name and MC, the rate confirmation has to be on your paper, and you can pull an agent’s access at any time — their open postings under you come down with it (loads they post for other brokerages are not yours and stay untouched). Nothing an unconfirmed agent posts can be booked. Agents who declare you also get a 6-digit code emailed to your FMCSA-listed address — approving here is the same thing, one click.'),
+      // ux-audit 2026-09-24 (O5): was one 12-line paragraph on a phone; the three facts first, the fine print on demand.
+      h('ul', { class: 'bt-sub', style: 'margin:6px 0 0;padding-left:18px;line-height:1.55' }, [
+        h('li', null, 'Agents post loads under your MC — every posting shows your legal name and MC.'),
+        h('li', null, 'Nothing an unconfirmed agent posts can be booked; approving here is one click.'),
+        h('li', null, 'Pull an agent’s access at any time — their open postings under you come down with it.'),
+      ]),
+      h('details', { style: 'margin-top:6px' }, [
+        h('summary', { class: 'bt-sub', style: 'cursor:pointer;font-weight:700;color:#0883F7' }, 'How it works'),
+        h('div', { class: 'bt-sub', style: 'margin-top:6px' }, 'The rate confirmation has to be on your paper. Loads an agent posts for other brokerages are not yours and stay untouched. Agents who declare you also get a 6-digit code emailed to your FMCSA-listed address — approving here is the same thing.'),
+      ]),
       banner,
     ]),
     body,

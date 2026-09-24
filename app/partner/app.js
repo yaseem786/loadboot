@@ -127,6 +127,8 @@ function payRailBlock(kind9, ref9, memo9, label9) {
   })();
   return host9;
 }
+// ux-audit 2026-09-24 (O4): claim evidence showed "7/18/2026, 6:16:30 AM"; people read "Jul 18, 6:16 AM".
+const fmtWhen = (d) => { if (!d) return '\u2014'; try { const t = new Date(d); if (isNaN(t.getTime())) return '\u2014'; return t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', ...(t.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); } catch (e) { return '\u2014'; } };
 const fmtDate = (d) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return '—'; } };
 const fmtDT = (d) => { if (!d) return '—'; try { return new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return '—'; } };
 const TONE = { submitted: 'amber', accepted: 'blue', declined: 'red', posted: 'green', requested: 'amber', quoted: 'blue', booked: 'green', scheduled: 'blue', checked_in: 'amber', completed: 'green', no_show: 'red', cancelled: 'gray', inbound: 'blue', outbound: 'violet' };
@@ -1030,7 +1032,7 @@ function securityCard() {
               const em9 = h('div', { class: 'cp-err' });
               const close9 = openModal('🔐 Set up two-factor', [
                 h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, '1. Open Google Authenticator (or any TOTP app) → add account → scan this code.'),
-                en9.totp && en9.totp.qr_code ? h('div', { style: 'background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center', html: en9.totp.qr_code }) : null,
+                en9.totp && en9.totp.qr_code ? h('div', { style: 'background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center' }, /^data:/i.test(en9.totp.qr_code) ? h('img', { src: en9.totp.qr_code, alt: 'Scan with your authenticator app', width: 200, height: 200 }) : h('div', { html: en9.totp.qr_code })) : null,  // ux-audit 2026-09-24: Supabase sends a data: URI; injecting it as HTML printed the prefix beside the code
                 h('div', { class: 'cp-sub', style: 'margin:8px 0;word-break:break-all' }, 'Can\u2019t scan? Enter this key manually: ' + ((en9.totp && en9.totp.secret) || '')),
                 h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, '2. Type the 6-digit code the app shows:'),
                 code9, em9,
@@ -3488,8 +3490,11 @@ async function brokerDash(user, ov) {
       document.head.appendChild(st);
     }
     const host = h('div', null, h('div', { class: 'cp-sub' }, 'Connecting to the live feed\u2026'));
-    let __xs = null; // extra stops (fetched once)
-    (async () => { try { const r0 = await ccLoadStops(l.id); __xs = (r0 && r0.count) ? (r0.stops || []) : []; } catch (_) { __xs = []; } })();
+    let __xs = null; // extra stops (fetched once, after the first draw tells us the board load id)
+    // ux-audit 2026-09-24 (bl_ux_0431): this used to send the partner_loads id to cc_load_stops, which
+    // looks up public.loads — a 400 "load not found" on every open and no stop geofences on the map.
+    let __xsAsked = false;
+    const askStops = (boardId) => { if (__xsAsked) return; __xsAsked = true; if (!boardId) { __xs = []; return; } (async () => { try { const r0 = await ccLoadStops(boardId); __xs = (r0 && r0.count) ? (r0.stops || []) : []; } catch (_) { __xs = []; } })(); };
     const closeM = openModal('\ud83d\udef0 Live tracking \u2014 ' + (l.origin || '?') + ' \u2192 ' + (l.destination || '?'), [host], { wide: true });
     let map = null, truckMk = null, routeLn = null, timer = null, dead = false;
     const stop = () => { dead = true; clearTimeout(timer); };
@@ -3499,6 +3504,7 @@ async function brokerDash(user, ov) {
       if (dead || !document.body.contains(host)) { stop(); return; }
       let d; try { d = await partnerTrackLoad(l.id); } catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load tracking.')); return; }
       const ld = d.load || {}, bd = d.board || {}, of = d.offers || {}, t = d.trip;
+      askStops(bd.load_id || null);
       const ts = t ? String(t.status || '') : '';
       const cancelled = ts === 'cancelled' || /reject/.test(String(ld.status || ''));
       // milestone model
@@ -3913,24 +3919,24 @@ async function brokerDash(user, ov) {
         const supPill = c.support_status === 'open' ? h('span', { class: 'cp-pill', style: 'background:#dbeafe;color:#1d4ed8' }, '\ud83c\udfa7 With LoadBoot support') : c.support_status === 'decided' ? h('span', { class: 'cp-pill', style: 'background:' + (c.support_verdict === 'broker' ? '#e7f9ee;color:#12a150' : '#fee2e2;color:#b91c1c') }, '\u2696 Support ruled: ' + c.support_verdict) : null;
         const det = h('div', { style: 'display:none;margin-top:8px;border-top:1px dashed #e2e8f0;padding-top:8px' }, [
           h('div', { style: 'font-weight:700;font-size:.85rem;margin-bottom:4px' }, '\ud83d\udd52 What happened, minute by minute'),
-          (Array.isArray(b.timeline) && b.timeline.length) ? h('div', { style: 'border-left:3px solid #0883F7;padding-left:10px;margin-bottom:8px' }, b.timeline.map((tl9) => h('div', { class: 'cp-sub', style: 'padding:3px 0' }, [h('b', { style: 'color:#0f172a' }, tl9.at ? new Date(tl9.at).toLocaleString() : ''), ' \u2014 ' + (tl9.what || '')]))) : h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'No timeline events yet.'),
+          (Array.isArray(b.timeline) && b.timeline.length) ? h('div', { style: 'border-left:3px solid #0883F7;padding-left:10px;margin-bottom:8px' }, b.timeline.map((tl9) => h('div', { class: 'cp-sub', style: 'padding:3px 0' }, [h('b', { style: 'color:#0f172a' }, tl9.at ? fmtWhen(tl9.at) : ''), ' \u2014 ' + (tl9.what || '')]))) : h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'No timeline events yet.'),
           (b.filed_evidence && b.filed_evidence.calc) ? h('div', { class: 'cp-sub', style: 'margin-bottom:8px;background:#eff6ff;border-radius:8px;padding:8px 10px' }, [h('b', null, '\u{1F9EE} Amount ' + money(c.amount || 0) + ': '), b.filed_evidence.calc + ' \u2014 the rates you agreed to when posting this load.']) : null,
           (Array.isArray(b.stop_documents) && b.stop_documents.length) ? h('div', { style: 'margin-bottom:8px' }, [
             h('div', { style: 'font-weight:700;font-size:.85rem' }, '\ud83d\udcce Paper proof collected at the stops'),
             ...b.stop_documents.map((d9) => h('div', { class: 'cp-sub', style: 'padding:2px 0' }, [
-              ({ bol_signed: '\ud83d\udcdd Facility-SIGNED BOL', pod_signed: '\ud83d\udcdd Facility-SIGNED POD', lumper_receipt: '\ud83e\uddfe Lumper receipt', gate_ticket: '\ud83c\udfab Gate ticket', stop_photo: '\ud83d\udcf7 Stop photo', pod: 'POD' }[d9.kind] || d9.kind) + ' \u2014 ' + (d9.file_name || '') + ' \u00b7 uploaded ' + (d9.uploaded_at ? new Date(d9.uploaded_at).toLocaleString() : ''),
+              ({ bol_signed: '\ud83d\udcdd Facility-SIGNED BOL', pod_signed: '\ud83d\udcdd Facility-SIGNED POD', lumper_receipt: '\ud83e\uddfe Lumper receipt', gate_ticket: '\ud83c\udfab Gate ticket', stop_photo: '\ud83d\udcf7 Stop photo', pod: 'POD' }[d9.kind] || d9.kind) + ' \u2014 ' + (d9.file_name || '') + ' \u00b7 uploaded ' + (d9.uploaded_at ? fmtWhen(d9.uploaded_at) : ''),
               d9.path ? h('a', { href: '#', style: 'margin-left:8px;color:#0883F7;font-weight:700', onClick: async (ev9) => { ev9.preventDefault(); const a9 = ev9.currentTarget; const was9 = a9.textContent; a9.textContent = 'opening\u2026'; try { const u9 = await signedDocumentUrl(d9.path, 600); window.open(u9, '_blank', 'noopener'); } catch (e9) { alert((e9 && e9.message) || 'Could not open the document.'); } a9.textContent = was9; } }, 'View \u2197') : h('span', { style: 'margin-left:8px;color:#94a3b8' }, '(ask support for a copy)'),
             ].filter(Boolean))),
           ] ) : null,
           h('div', { style: 'font-weight:700;font-size:.85rem' }, 'GPS evidence \u2014 recorded on scene'),
           dw.length ? h('div', null, dw.map((e9) => h('div', { class: 'cp-sub', style: 'padding:3px 0' }, [
-            (e9.stop || '') + ': arrived ' + (e9.arrived_at ? new Date(e9.arrived_at).toLocaleString() : '\u2014') + ' \u00b7 departed ' + (e9.departed_at ? new Date(e9.departed_at).toLocaleString() : '\u2014')
+            (e9.stop || '') + ': arrived ' + (e9.arrived_at ? fmtWhen(e9.arrived_at) : '\u2014') + ' \u00b7 departed ' + (e9.departed_at ? fmtWhen(e9.departed_at) : '\u2014')
             + (e9.held_minutes != null ? ' \u00b7 held ' + e9.held_minutes + ' min (free ' + (e9.free_minutes || 0) + ', detention ' + (e9.detention_minutes || 0) + ' min)' : '')
             + (e9.gps ? ' \u00b7 GPS \u2713 (' + Math.round(e9.gps.distance_m || 0) + 'm from pin)' : ''),
             e9.gps ? h('a', { href: (e9.stop_gps ? 'https://www.google.com/maps/dir/?api=1&origin=' + e9.gps.lat + ',' + e9.gps.lng + '&destination=' + e9.stop_gps.lat + ',' + e9.stop_gps.lng + '&travelmode=walking' : 'https://maps.google.com/?q=' + e9.gps.lat + ',' + e9.gps.lng), target: '_blank', rel: 'noopener', style: 'margin-left:6px;color:#0883F7;font-weight:700', title: e9.stop_gps ? 'Opens BOTH pins — the truck\u2019s recorded fix AND your facility; the tiny gap between them is the proof of presence' : '' }, e9.stop_gps ? 'verify: truck vs facility ↗' : 'verify on map ↗') : null,
           ].filter(Boolean)))) : h('div', { class: 'cp-sub' }, 'No dwell events recorded.'),
           h('div', { class: 'cp-sub', style: 'margin-top:6px;background:#f8fafc;border-radius:8px;padding:8px 10px' }, '\ud83d\udd12 These timestamps and GPS fixes were recorded automatically by LoadBoot on scene (geofenced arrive/depart) \u2014 neither party can create or edit them. \u201cVerify: truck vs facility\u201d opens BOTH pins on Google Maps \u2014 the truck\u2019s recorded position AND your facility. If they sit together (see the meters shown), the truck was there at those timestamps; that is the proof.'),
-          cxl.length ? h('div', { style: 'margin-top:6px' }, [h('div', { style: 'font-weight:700;font-size:.85rem' }, 'Cancellation trail'), ...cxl.map((x9) => h('div', { class: 'cp-sub' }, new Date(x9.at).toLocaleString() + ' \u2014 ' + (x9.what || '')))]) : null,
+          cxl.length ? h('div', { style: 'margin-top:6px' }, [h('div', { style: 'font-weight:700;font-size:.85rem' }, 'Cancellation trail'), ...cxl.map((x9) => h('div', { class: 'cp-sub' }, fmtWhen(x9.at) + ' \u2014 ' + (x9.what || '')))]) : null,
           c.note ? h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Carrier\u2019s note: \u201c' + c.note + '\u201d') : null,
           b.policy ? h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Rates apply per the LoadBoot rate card agreed at booking (detention/layover/TONU/lumper).') : null,
           c.broker_note ? h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Your note: ' + c.broker_note) : null,
@@ -4005,13 +4011,13 @@ async function brokerDash(user, ov) {
         })();
         return h('div', { style: 'padding:10px 0;border-bottom:1px solid #e2e8f0' }, [
           h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;cursor:pointer', onClick: () => { const on = det.style.display !== 'none'; det.style.display = on ? 'none' : 'block'; caret.textContent = on ? '\u25be Evidence' : '\u25b4 Hide'; } }, [
-            h('div', null, [h('b', null, String(c.kind || '').toUpperCase() + ' \u00b7 ' + money(c.amount || 0) + ' \u2014 ' + (t.origin || '') + ' \u2192 ' + (t.destination || '')), h('div', { class: 'cp-sub' }, (c.ref || '') + ' \u00b7 filed ' + (c.filed_at ? new Date(c.filed_at).toLocaleString() : '') + ' \u00b7 carrier: ' + (t.carrier || ''))]),
+            h('div', null, [h('b', null, String(c.kind || '').toUpperCase() + ' \u00b7 ' + money(c.amount || 0) + ' \u2014 ' + (t.origin || '') + ' \u2192 ' + (t.destination || '')), h('div', { class: 'cp-sub' }, (c.ref || '') + ' \u00b7 filed ' + (c.filed_at ? fmtWhen(c.filed_at) : '') + ' \u00b7 carrier: ' + (t.carrier || ''))]),
             h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [supPill, h('span', { class: 'cp-pill', style: 'background:' + stPill[0] + ';color:' + stPill[1] }, stPill[2]), caret].filter(Boolean)),
           ]),
           actRow, payW, det,
         ].filter(Boolean));
       }) : [h('div', { class: 'cp-sub' }, 'No claims filed on your loads.')];
-      mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, '\ud83d\udcb0 Claims on your loads'), pend ? h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309;margin-left:8px' }, pend + ' need review') : null].filter(Boolean)), ...items]);
+      mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, '\ud83d\udcb0 Claims on your loads'), pend ? h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309;margin-left:8px;white-space:nowrap' }, pend + ' need review') : null].filter(Boolean)), ...items]);
     }
     loadClaims();
     return card;
@@ -4476,6 +4482,7 @@ function packetAgreementCards(skipPacket) {
             ].filter(Boolean)),
             x9.transfer_status === 'received' ? h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150' }, '✓ Paid & confirmed')
             : x9.transfer_status === 'sent' ? h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309' }, [icon('finance',15),' On the way · awaiting carrier ✓'])
+            : x9.pay_by ? null   // ux-audit 2026-09-24 (O2): the PAY BY / OVERDUE chip on the left already carries the state
             : h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c' }, [icon('clock',15),' DUE']),
           ]),
           x9.transfer_status ? null : payRailBlock(x9.kind, x9.ref_id, x9.memo || '', x9.kind === 'claim' ? 'Pay this claim' : 'Pay freight'),

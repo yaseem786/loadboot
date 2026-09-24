@@ -54,8 +54,16 @@ export async function mfaListFactors() {
 }
 export async function mfaEnrollTotp() {
   const sb = await getClient();
+  // ux-audit 2026-09-24: closing the setup dialog without typing a code leaves an UNVERIFIED
+  // factor behind, and the next "Enable" then failed with the raw Supabase error
+  // 'A factor with the friendly name "Authenticator app" for this user already exists'.
+  // Drop stale unverified TOTP factors before enrolling; a verified one is left alone.
+  try {
+    const { data: lf } = await sb.auth.mfa.listFactors();
+    for (const f of ((lf && lf.all) || [])) { if (f.factor_type === 'totp' && f.status !== 'verified') { try { await sb.auth.mfa.unenroll({ factorId: f.id }); } catch (_) {} } }
+  } catch (_) {}
   const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Authenticator app' });
-  if (error) throw error;
+  if (error) throw new Error(/already exists/i.test(error.message || '') ? 'Two-factor is already set up on this account. Turn it off first to set it up again.' : (error.message || 'Could not start 2FA setup.'));
   return data;
 }
 export async function mfaVerify(factorId, code) {

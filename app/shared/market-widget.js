@@ -26,6 +26,8 @@ function css() {
   .mw-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
   .mw-form input,.mw-form select{border:0;border-radius:11px;padding:10px 13px;font-weight:700;font-size:.85rem;background:rgba(255,255,255,.95);color:#10223B;outline:none}
   .mw-form input{width:120px;text-transform:uppercase}
+  /* ux-audit 2026-09-24 (O6): on a phone the 120px boxes clipped their own placeholder ("ORIGIN S'") */
+  @media (max-width:560px){.mw-form input,.mw-form select{flex:1 1 38%;width:auto;min-width:0}.mw-form input[placeholder^="Miles"]{flex:1 1 38%;width:auto!important}.mw-go{flex:1 1 45%}}
   .mw-go{border:0;border-radius:11px;padding:10px 20px;font-weight:800;font-size:.85rem;color:#fff;cursor:pointer;background:linear-gradient(120deg,#0883F7,#0967d2)}
   .mw-card{background:#fff;border:1px solid #e6ebf3;border-radius:18px;padding:18px 20px;margin-bottom:14px;box-shadow:0 12px 32px -24px rgba(2,12,30,.3)}
   .mw-lane{font-weight:800;font-size:1.05rem}

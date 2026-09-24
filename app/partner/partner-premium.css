@@ -107,8 +107,11 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
   .bd-hero { padding: 18px 16px; }
   .bd-qa button { flex: 1 1 44%; }
   .bd-kgrid { grid-template-columns: repeat(2, 1fr); }
-  .lt-steps { flex-wrap: wrap; row-gap: 14px; }
-  .lt-step { flex: 1 1 32%; }
+  /* ux-audit 2026-09-24: the modal injects its own .lt-step rules later in the document, so these
+     needed more weight — six milestones were crammed into one 390px row with 3-line labels. */
+  .cp-modal-card .lt-steps { flex-wrap: wrap; row-gap: 14px; }
+  .cp-modal-card .lt-step { flex: 1 1 32%; max-width: 33.33%; }
+  .cp-modal-card .lt-step:nth-child(3n):before { display: none; }
   .lt-map { height: 260px; }
   .cp-modal-card { border-radius: 18px 18px 0 0 !important; max-height: 94vh !important; }
   .bd-arow { flex-direction: column; align-items: stretch; }
@@ -161,3 +164,7 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
   .cp-card:has(> .cp-tablewrap) > .cp-cardhead { padding: 0 4px 8px; }
   .cp-tablewrap .cp-card { padding: 14px; }
 }
+
+/* ux-audit 2026-09-24: carrier.css gives .lb-state min-height:70vh for full-page states; inside a card
+   ("No invoices yet.") that left ~540px of white space above four words. */
+.cp-card .lb-state, .cp-tablewrap .lb-state { min-height: 0; padding: 28px 16px; }
