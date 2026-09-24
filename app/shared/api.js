@@ -1515,6 +1515,10 @@ export const ccInvReverseExpense = (id, reason) => rpc('cc_inv_reverse_expense',
 export const ccInvPublishMonth   = (p) => rpc('cc_inv_publish_month', { p });
 export const ccInvPay            = (p) => rpc('cc_inv_pay', { p });
 export const ccInvDetail         = (agreementId) => rpc('cc_inv_detail', { p_agreement: agreementId });
+// bl_inv_0412 — time on the bank slip for a receipt / expense / payout ({kind, id, at|null})
+export const ccInvSetTxnTime     = (p) => rpc('cc_inv_set_txn_time', { p });
+// bl_inv_0413 — add a receipt to an expense logged without one
+export const ccInvExpenseAttach  = (id, receiptUrl) => rpc('cc_inv_expense_attach', { p: { id, receipt_url: receiptUrl } });
 // bl_inv_0402 — scenarios, language, flags
 export const invSetLang          = (lang) => rpc('inv_set_lang', { p_lang: lang });
 export const invFlag             = (p) => rpc('inv_flag', { p });

@@ -47,6 +47,14 @@ async function proofLink(ref, label) {
 }
 const pct = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 }) + '%';
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('none');
+// bl_inv_0412 — bank-app style times. Everything is shown in Pakistan time (the time printed on the bank slips).
+const TZ = 'Asia/Karachi';
+const pktDay = (d) => { if (!d) return ''; const x = String(d); if (/^\d{4}-\d{2}-\d{2}$/.test(x)) return x; return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(d)); };
+const fmtTime = (d) => d ? new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TZ }) : '';
+const fmtStamp = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: TZ }) + ', ' + fmtTime(d) + ' PKT' : null;
+const dayLabel = (k) => { if (k === pktDay(new Date())) return t('tx_today'); if (k === pktDay(new Date(Date.now() - 864e5))) return t('tx_yesterday'); return new Date(k + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }); };
+const whenPaid = (day, at) => at ? fmtStamp(at) : fmtDate(day) + ' · ' + t('tx_notime');
+const groupDays = (list, fn) => { const out = []; let last = null; list.forEach(e => { if (e.day !== last) { last = e.day; out.push(el('div', { class: 'iv-day' }, dayLabel(e.day))); } out.push(fn(e)); }); return out; };
 const fmtMonth = (d) => d ? new Date(d).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : t('none');
 const CAT = { office: 'Office', rent: 'Rent', salary: 'Salaries', equipment: 'Equipment', tools: 'Tools & subscriptions', legal: 'Legal & professional', relocation: 'Relocation', utilities: 'Utilities', marketing: 'Marketing', misc: 'Other' };
 const catName = (c) => CAT[c] || (c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Other');
@@ -112,11 +120,13 @@ function skeleton() {
     el('div', { class: 'iv-card iv-sk-card' }, [line(40), line(100), line(90), line(70)]),
   ]);
 }
+const LANG_SHORT = { en: 'EN', ur_roman: 'Roman', ur: 'اردو' };
 function langSwitch() {
-  return el('select', { class: 'iv-select', id: 'iv-lang', 'aria-label': t('sel_lang'), title: t('sel_lang'), onChange: async (e) => {
+  const narrow = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 560px)').matches;
+  return el('select', { class: 'iv-select iv-lang-sel', id: 'iv-lang', 'aria-label': t('sel_lang'), title: t('sel_lang'), onChange: async (e) => {
     const code = e.target.value; setLang(code); try { localStorage.setItem('lb-inv-lang', code); } catch (_) {}
     if (S.me) { try { await invSetLang(code); } catch (_) {} renderShell(); } else renderLogin();
-  } }, LANGS.map(([code, label]) => el('option', { value: code, selected: code === getLang() }, label)));
+  } }, LANGS.map(([code, label]) => el('option', { value: code, selected: code === getLang() }, narrow ? (LANG_SHORT[code] || label) : label)));
 }
 
 // ---------- login + 2FA ----------
@@ -604,11 +614,11 @@ async function renderLedger(host) {
   const exp = L.expenses || [];
   const expSheet = (x) => openSheet(catName(x.category), el('div', null, [
     el('p', { class: 'iv-gl-p' }, vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang())),
-    dl([[t('amount'), money(x.amount)], [t('date'), fmtDate(x.date)], [t('l_vendor'), x.vendor], [t('l_details'), x.description],
+    dl([[t('amount'), money(x.amount)], [t('tx_paid_at'), whenPaid(x.date, x.txn_at)], [t('tx_logged'), fmtStamp(x.logged_at)], [t('l_vendor'), x.vendor], [t('l_details'), x.description],
         [t('l_paid_from'), x.tranche ? t('l_tranche', fmtDate(x.tranche)) : null], [t('l_recurring'), x.recurring ? t('l_yes') : t('l_no')]]),
     x.receipt_url ? el('a', { class: 'iv-btn block', href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(x.receipt_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, t('view') + ' ' + t('receipt')) : el('p', { class: 'iv-muted' }, t('l_no_receipt')),
     el('button', { class: 'iv-btn block', onClick: () => expenseReceipt(x) }, [icon('download'), t('dl_receipt')]),
-    x.reversed ? null : x.acknowledged_at ? el('div', { class: 'iv-ok' }, t('ack_done', fmtDate(x.acknowledged_at))) : el('div', null, [
+    x.reversed ? null : x.acknowledged_at ? el('div', { class: 'iv-ok' }, t('ack_done', fmtStamp(x.acknowledged_at))) : el('div', null, [
       el('button', { class: 'iv-btn primary block', onClick: async (e) => { e.target.disabled = true; try { await invAckExpense(x.id); x.acknowledged_at = new Date().toISOString(); S.ledger = null; renderShell(); } catch (ex) { alert(err(ex)); e.target.disabled = false; } } }, t('ack_btn')),
       el('p', { class: 'iv-muted', style: 'font-size:.75rem' }, t('ack_hint'))]),
     flagButton('expense', x.id),
@@ -640,8 +650,8 @@ async function renderPayments(host) {
   const rc = S.ledger.receipts || [];
   const returned = (S.ledger.payouts || []).filter(x => x.kind === 'capital_return');
   const sheet = (r) => openSheet(t('nav_payments'), el('div', null, [
-    dl([[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method], [t('reference'), r.reference], [t('tr_from'), trFrom(r)], [t('tr_into'), trInto(r)],
-        [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : null], [t('p_lb_confirmed'), r.confirmed_at ? fmtDate(r.confirmed_at) : t('not_yet')],
+    dl([[t('amount'), money(r.amount)], [t('tx_paid_at'), whenPaid(r.received_date, r.txn_at)], [t('method'), r.method], [t('reference'), r.reference], [t('tr_from'), trFrom(r)], [t('tr_into'), trInto(r)],
+        [t('p_you_declared'), r.declared_at ? fmtStamp(r.declared_at) : null], [t('p_lb_confirmed'), r.confirmed_at ? fmtStamp(r.confirmed_at) : t('not_yet')],
         r.rejected_reason ? [t('p_rejected_why'), r.rejected_reason] : [t('note'), r.note],
         [t('proof'), r.proof_url ? el('a', { href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(r.proof_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, t('view')) : null]]),
     r.confirmed_at ? el('button', { class: 'iv-btn block', onClick: () => paymentConfirmation(r) }, [icon('download'), t('dl_confirm')]) : null,
@@ -1117,8 +1127,8 @@ async function expenseReceipt(x) {
     null, '', img);
 }
 function paymentConfirmation(r) {
-  brandDoc(t('dl_confirm'), t('p_lb_confirmed') + ' ' + fmtDate(r.confirmed_at),
-    [[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method || '—'], [t('reference'), r.reference || '—'], [t('tr_from'), trFrom(r) || '—'], [t('tr_into'), trInto(r) || '—'], [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : '—'], [t('p_lb_confirmed'), fmtDate(r.confirmed_at)], ['Record id', r.id]],
+  brandDoc(t('dl_confirm'), t('p_lb_confirmed') + ' ' + fmtStamp(r.confirmed_at),
+    [[t('amount'), money(r.amount)], [t('tx_paid_at'), whenPaid(r.received_date, r.txn_at)], [t('method'), r.method || '—'], [t('reference'), r.reference || '—'], [t('tr_from'), trFrom(r) || '—'], [t('tr_into'), trInto(r) || '—'], [t('p_you_declared'), r.declared_at ? fmtStamp(r.declared_at) : '—'], [t('p_lb_confirmed'), fmtStamp(r.confirmed_at)], ['Record id', r.id]],
     null, 'CONFIRMED BY BOTH PARTIES — counts toward the funded amount.');
 }
 function statementDoc(s) {
@@ -1273,12 +1283,13 @@ async function renderRecord(host) {
   let ups = []; try { ups = (await invUpdates(S.agr.id, 50)).updates || []; } catch (_) {}
   const L = S.ledger, p = L.position || S.agr.position || {};
   const ev = [];
-  ups.forEach(u => ev.push({ t: u.created_at, kind: 'update', tag: u.kind === 'milestone' ? t('tag_milestone') : /team|hire|bharti|join/i.test(u.title + ' ' + u.body) ? t('tag_team') : t('tag_update'), title: u.title, sub: u.body, proof: null, amt: '', cls: '', open: () => openSheet(u.title, el('div', null, [el('p', { class: 'iv-muted' }, new Date(u.created_at).toLocaleString('en-GB')), el('p', { style: 'white-space:pre-line' }, u.body)])), ok: true }));
-  (L.receipts || []).forEach(r => { if (r.state === 'confirmed' || r.state === 'awaiting_confirmation') ev.push({ t: r.received_date, kind: 'in', tag: t('tag_investment'), title: t('rec_in') + ' ' + money(r.amount), sub: (r.method || '') + (r.reference ? ' · ' + r.reference : '') + (r.state === 'confirmed' ? ' · ' + t('p_lb_confirmed') + ' ' + fmtDate(r.confirmed_at) : ' · ' + t('not_yet')), proof: !!r.proof_url, amt: '+' + money(r.amount), cls: 'pos', open: () => investmentSheet(r), ok: r.state === 'confirmed' }); });
-  (L.expenses || []).forEach(x => ev.push({ t: x.date, kind: 'out', tag: catName(x.category), title: (x.reversed ? t('l_reversal') + ' · ' : '') + (x.vendor || catName(x.category)), sub: (vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang())) + (x.description ? ' — ' + x.description : ''), proof: !!x.receipt_url, amt: (x.reversed ? '+' : '−') + money(x.amount), cls: x.reversed ? 'pos' : 'neg', open: () => { S.tab = 'ledger'; renderShell(); }, ok: true, ack: x.acknowledged_at }));
-  (L.payouts || []).forEach(po => { if (po.status === 'paid' && Number(po.total) > 0) ev.push({ t: po.paid_date, kind: 'payout', tag: t('tag_payout'), title: t('rec_payout') + ' ' + money(po.total), sub: (po.month ? fmtMonth(po.month) : t('h_wound')) + (po.confirmed_at ? ' · ✓' : ' · ' + t('not_yet')), proof: !!po.proof_url, amt: '+' + money(po.total), cls: 'pos', open: () => { S.tab = 'payments'; renderShell(); }, ok: !!po.confirmed_at }); });
-  (S.requests || []).forEach(r => { if (r.status === 'pending') ev.push({ t: r.requested_at, kind: 'req', tag: t('tag_request'), title: t('rec_req') + ' ' + money(r.amount), sub: r.reason || '', proof: false, amt: money(r.amount), cls: '', open: () => openRequest(r), ok: false }); });
-  ev.sort((a, b) => new Date(b.t) - new Date(a.t));
+  ups.forEach(u => ev.push({ t: u.created_at, day: pktDay(u.created_at), at: u.created_at, kind: 'update', tag: u.kind === 'milestone' ? t('tag_milestone') : /team|hire|bharti|join/i.test(u.title + ' ' + u.body) ? t('tag_team') : t('tag_update'), title: u.title, sub: u.body, proof: null, amt: '', cls: '', open: () => openSheet(u.title, el('div', null, [el('p', { class: 'iv-muted' }, new Date(u.created_at).toLocaleString('en-GB')), el('p', { style: 'white-space:pre-line' }, u.body)])), ok: true }));
+  (L.receipts || []).forEach(r => { if (r.state === 'confirmed' || r.state === 'awaiting_confirmation') ev.push({ t: r.received_date, day: r.received_date, at: r.txn_at, logged: r.confirmed_at || r.logged_at, kind: 'in', tag: t('tag_investment'), title: t('rec_in') + ' ' + money(r.amount), sub: (r.method || '') + (r.reference ? ' · ' + r.reference : '') + (r.state === 'confirmed' ? ' · ' + t('p_lb_confirmed') + ' ' + fmtStamp(r.confirmed_at) : ' · ' + t('not_yet')), proof: !!r.proof_url, amt: '+' + money(r.amount), cls: 'pos', open: () => investmentSheet(r), ok: r.state === 'confirmed' }); });
+  (L.expenses || []).forEach(x => ev.push({ t: x.date, day: x.date, at: x.txn_at, logged: x.logged_at, kind: 'out', tag: catName(x.category), title: (x.reversed ? t('l_reversal') + ' · ' : '') + (x.vendor || catName(x.category)), sub: (vendorWhat(x.vendor, getLang()) || catWhat(x.category, getLang())) + (x.description ? ' — ' + x.description : ''), proof: !!x.receipt_url, amt: (x.reversed ? '+' : '−') + money(x.amount), cls: x.reversed ? 'pos' : 'neg', open: () => { S.tab = 'ledger'; renderShell(); }, ok: true, ack: x.acknowledged_at }));
+  (L.payouts || []).forEach(po => { if (po.status === 'paid' && Number(po.total) > 0) ev.push({ t: po.paid_date, day: po.paid_date, at: po.txn_at, logged: po.confirmed_at || po.logged_at, kind: 'payout', tag: t('tag_payout'), title: t('rec_payout') + ' ' + money(po.total), sub: (po.month ? fmtMonth(po.month) : t('h_wound')) + (po.confirmed_at ? ' · ✓' : ' · ' + t('not_yet')), proof: !!po.proof_url, amt: '+' + money(po.total), cls: 'pos', open: () => { S.tab = 'payments'; renderShell(); }, ok: !!po.confirmed_at }); });
+  (S.requests || []).forEach(r => { if (r.status === 'pending') ev.push({ t: r.requested_at, day: pktDay(r.requested_at), at: r.requested_at, kind: 'req', tag: t('tag_request'), title: t('rec_req') + ' ' + money(r.amount), sub: r.reason || '', proof: false, amt: money(r.amount), cls: '', open: () => openRequest(r), ok: false }); });
+  // newest day first; inside a day: lines with a slip time (newest first), then lines without one
+  ev.sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0) || ((a.at ? 0 : 1) - (b.at ? 0 : 1)) || (new Date(b.at || b.logged || 0) - new Date(a.at || a.logged || 0)));
   const ic = { in: 'payments', out: 'ledger', payout: 'statements', req: 'requests', update: 'inbox' };
   const pendingReq = (S.requests || []).filter(r => r.status === 'pending').length;
   mount(host, [
@@ -1287,9 +1298,9 @@ async function renderRecord(host) {
     pendingReq ? el('button', { class: 'iv-warn', style: 'width:100%;text-align:start;cursor:pointer;font:inherit', onClick: () => openRequest((S.requests || []).find(r => r.status === 'pending')) }, [el('b', null, t('rec_req') + ' ' + money((S.requests || []).find(r => r.status === 'pending').amount)), ' — ', (S.requests || []).find(r => r.status === 'pending').reason || '', ' ›']) : null,
     recHero(p),
     el('div', { class: 'iv-sect' }, el('h2', null, t('rec_all'))),
-    ev.length ? el('div', { class: 'iv-list' }, ev.map(e => el('button', { class: 'iv-row', onClick: e.open }, [
+    ev.length ? el('div', { class: 'iv-list' }, groupDays(ev, e => el('button', { class: 'iv-row', onClick: e.open }, [
       el('div', { class: 'ic ' + (e.kind === 'out' ? 'out' : 'in') }, icon(ic[e.kind])),
-      el('div', null, [el('div', { class: 't' }, [el('span', { class: 'iv-tag ' + e.kind }, e.tag), e.title]), el('div', { class: 's' }, fmtDate(e.t) + (e.sub ? ' · ' + e.sub : '')), e.proof === null ? null : el('div', { class: 's what' }, [e.proof ? el('span', { class: 'iv-proof ok' }, '📎 ' + t('rec_proof')) : el('span', { class: 'iv-proof' }, t('rec_noproof')), e.kind === 'out' && !e.ack ? el('small', { class: 'iv-new', style: 'margin-left:6px' }, t('ack_new')) : null])]),
+      el('div', null, [el('div', { class: 't' }, [el('span', { class: 'iv-tag ' + e.kind }, e.tag), e.title]), el('div', { class: 's' }, [el('b', { class: 'iv-tm' + (e.at ? '' : ' none') }, e.at ? fmtTime(e.at) : t('tx_notime')), e.sub ? ' · ' + e.sub : '']), e.proof === null ? null : el('div', { class: 's what' }, [e.proof ? el('span', { class: 'iv-proof ok' }, '📎 ' + t('rec_proof')) : el('span', { class: 'iv-proof' }, t('rec_noproof')), e.kind === 'out' && !e.ack ? el('small', { class: 'iv-new', style: 'margin-left:6px' }, t('ack_new')) : null])]),
       el('div', { class: 'amt ' + e.cls }, e.amt),
     ]))) : empty(t('l_empty')),
     el('div', { class: 'iv-actions', style: 'justify-content:center;margin-top:14px' }, el('button', { class: 'iv-btn', onClick: () => expenseReport(L) }, [icon('download'), t('rec_dl')])),
@@ -1302,9 +1313,9 @@ function renderAgreementTab(host) {
   const navRow = (ic, title, sub, fn, id) => el('button', { class: 'iv-row', onClick: fn }, [el('div', { class: 'ic' }, icon(ic)), el('div', null, [el('div', { class: 't' }, title), el('div', { class: 's', id: id || null }, sub)]), el('div', { class: 'amt' }, '›')]);
   mount(host, [
     agrPicker(), el('h1', { class: 'iv-h1' }, t('h_agreement')), el('p', { class: 'iv-sub' }, t('ag_tab_sub')),
-    (p.open_questions || []).length ? el('div', { class: 'iv-open' }, [el('b', null, t('h_open')), el('ul', null, p.open_questions.map(q => el('li', null, t('oq_' + q, pct(p.permanent_share_pct)))))]) : null,
+    (p.open_questions || []).length ? el('div', { class: 'iv-open', id: 'iv-open-box' }, [el('b', null, t('h_open')), el('ul', null, p.open_questions.map(q => el('li', { 'data-q': q }, t('oq_' + q, pct(p.permanent_share_pct)))))]) : null,
     el('div', { class: 'iv-card' }, [el('div', { class: 'iv-kv', style: 'margin-top:0' }, [kv(t('h_monthly'), (p.phase === 'recovering' ? pct(p.payback_rate_pct) + ' + ' : '') + pct(p.effective_share_pct), '', 'share'), kv(t('h_recovery'), money(p.recovered) + ' / ' + money(p.recovery_target), '', 'recovery'), kv(t('h_outstanding'), money(p.outstanding), '', 'outstanding'), kv(t('h_share_type'), p.share_type === 'equity' ? pct(p.equity_vested_pct) : p.share_type === 'profit_share' ? t('h_profit_share') : t('h_undecided'), '', 'share_type')])]),
-    navRow('doc', t('doc_title'), S.agr.signed_date ? t('h_signed', fmtDate(S.agr.signed_date)) : t('h_draft'), () => showAgreement()),
+    navRow('doc', t('doc_title'), S.agr.signed_date ? t('h_signed', fmtDate(S.agr.signed_date)) : t('h_draft'), () => showAgreement(), 'iv-doc-sub'),
     el('div', { style: 'height:8px' }),
     amendCard(p),
     navRow('shield', t('sec_title'), '…', () => showSecurity(), 'iv-sec-sub'),
@@ -1313,6 +1324,15 @@ function renderAgreementTab(host) {
     el('div', { style: 'height:8px' }),
     navRow('inbox', t('gl_title'), t('gl_row'), () => showGlossary()),
   ]);
+  // investor signed, LoadBoot not yet: say so instead of "Draft — not yet signed"
+  if (!S.agr.signed_date) invCurrentDoc(S.agr.id).then(res => {
+    const d = res && res.doc; if (!d) return;
+    const mine = (d.signatures || []).find(x => x.party === 'investor'), co = (d.signatures || []).find(x => x.party === 'company');
+    if (!mine || co) return;
+    const sub = document.getElementById('iv-doc-sub'); if (sub) sub.textContent = t('h_you_signed_wait', fmtStamp(mine.signed_at));
+    const box = document.getElementById('iv-open-box'); const li = box && box.querySelector('li[data-q="signed_document"]');
+    if (li) { li.textContent = t('oq_signed_wait'); if (box.querySelectorAll('li').length === 1) { box.classList.add('wait'); const b = box.querySelector('b'); if (b) b.textContent = t('h_wait_title'); } }
+  }).catch(() => {});
   mfaListFactors().then(f => { const on = (f.all || []).concat(f.totp || [], f.phone || []).some(x => x.status === 'verified'); const s = document.getElementById('iv-sec-sub'); if (s) s.textContent = on ? t('sec_on') : t('sec_off'); }).catch(() => {});
 }
 
@@ -1344,7 +1364,7 @@ function investmentSheet(r) {
   const st = r.state === 'confirmed' ? pill(t('in_confirmed'), 'ok') : r.state === 'rejected' ? pill(t('in_rejected'), 'due') : pill(t('in_waiting'), 'wait');
   openSheet(t('in_title'), el('div', null, [
     el('div', { style: 'margin-bottom:10px' }, st),
-    dl([[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method || '—'], [t('reference'), r.reference || '—'], [t('tr_from'), trFrom(r) || '—'], [t('tr_into'), trInto(r) || '—'], [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : '—'], [t('p_lb_confirmed'), r.confirmed_at ? fmtDate(r.confirmed_at) : t('not_yet')], r.rejected_reason ? [t('p_rejected_why'), r.rejected_reason] : [t('note'), r.note || '—']]),
+    dl([[t('amount'), money(r.amount)], [t('tx_paid_at'), whenPaid(r.received_date, r.txn_at)], [t('method'), r.method || '—'], [t('reference'), r.reference || '—'], [t('tr_from'), trFrom(r) || '—'], [t('tr_into'), trInto(r) || '—'], [t('p_you_declared'), r.declared_at ? fmtStamp(r.declared_at) : '—'], [t('p_lb_confirmed'), r.confirmed_at ? fmtStamp(r.confirmed_at) : t('not_yet')], r.rejected_reason ? [t('p_rejected_why'), r.rejected_reason] : [t('note'), r.note || '—']]),
     r.proof_url ? el('a', { class: 'iv-btn block', href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(r.proof_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, [icon('doc'), t('view') + ' ' + t('proof')]) : null,
     r.confirmed_at ? el('button', { class: 'iv-btn primary block', onClick: () => paymentConfirmation(r) }, [icon('download'), t('dl_confirm')]) : el('p', { class: 'iv-muted' }, t('d_two')),
     flagButton('receipt', r.id),

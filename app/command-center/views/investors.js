@@ -15,7 +15,7 @@ import { ccInvList, ccInvDetail, ccInvSaveInvestor, ccInvLinkUser, ccInvSaveAgre
          ccInvConfirmReceipt, ccInvReverseReceipt, ccInvExpense, ccInvReverseExpense, ccInvPublishMonth, ccInvPay,
          ccInvRejectReceipt, ccInvCloseCommitment, ccInvReopenCommitment, ccInvWindDown, ccInvAnswerFlag,
          ccInvSettingsGet, ccInvSettingsSet, ccInvPublishDoc, ccInvCountersign, invProofUrl, invCurrentDoc, ccInvAmendments, ccInvDecideAmendment,
-         ccInvPostUpdate, ccInvUpdates, invUploadProof, ccInvRequestAttach } from '../../shared/api.js';
+         ccInvPostUpdate, ccInvUpdates, invUploadProof, ccInvRequestAttach, ccInvSetTxnTime, ccInvExpenseAttach } from '../../shared/api.js';
 import { buildAgreement, hasPlaceholders, mdToHtml, DEFAULT_EXTRA } from '../../investor/agreement-template.js';
 import { VENDOR_NAMES, vendorWhat } from '../../investor/glossary.js';
 import { can } from '../../shared/permissions.js';
@@ -376,10 +376,24 @@ function requestForm(agrId, unfunded, cur, onDone, pos) {
 }
 function guessCat(t) { t = String(t || '').toLowerCase(); return /rent/.test(t) ? 'rent' : /salary|dispatcher|pay/.test(t) ? 'salary' : /laptop|computer|equip|headset|ups/.test(t) ? 'equipment' : /software|tool|phone|line|hosting/.test(t) ? 'tools' : /legal|lawyer|regist/.test(t) ? 'legal' : /market|ads/.test(t) ? 'marketing' : /reloc|move|shift/.test(t) ? 'relocation' : /deposit|office/.test(t) ? 'office' : 'misc'; }
 
+
+// bl_inv_0412 — bank-slip time. Stored as an exact moment; shown and entered in Pakistan time.
+const PKT = 'Asia/Karachi';
+const pktTime = (ts) => ts ? new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: PKT }) : '';
+const slipAt = (day, hhmm) => (day && hhmm) ? day + 'T' + hhmm + ':00+05:00' : null;
+const timeInp = () => inp({ type: 'time', step: '60' });
+const dateCell = (day, ts, kind, id, manage, reload) => el('div', { style: 'white-space:nowrap' }, [fmtDate(day),
+  ts ? el('div', { style: 'font-size:11.5px;opacity:.7' }, pktTime(ts) + ' PKT') : null,
+  manage && id ? el('a', { href: '#', style: 'font-size:11px', title: 'Time on the bank slip (Pakistan time)', onClick: async (e) => { e.preventDefault();
+    const v = await askReason(ts ? 'Change the time on the slip' : 'Add the time from the bank slip', { placeholder: 'Pakistan time, 24h — e.g. 04:20 or 16:43. Leave empty to clear.' });
+    if (v == null) return; const m = String(v).trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (String(v).trim() && !m) { toast('Use HH:MM, e.g. 04:20', 'error'); return; }
+    try { await ccInvSetTxnTime({ kind, id, at: m ? slipAt(day, m[1].padStart(2, '0') + ':' + m[2]) : null }); toast('Time saved'); reload(); } catch (ex) { toast(humanizeError(ex), 'error'); } } }, ts ? 'edit time' : '+ time') : null]);
 function receiptForm(agrId, requests, cur, onDone, receipts) {
   const req = sel([['', '— not tied to a request —']].concat(requests.filter(r => r.status !== 'funded' && r.status !== 'cancelled').map(r => [r.id, '#' + r.seq + ' · ' + pkr(r.amount, cur) + ' · ' + r.reason])), '');
   const amount = num({ required: true });
   const date = inp({ type: 'date', value: today() });
+  const rtime = timeInp();
   const method = sel([['bank', 'Bank transfer'], ['easypaisa', 'Easypaisa'], ['jazzcash', 'JazzCash'], ['cash', 'Cash'], ['other', 'Other']], 'bank');
   const ref = inp({ placeholder: 'Transaction ID / TID' });
   // transfer details — suggestions come from earlier receipts so the same account is one tap away
@@ -404,7 +418,7 @@ function receiptForm(agrId, requests, cur, onDone, receipts) {
   const d = openDrawer('Record money received', el('div', null, [
     dl('cc-inv-dl-into', past('received_into')), dl('cc-inv-dl-sname', past('sender_name')), dl('cc-inv-dl-sbank', past('sender_bank')),
     f('Against request', req),
-    el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Amount', amount), f('Date received', date)]),
+    el('div', { style: 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px' }, [f('Amount', amount), f('Date received', date), f('Time (PKT)', rtime, 'From the slip')]),
     el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Method', method), f('Reference', ref)]),
     bankBox,
     f('Proof (bank slip / screenshot)', pfile, 'JPG, PNG, WebP or PDF up to 10 MB — stored privately; the investor can open it.'), f('…or proof link', proof),
@@ -414,7 +428,9 @@ function receiptForm(agrId, requests, cur, onDone, receipts) {
     let pref = proof.value; const fl = pfile.files && pfile.files[0];
     if (fl) { if (fl.size > 10 * 1024 * 1024) throw new Error('File is larger than 10 MB'); pref = await invUploadProof(agrId, fl); }
     const transfer = method.value === 'cash' ? {} : { received_into: into.value, sender_name: sName.value, sender_bank: sBank.value, sender_account: sAcct.value, country: country.value };
-    return ccInvConfirmReceipt({ agreement_id: agrId, request_id: req.value, amount: amount.value, received_date: date.value, method: method.value, reference: ref.value, proof_url: pref, transfer });
+    const res = await ccInvConfirmReceipt({ agreement_id: agrId, request_id: req.value, amount: amount.value, received_date: date.value, method: method.value, reference: ref.value, proof_url: pref, transfer });
+    if (rtime.value && res && res.id) await ccInvSetTxnTime({ kind: 'receipt', id: res.id, at: slipAt(date.value, rtime.value) });
+    return res;
   }, () => { d.close(); onDone(); });
 }
 function transferLine(t) {
@@ -431,6 +447,7 @@ function expenseForm(agrId, receipts, cur, onDone) {
   const cat = sel(CATS.map(c => [c, c]), 'office');
   const amount = num({ required: true });
   const date = inp({ type: 'date', value: today() });
+  const etime = timeInp();
   const vendors = ((SETTINGS && SETTINGS.vendors && SETTINGS.vendors.list) || DEFAULT_VENDORS);
   const vendorSel = sel([['', '— choose —']].concat(vendors.map(v => [v, v])).concat([['__other', 'Other…']]), '');
   const vendorOther = inp({ placeholder: 'Who was paid', style: 'width:100%;display:none;margin-top:6px' });
@@ -446,7 +463,7 @@ function expenseForm(agrId, receipts, cur, onDone) {
   settings();
   const d = openDrawer('Log an expense', el('div', null, [
     f('Paid from tranche', tranche, 'TAG 1 — which money paid for it'), f('Category', cat, 'TAG 2 — what it was'),
-    el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Amount', amount), f('Date', date)]),
+    el('div', { style: 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px' }, [f('Amount', amount), f('Date', date), f('Time (PKT)', etime, 'From the slip')]),
     f('Vendor / service', el('div', null, [vendorSel, vendorOther, whatHint]), 'Pre-listed tools carry a plain-language meaning the investor reads automatically. Manage the list in Settings.'), f('Description', desc, 'Plain words a non-technical person understands: what was bought and why. No jargon.'),
     f('Receipt / invoice file', rfile, 'JPG, PNG, WebP or PDF up to 10 MB — stored privately; the investor opens it from the expense.'), f('…or receipt link', receipt),
     el('label', { style: 'display:flex;gap:8px;align-items:center;margin:6px 0 12px' }, [rec, 'Recurring monthly (rent, subscription)']), btn,
@@ -454,7 +471,9 @@ function expenseForm(agrId, receipts, cur, onDone) {
   btn.onclick = () => submit(btn, async () => {
     let ref = receipt.value; const fl = rfile.files && rfile.files[0];
     if (fl) { if (fl.size > 10 * 1024 * 1024) throw new Error('File is larger than 10 MB'); ref = await invUploadProof(agrId, fl); }
-    return ccInvExpense({ agreement_id: agrId, receipt_id: tranche.value, category: cat.value, amount: amount.value, expense_date: date.value, vendor: vendor.value, description: desc.value, receipt_url: ref, is_recurring: rec.checked });
+    const res = await ccInvExpense({ agreement_id: agrId, receipt_id: tranche.value, category: cat.value, amount: amount.value, expense_date: date.value, vendor: vendor.value, description: desc.value, receipt_url: ref, is_recurring: rec.checked });
+    if (etime.value && res && res.id) await ccInvSetTxnTime({ kind: 'expense', id: res.id, at: slipAt(date.value, etime.value) });
+    return res;
   }, () => { d.close(); onDone(); });
 }
 
@@ -573,7 +592,7 @@ async function openDetail(agrId, onListChange) {
 
       sec('Money received', manage ? [el('button', { class: 'lb-btn lb-btn-sm', onClick: () => receiptForm(agrId, D.requests || [], cur, reload, D.receipts || []) }, '+ Record receipt')] : null,
         tbl(['Date', 'Amount', 'Method / ref', 'Investor', 'LoadBoot', ''], (D.receipts || []).map(r => row([
-          fmtDate(r.received_date), el('b', { style: Number(r.amount) < 0 ? 'color:#dc2626' : '' }, pkr(r.amount, cur)),
+          dateCell(r.received_date, r.txn_at, 'receipt', r.id, manage, reload), el('b', { style: Number(r.amount) < 0 ? 'color:#dc2626' : '' }, pkr(r.amount, cur)),
           el('div', null, [(r.method || '—') + (r.reference ? ' · ' + r.reference : '') + ' ', link(r.proof_url, '(proof)'), transferLine(r.transfer)]),
           r.declared_at ? pill('Declared', 'green') : pill('—', 'gray'),
           r.state === 'rejected' ? pill('Rejected', 'red') : r.confirmed_at ? pill('Confirmed', 'green') : pill('Not yet', 'amber'),
@@ -587,8 +606,8 @@ async function openDetail(agrId, onListChange) {
         el('div', null, [
           Object.keys(D.by_category || {}).length ? el('div', { style: 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px' }, Object.entries(D.by_category).sort((x, y) => y[1] - x[1]).map(([c, v]) => pill(c + ' ' + pkr(v, cur), 'blue'))) : null,
           tbl(['Date', 'Category', 'Vendor / what', 'Amount', 'Receipt', 'Investor', ''], (D.expenses || []).map(x => row([
-            fmtDate(x.date), x.category, (x.vendor || '—') + (x.description ? ' · ' + x.description : '') + (x.recurring ? ' · monthly' : ''),
-            el('b', { style: x.reversed ? 'color:#16a34a' : '' }, (x.reversed ? '+' : '−') + pkr(x.amount, cur)), link(x.receipt_url, 'view'),
+            dateCell(x.date, x.txn_at, 'expense', x.id, manage, reload), x.category, (x.vendor || '—') + (x.description ? ' · ' + x.description : '') + (x.recurring ? ' · monthly' : ''),
+            el('b', { style: x.reversed ? 'color:#16a34a' : '' }, (x.reversed ? '+' : '−') + pkr(x.amount, cur)), x.receipt_url ? link(x.receipt_url, 'view') : (manage && !x.reversed ? el('a', { href: '#', title: 'Add the receipt / screenshot now (only possible while none is attached)', onClick: (e) => { e.preventDefault(); const fi = el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp,application/pdf' }); fi.onchange = async () => { const fl = fi.files && fi.files[0]; if (!fl) return; if (fl.size > 10 * 1024 * 1024) { toast('File is larger than 10 MB', 'error'); return; } try { const ref = await invUploadProof(agrId, fl); await ccInvExpenseAttach(x.id, ref); toast('Receipt added'); reload(); } catch (ex) { toast(humanizeError(ex), 'error'); } }; fi.click(); } }, '+ receipt') : '—'),
             x.reversed ? '' : (D.acks || {})[x.id] ? pill('Seen · ' + fmtDate((D.acks || {})[x.id]), 'green') : pill('Not yet seen', 'gray'),
             (manage && !x.reversed) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async () => { const why = await askReason('Reverse this expense', { placeholder: 'Why?' }); if (!why) return; try { await ccInvReverseExpense(x.id, why); toast('Reversed'); reload(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Reverse') : ''], x.reversed ? 'cc-row-muted' : ''))),
         ])),
