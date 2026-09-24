@@ -98,7 +98,7 @@ def sms_page(ctx=None):
           '<div class="sm-step"><span class="n">1</span><h4>Open the carrier portal</h4><p>Go to <a href="/app/carrier/">loadboot.com/app/carrier</a> and choose <b>Carrier owner</b>.</p></div>'
           '<div class="sm-step"><span class="n">2</span><h4>Tap &ldquo;Create an account&rdquo;</h4><p>The registration form asks for email, password, company, your name, and a country code plus mobile number.</p></div>'
           '<div class="sm-step"><span class="n">3</span><h4>Tick the optional SMS box</h4><p>It sits directly under the mobile number, is <b>unchecked by default</b>, and the account is created whether or not you tick it.</p></div>'
-          '<div class="sm-step"><span class="n">4</span><h4>We record your consent</h4><p>The date, time and source (registration checkbox) are stored with your account. Untick later from Account &rarr; Security, or reply STOP.</p></div>'
+          '<div class="sm-step"><span class="n">4</span><h4>We record your consent</h4><p>The date, time and source (registration checkbox) are stored with your account. To stop at any time, reply STOP to any message.</p></div>'
           '</div>'
           # ---- replica of the live form ----
           '<div class="sm-form" aria-label="Copy of the LoadBoot carrier registration form">'
@@ -134,7 +134,7 @@ def sms_page(ctx=None):
             ('&#10067;', 'How to get help', 'Reply <b>HELP</b> to any message, call <a href="tel:+14692537575">+1 (469) 253-7575</a>, or email <a href="mailto:hello@loadboot.com">hello@loadboot.com</a>.'),
             ('&#128274;', 'Your number stays private', 'Consent is not a condition of creating an account, of being dispatched, or of any purchase. Mobile numbers and text-message consent records are never sold, rented or shared with third parties or affiliates for their marketing. Full details in our <a href="/privacy.html#sms">Privacy Policy</a>.'),
           ]) +
-          '<p style="margin-top:22px;font-size:.92rem;color:#64748b">Mobile carriers are not liable for delayed or undelivered messages. Supported carriers: all major US carriers.</p>'
+          '<p style="margin-top:22px;font-size:.92rem;color:#64748b">Mobile carriers are not liable for delayed or undelivered messages.</p>'
           '</div></section>')
 
     # ---------- KEYWORDS ----------
