@@ -644,11 +644,12 @@
           });
           var d = await r.json();
           if (chatIdentity() !== uploadIdentity) throw new Error('Chat changed during upload');
+          if (d && d.error === 'frozen') { var fz = new Error(d.detail || 'Uploads are paused.'); fz.frozen = true; throw fz; }
           if (!r.ok || d.error || d.ok !== true || d.stored !== true || !d.verdict) throw new Error(d.detail || d.error || 'check failed');
           renderVerdict(doc, idx, d.verdict);
         } catch (e) {
           drop.innerHTML = '📎 Tap to choose a file<br><span style="font-weight:400;font-size:11px;color:#64748b">PDF, JPG or PNG · max 8 MB</span>';
-          err.textContent = 'Upload hiccup — please try again (' + ((e && e.message) || '') + ')';
+          err.textContent = (e && e.frozen) ? e.message : 'Upload hiccup — please try again (' + ((e && e.message) || '') + ')';
           err.style.display = 'block';
         }
       };
