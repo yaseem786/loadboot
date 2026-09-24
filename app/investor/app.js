@@ -166,7 +166,7 @@ function renderSignup(msg) {
     btn.disabled = true;
     try {
       S.signupName = name.value.trim();
-      const { data, error } = await signUp(email.value.trim(), pass.value, { name: name.value.trim(), role: 'investor' });
+      const { data, error } = await signUp(email.value.trim(), pass.value, { name: name.value.trim(), role: 'investor', redirectTo: location.origin + '/app/investor/' });
       if (error) throw error;
       if (data && data.session) { await boot(); return; }
       // Supabase answers an already-registered e-mail with a user that has NO identities (and sends nothing)
