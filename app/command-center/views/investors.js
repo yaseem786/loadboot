@@ -376,18 +376,53 @@ function requestForm(agrId, unfunded, cur, onDone, pos) {
 }
 function guessCat(t) { t = String(t || '').toLowerCase(); return /rent/.test(t) ? 'rent' : /salary|dispatcher|pay/.test(t) ? 'salary' : /laptop|computer|equip|headset|ups/.test(t) ? 'equipment' : /software|tool|phone|line|hosting/.test(t) ? 'tools' : /legal|lawyer|regist/.test(t) ? 'legal' : /market|ads/.test(t) ? 'marketing' : /reloc|move|shift/.test(t) ? 'relocation' : /deposit|office/.test(t) ? 'office' : 'misc'; }
 
-function receiptForm(agrId, requests, cur, onDone) {
+function receiptForm(agrId, requests, cur, onDone, receipts) {
   const req = sel([['', '— not tied to a request —']].concat(requests.filter(r => r.status !== 'funded' && r.status !== 'cancelled').map(r => [r.id, '#' + r.seq + ' · ' + pkr(r.amount, cur) + ' · ' + r.reason])), '');
   const amount = num({ required: true });
   const date = inp({ type: 'date', value: today() });
-  const method = sel([['bank', 'Bank'], ['easypaisa', 'Easypaisa'], ['jazzcash', 'JazzCash'], ['cash', 'Cash'], ['other', 'Other']], 'bank');
-  const ref = inp({ placeholder: 'Transaction ID' });
-  const proof = inp({ type: 'url', placeholder: 'https://… screenshot' });
+  const method = sel([['bank', 'Bank transfer'], ['easypaisa', 'Easypaisa'], ['jazzcash', 'JazzCash'], ['cash', 'Cash'], ['other', 'Other']], 'bank');
+  const ref = inp({ placeholder: 'Transaction ID / TID' });
+  // transfer details — suggestions come from earlier receipts so the same account is one tap away
+  const past = (k) => Array.from(new Set((receipts || []).map(r => r.transfer && r.transfer[k]).filter(Boolean)));
+  const dl = (id, vals) => el('datalist', { id }, vals.map(v => el('option', { value: v })));
+  const into = inp({ placeholder: 'e.g. Meezan Bank — M. Yaseen — ****1234', list: 'cc-inv-dl-into' });
+  const sName = inp({ placeholder: 'Account title of the sender', list: 'cc-inv-dl-sname' });
+  const sBank = inp({ placeholder: 'e.g. Emirates NBD, HBL, Meezan', list: 'cc-inv-dl-sbank' });
+  const sAcct = inp({ placeholder: 'Last 4 digits, e.g. ****5678', maxlength: 40 });
+  const country = sel([['', '—'], ['Pakistan', 'Pakistan'], ['UAE', 'UAE'], ['Saudi Arabia', 'Saudi Arabia'], ['UK', 'UK'], ['USA', 'USA'], ['Other', 'Other']], '');
+  const pfile = el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp,application/pdf', class: 'lb-input', style: 'width:100%' });
+  const proof = inp({ type: 'url', placeholder: 'https://… (optional)' });
+  const bankBox = el('div', { style: 'border:1px solid var(--cc-border,#e5e7eb);border-radius:10px;padding:10px 12px;margin:4px 0 12px' }, [
+    el('div', { style: 'font-weight:600;font-size:13px;margin-bottom:6px' }, 'Bank transfer details'),
+    f('Received into (your account)', into, 'Which of your accounts the money landed in. Bank — account title — last 4 digits.'),
+    el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Sender name', sName), f('Sender bank', sBank)]),
+    el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Sender account', sAcct, 'Last 4 digits only — never the full number.'), f('Sent from country', country)]),
+  ]);
+  const syncBank = () => { bankBox.style.display = method.value === 'cash' ? 'none' : ''; };
+  method.addEventListener('change', syncBank); syncBank();
   const btn = el('button', { class: 'lb-btn lb-btn-primary' }, 'Record & confirm');
   const d = openDrawer('Record money received', el('div', null, [
-    f('Against request', req), f('Amount', amount), f('Date received', date), f('Method', method), f('Reference', ref), f('Proof link', proof), btn,
+    dl('cc-inv-dl-into', past('received_into')), dl('cc-inv-dl-sname', past('sender_name')), dl('cc-inv-dl-sbank', past('sender_bank')),
+    f('Against request', req),
+    el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Amount', amount), f('Date received', date)]),
+    el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Method', method), f('Reference', ref)]),
+    bankBox,
+    f('Proof (bank slip / screenshot)', pfile, 'JPG, PNG, WebP or PDF up to 10 MB — stored privately; the investor can open it.'), f('…or proof link', proof),
+    btn,
   ]), { subtitle: 'Use this when the investor handed money over without declaring it in the portal. It is confirmed on your side immediately.' });
-  btn.onclick = () => submit(btn, () => ccInvConfirmReceipt({ agreement_id: agrId, request_id: req.value, amount: amount.value, received_date: date.value, method: method.value, reference: ref.value, proof_url: proof.value }), () => { d.close(); onDone(); });
+  btn.onclick = () => submit(btn, async () => {
+    let pref = proof.value; const fl = pfile.files && pfile.files[0];
+    if (fl) { if (fl.size > 10 * 1024 * 1024) throw new Error('File is larger than 10 MB'); pref = await invUploadProof(agrId, fl); }
+    const transfer = method.value === 'cash' ? {} : { received_into: into.value, sender_name: sName.value, sender_bank: sBank.value, sender_account: sAcct.value, country: country.value };
+    return ccInvConfirmReceipt({ agreement_id: agrId, request_id: req.value, amount: amount.value, received_date: date.value, method: method.value, reference: ref.value, proof_url: pref, transfer });
+  }, () => { d.close(); onDone(); });
+}
+function transferLine(t) {
+  if (!t || typeof t !== 'object') return null;
+  const from = [t.sender_name, t.sender_bank, t.sender_account, t.country].filter(Boolean).join(' · ');
+  if (!from && !t.received_into) return null;
+  return el('div', { style: 'font-size:11.5px;color:var(--cc-muted,#6b7280);margin-top:2px;line-height:1.35' }, [
+    from ? el('div', null, 'From: ' + from) : null, t.received_into ? el('div', null, 'Into: ' + t.received_into) : null]);
 }
 
 function expenseForm(agrId, receipts, cur, onDone) {
@@ -536,10 +571,10 @@ async function openDetail(agrId, onListChange) {
           pill({ pending: 'Awaiting investor', declared: 'Declared — confirm below', funded: 'Funded', declined: 'Declined', cancelled: 'Cancelled' }[r.status] || r.status, { pending: 'amber', declared: 'blue', funded: 'green' }[r.status] || 'gray'),
           r.seen_at ? fmtDate(r.seen_at) : '—'])))),
 
-      sec('Money received', manage ? [el('button', { class: 'lb-btn lb-btn-sm', onClick: () => receiptForm(agrId, D.requests || [], cur, reload) }, '+ Record receipt')] : null,
+      sec('Money received', manage ? [el('button', { class: 'lb-btn lb-btn-sm', onClick: () => receiptForm(agrId, D.requests || [], cur, reload, D.receipts || []) }, '+ Record receipt')] : null,
         tbl(['Date', 'Amount', 'Method / ref', 'Investor', 'LoadBoot', ''], (D.receipts || []).map(r => row([
           fmtDate(r.received_date), el('b', { style: Number(r.amount) < 0 ? 'color:#dc2626' : '' }, pkr(r.amount, cur)),
-          (r.method || '—') + (r.reference ? ' · ' + r.reference : '') + ' ', link(r.proof_url, '(proof)'),
+          el('div', null, [(r.method || '—') + (r.reference ? ' · ' + r.reference : '') + ' ', link(r.proof_url, '(proof)'), transferLine(r.transfer)]),
           r.declared_at ? pill('Declared', 'green') : pill('—', 'gray'),
           r.state === 'rejected' ? pill('Rejected', 'red') : r.confirmed_at ? pill('Confirmed', 'green') : pill('Not yet', 'amber'),
           manage ? el('div', { style: 'display:flex;gap:4px' }, [

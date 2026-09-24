@@ -100,6 +100,8 @@ function field(label, input, hint) {
   return el('div', { class: 'iv-field' }, [el('label', { for: input.id }, label), input, hint ? el('span', { class: 'hint' }, hint) : null]);
 }
 const inp = (id, attrs) => el('input', Object.assign({ id, name: id }, attrs || {}));
+const trFrom = (r) => { const x = (r && r.transfer) || {}; return [x.sender_name, x.sender_bank, x.sender_account, x.country].filter(Boolean).join(' · ') || null; };
+const trInto = (r) => ((r && r.transfer) || {}).received_into || null;
 const dl = (pairs) => el('div', { class: 'iv-dl' }, pairs.flatMap(([k, v]) => [el('span', null, k), (v && v.nodeType) ? v : el('b', null, v == null || v === '' ? t('none') : v)]));
 const empty = (msg, ic) => el('div', { class: 'iv-card' }, el('div', { class: 'iv-empty' }, [icon(ic || 'inbox', ''), msg]));
 function skeleton() {
@@ -638,7 +640,7 @@ async function renderPayments(host) {
   const rc = S.ledger.receipts || [];
   const returned = (S.ledger.payouts || []).filter(x => x.kind === 'capital_return');
   const sheet = (r) => openSheet(t('nav_payments'), el('div', null, [
-    dl([[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method], [t('reference'), r.reference],
+    dl([[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method], [t('reference'), r.reference], [t('tr_from'), trFrom(r)], [t('tr_into'), trInto(r)],
         [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : null], [t('p_lb_confirmed'), r.confirmed_at ? fmtDate(r.confirmed_at) : t('not_yet')],
         r.rejected_reason ? [t('p_rejected_why'), r.rejected_reason] : [t('note'), r.note],
         [t('proof'), r.proof_url ? el('a', { href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(r.proof_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, t('view')) : null]]),
@@ -1116,7 +1118,7 @@ async function expenseReceipt(x) {
 }
 function paymentConfirmation(r) {
   brandDoc(t('dl_confirm'), t('p_lb_confirmed') + ' ' + fmtDate(r.confirmed_at),
-    [[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method || '—'], [t('reference'), r.reference || '—'], [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : '—'], [t('p_lb_confirmed'), fmtDate(r.confirmed_at)], ['Record id', r.id]],
+    [[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method || '—'], [t('reference'), r.reference || '—'], [t('tr_from'), trFrom(r) || '—'], [t('tr_into'), trInto(r) || '—'], [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : '—'], [t('p_lb_confirmed'), fmtDate(r.confirmed_at)], ['Record id', r.id]],
     null, 'CONFIRMED BY BOTH PARTIES — counts toward the funded amount.');
 }
 function statementDoc(s) {
@@ -1342,7 +1344,7 @@ function investmentSheet(r) {
   const st = r.state === 'confirmed' ? pill(t('in_confirmed'), 'ok') : r.state === 'rejected' ? pill(t('in_rejected'), 'due') : pill(t('in_waiting'), 'wait');
   openSheet(t('in_title'), el('div', null, [
     el('div', { style: 'margin-bottom:10px' }, st),
-    dl([[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method || '—'], [t('reference'), r.reference || '—'], [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : '—'], [t('p_lb_confirmed'), r.confirmed_at ? fmtDate(r.confirmed_at) : t('not_yet')], r.rejected_reason ? [t('p_rejected_why'), r.rejected_reason] : [t('note'), r.note || '—']]),
+    dl([[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method || '—'], [t('reference'), r.reference || '—'], [t('tr_from'), trFrom(r) || '—'], [t('tr_into'), trInto(r) || '—'], [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : '—'], [t('p_lb_confirmed'), r.confirmed_at ? fmtDate(r.confirmed_at) : t('not_yet')], r.rejected_reason ? [t('p_rejected_why'), r.rejected_reason] : [t('note'), r.note || '—']]),
     r.proof_url ? el('a', { class: 'iv-btn block', href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(r.proof_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, [icon('doc'), t('view') + ' ' + t('proof')]) : null,
     r.confirmed_at ? el('button', { class: 'iv-btn primary block', onClick: () => paymentConfirmation(r) }, [icon('download'), t('dl_confirm')]) : el('p', { class: 'iv-muted' }, t('d_two')),
     flagButton('receipt', r.id),
