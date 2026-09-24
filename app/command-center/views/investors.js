@@ -264,7 +264,7 @@ function agreementForm(agr, rows, onDone, presetInvestor) {
   const stopMode = sel([['pro_rata', 'Pro-rate the permanent % to what was paid (8 of 20 → 2%)'], ['keep', 'Keep the full permanent %']], a.early_stop_share_mode || 'pro_rata');
   const carry = sel([['false', 'Month by month — a loss month owes nothing and is not carried'], ['true', 'Carry losses forward — later profit first repays earlier losses']], String(a.loss_carry_forward === true));
   const exitPct = num({ value: a.exit_participation_pct ?? '', max: '100', placeholder: 'e.g. 5' });
-  const signed = inp({ type: 'date', value: a.signed_date || '' });
+  const signed = inp({ type: 'date', value: a.signed_date || '', disabled: true, title: 'Set automatically when both sides sign in the portal' });
   const doc = inp({ type: 'url', value: a.doc_url || '', placeholder: 'https://… signed PDF' });
   const status = sel([['draft', 'Draft'], ['active', 'Active'], ['recovered', 'Recovered'], ['closed', 'Closed']], a.status || 'active');
   const btn = el('button', { class: 'lb-btn lb-btn-primary' }, agr ? 'Save agreement' : 'Create agreement');
@@ -279,7 +279,7 @@ function agreementForm(agr, rows, onDone, presetInvestor) {
     f('Exit participation % (of sale proceeds)', exitPct, 'Phantom equity: a share of a sale WITHOUT ownership. Blank = none.'), f('If the company is sold (words)', exitT),
     f('If they stop funding partway — the permanent %', stopMode), f('If they stop funding partway (words)', stopT),
     f('Loss months', carry), f('Buyout clause', buyout),
-    el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Signed on', signed), f('Status', status)]),
+    el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' }, [f('Signed on', signed, 'Automatic — set when both sides e-sign.'), f('Status', status)]),
     f('Signed document link', doc), btn,
   ]), { subtitle: 'These words are what the investor reads in their portal. Write them as agreed, not as hoped.' });
   btn.onclick = () => submit(btn, () => ccInvSaveAgreement({
@@ -287,7 +287,7 @@ function agreementForm(agr, rows, onDone, presetInvestor) {
     commitment_cap: cap.value, payback_rate_pct: payRate.value, permanent_share_pct: shareRate.value,
     payback_basis: basis.value, payback_fixed_amount: fixed.value, share_type: shareType.value,
     equity_vesting_mode: vest.value, profit_definition: profitDef.value, exit_treatment: exitT.value,
-    early_stop_terms: stopT.value, buyout_terms: buyout.value, signed_date: signed.value, doc_url: doc.value, status: status.value,
+    early_stop_terms: stopT.value, buyout_terms: buyout.value, doc_url: doc.value, status: status.value,
     early_stop_share_mode: stopMode.value, loss_carry_forward: carry.value === 'true', exit_participation_pct: exitPct.value,
   }), () => { d.close(); onDone(); });
 }
