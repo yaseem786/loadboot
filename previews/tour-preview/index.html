@@ -1,0 +1,124 @@
+<title>Carrier Tour Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #eef2f7; --bar: #0b1220; --bar-2: #111c33; --ink: #10223B; --muted: #64748B; --line: #dbe3ee; --panel: #ffffff;
+    --blue: #0883F7; --orange: #FC5305; --green: #16a34a; --chip: rgba(255,255,255,.08); --chip-on: #0883F7; --font: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #070d1a; --ink: #eaf1fb; --muted: #8ea2c3; --line: rgba(255,255,255,.1); --panel: #0f1a2e; color-scheme: dark; } }
+  :root[data-theme="dark"] { --bg: #070d1a; --ink: #eaf1fb; --muted: #8ea2c3; --line: rgba(255,255,255,.1); --panel: #0f1a2e; color-scheme: dark; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); display: flex; flex-direction: column; min-height: 100%; }
+  .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: linear-gradient(180deg, var(--bar), var(--bar-2)); color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; box-shadow: 0 10px 30px -18px rgba(0,0,0,.6); }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; letter-spacing: -.01em; margin-right: 6px; }
+  .brand small { display: block; font-size: .64rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #93a4c4; }
+  .grp { display: flex; align-items: center; gap: 6px; }
+  .grp > span { font-size: .66rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #93a4c4; margin-right: 2px; }
+  .seg { display: inline-flex; background: var(--chip); border-radius: 11px; padding: 3px; gap: 2px; }
+  .seg button { border: 0; background: transparent; color: #cbd5e1; font-family: inherit; font-weight: 700; font-size: .8rem; padding: 7px 12px; border-radius: 8px; cursor: pointer; transition: .15s; }
+  .seg button.on { background: var(--chip-on); color: #fff; box-shadow: 0 8px 18px -10px rgba(8,131,247,.9); }
+  .seg button:focus-visible, .act:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
+  .act { border: 0; border-radius: 10px; padding: 9px 14px; font-family: inherit; font-weight: 800; font-size: .82rem; cursor: pointer; background: var(--orange); color: #fff; box-shadow: 0 10px 22px -12px rgba(252,83,5,.9); }
+  .act.ghost { background: rgba(255,255,255,.1); color: #fff; box-shadow: none; }
+  .act:active { transform: scale(.97); }
+  .spacer { flex: 1; }
+  .stage { flex: 1; display: grid; grid-template-columns: 1fr 300px; gap: 0; min-height: 0; }
+  .view { position: relative; min-height: 640px; display: flex; align-items: flex-start; justify-content: center; padding: 0; }
+  .view.desktop iframe { width: 100%; height: calc(100vh - 66px); min-height: 640px; border: 0; display: block; background: #0d1c34; }
+  .view.phone { padding: 22px 16px 32px; align-items: center; }
+  .phone-shell { width: 402px; max-width: 100%; height: 836px; max-height: calc(100vh - 110px); min-height: 560px; border-radius: 48px; background: #05080f; padding: 12px; box-shadow: 0 40px 90px -30px rgba(2,6,23,.8), inset 0 0 0 2px #1f2937; position: relative; }
+  .phone-shell:before { content: ""; position: absolute; top: 22px; left: 50%; width: 110px; height: 30px; transform: translateX(-50%); background: #05080f; border-radius: 20px; z-index: 2; }
+  .phone-shell iframe { width: 100%; height: 100%; border: 0; border-radius: 38px; background: #0d1c34; display: block; }
+  .side { border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+  .side h2 { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0; padding: 16px 16px 8px; }
+  .notes { padding: 4px 16px 14px; font-size: .86rem; line-height: 1.55; border-bottom: 1px solid var(--line); }
+  .notes p { margin: 0 0 8px; }
+  .notes b { color: var(--blue); }
+  .notes ul { margin: 6px 0 0; padding-left: 18px; }
+  .notes li { margin: 3px 0; }
+  .log { flex: 1; overflow: auto; padding: 8px 12px 16px; font-size: .8rem; font-variant-numeric: tabular-nums; }
+  .ev { display: grid; grid-template-columns: 52px 1fr; gap: 8px; padding: 6px 4px; border-bottom: 1px dashed var(--line); animation: in .25s ease both; }
+  @keyframes in { from { opacity: 0; transform: translateY(4px); } }
+  .ev time { color: var(--muted); font-size: .72rem; padding-top: 2px; }
+  .ev b { display: block; font-size: .8rem; }
+  .ev span { color: var(--muted); font-size: .74rem; }
+  .ev.start b { color: var(--blue); } .ev.done b { color: var(--green); } .ev.skip b { color: var(--orange); }
+  .empty { color: var(--muted); padding: 12px 6px; font-size: .8rem; }
+  @media (max-width: 960px) { .stage { grid-template-columns: 1fr; } .side { border-left: 0; border-top: 1px solid var(--line); max-height: 320px; } .view.desktop iframe { height: 72vh; min-height: 520px; } }
+  @media (max-width: 640px) { .bar { padding: 8px 12px; gap: 8px; } .brand small { display: none; } .grp > span { display: none; } .seg button { padding: 7px 9px; font-size: .74rem; } .view.phone { padding: 10px 8px 18px; } .phone-shell { width: 100%; height: 78vh; min-height: 480px; border-radius: 30px; padding: 8px; } .phone-shell:before { display: none; } .phone-shell iframe { border-radius: 24px; } }
+  @media (prefers-reduced-motion: reduce) { .ev { animation: none; } }
+</style>
+<div class="bar" role="toolbar" aria-label="Preview controls">
+  <div class="brand"><svg width="22" height="23" viewBox="16 14 68 72" aria-hidden="true"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#fff"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#fff"/></svg><div>Tour preview<small>Carrier portal</small></div></div>
+  <div class="grp"><span>Role</span><div class="seg" id="role"><button data-v="owner" class="on">Owner</button><button data-v="driver">Driver</button><button data-v="dispatcher">Dispatcher</button></div></div>
+  <div class="grp"><span>Device</span><div class="seg" id="device"><button data-v="desktop" class="on">Desktop</button><button data-v="phone">Phone</button></div></div>
+  <div class="grp"><span>Theme</span><div class="seg" id="theme"><button data-v="dark" class="on">Dark</button><button data-v="light">Light</button></div></div>
+  <div class="spacer"></div>
+  <button class="act ghost" id="guide" title="Runs only the steps for the screen that is open">Screen guide</button>
+  <button class="act ghost" id="helpbtn">Open ? panel</button>
+  <button class="act" id="restart">&#9654; Restart tour</button>
+</div>
+<div class="stage">
+  <div class="view desktop" id="view"><iframe id="frame" title="Carrier portal preview" src="mock.html?role=owner&theme=dark"></iframe></div>
+  <aside class="side">
+    <h2>Kya dekhna hai</h2>
+    <div class="notes">
+      <p>Yeh asli carrier portal ki <b>CSS aur shell</b> hai, data nakli hai. Tour engine wahi hai jo product mein jayega.</p>
+      <ul>
+        <li><b>Role</b> badlein: owner 11 stops, driver 6, dispatcher 8. Har ek ka apna lehja.</li>
+        <li><b>Phone</b> par card neeche sheet ban jata hai, tab bar ke upar. Target neeche ho to upar chala jata hai.</li>
+        <li>Tour <b>khud screen badalta</b> hai: Load Board, My Loads, Documents, Finance.</li>
+        <li>Neeche daayen <b>?</b> button: replay, screen guide, quick tips, support.</li>
+        <li>Tour ke baad naye screen par ek baar <b>nudge</b> aata hai: "New here?"</li>
+        <li>Desktop par &larr; &rarr; Esc chalte hain. Spotlight ke bahar click block hai.</li>
+      </ul>
+    </div>
+    <h2>Live events</h2>
+    <div class="log" id="log"><div class="empty">Tour shuru hote hi yahan events aayenge.</div></div>
+  </aside>
+</div>
+<script>
+  (function () {
+    var state = { role: 'owner', device: 'desktop', theme: 'dark' };
+    var frame = document.getElementById('frame'), view = document.getElementById('view'), log = document.getElementById('log');
+    var count = 0;
+    function src() { return 'mock.html?role=' + state.role + '&theme=' + state.theme + '&t=' + Date.now(); }
+    function seg(id, key) {
+      var box = document.getElementById(id);
+      box.addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        box.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
+        state[key] = b.dataset.v;
+        if (key === 'device') { render(); } else { frame.src = src(); note('start', 'Reloaded as ' + state.role + ' \u00b7 ' + state.theme, 'tour restarts from the welcome card'); }
+      });
+    }
+    seg('role', 'role'); seg('device', 'device'); seg('theme', 'theme');
+    function render() {
+      view.className = 'view ' + state.device;
+      view.innerHTML = '';
+      var f = document.createElement('iframe'); f.id = 'frame'; f.title = 'Carrier portal preview'; f.src = src();
+      if (state.device === 'phone') { var shell = document.createElement('div'); shell.className = 'phone-shell'; shell.appendChild(f); view.appendChild(shell); }
+      else view.appendChild(f);
+      frame = f;
+    }
+    function post(m) { try { frame.contentWindow.postMessage(m, '*'); } catch (_) {} }
+    document.getElementById('restart').addEventListener('click', function () { post({ type: 'tour.restart' }); });
+    document.getElementById('guide').addEventListener('click', function () { post({ type: 'tour.screen' }); });
+    document.getElementById('helpbtn').addEventListener('click', function () { post({ type: 'help.open' }); });
+    function note(kind, title, sub) {
+      if (count === 0) log.innerHTML = '';
+      count++;
+      var d = document.createElement('div'); d.className = 'ev ' + kind;
+      var t = new Date(); var hh = ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) + ':' + ('0' + t.getSeconds()).slice(-2);
+      d.innerHTML = '<time>' + hh + '</time><div><b></b><span></span></div>';
+      d.querySelector('b').textContent = title; d.querySelector('span').textContent = sub || '';
+      log.prepend(d); while (log.children.length > 60) log.lastChild.remove();
+    }
+    window.addEventListener('message', function (e) {
+      var m = e.data || {}; if (m.type !== 'tour.event') return;
+      var n = m.name, d = m.data || {}, kind = /start/.test(n) ? 'start' : /done/.test(n) ? 'done' : /skip/.test(n) ? 'skip' : 'step';
+      var label = { 'tour.start': 'Tour started', 'tour.step': 'Step ' + ((d.index | 0) + 1) + ' of ' + d.total, 'tour.done': 'Tour finished', 'tour.skip': 'Tour skipped at step ' + ((d.at | 0) + 1),
+        'screen.start': 'Screen guide: ' + d.screen, 'screen.step': 'Guide step ' + ((d.index | 0) + 1) + ' of ' + d.total, 'screen.done': 'Screen guide finished', 'screen.skip': 'Screen guide closed', 'help.open': 'Help panel opened' }[n] || n;
+      note(kind, label, d.id ? d.id + (d.role ? ' \u00b7 ' + d.role : '') : (d.role || ''));
+    });
+  })();
+</script>
