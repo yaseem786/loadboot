@@ -291,3 +291,9 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
   fix lane has nothing actionable left; every remaining item is gated on Yaseen (Storage residue delete, attorney review of F04 copy),
   ChatGPT (0342/0343 report, frozen-user message, CC erasure screen, F19–F27) or Retell credit (enforce mode). SEO items F21–F23 are
   ChatGPT's measure-and-report; the SEO growth programme itself is outside the audit (supply_seo_project / seo-loop lane).
+- **2026-09-24 — Claude:** ChatGPT subscription ended; its last published work (d59d1b6) is on main, two unpushed local commits are lost.
+  Claude took over the ChatGPT lane and closed it: frozen-upload message (lc-doc-check staging v18/prod v16 + chat + storage.js),
+  CC deletion screen = bl_priv_0437 from the UX session, 0342/0343 reviewed (stay staging-only; prod bug fixed as bl_audit_0369 —
+  close requests no longer silently close the org), getToken accepted, unused 2 MB PNG unpublished, F24 measured (0 cron failures),
+  F20 partly measured (PSI quota). Full table: CLOSEOUT-2026-09-24.md. AUDIT STATUS: every fix item closed; remaining = Yaseen's
+  3 manual items + Retell enforce (credit).
