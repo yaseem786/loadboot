@@ -397,6 +397,65 @@ function openCancelLoadModal(l, committed, onDone) {
   repostBtn.onclick = repostBtn.onClick = () => submit(true, repostBtn, 'Re-posting…', committed ? 'Remove carrier & re-post' : 'Re-post to board');
   deleteBtn.onclick = deleteBtn.onClick = () => submit(false, deleteBtn, 'Deleting…', 'Delete load');
 }
+/* ---------- claim review sheet — O11 (replaces confirm()/prompt() on Approve/Reject) ---------- */
+function openClaimReviewSheet(b, action, onDone) {
+  const c = b.claim || {}; const t = b.trip || {}; const dw = b.gps_dwell || []; const docs = b.stop_documents || [];
+  const approve = action === 'approve';
+  const amt = money(c.amount || 0);
+  const line = (txt) => h('div', { class: 'cp-sub', style: 'padding:2px 0' }, txt);
+  const evidence = [
+    (b.filed_evidence && b.filed_evidence.calc) ? line('\u{1F9EE} ' + b.filed_evidence.calc) : null,
+    ...(dw.length ? dw.map((e9) => line((e9.stop || 'Stop') + ': '
+      + (e9.held_minutes != null ? 'held ' + e9.held_minutes + ' min (free ' + (e9.free_minutes || 0) + ', detention ' + (e9.detention_minutes || 0) + ')' : 'arrived ' + (e9.arrived_at ? fmtWhen(e9.arrived_at) : '—'))
+      + (e9.gps ? ' · GPS ✓ ' + Math.round(e9.gps.distance_m || 0) + ' m from the pin' : ' · no GPS fix'))) : [line('No GPS arrive/depart recorded on scene.')]),
+    line(docs.length ? '📎 ' + docs.length + ' document' + (docs.length === 1 ? '' : 's') + ' collected at the stops' : '📎 No stop documents attached'),
+    c.note ? line('Carrier’s note: “' + c.note + '”') : null,
+  ].filter(Boolean);
+  const note = h('textarea', { class: 'cp-in', rows: 3, style: 'width:100%;box-sizing:border-box;resize:vertical;margin-top:6px',
+    placeholder: approve ? 'Optional — a note for your records' : 'Required — why you are rejecting. The carrier reads this.' });
+  const err = h('div', { style: 'color:#e11d48;font-size:.85rem;margin-top:6px;min-height:1em' });
+  const goBtn = h('button', { class: 'cp-btn cp-btn-sm', style: approve ? 'background:#16a34a;color:#fff' : 'background:#e11d48;color:#fff' }, approve ? '✓ Approve ' + amt : '✕ Reject claim');
+  const cancelBtn = h('button', { class: 'cp-btn cp-btn-sm ghost' }, 'Cancel');
+  const body = h('div', null, [
+    h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap' }, [
+      h('div', { style: 'font-weight:800;font-size:.95rem;color:#0f172a' }, String(c.kind || 'claim').toUpperCase() + ' · ' + (t.origin || '—') + ' → ' + (t.destination || '—')),
+      h('div', { style: 'font-weight:900;font-size:1.35rem;color:#0f172a' }, amt),
+    ]),
+    h('div', { class: 'cp-sub' }, [(t.carrier || 'Carrier'), c.ref ? ' · ' + c.ref : '', c.filed_at ? ' · filed ' + fmtWhen(c.filed_at) : ''].join('')),
+    h('div', { style: 'margin-top:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:11px;padding:9px 12px' }, [
+      h('div', { style: 'font-weight:700;font-size:.82rem;color:#334155;margin-bottom:2px' }, 'Evidence on file'), ...evidence,
+    ]),
+    approve
+      ? h('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:11px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;font-size:.85rem;line-height:1.5' }, [
+          h('b', null, 'What happens next'),
+          h('div', null, 'LoadBoot finalizes the amount and it lands on your invoice. The carrier is told you approved. You pay it from this tab once it is finalized.'),
+        ])
+      : h('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:11px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.85rem;line-height:1.5' }, [
+          h('b', null, 'The carrier sees your reason.'),
+          h('div', null, 'If they disagree, either side can ask LoadBoot support to rule on the GPS and paper evidence. That verdict is final for both of you.'),
+        ]),
+    h('label', { style: 'display:block;font-weight:700;font-size:.8rem;color:#334155;margin-top:12px' }, approve ? 'Note (optional)' : 'Reason'),
+    note, err,
+    h('div', { style: 'display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap' }, [cancelBtn, goBtn]),
+  ]);
+  const close = openModal(approve ? '✓ Approve this claim?' : '✕ Reject this claim?', body);
+  cancelBtn.onclick = close;
+  goBtn.onclick = async () => {
+    const nt = note.value.trim();
+    if (!approve && !nt) { err.textContent = 'Write the reason — the carrier and support both read it.'; note.focus(); return; }
+    goBtn.disabled = true; cancelBtn.disabled = true; goBtn.textContent = approve ? 'Approving…' : 'Rejecting…';
+    try {
+      await partnerReviewClaim(c.id, approve ? 'approve' : 'dispute', nt || null);
+      close();
+      pToast(approve ? 'LoadBoot finalizes the amount; it lands on your invoice.' : 'The carrier has been told, with your reason.', { kind: 'ok', title: approve ? '✓ Claim approved — ' + amt : '✕ Claim rejected' });
+      if (onDone) onDone();
+    } catch (e9) {
+      goBtn.disabled = false; cancelBtn.disabled = false; goBtn.textContent = approve ? '✓ Approve ' + amt : '✕ Reject claim';
+      err.textContent = (e9 && e9.message) || 'Could not save your decision — please try again.';
+    }
+  };
+  if (!approve) setTimeout(() => note.focus(), 80);
+}
 async function openCancellationHistory(l) {
   const host = h('div', null, h('div', { class: 'cp-sub' }, 'Loading cancellation history…'));
   openModal('⟲ Cancellation history — ' + (l.origin || '') + ' → ' + (l.destination || ''), host);
@@ -1276,19 +1335,37 @@ function verifyGateCard(ov) {
   card.appendChild(list);
   (async () => {
     let pk; try { pk = await myOnboardingPacket(); } catch (_) { mount(list, h('div', { class: 'cp-sub' }, 'Could not load your packet.')); return; }
-    mount(list, (pk.items || []).map(it => h('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #e2e8f0;flex-wrap:wrap' }, [
-      h('div', null, [h('b', { style: 'font-size:.9rem' }, it.label), h('div', { class: 'cp-sub' },
-        (it.note || '').trim().startsWith('{') ? 'Signed online \u2713'
+    // O14: one line per item (label + state on the left, the action on the right — no wrap on a phone).
+    // Items that gate posting come first; "before first booking" and optional ones sit folded below.
+    const tagOf = (it) => String(it.tag || '').toLowerCase();
+    const row = (it) => {
+      const state = (it.note || '').trim().startsWith('{') ? 'Signed online \u2713'
         : it.status === 'rejected' && it.note ? '\u2715 ' + it.note
         : it.status === 'submitted' ? 'In review'
         : it.status === 'verified' ? 'Verified \u2713'
-        : (String(it.tag || '').toLowerCase() === 'optional' ? 'Optional' : String(it.tag || '').toLowerCase() === 'conditional' ? 'Before first booking' : 'Required'))]),
-      h('div', { style: 'display:flex;gap:6px;align-items:center' }, [pill(it.status),
-        h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
-          try { openPacketSubmit(it, () => alert('Submitted — our team will verify it. You can post loads once all required items are verified.')); }
-          catch (e) { alert((e && e.message) || 'Failed'); }
-        } }, packetBtnLabel(it.status))].filter(Boolean)),
-    ])));
+        : (tagOf(it) === 'optional' ? 'Optional' : tagOf(it) === 'conditional' ? 'Before first booking' : 'Required');
+      return h('div', { style: 'display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e2e8f0' }, [
+        h('div', { style: 'flex:1;min-width:0' }, [h('b', { style: 'font-size:.9rem;display:block' }, it.label), h('div', { class: 'cp-sub' }, state)]),
+        h('div', { style: 'display:flex;gap:6px;align-items:center;flex-shrink:0' }, [
+          it.status !== 'pending' ? pill(it.status) : null,   // "Pending" beside "Submit" said nothing
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
+            try { openPacketSubmit(it, () => pToast('Our team will verify it. You can post loads once every required item is verified.', { kind: 'ok', title: 'Submitted \u2713' })); }
+            catch (e) { pToast((e && e.message) || 'Could not open the form.', { kind: 'error', title: 'Try again' }); }
+          } }, packetBtnLabel(it.status)),
+        ].filter(Boolean)),
+      ]);
+    };
+    const all = pk.items || [];
+    const gating = all.filter((it) => it.status === 'rejected' || (tagOf(it) !== 'optional' && tagOf(it) !== 'conditional'));
+    const later = all.filter((it) => !gating.includes(it));
+    const openLater = later.length && !gating.some((it) => it.status === 'required' || it.status === 'pending' || it.status === 'rejected');
+    mount(list, [
+      ...gating.map(row),
+      later.length ? h('details', { style: 'margin-top:8px', open: !!openLater }, [
+        h('summary', { style: 'cursor:pointer;font-weight:700;font-size:.85rem;color:#1d4ed8;padding:6px 0' }, 'Before your first booking & optional (' + later.length + ')'),
+        ...later.map(row),
+      ]) : null,
+    ].filter(Boolean));
   })();
   return card;
 }
@@ -3247,9 +3324,9 @@ async function brokerDash(user, ov) {
         ]),
         h('span', { style: 'padding:6px 14px;border-radius:999px;font-weight:800;font-size:.72rem;background:#dcfce7;color:#166534' }, '\ud83d\udd13 UNLOCKED \u2014 ' + d.mandatory_verified + '/' + d.mandatory_total + ' mandatory verified'),
       ]),
-      h('div', { style: 'margin-top:12px' }, (d.items || []).map(it => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid #f1f5f9;font-size:.84rem;flex-wrap:wrap' }, [
-        h('span', { style: 'font-weight:700;color:#10223B' }, [it.label, it.mandatory ? h('span', { style: 'font-size:.6rem;color:#b45309;font-weight:800;margin-left:6px' }, 'REQUIRED') : null]),
-        h('span', { style: 'text-align:right' }, [
+      h('div', { style: 'margin-top:12px' }, (d.items || []).map(it => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid #f1f5f9;font-size:.84rem;align-items:flex-start' }, [  // O13: no wrap — the status stays in its right column on a phone
+        h('span', { style: 'font-weight:700;color:#10223B;flex:1 1 auto;min-width:0' }, [it.label, it.mandatory ? h('span', { style: 'font-size:.6rem;color:#b45309;font-weight:800;margin-left:6px;white-space:nowrap' }, 'REQUIRED') : null]),
+        h('span', { style: 'text-align:right;flex:0 0 auto' }, [
           h('b', { style: 'color:' + (stOk(it.status) ? '#16a34a' : '#b45309') }, String(it.status).toUpperCase()),
           h('div', { class: 'cp-sub' }, [it.expiry_date ? 'expires ' + it.expiry_date : null, it.verified_at ? 'verified ' + String(it.verified_at).slice(0, 10) : null].filter(Boolean).join(' \u00b7 ')),
           (() => { let j9 = null; try { j9 = it.note ? JSON.parse(it.note) : null; } catch (_) {}
@@ -3944,14 +4021,8 @@ async function brokerDash(user, ov) {
         ].filter(Boolean));
         const caret = h('span', { style: 'color:#0883F7;font-weight:700;font-size:.82rem;cursor:pointer' }, '\u25be Evidence');
         const actRow = (c.broker_status === 'pending') ? h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
-          h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { const b9 = ev.currentTarget;
-            if (!confirm('Approve this ' + c.kind + ' claim? LoadBoot finalizes the amount and it lands on your invoice.')) return;
-            b9.disabled = true; try { await partnerReviewClaim(c.id, 'approve', null); loadClaims(); } catch (e) { b9.disabled = false; alert((e && e.message) || 'Failed.'); }
-          } }, '\u2713 Approve'),
-          h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#fff;border:1px solid #fca5a5;color:#b91c1c', onClick: async (ev) => { const b9 = ev.currentTarget;
-            const nt = prompt('Reject \u2014 why? (the carrier sees this; LoadBoot support can be called in to decide on the GPS evidence):'); if (!nt) return;
-            b9.disabled = true; try { await partnerReviewClaim(c.id, 'dispute', nt); loadClaims(); } catch (e) { b9.disabled = false; alert((e && e.message) || 'Failed.'); }
-          } }, '\u2715 Reject'),
+          h('button', { class: 'cp-btn cp-btn-sm', onClick: () => openClaimReviewSheet(b, 'approve', loadClaims) }, '\u2713 Approve'),
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#fff;border:1px solid #fca5a5;color:#b91c1c', onClick: () => openClaimReviewSheet(b, 'dispute', loadClaims) }, '\u2715 Reject'),
         ]) : (c.support_status === 'none' && c.broker_status === 'disputed') ? h('div', { style: 'margin-top:8px' },
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
             try { await claimEscalate(c.id); loadClaims(); alert('Escalated \u2014 LoadBoot support will investigate the GPS + policy evidence and decide. The verdict is final for both sides.'); } catch (e) { b9.disabled = false; alert((e && e.message) || 'Failed.'); }
@@ -3990,7 +4061,10 @@ async function brokerDash(user, ov) {
               } catch (e9) { b9.disabled = false; b9.textContent = 'I have paid \u2014 submit receipt'; msg9.textContent = (e9 && e9.message) || 'Failed.'; }
             } }, 'I have paid \u2014 submit receipt');
             const panel = h('div', { style: 'display:none;margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px' }, [
-              h('div', { style: 'font-weight:800;font-size:.9rem' }, 'How to pay \u2014 ' + (pi.label || 'this claim')),
+              h('div', { style: 'display:flex;justify-content:space-between;gap:8px;align-items:center' }, [
+                h('div', { style: 'font-weight:800;font-size:.9rem' }, 'How to pay \u2014 ' + (pi.label || 'this claim')),
+                h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'padding:4px 10px', onClick: () => { panel.style.display = 'none'; openB.style.display = ''; } }, 'Hide'),  // O12: fold the panel back
+              ]),
               h('div', { style: 'font-size:1.3rem;font-weight:900;margin:4px 0' }, money(pi.amount || 0)),
               pi.noa_warning ? h('div', { style: 'background:#fee2e2;color:#b91c1c;border-radius:8px;padding:8px 10px;font-size:.83rem;font-weight:700;margin:6px 0' }, '\u26a0 ' + pi.noa_warning) : null,
               bank.instructions ? h('div', { class: 'cp-sub', style: 'white-space:pre-wrap' }, bank.instructions) : h('div', null, [

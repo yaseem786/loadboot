@@ -282,6 +282,7 @@ h1, h2, h3, h4 { color: #eaf1fb; }
 .cp-card .cp-row,.cp-card .cp-trip{flex-wrap:wrap;min-width:0;border:1px solid var(--lb-line,#22314e);border-radius:14px;padding:13px 15px;margin:0 0 10px;background:rgba(255,255,255,.025);transition:border-color .15s,transform .15s}
 .cp-card .cp-row:hover,.cp-card .cp-trip:hover{border-color:rgba(8,131,247,.45)}
 .cp-card .cp-row>div:first-child{min-width:0;flex:1 1 220px;overflow-wrap:anywhere}
+.cp-card .cp-row.cp-row-col>div:first-child{flex:0 0 auto} /* ux-audit C3: a column-direction row must not inherit the 220px flex-basis as height (Documents cards had ~120px of dead space each) */
 .cp-card .cp-row .cp-btn{flex:none}
 .cp-row-t{overflow-wrap:anywhere}
 @media(max-width:640px){.cp-card .cp-row{gap:8px}.cp-card .cp-row .cp-btn{flex:1 1 auto;text-align:center}}

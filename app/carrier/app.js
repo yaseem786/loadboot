@@ -3372,7 +3372,7 @@ async function appView(user) {
             : h('div', null, [
                 h('div', { class: 'cpx-set-s', style: 'line-height:1.6' },
                   'Permanently deletes your profile, contact details, uploaded documents, banking details and location history. Delivered load paperwork and settlement records are kept where US law requires (3 years for load documents, 7 for tax records), with your personal details removed from them. '),
-                h('a', { href: 'https://loadboot.com/delete-account.html', target: '_blank', rel: 'noopener', style: 'color:#0883F7;font-size:.86rem' }, 'Read the full policy →'),
+                h('a', { href: 'https://loadboot.com/delete-account.html', target: '_blank', rel: 'noopener', style: 'color:#0883F7;font-size:.86rem;display:inline-block;margin:12px 14px 0 0' }, 'Read the full policy →'),
                 h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:12px;background:#b91c1c;border-color:#b91c1c', onClick: async (ev) => {
                   if (!confirm('Request deletion of your LoadBoot account and personal data?\n\nA person completes this within 30 days. You can cancel any time before then.')) return;
                   const b = ev.currentTarget; b.disabled = true;
@@ -3432,7 +3432,7 @@ async function appView(user) {
     const nd = d.notifications || {}; const notes = (Array.isArray(nd.recent) ? nd.recent : []).filter(n => !n.read_at); const unread = nd.unread || 0;
     const notifCard = h('div', { class: 'cp-card' }, [
       cardHead('Notifications', unread ? unread + ' unread' : 'All caught up', () => go('notifications')),
-      notes.length ? h('div', null, notes.map(n => { const p = n.payload || {}; const t = toneOf(p.tone); const isUnread = !n.read_at;
+      notes.length ? h('div', null, [...notes.slice(0, 3).map(n => { const p = n.payload || {}; const t = toneOf(p.tone); const isUnread = !n.read_at;
         const row = h('div', { class: 'cp-row', style: 'border-left:4px solid ' + t.c + ';padding-left:10px;background:' + (isUnread ? t.bg : 'transparent') + ';cursor:pointer', title: 'Open the page this notification is about', onClick: async () => { try { await pocketMarkNotificationRead(n.id); } catch (_) {} go(lbNotifDest(n, p)); } }, [
           h('div', null, [
             h('div', { class: 'cp-row-t' }, [isUnread ? h('span', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + t.c + ';margin-right:6px' }) : null, p.title || n.template_key || 'Notification'].filter(Boolean)),
@@ -3440,7 +3440,7 @@ async function appView(user) {
           isUnread ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { ev.stopPropagation(); const btn9 = ev.currentTarget; btn9.disabled = true; btn9.textContent = '\u2026';
             try { await pocketMarkNotificationRead(n.id); } catch (e9) { try { await markMyNotification(n.id); } catch (e8) { btn9.disabled = false; btn9.textContent = 'Mark read'; lbToast((e8 && e8.message) || 'Could not mark read \u2014 check connection.', 'urgent', 'Not marked'); return; } }
             row.remove(); } }, 'Mark read') : null].filter(Boolean));
-        return row; }))
+        return row; }), notes.length > 3 ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: () => go('notifications') }, (Math.max(unread || 0, notes.length) - 3) + ' more unread \u2192 Alerts') : null].filter(Boolean))
         : h('div', { class: 'cp-muted' }, 'All caught up \u2014 older notifications are under \u201cView all\u201d.'),
     ]);
 
@@ -3458,7 +3458,7 @@ async function appView(user) {
       cardHead('Active trips', trips.length ? trips.length + ' moving' : 'None active', () => go('trips')),
       trips.length ? h('div', null, trips.slice(0, 6).map(t => h('div', { class: 'cp-row' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')),
-          h('div', { class: 'cp-row-s' }, [t.status, t.miles ? t.miles + ' mi' : null, t.rate ? money(t.rate) : null].filter(Boolean).join(' · '))]),
+          h('div', { class: 'cp-row-s' }, [t.miles ? t.miles + ' mi' : null, t.rate ? money(t.rate) : null].filter(Boolean).join(' · '))]),
         pill(t.status)])))
         : h('div', { class: 'cp-muted' }, 'No active trips. Browse available loads to book.'),
     ]);
@@ -5050,7 +5050,8 @@ function tripStepper(status) {
       else if (_liveWatch != null) { stopLiveLoc(); }
     } catch (_) {}
     if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card', style: 'text-align:center;padding:26px 16px' }, [h('div', { style: 'font-size:40px;line-height:1' }, '🚛'), h('div', { class: 'cp-row-t', style: 'margin:10px 0 4px' }, 'No trips yet'), h('div', { class: 'cp-muted' }, 'Book a load and it appears here with live tracking, documents and settlement.'), h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: () => go('loads') }, '🔎 Browse the Load Board')])); return; }
-    mount(content, h('div', { class: 'cp-card' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => {
+    const PHONE9 = window.innerWidth <= 560; let doneSeen9 = 0;
+    mount(content, h('div', { class: 'cp-card' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => { const cardOf = () => {
       const active = t.status === 'planned' || t.status === 'dispatched' || t.status === 'in_transit';
       const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { ev.currentTarget.disabled = true; try { const _ct3516 = ev.currentTarget; await pocketConfirmTrip(t.id); _ct3516.textContent = 'Confirmed ✓'; } catch (x) { _ct3516.textContent = 'Error'; } } }, 'Confirm') : null;
       const share = active ? h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => shareLoc(ev, t.id) }, [icon('pin',15),' Share location']) : null;
@@ -5427,7 +5428,7 @@ function tripStepper(status) {
           let d2 = Math.floor((tgt - Date.now()) / 1000);
           const late = d2 < 0; if (late) d2 = -d2;
           const hh = Math.floor(d2 / 3600), mm = Math.floor((d2 % 3600) / 60), ss = d2 % 60;
-          val.textContent = (late ? '-' : '') + String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+          val.textContent = hh >= 48 ? Math.floor(hh / 24) + ' d ' + (hh % 24) + ' h' : String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0');  // ux-audit C9: "-130:26:25" read as a negative clock; the label already says overdue
           if (late) { val.style.color = '#f87171'; lbl.textContent = toPickup ? '\u26a0 Pickup overdue by' : '\u26a0 Delivery overdue by'; cdEl.style.background = 'rgba(239,68,68,.10)'; cdEl.style.borderColor = 'rgba(239,68,68,.35)'; }
         };
         const iv = setInterval(tick, 1000); tick();
@@ -5558,6 +5559,25 @@ function tripStepper(status) {
         timesEl,
         chips, moreT, moreW, fw, podW, dwellW, accW, reloadW, rateW,
       ].filter(Boolean));
+    };
+      // ux-audit 2026-09 C2 — on a phone a finished trip (delivered / cancelled) after the first two is one slim
+      // row: lane · rate · status · date. "Details" swaps in the full card (POD, docs & tools, claims) — nothing removed.
+      const done9 = !/planned|dispatched|in_transit/.test(String(t.status || ''));
+      if (!(PHONE9 && done9 && ++doneSeen9 > 2)) return cardOf();
+      const when9 = t.delivered_at || t.updated_at || t.created_at; const d9 = when9 ? new Date(when9).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+      const slim9 = h('div', { class: 'cp-trip cp-trip-slim', 'data-trip': String(t.id || '') }, [
+        h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px' }, [
+          h('div', { style: 'min-width:0' }, [
+            h('div', { class: 'cp-row-t', style: 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis' }, (t.origin || '') + ' \u2192 ' + (t.destination || '')),
+            h('div', { class: 'cp-row-s' }, [pill(t.status), d9 ? ' \u00b7 ' + d9 : '']),
+          ]),
+          h('div', { style: 'text-align:right;flex:none' }, [
+            h('div', { style: 'font-weight:900' }, money(t.rate || 0)),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:4px', onClick: () => { try { slim9.replaceWith(cardOf()); } catch (_) {} } }, 'Details \u25be'),
+          ]),
+        ]),
+      ]);
+      return slim9;
     })]));
 
     // Emergency / delivery-reschedule request — REQUIRES a defined category, a detailed reason and proof.
@@ -7243,7 +7263,7 @@ function tripStepper(status) {
         h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;margin-bottom:10px' }, [
           h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'What these are: every time a load DELIVERS, LoadBoot auto-issues an invoice for its flat 5% service fee (e.g. $1,175 gross → $59). This is the ONLY thing you ever pay LoadBoot — broker freight money is separate and tracked under 📥 Money in. DUE = pay within 15 days (💳 Pay now → transfer to the details shown → attach receipt → LoadBoot verifies → PAID). Factored carriers: this fee comes from YOUR account, not your factor.'),
         ]),
-        rows.length ? h('div', null, rows.map(i => {
+        rows.length ? (() => { const rowOf9 = (i) => {
         const dw = h('div');
         const packetBtn9 = i.trip_id ? h('button', { class: 'cp-btn-ghost cp-btn-sm', style: 'margin:4px 6px 0 0;font-size:.74rem', onClick: async () => {
           let pk9; try { pk9 = await carrierFactoringPacket(i.trip_id); } catch (e9) { lbToast((e9 && e9.message) || 'Could not load the packet.', 'urgent', 'Packet'); return; }
@@ -7321,7 +7341,7 @@ function tripStepper(status) {
           ]));
         } }, [icon('card',15),' Pay now']) : null;
         return h('div', { class: 'cp-trip' }, [h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, i.invoice_no), h('div', { class: 'cp-row-s' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]), pill(i.status)]), h('div', { class: 'cp-trip-actions' }, [invPdf, packetBtn9, payFee, dispute].filter(Boolean)), dw].filter(Boolean));
-      })) : h('div', { class: 'cp-muted' }, 'No invoices yet.')]),
+      }; const PH9 = window.innerWidth <= 560; const vis9 = PH9 ? rows.filter((i, k) => i.status === 'sent' || k < 3) : rows; const hid9 = rows.length - vis9.length; const wrap9 = h('div', null, vis9.map(rowOf9)); if (hid9 > 0) wrap9.appendChild(h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: (ev9) => { ev9.currentTarget.remove(); rows.filter(i => vis9.indexOf(i) < 0).forEach(i => wrap9.appendChild(rowOf9(i))); } }, 'Show ' + hid9 + ' older invoice' + (hid9 === 1 ? '' : 's'))); return wrap9; })() : h('div', { class: 'cp-muted' }, 'No invoices yet.')]),
     ]));
   }
 
@@ -7804,7 +7824,7 @@ function tripStepper(status) {
       const isW9 = (r.doc_type === 'w9') || r.requirement_key === 'w9' || /\bw-?9\b/i.test(r.name || '');
       const startW9 = () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'W-9') }, { carrier: _agrCarrier }, () => loadDocuments()));
       const dlW9 = async () => { let w = {}; try { w = (await carrierW9()) || {}; } catch (_) {} const m = await import('./w9-form.js'); m.printExecutedW9(Object.assign({}, w, { approved: r.status === 'valid' })); };
-      return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
+      return h('div', { class: 'cp-row cp-row-col', style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap' }, [
           h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required' : 'Optional') + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why))]),
           h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
@@ -7835,7 +7855,7 @@ function tripStepper(status) {
             : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
         sorted.length ? h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, sorted.map(reqRow)) : h('div', { class: 'cp-muted' }, 'No requirements listed.')]),
       h('div', { class: 'cp-card' }, [cardHead('Upload an extra document', 'Anything not listed above \u2014 permits, lease agreements, references'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fmtLine, guideHost, trustHost, fileIn, msg, up]),
-      h('div', { class: 'cp-card' }, [cardHead('My uploads \u2014 review status', 'Every file you sent, incl. plan-of-action attachments'), listWrap]),
+      h('details', { class: 'cp-card', open: window.innerWidth > 560 }, [h('summary', { style: 'cursor:pointer;list-style:none' }, cardHead('My uploads \u2014 review status', 'Every file you sent, incl. plan-of-action attachments \u00b7 tap to open')), listWrap]),
     ]));
     async function loadList() {
       mount(listWrap, h('div', { class: 'cp-muted' }, 'Loading…'));
