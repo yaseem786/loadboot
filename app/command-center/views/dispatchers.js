@@ -822,8 +822,8 @@ export function renderDispatchers(host) {
         if (r && r.error) { err.textContent = r.error; return; }
         m.remove(); toast('✓ SOP saved — the dispatcher sees it in Trucks'); rerender();
       } }, onSave ? 'Save SOP & assign' : 'Save SOP');
-      const m = el('div', { style: 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:70;display:flex;align-items:center;justify-content:center', onClick: (e) => { if (e.target === m) m.remove(); } }, [
-        el('div', { role: 'dialog', 'aria-modal': 'true', style: 'background:#fff;border-radius:12px;max-width:540px;width:92%;max-height:90vh;overflow:auto;padding:20px', onClick: (e) => e.stopPropagation() }, [
+      const m = el('div', { class: 'cc-xdlg-ovl', style: 'z-index:70', onClick: (e) => { if (e.target === m) m.remove(); } }, [   // bl_ui_0440 premium frame
+        el('div', { role: 'dialog', 'aria-modal': 'true', class: 'cc-xdlg cc-xdlg-sm', onClick: (e) => e.stopPropagation() }, [
           el('div', { style: 'font-weight:800;margin-bottom:4px' }, 'SOP — ' + (a.carrier || 'carrier')),
           el('div', { class: 'cc-sub', style: 'margin-bottom:10px;line-height:1.5' }, '⚖️ Scope basis keeps this carrier’s loads NON-overlapping with your other carriers — so no load is ever "allocated" between carriers (FMCSA 88 FR 39371). The floor is what the rate check uses: a booking under it needs your written reason to approve.'),
           prefsHint,
@@ -992,13 +992,14 @@ export function renderDispatchers(host) {
     }
 
     mount(wrap, sections(d));
-    const overlay = el('div', { class: 'cc-overlay', style: 'position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:60;display:flex;justify-content:flex-end', onClick: (e) => { if (e.target === overlay) close(); } }, [
-      el('div', { role: 'dialog', 'aria-modal': 'true', 'aria-label': (d.profile && d.profile.full_name) || 'Dispatcher', style: 'background:#fff;height:100%;width:min(840px,100%);overflow:auto;padding:22px', onClick: (e) => e.stopPropagation() }, [
-        el('button', { class: 'lb-btn lb-btn-ghost', style: 'float:right', onClick: () => close() }, '✕ Close'), wrap]),
+    const overlay = el('div', { class: 'cc-overlay cc-xdlg-ovl', onClick: (e) => { if (e.target === overlay) close(); } }, [   // bl_ui_0440 premium frame
+      el('div', { role: 'dialog', 'aria-modal': 'true', 'aria-label': (d.profile && d.profile.full_name) || 'Dispatcher', class: 'cc-xdlg', onClick: (e) => e.stopPropagation() }, [
+        el('button', { class: 'cc-drawer-x', title: 'Close (Esc)', 'aria-label': 'Close', style: 'float:right;margin:-6px -8px 8px 12px', onClick: () => close() }, '✕'), wrap]),
     ]);
     const onKey = (e) => { if (e.key === 'Escape' && !document.getElementById('cc-drawer-root')) close(); };
-    function close() { overlay.remove(); document.removeEventListener('keydown', onKey); paintQueue(); }
+    function close() { overlay.remove(); document.removeEventListener('keydown', onKey); if (!document.getElementById('cc-drawer-root')) document.documentElement.classList.remove('cc-dlg-lock'); paintQueue(); }
     document.addEventListener('keydown', onKey);
     document.body.appendChild(overlay);
+    document.documentElement.classList.add('cc-dlg-lock');
   }
 }

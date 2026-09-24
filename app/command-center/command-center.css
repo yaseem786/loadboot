@@ -1176,6 +1176,46 @@ html.cc-dlg-lock, html.cc-dlg-lock body { overflow: hidden; }
   .cc-dlg .cc-drawer-body { padding: 16px 18px 22px; }
   /* wide tables scroll sideways on a phone instead of crushing every column into one-word lines */
   .cc-dlg .cc-drawer-body { overflow-x: auto; }
-  .cc-dlg .cc-drawer-body table { min-width: 620px; }
+  .cc-dlg .cc-drawer-body table:not(.lb-stack) { min-width: 620px; }
 }
 @media (prefers-reduced-motion: reduce) { .cc-dlg .cc-drawer-panel { transition: none; } }
+
+/* bl_ui_0440: phones — every headed table inside a popup becomes cards (labels from the header). */
+@media (max-width: 640px) {
+  table.lb-stack, table.lb-stack tbody { display: block; width: 100%; min-width: 0 !important; border: 0; background: transparent; }
+  table.lb-stack thead { display: none; }
+  table.lb-stack tr { display: block; background: #fff; border: 1px solid #e6ebf3; border-radius: 14px; padding: 4px 14px; margin: 0 0 10px;
+    box-shadow: 0 8px 20px -18px rgba(16,34,59,.4); }
+  table.lb-stack td { display: flex; justify-content: flex-start; align-items: flex-start; gap: 12px; padding: 9px 0 !important;
+    border: 0 !important; border-bottom: 1px solid #f1f4f9 !important; text-align: left; min-width: 0; font-size: .92rem; word-break: normal; overflow-wrap: break-word; }
+  table.lb-stack td:last-child { border-bottom: 0 !important; }
+  table.lb-stack td::before { content: attr(data-label); flex: 0 0 34%; max-width: 34%; text-align: left; color: #6b7d99; font-size: .7rem;
+    font-weight: 800; text-transform: uppercase; letter-spacing: .05em; padding-top: 3px; }
+  table.lb-stack td[data-label=""]::before { display: none; }
+  table.lb-stack td[data-label=""] { justify-content: flex-start; }
+  .cc-dlg .cc-drawer-body .cc-table-wrap, .cc-dlg .cc-drawer-body .cc-tablewrap { border: 0; background: transparent; box-shadow: none; overflow: visible; }
+  /* bigger touch targets + full-width actions inside popups */
+  .cc-dlg .cc-drawer-body .lb-btn { min-height: 44px; }
+  .cc-dlg .cc-drawer-body input, .cc-dlg .cc-drawer-body select, .cc-dlg .cc-drawer-body textarea { font-size: 16px; } /* no iOS zoom */
+  .cc-dlg .cc-drawer-head h3 { white-space: normal; font-size: 1.05rem; }
+}
+
+/* bl_ui_0440: the two hand-built CC overlays (dispatcher detail, SOP editor) use the same premium frame. */
+.cc-xdlg-ovl { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 28px;
+  background: rgba(10, 19, 34, .52); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); animation: ccXdlgFade .18s ease; }
+.cc-xdlg { position: relative; background: #fff; width: min(1040px, 100%); max-height: min(90vh, 1000px); overflow: auto; padding: 24px 26px 26px;
+  border-radius: 18px; border: 1px solid rgba(16, 34, 59, .08); box-shadow: 0 40px 90px -30px rgba(10, 19, 34, .55), 0 10px 30px -18px rgba(10, 19, 34, .35);
+  animation: ccXdlgUp .22s cubic-bezier(.2, .8, .2, 1); overscroll-behavior: contain; }
+.cc-xdlg::before { content: ""; position: sticky; display: block; top: -24px; margin: -24px -26px 18px; height: 3px;
+  background: linear-gradient(90deg, #0883F7, #3b9dff 60%, #FC5305); }
+.cc-xdlg.cc-xdlg-sm { width: min(560px, 100%); }
+@keyframes ccXdlgFade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes ccXdlgUp { from { opacity: 0; transform: translateY(14px) scale(.975) } to { opacity: 1; transform: none } }
+@media (max-width: 640px) {
+  .cc-xdlg-ovl { align-items: flex-end; padding: 0; }
+  .cc-xdlg, .cc-xdlg.cc-xdlg-sm { width: 100%; max-height: 92vh; border-radius: 20px 20px 0 0; padding: 18px 18px calc(22px + env(safe-area-inset-bottom, 0px)); }
+  .cc-xdlg::before { margin: -18px -18px 14px; top: -18px; }
+  .cc-xdlg .lb-btn { min-height: 44px; }
+  .cc-xdlg input, .cc-xdlg select, .cc-xdlg textarea { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .cc-xdlg, .cc-xdlg-ovl { animation: none; } }

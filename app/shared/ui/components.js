@@ -142,6 +142,21 @@ export function avatar(name, fallback) {
 }
 
 // ---- slide-in drawer ----
+// Phones: a table with a header becomes a stack of cards. Every <td> gets data-label from its column
+// header; CSS (command-center.css, .lb-stack) shows "LABEL  value" rows under 640px. Idempotent.
+export function stackTables(scope) {
+  if (!scope || !scope.querySelectorAll) return;
+  scope.querySelectorAll('table').forEach((t) => {
+    const ths = Array.from(t.querySelectorAll('thead th'));
+    if (!ths.length) return;
+    const labels = ths.map((th) => (th.textContent || '').trim());
+    t.querySelectorAll('tbody tr').forEach((tr) => {
+      Array.from(tr.children).forEach((td, i) => { if (!td.hasAttribute('data-label')) td.setAttribute('data-label', labels[i] || ''); });
+    });
+    t.classList.add('lb-stack');
+  });
+}
+
 // ---- openDrawer: the ONE popup window used across the Command Center (130+ call sites) ----
 // bl_ui_0439 (24 Sep 2026): was a 560px side drawer that squeezed tables into one-word columns.
 // Now a centred, premium dialog on desktop and a bottom sheet on phones. Same API and the same
@@ -165,7 +180,7 @@ export function openDrawer(title, bodyNode, opts = {}) {
     document.removeEventListener('keydown', onKey, true);
     try { if (mo) mo.disconnect(); } catch (_) {}
     root.classList.remove('open');
-    document.documentElement.classList.remove('cc-dlg-lock');
+    if (!document.querySelector('.cc-xdlg-ovl')) document.documentElement.classList.remove('cc-dlg-lock');
     if (instant === true) root.remove(); else setTimeout(() => root.remove(), 200);
     try { if (instant !== true && prevFocus && prevFocus.focus && document.contains(prevFocus)) prevFocus.focus({ preventScroll: true }); } catch (_) {}
   };
@@ -186,13 +201,19 @@ export function openDrawer(title, bodyNode, opts = {}) {
   const wideTable = () => Array.from(panel.querySelectorAll('.cc-drawer-body table')).some(t => {
     const r = t.querySelector('tr'); return r && r.children.length >= 5;
   });
-  if (size === 'md') {
-    if (wideTable()) setSize('lg');
-    else if (typeof MutationObserver !== 'undefined') {
-      mo = new MutationObserver(() => { if (wideTable()) { setSize('lg'); mo.disconnect(); mo = null; } });
-      mo.observe(panel, { childList: true, subtree: true });
-      setTimeout(() => { try { if (mo) { mo.disconnect(); mo = null; } } catch (_) {} }, 8000);
-    }
+  // Tables re-render inside popups, so one observer lives as long as the popup: it upgrades 'md' to
+  // 'lg' for wide tables and labels every cell so phones can show each row as a card (lb-stack).
+  let pending = false;
+  const tidy = () => {
+    pending = false;
+    if (closed) return;
+    if (size === 'md' && wideTable()) setSize('lg');
+    stackTables(panel);
+  };
+  tidy();
+  if (typeof MutationObserver !== 'undefined') {
+    mo = new MutationObserver(() => { if (!pending) { pending = true; requestAnimationFrame(tidy); } });
+    mo.observe(panel, { childList: true, subtree: true });
   }
   document.body.appendChild(root);
   document.documentElement.classList.add('cc-dlg-lock');
