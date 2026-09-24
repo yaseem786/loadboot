@@ -112,6 +112,8 @@ import { showWhatsNew } from '../shared/whatsnew.js';
 import { initInstallPrompt } from '../shared/installprompt.js';
 import { renderFaq, CARRIER_FAQ } from '../shared/faq.js';
 import { myDriverContext } from '../shared/api.js';   // bl_drv_0344 driver mode
+import { createTour, mountHelp } from '../shared/ui/tour.js';   // guided tour + floating "?" help (24 Sep 2026)
+import { CARRIER_TOUR } from './tour-content.js';
 initTelemetry();  // real-user error + Core Web Vitals capture
 
 // Agent portal runs the SAME bundle as the carrier app, told apart only by URL path.
@@ -2516,6 +2518,20 @@ async function appView(user) {
   root.setAttribute('aria-busy', 'false');
   // Pull-to-refresh (big-brand standard): re-runs the current view + unread count.
   try { attachPullToRefresh(content, async () => { render(); refreshUnread(); }); } catch (_) {}
+  // Guided tour + floating "?" help (24 Sep 2026). Engine: ../shared/ui/tour.js, copy: ./tour-content.js.
+  // The flow follows the person: owner, driver, or a driver who can see the board (in-house dispatcher).
+  // Progress is localStorage only (lb_tour.carrier.v1). The agent portal reuses this shell and gets its own
+  // content file later, so it is skipped here. autoStart() runs after the first go(tab) below.
+  let tour = null, help = null;
+  if (!window.__LB_AGENT) {
+    try {
+      const tourNav = (r) => go(String(r || '').replace(/^#/, '').split('/')[0] || 'dashboard');   // routes come as '#loads'
+      const tourRole = DRV ? ((DRV.perms || []).includes('loads.view_board') ? 'dispatcher' : 'driver') : 'owner';
+      tour = createTour({ key: 'carrier', version: 1, role: tourRole, flows: CARRIER_TOUR.flows, screens: CARRIER_TOUR.screens, navigate: tourNav, currentRoute: () => tab });
+      help = mountHelp(tour, { supportRoute: '#support', navigate: tourNav });
+      window.__lbTour = tour;   // replay hook for Settings / support; nothing depends on it
+    } catch (_) { tour = null; help = null; }
+  }
 
   function go(id) {
     tab = id; if (location.hash !== '#' + id && location.hash.indexOf('#' + id + '/') !== 0) history.replaceState(null, '', '#' + id);  // keep #tab/<deep> (bl_agent_0403); replace, not push — keeps Back working / no hash pile-up
@@ -2526,6 +2542,7 @@ async function appView(user) {
     const item = NAV.find(n => n[0] === tab);
     titleEl.textContent = item ? item[1] : ({ notifications: 'Notifications', onboarding: 'Onboarding', settings: 'Settings', reinstate: 'Account reinstatement' }[tab] || 'Dashboard');
     render();
+    if (help) { try { help.onRoute(tab); } catch (_) {} }
   }
   window.addEventListener('hashchange', () => { let t = (location.hash || '').replace('#', ''); if (t.indexOf('/') > 0) { const p9 = t.split('/'); t = p9[0]; if (p9[1]) window.__lbDeepEnt = { tab: t, id: p9.slice(1).join('/') }; }
     if (t && t !== tab && (NAV.some(n => n[0] === t) || EXTRA_TABS.includes(t))) go(t); else if (t === tab && window.__lbDeepEnt) render(); });
@@ -3417,7 +3434,7 @@ async function appView(user) {
 
     // 1) "Complete your setup" — gaps coloured by the GLOBAL tone tokens, each linking to the exact step.
     const gaps = Array.isArray(d.setup_gaps) ? d.setup_gaps : [];
-    const setupCard = gaps.length ? h('div', { class: 'cp-card' }, [
+    const setupCard = gaps.length ? h('div', { class: 'cp-card', 'data-tour': 'dash-setup' }, [
       cardHead('Complete your setup', acct.onboarding_complete ? 'Almost there' : 'Action needed'),
       h('div', null, gaps.map(g => { const t = toneOf(g.tone); return h('button', {
         class: 'cp-rowbtn', style: 'border-left:4px solid ' + t.c + ';background:' + t.bg,
@@ -3453,7 +3470,7 @@ async function appView(user) {
     ]);
 
     // 3) KPI strip from the aggregate (falls back to overview).
-    const kpis = h('div', { class: 'cp-kpis' }, [
+    const kpis = h('div', { class: 'cp-kpis', 'data-tour': 'dash-kpis' }, [
       statTile('Active trips', String(k.active_trips ?? ov.trips_active ?? 0), 'trips', 'blue', () => go('trips')),
       statTile('Offers for you', String(k.open_offers ?? 0), 'docs', 'violet', () => go('loads')),
       statTile('Delivered this week', String(k.delivered_this_week ?? 0), 'dash', 'green', () => go('trips')),
@@ -4226,7 +4243,7 @@ async function appView(user) {
     try { const k9 = sessionStorage.getItem('lb:avail:kind'); if (k9) { sessionStorage.removeItem('lb:avail:kind');
       if (k9 === '__reactivate__') { const p9 = (postings || []).find(x9 => x9.status === 'paused'); setTimeout(() => openPostingForm(p9 || null, p9 ? undefined : 'empty'), 300); }
       else setTimeout(() => openPostingForm(null, k9), 300); } } catch (_) {}
-    const truckCard = h('div', { class: 'cp-card', style: 'margin-bottom:12px' }, [
+    const truckCard = h('div', { class: 'cp-card', style: 'margin-bottom:12px', 'data-tour': 'loads-post' }, [
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, [icon('truck',15),' Post your availability']), h('div', { class: 'cp-row-s' }, 'Where is the truck today — empty, or booked and needing a backhaul? Post it daily; your dispatcher only works posted trucks.')]),
         h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' }, [
@@ -4387,7 +4404,7 @@ async function appView(user) {
     const fCount = () => { const n = [fOrigin, fDest, fEq, fRpm, fRate, fSize].filter(x => (x.value || '').trim()).length; fChip.style.display = n ? 'inline-block' : 'none'; fChip.textContent = n + ' active'; };
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount)); fSize.addEventListener('change', () => { fCount(); renderList(); });
     const fToggle = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { const open = fBody.style.display !== 'none'; fBody.style.display = open ? 'none' : 'flex'; fToggle.firstChild.textContent = open ? '⚙ Filters ▾' : '⚙ Filters ▴'; } }, [h('span', null, '⚙ Filters ▾'), fChip]);
-    const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px' }, [
+    const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px', 'data-tour': 'loads-filters' }, [
       h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [fToggle, favBtn, tbBtn]),
       fBody,
     ]);
@@ -4915,7 +4932,7 @@ async function appView(user) {
 
       ].filter(Boolean));
     })();
-    const gridHost = h('div', { class: 'cp-loadgrid', id: 'cp-loadgrid-host' });
+    const gridHost = h('div', { class: 'cp-loadgrid', id: 'cp-loadgrid-host', 'data-tour': 'loads-list' });
     mount(availWrap, h('div', null, [availHostL, truckCard, filterBar, setupBanner, bestCard, gridHost].filter(Boolean)));
     mount(content, h('div', null, [gpsBanner, capNudge, tabsBar, reqHost, availWrap].filter(Boolean)));
     renderList();
@@ -5059,7 +5076,7 @@ function tripStepper(status) {
     } catch (_) {}
     if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card', style: 'text-align:center;padding:26px 16px' }, [h('div', { style: 'font-size:40px;line-height:1' }, '🚛'), h('div', { class: 'cp-row-t', style: 'margin:10px 0 4px' }, 'No trips yet'), h('div', { class: 'cp-muted' }, 'Book a load and it appears here with live tracking, documents and settlement.'), h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: () => go('loads') }, '🔎 Browse the Load Board')])); return; }
     const PHONE9 = window.innerWidth <= 560; let doneSeen9 = 0;
-    mount(content, h('div', { class: 'cp-card' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => { const cardOf = () => {
+    mount(content, h('div', { class: 'cp-card', 'data-tour': 'trips-list' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => { const cardOf = () => {
       const active = t.status === 'planned' || t.status === 'dispatched' || t.status === 'in_transit';
       const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { ev.currentTarget.disabled = true; try { const _ct3516 = ev.currentTarget; await pocketConfirmTrip(t.id); _ct3516.textContent = 'Confirmed ✓'; } catch (x) { _ct3516.textContent = 'Error'; } } }, 'Confirm') : null;
       const share = active ? h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => shareLoc(ev, t.id) }, [icon('pin',15),' Share location']) : null;
@@ -5132,7 +5149,7 @@ function tripStepper(status) {
         } }, 'Submit rating');
         rateW.appendChild(h('div', { class: 'cp-inlineform' }, [h('div', { class: 'cp-row-s' }, 'Rate the posting party for this trip:'), starsBar, cmt, send]));
       } }, '⭐ Rate') : null;
-      const pod = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+      const pod = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', 'data-tour': 'trip-pod', onClick: () => {
         if (podW.firstChild) { podW.innerHTML = ''; return; }
         showCarrierPod(t, podW);
       } }, [icon('docs',15),' Proof of delivery']) : null;
@@ -5508,7 +5525,7 @@ function tripStepper(status) {
           h('button', { class: 'cp-btn ghost', style: 'width:100%;margin-top:8px', onClick: () => { if (close9) close9(); go('support'); } }, '🎫 Open a support ticket'),
         ].filter(Boolean));
       } }, '📞 Contact');
-      const chips = h('div', { class: 'cp-trip-actions', style: 'margin-top:10px' }, [confirm, start, deliver, loadDetBtn, dpackBtn, dwell, accBtn, pod, issue, emergency, contactBtn, cancelBtn].filter(Boolean));
+      const chips = h('div', { class: 'cp-trip-actions', style: 'margin-top:10px', 'data-tour': 'trip-actions' }, [confirm, start, deliver, loadDetBtn, dpackBtn, dwell, accBtn, pod, issue, emergency, contactBtn, cancelBtn].filter(Boolean));
       const moreW = h('div', { style: 'display:none' }, [h('div', { class: 'cp-trip-actions' }, [settleBtn, sheetBtn, rcBtn, packBtn, history, nav, share, live, assign, reloadBtn, rateBtn].filter(Boolean))]);
       const moreT = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'width:100%;margin-top:8px', onClick: (ev) => {
         const open = moreW.style.display !== 'none';
@@ -6418,7 +6435,7 @@ function tripStepper(status) {
           ? 'You can run ONE load at a time. Add another truck so a second load can be booked while the first is still rolling \u2014 each truck runs its own load, with its own driver. Add the truck below, add its driver, then tap \u201cInvite & set permissions\u201d so their phone tracks that load.'
           : 'Each of your ' + trucks.length + ' trucks can carry its own load at the same time (' + trucks.length + ' concurrent loads). Invite each driver to the app so every truck is tracked separately.'),
       ]),
-      h('div', { class: 'cp-card', 'data-lb': 'drivers-card' }, [
+      h('div', { class: 'cp-card', 'data-lb': 'drivers-card', 'data-tour': 'fleet-list' }, [
         cardHead('Drivers', drivers.length + ' total'),
         h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', 'data-lb': 'add-driver', onClick: () => driverForm(null) }, '+ Add driver'),
         driverList,
@@ -7204,7 +7221,7 @@ function tripStepper(status) {
     ];
     let sec = 'earn';
     try { if (window.__finSec9) { sec = window.__finSec9; window.__finSec9 = null; } } catch (_) {}
-    const secHost = h('div');
+    const secHost = h('div', { 'data-tour': 'fin-summary' });
     const nav = h('div', { class: 'finnav' });
     const paint = () => {
       mount(nav, SECS.map(([k, lbl]) => h('button', { class: 'cp-btn cp-btn-sm ' + (sec === k ? '' : 'ghost'), onClick: () => { sec = k; paint(); } }, lbl)));
@@ -7858,7 +7875,7 @@ function tripStepper(status) {
     } catch (_) {}
     const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
     mount(content, h('div', null, [shareBanner9, noaBanner9, scanCard, 
-      h('div', { class: 'cp-card' }, [cardHead('What LoadBoot needs from you',
+      h('div', { class: 'cp-card', 'data-tour': 'docs-list' }, [cardHead('What LoadBoot needs from you',
           c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
             : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
         sorted.length ? h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, sorted.map(reqRow)) : h('div', { class: 'cp-muted' }, 'No requirements listed.')]),
@@ -8598,6 +8615,7 @@ function tripStepper(status) {
   }
   go(tab);
   refreshUnread();
+  if (tour) setTimeout(() => { try { tour.autoStart(); } catch (_) {} }, 500);
 }
 
 /* ---------- auth watch (only reload on real sign-out) ---------- */
