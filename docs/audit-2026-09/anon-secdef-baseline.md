@@ -129,3 +129,30 @@ Audit-function body parity (15 functions: cc_erasure_*, erasure_removal_*, erasu
 lc_ob_upload_check, cc_account_deletion_process, capture_account_erasure_inventory, cc_retention_classes, retell_hook_verify):
 14/15 byte-identical across envs; the one difference is `retell_hook_verify` — staging carries ONE extra comment line
 ("-- try the dedicated webhook signing key first, then the general api key"), code identical. Accepted, no action.
+
+## 24 Sep 2026 — investor lane: six names appeared, root cause found, revoked (bl_sec_0436)
+
+Observed 24 Sep before the fix: **prod 39, staging 38** = the 33 / 32 above plus six investor-lane
+names on both: `cc_inv_expense_attach`, `cc_inv_request_attach`, `cc_inv_set_txn_time`,
+`inv_claim_by_email`, `inv_publish_self_doc`, `inv_self_onboard` (bl_inv_0408 / 0409 / 0410 / 0412 / 0413).
+
+**Root cause — this is the mechanism, not a stray blanket grant.** `pg_default_acl` on both databases
+carries Supabase's default for role `postgres` in schema `public`, object type `f`:
+`{postgres=X, anon=X, authenticated=X, service_role=X}`. Every function created in `public` gets an
+EXPLICIT `anon=X` entry at creation. The five migrations each ran
+`revoke all on function … from public; grant execute … to authenticated;` — that removes PUBLIC's
+implicit EXECUTE but does not touch the explicit anon entry, so all six stayed anon-executable.
+
+**Why nothing was reachable:** each one authorises on its first statement — `auth.uid() is null →
+42501 'not signed in'` (`inv_claim_by_email`, `inv_self_onboard`), `app_private.inv_can_manage()`
+(`cc_inv_*`), `app_private.inv_my_investor()` (`inv_publish_self_doc`). Same shape as the 9 Sep `cc_cmp_save`
+case: a missing layer, not an open door.
+
+**Fix:** `migrations/bl_sec_0436_inv_anon_revoke.sql` — `revoke execute … from public, anon` on the six
+exact signatures, then a DO block that asserts none is anon-executable and all keep authenticated +
+service_role. Applied staging (38 → **32**, names = the staging list above) and prod (39 → **33**, names
+= the 19 Sep catalog exactly). `has_schema_privilege('anon','app_private','usage')` still false on both.
+
+**Rule from here (added to CLAUDE.md §4):** a migration that creates a `public` function must
+`revoke execute on function … from public, anon` explicitly — revoking from PUBLIC alone leaves the
+default-ACL anon grant in place — and must re-run the check above and compare names.

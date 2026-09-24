@@ -99,6 +99,10 @@ pastes that into the new session. Never make him reconstruct context from memory
   is for, and the query are in `docs/audit-2026-09/anon-secdef-baseline.md`. If a name appears
   that is not on that list, something opened a door. (This said "27" until 9 Sep 2026; neither
   database had read 27 for some time, and a stale number is worse than none - it gets ignored.)
+  **Every new `public` function gets an explicit `anon=X` from Supabase's default ACL at creation** -
+  `revoke ... from public` does not remove it. A migration that creates a `public` function must
+  `revoke execute on function ... from public, anon` explicitly (six investor-lane functions slipped
+  through this way on 24 Sep 2026; `bl_sec_0436` closed them).
 - Never run a diagnostic against a live customer account. A probe against a real agent
   once fired a real "your payout was approved" notification that could not be recalled.
 - Never enter his identity documents, payment details, API keys or passwords into any

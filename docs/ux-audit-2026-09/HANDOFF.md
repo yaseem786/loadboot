@@ -58,7 +58,10 @@ provider settings still need his explicit yes. Screens are judged at 390px (phon
 - **O3 (P1, security/config)** Supabase Auth minimum password length is 6 on staging (check prod in dashboard → Auth → Providers → Email). Raising it is a provider setting → Yaseen's yes. Pairs with open F15 (leaked-password protection).
 - **O7 (P3)** `is_my_org_agent` RPC is called before sign-in → 401 on every login page load.
 - **O8 (P3, env drift)** STAGING lacks `app_private.tele_ingest` (`bl_obs_0213_client_telemetry` never applied there) → every web-vital from a staging build 404s. Prod is fine.
-- **O10 (security lane, names compared 24 Sep)** Prod `anon`-executable SECURITY DEFINER names in `public` = **39** = the 33 in `docs/audit-2026-09/anon-secdef-baseline.md` + six from the investor lane: `cc_inv_expense_attach`, `cc_inv_request_attach`, `cc_inv_set_txn_time`, `inv_claim_by_email`, `inv_publish_self_doc`, `inv_self_onboard`. Nothing else differs. Not caused by any bl_ux migration (0430/0431/0432 touch no anon grant). Yaseen decides: either the baseline doc + CLAUDE.md §4 move to 39 with these six listed, or the six get reviewed.
+- ~~O10~~ **closed 24 Sep (Yaseen: "suggest and implement")** — the six investor names were not a deliberate anon surface:
+  Supabase's default ACL gives every new `public` function an explicit `anon=X`, and the bl_inv migrations only revoked
+  PUBLIC. All six refuse anon on their first line anyway. `bl_sec_0436_inv_anon_revoke` (staging 38 → 32, prod 39 → 33,
+  names = baseline). Rule added to CLAUDE.md §4 and the baseline doc.
 - Walked this session: claim review sheet (approve + reject, phone + desktop), Track live → Carrier packet (booked load), shipper phone dashboard; earlier: Claims evidence/pay panel, Track live, Carrier packet preview, Account/2FA/push/devices, Developers key create+revoke, desktop layouts of dashboard/claims/account/loads/invoices/requests/carriers/network/onboarding/developers (no overflow, nothing broken), shipper + facility dashboards (phone + desktop).
 - Not yet walked: Post-a-load wizard steps 2–3 end to end, claim Approve/Reject WRITES (sheet opens and validates; needs a throwaway claim from the carrier lane), shipper/facility inner tabs and forms (dock appointment create), Network tab content, Documents (onboarding) submit flow.
 
@@ -130,5 +133,4 @@ heights: dashboard 3,086 · trips 4,889 · documents 6,207 (pre-C3; re-shoot) ·
   — `trip_locations_source_check` rejected every owner_app / driver_app / eld:<provider> ping since bl_drv_0345a (prod: one
   GPS row ever). DB: bl_ux_0434 (staging + prod, DDL), bl_ux_0435 (staging + prod, app_private cron copy). UI: C11 delete
   sheet. Prod anon-SECDEF names: 39, unchanged. NEXT: the "not yet walked" list needs personas/fixtures (driver login, an
-  active consented trip, a throwaway carrier for onboarding 5–6) — then **Command Center** per the order. Still waiting on
-  Yaseen: O3 (Auth min password), O10 (39 vs 33 baseline).
+  active consented trip, a throwaway carrier for onboarding 5–6) — then **Command Center** per the order. O10 closed (bl_sec_0436). Still waiting on Yaseen: O3 (Auth min password 8 — dashboard, steps given).
