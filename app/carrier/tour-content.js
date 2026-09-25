@@ -22,14 +22,14 @@ const OWNER = [
     text: 'Brokers only book carriers whose documents are in order. This card shows exactly what is missing, and each row takes you straight to the fix.',
     tip: 'Once every row is green, your <b>Compliant</b> badge switches on and you appear in broker searches.' },
 
-  { id: 'loads.board', emptyTitle: 'No loads match yet', emptyText: 'Loads appear here as cards, each with the rate, the lane and the pay per mile up front. Widen your filters or post your truck and matching loads will come to you.', screen: 'loads', route: '#loads', chapter: 'Finding loads', icon: 'search',
+  { id: 'loads.board', emptyTarget: ['[data-tour="loads-empty"]'], emptyTitle: 'No loads match yet', emptyText: 'Loads appear here as cards, each with the rate, the lane and the pay per mile up front. Widen your filters or post your truck and matching loads will come to you.', screen: 'loads', route: '#loads', chapter: 'Finding loads', icon: 'search',
     target: ['[data-tour="loads-list"]', '.cp-loadgrid'],
     title: 'Loads that fit your truck',
     text: 'Every card is a real load with the rate, the lane and the pay per mile right up front. No calling around to find out the number.',
     tip: 'A green <b>Detention</b> tag means the wait-time terms are already in writing before you accept.' },
 
-  { id: 'loads.filters', screen: 'loads', chapter: 'Finding loads', icon: 'filter',
-    target: ['[data-tour="loads-filters"]'], anchor: '.cp-content',
+  { id: 'loads.filters', optional: true, screen: 'loads', chapter: 'Finding loads', icon: 'filter',
+    target: ['[data-tour="loads-filters"]'],
     title: 'Tell us your lane',
     text: 'Set where you are, where you want to go and what you pull. We remember it, so next time the board opens already sorted for you.',
     interact: true },
@@ -40,7 +40,7 @@ const OWNER = [
     text: 'Tell brokers when and where your truck is free. Matching loads arrive as <b>booking requests</b>, and you accept or decline with one tap.',
     tip: 'The <b>Online / Offline</b> switch at the top pauses requests when you are busy.', interact: true },
 
-  { id: 'trips.list', emptyTitle: 'Your booked loads live here', emptyText: 'Nothing booked yet. Once you take a load from the board it shows up here, and you mark <b>Arrived</b>, <b>Loaded</b> and <b>Delivered</b> as you go. Each tap is time-stamped with your location.', screen: 'trips', route: '#trips', chapter: 'On the road', icon: 'route',
+  { id: 'trips.list', emptyTarget: ['[data-tour="trips-empty"]'], emptyTitle: 'Your booked loads live here', emptyText: 'Nothing booked yet. Once you take a load from the board it shows up here, and you mark <b>Arrived</b>, <b>Loaded</b> and <b>Delivered</b> as you go. Each tap is time-stamped with your location.', screen: 'trips', route: '#trips', chapter: 'On the road', icon: 'route',
     target: ['[data-tour="trips-list"]'],
     title: 'Every load, step by step',
     text: 'Once you book a load it lives here. Mark <b>Arrived</b>, <b>Loaded</b> and <b>Delivered</b> as you go. Each tap is time-stamped with your location, which is your proof if there is ever a dispute.',
@@ -95,7 +95,7 @@ const DRIVER = [
     title: 'Today, and nothing else',
     text: 'Your next pickup, the address, the appointment time and the dispatcher note. Open the app, read one screen, drive.' },
 
-  { id: 'trips', emptyTitle: 'Your loads will show here', emptyText: 'Nothing assigned to you yet. When dispatch gives you a load it appears here with the address, the appointment time and who to call.', screen: 'trips', route: '#trips', chapter: 'On the road', icon: 'route',
+  { id: 'trips', emptyTarget: ['[data-tour="trips-empty"]'], emptyTitle: 'Your loads will show here', emptyText: 'Nothing assigned to you yet. When dispatch gives you a load it appears here with the address, the appointment time and who to call.', screen: 'trips', route: '#trips', chapter: 'On the road', icon: 'route',
     target: ['[data-tour="trips-list"]'],
     title: 'Your loads',
     text: 'Every load you are assigned, in order. Tap one to see the full details, directions and who to call.' },
@@ -141,13 +141,13 @@ const DISPATCHER = [
     title: 'The fleet at a glance',
     text: 'Which trucks are loaded, which are empty, what delivers today. This is the screen you keep open.' },
 
-  { id: 'loads.board', screen: 'loads', route: '#loads', chapter: 'Booking', icon: 'search',
+  { id: 'loads.board', emptyTarget: ['[data-tour="loads-empty"]'], emptyTitle: 'No loads match yet', emptyText: 'Loads appear here as cards, each with the rate, the lane and the pay per mile up front. Widen your filters or post your truck and matching loads will come to you.', screen: 'loads', route: '#loads', chapter: 'Booking', icon: 'search',
     target: ['[data-tour="loads-list"]', '.cp-loadgrid'],
     title: 'The load board',
     text: 'Rate, lane, miles and pay per mile on every card. Detention terms are written on the load before you book it, so there is nothing to negotiate later.' },
 
-  { id: 'loads.filters', screen: 'loads', chapter: 'Booking', icon: 'filter',
-    target: ['[data-tour="loads-filters"]'], anchor: '.cp-content',
+  { id: 'loads.filters', optional: true, screen: 'loads', chapter: 'Booking', icon: 'filter',
+    target: ['[data-tour="loads-filters"]'],
     title: 'Filter by truck, not by luck',
     text: 'Set the equipment, the origin and the minimum rate. The board remembers it per device, so the morning check takes ten seconds.', interact: true },
 
@@ -156,7 +156,7 @@ const DISPATCHER = [
     title: 'Post an empty truck',
     text: 'Empty in Dallas on Thursday? Post it. Brokers send booking requests straight to you, and you accept with one tap. Beats refreshing a board.', interact: true },
 
-  { id: 'trips', screen: 'trips', route: '#trips', chapter: 'On the road', icon: 'route',
+  { id: 'trips', emptyTarget: ['[data-tour="trips-empty"]'], emptyTitle: 'Your booked loads live here', emptyText: 'Nothing booked yet. Once you take a load from the board it shows up here, and you mark <b>Arrived</b>, <b>Loaded</b> and <b>Delivered</b> as you go. Each tap is time-stamped with your location.', screen: 'trips', route: '#trips', chapter: 'On the road', icon: 'route',
     target: ['[data-tour="trips-list"]'],
     title: 'Assign, then watch it move',
     text: 'Booked loads land here. Assign a driver and a truck. The driver’s taps (arrived, loaded, delivered) show up live, with time and location.' },

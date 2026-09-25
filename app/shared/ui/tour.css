@@ -273,3 +273,9 @@ body.lbt-lock { overflow: hidden; }
   .lbt-card:not(.lbt-hero) .lbt-btn { min-height: 38px; padding: 7px 16px; font-size: .86rem; border-radius: 11px; }
   .lbt-card:not(.lbt-hero) .lbt-btn.ghost { padding-left: 10px; padding-right: 10px; }
 }
+
+/* shown while a just-opened screen is still fetching; the spotlight follows once the target renders */
+.lbt-loading { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: .78rem; font-weight: 700; color: var(--lbt-blue); }
+.lbt-loading > i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(8,131,247,.25); border-top-color: var(--lbt-blue); animation: lbtSpin .8s linear infinite; }
+@keyframes lbtSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .lbt-loading > i { animation: none; } }

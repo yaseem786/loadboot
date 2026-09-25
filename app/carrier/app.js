@@ -4482,7 +4482,7 @@ async function appView(user) {
     if (!rows || !rows.length) { mount(availWrap, h('div', null, [availHostL, truckCard, setupBanner, bestCard, (function () {
       const dp9 = _dp || {};
       const prefsSet9 = !!(dp9.min_rpm || (dp9.preferred_equipment || []).length || (dp9.preferred_lanes || []).length);
-      return h('div', { class: 'cp-card', style: 'text-align:center;padding:34px 22px' }, [
+      return h('div', { class: 'cp-card', style: 'text-align:center;padding:34px 22px', 'data-tour': 'loads-empty' }, [
         h('div', { style: 'font-size:46px;line-height:1' }, '\ud83d\udef0'),
         h('div', { class: 'cp-row-t', style: 'font-size:1.15rem;margin:12px 0 6px' }, 'Your dispatcher is out hunting freight for you'),
         h('div', { class: 'cp-muted', style: 'max-width:540px;margin:0 auto;line-height:1.7' }, 'LoadBoot is not a wall of 10,000 stale reposts \u2014 every load that appears here is real, verified, and gone the second it books. Freight lands from broker partners and direct shippers; the moment one matches your lanes and equipment you get an instant alert.'),
@@ -5115,7 +5115,7 @@ function tripStepper(status) {
       if (act9) ensureLiveLoc(act9.id);
       else if (_liveWatch != null) { stopLiveLoc(); }
     } catch (_) {}
-    if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card', style: 'text-align:center;padding:26px 16px' }, [h('div', { style: 'font-size:40px;line-height:1' }, '🚛'), h('div', { class: 'cp-row-t', style: 'margin:10px 0 4px' }, 'No trips yet'), h('div', { class: 'cp-muted' }, 'Book a load and it appears here with live tracking, documents and settlement.'), h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: () => go('loads') }, '🔎 Browse the Load Board')])); return; }
+    if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card', style: 'text-align:center;padding:26px 16px', 'data-tour': 'trips-empty' }, [h('div', { style: 'font-size:40px;line-height:1' }, '🚛'), h('div', { class: 'cp-row-t', style: 'margin:10px 0 4px' }, 'No trips yet'), h('div', { class: 'cp-muted' }, 'Book a load and it appears here with live tracking, documents and settlement.'), h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: () => go('loads') }, '🔎 Browse the Load Board')])); return; }
     const PHONE9 = window.innerWidth <= 560; let doneSeen9 = 0;
     mount(content, h('div', { class: 'cp-card', 'data-tour': 'trips-list' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => { const cardOf = () => {
       const active = t.status === 'planned' || t.status === 'dispatched' || t.status === 'in_transit';
