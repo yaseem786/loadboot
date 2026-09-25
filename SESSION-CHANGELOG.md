@@ -589,3 +589,16 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
 - W-9 Amazon Seller Central-style guided tax setup wizard (NEW): app/carrier/w9-form.js. 5-step interview (identity → federal tax classification → address → TIN → certify + e-sign). No screenshot upload. Auto-captures signing date. TIN stored server-side (app_private.w9_submissions, RLS on) and masked to last-4 in compliance notes; full number used only for the carrier's own completed W-9.
   - DB (prod+staging): table app_private.w9_submissions; RPC public.cc_carrier_submit_w9(jsonb) (records submission, sets carrier_compliance requirement_key='w9' -> pending, audit+event); RPC public.cc_carrier_w9() (carrier's latest submission for their own download).
   - api.js: carrierSubmitW9, carrierW9. app.js reqRow: w9 requirement now shows "Start your W-9" wizard; Download only after CC approval (valid); in-review shows pill only.
+
+## Choose your carrier — the Carrier Fleet Book inside the dispatcher portal (bl_disp_0442, 25 Sep 2026)
+- A candidate whose skills-test PASS is released now gets a "Choose your carrier" tab in /app/agent/: every
+  available carrier (approved, active, not demo, no active dispatcher, not on hold) with the depth of the
+  hand-built Fleet Book PDF — trucks + specs, loading gear, preferences + floor, FMCSA authority age, cargo,
+  timeline, NULL/CONFIRM items. Exact equipment matches first; "No exact match with your profile — but you can
+  still choose…" when there is none; "No carrier is open right now" when every carrier is assigned.
+- Choosing puts the carrier on hold, notifies CC (card + e-mail dispatcher.carrier.chosen) and the candidate
+  (receipt). CC 360 → "Carrier choice waiting": Accept = trial terms + SOP + assignment in ONE step; Decline =
+  carrier freed, candidate e-mailed to choose again. Queue cell "Carrier choices" on the Dispatchers screen.
+- Pre-assignment the candidate never sees names, phones, dockets, documents or bank/factoring.
+- DB: STAGING applied + rollback test green (tests/bl_disp_0442_rollback_test.sql). PROD pending owner test.
+  Anon SECURITY DEFINER surface unchanged. Notes: claude/CHOOSE-CARRIER-0442.md.
