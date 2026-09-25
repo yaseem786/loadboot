@@ -9012,7 +9012,15 @@ DOMAIN = 'https://loadboot.com'
 _SITEMAP_EXCLUDE = {'dashboard.html', '404.html', 'broker-claim.html', 'agent-confirm.html', 'claim-confirm.html', 'unsub.html',
                     'referral.html'}  # SEO-0: referral.html 301s to agents.html on Netlify — a sitemap URL must not redirect
 pages = [f for f in sorted(os.listdir(OUT)) if f.endswith('.html') and f not in _SITEMAP_EXCLUDE]
-urls = ''.join('<url><loc>%s/%s</loc><changefreq>weekly</changefreq></url>' % (DOMAIN, ('' if f=='index.html' else f)) for f in pages)
+# S9 (seo-audit-2026-10): <lastmod> only where the page itself carries a real date — its own JSON-LD
+# dateModified (article first-commit dates, market-report as_of, policy dates). Never the build date:
+# pages without one get no <lastmod> rather than a fake one Google learns to ignore.
+_LASTMOD_RE = re.compile(r'"dateModified"\s*:\s*"(\d{4}-\d{2}-\d{2})')
+def _lastmod(f):
+    with open(os.path.join(OUT, f), encoding='utf-8') as fh:
+        ds = _LASTMOD_RE.findall(fh.read())
+    return ('<lastmod>%s</lastmod>' % max(ds)) if ds else ''
+urls = ''.join('<url><loc>%s/%s</loc>%s<changefreq>weekly</changefreq></url>' % (DOMAIN, ('' if f=='index.html' else f), _lastmod(f)) for f in pages)
 sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>' % urls
 with open(os.path.join(OUT,'sitemap.xml'),'w',encoding='utf-8') as f: f.write(sitemap)
 with open(os.path.join(OUT,'robots.txt'),'w',encoding='utf-8') as f:
