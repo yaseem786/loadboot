@@ -1560,7 +1560,7 @@ EXTRA = {
  "Dry Van": [
   ("Who dry van dispatch is for",
    ["Dry van is the freight most of America moves: palletised, boxed and floor-loaded goods that need a closed, dry trailer and nothing more &mdash; retail and consumer goods, paper and packaging, e-commerce and fulfilment freight, non-perishable food and beverages, general palletised freight. Because so many trucks can haul it, dry van rates are set by competition, and the carrier who wins is the one whose next load is already booked.",
-    "Our dry van dispatch service is built for three kinds of carrier: an owner-operator with one tractor, one 53&rsquo; van and their own MC; a small fleet running several vans under one authority; and a new authority that wants a dry van dispatcher from the first load. LoadBoot has no minimum authority age &mdash; your dispatcher tells you up front which brokers will take a new MC and which will not."],
+    "Our dry van dispatch service is built for three kinds of carrier: an owner-operator with one tractor, one 53&rsquo; van and their own MC; a small fleet running several vans under one authority; and a new authority that wants a dry van dispatcher from the first load. LoadBoot has no minimum authority age &mdash; your dispatcher tells you up front which brokers will take a new MC and which will not. Running one truck across more than one kind of freight? See our <a href=\"owner-operator-dispatch.html\">owner operator dispatch services</a>."],
    ["<b>Equipment:</b> a 53&rsquo; or 48&rsquo; dry van, swing or roll-up doors. Your SOP records your trailer length, legal payload, and whether you carry load bars or straps.",
     "<b>Authority:</b> your own active MC/DOT and cargo insurance. New authorities are dispatched too; the broker list is narrower in the first months and we say so.",
     "<b>Region:</b> dry van dispatch across the USA &mdash; 48 states, OTR, regional or local. You set the lanes and home time; your dispatcher works inside them."]),
@@ -1600,7 +1600,7 @@ EXTRA = {
  "Power Only": [
   ("Who power only dispatch is for",
    ["Power only means you bring the tractor and the broker, shipper or trailer pool supplies the trailer. You hook a loaded (or empty) trailer at a yard or dock, pull it to the receiver, drop it, and often hook the next one on the spot. There is no trailer payment, no trailer tires, no trailer plates and no trailer repairs on your books.",
-    "Our power only dispatch service is built for three kinds of carrier: an owner-operator with one tractor and their own MC, a small fleet running a few power only units under one authority, and a dry van or reefer carrier who has sold or parked a trailer and wants to keep the tractor earning. New authority is welcome &mdash; LoadBoot has no minimum authority age, and your dispatcher tells you up front which brokers and trailer pools will take a new MC and which will not."],
+    "Our power only dispatch service is built for three kinds of carrier: an owner-operator with one tractor and their own MC, a small fleet running a few power only units under one authority, and a dry van or reefer carrier who has sold or parked a trailer and wants to keep the tractor earning. New authority is welcome &mdash; LoadBoot has no minimum authority age, and your dispatcher tells you up front which brokers and trailer pools will take a new MC and which will not. Running one truck across more than one kind of freight? See our <a href=\"owner-operator-dispatch.html\">owner operator dispatch services</a>."],
    ["<b>Equipment:</b> a Class 8 day cab or sleeper with a fifth wheel. Your SOP records which trailers you can pull (53&rsquo; van, reefer, flatbed) and your air and light connections.",
     "<b>Authority:</b> your own active MC/DOT and insurance. New authorities are dispatched too; the broker list is narrower in the first months and we say so.",
     "<b>Region:</b> power only dispatch across the USA &mdash; 48 states, OTR, regional or local. You set the lanes and home time; your dispatcher works inside them."]),
@@ -2333,7 +2333,8 @@ A1_BODY=(
 '<h2 id="quick-answer">Quick answer: what does a truck dispatcher cost?</h2>'
 '<p>Most truck dispatchers in the U.S. charge <b>3% to 10% of your gross revenue</b>, and <b>5% is the industry standard</b>. '
 'The other common model is a <b>flat weekly fee</b>, usually <b>$150&ndash;$250 per truck, per week</b>. At Loadboot it&rsquo;s a '
-'<a href="pricing.html">flat 5% with no long-term contracts</a> &mdash; you only pay when we actually book and run a load for you.</p>'
+'<a href="pricing.html">flat 5% of line-haul, earned at delivery</a> &mdash; fuel surcharge and accessorials are yours, there is no setup or monthly fee, '
+'and no long-term contract. You only pay on loads your dispatcher books and you deliver.</p>'
 '<div class="callout cl-info"><span class="ic">&#128161;</span><div>On a $3,000 load, a 5% dispatch fee is <b>$150</b>. '
 'The number that actually matters isn&rsquo;t the percentage &mdash; it&rsquo;s whether your dispatcher books better-paying loads '
 'and cuts your empty miles by <em>more</em> than they cost. A good one should.</div></div>'
@@ -2366,7 +2367,7 @@ A1_BODY=(
 '<div class="callout cl-warn"><span class="ic">&#9888;</span><div>If a dispatcher just forwards cheap loads with no negotiation, '
 'you&rsquo;re overpaying at <em>any</em> price. <b>Booking is not dispatching.</b></div></div>'
 +svc_banner('Flat 5%. No long-term contracts. You keep the rest.',
-  'See exactly what our dispatch service includes and what you pay &mdash; no hidden fees, cancel anytime.',
+  'See exactly what our dispatch service includes and what you pay &mdash; no setup fee, no monthly fee, no long-term contract.',
   'See our pricing &rarr;','pricing.html')+
 
 '<h2 id="roi">Does 5% actually pay for itself?</h2>'
@@ -2397,7 +2398,7 @@ A1_BODY=(
 '<li><b>Dealing directly with shippers</b> as if brokering (that crosses into illegal territory for a dispatcher)</li>'
 '</ul>'
 '<div class="callout cl-tip"><span class="ic">&#10003;</span><div>A fair dispatch deal looks like this: a flat percentage, '
-'no long-term contract, full rate transparency, and <b>you approve every load</b>. If you can&rsquo;t walk away anytime, that&rsquo;s a red flag.</div></div>'
+'no long-term contract, full rate transparency, and <b>you approve every load</b>. If leaving means a penalty or a year-long lock-in, that&rsquo;s a red flag.</div></div>'
 '<h2 id="how-works">How dispatch actually works, step by step</h2>'
 '<p>Wondering what you&rsquo;re paying for day to day? Here&rsquo;s the loop a good dispatcher runs for every load you haul:</p>'
 '<div class="art-steps">'
@@ -2416,17 +2417,21 @@ A1_BODY=(
 '<h2 id="bottom-line">The bottom line</h2>'
 '<p>Expect to pay around <b>5% of line-haul</b> for quality truck dispatch, with no long-term contract and no hidden fees. The right dispatcher should '
 'make you more than they cost &mdash; in better rates, fewer empty miles, and the hours you get back. If they don&rsquo;t, you should be '
-'able to leave anytime. That&rsquo;s exactly how Loadboot works.</p>')
+'able to leave without a penalty. At Loadboot the agreement is month-to-month with 30 days&rsquo; notice, and you can pause or ask for a '
+'different dispatcher in the app at any time.</p>')
 
 A1_TOC=[('quick-answer','Quick answer'),('models','The two pricing models'),('included','What your fee covers'),
         ('roi','Does 5% pay for itself?'),('flat-vs-percent','Flat fee vs percentage'),('red-flags','Red flags to avoid'),
         ('how-works','How dispatch works'),('bottom-line','The bottom line')]
 A1_FAQ=[
  ('Is 5% a lot for a truck dispatcher?','No &mdash; 5% is the industry standard, and for most owner-operators it is the fairest model because you only pay when the dispatcher actually books and runs a load for you. The fee is usually small next to the higher rates and reduced deadhead a good dispatcher delivers.'),
- ('Do dispatchers charge an upfront fee?','A reputable dispatcher should not charge upfront or setup fees. At Loadboot you pay a flat 5% only on loads we book &mdash; nothing upfront, and no long-term contract.'),
+ ('How much does a dispatch service cost?','Most truck dispatch services charge 3&ndash;10% of the load&rsquo;s gross, with 5% the most common, or a flat $150&ndash;$250 per truck per week. At Loadboot it is a flat 5% of line-haul, earned at delivery: on a $2,000 line-haul load the fee is $100. Fuel surcharge, detention, TONU, layover and lumper stay 100% yours. What that covers on a single truck: <a href="owner-operator-dispatch.html">owner operator dispatch services</a>.'),
+ ('What is a dispatch fee?','A dispatch fee is what a carrier pays a truck dispatcher for finding, negotiating and booking loads. It is charged as a percentage of each load&rsquo;s rate or as a flat weekly fee per truck. Check what the percentage is taken on: gross including accessorials, or line-haul only. Loadboot takes 5% of line-haul and nothing from accessorials.'),
+ ('How much do truck dispatchers make per load?','On a percentage deal the dispatcher earns the fee on each load: 5% is $100 on a $2,000 load and $150 on a $3,000 load. A flat-fee dispatcher earns the same weekly amount however many loads you run. At Loadboot you pay the 5% to Loadboot, never to the dispatcher; dispatchers are Loadboot contractors paid by us. Want to do the job yourself? See <a href="careers.html">becoming a dispatcher</a>.'),
+ ('Do dispatchers charge an upfront fee?','A reputable dispatcher should not charge upfront or setup fees. At Loadboot you pay a flat 5% of line-haul only on loads your dispatcher books and you deliver &mdash; nothing upfront, no monthly fee, and no long-term contract.'),
  ('Is a flat weekly fee cheaper than a percentage?','It depends on your revenue. A flat fee ($150&ndash;$250/truck/week) can be cheaper only if you run high gross every week. If your weeks vary, the percentage model usually costs less and keeps your dispatcher&rsquo;s incentives aligned with yours.'),
  ('Do I still control which loads I take?','Yes. A dispatcher works for you &mdash; they find and negotiate loads, but you approve every load and rate before anything is booked.'),
- ('Can I cancel anytime?','With Loadboot, yes. There are no long-term contracts &mdash; we earn your business load by load, and you can stop anytime.')]
+ ('Can I cancel anytime?','There is no long-term contract. The Loadboot dispatch agreement is month-to-month with 30 days&rsquo; written notice, and loads already booked finish under it. You can pause, or ask for a different dispatcher, from the app at any time.')]
 A1_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
  '<defs><linearGradient id="fa1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10223B"/>'
  '<stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0883F7"/></linearGradient></defs>'
@@ -2440,7 +2445,7 @@ A1_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMid
  '</svg>')
 rich_article('how-much-does-a-truck-dispatcher-cost.html',
  'Truck Dispatcher Cost 2026: 5\u201310% of Gross Explained',
- 'Real 2026 dispatcher pricing: percentage deals run 5\u201310% of gross, flat fees $200\u2013$500 per truck per month. What each model gets you, the hidden fees and red flags to avoid, and when a dispatcher pays for itself.',
+ 'Truck dispatcher cost in 2026: 3\u201310% of gross, with 5% the standard, or a flat $150\u2013$250 per truck per week. What a dispatch fee covers, and the red flags.',
  'Dispatch Pricing','How Much Does a Truck Dispatcher Cost in 2026?',
  'Percentage vs flat fee, what 5% should cover, the red flags that mean you are overpaying, and the simple math on whether a dispatcher pays for itself.',
  8,'dispatcher-cost-hero.avif','Semi-truck on a US highway — what a truck dispatcher costs',
@@ -2764,7 +2769,8 @@ A4_BODY=(
 '<p>An owner-operator dispatch service exists to do one thing: keep your truck loaded at the best possible rate so you can focus on driving. '
 'The right one is transparent, contract-free, vets your brokers, and makes you more than it costs &mdash; in higher rates, fewer empty miles, '
 'and the hours you get back. If a service can&rsquo;t promise all of that, keep looking. That&rsquo;s exactly the standard '
-'<a href="pricing.html">Loadboot</a> holds itself to: flat 5%, no long-term contracts, you approve every load.</p>')
+'<a href="pricing.html">Loadboot</a> holds itself to: flat 5%, no long-term contracts, you approve every load. How that runs on one truck: '
+'<a href="owner-operator-dispatch.html">owner operator dispatch services</a>.</p>')
 
 A4_TOC=[('what-is','What it is'),('what-it-does','What it does for you'),('how-it-works','How it works day to day'),
         ('cost','What it costs'),('new-authority','New owner-operators'),('diy-vs','Dispatch vs DIY'),
