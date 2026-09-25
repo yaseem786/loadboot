@@ -6299,6 +6299,26 @@ if _SNAP and _SNAP['rates'].get('Dry Van'):
       'number moves with lane balance and season far more than with scarcity \u2014 the same lane run in the other '
       'direction can sit on the opposite side of the average.'
       % (_SNAP['month'], _SNAP['rates']['Dry Van']))]
+# LEDGER #5 (25 Sep 2026): box-truck hub, same snippet shape. BEFORE 28 d 1 / 298 / 0.34 % / 7.7; its named
+# queries (average box truck rate per mile 5 @ 29.6, box truck mileage rate 3 @ 36.3, box truck freight rates
+# 1 @ 39.0) never saw the number or the month, and "mileage rate" appeared nowhere in the copy. The old first FAQ
+# ("What is the average box truck rate per mile?" -> "See the live figure below") is replaced by the lead FAQ so
+# the same question is not asked twice. Title untouched (pos 7.7, page 1).
+if _SNAP and _SNAP['rates'].get('Box Truck'):
+    _EQ_SEO_OVERRIDE['box-truck'] = dict(
+      desc='Box truck rates per mile, %s: $%.2f average to the carrier on the national benchmark, updated as new data '
+           'lands. Average box truck mileage rate for carriers, brokers and shippers, regional lane examples, '
+           'seasonality and the liftgate and dock-height accessorials that move the real number.'
+           % (_SNAP['month'], _SNAP['rates']['Box Truck']))
+    _EQ_FAQ_LEAD['box-truck'] = [('What is the average box truck rate per mile in 2026?',
+      'The national box truck benchmark for %s is $%.2f per loaded mile to the carrier, before liftgate, hand-unload '
+      'and other accessorials; the live figure at the top of this page carries the as-of date of the week it was '
+      'rebuilt. Box truck sits under dry van per mile, but the runs are short and regional, so the mileage rate '
+      'matters less than stops per day \u2014 a tight multi-stop route at a low rate per mile can out-earn a longer '
+      'run at a higher one.'
+      % (_SNAP['month'], _SNAP['rates']['Box Truck']))]
+    _bt = next(_e for _e in _EQ_RATES if _e['slug'] == 'box-truck')
+    _bt['faq'] = [_f for _f in _bt['faq'] if not _f[0].startswith('What is the average box truck rate per mile')]
 for _eq in _EQ_RATES:
     _n, _s = _eq['name'], _eq['slug']
     _low = _n.lower()
