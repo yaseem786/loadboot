@@ -370,6 +370,9 @@ export async function renderDispatcher360(host, query) {
     if (st === 'skills_test') return btn('Move to trial — set terms', () => trialForm(), 'o', 'play');
     if (st === 'trial') return btn('Verify — passed trial', () => act('verify', 'Verify ' + (pp.full_name || 'this dispatcher') + '?', 'Check the scorecard first: ≥3 loads/week/truck, avg $/mi above the floor, 100% RC attached, ≥2 check calls per load, no dispatch-caused cancellations.'), 'o', 'award');
     if (st === 'verified') return btn('Assign a carrier', () => go('carriers'), 'o', 'handshake');
+    // bl_disp_0443: an upheld carrier report is a permanent block — no Reinstate (the server refuses it too)
+    const blocked9 = pp.blocked_at || (state.reports || []).some((r) => r.status === 'upheld');
+    if (st === 'suspended' && blocked9) return pill('Permanently blocked', 'red', 'alert');
     if (st === 'suspended') return btn('Reinstate', () => act('reinstate', 'Reinstate?', 'Paused assignments resume; returns to trial if the trial window is still open.'), 'o', 'play');
     if (st === 'active') return btn('Message', () => go('messages'), 'o', 'chat');
     return null;
