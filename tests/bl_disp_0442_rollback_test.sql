@@ -71,6 +71,7 @@ begin
   -- the candidate's receipt never carries the carrier's real name; the staff notice does
   if exists (select 1 from app_private.message_deliveries m join public.organizations o on o.id = v_c2 where m.idempotency_key = 'disp.choice.receipt:' || v_choice::text and m.meta->>'body_html' ilike '%' || o.name || '%') then raise exception 'c2 receipt leaked carrier name'; end if;
   if not exists (select 1 from app_private.message_deliveries m join public.organizations o on o.id = v_c2 where m.idempotency_key = 'disp.choice.staff:' || v_choice::text and m.meta->>'body_html' ilike '%' || o.name || '%') then raise exception 'c2 staff notice missing carrier name'; end if;
+  if exists (select 1 from app_private.message_deliveries where idempotency_key like 'disp.choice.%:' || v_choice::text and meta->>'body_html' ilike '%on hold%') then raise exception 'c2 e-mail still says on hold'; end if;
 
   -- c3 pending state: nothing else to choose, the carrier is held, a second choice is refused
   o := public.dispatcher_carrier_options();
@@ -78,14 +79,13 @@ begin
   if (o->'pending'->'book'->'org'->>'id')::uuid <> v_c2 then raise exception 'c3 pending book'; end if;
   r := public.dispatcher_choose_carrier(v_c1, null);
   if r->>'error' is null then raise exception 'c3 second choice accepted %', r; end if;
-  if app_private.disp_carrier_available(v_c2) then raise exception 'c3 carrier not held'; end if;
-  if not app_private.disp_carrier_available(v_c2, v_disp) then raise exception 'c3 own hold must count as available'; end if;
+  -- shared choice (25 Sep revision): a pending choice does NOT reserve the carrier
+  if not app_private.disp_carrier_available(v_c2) then raise exception 'c3 carrier must stay open to other candidates'; end if;
 
   -- c4 withdraw → released, choose again
   r := public.dispatcher_withdraw_choice();
   if not coalesce((r->>'ok')::boolean,false) then raise exception 'c4 %', r; end if;
   if (select status from app_private.dispatcher_carrier_choices where id = v_choice) <> 'withdrawn' then raise exception 'c4 status'; end if;
-  if not app_private.disp_carrier_available(v_c2) then raise exception 'c4 not released'; end if;
   r := public.dispatcher_choose_carrier(v_c1, null);
   if not coalesce((r->>'ok')::boolean,false) or (r->>'match_kind') <> 'partial' then raise exception 'c4 rechoose %', r; end if;
   v_choice := (r->>'id')::uuid;
@@ -113,10 +113,26 @@ begin
   if not coalesce((r->>'ok')::boolean,false) then raise exception 'c6 choose %', r; end if;
   v_choice := (r->>'id')::uuid;
   perform set_config('request.jwt.claims', json_build_object('role','authenticated','sub',v_staff)::text, true);
+  -- a competing candidate (the staff user doubles as a second dispatcher inside this transaction) chose the same carrier
+  insert into app_private.dispatcher_profiles(user_id, full_name, status, skills) values (v_staff, 'Rival Candidate', 'skills_test', '{"equipment":["Reefer"]}'::jsonb)
+    on conflict (user_id) do update set status = 'skills_test', full_name = 'Rival Candidate';
+  insert into app_private.skills_test_attempts(user_id, attempt_no, status, minutes, invited_at, start_by, started_at, ends_at, submitted_at, decision, staff_score, max_score, reviewed_at, passed_email_at)
+    values (v_staff, 1, 'scored', 45, now() - interval '1 day', now() + interval '1 day', now() - interval '3 hours', now() - interval '2 hours', now() - interval '2 hours', 'pass', 70, 100, now() - interval '1 hour', now() - interval '1 hour');
+  update app_private.dispatcher_profiles set conduct_terms_accepted_at = now(), conduct_terms_version = app_private.disp_conduct_terms()->>'version' where user_id = v_staff;
+  r := public.dispatcher_choose_carrier(v_c2, 'rival pick');
+  if not coalesce((r->>'ok')::boolean,false) then raise exception 'c6 rival choose %', r; end if;
+  o := public.cc_dispatcher_choices('pending', null);
+  if jsonb_array_length(o) <> 2 or (select count(*) from jsonb_array_elements(o) x where (x->'carrier'->>'competing')::int = 1) <> 2 then raise exception 'c6 competing count %', o; end if;
   r := public.cc_dispatcher_set_terms(v_disp, 2.5, current_date, app_private.add_working_days(current_date, 10));
   if r->>'error' is not null then raise exception 'c6 terms %', r; end if;
   r := public.cc_dispatcher_choice_decide(v_choice, 'accept', 'Welcome aboard.', '{"scope_type":"equipment","scope_value":"Reefer only","min_rate":2.25,"lanes":"TX ↔ Southeast"}'::jsonb);
-  if not coalesce((r->>'ok')::boolean,false) or not (r->>'trial_started')::boolean or r->>'assignment' is null then raise exception 'c6 accept %', r; end if;
+  if not coalesce((r->>'ok')::boolean,false) or not (r->>'trial_started')::boolean or r->>'assignment' is null or (r->>'others_declined')::int <> 1 then raise exception 'c6 accept %', r; end if;
+  -- the rival is declined automatically, told in-app + by e-mail, and the carrier is gone from every list
+  if (select status from app_private.dispatcher_carrier_choices where dispatcher_user_id = v_staff and carrier_org_id = v_c2) <> 'declined' then raise exception 'c6 rival not declined'; end if;
+  select count(*) into n from app_private.notifications where template_key = 'dispatcher.carrier.assigned_elsewhere' and (payload->>'user')::uuid = v_staff and created_at > now() - interval '1 minute'; if n <> 1 then raise exception 'c6 rival card %', n; end if;
+  select count(*) into n from app_private.message_deliveries where template_key = 'dispatcher.carrier.assigned_elsewhere' and scheduled_at > now() - interval '1 minute'; if n <> 1 then raise exception 'c6 rival e-mail %', n; end if;
+  if app_private.disp_carrier_available(v_c2) then raise exception 'c6 assigned carrier still listed'; end if;
+  delete from app_private.skills_test_attempts where user_id = v_staff; delete from app_private.dispatcher_profiles where user_id = v_staff;
   v_asg := (r->>'assignment')::uuid;
   if (select status from app_private.dispatcher_profiles where user_id = v_disp) <> 'trial' then raise exception 'c6 status not trial'; end if;
   if (select status from app_private.dispatcher_assignments where id = v_asg) <> 'active' or (select carrier_org_id from app_private.dispatcher_assignments where id = v_asg) <> v_c2 then raise exception 'c6 assignment'; end if;

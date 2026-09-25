@@ -37,6 +37,15 @@ again. The test-passed e-mail now points at the portal instead of "a coordinator
 
 ## Rules baked in (owner decisions, 25 Sep 2026)
 
+- **Shared choice (revision 2, 25 Sep evening):** choosing does NOT reserve the carrier. Every eligible candidate
+  keeps seeing it; several may choose the same one. CC sees each request (queue cell **Carrier choices**, 360 card
+  per candidate with an amber "Also chosen by N others" pill) and accepts ONE. On accept the other pending choices on
+  that carrier are declined automatically: in-app card + e-mail `dispatcher.carrier.assigned_elsewhere` ("your chosen
+  carrier was assigned to another dispatcher — visit your portal and choose again"). The assigned carrier disappears
+  from every list (active assignment); unassign brings it back. The candidate who chose sees the "Your choice is with
+  LoadBoot" card instead of the list (one pending choice per candidate — a second request is refused server-side).
+  Rollback test c3/c6 cover it (rival candidate declined + e-mailed on accept).
+
 - **Available** = `organizations.kind='carrier'`, status active, `is_demo=false`, `carrier_onboarding.stage='approved'`,
   no `dispatcher_assignments` row in `active`/`paused`, and not on hold (`pending` choice) for another candidate.
 - **Eligible** = `dispatcher_profiles.status='skills_test'` with a pass whose `passed_email_at` is set, OR

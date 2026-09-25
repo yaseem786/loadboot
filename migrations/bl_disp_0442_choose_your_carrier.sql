@@ -9,8 +9,7 @@
 --        candidate — skills_test_attempts.passed_email_at), a "Choose your carrier" tab opens in
 --        the dispatcher portal.
 --     2. It lists every AVAILABLE carrier — approved by LoadBoot (carrier_onboarding.stage =
---        'approved'), active, not demo, with NO active dispatcher assignment and not on hold for
---        another candidate — with the same depth as the Fleet Book: trucks and specs, loading
+--        'approved'), active, not demo, with NO active dispatcher assignment — with the same depth as the Fleet Book: trucks and specs, loading
 --        equipment, preferences and rate floor, FMCSA authority age, cargo, timeline, open gaps.
 --     3. Carriers whose equipment the candidate said they can manage (dispatcher_profiles.skills →
 --        equipment) come FIRST as an exact match. When there is none the screen says so:
@@ -27,7 +26,12 @@
 --   boards, weekly cost, FMCSA counts and authority age, timeline. NOT: owner/driver names, phones,
 --   e-mails, MC/DOT dockets, documents, bank/factoring. Those arrive with the assignment brief,
 --   exactly as today (dispatcher.assigned.brief). "Never tell a candidate how many carriers LoadBoot
---   has" — carriers on hold for another candidate are simply not listed, not counted.
+--   has".
+-- Shared choice (owner, 25 Sep 2026 — revision): choosing does NOT reserve the carrier. Several candidates may
+--   choose the same carrier; CC sees every request on it and accepts ONE. On accept the other pending choices on
+--   that carrier are declined automatically with the e-mail + in-app card `dispatcher.carrier.assigned_elsewhere`
+--   ("your chosen carrier was assigned to another dispatcher — choose again"). The assigned carrier disappears from
+--   every list (active assignment); an unassign makes it available again.
 --
 -- Contact line: {{contact_inline}} only (WhatsApp via the contact switch — never the Riley line).
 -- Public surface: 5 NEW public functions, all revoked from public+anon and granted to
@@ -55,17 +59,16 @@ create table if not exists app_private.dispatcher_carrier_choices (
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now()
 );
--- one open choice per candidate, and one open hold per carrier
+-- one open choice per candidate. NOT one per carrier: several candidates may choose the same carrier (revision 25 Sep).
 create unique index if not exists dispatcher_carrier_choices_one_pending_per_user
   on app_private.dispatcher_carrier_choices (dispatcher_user_id) where status = 'pending';
-create unique index if not exists dispatcher_carrier_choices_one_pending_per_carrier
-  on app_private.dispatcher_carrier_choices (carrier_org_id) where status = 'pending';
+drop index if exists app_private.dispatcher_carrier_choices_one_pending_per_carrier;
 create index if not exists dispatcher_carrier_choices_status_idx
   on app_private.dispatcher_carrier_choices (status, created_at desc);
 alter table app_private.dispatcher_carrier_choices enable row level security;
 revoke all on app_private.dispatcher_carrier_choices from public, anon, authenticated;
 comment on table app_private.dispatcher_carrier_choices is
-  'bl_disp_0442 — a passed candidate''s pick from the available carriers. pending = on hold for CC; accepted = trial started + carrier assigned; declined = CC said no (candidate chooses again); withdrawn = candidate took it back.';
+  'bl_disp_0442 — a passed candidate''s pick from the available carriers. pending = with CC (does not reserve the carrier); accepted = trial started + carrier assigned; declined = CC said no, or another candidate was assigned that carrier (candidate chooses again); withdrawn = candidate took it back.';
 
 -- ---------------------------------------------------------------- 2. equipment vocabulary
 -- The carrier side writes "Dry Van" / "Hotshot" / "Box Truck" (fleet form), the prefs side has
@@ -156,9 +159,8 @@ $$;
 revoke all on function app_private.disp_choice_match(text[], text[]) from public, anon;
 
 -- ---------------------------------------------------------------- 3. availability + eligibility
--- Available = approved by LoadBoot, active, real (not demo), no active dispatcher, not on hold for
--- another candidate. p_for lets the caller's OWN pending hold count as available (so the pending
--- card can still render the book).
+-- Available = approved by LoadBoot, active, real (not demo), no active dispatcher. A pending choice by another
+-- candidate does NOT remove it (shared choice — CC decides between them). p_for is kept for the signature.
 create or replace function app_private.disp_carrier_available(p_org uuid, p_for uuid default null) returns boolean
 language sql stable security definer set search_path = app_private, public as $$
   select exists (
@@ -166,9 +168,7 @@ language sql stable security definer set search_path = app_private, public as $$
      where o.id = p_org and o.kind = 'carrier' and coalesce(o.status,'active') = 'active'
        and not coalesce(o.is_demo, false)
        and exists (select 1 from app_private.carrier_onboarding ob where ob.carrier_id = o.id and ob.stage = 'approved')
-       and not exists (select 1 from app_private.dispatcher_assignments a where a.carrier_org_id = o.id and a.status in ('active','paused'))
-       and not exists (select 1 from app_private.dispatcher_carrier_choices c where c.carrier_org_id = o.id and c.status = 'pending'
-                         and (p_for is null or c.dispatcher_user_id <> p_for)))
+       and not exists (select 1 from app_private.dispatcher_assignments a where a.carrier_org_id = o.id and a.status in ('active','paused')))
 $$;
 revoke all on function app_private.disp_carrier_available(uuid, uuid) from public, anon;
 
@@ -468,7 +468,7 @@ begin
     insert into app_private.dispatcher_carrier_choices (dispatcher_user_id, carrier_org_id, match_kind, dispatcher_note, dispatcher_equipment, carrier_equipment)
     values (v_uid, p_org, v_match, v_note, v_disp, v_carr) returning id into v_id;
   exception when unique_violation then
-    return jsonb_build_object('error','this carrier was just taken by another candidate — pick another');
+    return jsonb_build_object('error','your choice is already with LoadBoot — withdraw it first if you want to change it');
   end;
 
   v_book := app_private.disp_carrier_book(p_org, false);
@@ -507,7 +507,7 @@ begin
     || case when v_note is not null then app_private.disp_box('Candidate note', replace(app_private.disp_esc(v_note), E'\n', '<br>'), 'note') else '' end
     || app_private.disp_box('What Accept does',
          '<b>Accept</b> in Command Center starts the trial (terms first &mdash; commission % and the 10 working days) <b>and</b> assigns this carrier with its SOP in one step: the candidate gets the trial e-mail and the full carrier brief, the carrier gets the intro. '
-      || '<b>Decline</b> frees the carrier and tells the candidate to choose again. The carrier is on hold for this candidate until you decide.', 'ok')
+      || '<b>Decline</b> tells the candidate to choose again. Other candidates can choose this carrier too &mdash; whoever you accept gets it and the rest are told to choose again.', 'ok')
     || app_private.disp_btn('Open in Command Center', v_cc_url)
     || '<p style="color:#8ea2c3;font-size:12px;margin:0">Staff notice &middot; dispatcher.carrier.chosen &middot; choice ' || v_id::text || '</p></div>';
   v_text := coalesce(d.full_name,'A candidate') || ' chose ' || coalesce(o.name,'a carrier') || ' (' || v_match_label || E').\n'
@@ -523,23 +523,23 @@ begin
   -- ---- the candidate: in-app + receipt e-mail
   perform app_private.disp_notify(v_uid, 'dispatcher', 'dispatcher.carrier.chosen.receipt',
     'Your choice is with LoadBoot: ' || v_label,
-    'We confirm the carrier, set your trial terms and open your workspace. You will get an e-mail the moment it is done.',
+    'LoadBoot reviews it, sets your trial terms and opens your workspace. Other candidates may choose the same carrier; you get an e-mail the moment it is decided.',
     '/app/agent/#dashboard', false);
   select u.email into v_mail from auth.users u where u.id = v_uid;
   if v_mail is not null then
     v_html := '<div style="font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;font-size:15px;line-height:1.65">'
       || app_private.disp_head('LoadBoot Dispatch &middot; Carrier choice', 'Your choice is with LoadBoot')
-      || '<p style="margin:0 0 14px">Dear ' || app_private.disp_esc(coalesce(nullif(d.full_name,''),'Dispatcher')) || ', you chose <b>' || v_label || '</b>. This carrier is now on hold for you while LoadBoot confirms it.</p>'
+      || '<p style="margin:0 0 14px">Dear ' || app_private.disp_esc(coalesce(nullif(d.full_name,''),'Dispatcher')) || ', you chose <b>' || v_label || '</b>. LoadBoot now reviews it.</p>'
       || app_private.disp_strip('Carrier', v_label, 'Runs', app_private.disp_esc(v_equip_c), 'Your fit', '<span style="color:' || case v_match when 'exact' then '#4ade80' else '#FC5305' end || '">' || v_match_label || '</span>')
       || app_private.disp_box('What happens next',
-           '<b>1.</b> LoadBoot reviews your choice &mdash; usually within one working day.<br>'
+           '<b>1.</b> LoadBoot reviews your choice &mdash; usually within one working day. Other candidates may choose the same carrier; LoadBoot decides who is assigned and tells everyone.<br>'
         || '<b>2.</b> On acceptance your paid trial starts: you receive the trial terms e-mail and this carrier&rsquo;s full operating brief (truck, driver, rules, authority) in a second e-mail.<br>'
         || '<b>3.</b> Read the brief completely before you introduce yourself. Contact details arrive through the carrier&rsquo;s WhatsApp group, never before.')
-      || app_private.disp_box('Changed your mind?', 'Open your portal and withdraw the choice &mdash; the carrier is released and you can pick another. Do not contact the carrier directly before the assignment.', 'note')
+      || app_private.disp_box('Changed your mind?', 'Open your portal and withdraw the choice and pick another. Do not contact the carrier directly before the assignment.', 'note')
       || app_private.disp_btn('Open my portal', 'https://loadboot.com/app/agent/#dashboard')
       || '<p style="margin:0 0 16px"><b>LoadBoot Dispatch</b><br><span style="color:#64748b;font-size:13px">{{contact_inline}}<br>' || v_contact || '</span></p>'
       || '<p style="color:#8ea2c3;font-size:12px;margin:0">You are receiving this because you chose a carrier in your LoadBoot dispatcher portal. Transactional notice about your application.</p></div>';
-    v_text := 'Dear ' || coalesce(nullif(d.full_name,''),'Dispatcher') || E',\n\nYou chose ' || v_label || E'. It is on hold for you while LoadBoot confirms it (usually within one working day). On acceptance your paid trial starts and you receive the trial terms and the carrier''s full brief by e-mail.\n\nChanged your mind? Withdraw the choice in your portal: https://loadboot.com/app/agent/#dashboard\n\nLoadBoot Dispatch - {{contact_inline}} - ' || v_contact;
+    v_text := 'Dear ' || coalesce(nullif(d.full_name,''),'Dispatcher') || E',\n\nYou chose ' || v_label || E'. LoadBoot reviews it (usually within one working day); other candidates may choose the same carrier and LoadBoot decides who is assigned. On acceptance your paid trial starts and you receive the trial terms and the carrier''s full brief by e-mail.\n\nChanged your mind? Withdraw the choice in your portal: https://loadboot.com/app/agent/#dashboard\n\nLoadBoot Dispatch - {{contact_inline}} - ' || v_contact;
     begin
       perform app_private.sys_email(v_mail, 'dispatcher.carrier.chosen.receipt', 'Your carrier choice is with LoadBoot: ' || v_label, v_html, v_text, 'disp.choice.receipt:' || v_id::text);
     exception when others then null; end;
@@ -566,7 +566,7 @@ begin
   select name into v_cname from public.organizations where id = c.carrier_org_id;
   perform app_private.disp_notify(null, 'staff', 'dispatcher.carrier.withdrawn',
     coalesce(v_name,'Candidate') || ' withdrew the choice: ' || coalesce(v_cname,'carrier'),
-    'The carrier is open again. The candidate can pick another from the portal.',
+    'The candidate can pick another from the portal.',
     '/app/command-center/#/dispatcher?id=' || v_uid::text || '&tab=carriers', false);
   perform app_private.disp_audit('dispatcher.carrier.withdrawn', 'dispatcher_choice', c.id::text, c.carrier_org_id,
     coalesce(v_name,'dispatcher') || ' withdrew ' || coalesce(v_cname,'carrier'), '{}'::jsonb);
@@ -597,7 +597,8 @@ language sql stable security definer set search_path = app_private, public as $$
               'home_base', coalesce((select nullif(p.home_base,'') from app_private.carrier_dispatch_prefs p where p.carrier_id = o.id),
                                     (select nullif(concat_ws(', ', nullif(t.domicile_city,''), nullif(t.domicile_state,'')), '') from app_private.fleet_trucks t where t.carrier_id = o.id order by t.created_at limit 1)),
               'min_rpm', (select p.min_rpm from app_private.carrier_dispatch_prefs p where p.carrier_id = o.id),
-              'still_available', app_private.disp_carrier_available(o.id, c.dispatcher_user_id))
+              'still_available', app_private.disp_carrier_available(o.id, c.dispatcher_user_id),
+              'competing', (select count(*) from app_private.dispatcher_carrier_choices x where x.carrier_org_id = o.id and x.status = 'pending' and x.id <> c.id))
             from public.organizations o where o.id = c.carrier_org_id)
       ) order by c.created_at desc)
       from app_private.dispatcher_carrier_choices c
@@ -615,7 +616,7 @@ grant execute on function public.cc_dispatcher_choices(text, uuid) to authentica
 create or replace function public.cc_dispatcher_choice_decide(p_id uuid, p_action text, p_note text default null, p_sop jsonb default '{}'::jsonb) returns jsonb
 language plpgsql security definer set search_path = app_private, public as $$
 declare c record; d record; o record; r jsonb; r2 jsonb; v_trial boolean := false; v_mail text; v_html text; v_text text;
-        v_contact text := app_private.disp_contact()->>'email'; v_note text := nullif(btrim(coalesce(p_note,'')), ''); v_label text;
+        v_contact text := app_private.disp_contact()->>'email'; v_note text := nullif(btrim(coalesce(p_note,'')), ''); v_label text; x record; v_others int := 0; v_oname text;
 begin
   if not app_private.disp_is_staff() then return jsonb_build_object('error','not authorized'); end if;
   select * into c from app_private.dispatcher_carrier_choices where id = p_id for update;
@@ -639,10 +640,36 @@ begin
     update app_private.dispatcher_carrier_choices
        set status = 'accepted', decided_by = auth.uid(), decided_at = now(), decision_note = v_note, assignment_id = (r2->>'assignment')::uuid, updated_at = now()
      where id = c.id;
+    -- shared choice: every other pending choice on this carrier is declined and its candidate told to choose again
+    for x in update app_private.dispatcher_carrier_choices
+               set status = 'declined', decided_by = auth.uid(), decided_at = now(), decision_note = 'assigned to another dispatcher', updated_at = now()
+             where carrier_org_id = c.carrier_org_id and status = 'pending' and id <> c.id
+             returning id, dispatcher_user_id loop
+      v_others := v_others + 1;
+      perform app_private.disp_notify(x.dispatcher_user_id, 'dispatcher', 'dispatcher.carrier.assigned_elsewhere',
+        'Your chosen carrier was assigned to another dispatcher',
+        v_label || ' went to another candidate. Your "Choose your carrier" tab is open again — visit your portal to see the carriers open today and choose again.',
+        '/app/agent/#dashboard', false);
+      select u.email into v_mail from auth.users u where u.id = x.dispatcher_user_id;
+      select coalesce(nullif(full_name,''), 'Dispatcher') into v_oname from app_private.dispatcher_profiles where user_id = x.dispatcher_user_id;
+      if v_mail is not null then
+        v_html := '<div style="font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;font-size:15px;line-height:1.65">'
+          || app_private.disp_head('LoadBoot Dispatch &middot; Carrier choice', 'Your chosen carrier was assigned to another dispatcher')
+          || '<p style="margin:0 0 14px">Dear ' || app_private.disp_esc(v_oname) || ', more than one candidate chose <b>' || v_label || '</b>. LoadBoot assigned it to another dispatcher. Nothing is held against you &mdash; it is simply taken.</p>'
+          || app_private.disp_box('What to do now', 'Open your portal &mdash; the <b>Choose your carrier</b> tab is open again with every carrier that is available today. Pick the one that fits your experience best; the carriers whose equipment you know are listed first. If none is open today, the tab says so and we tell you the moment one opens.')
+          || app_private.disp_btn('Choose another carrier', 'https://loadboot.com/app/agent/#dashboard')
+          || '<p style="margin:0 0 16px"><b>LoadBoot Dispatch</b><br><span style="color:#64748b;font-size:13px">{{contact_inline}}<br>' || v_contact || '</span></p>'
+          || '<p style="color:#8ea2c3;font-size:12px;margin:0">Transactional notice about your LoadBoot dispatcher application.</p></div>';
+        v_text := 'Dear ' || v_oname || E',\n\nMore than one candidate chose ' || v_label || E'. LoadBoot assigned it to another dispatcher.\n\nPlease choose another carrier in your portal: https://loadboot.com/app/agent/#dashboard\n\nLoadBoot Dispatch - {{contact_inline}} - ' || v_contact;
+        begin
+          perform app_private.sys_email(v_mail, 'dispatcher.carrier.assigned_elsewhere', 'Your chosen carrier was assigned to another dispatcher — please choose again', v_html, v_text, 'disp.choice.elsewhere:' || x.id::text);
+        exception when others then null; end;
+      end if;
+    end loop;
     perform app_private.disp_audit('dispatcher.carrier.choice.accept', 'dispatcher_choice', c.id::text, c.carrier_org_id,
-      coalesce(d.full_name,'dispatcher') || ' → ' || coalesce(o.name,'carrier') || case when v_trial then ' (trial started)' else '' end,
-      jsonb_build_object('note', v_note, 'assignment', r2->>'assignment'));
-    return jsonb_build_object('ok', true, 'assignment', r2->'assignment', 'trial_started', v_trial, 'warning', r->'warning');
+      coalesce(d.full_name,'dispatcher') || ' → ' || coalesce(o.name,'carrier') || case when v_trial then ' (trial started)' else '' end || case when v_others > 0 then ' · ' || v_others || ' other candidate(s) told to choose again' else '' end,
+      jsonb_build_object('note', v_note, 'assignment', r2->>'assignment', 'others_declined', v_others));
+    return jsonb_build_object('ok', true, 'assignment', r2->'assignment', 'trial_started', v_trial, 'warning', r->'warning', 'others_declined', v_others);
 
   elsif p_action = 'decline' then
     update app_private.dispatcher_carrier_choices
@@ -686,8 +713,12 @@ values
    'S', 'staff', 'event', 'public.dispatcher_choose_carrier', 'once per choice', 'once (idempotency disp.choice.staff:<choice>)',
    'staff_internal', false, '#/dispatchers', 'live', '{code}'),
   ('dispatcher.carrier.chosen.receipt', 'Carrier choice — receipt',
-   'Candidate receipt: the carrier is on hold for them while LoadBoot confirms; what happens next; how to withdraw',
+   'Candidate receipt: LoadBoot reviews the choice (others may choose the same carrier); what happens next; how to withdraw',
    'T', 'dispatcher', 'event', 'public.dispatcher_choose_carrier', 'once per choice', 'once (idempotency disp.choice.receipt:<choice>)',
+   'account_critical', false, '#/dispatchers', 'live', '{code}'),
+  ('dispatcher.carrier.assigned_elsewhere', 'Carrier choice — assigned to another dispatcher',
+   'CC accepted another candidate for the carrier this candidate chose: the tab is open again, choose another',
+   'T', 'dispatcher', 'event', 'public.cc_dispatcher_choice_decide', 'once per competing choice', 'once (idempotency disp.choice.elsewhere:<choice>)',
    'account_critical', false, '#/dispatchers', 'live', '{code}'),
   ('dispatcher.carrier.declined', 'Carrier choice — declined',
    'CC declined the candidate''s carrier choice: reason + the tab is open again to choose another',

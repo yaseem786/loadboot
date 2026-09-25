@@ -6,7 +6,7 @@
 // book — truck specs, loading gear, preferences and floor, FMCSA authority age, cargo, timeline, and the
 // NULL / CONFIRM items to collect on the first call. Carriers whose equipment the candidate said they can
 // manage come first ("exact match"); when there is none the screen says so and still lets them choose.
-// Choosing puts the carrier on hold, tells Command Center (card + e-mail) and sends the candidate a
+// Choosing does not reserve the carrier (several candidates may pick the same one; CC decides), tells Command Center (card + e-mail) and sends the candidate a
 // receipt; CC's Accept starts the trial and assigns the carrier in one step.
 //
 // Everything that decides is on the SERVER: eligibility, availability, the hold, the match. This module
@@ -308,7 +308,7 @@ function confirmChoose(b, terms) {
       h('div', { class: 'cyc-sheet', style: 'max-width:520px;padding:22px' }, [
         h('div', { class: 'cyc-kick' }, 'CHOOSE YOUR CARRIER'),
         h('div', { class: 'cyc-h1', style: 'font-size:1.3rem' }, (b.org && (b.org.label || b.org.name)) || 'This carrier'),
-        h('div', { class: 'cyc-sub', style: 'margin-bottom:12px' }, 'This puts the carrier on hold for you and sends your choice to LoadBoot. You can withdraw it until LoadBoot confirms. Once confirmed your paid trial starts and you receive the full operating brief.'),
+        h('div', { class: 'cyc-sub', style: 'margin-bottom:12px' }, 'This sends your choice to LoadBoot. Other candidates may choose the same carrier — LoadBoot decides who is assigned and tells everyone. You can withdraw it until LoadBoot decides. Once confirmed your paid trial starts and you receive the full operating brief.'),
         b.match_kind && b.match_kind !== 'exact' ? h('div', { class: 'cyc-note', style: 'margin-bottom:12px' }, (MATCH[b.match_kind] || MATCH.unknown)[3].toLowerCase().replace(/^./, (c) => c.toUpperCase()) + (b.match_missing && b.match_missing.length ? ' — this carrier runs ' + b.match_missing.join(' / ') + ', which you did not list in your application. Say in the note why you can handle it.' : '.')) : null,
         ta,
         needTerms ? termsBlock(terms) : h('div', { class: 'cyc-line', style: 'margin-top:10px' }, '✓ Contact rules accepted ' + (terms && terms.accepted_at ? fmtD(terms.accepted_at) : '') + ' — every contact with the carrier goes through LoadBoot channels only; anything else is a permanent block.'),
@@ -375,7 +375,7 @@ function pendingCard(o, reload) {
     kpiTiles(b), badges(b),
     p.note ? h('div', { class: 'cyc-note' }, ['Your note: ', p.note]) : null,
     h('div', { class: 'cyc-steps' }, [
-      ['1', 'LoadBoot reviews your choice — usually within one working day. The carrier is on hold for you meanwhile.'],
+      ['1', 'LoadBoot reviews your choice — usually within one working day. Other candidates may choose the same carrier; LoadBoot decides who is assigned and tells you either way.'],
       ['2', 'On acceptance your paid trial starts: you get the trial terms e-mail and this carrier’s full operating brief (truck, driver, rules, authority).'],
       ['3', 'Read the brief completely, then introduce yourself in the carrier’s WhatsApp group. Never contact the carrier before that.'],
     ].map((s) => h('div', { class: 'cyc-step' }, [h('i', null, s[0]), h('div', null, s[1])]))),

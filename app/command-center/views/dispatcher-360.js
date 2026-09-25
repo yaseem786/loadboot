@@ -643,7 +643,7 @@ export async function renderDispatcher360(host, query) {
       const m = CHOICE_MK[c.match_kind] || [String(c.match_kind || '').toUpperCase(), 'violet'];
       const gone = cr.still_available === false;
       const body = el('div', { class: 'd3-pad' }, [
-        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px' }, [el('b', { style: 'font-size:15px' }, cr.name || 'Carrier'), pill(m[0], m[1]), gone ? pill('No longer available — decline', 'red', 'alert') : '']),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px' }, [el('b', { style: 'font-size:15px' }, cr.name || 'Carrier'), pill(m[0], m[1]), gone ? pill('No longer available — decline', 'red', 'alert') : '', Number(cr.competing) > 0 ? pill('Also chosen by ' + cr.competing + ' other' + (Number(cr.competing) === 1 ? '' : 's') + ' — accept one, the rest are told', 'amber', 'users') : '']),
         el('div', { class: 'd3-mut', style: 'font-size:12.5px;line-height:1.7' }, [
           'Chosen ' + dShort(c.created_at) + ' · carrier runs ' + ((cr.equipment || []).join(' / ') || 'equipment not on file') + ' · ' + (cr.trucks || 0) + ' truck' + (Number(cr.trucks) === 1 ? '' : 's') + (cr.home_base ? ' · ' + cr.home_base : '') + (cr.min_rpm != null ? ' · floor $' + Number(cr.min_rpm).toFixed(2) + '/mi' : ''),
           el('br'), 'Candidate knows ' + ((dp.equipment || []).join(' / ') || 'nothing listed') + (dp.years_exp != null ? ' · ' + dp.years_exp + ' yr US dispatch' : '') + (dp.score ? ' · test ' + dp.score : '') + ' · status ' + (pp.status || '—'),
@@ -654,7 +654,7 @@ export async function renderDispatcher360(host, query) {
           btn('Decline — candidate chooses again', () => declineChoice(c), 'danger', 'x'),
         ]),
       ]);
-      return card('Carrier choice waiting', 'Picked by the candidate from the Fleet Book in their portal · on hold until you decide', 'handshake', body, [], 'carriers');
+      return card('Carrier choice waiting', 'Picked by the candidate from the Fleet Book in their portal · the carrier stays open to other candidates until you accept one', 'handshake', body, [], 'carriers');
     });
   }
   // bl_disp_0443 — a carrier reported this dispatcher. Uphold = same-day suspension + permanent block (no reinstate,
