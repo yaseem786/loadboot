@@ -32,6 +32,9 @@ ANON = (os.environ.get('LOADBOOT_PROD_ANON_KEY')
 URL = 'https://%s.supabase.co/rest/v1/rpc/get_public_market_rates' % PROD_REF
 HERE = os.path.dirname(os.path.abspath(__file__))
 STORE = os.path.join(HERE, 'rate_snapshots.json')
+# build_site.py reads the benchmark live at build time and falls back to this file when it cannot
+# (SEO ledger notes b + e, 25 Sep 2026). Every successful fetch here refreshes it.
+FALLBACK = os.path.join(HERE, 'market_rates_fallback.json')
 
 
 def fetch():
@@ -53,6 +56,11 @@ def main():
         print('RPC returned no rows. Nothing written.')
         return 1
 
+    fb = json.load(open(FALLBACK, encoding='utf-8')) if os.path.exists(FALLBACK) else {}
+    fb.update(fetched=datetime.date.today().isoformat(), rows=sorted(rows, key=lambda r: r['equipment']))
+    json.dump(fb, open(FALLBACK, 'w', encoding='utf-8'), indent=1)
+    print('Refreshed market_rates_fallback.json (%d rows).' % len(rows))
+
     # as_of comes from the benchmark table itself, not from today's date -- the report
     # must be dated by when the number was measured, not by when we happened to fetch it.
     as_of = rows[0].get('as_of') or datetime.date.today().isoformat()
@@ -64,6 +72,12 @@ def main():
 
     for s in snaps:
         if s['as_of'] == as_of:
+            moved = sorted(r['equipment'] for r in rows if r['equipment'] in s['rates']
+                           and round(float(r['carrier_rpm']), 2) != round(float(s['rates'][r['equipment']]['rpm']), 2))
+            if moved:
+                print('WARNING: the benchmark still says as_of %s but %s no longer match the snapshot' % (as_of, ', '.join(moved)))
+                print('recorded for that date. rate_benchmarks was revised in place without moving as_of,')
+                print('so the live pages and the dated report for that week now disagree on the same date.')
             print('A snapshot for %s already exists. Nothing written.' % as_of)
             print('Snapshots are append-only on purpose -- published reports are built')
             print('from them and must never change after the fact.')
