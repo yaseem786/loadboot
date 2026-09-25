@@ -156,3 +156,21 @@ service_role. Applied staging (38 → **32**, names = the staging list above) an
 **Rule from here (added to CLAUDE.md §4):** a migration that creates a `public` function must
 `revoke execute on function … from public, anon` explicitly — revoking from PUBLIC alone leaves the
 default-ACL anon grant in place — and must re-run the check above and compare names.
+
+### 25 Sep 2026 — market data registry (bl_mkt_0442), staging
+
+`bl_mkt_0442_site_facts_registry` adds ONE intentional anon name: **`get_public_site_facts()`** — the
+public-site build's read of site facts + diesel + rates `as_of`, same shape and reason as
+`get_public_market_rates` (reached by `build_site.py` on Netlify with the anon key, no session). The six
+staff functions it creates (`cc_site_facts`, `cc_site_fact_set`, `cc_site_publish_config_set`,
+`cc_site_rebuild`, `cc_market_rates_preview`, `cc_market_rates_publish`) are revoked from public + anon
+in the migration, which asserts that at the end. Staging name-level check after apply: **32 → 33**, the
+only added name is `get_public_site_facts`. **Prod applied the same day** (bl_mkt_0442–0445): **33 → 34**,
+name-level diff = `+get_public_site_facts`, nothing removed. Full 34-name prod catalog after: all_flags, cc_get_public_form,
+dispatcher_submit_id, eld_ingest, get_active_public_announcements, get_public_load_opportunities, get_public_market_rates,
+get_public_site_facts, lb_contact_channel, lb_email_claim_get, lb_email_claim_sign, lb_email_ping_confirm, lb_email_ping_get,
+lc_brain_write, lc_chat_request_call, lc_history, lc_identify, lc_ob_get, lc_ob_save, lc_ob_upload_check, lc_poll, lc_rate,
+lc_request_call, lc_send, lc_start, outreach_unsubscribe, partner_agent_confirm, partner_agent_confirm_get,
+partner_claim_confirm, partner_claim_get, retell_inbound, retell_webhook, submit_web_form, track_web_event.
+Staging = the same minus `retell_inbound` = 33. `diesel_pull_record` (0443) is service_role-only and asserted so.
+CLAUDE.md §4 updated to 34/33.

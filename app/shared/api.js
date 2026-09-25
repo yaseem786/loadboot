@@ -513,6 +513,22 @@ export const carrierDispatcherChangeRequest = (reason) => rpc('carrier_dispatche
 export const ccDispatcherContactRelease = (assignment, release, note) => rpc('cc_dispatcher_contact_release', { p_assignment: assignment, p_release: release !== false, p_note: note ?? null });
 export const ccDispatcherDelaySet = (carrierOrg, reason, note, etaDays) => rpc('cc_dispatcher_delay_set', { p_carrier_org: carrierOrg, p_reason: reason ?? null, p_note: note ?? null, p_eta_days: etaDays ?? null });   // bl_disp_0410
 export const ccDispatcherResendIntro = (assignment) => rpc('cc_dispatcher_resend_intro', { p_assignment: assignment });
+// bl_disp_0442 — "Choose your carrier": the Carrier Fleet Book inside the dispatcher portal.
+// Candidate side (eligibility is decided server-side: passed test released, or trial/verified with no carrier).
+export const dispatcherCarrierOptions = () => rpc('dispatcher_carrier_options', {});
+export const dispatcherChooseCarrier = (org, note) => rpc('dispatcher_choose_carrier', { p_org: org, p_note: note ?? null });
+export const dispatcherWithdrawChoice = () => rpc('dispatcher_withdraw_choice', {});
+// Staff side: the queue of choices and the one-step decision (accept = trial + assign; decline = candidate chooses again).
+export const ccDispatcherChoices = (status, user) => rpc('cc_dispatcher_choices', { p_status: status ?? 'pending', p_user: user ?? null });
+export const ccDispatcherChoiceDecide = (id, action, note, sop) => rpc('cc_dispatcher_choice_decide', { p_id: id, p_action: action, p_note: note ?? null, p_sop: sop ?? {} });
+// The contact-conduct terms a candidate accepts before the first choice (server holds the text + version).
+export const dispatcherAcceptConductTerms = () => rpc('dispatcher_accept_conduct_terms', {});
+// bl_disp_0443 §11 — how many carriers this dispatcher may hold (policy + own numbers).
+export const dispatcherCapacity = () => rpc('dispatcher_capacity', {});
+// bl_disp_0443 — carrier report → permanent block. Carrier side + staff queue and decision.
+export const carrierReportDispatcher = (kind, channel, contact, detail) => rpc('carrier_report_dispatcher', { p_kind: kind, p_channel: channel ?? null, p_contact: contact ?? null, p_detail: detail ?? null });
+export const ccDispatcherReports = (status, user) => rpc('cc_dispatcher_reports', { p_status: status ?? 'open', p_user: user ?? null });
+export const ccDispatcherReportDecide = (id, action, note) => rpc('cc_dispatcher_report_decide', { p_id: id, p_action: action, p_note: note ?? null });
 export const carrierBookingAck = (booking, ok, note) => rpc('carrier_booking_ack', { p_booking: booking, p_ok: !!ok, p_note: note ?? null });
 // ---- Dispatcher Workspace P1 (bl_disp_0289) — board / posting / KPIs, acting for an assigned carrier ----
 export const dispatcherBoard = (org, limit) => rpc('dispatcher_board', { p_org: org, p_limit: limit ?? 20 });
@@ -1594,3 +1610,17 @@ export const ccInvPostUpdate  = (p) => rpc('cc_inv_post_update', { p });
 export const ccInvUpdates     = (limit) => rpc('cc_inv_updates', { p_limit: limit || 50 });
 // 0408 — attachments on capital requests (invoice / quote / screenshot)
 export const ccInvRequestAttach = (id, attachments) => rpc('cc_inv_request_attach', { p_request: id, p_attachments: attachments });
+
+// ---- Market data (bl_mkt_0442–0445, 25 Sep 2026): the CC "Market rates" screen. Every write is staff-only
+// server-side (settings.manage / content.publish / seo.manage) and rebuilds the public site through the hook.
+export const siteFacts = () => rpc('cc_site_facts');
+export const siteFactSet = (key, value, opts) => rpc('cc_site_fact_set', { p_key: key, p_value: value, p_opts: opts || {} });
+export const siteRebuild = (reason) => rpc('cc_site_rebuild', { p_reason: reason || 'manual' });
+export const sitePublishConfigSet = (url, enabled) => rpc('cc_site_publish_config_set', { p_url: url || null, p_enabled: enabled !== false });
+export const marketRatesPreview = (van, reefer, flatbed) => rpc('cc_market_rates_preview', { p_dry_van: van, p_reefer: reefer, p_flatbed: flatbed });
+export const marketRatesPublish = (van, reefer, flatbed, week, source, confirmed) =>
+  rpc('cc_market_rates_publish', { p_dry_van: van, p_reefer: reefer, p_flatbed: flatbed, p_week: week, p_source: source || null, p_confirmed: !!confirmed });
+export const dieselPullNow = () => rpc('cc_diesel_pull_now');
+export const dieselSet = (region, usdGal, asOf) => rpc('cc_diesel_set', { p_region: region, p_usd_gal: usdGal, p_as_of: asOf || null });
+export const dieselConfigSet = (url, anon, token) => rpc('cc_diesel_config_set', { p_function_url: url || null, p_anon_key: anon || null, p_worker_token: token || null });
+export const dieselWorkerToken = () => rpc('cc_diesel_worker_token');

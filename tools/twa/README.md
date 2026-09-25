@@ -85,3 +85,15 @@ the targetSdk requirement.
   Signed on the owner's Windows PC by double-clicking `SIGN-V4.bat` (repo root): it signs
   `release/loadboot-v4-unsigned.aab` with the local upload keystore, checks the fingerprint is
   A7:F2…F1:48 and writes `release/loadboot-v4.aab`. The key never leaves his machine.
+- **v1.0.4 (versionCode 5, 25 Sep 2026)** — lifecycle clean-up, no user-visible change on the happy path.
+  The Custom Tabs `ServiceConnection` was a *static* field. A `bindService()` binding belongs to the
+  Context that made it, so the static never let it outlive the activity; it only meant that a second
+  launcher instance (a `loadboot.com` deep link arriving while the v1.0.2 launcher was still in the back
+  stack) overwrote the first instance's reference — the first binding was never unbound (Android logs
+  "leaked ServiceConnection" and drops it) and the first instance's `onDestroy` unbound the *second*
+  instance's binding. Now: the connection is a per-instance field, `onDestroy` always unbinds it and
+  clears the queued timeouts; `onNewIntent` reuses the existing binding and session (before launch the
+  pending launch picks up the new URL, after launch it navigates the open TWA); and the launcher saves
+  `launched` in its instance state, so when the system recreates it after the web app was on top it
+  closes like `onRestart` instead of binding and launching a second TWA. Signed the same way as v4:
+  `SIGN-V5.bat` signs `release/loadboot-v5-unsigned.aab` into `release/loadboot-v5.aab`.

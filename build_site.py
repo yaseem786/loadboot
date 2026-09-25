@@ -455,7 +455,7 @@ def header_v1(active):
 </div></header>''' % (links, mob, ARW)
 
 def header(active):
-    return header_v2(active) if HEADER_V2 else header_v1(active)
+    return _contact_header(header_v2(active) if HEADER_V2 else header_v1(active))
 
 
 # WEB-4: 'Research LoadBoot with AI' footer. Owner-flippable build switch (True = rendered).
@@ -498,7 +498,7 @@ def footer():
 '''
 
 GA_ID = 'G-C2ELQ7H8EM'  # GA4 Measurement ID — injected on every page.
-LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Loadboot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Truck dispatch for owner-operators, small fleets and new-authority carriers: a dedicated, LoadBoot-vetted dispatcher on your truck plus the platform that verifies, tracks and settles every load. Flat 5% of line-haul at delivery, no long-term contract.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
+LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"LoadBoot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Truck dispatch for owner-operators, small fleets and new-authority carriers: a dedicated, LoadBoot-vetted dispatcher on your truck plus the platform that verifies, tracks and settles every load. Flat 5% of line-haul at delivery, no long-term contract.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
 GA_SNIPPET = ('<script async src="https://www.googletagmanager.com/gtag/js?id=%s"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag(\'js\',new Date());gtag(\'config\',\'%s\');</script>' % (GA_ID, GA_ID)) if GA_ID else ''
 ORG_SCHEMA = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://loadboot.com/#org","name":"LoadBoot","legalName":"LoadBoot LLC","url":"https://loadboot.com/","logo":"https://loadboot.com/icon-512.png","slogan":"The Operating System for Trucking","description":"The Operating System for Trucking: a verified load board, carrier app, GPS proof, documents and settlements on one platform, with a LoadBoot-run network of dedicated, vetted truck dispatchers. Flat 5% of line-haul for carriers; free for brokers, shippers, broker agents and referral partners.","email":"hello@loadboot.com","telephone":"+1-469-253-7575","sameAs":["https://www.linkedin.com/company/135138228/","https://play.google.com/store/apps/details?id=com.loadboot.app"],"areaServed":{"@type":"Country","name":"United States"}}</script>'
 HEADX = LOCALBIZ + ORG_SCHEMA + GA_SNIPPET
@@ -574,6 +574,55 @@ _CONTACT_SWITCH = ("<script>(function(){"
   "if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',go);}else{go();}"
   "})();</script>") % (APP_REF, APP_ANON)
 HEADX = HEADX + _CONTACT_SWITCH
+
+# CLAUDE.md §7 (25 Sep 2026): the HEADER no longer ships the Riley line in the built HTML. The switch above only
+# rewrites after the fetch lands, so the phone number sat in the static header (crawlers, no-JS, first paint).
+# The build now reads the same public.lb_contact_channel() and, when the channel is whatsapp, renders every
+# data-lb-contact link in the header exactly as the switch would (same labels, so no flash), and hides the
+# data-lb-callonly bits. On phone/both the header is left as it was. Body, footer and schema.org keep the phone
+# version and stay on the runtime switch. A flip in CC applies at runtime at once and to the static header on
+# the next build (every market-data Publish rebuilds).
+_CONTACT_FALLBACK = {'channel': 'whatsapp',
+                     'whatsapp': {'url': 'https://wa.me/18153651168', 'display': '+1 (815) 365-1168'}}
+def _contact_load():
+    if os.environ.get('LOADBOOT_RATES_OFFLINE') != '1':
+        try:
+            import urllib.request
+            _req = urllib.request.Request('https://%s.supabase.co/rest/v1/rpc/lb_contact_channel' % PROD_REF,
+                data=b'{}', headers={'apikey': PROD_ANON, 'Authorization': 'Bearer ' + PROD_ANON,
+                                     'Content-Type': 'application/json'})
+            with urllib.request.urlopen(_req, timeout=20) as _r:
+                _c = json.loads(_r.read().decode('utf-8'))
+            if isinstance(_c, dict) and _c.get('channel'):
+                return _c, 'live'
+            print('contact channel: live read returned an unexpected shape - using fallback')
+        except Exception as _ex:
+            print('contact channel: live read FAILED (%s) - using fallback' % _ex)
+    return _CONTACT_FALLBACK, 'fallback'
+_CONTACT, _CONTACT_FROM = _contact_load()
+_CONTACT_WA = _CONTACT.get('whatsapp') or {}
+_CONTACT_HDR_WA = (_CONTACT.get('channel') == 'whatsapp' and str(_CONTACT_WA.get('url') or '').startswith('https://wa.me/')
+                   and bool(_CONTACT_WA.get('display')))
+print('contact channel: %s (%s), header ships %s' % (_CONTACT.get('channel'), _CONTACT_FROM,
+      'WhatsApp ' + _CONTACT_WA.get('display', '') if _CONTACT_HDR_WA else 'the phone line'))
+_CONTACT_HDR_LABEL = {'topbar': '&#128172; WhatsApp&nbsp; %s', 'nav': '&#128172; WhatsApp us &mdash; %s',
+                      'footer': '&#128172; %s &middot; WhatsApp', 'inline': '%s on WhatsApp'}
+def _contact_header(h):
+    if not _CONTACT_HDR_WA:
+        return h
+    import html as _html
+    _u, _d = _html.escape(_CONTACT_WA['url']), _html.escape(_CONTACT_WA['display'])
+    def _a(m):
+        kind = m.group(2)
+        attrs = re.sub(r'\shref="tel:[^"]*"', '', m.group(1))
+        return '<a%s href="%s" rel="noopener" target="_blank" data-lb-contact="%s"%s>%s</a>' % (
+            attrs, _u, kind, m.group(3), _CONTACT_HDR_LABEL.get(kind, _CONTACT_HDR_LABEL['inline']) % _d)
+    h = re.sub(r'<a((?:\s[^>]*?)?)\sdata-lb-contact="(\w+)"([^>]*)>.*?</a>', _a, h, flags=re.S)
+    h = re.sub(r'(<[a-z]+\b[^>]*?)\sdata-lb-callonly(?=[\s>])', r'\1 style="display:none" data-lb-callonly', h)
+    h = h.replace('Riley answers 24/7', 'WhatsApp any hour')
+    if re.search(r'253-?7575|2537575', h):
+        sys.exit('BUILD REFUSED - the header still carries the Riley line while the contact channel is whatsapp (CLAUDE.md §7).')
+    return h
 
 
 def _breadcrumb(fname, title):
@@ -670,7 +719,7 @@ def page(fname, title, desc, active, body, schema=''):
     doc = '''<!DOCTYPE html><html lang="en" class="no-js"><head><script>document.documentElement.classList.remove("no-js")</script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%s</title><meta name="description" content="%s"><link rel="canonical" href="https://loadboot.com/%s">
 <meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta property="og:type" content="website"><meta property="og:url" content="https://loadboot.com/%s"><meta property="og:image" content="https://loadboot.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="LoadBoot — the load board with zero ghost loads, plus dispatch, GPS proof and payments"><meta property="og:image" content="https://loadboot.com/og-image-square.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="1200"><meta property="og:site_name" content="LoadBoot"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="%s"><meta name="twitter:description" content="%s"><meta name="twitter:image" content="https://loadboot.com/og-image.png"><meta name="twitter:image:alt" content="LoadBoot — the load board with zero ghost loads"><meta name="theme-color" content="#10223B">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="LoadBoot">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css?v=7"><script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "xvcrda1da1");</script><script type="text/javascript" src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js" async></script>%s</head><body>
@@ -699,7 +748,7 @@ def faq_block(items):
 PWA_JS = r'''
 var lbUpdateApproved=false;
 if('serviceWorker' in navigator){var lbHadSW=!!navigator.serviceWorker.controller;addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').then(function(reg){function n(w){if(w&&navigator.serviceWorker.controller)lbUpdBanner(w);}if(reg.waiting)n(reg.waiting);reg.addEventListener('updatefound',function(){var w=reg.installing;if(w)w.addEventListener('statechange',function(){if(w.state==='installed')n(w);});});setInterval(function(){reg.update();},60000);}).catch(function(){});var r=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(r)return;if(!lbHadSW){lbHadSW=true;return;}if(!lbUpdateApproved){lbUpdBanner(null);return;}r=true;location.reload();});});}
-function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;width:max-content;max-width:min(92vw,520px)';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of Loadboot is available.</span><button id="lbUpdBtn" style="background:#FC5305;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){if(!confirm('Update and reload this tab? Save any unfinished work first.'))return;lbUpdateApproved=true;this.textContent='Updating…';if(!w||w.state==='activated')location.reload();else w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
+function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;width:max-content;max-width:min(92vw,520px)';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of LoadBoot is available.</span><button id="lbUpdBtn" style="background:#FC5305;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){if(!confirm('Update and reload this tab? Save any unfinished work first.'))return;lbUpdateApproved=true;this.textContent='Updating…';if(!w||w.state==='activated')location.reload();else w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
 (function(){function mk(){if(document.getElementById('pwaBtn'))return null;var b=document.createElement('button');b.id='pwaBtn';b.className='lb-float-ctl';b.setAttribute('aria-label','Get the LoadBoot app');b.innerHTML='&#11015; Get the app';b.style.cssText='position:fixed;bottom:20px;left:20px;z-index:90;background:#0883F7;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-weight:700;font-family:Manrope,sans-serif;font-size:.9rem;box-shadow:0 12px 30px -8px rgba(37,99,235,.6);cursor:pointer;transition:opacity .2s ease,visibility .2s ease';b.onclick=function(){location.href='/apps.html';};document.body.appendChild(b);try{if(window.lbFloatRegister)window.lbFloatRegister(b);}catch(e){}return b;}/* Chrome offers its own install prompt through beforeinstallprompt. We suppress the mini-infobar but never
    fire an install from this button: nothing should download straight off the floating button. Its whole job is
    to take the visitor to /apps.html, where the Google Play badge sits next to the iOS instructions and they can
@@ -1136,7 +1185,7 @@ ROUTE = '''<section><div class="wrap route-grid">
 # fix mpath: use inline path reference via id
 ROUTE = ROUTE.replace('<path d="M40 175 C 150 175 120 70 250 72 S 340 55 360 48" fill="none" stroke="#CBD5E1"','<path id="rtpath" d="M40 175 C 150 175 120 70 250 72 S 340 55 360 48" fill="none" stroke="#CBD5E1"').replace('<mpath href="#"/>','<mpath href="#rtpath"/>')
 
-WHYUS = '''<section id="why"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Why Loadboot</div><h2>Built for carriers who want to earn more and stress less</h2></div>
+WHYUS = '''<section id="why"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Why LoadBoot</div><h2>Built for carriers who want to earn more and stress less</h2></div>
 <div class="grid g4">
 <div class="card reveal"><div class="icon">&#128200;</div><h3>Higher-paying loads</h3><p>We negotiate hard on every rate and turn down cheap freight that wastes your time.</p></div>
 <div class="card reveal d1"><div class="icon">&#128739;</div><h3>Less deadhead</h3><p>Smart lane planning keeps your truck loaded and your miles paid.</p></div>
@@ -1250,7 +1299,7 @@ HOME_RATES = ('<section id="market-rates" class="bg-soft"><div class="wrap">'
  '.hmr .r{font-size:.72rem;color:#64748b}'
  '.hmr-note{text-align:center;font-size:.8rem;color:#64748b;margin-top:6px}</style>'
  '<div class="hmr-g reveal" id="hmrTiles">'
- + ''.join('<div class="hmr"><div class="e">' + e + ' Rates</div><div class="p" data-eq="' + e + '">\u2014</div><div class="r" data-eqr="' + e + '">loading\u2026</div></div>'
+ + ''.join('<div class="hmr"><div class="e">' + e + ' Rates</div><div class="p" data-eq="' + e + '">\u2014</div><div class="r" data-eqr="' + e + '">loading\u2026</div><div class="r" data-eqt="' + e + '"></div></div>'
            for e in ['Dry Van', 'Reefer', 'Flatbed', 'Hotshot'])
  + '</div>'
  '<div class="hmr-note" id="hmrAsOf">National spot averages, all-in linehaul per mile \u00b7 each figure carries its own as-of date</div>'
@@ -1275,9 +1324,185 @@ HOME_RATES_JS = ("<script>(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD
  "fetch(SB+'/rest/v1/rpc/get_public_market_rates',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'})"
  ".then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(!d)return;var asof='';"
  "d.forEach(function(b){asof=b.as_of||asof;var p=document.querySelector('[data-eq=\"'+b.equipment+'\"]');var r2=document.querySelector('[data-eqr=\"'+b.equipment+'\"]');"
- "if(p)p.textContent='$'+Number(b.carrier_rpm).toFixed(2)+'/mi';if(r2)r2.textContent='range $'+Number(b.low).toFixed(2)+'\u2013'+Number(b.high).toFixed(2);});"
+ "if(p)p.textContent='$'+Number(b.carrier_rpm).toFixed(2)+'/mi';if(r2)r2.textContent='range $'+Number(b.low).toFixed(2)+'\u2013'+Number(b.high).toFixed(2);"
+ "var t=document.querySelector('[data-eqt=\"'+b.equipment+'\"]');if(t&&window.LBT)t.innerHTML=LBT(b);});"
  "var a=document.getElementById('hmrAsOf');if(a&&asof)a.textContent='National spot averages, all-in linehaul per mile \u00b7 updated '+asof;"
  "}).catch(function(){});})();</script>")
+
+# ---- Build-time read of the live benchmark (SEO ledger notes b + e, 25 Sep 2026) ----
+# spot-market-freight-rates, truckload-freight-rates and the market-rates FAQ used to hard-code
+# "September 2026" figures that drifted from the live table inside the same month ($2.97 printed
+# while get_public_market_rates() read $3.03). They now print whatever the RPC returns at build
+# time. The RPC is STABLE, SECURITY DEFINER, anon-executable, and only SELECTs from
+# app_private.rate_benchmarks (checked 25 Sep 2026) - the same public read every visitor's browser
+# already makes on the homepage, so a preview/local build reading production here writes nothing.
+# If the read fails the build uses market_rates_fallback.json (the last good read, refreshed by
+# refresh_rate_snapshot.py) and says so loudly. Either way every figure carries its own as_of.
+# LOADBOOT_RATES_OFFLINE=1 skips the network read.
+_MR_EQS = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Conestoga', 'Power Only', 'Box Truck', 'Hotshot']
+def _mr_valid(rows):
+    by = {r.get('equipment'): r for r in (rows or []) if isinstance(r, dict)}
+    for e in _MR_EQS:
+        r = by.get(e)
+        if not r or not r.get('as_of'):
+            return None
+        try:
+            for k in ('carrier_rpm', 'shipper_rpm', 'low', 'high'):
+                r[k] = float(r[k])
+        except (TypeError, ValueError, KeyError):
+            return None
+    return by
+def _mr_load():
+    if os.environ.get('LOADBOOT_RATES_OFFLINE') != '1':
+        try:
+            import urllib.request
+            _req = urllib.request.Request('https://%s.supabase.co/rest/v1/rpc/get_public_market_rates' % PROD_REF,
+                data=b'{}', headers={'apikey': PROD_ANON, 'Authorization': 'Bearer ' + PROD_ANON,
+                                     'Content-Type': 'application/json'})
+            with urllib.request.urlopen(_req, timeout=20) as _r:
+                _by = _mr_valid(json.loads(_r.read().decode('utf-8')))
+            if _by:
+                return _by, 'live'
+            print('market rates: live read returned incomplete rows - using fallback')
+        except Exception as _ex:
+            print('market rates: live read FAILED (%s) - using fallback' % _ex)
+    with open(os.path.join(SRC, 'market_rates_fallback.json'), encoding='utf-8') as _f:
+        _fb = json.load(_f)
+    _by = _mr_valid(_fb.get('rows'))
+    if not _by:
+        sys.exit('BUILD REFUSED - market_rates_fallback.json is incomplete and the live read failed.')
+    return _by, 'fallback (fetched %s)' % _fb.get('fetched', '?')
+_MR_LIVE, _MR_FROM = _mr_load()
+_MR_ASOF = max(r['as_of'] for r in _MR_LIVE.values())
+_MR_MONTH = __import__('datetime').date.fromisoformat(_MR_ASOF).strftime('%B %Y')
+print('market rates: %s, as_of %s, dry van $%.2f' % (_MR_FROM, _MR_ASOF, _MR_LIVE['Dry Van']['carrier_rpm']))
+
+# ---- Site facts registry (bl_mkt_0442, 25 Sep 2026) ---------------------------------------
+# Every weekly number and word on the site that is NOT a rate comes from app_private.site_facts and
+# app_private.fuel_prices through ONE anon RPC, get_public_site_facts(): diesel, slow facts (IRS per diem),
+# short weekly lines, and rate_history for the dated reports. Same shape as _mr_load(): live read on
+# production, site_facts_fallback.json when the read fails (refresh_rate_snapshot.py refreshes the file).
+def _sf_fallback():
+    with open(os.path.join(SRC, 'site_facts_fallback.json'), encoding='utf-8') as _f:
+        return json.load(_f)
+def _sf_load():
+    if os.environ.get('LOADBOOT_RATES_OFFLINE') != '1':
+        try:
+            import urllib.request
+            _req = urllib.request.Request('https://%s.supabase.co/rest/v1/rpc/get_public_site_facts' % PROD_REF,
+                data=b'{}', headers={'apikey': PROD_ANON, 'Authorization': 'Bearer ' + PROD_ANON,
+                                     'Content-Type': 'application/json'})
+            with urllib.request.urlopen(_req, timeout=20) as _r:
+                _sf = json.loads(_r.read().decode('utf-8'))
+            if isinstance(_sf, dict) and isinstance(_sf.get('facts'), dict):
+                return _sf, 'live'
+            print('site facts: live read returned an unexpected shape - using fallback')
+        except Exception as _ex:
+            print('site facts: live read FAILED (%s) - using fallback' % _ex)
+    _sf = _sf_fallback()
+    return _sf, 'fallback (fetched %s)' % _sf.get('fetched', '?')
+_SF, _SF_FROM = _sf_load()
+_SF_FACTS = _SF.get('facts') or {}
+# Week-on-week trend arrows (25 Sep 2026): each equipment's rate is compared with its previous publish in
+# rate_history (the latest as_of before the live one). Rendered client-side by window.LBT next to the live
+# figure, and only while the live as_of is still the one this build saw - a publish after the build hides the
+# arrow instead of comparing against the wrong week. No history (fallback build) = no arrows, never a guess.
+def _mr_prev_load():
+    import datetime as _dtm
+    _h = {}
+    for _r in (_SF.get('rate_history') or []):
+        try: _h.setdefault(_r['equipment'], []).append((str(_r['as_of']), float(_r['rpm'])))
+        except (KeyError, TypeError, ValueError): continue
+    _out = {}
+    for _e in _MR_EQS:
+        _cur = str(_MR_LIVE[_e]['as_of'])
+        _old = sorted(_x for _x in _h.get(_e, []) if _x[0] < _cur)
+        if _old:
+            _out[_e] = {'r': _old[-1][1], 'c': _cur, 'l': _dtm.date.fromisoformat(_old[-1][0]).strftime('%b %-d')}
+    return _out
+_MR_PREV = _mr_prev_load()
+_MR_TREND_JS = ("<script>(function(){var P=" + json.dumps(_MR_PREV) + ";"
+  "window.LBT=function(b){var p=P[b.equipment];if(!p||String(b.as_of)!==p.c)return '';"
+  "var d=Math.round((Number(b.carrier_rpm)-p.r)*100)/100,up=d>0,dn=d<0;"
+  "var col=up?'#15803d':(dn?'#b91c1c':'#64748b'),pc=(d/p.r*100).toFixed(1);"
+  "return '<span class=\"lbt\" style=\"color:'+col+';font-weight:700;font-size:.78rem;white-space:nowrap\">'"
+  "+(up?'\u25B2 +':(dn?'\u25BC \u2212':'\u2192 '))+(d===0?'unchanged':'$'+Math.abs(d).toFixed(2)+' ('+(up?'+':'')+pc+'%)')+' vs '+p.l+'</span>';};"
+  "})();</script>")
+HOME_RATES_JS = _MR_TREND_JS + HOME_RATES_JS
+print('trend arrows: %d of %d equipment have a previous publish (%s)' % (len(_MR_PREV), len(_MR_EQS),
+      ', '.join('%s %.2f %s' % (_e, _v['r'], _v['l']) for _e, _v in _MR_PREV.items()) or 'none'))
+_FACT_USED, _FACT_MISSING = {}, {}
+def fact(key, default=None, page=None):
+    """One site fact by key. kind=number comes back as float. A key the registry does not have falls
+    back to `default` and is listed at the end of the build, so a missing row is visible, never silent."""
+    if page: _FACT_USED.setdefault(key, set()).add(page)
+    r = _SF_FACTS.get(key)
+    if not r or r.get('value') in (None, ''):
+        _FACT_MISSING[key] = default
+        return default
+    v = r['value']
+    if r.get('kind') == 'number':
+        try: return float(v)
+        except (TypeError, ValueError): return default
+    return v
+def fact_asof(key):
+    return (_SF_FACTS.get(key) or {}).get('as_of') or ''
+# Diesel (US average, $/gal). get_public_site_facts() sends fuel_prices only while a verified pull (EIA or a CC
+# override) stands behind it; otherwise the fallback file's figure is used, labelled with its own date.
+def _diesel_pick():
+    d = (_SF.get('diesel') or {}).get('US average') or {}
+    try:
+        v = float(d.get('usd_gal')); a = str(d.get('as_of') or '')
+        if 2.0 <= v <= 8.0 and a: return v, a, _SF_FROM
+    except (TypeError, ValueError): pass
+    fb = (_sf_fallback().get('diesel') or {}).get('US average') or {}
+    return float(fb['usd_gal']), str(fb.get('as_of') or '?'), 'fallback'
+_DIESEL, _DIESEL_ASOF, _DIESEL_FROM = _diesel_pick()
+_DIESEL_S = '$%.2f' % _DIESEL
+def _ymd_long(d):                                           # '2026-09-21' -> 'Sep 21, 2026'; anything else unchanged
+    import datetime as _dtm
+    try: return _dtm.date.fromisoformat(str(d)).strftime('%b %-d, %Y')
+    except (TypeError, ValueError): return str(d)
+def _fsc(peg, mpg): return (_DIESEL - peg) / mpg          # fuel surcharge per mile, the industry formula
+def _fsc_s(peg, mpg): return '$%.2f' % _fsc(peg, mpg)
+def _fs_row(peg, mpg, mpg_label):                            # one row of the worked-example FSC table
+    return '<tr><td>$%.2f</td><td>%s</td><td><b>%s</b></td><td>%s</td></tr>' % (peg, mpg_label, _fsc_s(peg, mpg), _money(_fsc(peg, mpg) * 500))
+# IRS special transportation-industry per diem (changes every 1 Oct; the registry row carries due_on).
+_PD_RATE = fact('perdiem.conus', 80, 'truck-driver-per-diem-2026')
+_PD_OCONUS = fact('perdiem.oconus', 86, 'truck-driver-per-diem-2026')
+_PD_PCT = fact('perdiem.deductible_pct', 80, 'truck-driver-per-diem-2026')
+_PD_NET = _PD_RATE * _PD_PCT / 100.0                        # $ per night that reaches the return
+def _pd_i(n): return '$' + format(int(round(n)), ',')
+_PD_RATE_S, _PD_OCONUS_S, _PD_NET_S, _PD_PCT_S = _pd_i(_PD_RATE), _pd_i(_PD_OCONUS), _pd_i(_PD_NET), '%d%%' % _PD_PCT
+print('site facts: %s, %d keys; diesel %s/gal as_of %s (%s); per diem %s x %s' % (_SF_FROM, len(_SF_FACTS), _DIESEL_S, _DIESEL_ASOF, _DIESEL_FROM, _PD_RATE_S, _PD_PCT_S))
+def _mrc(e): return _MR_LIVE[e]['carrier_rpm']
+def _mrs(e): return _MR_LIVE[e]['shipper_rpm']
+def _mrrow(e, label):   # one benchmark table row: equipment | carrier | shipper | low-high
+    r = _MR_LIVE[e]
+    return ('<tr><td>%s</td><td><b>$%.2f</b></td><td>$%.2f</td><td>$%.2f&ndash;$%.2f</td></tr>'
+            % (label, r['carrier_rpm'], r['shipper_rpm'], r['low'], r['high']))
+def _money(n): return '$' + format(int(round(n)), ',')
+_MR_MARKUP = int(round((_mrs('Dry Van') / _mrc('Dry Van') - 1) * 100))   # shipper over carrier, dry van
+def _d(x): return '$%.2f' % x
+_mrd = _d   # rebinding-proof alias: a later loop reuses the name _d, so post-5200 code (meta descs, lint) calls _mrd
+# market-rates.html FAQ 'average trucking rate per mile right now' - visible text and FAQPage schema from one source
+_MR_FAQ_AVG = ('National benchmark averages paid to the carrier, as of %s: dry van %s per mile (range %s to %s), reefer %s (%s to %s) and flatbed %s (%s to %s). '
+    % tuple([_MR_ASOF] + [v for _e in ('Dry Van', 'Reefer', 'Flatbed') for v in (_d(_mrc(_e)), _d(_MR_LIVE[_e]['low']), _d(_MR_LIVE[_e]['high']))]))
+_MR_FAQ_AVG_HTML = _MR_FAQ_AVG + 'Shippers pay roughly %d%% more once a broker margin is added. The live table above shows the current figure for all eight equipment types and each market side.' % _MR_MARKUP
+_MR_FAQ_AVG_TXT = _MR_FAQ_AVG + 'Shippers pay roughly %d%% more once a broker margin is added. Lane, direction and season move a real quote more than the national average; the live table on this page shows the date each benchmark was last updated.' % _MR_MARKUP
+# spot page worked example: 500 loaded mi + 100 deadhead at ~$2.25/mi operating cost
+_SP_SELL, _SP_BUY = 500 * _mrs('Dry Van'), 500 * _mrc('Dry Van')
+_SP_NET = _SP_BUY - 600 * 2.25
+_SP_ALLMI = _SP_BUY / 600
+_SP_PREM = [_mrc(e) - _mrc('Dry Van') for e in ('Reefer', 'Flatbed', 'Step Deck')]
+_SP_SPREAD = _MR_LIVE['Dry Van']['high'] - _MR_LIVE['Dry Van']['low']
+def _sp_mgn(buy): return int(round((_mrs('Dry Van') - buy) / _mrs('Dry Van') * 100))
+# truckload page worked example: 800 loaded mi + 12% deadhead (896 mi) at $2.25
+_TL_SELL, _TL_BUY = 800 * _mrs('Dry Van'), 800 * _mrc('Dry Van')
+_TL_GROSS = _TL_BUY - 896 * 2.25
+def _tl_share():   # what one unpaid 3-hour detention ($180) does to that gross
+    if _TL_GROSS <= 180: return '<b>all</b> of the gross on the whole trip, and more'
+    return '<b>about %d%%</b> of the gross on the whole trip' % round(180 / _TL_GROSS * 100)
 
 # Public announcement bar — fetches active audience='public' announcements (get_active_public_announcements,
 # anon-granted) and renders a dismissible top bar. Emergencies show first in red. Dismissal is per-announcement
@@ -1327,7 +1552,7 @@ CONFIRM_JS = r"""
 """
 
 COMPARE = '''<section id="compare" class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The Difference</div><h2>Why carriers choose us over going it alone</h2></div>
-<div class="reveal"><table class="cmp"><thead><tr><th>What matters to you</th><th>Dispatching yourself</th><th>A typical dispatcher</th><th class="us">Loadboot</th></tr></thead><tbody>
+<div class="reveal"><table class="cmp"><thead><tr><th>What matters to you</th><th>Dispatching yourself</th><th>A typical dispatcher</th><th class="us">LoadBoot</th></tr></thead><tbody>
 <tr><td>Hours saved on broker calls</td><td class="no">None</td><td>Some</td><td class="us">Fully handled</td></tr>
 <tr><td>Expert rate negotiation</td><td class="no">On your own</td><td>Varies</td><td class="us">Every load</td></tr>
 <tr><td>No long-term contract</td><td>&mdash;</td><td class="no">Often locked in</td><td class="us">Cancel anytime</td></tr>
@@ -1386,7 +1611,7 @@ _tp = [
 ]
 _tpcards = ''.join('<a class="linkcard reveal" href="tools.html#%s"><div class="icon">%s</div><h3>%s</h3><p>%s</p><span class="arw">Open tool %s</span></a>' % (a,b,c,d,ARW) for a,b,c,d in _tp)
 TOOLSPROMO = '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free for drivers &mdash; no login</div><h2>Free trucking calculators that pay for themselves</h2><p class="lead center" style="margin:0 auto">Owner-operators use these every day to price loads, know their real cost per mile, and stop hauling cheap freight. 100% free, right in your browser &mdash; no signup needed.</p></div><div class="grid g3 reveal">' + _tpcards + '</div><div class="center" style="margin-top:32px"><a href="tools.html" class="btn btn-primary">Open all free tools %s</a></div></div></section>' % ARW
-LSBAND = '<section id="load-score-home" class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free decision tool &mdash; no login</div><h2>Should you take this load? Find out in 3 seconds.</h2><p class="lead center" style="margin:0 auto">The one tool every owner-operator needs daily. Enter any offer and get a clear <b>take / negotiate / pass</b> verdict &mdash; with a smart counter-offer built on your real costs.</p></div>' + LS_HTML + '<div class="center" style="margin-top:24px"><a href="load-score.html" class="btn btn-secondary">How the Load Score works &rarr;</a></div></div></section>'
+LSBAND = '<section id="load-score-home" class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free decision tool &mdash; no login</div><h2>Should you take this load? Find out in 3 seconds.</h2><p class="lead center" style="margin:0 auto">The one tool every owner-operator needs daily. Enter any offer and get a clear <b>take / negotiate / pass</b> verdict &mdash; with a smart counter-offer built on your real costs.</p></div>' + LS_HTML.replace('value="3.85"', 'value="%.2f"' % _DIESEL) + '<div class="center" style="margin-top:24px"><a href="load-score.html" class="btn btn-secondary">How the Load Score works &rarr;</a></div></div></section>'
 # Static, timeless ILLUSTRATIVE examples only. No dates, no "available now", no live DB query.
 # Columns: origin, destination, equipment, loaded_miles, example_rate, weight
 PLB_SAMPLES = [
@@ -1502,7 +1727,7 @@ def svc_hero(h1,lead,tert_label='All Services',tert_href='services.html',
     # freight to a contact form was costing us the signup (audit, 25 Aug).
     cta_label = cta_label or ('Get Started ' + ARW)
     return '''<section class="hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div><div class="wrap" style="position:relative;z-index:1;max-width:820px">
-<span class="badge reveal"><span class="dot"></span> Loadboot Dispatch</span><h1 class="reveal d1">%s</h1>
+<span class="badge reveal"><span class="dot"></span> LoadBoot Dispatch</span><h1 class="reveal d1">%s</h1>
 <p class="lead reveal d2" style="margin:22px 0 28px">%s</p>
 <div class="hero-btns reveal d3"><a href="%s" class="btn btn-primary">%s</a><a href="%s" class="btn btn-secondary">%s</a><a href="%s" class="btn btn-ghost">%s &rarr;</a></div></div></section>''' % (h1,lead,cta_href,cta_label,cta2_href,cta2_label,tert_href,tert_label)
 
@@ -1655,8 +1880,8 @@ SVC_ALT = {
  'dry-van':'Dry van semi truck running freight on the highway',
  'hotshot':'Hotshot truck with gooseneck trailer ready for expedited loads',
  'power-only':'Power only semi truck tractor ready to pull a trailer',
- 'owner-operator':'Owner-operator truck driver managing loads with Loadboot dispatch',
- 'new-authority':'New authority truck driver getting set up with Loadboot dispatch'}
+ 'owner-operator':'Owner-operator truck driver managing loads with LoadBoot dispatch',
+ 'new-authority':'New authority truck driver getting set up with LoadBoot dispatch'}
 SVC_CAP = {
  'reefer':'Temperature-controlled freight &mdash; booked and protected.',
  'flatbed':'Steel, lumber and machinery &mdash; freight that pays.',
@@ -1691,7 +1916,7 @@ def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs,shots=None):
     inc_cards = ''.join('<div class="card reveal"><div class="icon">%s</div><p>%s</p></div>' % (CHK, x) for x in included)
     body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">What you get</div><h2>Everything in our %s dispatch service</h2></div><div class="grid g3">%s</div></div></section>' % (nl, inc_cards)
     # Why -> navy highlight panel
-    body += '<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Why Loadboot</div><h2>Why %s carriers choose us</h2><p>%s</p></div></div></section>' % (nl, why)
+    body += '<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Why LoadBoot</div><h2>Why %s carriers choose us</h2><p>%s</p></div></div></section>' % (nl, why)
     if shots: body += _real_screen(*shots)
     body += DOS_CSS + dos_steps('equipment', equipment=nl)
     # EXTRA unique sections (bullets -> cards, else prose)
@@ -1716,11 +1941,11 @@ def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs,shots=None):
     bc = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://loadboot.com/"},{"@type":"ListItem","position":2,"name":"Services","item":"https://loadboot.com/services.html"},{"@type":"ListItem","position":3,"name":"%s Dispatch","item":"https://loadboot.com/%s"}]}</script>' % (name, fname)
     ssch = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service",'
             '"serviceType":"%s truck dispatching","name":"%s",'
-            '"provider":{"@type":"Organization","name":"Loadboot","url":"https://loadboot.com/"},'
+            '"provider":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/"},'
             '"areaServed":{"@type":"Country","name":"United States"},"url":"https://loadboot.com/%s"}</script>') % (name, h1.replace('"', "'"), fname)
     page(fname,title,desc,'services.html',body,fsch+bc+ssch)
 
-svc_page('reefer-dispatch.html','Reefer','Reefer Dispatch Services for Owner-Operators | Loadboot',
+svc_page('reefer-dispatch.html','Reefer','Reefer Dispatch Services for Owner-Operators | LoadBoot',
  'Reefer truck dispatch for owner-operators &amp; fleets. We book high-paying temperature-controlled loads, negotiate rates, and handle the paperwork. Flat 5%.',
  'Reefer Dispatch Services Across the USA','Higher-paying temperature-controlled freight, booked and managed for you &mdash; so your reefer stays loaded and your margins stay protected.',
  ['Reefer freight pays well, but it comes with pressure &mdash; tight delivery windows, temperature requirements, and brokers who push for cheap rates. Our dispatchers know the reefer market and fight for what your run is actually worth.',
@@ -1758,7 +1983,7 @@ svc_page('dry-van-dispatch.html','Dry Van','Dry Van Dispatch Services 2026 — D
   ('Can I get dry van dispatch with a new authority?','Yes. LoadBoot has no minimum authority age. Some brokers ask for authority age or a safety history before they tender freight, so the list is narrower at first &mdash; your dispatcher tells you which ones will take your MC.'),
   ('Do you book live-load or drop-and-hook dry van freight?','Both. Your SOP says which you prefer. Before you accept, your dispatcher confirms the appointment times, whether it is live-load or drop-and-hook, and whether a lumper is expected, so dock time is priced in before the rate is agreed.')])
 
-svc_page('hotshot-dispatch.html','Hotshot','Hotshot Dispatch Services | Loadboot',
+svc_page('hotshot-dispatch.html','Hotshot','Hotshot Dispatch Services | LoadBoot',
  'Hotshot truck dispatch for owner-operators running class 3-5 trucks and goosenecks. Expedited loads, rate negotiation, broker handling. Flat 5%, no long-term contracts.',
  'Hotshot Dispatch Services Across the USA','Expedited, smaller, well-paying loads for hotshot operators &mdash; we work the boards and the brokers so you keep rolling.',
  ['Hotshot is fast-moving and competitive, and the good loads go quick. You need someone watching the boards and negotiating in real time. We do exactly that for hotshot operators.',
@@ -1847,7 +2072,7 @@ serv_body += '''<section><div class="wrap"><div class="sec-head reveal"><div cla
 </div></div></section>'''
 serv_hub_faq_html, serv_hub_faq_schema = faq_block(home_faqs)
 serv_body += COMPARE + HOW + serv_hub_faq_html + final_cta()
-page('services.html','Truck Dispatch Services (Full List) | Loadboot',
+page('services.html','Truck Dispatch Services (Full List) | LoadBoot',
      'Full-service truck dispatch: a dedicated, vetted dispatcher booking and negotiating your loads, plus authority setup, IFTA, factoring, compliance and claims on one platform. Flat 5% of line-haul, no long-term contracts.',
      'services.html', serv_body, serv_hub_faq_schema)
 
@@ -1947,7 +2172,7 @@ page('about.html','About LoadBoot — The Operating System for Trucking',
      'about.html', about_body, schema=_about_org_schema + _about_faq_schema)
 
 # ---------- CONTACT ----------
-contact_body = svc_hero('Get Started with Loadboot','Create your account in 2 minutes (carrier, broker, shipper or agent), request a rate quote, or just send us a message &mdash; flat 5%, no long-term contracts, cancel anytime.')
+contact_body = svc_hero('Get Started with LoadBoot','Create your account in 2 minutes (carrier, broker, shipper or agent), request a rate quote, or just send us a message &mdash; flat 5%, no long-term contracts, cancel anytime.')
 contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:820px">
 <form class="quote-wrap reveal" id="qfForm" name="quote" method="POST" data-netlify="true" data-netlify-honeypot="bot-field">
 <input type="hidden" name="form-name" value="quote"><p hidden><label>Skip: <input name="bot-field"></label></p>
@@ -1997,7 +2222,7 @@ if(ml){ml.innerHTML=(!isAcct&&!isQuote)?'Your message':((isQuote?'Load / lane de
 var b=document.getElementById('submitBtn');if(b){b.style.display=isAcct?'none':'';b.innerHTML=(isQuote?'Get My Rate Quote':'Send Message')+' &rarr;';}
 var t=document.getElementById('formIntro');if(t)t.textContent=isAcct?'Tell us about your operation and a dispatcher gets you set up.':(isQuote?'Tell us about a load or lane and we will send you a rate.':'Send us a message and we will get right back to you.');}
 (function(){var h=location.hash;var map={'#quote':'iQuote','#ask':'iAsk','#question':'iAsk','#create':'iAcct','#account':'iAcct','#form':null};if(h in map){var id=map[h];if(id){var r=document.getElementById(id);if(r)r.checked=true;}setTimeout(function(){var f=document.getElementById('qfForm');if(f)f.scrollIntoView({behavior:'smooth',block:'start'});},150);}qfIntent();
-var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();var fd=new FormData(f);var d=new URLSearchParams(fd).toString();try{if(window.lbSubmitLead){var o={};fd.forEach(function(v,k){if(k!=='bot-field'&&k!=='form-name'&&String(v).trim())o[k]=String(v);});o.form_key='quote';window.lbSubmitLead(o.intent==='Create carrier account'?'quote-account':(o.intent==='Get a rate quote'?'quote-rate':'quote-question'),o);}}catch(_){}fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:d}).then(function(){f.innerHTML='<div style=\\'text-align:center;padding:40px\\'><div style=\\'font-size:2.6rem;color:#16a34a\\'>&#10003;</div><h3 style=\\'margin:12px 0\\'>Got it &mdash; thanks!</h3><p>A Loadboot dispatcher will reach out within 15 minutes during business hours.</p></div>';}).catch(function(){f.innerHTML='<p style=\\'text-align:center\\'>Something went wrong &mdash; please email hello@loadboot.com and we will get right back to you.</p>';});});})();
+var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();var fd=new FormData(f);var d=new URLSearchParams(fd).toString();try{if(window.lbSubmitLead){var o={};fd.forEach(function(v,k){if(k!=='bot-field'&&k!=='form-name'&&String(v).trim())o[k]=String(v);});o.form_key='quote';window.lbSubmitLead(o.intent==='Create carrier account'?'quote-account':(o.intent==='Get a rate quote'?'quote-rate':'quote-question'),o);}}catch(_){}fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:d}).then(function(){f.innerHTML='<div style=\\'text-align:center;padding:40px\\'><div style=\\'font-size:2.6rem;color:#16a34a\\'>&#10003;</div><h3 style=\\'margin:12px 0\\'>Got it &mdash; thanks!</h3><p>A LoadBoot dispatcher will reach out within 15 minutes during business hours.</p></div>';}).catch(function(){f.innerHTML='<p style=\\'text-align:center\\'>Something went wrong &mdash; please email hello@loadboot.com and we will get right back to you.</p>';});});})();
 </script>"""
 
 # ---------- "Get a call" section (contact page): role-gated number + call-me-now/schedule ----------
@@ -2056,7 +2281,7 @@ btn.textContent='✅ Done!';msg.style.color='#16a34a';msg.textContent=d&&d.sched
 )
 
 
-page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no long-term contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + call_section + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap" style="max-width:820px"><div class="sec-head center reveal"><div class="eyebrow">Worked with us?</div><h2>Tell other carriers the truth</h2><p class="lead center" style="max-width:620px;margin:0 auto">If we have moved a load for you or posted your freight, a short honest review helps the next carrier decide. Good or bad &mdash; we would rather it was public.</p></div><div class="trustpilot-widget" data-locale="en-US" data-template-id="56278e9abfbbba0bdcd568bc" data-businessunit-id="6a6e9e88dbb320690ec81eaf" data-style-height="52px" data-style-width="100%" data-token="2a67aebb-e3a2-407d-9404-b0a62a1a069b" style="margin-top:18px"><a href="https://www.trustpilot.com/review/loadboot.com" target="_blank" rel="noopener">Trustpilot</a></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who you are dealing with</div><h2>There is a person behind this</h2><p style="max-width:66ch;margin:0 auto">LoadBoot is founded and run by <b style="color:var(--navy)">Muhammad Yaseen</b>. Not a call centre and not a faceless brand &mdash; if you email <a href="mailto:hello@loadboot.com" style="color:var(--blue);font-weight:700">hello@loadboot.com</a>, it reaches him.</p></div><div class="grid g3 reveal" style="margin-top:34px"><div class="card reveal"><div class="icon">&#127970;</div><h3>Legal entity</h3><p><b>LoadBoot LLC</b><br>A Wyoming limited liability company<br>Filing ID 2026-002044986</p></div><div class="card reveal"><div class="icon">&#128205;</div><h3>Registered office</h3><p>30 N Gould St, Ste N<br>Sheridan, WY 82801<br>United States</p></div><div class="card reveal"><div class="icon">&#128290;</div><h3>D-U-N-S&reg; Number</h3><p><b>14-988-0967</b><br>Verified with Dun &amp; Bradstreet<br>D-U-N-S&reg; is a registered trademark of D&amp;B</p></div></div></div></section>')
+page('contact.html','Get Started, Get a Quote or Contact Us | LoadBoot','Create your carrier profile, request a rate quote, or send LoadBoot a message. Flat 5%, no long-term contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + call_section + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap" style="max-width:820px"><div class="sec-head center reveal"><div class="eyebrow">Worked with us?</div><h2>Tell other carriers the truth</h2><p class="lead center" style="max-width:620px;margin:0 auto">If we have moved a load for you or posted your freight, a short honest review helps the next carrier decide. Good or bad &mdash; we would rather it was public.</p></div><div class="trustpilot-widget" data-locale="en-US" data-template-id="56278e9abfbbba0bdcd568bc" data-businessunit-id="6a6e9e88dbb320690ec81eaf" data-style-height="52px" data-style-width="100%" data-token="2a67aebb-e3a2-407d-9404-b0a62a1a069b" style="margin-top:18px"><a href="https://www.trustpilot.com/review/loadboot.com" target="_blank" rel="noopener">Trustpilot</a></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who you are dealing with</div><h2>There is a person behind this</h2><p style="max-width:66ch;margin:0 auto">LoadBoot is founded and run by <b style="color:var(--navy)">Muhammad Yaseen</b>. Not a call centre and not a faceless brand &mdash; if you email <a href="mailto:hello@loadboot.com" style="color:var(--blue);font-weight:700">hello@loadboot.com</a>, it reaches him.</p></div><div class="grid g3 reveal" style="margin-top:34px"><div class="card reveal"><div class="icon">&#127970;</div><h3>Legal entity</h3><p><b>LoadBoot LLC</b><br>A Wyoming limited liability company<br>Filing ID 2026-002044986</p></div><div class="card reveal"><div class="icon">&#128205;</div><h3>Registered office</h3><p>30 N Gould St, Ste N<br>Sheridan, WY 82801<br>United States</p></div><div class="card reveal"><div class="icon">&#128290;</div><h3>D-U-N-S&reg; Number</h3><p><b>14-988-0967</b><br>Verified with Dun &amp; Bradstreet<br>D-U-N-S&reg; is a registered trademark of D&amp;B</p></div></div></div></section>')
 
 # ---------- PRICING ----------
 pr_body = svc_hero('Simple, Honest Dispatch Pricing','One flat rate, no long-term contracts, no hidden fees. You only pay when we actually book you a load &mdash; so our goals and yours are always the same.')
@@ -2120,8 +2345,8 @@ def blog_post(fname,title,desc,excerpt,blocks):
     art = {"@context":"https://schema.org","@type":"Article","headline":title.replace('"',"'"),"description":desc,
            "image":["https://loadboot.com/og-image.png","https://loadboot.com/og-image-square.png"],
            "mainEntityOfPage":{"@type":"WebPage","@id":"https://loadboot.com/"+fname},
-           "author":{"@type":"Organization","name":"Loadboot","url":"https://loadboot.com/"},
-           "publisher":{"@type":"Organization","name":"Loadboot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}}}
+           "author":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/"},
+           "publisher":{"@type":"Organization","name":"LoadBoot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}}}
     if pub:
         art["datePublished"] = art["dateModified"] = pub
     sch = '<script type="application/ld+json">%s</script>' % json.dumps(art, ensure_ascii=False, separators=(',',':'))
@@ -2132,8 +2357,8 @@ BLOG_PUB = {'how-to-get-loads-with-new-authority.html':'2026-06-27'}
 
 BLOGPOSTS = [
  ('truck-driver-per-diem-2026.html',
-  'Truck Driver Per Diem 2026: The $12,800 Most Owner-Operators Never Claim',
-  'IRS per diem for truck drivers is $80/day in 2026 and 80% deductible. 200 nights out is $12,800 in deductions — and most owner-operators lose it because they cannot prove the days.',
+  'Truck Driver Per Diem 2026: The ' + _pd_i(200 * _PD_NET) + ' Most Owner-Operators Never Claim',
+  'IRS per diem for truck drivers is ' + _PD_RATE_S + '/day in 2026 and ' + _PD_PCT_S + ' deductible. 200 nights out is ' + _pd_i(200 * _PD_NET) + ' in deductions — and most owner-operators lose it because they cannot prove the days.',
   'You do not need a single meal receipt. You DO need proof of the nights you were away — and that is exactly where most drivers lose thousands. Here is the 2026 rule, the real math, and how to make the proof build itself.',
   []),
  ('ghost-loads-load-board-problems.html',
@@ -2200,7 +2425,7 @@ BLOGPOSTS = [
    'When you work with a dispatcher, you keep your own authority and stay in control. You approve every load and rate. The dispatcher simply does the legwork &mdash; searching, negotiating, and handling brokers &mdash; so you can focus on driving.',
    'A broker is who your dispatcher negotiates with to get you a load. A dispatcher is who works for you to get the best deal from that broker.',
    'H:Which one do you need?',
-   'If you are a carrier with your own authority who wants help finding and negotiating loads without giving up control, you need a dispatcher. Loadboot is a dispatch service &mdash; we represent you, the carrier, and we work to keep your truck loaded at the best possible rate.']),
+   'If you are a carrier with your own authority who wants help finding and negotiating loads without giving up control, you need a dispatcher. LoadBoot is a dispatch service &mdash; we represent you, the carrier, and we work to keep your truck loaded at the best possible rate.']),
  ('how-to-get-loads-with-new-authority.html',
   'How to Get Loads With a New Authority: A Carrier\'s Guide',
   'Just got your MC number? Here is how to get set up with brokers, find your first loads, and avoid the mistakes that sink new carriers.',
@@ -2305,20 +2530,20 @@ def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,bod
     e=lambda s:s.replace('"',"'")
     crumb='<div class="wrap"><nav class="crumbs"><a href="index.html">Home</a> &rsaquo; <a href="blog.html">Blog</a> &rsaquo; '+h1+'</nav></div>'
     herob=('<header class="art-hero"><div class="wrap"><div class="art-eyebrow">'+eyebrow+'</div><h1>'+h1
-           +'</h1><p class="art-sub">'+deck+'</p><div class="art-meta"><span>By Loadboot Dispatch Team</span>'
+           +'</h1><p class="art-sub">'+deck+'</p><div class="art-meta"><span>By LoadBoot Dispatch Team</span>'
            '<span>&middot; Published '+pub_h+'</span><span>&middot; '+str(read_min)+' min read</span></div></div></header>')
     # Only reference the hero photo if the file is actually present (else keep the gradient SVG).
     hero_img=('<img src="'+hero+'" alt="'+hero_alt+'" width="1200" height="630" decoding="async">') if asset_exists(hero) else ''
     feat='<div class="wrap"><figure class="art-feat">'+feat_svg+hero_img+'</figure></div>'
     toch='<aside class="art-toc"><div class="tt">In this guide</div>'+''.join('<a href="#'+i+'">'+l+'</a>' for i,l in toc)+'</aside>'
-    author=('<div class="wrap"><div class="art-author"><div class="av">LB</div><div><b>Loadboot Dispatch Team</b>'
+    author=('<div class="wrap"><div class="art-author"><div class="av">LB</div><div><b>LoadBoot Dispatch Team</b>'
             '<div style="color:var(--muted);font-size:.92rem;margin-top:3px">Truck dispatchers who book, negotiate, and '
             'manage freight for owner-operators and fleets across the U.S. &mdash; flat 5%, no long-term contracts.</div></div></div></div>')
     fhtml,fsch=faq_block(faqs)
     body=crumb+herob+feat+'<div class="wrap art-grid">'+toch+'<div class="art-body">'+body_html+'</div></div>'+author+fhtml+final_cta()
     art=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"'+e(headline or h1)
-         +'","description":"'+e(desc)+'","image":"https://loadboot.com/'+(hero if asset_exists(hero) else 'icon-512.png')+'","author":{"@type":"Organization","name":"Loadboot"},'
-         '"publisher":{"@type":"Organization","name":"Loadboot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}},'
+         +'","description":"'+e(desc)+'","image":"https://loadboot.com/'+(hero if asset_exists(hero) else 'icon-512.png')+'","author":{"@type":"Organization","name":"LoadBoot"},'
+         '"publisher":{"@type":"Organization","name":"LoadBoot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}},'
          '"datePublished":"'+pub+'","dateModified":"'+pub+'"}</script>')
     bcr=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":'
          '[{"@type":"ListItem","position":1,"name":"Home","item":"https://loadboot.com/"},'
@@ -2333,7 +2558,7 @@ A1_SVG=('<figure class="art-fig"><svg viewBox="0 0 600 248" width="100%" role="i
  '<rect x="0" y="80" width="560" height="30" rx="6" fill="#eef2f7"/>'
  '<rect x="0" y="80" width="407" height="30" rx="6" fill="#94a3b8"/>'
  '<text x="418" y="100" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">$2,600</text>'
- '<text x="0" y="148" font-family="Inter,Arial" font-size="13" fill="#64748B">With Loadboot (after the 5% fee)</text>'
+ '<text x="0" y="148" font-family="Inter,Arial" font-size="13" fill="#64748B">With LoadBoot (after the 5% fee)</text>'
  '<rect x="0" y="158" width="560" height="30" rx="6" fill="#eff6ff"/>'
  '<rect x="0" y="158" width="446" height="30" rx="6" fill="#0883F7"/>'
  '<text x="457" y="178" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">$2,850</text>'
@@ -2345,7 +2570,7 @@ A1_SVG=('<figure class="art-fig"><svg viewBox="0 0 600 248" width="100%" role="i
 A1_BODY=(
 '<h2 id="quick-answer">Quick answer: what does a truck dispatcher cost?</h2>'
 '<p>Most truck dispatchers in the U.S. charge <b>3% to 10% of your gross revenue</b>, and <b>5% is the industry standard</b>. '
-'The other common model is a <b>flat weekly fee</b>, usually <b>$150&ndash;$250 per truck, per week</b>. At Loadboot it&rsquo;s a '
+'The other common model is a <b>flat weekly fee</b>, usually <b>$150&ndash;$250 per truck, per week</b>. At LoadBoot it&rsquo;s a '
 '<a href="pricing.html">flat 5% of line-haul, earned at delivery</a> &mdash; fuel surcharge and accessorials are yours, there is no setup or monthly fee, '
 'and no long-term contract. You only pay on loads your dispatcher books and you deliver.</p>'
 '<div class="callout cl-info"><span class="ic">&#128161;</span><div>On a $3,000 load, a 5% dispatch fee is <b>$150</b>. '
@@ -2430,7 +2655,7 @@ A1_BODY=(
 '<h2 id="bottom-line">The bottom line</h2>'
 '<p>Expect to pay around <b>5% of line-haul</b> for quality truck dispatch, with no long-term contract and no hidden fees. The right dispatcher should '
 'make you more than they cost &mdash; in better rates, fewer empty miles, and the hours you get back. If they don&rsquo;t, you should be '
-'able to leave without a penalty. At Loadboot the agreement is month-to-month with 30 days&rsquo; notice, and you can pause or ask for a '
+'able to leave without a penalty. At LoadBoot the agreement is month-to-month with 30 days&rsquo; notice, and you can pause or ask for a '
 'different dispatcher in the app at any time.</p>')
 
 A1_TOC=[('quick-answer','Quick answer'),('models','The two pricing models'),('included','What your fee covers'),
@@ -2438,13 +2663,13 @@ A1_TOC=[('quick-answer','Quick answer'),('models','The two pricing models'),('in
         ('how-works','How dispatch works'),('bottom-line','The bottom line')]
 A1_FAQ=[
  ('Is 5% a lot for a truck dispatcher?','No &mdash; 5% is the industry standard, and for most owner-operators it is the fairest model because you only pay when the dispatcher actually books and runs a load for you. The fee is usually small next to the higher rates and reduced deadhead a good dispatcher delivers.'),
- ('How much does a dispatch service cost?','Most truck dispatch services charge 3&ndash;10% of the load&rsquo;s gross, with 5% the most common, or a flat $150&ndash;$250 per truck per week. At Loadboot it is a flat 5% of line-haul, earned at delivery: on a $2,000 line-haul load the fee is $100. Fuel surcharge, detention, TONU, layover and lumper stay 100% yours. What that covers on a single truck: <a href="owner-operator-dispatch.html">owner operator dispatch services</a>.'),
- ('What is a dispatch fee?','A dispatch fee is what a carrier pays a truck dispatcher for finding, negotiating and booking loads. It is charged as a percentage of each load&rsquo;s rate or as a flat weekly fee per truck. Check what the percentage is taken on: gross including accessorials, or line-haul only. Loadboot takes 5% of line-haul and nothing from accessorials.'),
- ('How much do truck dispatchers make per load?','On a percentage deal the dispatcher earns the fee on each load: 5% is $100 on a $2,000 load and $150 on a $3,000 load. A flat-fee dispatcher earns the same weekly amount however many loads you run. At Loadboot you pay the 5% to Loadboot, never to the dispatcher; dispatchers are Loadboot contractors paid by us. Want to do the job yourself? See <a href="careers.html">becoming a dispatcher</a>.'),
- ('Do dispatchers charge an upfront fee?','A reputable dispatcher should not charge upfront or setup fees. At Loadboot you pay a flat 5% of line-haul only on loads your dispatcher books and you deliver &mdash; nothing upfront, no monthly fee, and no long-term contract.'),
+ ('How much does a dispatch service cost?','Most truck dispatch services charge 3&ndash;10% of the load&rsquo;s gross, with 5% the most common, or a flat $150&ndash;$250 per truck per week. At LoadBoot it is a flat 5% of line-haul, earned at delivery: on a $2,000 line-haul load the fee is $100. Fuel surcharge, detention, TONU, layover and lumper stay 100% yours. What that covers on a single truck: <a href="owner-operator-dispatch.html">owner operator dispatch services</a>.'),
+ ('What is a dispatch fee?','A dispatch fee is what a carrier pays a truck dispatcher for finding, negotiating and booking loads. It is charged as a percentage of each load&rsquo;s rate or as a flat weekly fee per truck. Check what the percentage is taken on: gross including accessorials, or line-haul only. LoadBoot takes 5% of line-haul and nothing from accessorials.'),
+ ('How much do truck dispatchers make per load?','On a percentage deal the dispatcher earns the fee on each load: 5% is $100 on a $2,000 load and $150 on a $3,000 load. A flat-fee dispatcher earns the same weekly amount however many loads you run. At LoadBoot you pay the 5% to LoadBoot, never to the dispatcher; dispatchers are LoadBoot contractors paid by us. Want to do the job yourself? See <a href="careers.html">becoming a dispatcher</a>.'),
+ ('Do dispatchers charge an upfront fee?','A reputable dispatcher should not charge upfront or setup fees. At LoadBoot you pay a flat 5% of line-haul only on loads your dispatcher books and you deliver &mdash; nothing upfront, no monthly fee, and no long-term contract.'),
  ('Is a flat weekly fee cheaper than a percentage?','It depends on your revenue. A flat fee ($150&ndash;$250/truck/week) can be cheaper only if you run high gross every week. If your weeks vary, the percentage model usually costs less and keeps your dispatcher&rsquo;s incentives aligned with yours.'),
  ('Do I still control which loads I take?','Yes. A dispatcher works for you &mdash; they find and negotiate loads, but you approve every load and rate before anything is booked.'),
- ('Can I cancel anytime?','There is no long-term contract. The Loadboot dispatch agreement is month-to-month with 30 days&rsquo; written notice, and loads already booked finish under it. You can pause, or ask for a different dispatcher, from the app at any time.')]
+ ('Can I cancel anytime?','There is no long-term contract. The LoadBoot dispatch agreement is month-to-month with 30 days&rsquo; written notice, and loads already booked finish under it. You can pause, or ask for a different dispatcher, from the app at any time.')]
 A1_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
  '<defs><linearGradient id="fa1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10223B"/>'
  '<stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0883F7"/></linearGradient></defs>'
@@ -2554,7 +2779,7 @@ A2_BODY=(
 'you&rsquo;re a one-truck operation going up against someone who books hundreds of loads a week and knows every lane&rsquo;s real number. '
 'A dispatcher levels that table, because they sit on <em>your</em> side and negotiate dozens of loads a week too.</p>'
 +svc_banner('A dispatcher who works for you, not the load',
-  'Loadboot represents the carrier &mdash; we negotiate with brokers on your behalf, you approve every rate, and you keep your own authority.',
+  'LoadBoot represents the carrier &mdash; we negotiate with brokers on your behalf, you approve every rate, and you keep your own authority.',
   'See how our dispatch works &rarr;','services.html')+
 
 '<h2 id="legal">What each can legally do</h2>'
@@ -2782,7 +3007,7 @@ A4_BODY=(
 '<p>An owner-operator dispatch service exists to do one thing: keep your truck loaded at the best possible rate so you can focus on driving. '
 'The right one is transparent, contract-free, vets your brokers, and makes you more than it costs &mdash; in higher rates, fewer empty miles, '
 'and the hours you get back. If a service can&rsquo;t promise all of that, keep looking. That&rsquo;s exactly the standard '
-'<a href="pricing.html">Loadboot</a> holds itself to: flat 5%, no long-term contracts, you approve every load. How that runs on one truck: '
+'<a href="pricing.html">LoadBoot</a> holds itself to: flat 5%, no long-term contracts, you approve every load. How that runs on one truck: '
 '<a href="owner-operator-dispatch.html">owner operator dispatch services</a>.</p>')
 
 A4_TOC=[('what-is','What it is'),('what-it-does','What it does for you'),('how-it-works','How it works day to day'),
@@ -2790,11 +3015,11 @@ A4_TOC=[('what-is','What it is'),('what-it-does','What it does for you'),('how-i
         ('how-to-choose','How to choose one'),('bottom-line','The bottom line')]
 A4_FAQ=[
  ('What is an owner-operator dispatch service?','It&rsquo;s a company that finds, negotiates and books freight on your behalf so you can focus on driving. A dispatcher represents you, the carrier &mdash; searching loads, negotiating rates, vetting brokers and handling paperwork &mdash; while you keep your authority and approve every load.'),
- ('How much does dispatch cost for one truck?','Most services charge 3%&ndash;10% of gross, with 5% the standard, or a flat $150&ndash;$250 per week. For a solo owner-operator with variable weeks, the percentage model is usually fairer because you only pay when a load is actually booked. Loadboot is a flat 5% with no long-term contract.'),
+ ('How much does dispatch cost for one truck?','Most services charge 3%&ndash;10% of gross, with 5% the standard, or a flat $150&ndash;$250 per week. For a solo owner-operator with variable weeks, the percentage model is usually fairer because you only pay when a load is actually booked. LoadBoot is a flat 5% with no long-term contract.'),
  ('Do I keep control of which loads I run?','Yes. A dispatch service does the legwork, but you approve every load and rate before anything books. You keep your own authority and stay the decision-maker.'),
  ('Do new-authority owner-operators need a dispatcher?','It&rsquo;s optional, but it&rsquo;s one of the fastest ways to get loaded when your authority is new. An experienced dispatcher already has broker relationships and the setup process handled, which helps get around the common &ldquo;90 days in business&rdquo; hurdle new carriers face.'),
  ('Is a dispatcher the same as a freight broker?','No. A broker represents the shipper and must hold broker authority and a bond. A dispatcher represents you, the carrier, and generally does not need broker authority. A dispatcher should never deal directly with shippers as if brokering.'),
- ('Can I cancel a dispatch service anytime?','With a fair service, yes. Loadboot has no long-term contracts &mdash; we earn your business load by load, and you can stop anytime with no penalty.')]
+ ('Can I cancel a dispatch service anytime?','With a fair service, yes. LoadBoot has no long-term contracts &mdash; we earn your business load by load, and you can stop anytime with no penalty.')]
 rich_article('owner-operator-dispatch-service-guide.html',
  'Owner-Operator Dispatch Service: The Complete Guide (2026)',
  'What an owner-operator dispatch service does, what it costs, how it works day to day, and how to choose one &mdash; a complete guide for single-truck operators.',
@@ -2879,7 +3104,7 @@ NA_FAQ=[
  ('What does LoadBoot charge a new authority?','The same flat 5% of the linehaul as every carrier — no setup fee, no monthly minimum, no long-term contract. You approve every load and can leave any time.'),
 ]
 rich_article('do-new-authority-carriers-need-a-dispatcher.html',
- 'Do New-Authority Carriers Need a Dispatcher? (2026) | Loadboot',
+ 'Do New-Authority Carriers Need a Dispatcher? (2026) | LoadBoot',
  'Fresh MC and no broker callbacks? What actually blocks new authorities, what a dispatcher fixes (and cannot fix), when to skip one, and the math of the first 90 days.',
  'New-Authority Guide','Do New-Authority Carriers Need a Dispatcher?',
  'The first 90 days under a fresh MC decide whether the truck earns or the authority lapses. Here is what actually blocks new carriers, what a dispatcher changes &mdash; and the honest cases where you should skip one.',
@@ -2918,7 +3143,7 @@ RC_FAQ=[
  ('Who should sign the rate con — me or my dispatcher?','Your dispatcher may sign only if your dispatch agreement gives them that written authority (a limited power of attorney). Either way the terms bind the CARRIER — so the reading rules in this guide apply to whoever holds the pen.'),
 ]
 rich_article('how-to-read-a-rate-confirmation.html',
- 'How to Read a Rate Confirmation Before You Sign | Loadboot',
+ 'How to Read a Rate Confirmation Before You Sign | LoadBoot',
  'Rate confirmation explained for carriers: the 10 lines to verify, fine-print traps, fraud tells, when to refuse to sign, and what to do after.',
  'Carrier Paperwork Guide','How to Read a Rate Confirmation (Before You Sign It)',
  'The rate con is the contract that decides whether you get paid. The ten lines to check every time, the traps under the money line, the fraud tells &mdash; and when the right answer is to walk.',
@@ -3188,12 +3413,12 @@ READTIME={'ghost-loads-load-board-problems.html':9,'how-to-avoid-cheap-freight.h
 # ---------- PER DIEM (money page: trucking tax deductions) ----------
 PREMIUM_ARTICLES.add('truck-driver-per-diem-2026.html')
 
-PD_FEAT = ('<svg viewBox="0 0 900 320" role="img" aria-label="Truck driver per diem 2026: $80 per day, 80% deductible, proven by GPS trip records">'
+PD_FEAT = ('<svg viewBox="0 0 900 320" role="img" aria-label="Truck driver per diem 2026: ' + _PD_RATE_S + ' per day, ' + _PD_PCT_S + ' deductible, proven by GPS trip records">'
  '<defs><linearGradient id="pdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#14532d"/></linearGradient></defs>'
  '<rect width="900" height="320" rx="18" fill="url(#pdg)"/>'
  '<text x="48" y="86" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#4ade80" letter-spacing="3">IRS PER DIEM &#183; 2026</text>'
- '<text x="48" y="140" font-family="Manrope,Arial" font-weight="900" font-size="46" fill="#ffffff">$80/day &#215; 80% = $64</text>'
- '<text x="48" y="180" font-family="Manrope,Arial" font-weight="800" font-size="24" fill="#fbbf24">200 nights out = $12,800 deducted</text>'
+ '<text x="48" y="140" font-family="Manrope,Arial" font-weight="900" font-size="46" fill="#ffffff">' + _PD_RATE_S + '/day &#215; ' + _PD_PCT_S + ' = ' + _PD_NET_S + '</text>'
+ '<text x="48" y="180" font-family="Manrope,Arial" font-weight="800" font-size="24" fill="#fbbf24">200 nights out = ' + _pd_i(200 * _PD_NET) + ' deducted</text>'
  '<text x="48" y="222" font-family="Inter,Arial" font-size="17" fill="#93a4bd">No meal receipts needed. Only proof of the nights away &#8212;</text>'
  '<text x="48" y="248" font-family="Inter,Arial" font-size="17" fill="#93a4bd">which is exactly what most drivers cannot produce.</text>'
  '<g transform="translate(640,70)">'
@@ -3201,7 +3426,7 @@ PD_FEAT = ('<svg viewBox="0 0 900 320" role="img" aria-label="Truck driver per d
  '<text x="18" y="34" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#7f92b3">NIGHTS AWAY</text>'
  '<text x="18" y="72" font-family="Manrope,Arial" font-weight="900" font-size="34" fill="#4ade80">214</text>'
  '<text x="18" y="102" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#7f92b3">DEDUCTION</text>'
- '<text x="18" y="140" font-family="Manrope,Arial" font-weight="900" font-size="30" fill="#ffffff">$13,696</text>'
+ '<text x="18" y="140" font-family="Manrope,Arial" font-weight="900" font-size="30" fill="#ffffff">' + _pd_i(214 * _PD_NET) + '</text>'
  '<text x="18" y="164" font-family="Inter,Arial" font-size="12" fill="#93a4bd">counted from GPS trips</text>'
  '</g></svg>')
 
@@ -3214,8 +3439,8 @@ PD_SHOT1 = ('<figure class="art-shot"><svg viewBox="0 0 880 520" role="img" aria
  # per diem hero box
  '<rect x="28" y="86" width="824" height="112" rx="12" fill="#0d2b1c" stroke="#22c55e" stroke-opacity=".38"/>'
  '<text x="48" y="116" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#4ade80">&#128716; Per diem &#8212; 214 nights away</text>'
- '<text x="48" y="158" font-family="Manrope,Arial" font-weight="900" font-size="34" fill="#4ade80">$13,696</text>'
- '<text x="48" y="182" font-family="Inter,Arial" font-size="13" fill="#93a4bd">214 nights &#215; $80/day &#215; 80% deductible &#183; counted automatically from your GPS trip records</text>'
+ '<text x="48" y="158" font-family="Manrope,Arial" font-weight="900" font-size="34" fill="#4ade80">' + _pd_i(214 * _PD_NET) + '</text>'
+ '<text x="48" y="182" font-family="Inter,Arial" font-size="13" fill="#93a4bd">214 nights &#215; ' + _PD_RATE_S + '/day &#215; ' + _PD_PCT_S + ' deductible &#183; counted automatically from your GPS trip records</text>'
  # deadlines
  '<text x="28" y="228" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#dbe6f5">&#128197; Deadlines</text>'
  '<g font-family="Inter,Arial" font-size="13">'
@@ -3235,7 +3460,7 @@ PD_SHOT1 = ('<figure class="art-shot"><svg viewBox="0 0 880 520" role="img" aria
  '<text x="28" y="480" fill="#dbe6f5">tolls &#183; scales &#183; parking</text><text x="800" y="480" fill="#dbe6f5" font-weight="800" text-anchor="end">$2,905</text>'
  '<text x="28" y="504" fill="#4ade80" font-weight="800">TOTAL LOGGED</text><text x="800" y="504" fill="#4ade80" font-weight="800" text-anchor="end">$47,599</text>'
  '</g></svg>'
- '<figcaption>Loadboot Tax centre &mdash; nights away are counted from your GPS trip records, so the per diem number (and its proof) builds itself.</figcaption></figure>')
+ '<figcaption>LoadBoot Tax centre &mdash; nights away are counted from your GPS trip records, so the per diem number (and its proof) builds itself.</figcaption></figure>')
 
 # --- HD product visual 2: per-trip P&L ---
 PD_SHOT2 = ('<figure class="art-shot"><svg viewBox="0 0 880 520" role="img" aria-label="LoadBoot per-trip profit and loss statement showing linehaul, detention, fuel, driver pay, factoring and net profit per load">'
@@ -3277,47 +3502,44 @@ PD_CALC = ('<div class="pdcalc">'
  '<output id="pdOut">220</output></div>'
  '<input id="pdNights" type="range" min="50" max="330" step="5" value="220" aria-label="Nights away from home per year">'
  '<div class="pdc-grid">'
- '<div class="pdc-tile"><span>YOUR DEDUCTION</span><b id="pdDed">$14,080</b><i>nights &#215; $80 &#215; 80%</i></div>'
- '<div class="pdc-tile pdc-hi"><span>CASH BACK IN YOUR POCKET</span><b id="pdSave">$5,209</b><i>estimated, ~37% marginal rate</i></div>'
+ '<div class="pdc-tile"><span>YOUR DEDUCTION</span><b id="pdDed">' + _pd_i(220 * _PD_NET) + '</b><i>nights &#215; ' + _PD_RATE_S + ' &#215; ' + _PD_PCT_S + '</i></div>'
+ '<div class="pdc-tile pdc-hi"><span>CASH BACK IN YOUR POCKET</span><b id="pdSave">' + _pd_i(220 * _PD_NET * 0.37) + '</b><i>estimated, ~37% marginal rate</i></div>'
  '</div>'
- '<div class="pdc-note">Most drivers claim <b>none of this</b> &mdash; not because they are not owed it, but because they cannot prove the nights. Loadboot GPS-stamps every trip, so the proof writes itself.</div>'
+ '<div class="pdc-note">Most drivers claim <b>none of this</b> &mdash; not because they are not owed it, but because they cannot prove the nights. LoadBoot GPS-stamps every trip, so the proof writes itself.</div>'
  '<a class="pdc-cta" href="get-started.html">Get my nights counted automatically &rarr;</a>'
  '<script>(function(){var r=document.getElementById("pdNights"),o=document.getElementById("pdOut"),'
  'd=document.getElementById("pdDed"),s=document.getElementById("pdSave");if(!r)return;'
  'function f(n){return "$"+Math.round(n).toLocaleString();}'
- 'function u(){var n=+r.value;var ded=n*80*0.8;o.textContent=n;d.textContent=f(ded);s.textContent=f(ded*0.37);}'
+ 'function u(){var n=+r.value;var ded=n*' + ('%g' % _PD_RATE) + '*' + ('%g' % (_PD_PCT / 100.0)) + ';o.textContent=n;d.textContent=f(ded);s.textContent=f(ded*0.37);}'
  'r.addEventListener("input",u);u();})();</script>'
  '</div>')
 
 PD_TOC = [('the-money','The money you are losing'),('what-is-per-diem','What per diem actually is (2026)'),
  ('the-math','The math: what it is really worth'),('who-can-claim','Who can claim it &mdash; and who cannot'),
- ('why-missed','Why most drivers lose it: the proof problem'),('loadboot','How Loadboot proves it for you'),
+ ('why-missed','Why most drivers lose it: the proof problem'),('loadboot','How LoadBoot proves it for you'),
  ('by-year','Per diem rates by year (2018–2026)'),('beyond','Beyond per diem: the rest of the money'),('mistakes','Five mistakes that cost you'),('bottom-line','The bottom line')]
 
 PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<p>If you are an owner-operator who sleeps in the truck, there is a deduction sitting in front of you that costs nothing to earn, requires no purchase, and needs <b>not one meal receipt</b>. It is the transportation-industry <b>per diem</b>. And a large share of drivers either never claim it, or claim a fraction of what they are owed.</p>'
  '<p>The scale is not small. Industry tax specialists put it plainly: a driver who spends around <b>200 days on the road and does not claim per diem is leaving over $11,000 in deductions on the table &mdash; every single year</b>. For drivers running 250+ nights, the loss is bigger still.</p>'
  '<p>That is not a rounding error. That is a truck payment. And the reason it goes unclaimed is almost never greed or laziness &mdash; it is <b>proof</b>. Keep reading; the fix is more boring, and more automatic, than you think.</p>'
- + svc_banner('Your trips already ARE the proof','Loadboot GPS-stamps every pickup and delivery, then counts your nights away and computes the deduction for you &mdash; flat 5%, no long-term contract.','See carrier services','carriers.html') +
+ + svc_banner('Your trips already ARE the proof','LoadBoot GPS-stamps every pickup and delivery, then counts your nights away and computes the deduction for you &mdash; flat 5%, no long-term contract.','See carrier services','carriers.html') +
 
  '<h2 id="what-is-per-diem">What per diem actually is (2026 rates)</h2>'
  '<p>Per diem is a <b>flat daily allowance</b> the IRS lets you deduct for <b>meals and incidental expenses</b> while you are away from your tax home overnight &mdash; instead of saving and adding up every receipt.</p>'
  '<ul>'
- '<li><b>$80 per full day</b> inside the continental U.S. (CONUS) for the special transportation-industry rate.</li>'
- '<li><b>$86 per day</b> if your route takes you outside CONUS.</li>'
+ '<li><b>' + _PD_RATE_S + ' per full day</b> inside the continental U.S. (CONUS) for the special transportation-industry rate.</li>'
+ '<li><b>' + _PD_OCONUS_S + ' per day</b> if your route takes you outside CONUS.</li>'
  '<li><b>Partial days</b> (the day you leave and the day you get home) are claimed at a reduced amount &mdash; commonly treated as 75% of the standard rate.</li>'
- '<li><b>80% is deductible</b> for workers subject to DOT hours-of-service rules. Everyone else in business only gets 50% &mdash; truckers get a better deal.</li>'
+ '<li><b>' + _PD_PCT_S + ' is deductible</b> for workers subject to DOT hours-of-service rules. Everyone else in business only gets 50% &mdash; truckers get a better deal.</li>'
  '</ul>'
- '<p>So the number that actually reaches your tax return is <b>$80 &times; 80% = $64 per night</b>.</p>'
+ '<p>So the number that actually reaches your tax return is <b>' + _PD_RATE_S + ' &times; ' + _PD_PCT_S + ' = ' + _PD_NET_S + ' per night</b>.</p>'
  '<p>One important limit: in trucking, per diem covers <b>meals and incidentals only</b> &mdash; not lodging. Tips, laundry on the road, that kind of thing. Your truck payment, fuel and repairs are separate deductions entirely.</p>'
 
  '<h2 id="the-math">The math: what it is really worth</h2>'
  '<p>Run it on your own year:</p>'
- '<table><thead><tr><th>Nights away</th><th>Deduction ($64/night)</th><th>Roughly saved*</th></tr></thead><tbody>'
- '<tr><td>150</td><td>$9,600</td><td>~$3,500</td></tr>'
- '<tr><td>200</td><td>$12,800</td><td>~$4,700</td></tr>'
- '<tr><td>250</td><td>$16,000</td><td>~$5,900</td></tr>'
- '<tr><td>300</td><td>$19,200</td><td>~$7,100</td></tr>'
+ '<table><thead><tr><th>Nights away</th><th>Deduction (' + _PD_NET_S + '/night)</th><th>Roughly saved*</th></tr></thead><tbody>'
+ + ''.join('<tr><td>%d</td><td>%s</td><td>~%s</td></tr>' % (_n, _pd_i(_n * _PD_NET), _pd_i(round(_n * _PD_NET * 0.37, -2))) for _n in (150, 200, 250, 300)) +
  '</tbody></table>'
  '<p class="small">*A deduction is not a refund &mdash; it lowers the income you are taxed on. For a self-employed owner-operator, the combined bite of self-employment tax (15.3%) plus federal income tax often lands somewhere near the mid-30s as a marginal rate, so every $100 deducted commonly keeps roughly $35&ndash;$37 in your pocket. Your exact number depends on your bracket. Talk to your CPA.</p>'
  '<p>Even at the low end, this single line is usually worth <b>more than a month of net revenue</b> to a solo owner-operator. And notice what it costs you to claim it: nothing. You already slept in the truck.</p>'
@@ -3342,16 +3564,16 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '</ul>'
  '<p>So one of two things happens. Either the driver <b>does not claim it at all</b> (&ldquo;I can&rsquo;t prove it, skip it&rdquo;), or the CPA <b>lowballs the number</b> to stay safe. Both cost real money, quietly, every year. The deduction was never the hard part. <b>The record was.</b></p>'
 
- '<h2 id="loadboot">How Loadboot proves it for you &mdash; automatically</h2>'
- '<p>This is precisely the problem Loadboot was built to remove, and the fix comes free with how the platform already works.</p>'
- '<p>Every load you run on Loadboot is <b>GPS-stamped end to end</b>. When you roll out, the trip starts. When you enter the pickup geofence, arrival is recorded. When you clear the delivery, the drop is stamped. You do not tap anything &mdash; the truck&rsquo;s position writes the record.</p>'
+ '<h2 id="loadboot">How LoadBoot proves it for you &mdash; automatically</h2>'
+ '<p>This is precisely the problem LoadBoot was built to remove, and the fix comes free with how the platform already works.</p>'
+ '<p>Every load you run on LoadBoot is <b>GPS-stamped end to end</b>. When you roll out, the trip starts. When you enter the pickup geofence, arrival is recorded. When you clear the delivery, the drop is stamped. You do not tap anything &mdash; the truck&rsquo;s position writes the record.</p>'
  '<p>Those stamps are not just for detention claims and on-time scores. They are <b>exactly the substantiation the IRS asks for</b>: a dated, objective record of which nights you were away from home. So the Tax centre simply counts them:</p>'
  + PD_SHOT1 +
  '<p>Nights away, the deduction, the deadlines, and your Schedule C categories &mdash; assembled from work you already did. Nothing to remember in January. Nothing to reconstruct in April.</p>'
  '<p>And because the same trip record drives your money, the rest of the picture lines up with it:</p>'
  + PD_SHOT2 +
  '<p>Every load carries its own profit statement. Detention and accessorials land on it <b>automatically</b> from the same GPS stamps, so the income side is as complete as the deduction side. At tax time you are not hunting &mdash; you are exporting.</p>'
- + svc_banner('Stop reconstructing your year in April','Run your loads on Loadboot and the tax record writes itself &mdash; nights away, per-load profit, detention, Schedule C. Flat 5%, no long-term contract, cancel anytime.','Get started','get-started.html') +
+ + svc_banner('Stop reconstructing your year in April','Run your loads on LoadBoot and the tax record writes itself &mdash; nights away, per-load profit, detention, Schedule C. Flat 5%, no long-term contract, cancel anytime.','Get started','get-started.html') +
 
  '<h2 id="by-year">Per diem rates by year (2018&ndash;2026)</h2>'
  '<p>Searching for an older year because you are amending a return or catching up on back taxes? Here is the IRS special transportation-industry M&amp;IE rate for every year, and how much of it was deductible. Amended returns can generally be filed up to three years back &mdash; if you never claimed per diem, those years may still be worth real money.</p>'
@@ -3364,9 +3586,9 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<tr><td>2023</td><td>$69</td><td>80%</td><td>$11,040</td></tr>'
  '<tr><td>2024</td><td>$69&ndash;$80</td><td>80%</td><td>$11,040+</td></tr>'
  '<tr><td>2025</td><td>$80</td><td>80%</td><td>$12,800</td></tr>'
- '<tr><td><b>2026</b></td><td><b>$80</b></td><td><b>80%</b></td><td><b>$12,800</b></td></tr>'
+ '<tr><td><b>2026</b></td><td><b>' + _PD_RATE_S + '</b></td><td><b>' + _PD_PCT_S + '</b></td><td><b>' + _pd_i(200 * _PD_NET) + '</b></td></tr>'
  '</tbody></table></div>'
- '<p>Rates change each October 1 with the federal fiscal year, so a calendar tax year can straddle two rates &mdash; the IRS lets you use the rate in effect for each night, or apply a consistent method. Partial travel days count as &frac34; of a day. When in doubt, your nights-away log decides everything, which is exactly the record most drivers never kept &mdash; and the one Loadboot builds automatically.</p>'
+ '<p>Rates change each October 1 with the federal fiscal year, so a calendar tax year can straddle two rates &mdash; the IRS lets you use the rate in effect for each night, or apply a consistent method. Partial travel days count as &frac34; of a day. When in doubt, your nights-away log decides everything, which is exactly the record most drivers never kept &mdash; and the one LoadBoot builds automatically.</p>'
  '<h2 id="beyond">Beyond per diem: the rest of the money</h2>'
  '<p>Per diem is the biggest one drivers miss, but it is not the only one. The same records feed the rest of your return:</p>'
  '<ul>'
@@ -3389,30 +3611,30 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '</ol>'
 
  '<h2 id="bottom-line">The bottom line</h2>'
- '<p>Per diem is the rare deduction that is large, legal, and free &mdash; you have already earned it by sleeping in the truck. The only thing standing between you and roughly <b>$64 for every night you were out</b> is a record of the nights.</p>'
+ '<p>Per diem is the rare deduction that is large, legal, and free &mdash; you have already earned it by sleeping in the truck. The only thing standing between you and roughly <b>' + _PD_NET_S + ' for every night you were out</b> is a record of the nights.</p>'
  '<p>You can build that record by hand, in a notebook, hoping you remember. Or you can run your freight on a system that <b>stamps every trip with GPS by default</b>, counts the nights for you, files the detention you earned, and hands you a Schedule C rollup and a per-load profit statement at the end of it.</p>'
- '<p>The deduction was always yours. Loadboot just makes it provable.</p>'
- '<p class="small">Loadboot is a dispatch and carrier-operations platform, not a tax preparer or CPA firm. The figures here are estimates to help you plan; per diem rates, deductibility and eligibility change and depend on your circumstances. Confirm your numbers with a qualified tax professional before filing.</p>')
+ '<p>The deduction was always yours. LoadBoot just makes it provable.</p>'
+ '<p class="small">LoadBoot is a dispatch and carrier-operations platform, not a tax preparer or CPA firm. The figures here are estimates to help you plan; per diem rates, deductibility and eligibility change and depend on your circumstances. Confirm your numbers with a qualified tax professional before filing.</p>')
 
 PD_FAQ = [
  ('What is the truck driver per diem rate for 2026?',
-  'For 2026 the IRS special transportation-industry rate is $80 per full day within the continental U.S. (CONUS) and $86 per day outside CONUS. Partial travel days &mdash; the day you leave and the day you return &mdash; are claimed at a reduced amount, commonly 75% of the standard rate.'),
+  'For 2026 the IRS special transportation-industry rate is ' + _PD_RATE_S + ' per full day within the continental U.S. (CONUS) and ' + _PD_OCONUS_S + ' per day outside CONUS. Partial travel days &mdash; the day you leave and the day you return &mdash; are claimed at a reduced amount, commonly 75% of the standard rate.'),
  ('Is truck driver per diem 80% or 100% deductible?',
-  'It is 80% deductible for workers subject to DOT hours-of-service rules, which includes truck drivers. Regular business travellers only get 50%. So the effective deduction is $80 &times; 80% = $64 per full night away.'),
+  'It is ' + _PD_PCT_S + ' deductible for workers subject to DOT hours-of-service rules, which includes truck drivers. Regular business travellers only get 50%. So the effective deduction is ' + _PD_RATE_S + ' &times; ' + _PD_PCT_S + ' = ' + _PD_NET_S + ' per full night away.'),
  ('Can a company driver on a W-2 claim per diem?',
   'No. After the Tax Cuts and Jobs Act removed unreimbursed employee expenses, W-2 company drivers cannot deduct per diem on their tax return. Only self-employed owner-operators filing Schedule C can claim it. Some carriers instead run a per diem PAY program through payroll, which is a different thing entirely.'),
  ('Do I need meal receipts to claim per diem?',
-  'No. That is the whole advantage of a flat per diem &mdash; you do not save individual meal receipts. But you DO need records proving which nights you were away from your tax home overnight. Trip records, ELD logs or GPS-stamped load records all work. Loadboot produces this automatically from your trips.'),
+  'No. That is the whole advantage of a flat per diem &mdash; you do not save individual meal receipts. But you DO need records proving which nights you were away from your tax home overnight. Trip records, ELD logs or GPS-stamped load records all work. LoadBoot produces this automatically from your trips.'),
  ('How much is per diem worth to an owner-operator?',
-  'At $64 per night, 200 nights away is $12,800 in deductions and 250 nights is $16,000. Depending on your bracket and self-employment tax, that typically keeps roughly $4,700&ndash;$5,900 of real cash in your pocket. Specialists note that drivers who skip it lose over $11,000 in deductions a year.'),
+  'At ' + _PD_NET_S + ' per night, 200 nights away is ' + _pd_i(200 * _PD_NET) + ' in deductions and 250 nights is ' + _pd_i(250 * _PD_NET) + '. Depending on your bracket and self-employment tax, that typically keeps roughly ' + _pd_i(round(200 * _PD_NET * 0.37, -2)) + '&ndash;' + _pd_i(round(250 * _PD_NET * 0.37, -2)) + ' of real cash in your pocket. Specialists note that drivers who skip it lose over $11,000 in deductions a year.'),
  ('What proof does the IRS want for per diem?',
-  'Evidence of the days you were travelling away from your tax home overnight &mdash; not meal receipts. A dated, objective record is what matters. GPS-stamped pickup and delivery times, like the ones Loadboot writes on every trip, are exactly that kind of record.'),
+  'Evidence of the days you were travelling away from your tax home overnight &mdash; not meal receipts. A dated, objective record is what matters. GPS-stamped pickup and delivery times, like the ones LoadBoot writes on every trip, are exactly that kind of record.'),
 ]
 
 rich_article('truck-driver-per-diem-2026.html',
- 'Truck Driver Per Diem 2026: Rates, Rules &amp; the $12,800',
- 'IRS per diem for truck drivers 2026: $80/day, 80% deductible ($64/night). 200 nights out = $12,800 in deductions. Who can claim it, the proof the IRS wants, and how to make that proof build itself.',
- 'Trucking Tax Deductions','Truck Driver Per Diem 2026: The $12,800 Most Owner-Operators Never Claim',
+ 'Truck Driver Per Diem 2026: Rates, Rules &amp; the ' + _pd_i(200 * _PD_NET) + '',
+ 'IRS per diem for truck drivers 2026: ' + _PD_RATE_S + '/day, ' + _PD_PCT_S + ' deductible (' + _PD_NET_S + '/night). 200 nights out = ' + _pd_i(200 * _PD_NET) + ' in deductions. Who can claim it, the proof the IRS wants, and how to make that proof build itself.',
+ 'Trucking Tax Deductions','Truck Driver Per Diem 2026: The ' + _pd_i(200 * _PD_NET) + ' Most Owner-Operators Never Claim',
  'The IRS does not want your meal receipts. It wants proof of the nights you were away &mdash; and that is exactly where drivers lose thousands. Here is the 2026 rule, the real math, and how to make the record write itself.',
  9,'owner-operator-dispatch-hero.jpg','Owner-operator truck driver reviewing per diem tax deductions and trip records',
  PD_TOC, PD_BODY, PD_FAQ, feat_svg=PD_FEAT)
@@ -3642,14 +3864,14 @@ OS_TOC=[('what-counts','What counts as an oversize load'),('rates','Oversize rat
  ('brokers','For brokers &amp; shippers'),('paid','Getting every extra paid in writing')]
 OS_BODY=(
 '<p>Ask ten carriers how much oversize loads pay per mile and you will get ten answers &mdash; because &ldquo;oversize&rdquo; covers everything from a 9-foot-wide excavator that needs one permit to a 200,000-lb transformer that needs a police escort and a bridge engineer. This guide puts real 2026 numbers on the whole range: what counts as oversize, what each tier actually pays per mile, what permits and pilot cars cost, and how to price a move so the extras land in your pocket instead of coming out of it.</p>'
-'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: in 2026, permit-only oversize loads typically pay <b>$4.00&ndash;$5.50 per mile</b>, escorted loads <b>$5.00&ndash;$8.00</b>, and superloads <b>$8.00&ndash;$15.00+</b> &mdash; against a legal flatbed spot average around <b>$3.72 all-in</b>. The premium is not a gift: it pays for permits, escorts, daylight-only clocks and empty return miles.</div></div>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: in 2026, permit-only oversize loads typically pay <b>$4.00&ndash;$5.50 per mile</b>, escorted loads <b>$5.00&ndash;$8.00</b>, and superloads <b>$8.00&ndash;$15.00+</b> &mdash; against a legal flatbed spot average around <b>' + _d(_mrc('Flatbed')) + ' all-in</b>. The premium is not a gift: it pays for permits, escorts, daylight-only clocks and empty return miles.</div></div>'
 '<h2 id="what-counts">What counts as an oversize load</h2>'
 '<p>A load is oversize the moment it exceeds any standard legal limit on the route. The federal baseline most states follow: <b>8&rsquo;6&rdquo; (102&rdquo;) wide</b>, <b>13&rsquo;6&rdquo; tall</b> (14&rsquo; in much of the West), legal trailer length, and <b>80,000 lbs gross</b> vehicle weight. Cross one line &mdash; a 10-foot-wide combine header, a 14&rsquo;2&rdquo; press brake, a 90,000-lb gross move &mdash; and every state you touch wants a permit and sets its own rules for escorts, travel hours and routing.</p>'
 '<p>Two facts drive everything else in this guide. First, <b>oversize is a per-state game</b>: a load that runs clean in Texas may need a pilot car in Louisiana. Second, <b>dimensions decide cost tiers</b>: each foot of width or height past the threshold can add an escort, a curfew, or a routing survey &mdash; and the rate has to absorb all of it.</p>'
 '<h2 id="rates">Oversize rates per mile in 2026</h2>'
-'<p>Anchor on the legal market first: the <a href="market-rates.html">live flatbed spot average</a> is about <b>$3.72 per loaded mile all-in</b> in July 2026. Oversize prices off that baseline in tiers:</p>'
+'<p>Anchor on the legal market first: the <a href="market-rates.html">live flatbed spot average</a> is about <b>' + _d(_mrc('Flatbed')) + ' per loaded mile all-in</b> in ' + _MR_MONTH + '. Oversize prices off that baseline in tiers:</p>'
 '<table class="cmp"><thead><tr><th>Tier</th><th>Typical 2026 rate</th><th>What it looks like</th></tr></thead><tbody>'
-'<tr><td>Legal flatbed / step deck</td><td><b>$3.00&ndash;$4.50/mi</b> (avg ~$3.72)</td><td>Within all legal limits &mdash; no permits</td></tr>'
+'<tr><td>Legal flatbed / step deck</td><td><b>$3.00&ndash;$4.50/mi</b> (avg ~' + _d(_mrc('Flatbed')) + ')</td><td>Within all legal limits &mdash; no permits</td></tr>'
 '<tr><td>Permit-only oversize</td><td><b>$4.00&ndash;$5.50/mi</b></td><td>Modest width/height over legal; permits, no escorts</td></tr>'
 '<tr><td>Escorted oversize</td><td><b>$5.00&ndash;$8.00/mi</b></td><td>Wide/tall enough to require 1&ndash;2 pilot cars, daylight-only</td></tr>'
 '<tr><td>Superload / heavy haul</td><td><b>$8.00&ndash;$15.00+/mi</b></td><td>Multi-axle trailers, engineering reviews, police escorts &mdash; short moves can price far higher</td></tr>'
@@ -3695,7 +3917,7 @@ OS_BODY=(
 '<p>Oversize moves fail on paperwork more than on pavement. Before the truck moves, the <a href="how-to-read-a-rate-confirmation.html">rate confirmation</a> should name, in numbers: the linehaul, who purchases permits, who arranges and pays escorts, <a href="detention-pay-policy.html">detention</a> after free time, <a href="layover-policy.html">layover</a> for curfew and weekend holds, and a <a href="tonu-policy.html">TONU</a> for late cancellations &mdash; because a cancelled superload has often already paid for permits and scheduled escorts. On LoadBoot, a load cannot even post without its accessorial rate card, and heavy-haul or oversize moves are coordinated case by case with permit and routing support &mdash; <a href="contact.html">ask about your setup</a>. Referral partners who know equipment dealers and machinery movers can <a href="agents.html">earn 1% introducing them</a>.</p>'
 '<p>The oversize market pays professionals well precisely because amateurs get hurt in it. Know your tier, price the whole move, and get every dollar of it in writing.</p>')
 OS_FAQ=[
- ('How much do oversize loads pay per mile in 2026?','Permit-only oversize typically pays $4.00&ndash;$5.50 per mile, escorted loads $5.00&ndash;$8.00, and superloads $8.00&ndash;$15.00 or more &mdash; against a legal flatbed spot average of roughly $3.72 all-in. Short superload moves can price far above these ranges because fixed costs dominate.'),
+ ('How much do oversize loads pay per mile in 2026?','Permit-only oversize typically pays $4.00&ndash;$5.50 per mile, escorted loads $5.00&ndash;$8.00, and superloads $8.00&ndash;$15.00 or more &mdash; against a legal flatbed spot average of roughly ' + _d(_mrc('Flatbed')) + ' all-in. Short superload moves can price far above these ranges because fixed costs dominate.'),
  ('What makes a load oversize?','Exceeding any legal limit on the route &mdash; the common baseline is 8&rsquo;6&rdquo; (102&rdquo;) wide, 13&rsquo;6&rdquo; tall (14&rsquo; in much of the West), legal trailer length, or 80,000 lbs gross weight. Each state on the route then requires its own permit and sets its own escort and travel-hour rules.'),
  ('Who pays for permits and pilot cars?','Whoever the rate confirmation says &mdash; which is why it must be settled in writing before dispatch. The professional standard is that permits and escorts are priced as line items on top of the linehaul, so they are pass-through costs to the shipper rather than deductions from the carrier&rsquo;s rate.'),
  ('Why are oversize rates so much higher than regular flatbed?','Daylight-only travel, weekend and metro curfews, rare backhauls, specialized trailers and securement skill, and real routing risk. A truck on wide loads may run half the weekly miles of a legal flatbed, so each mile has to earn roughly twice as much.'),
@@ -3711,7 +3933,7 @@ BLOGPOSTS += [
 RELATED['oversize-load-rates-per-mile.html'] = [('flatbed-dispatch.html','Flatbed Dispatch'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('market-rates.html','Market Rates Per Mile'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('detention-pay-policy.html','Detention Pay'),('carrier-application.html','Apply as Carrier')]
 rich_article('oversize-load-rates-per-mile.html',
  'Oversize Load Rates 2026: Pay Per Mile ($4&ndash;$15+)',
- 'How much do oversize loads pay per mile? 2026 rates: $4–$5.50 permit-only, $5–$8 escorted, $8–$15+ superloads vs ~$3.72 legal flatbed. Permit fees, pilot car costs, and how to price the whole move.',
+ 'How much do oversize loads pay per mile? 2026 rates: $4–$5.50 permit-only, $5–$8 escorted, $8–$15+ superloads vs ~' + _d(_mrc('Flatbed')) + ' legal flatbed. Permit fees, pilot car costs, and how to price the whole move.',
  'Freight Rates &amp; Heavy Haul','How Much Do Oversize Loads Pay Per Mile? 2026 Oversize &amp; Heavy Haul Rates',
  'Oversize pays $4 to $15+ per mile in 2026 &mdash; but permits, pilot cars and daylight-only clocks eat amateurs alive. Here are the real rate tiers, the real costs underneath them, and the math for pricing the whole move.',
  10,'oversize-load-hero.jpg','Oversize load on a multi-axle trailer with pilot car escort and OVERSIZE LOAD banner',
@@ -3726,7 +3948,7 @@ FS_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs>
  '<text x="200" y="52" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#93c5fd">FUEL SURCHARGE FORMULA</text>'
  '<rect x="34" y="70" width="332" height="52" rx="8" fill="#0b1220" opacity=".72"/>'
  '<text x="200" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="#fff">(Diesel &#8722; Peg) &#247; MPG</text>'
- '<text x="200" y="113" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="#FC5305">= $0.23 &#8211; $0.47 per mile</text>'
+ '<text x="200" y="113" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="#FC5305">= ' + _fsc_s(2.5, 6.0) + ' &#8211; ' + _fsc_s(1.25, 5.5) + ' per mile</text>'
  '<text x="200" y="152" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8">DOE weekly index &#183; loaded miles &#183; 2026</text></svg>')
 FS_TOC=[('what-is','What a fuel surcharge actually is'),('formula','The FSC formula &mdash; three numbers, nothing else'),
  ('doe','The DOE index every surcharge points at'),('worked','What FSC pays: worked 2026 examples'),
@@ -3734,11 +3956,11 @@ FS_TOC=[('what-is','What a fuel surcharge actually is'),('formula','The FSC form
  ('brokers','For brokers &amp; shippers: an FSC that survives audit'),('writing','Getting the surcharge paid in writing')]
 FS_BODY=(
 '<p>The fuel surcharge is the most misunderstood line on a rate confirmation. Carriers treat it as bonus money. Brokers quote it as if it were charity. Shippers audit it once a year and discover they have been paying a peg nobody has updated since 2019. All three are wrong in the same way: the fuel surcharge is not a discount, a bonus or a courtesy &mdash; it is a <b>price-indexing mechanism</b>, and it has exactly three inputs. This guide shows the formula, the index it points at, what it pays in 2026 dollars, and the gap it leaves behind that quietly eats owner-operators.</p>'
-'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: fuel surcharge per mile = <b>(current diesel price per gallon &minus; the base &ldquo;peg&rdquo; price) &divide; truck MPG</b>. At $3.85/gal diesel with the common 6.0 MPG divisor, that is about <b>$0.43/mile</b> on a $1.25 peg, <b>$0.31/mile</b> on a $2.00 peg, and <b>$0.23/mile</b> on a $2.50 peg. Same fuel, same truck &mdash; the peg alone moves the money by nearly 90%.</div></div>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: fuel surcharge per mile = <b>(current diesel price per gallon &minus; the base &ldquo;peg&rdquo; price) &divide; truck MPG</b>. At ' + _DIESEL_S + '/gal diesel with the common 6.0 MPG divisor, that is about <b>' + _fsc_s(1.25, 6.0) + '/mile</b> on a $1.25 peg, <b>' + _fsc_s(2.0, 6.0) + '/mile</b> on a $2.00 peg, and <b>' + _fsc_s(2.5, 6.0) + '/mile</b> on a $2.50 peg. Same fuel, same truck &mdash; the peg alone moves the money by nearly 90%.</div></div>'
 
 '<h2 id="what-is">What a fuel surcharge actually is</h2>'
 '<p>Freight rates are negotiated weeks or months before the truck rolls. Diesel is not. A lane priced when diesel sat at $3.40 becomes a losing lane at $4.60, and a windfall at $2.90. Rather than reprice every lane every week, the industry split the rate into two parts: a <b>linehaul</b> that covers the truck, the driver, the trailer and the profit, and a <b>fuel surcharge</b> that floats with the diesel market.</p>'
-'<p>That split matters more than it sounds. The linehaul is what you negotiated. The surcharge is what the formula produces. When a broker says &ldquo;I got you $3.10 a mile,&rdquo; the only useful follow-up question is: <em>is that linehaul, or is that all-in?</em> Because $3.10 all-in on a $0.43 surcharge is a $2.67 linehaul &mdash; and $2.67 is a very different business than $3.10.</p>'
+'<p>That split matters more than it sounds. The linehaul is what you negotiated. The surcharge is what the formula produces. When a broker says &ldquo;I got you $3.10 a mile,&rdquo; the only useful follow-up question is: <em>is that linehaul, or is that all-in?</em> Because $3.10 all-in on a ' + _fsc_s(1.25, 6.0) + ' surcharge is a ' + _d(3.10 - round(_fsc(1.25, 6.0), 2)) + ' linehaul &mdash; and $2.67 is a very different business than $3.10.</p>'
 '<p>Four parties, four reasons to care:</p>'
 '<ul>'
 '<li><b>Carriers and owner-operators:</b> the surcharge is the only part of the rate that moves when your biggest variable cost moves. If it is missing, mispegged, or paid on the wrong miles, every diesel spike comes straight out of your margin.</li>'
@@ -3775,25 +3997,21 @@ FS_BODY=(
 '<p>None of this is exotic. It is simply the difference between a surcharge you can calculate yourself and a surcharge you have to take somebody&rsquo;s word on &mdash; and the second kind is how <a href="how-to-avoid-cheap-freight.html">cheap freight</a> disguises itself as a good rate.</p>'
 
 '<h2 id="worked">What FSC pays: worked 2026 examples</h2>'
-'<p>Take diesel at <b>$3.85/gal</b> &mdash; the working assumption in the LoadBoot <a href="cost-per-mile-calculator.html">cost-per-mile calculator</a>. Here is what the same truck, on the same lane, earns in surcharge under different terms:</p>'
+'<p>Take diesel at <b>' + _DIESEL_S + '/gal</b> &mdash; ' + ('the EIA weekly US average for the week of ' + _ymd_long(_DIESEL_ASOF) if not str(_DIESEL_FROM).startswith('fallback') else 'the last published US average') + ', the same figure the <a href="tools.html">LoadBoot trucking calculators</a> start from. Here is what the same truck, on the same lane, earns in surcharge under different terms:</p>'
 '<table class="cmp"><thead><tr><th>Peg</th><th>MPG divisor</th><th>FSC per mile</th><th>On a 500-mi load</th></tr></thead><tbody>'
-'<tr><td>$1.25</td><td>6.0</td><td><b>$0.43</b></td><td>$216</td></tr>'
-'<tr><td>$1.25</td><td>5.5 (reefer/heavy)</td><td><b>$0.47</b></td><td>$236</td></tr>'
-'<tr><td>$2.00</td><td>6.0</td><td><b>$0.31</b></td><td>$154</td></tr>'
-'<tr><td>$2.50</td><td>6.0</td><td><b>$0.23</b></td><td>$113</td></tr>'
-'<tr><td>$2.50</td><td>6.5</td><td><b>$0.21</b></td><td>$104</td></tr>'
++ ''.join(_fs_row(_p, _m, _ml) for _p, _m, _ml in ((1.25, 6.0, '6.0'), (1.25, 5.5, '5.5 (reefer/heavy)'), (2.0, 6.0, '6.0'), (2.5, 6.0, '6.0'), (2.5, 6.5, '6.5'))) +
 '</tbody></table>'
-'<p>Read the top and bottom rows together. Same diesel, same 500 miles, same truck: <b>$216 against $104</b>. Nothing about the freight changed. Only the paperwork did. That spread &mdash; a bit over $0.22 a mile &mdash; is larger than most carriers&rsquo; entire net margin per mile.</p>'
-'<p>Now put it against the market. LoadBoot publishes <a href="market-rates.html">spot rates all-in</a> &mdash; linehaul and fuel combined &mdash; because that is the number that pays your bills. In July 2026 the all-in averages ran about <b><a href="dry-van-freight-rates.html">$3.03/mi dry van</a></b>, <b>$3.39 reefer</b> and <b>$3.72 flatbed</b>. Decompose the van number at a $1.25 peg and 6.0 MPG: $3.03 all-in &minus; $0.43 surcharge = a <b>$2.60 linehaul</b>. That $2.60 is the number to compare against your true cost per mile, and it is the number a broker quoting &ldquo;$3.03&rdquo; is hoping you will not work out.</p>'
+'<p>Read the top and bottom rows together. Same diesel, same 500 miles, same truck: <b>' + _money(_fsc(1.25, 6.0) * 500) + ' against ' + _money(_fsc(2.5, 6.5) * 500) + '</b>. Nothing about the freight changed. Only the paperwork did. That spread &mdash; about $' + ('%.2f' % (_fsc(1.25, 6.0) - _fsc(2.5, 6.5))) + ' a mile &mdash; is larger than most carriers&rsquo; entire net margin per mile.</p>'
+'<p>Now put it against the market. LoadBoot publishes <a href="market-rates.html">spot rates all-in</a> &mdash; linehaul and fuel combined &mdash; because that is the number that pays your bills. In ' + _MR_MONTH + ' the all-in averages ran about <b><a href="dry-van-freight-rates.html">' + _d(_mrc('Dry Van')) + '/mi dry van</a></b>, <b>' + _d(_mrc('Reefer')) + ' reefer</b> and <b>' + _d(_mrc('Flatbed')) + ' flatbed</b>. Decompose the van number at a $1.25 peg and 6.0 MPG: ' + _d(_mrc('Dry Van')) + ' all-in &minus; ' + _fsc_s(1.25, 6.0) + ' surcharge = a <b>' + _d(_mrc('Dry Van') - round(_fsc(1.25, 6.0), 2)) + ' linehaul</b>. That ' + _d(_mrc('Dry Van') - round(_fsc(1.25, 6.0), 2)) + ' is the number to compare against your true cost per mile, and it is the number a broker quoting &ldquo;$3.03&rdquo; is hoping you will not work out.</p>'
 
 '<h2 id="gap">Why FSC never covers all your fuel</h2>'
 '<p>Here is the part that catches new authorities. The surcharge is designed to cover the fuel cost <em>above the peg</em>, on <em>loaded miles only</em>. Your truck burns diesel below the peg too, and it burns diesel empty.</p>'
-'<p>Run the full picture on that 500-mile van load at $3.85/gal, 6.0 MPG, $1.25 peg, with 100 miles of deadhead to get to the shipper:</p>'
+'<p>Run the full picture on that 500-mile van load at ' + _DIESEL_S + '/gal, 6.0 MPG, $1.25 peg, with 100 miles of deadhead to get to the shipper:</p>'
 '<ul>'
 '<li>Total miles driven: <b>600</b> (500 loaded + 100 empty)</li>'
-'<li>Diesel burned: 600 &divide; 6.0 = <b>100 gallons</b> &rarr; 100 &times; $3.85 = <b>$385 of fuel</b></li>'
-'<li>Surcharge collected: 500 loaded miles &times; $0.43 = <b>$216</b></li>'
-'<li><b>Fuel not covered by the surcharge: $169</b> &mdash; 44% of the fuel bill, which must come out of the linehaul</li>'
+'<li>Diesel burned: 600 &divide; 6.0 = <b>100 gallons</b> &rarr; 100 &times; ' + _DIESEL_S + ' = <b>' + _money(100 * _DIESEL) + ' of fuel</b></li>'
+'<li>Surcharge collected: 500 loaded miles &times; ' + _fsc_s(1.25, 6.0) + ' = <b>' + _money(_fsc(1.25, 6.0) * 500) + '</b></li>'
+'<li><b>Fuel not covered by the surcharge: ' + _money(100 * _DIESEL - _fsc(1.25, 6.0) * 500) + '</b> &mdash; ' + str(int(round((100 * _DIESEL - _fsc(1.25, 6.0) * 500) / (100 * _DIESEL) * 100))) + '% of the fuel bill, which must come out of the linehaul</li>'
 '</ul>'
 '<div class="callout cl-warn"><span class="ic">&#9888;</span><div>The surcharge is a hedge, not a reimbursement. It exists so a diesel spike does not destroy a rate you agreed to last month &mdash; not to make your fuel free. Any lane plan that assumes &ldquo;fuel is covered by FSC&rdquo; is under-priced from the first mile. Empty miles are where this bleeds fastest.</div></div>'
 '<p>This is exactly why <a href="cost-per-mile-calculator.html">knowing your own cost per mile</a> is not optional. Industry research (ATRI) has put the average marginal cost of running a truck at roughly <b>$2.20&ndash;$2.30 per mile</b> including driver wages in recent years; a solo owner-operator driving their own truck typically lands between <b>$1.40 and $1.90</b> before paying themselves. Your break-even is a linehaul number. Compare the surcharge to your fuel, and the linehaul to your cost &mdash; never mix the two.</p>'
@@ -3839,10 +4057,10 @@ FS_BODY=(
 '<p>The habit worth building is simple: work the formula yourself before you say yes. Three numbers, one division, ten seconds. It turns the most misunderstood line on the rate con into the one you can defend &mdash; and it is the same discipline that gets <a href="detention-pay-policy.html">detention</a>, <a href="layover-policy.html">layover</a> and <a href="lumper-policy.html">lumper</a> money paid instead of argued about.</p>'
 '<p class="small">Figures are planning references, not quotes. Diesel prices, pegs and surcharge programs vary by contract, region and week &mdash; verify the current DOE/EIA index and your own rate confirmation before pricing a load. LoadBoot is a dispatch and carrier-operations platform, not a tax or financial advisor.</p>')
 FS_FAQ=[
- ('How do you calculate a fuel surcharge in trucking?','Subtract the base &ldquo;peg&rdquo; price from the current diesel price per gallon, then divide by the assumed MPG. At $3.85/gal diesel with a $1.25 peg and a 6.0 MPG divisor: ($3.85 &minus; $1.25) &divide; 6.0 = $0.43 per mile. Multiply by the paid miles &mdash; usually loaded miles only &mdash; to get the surcharge on the load. On a 500-mile run that is about $216.'),
- ('What is a normal fuel surcharge per mile in 2026?','It depends entirely on the peg and divisor, not on any industry standard. At $3.85/gal diesel and 6.0 MPG, a $1.25 peg produces about $0.43/mile, a $2.00 peg about $0.31, and a $2.50 peg about $0.23. That is why &ldquo;what is a normal FSC&rdquo; is the wrong question &mdash; ask what peg and what divisor the contract uses, because those two numbers move the answer by roughly $0.20 a mile.'),
+ ('How do you calculate a fuel surcharge in trucking?','Subtract the base &ldquo;peg&rdquo; price from the current diesel price per gallon, then divide by the assumed MPG. At ' + _DIESEL_S + '/gal diesel with a $1.25 peg and a 6.0 MPG divisor: (' + _DIESEL_S + ' &minus; $1.25) &divide; 6.0 = ' + _fsc_s(1.25, 6.0) + ' per mile. Multiply by the paid miles &mdash; usually loaded miles only &mdash; to get the surcharge on the load. On a 500-mile run that is about ' + _money(_fsc(1.25, 6.0) * 500) + '.'),
+ ('What is a normal fuel surcharge per mile in 2026?','It depends entirely on the peg and divisor, not on any industry standard. At ' + _DIESEL_S + '/gal diesel and 6.0 MPG, a $1.25 peg produces about ' + _fsc_s(1.25, 6.0) + '/mile, a $2.00 peg about ' + _fsc_s(2.0, 6.0) + ', and a $2.50 peg about ' + _fsc_s(2.5, 6.0) + '. That is why &ldquo;what is a normal FSC&rdquo; is the wrong question &mdash; ask what peg and what divisor the contract uses, because those two numbers move the answer by roughly $0.20 a mile.'),
  ('What is the fuel surcharge peg or base price?','The diesel price at which the surcharge equals zero &mdash; the fuel cost assumed to be already covered inside the linehaul. $1.25/gal is a legacy peg from the late 1990s that is still widely used; newer contracts commonly set $2.00&ndash;$2.50. A higher peg should come with a higher linehaul; if it does not, the carrier is absorbing the difference.'),
- ('Does the fuel surcharge cover all my fuel?','No, and it is not designed to. It covers fuel cost above the peg, on loaded miles only. On a 500-mile load with 100 miles of deadhead at $3.85/gal and 6.0 MPG, the truck burns about 100 gallons ($385 of fuel) while a $1.25-peg surcharge pays about $216 &mdash; leaving roughly $169, about 44% of the fuel bill, to come out of the linehaul. Price the linehaul against your cost per mile, not against the surcharge.'),
+ ('Does the fuel surcharge cover all my fuel?','No, and it is not designed to. It covers fuel cost above the peg, on loaded miles only. On a 500-mile load with 100 miles of deadhead at ' + _DIESEL_S + '/gal and 6.0 MPG, the truck burns about 100 gallons (' + _money(100 * _DIESEL) + ' of fuel) while a $1.25-peg surcharge pays about ' + _money(_fsc(1.25, 6.0) * 500) + ' &mdash; leaving roughly ' + _money(100 * _DIESEL - _fsc(1.25, 6.0) * 500) + ', about ' + str(int(round((100 * _DIESEL - _fsc(1.25, 6.0) * 500) / (100 * _DIESEL) * 100))) + '% of the fuel bill, to come out of the linehaul. Price the linehaul against your cost per mile, not against the surcharge.'),
  ('Which diesel index do fuel surcharges use?','Almost always the U.S. Energy Information Administration (EIA/DOE) weekly On-Highway Diesel Fuel Price, published every Monday. It reports a national average plus regional PADD averages. Which one your contract names matters: California and the West Coast typically run well above the national average, so a West Coast carrier paid off the national index under-recovers on every mile.'),
  ('Is an all-in rate better than linehaul plus fuel surcharge?','For short spot loads, all-in is usually cleaner &mdash; diesel will not move before you deliver, and one number is easier to compare. For contract or dedicated lanes running for months, insist on the split, because otherwise you carry the entire fuel risk for the life of the agreement. The real mistake is comparing an all-in offer against a linehaul-only offer; always ask &ldquo;is that all-in?&rdquo; before you negotiate.')]
 PREMIUM_ARTICLES.add('fuel-surcharge-trucking.html')
@@ -3855,7 +4073,7 @@ BLOGPOSTS += [
 RELATED['fuel-surcharge-trucking.html'] = [('market-rates.html','Market Rates Per Mile'),('truckload-freight-rates.html','Truckload Freight Rates'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('how-to-avoid-cheap-freight.html','How to Avoid Cheap Freight'),('ifta-fuel-tax.html','IFTA Fuel Tax'),('carrier-application.html','Apply as Carrier')]
 rich_article('fuel-surcharge-trucking.html',
  'Fuel Surcharge in Trucking 2026: How to Calculate FSC Per Mile',
- 'How to calculate a fuel surcharge: (diesel price &minus; peg) &divide; MPG. 2026 examples — $0.23–$0.47 per mile depending on peg and divisor, the DOE weekly index, all-in vs linehaul + FSC, and why FSC never covers all your fuel.',
+ 'How to calculate a fuel surcharge: (diesel price &minus; peg) &divide; MPG. 2026 examples — ' + _fsc_s(2.5, 6.0) + '–' + _fsc_s(1.25, 5.5) + ' per mile depending on peg and divisor, the DOE weekly index, all-in vs linehaul + FSC, and why FSC never covers all your fuel.',
  'Freight Rates &amp; Fuel','How to Calculate a Fuel Surcharge in Trucking (2026 FSC Formula &amp; Rates)',
  'The fuel surcharge has exactly three inputs: the diesel index, the peg, and the MPG divisor. Change the peg alone and the same 500-mile load pays $216 or $104. Here is the formula, the index everyone points at, and the fuel gap it leaves behind.',
  9,'fuel-surcharge-hero.jpg','Truck fueling at a diesel island with the weekly DOE on-highway diesel price used to set fuel surcharges',
@@ -3879,7 +4097,7 @@ SPOT_TOC=[('what-is','What a spot rate actually is'),('spot-vs-contract','Spot r
  ('carriers','For carriers: negotiating against the spot rate'),('brokers-shippers','For brokers &amp; shippers: when to go spot, and when not to')]
 SPOT_BODY=(
 '<p>Every load board, every rate confirmation and every &ldquo;what can you do it for?&rdquo; phone call is really about one number: the <b>spot rate</b>. It is the price of one truck, on one lane, this week &mdash; and it is the most quoted, least understood figure in trucking. Carriers accept it without knowing what it is benchmarked against. Brokers quote it as if it were fixed. Shippers discover it only when their contract carrier stops showing up. This guide explains what spot market freight rates are, how they differ from contract rates, where truckload spot rates sit in 2026, what moves them week to week, where to find them, and how each side of the load should negotiate against them.</p>'
-'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: a <b>spot rate</b> is the one-time price agreed for a single load moved now, set by how many trucks and how many loads are on that lane this week. A <b>contract rate</b> is a price agreed in advance for a lane over months. In the September 2026 national snapshot on the <a href="market-rates.html">LoadBoot market rates page</a>, the spot benchmark to the carrier runs about <b>$2.97/mile dry van</b>, <b>$3.54 flatbed</b> and <b>$3.56 reefer</b> &mdash; with brokers selling the same freight to shippers roughly 15% higher. Those numbers move every week; the mechanics below do not.</div></div>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: a <b>spot rate</b> is the one-time price agreed for a single load moved now, set by how many trucks and how many loads are on that lane this week. A <b>contract rate</b> is a price agreed in advance for a lane over months. In the national benchmark on the <a href="market-rates.html">LoadBoot market rates page</a> (as of ' + _MR_ASOF + '), the spot benchmark to the carrier runs about <b>' + _d(_mrc('Dry Van')) + '/mile dry van</b>, <b>' + _d(_mrc('Flatbed')) + ' flatbed</b> and <b>' + _d(_mrc('Reefer')) + ' reefer</b> &mdash; with brokers selling the same freight to shippers roughly ' + str(_MR_MARKUP) + '% higher. Those numbers move every week; the mechanics below do not.</div></div>'
 
 '<h2 id="what-is">What a spot rate actually is</h2>'
 '<p>&ldquo;Spot&rdquo; comes from the commodity markets: a spot price is the price for delivery <em>on the spot</em>, today, as opposed to a futures price agreed for later. In trucking the spot market is the pool of loads that are not covered by a standing agreement &mdash; freight that a shipper or broker has to place with whatever truck is available this week, at whatever that truck will accept. The rate that clears that transaction is the spot rate.</p>'
@@ -3887,7 +4105,7 @@ SPOT_BODY=(
 '<ul>'
 '<li><b>It is a market price, not a list price.</b> Nobody sets it. It is the point where the number of available trucks on a lane meets the number of loads needing to move. When trucks outnumber loads, it falls. When loads outnumber trucks, it rises &mdash; sometimes by a dollar a mile in a single week.</li>'
 '<li><b>It is lane-specific and direction-specific.</b> A national average is a starting point, not a quote. Outbound from a region that produces more freight than it consumes pays well (a <em>headhaul</em>); the return trip into that region pays poorly (a <em>backhaul</em>), because trucks are already heading there empty.</li>'
-'<li><b>It is usually quoted all-in.</b> Most spot quotes bundle the linehaul, the <a href="fuel-surcharge-trucking.html">fuel surcharge</a> and sometimes the accessorials into one number per mile or one flat amount. That is convenient and dangerous: an all-in $3.10 with $0.43 of fuel inside it is a $2.67 linehaul, and the two are very different businesses.</li>'
+'<li><b>It is usually quoted all-in.</b> Most spot quotes bundle the linehaul, the <a href="fuel-surcharge-trucking.html">fuel surcharge</a> and sometimes the accessorials into one number per mile or one flat amount. That is convenient and dangerous: an all-in $3.10 with ' + _fsc_s(1.25, 6.0) + ' of fuel inside it is a ' + _d(3.10 - round(_fsc(1.25, 6.0), 2)) + ' linehaul, and the two are very different businesses.</li>'
 '</ul>'
 '<p>The spot rate is also the number that every other rate in the industry is measured against. Contract rates are negotiated as a discount or premium to it. Broker margins are the gap between two versions of it. And the <a href="how-to-read-a-rate-confirmation.html">rate confirmation</a> you sign is a spot rate frozen into writing for one load.</p>'
 
@@ -3904,41 +4122,36 @@ SPOT_BODY=(
 '<p>The relationship between the two is a cycle. In a soft market spot sits <em>below</em> contract, brokers buy cheap capacity and shippers wonder why they agreed to their routing guide. In a tight market spot sits <em>above</em> contract, tender rejections climb, and shippers pay spot anyway on the freight their contract carriers turn down. Most owner-operators live entirely in the spot market, which means their income tracks that cycle with no cushion &mdash; the reason a <a href="cost-per-mile-calculator.html">cost-per-mile floor</a> matters more to them than to anyone else in the chain.</p>'
 
 '<h2 id="rates-2026">Where truckload spot rates sit in 2026</h2>'
-'<p>The national benchmarks below are the September 2026 snapshot published on the <a href="market-rates.html">LoadBoot market rates page</a>, which refreshes as new national data lands. The <b>carrier</b> column is what the truck is paid per loaded mile; the <b>shipper</b> column is what the freight sells for once a broker&rsquo;s margin sits on top. Treat them as the centre of a range, not a quote: the same dry van load can clear $2.40 on a backhaul and $3.50 on a tight headhaul the same week.</p>'
+'<p>The national benchmarks below are the ' + _MR_MONTH + ' figures (as of ' + _MR_ASOF + ') published on the <a href="market-rates.html">LoadBoot market rates page</a>, read when this page was built. That page refreshes as new national data lands. The <b>carrier</b> column is what the truck is paid per loaded mile; the <b>shipper</b> column is what the freight sells for once a broker&rsquo;s margin sits on top. Treat them as the centre of a range, not a quote: the same dry van load can clear $2.40 on a backhaul and $3.50 on a tight headhaul the same week.</p>'
 '<table class="cmp"><thead><tr><th>Equipment</th><th>Carrier spot rate (per mile)</th><th>Shipper rate (per mile)</th><th>Typical range to carrier</th></tr></thead><tbody>'
-'<tr><td><a href="dry-van-freight-rates.html">Dry van</a></td><td><b>$2.97</b></td><td>$3.42</td><td>$2.38&ndash;$3.56</td></tr>'
-'<tr><td>Reefer</td><td><b>$3.56</b></td><td>$4.09</td><td>$2.85&ndash;$4.27</td></tr>'
-'<tr><td>Flatbed</td><td><b>$3.54</b></td><td>$4.07</td><td>$2.83&ndash;$4.25</td></tr>'
-'<tr><td>Step deck</td><td><b>$3.59</b></td><td>$4.13</td><td>$2.87&ndash;$4.31</td></tr>'
-'<tr><td>Conestoga</td><td><b>$3.64</b></td><td>$4.19</td><td>$2.91&ndash;$4.37</td></tr>'
-'<tr><td>Power only</td><td><b>$2.52</b></td><td>$2.90</td><td>$1.80&ndash;$3.50</td></tr>'
-'<tr><td>Box truck</td><td><b>$2.52</b></td><td>$2.90</td><td>$2.02&ndash;$3.02</td></tr>'
-'<tr><td>Hotshot</td><td><b>$2.35</b></td><td>$2.70</td><td>$1.80&ndash;$3.50</td></tr>'
++_mrrow('Dry Van','<a href="dry-van-freight-rates.html">Dry van</a>')+_mrrow('Reefer','Reefer')+_mrrow('Flatbed','Flatbed')
++_mrrow('Step Deck','Step deck')+_mrrow('Conestoga','Conestoga')+_mrrow('Power Only','Power only')
++_mrrow('Box Truck','Box truck')+_mrrow('Hotshot','Hotshot')+
 '</tbody></table>'
-'<p>Two things to read out of that table. First, the <b>equipment premium</b>: reefer, flatbed and step deck sit roughly $0.55&ndash;$0.65 a mile above dry van, because the trailer costs more, the freight needs more skill (tarping, securement, temperature control) and fewer trucks compete for it. Second, the <b>range is wider than the average</b>: a $1.20 spread between low and high on dry van means the lane, the day of the week and the negotiation matter as much as the market. Each equipment type has its own live hub &mdash; <a href="dry-van-freight-rates.html">dry van</a>, <a href="reefer-freight-rates.html">reefer</a>, <a href="flatbed-freight-rates.html">flatbed</a>, <a href="hotshot-freight-rates.html">hotshot</a>, <a href="power-only-freight-rates.html">power only</a> &mdash; with lane examples and seasonality.</p>'
+'<p>Two things to read out of that table. First, the <b>equipment premium</b>: reefer, flatbed and step deck sit roughly ' + _d(min(_SP_PREM)) + '&ndash;' + _d(max(_SP_PREM)) + ' a mile above dry van, because the trailer costs more, the freight needs more skill (tarping, securement, temperature control) and fewer trucks compete for it. Second, the <b>range is wider than the average</b>: a ' + _d(_SP_SPREAD) + ' spread between low and high on dry van means the lane, the day of the week and the negotiation matter as much as the market. Each equipment type has its own live hub &mdash; <a href="dry-van-freight-rates.html">dry van</a>, <a href="reefer-freight-rates.html">reefer</a>, <a href="flatbed-freight-rates.html">flatbed</a>, <a href="hotshot-freight-rates.html">hotshot</a>, <a href="power-only-freight-rates.html">power only</a> &mdash; with lane examples and seasonality.</p>'
 +svc_banner('See this week&rsquo;s spot benchmark before you quote or accept',
   'The LoadBoot market rates page shows the carrier rate, the broker buy and sell, and the shipper rate for every equipment type &mdash; free, no login, refreshed as national data lands.',
   'Open live market rates','market-rates.html')+
 
 '<h2 id="spread">The spread: carrier rate, broker margin, shipper rate</h2>'
 '<p>There is never one spot rate on a load; there are at least two. The <b>buy rate</b> is what the broker pays the carrier. The <b>sell rate</b> is what the broker charges the shipper. The gap is the broker&rsquo;s gross margin, and it is where most of the mistrust in spot freight lives &mdash; because the carrier only ever sees one side of it.</p>'
-'<p>On the LoadBoot benchmark the shipper rate sits about <b>15% above the carrier rate</b>. On a 500-mile dry van load at the September 2026 figures, that looks like this:</p>'
+'<p>On the LoadBoot benchmark the shipper rate sits about <b>15% above the carrier rate</b>. On a 500-mile dry van load at the ' + _MR_MONTH + ' figures, that looks like this:</p>'
 '<table class="cmp"><thead><tr><th>Line</th><th>Per mile</th><th>500-mile load</th></tr></thead><tbody>'
-'<tr><td>Shipper pays (sell rate)</td><td>$3.42</td><td><b>$1,710</b></td></tr>'
-'<tr><td>Broker gross margin (~15%)</td><td>$0.45</td><td>$225</td></tr>'
-'<tr><td>Carrier is paid (buy rate)</td><td>$2.97</td><td><b>$1,485</b></td></tr>'
+'<tr><td>Shipper pays (sell rate)</td><td>' + _d(_mrs('Dry Van')) + '</td><td><b>' + _money(_SP_SELL) + '</b></td></tr>'
+'<tr><td>Broker gross margin (~' + str(_MR_MARKUP) + '%)</td><td>' + _d(_mrs('Dry Van') - _mrc('Dry Van')) + '</td><td>' + _money(_SP_SELL - _SP_BUY) + '</td></tr>'
+'<tr><td>Carrier is paid (buy rate)</td><td>' + _d(_mrc('Dry Van')) + '</td><td><b>' + _money(_SP_BUY) + '</b></td></tr>'
 '<tr><td>Carrier operating cost (ATRI $2.20&ndash;$2.30/mi, incl. 100 mi deadhead = 600 mi)</td><td>~$2.25</td><td>~$1,350</td></tr>'
-'<tr><td>Carrier margin before accessorials</td><td>&mdash;</td><td><b>~$135</b></td></tr>'
+'<tr><td>Carrier margin before accessorials</td><td>&mdash;</td><td><b>~' + ('&minus;' if _SP_NET < 0 else '') + _money(abs(_SP_NET)) + '</b></td></tr>'
 '</tbody></table>'
-'<p>Read the bottom row twice. At an average spot rate, on an average lane, with a normal amount of deadhead, the truck clears about $135 on a $1,710 load &mdash; and that is before a single hour of <a href="detention-pay-policy.html">detention</a>, a <a href="lumper-policy.html">lumper</a> or a cancelled pickup. It is why accessorials are not extras in the spot market; they are the margin. A single unpaid two-hour detention at $60/hour, or one <a href="tonu-policy.html">TONU</a> the broker &ldquo;forgets&rdquo;, wipes out the profit on the whole trip.</p>'
-'<p>Broker margins in the wider market are not fixed at 15%. On contract freight they tend to sit in the low-to-mid teens; on spot freight they swing much wider, because the broker committed a sell rate to the shipper before knowing what a truck would cost that day. A broker who priced a load at $3.42 on Monday and can only find a truck at $3.20 on Thursday made 6%. A broker who finds one at $2.60 made 24% &mdash; and the carrier who took $2.60 will never know. The LoadBoot benchmark exists to close exactly that information gap: both sides see the same buy and sell figures before anyone commits. Referral partners who introduce a carrier or a broker earn <a href="agents.html">1% of the freight that follows</a>, which only works if the freight is priced so that everyone stays in business.</p>'
+'<p>Read the bottom row twice. At an average spot rate, on an average lane, with a normal amount of deadhead, the truck ' + ('clears about ' if _SP_NET >= 0 else 'loses about ') + _money(abs(_SP_NET)) + ' on a ' + _money(_SP_SELL) + ' load &mdash; and that is before a single hour of <a href="detention-pay-policy.html">detention</a>, a <a href="lumper-policy.html">lumper</a> or a cancelled pickup. It is why accessorials are not extras in the spot market; they are the margin. A single unpaid two-hour detention at $60/hour, or one <a href="tonu-policy.html">TONU</a> the broker &ldquo;forgets&rdquo;, wipes out the profit on the whole trip.</p>'
+'<p>Broker margins in the wider market are not fixed at 15%. On contract freight they tend to sit in the low-to-mid teens; on spot freight they swing much wider, because the broker committed a sell rate to the shipper before knowing what a truck would cost that day. A broker who priced a load at ' + _d(_mrs('Dry Van')) + ' on Monday and can only find a truck at $3.20 on Thursday made ' + str(_sp_mgn(3.20)) + '%. A broker who finds one at $2.60 made ' + str(_sp_mgn(2.60)) + '% &mdash; and the carrier who took $2.60 will never know. The LoadBoot benchmark exists to close exactly that information gap: both sides see the same buy and sell figures before anyone commits. Referral partners who introduce a carrier or a broker earn <a href="agents.html">1% of the freight that follows</a>, which only works if the freight is priced so that everyone stays in business.</p>'
 
 '<h2 id="drivers">What moves spot market freight rates week to week</h2>'
 '<p>The spot rate is a supply-and-demand price, so anything that changes the number of trucks or the number of loads on a lane moves it. The recurring drivers, in rough order of how much they matter:</p>'
 '<ul>'
 '<li><b>Tender rejections.</b> When contracted carriers start turning down loads, that freight spills into the spot market and spot prices rise. Rejection rates are the earliest signal that the market is tightening &mdash; they move before the rate does.</li>'
 '<li><b>Seasonality.</b> Produce season lifts reefer rates from spring through summer, starting in the south and moving north; construction season lifts flatbed through summer; retail peak lifts dry van from October into December; January is the annual trough for almost everything. Holiday weeks and the annual roadside inspection blitz in May pull trucks off the road and spike short-term rates.</li>'
-'<li><b>Diesel.</b> Fuel moves the all-in spot quote directly through the <a href="fuel-surcharge-trucking.html">fuel surcharge</a> &mdash; roughly $0.23&ndash;$0.47 a mile at $3.85/gal depending on the peg &mdash; and moves the linehaul indirectly, because carriers who cannot cover fuel park trucks, which tightens supply.</li>'
+'<li><b>Diesel.</b> Fuel moves the all-in spot quote directly through the <a href="fuel-surcharge-trucking.html">fuel surcharge</a> &mdash; roughly ' + _fsc_s(2.5, 6.0) + '&ndash;' + _fsc_s(1.25, 5.5) + ' a mile at ' + _DIESEL_S + '/gal depending on the peg &mdash; and moves the linehaul indirectly, because carriers who cannot cover fuel park trucks, which tightens supply.</li>'
 '<li><b>Regional imbalance.</b> Lanes out of freight-heavy regions pay more than lanes into them. Weather, port volumes, a plant shutdown or a harvest can flip a lane&rsquo;s balance in a week.</li>'
 '<li><b>Capacity entering and leaving.</b> Trucks are added when rates are high and cut when rates are low, always with a lag. Carrier exits during a long soft market are what eventually turn it: fewer trucks, same freight, higher spot rate.</li>'
 '<li><b>Day of the week.</b> Loads posted late Friday for a Monday delivery, or on the day of pickup, pay a premium because the pool of available trucks is smallest. The same lane midweek with a two-day lead pays less.</li>'
@@ -3964,13 +4177,13 @@ SPOT_BODY=(
 '<p>An owner-operator lives on spot rates, so the negotiation is the job. The discipline is not &ldquo;get the highest number&rdquo; &mdash; it is <em>know your floor, know the market, and never confuse the two</em>.</p>'
 '<ol>'
 '<li><b>Know your cost per mile before you look at a board.</b> Fuel, truck payment, insurance, maintenance, driver pay (or your own), and the empty miles to reach the pickup. The <a href="cost-per-mile-calculator.html">cost-per-mile calculator</a> does this in a minute; the industry average sits around $2.20&ndash;$2.30 per mile, but yours is the only one that matters.</li>'
-'<li><b>Price every load on all miles, not loaded miles.</b> A $2.97 load with 100 miles of deadhead on a 500-mile haul pays $2.48 for every mile the truck actually turns. That is the number to compare with your cost, and it is why a $2.75 load with no deadhead can beat a $3.10 load with 150.</li>'
+'<li><b>Price every load on all miles, not loaded miles.</b> A ' + _d(_mrc('Dry Van')) + ' load with 100 miles of deadhead on a 500-mile haul pays ' + _d(_SP_ALLMI) + ' for every mile the truck actually turns. That is the number to compare with your cost, and it is why a $2.75 load with no deadhead can beat a $3.10 load with 150.</li>'
 '<li><b>Separate fuel from linehaul.</b> Ask whether the quote is all-in. If it is, subtract the surcharge to see the real linehaul &mdash; that is the part you are negotiating.</li>'
 '<li><b>Negotiate the accessorials before the rate.</b> Detention after two hours, layover, TONU and lumper terms decide whether an average load is profitable. Get them on the <a href="how-to-read-a-rate-confirmation.html">rate confirmation</a> in numbers, not &ldquo;per industry standard.&rdquo;</li>'
-'<li><b>Use the benchmark as a floor, the lane as a ceiling.</b> A <a href="dry-van-freight-rates.html">national dry van average</a> of $2.97 is where the conversation starts on an average lane. A tight headhaul out of a busy region should clear well above it; do not accept the average on a lane that is paying a premium this week.</li>'
+'<li><b>Use the benchmark as a floor, the lane as a ceiling.</b> A <a href="dry-van-freight-rates.html">national dry van average</a> of ' + _d(_mrc('Dry Van')) + ' is where the conversation starts on an average lane. A tight headhaul out of a busy region should clear well above it; do not accept the average on a lane that is paying a premium this week.</li>'
 '<li><b>Walk away from the backhaul trap.</b> Taking a cheap load home is sometimes right and sometimes the most expensive decision of the month. Run the numbers on waiting a day, repositioning fifty miles, or booking a triangle instead of an out-and-back.</li>'
 '</ol>'
-'<p>A good dispatcher does all six of these on every load, which is what a <a href="how-much-does-a-truck-dispatcher-cost.html">flat 5% dispatch fee</a> buys: on a $1,485 load the fee is about $74, and a single well-negotiated accessorial pays it back. Carriers who prefer to run their own board can apply for a <a href="carrier-application.html">LoadBoot carrier account</a> and use the benchmark and Load Score for free.</p>'
+'<p>A good dispatcher does all six of these on every load, which is what a <a href="how-much-does-a-truck-dispatcher-cost.html">flat 5% dispatch fee</a> buys: on a ' + _money(_SP_BUY) + ' load the fee is about ' + _money(_SP_BUY * 0.05) + ', and a single well-negotiated accessorial pays it back. Carriers who prefer to run their own board can apply for a <a href="carrier-application.html">LoadBoot carrier account</a> and use the benchmark and Load Score for free.</p>'
 
 '<h2 id="brokers-shippers">For brokers &amp; shippers: when to go spot, and when not to</h2>'
 '<p>For a shipper, spot freight is not good or bad; it is a tool with a cost profile. It is the right tool for surge volume, one-off moves, lanes too thin to bid, and any week the contract carriers are rejecting tenders. It is the wrong tool for steady, predictable lanes in a rising market, where it will cost more every week and the service will get worse as capacity tightens. A routing guide with a spot backstop &mdash; contracted primaries, a broker or a direct carrier pool for the overflow &mdash; is how most freight actually moves.</p>'
@@ -3981,14 +4194,14 @@ SPOT_BODY=(
 '<li><b>Pay on the record.</b> GPS-stamped arrival and departure times settle detention in minutes; a signed, dated rate confirmation settles everything else. Brokers who pay accessorials promptly get first call on capacity when the market turns &mdash; which is when it matters.</li>'
 '</ul>'
 '<p>Shippers who want to skip the spread entirely can <a href="ship-direct-to-carrier.html">post freight directly to verified carriers</a>; brokers can post to the same carrier network free and see the buy/sell benchmark on every posting. Either way the spot rate is still the number in the room &mdash; the difference is whether both sides can see it.</p>'
-'<p class="small">Rates are national planning references from the LoadBoot market rates snapshot (September 2026), not quotes. Spot rates vary by lane, direction, equipment, season and week &mdash; check the live benchmark and your own rate confirmation before pricing or accepting a load. LoadBoot is a dispatch and carrier-operations platform, not a financial advisor.</p>')
+'<p class="small">Rates are national planning references from the LoadBoot market rates benchmark (as of ' + _MR_ASOF + '), not quotes. Spot rates vary by lane, direction, equipment, season and week &mdash; check the live benchmark and your own rate confirmation before pricing or accepting a load. LoadBoot is a dispatch and carrier-operations platform, not a financial advisor.</p>')
 SPOT_FAQ=[
  ('What is the spot rate in trucking?','The spot rate is the one-time price agreed to move a single load now, set by how many trucks and how many loads are on that lane this week. It is different from a contract rate, which is agreed in advance for a lane over a term of months. Most owner-operators and small fleets run almost entirely on spot rates, which is why their income rises and falls with the freight market.'),
- ('What are current spot market freight rates per mile?','In the September 2026 national snapshot on the LoadBoot market rates page, the spot benchmark paid to the carrier is about $2.97 per mile for dry van, $3.56 reefer, $3.54 flatbed, $3.59 step deck, $2.52 power only and $2.35 hotshot, with shippers paying roughly 15% more once a broker margin is added. Those figures move weekly and vary widely by lane and direction &mdash; check the live page and the per-equipment hubs before quoting or accepting.'),
+ ('What are current spot market freight rates per mile?','In the national benchmark on the LoadBoot market rates page (as of ' + _MR_ASOF + '), the spot benchmark paid to the carrier is about ' + _d(_mrc('Dry Van')) + ' per mile for dry van, ' + _d(_mrc('Reefer')) + ' reefer, ' + _d(_mrc('Flatbed')) + ' flatbed, ' + _d(_mrc('Step Deck')) + ' step deck, ' + _d(_mrc('Power Only')) + ' power only and ' + _d(_mrc('Hotshot')) + ' hotshot, with shippers paying roughly ' + str(_MR_MARKUP) + '% more once a broker margin is added. Those figures move weekly and vary widely by lane and direction &mdash; check the live page and the per-equipment hubs before quoting or accepting.'),
  ('Are spot rates higher than contract rates?','Sometimes. In a tight market, when trucks are scarce, spot rates rise above contract rates and contracted carriers start rejecting tenders, which pushes even more freight into the spot market. In a soft market, when trucks are plentiful, spot rates fall below contract and brokers cover freight cheaply. The two trade places over the freight cycle, which is why shippers keep a contract routing guide with a spot backstop.'),
  ('Where do you find spot rates for loads?','There is no single official number. Load boards show asking rates (usually low), paid subscription indexes aggregate real invoices by lane, free national benchmarks like the LoadBoot market rates page show the carrier, broker buy/sell and shipper rate by equipment, and your own past rate confirmations are the best data for the lanes you actually run. Use at least two sources on the same lane before you negotiate.'),
- ('What is the difference between a spot rate and the linehaul?','A spot quote is usually all-in: it bundles the linehaul (the price for the truck, driver and trailer) with the fuel surcharge and sometimes accessorials. The linehaul is the part you negotiate. An all-in $3.10 per mile with a $0.43 fuel surcharge inside it is a $2.67 linehaul &mdash; always ask whether a quote is all-in before comparing it with another.'),
- ('How do freight brokers make money on spot freight?','A broker sells the load to the shipper at one rate and buys a truck at a lower rate; the gap is the gross margin. On the LoadBoot benchmark that gap is about 15% (for example $3.42 to the shipper versus $2.97 to the carrier on dry van). In the wider spot market it swings from single digits to well over 20%, because the broker commits the sell rate before knowing what a truck will cost that day.')]
+ ('What is the difference between a spot rate and the linehaul?','A spot quote is usually all-in: it bundles the linehaul (the price for the truck, driver and trailer) with the fuel surcharge and sometimes accessorials. The linehaul is the part you negotiate. An all-in $3.10 per mile with a ' + _fsc_s(1.25, 6.0) + ' fuel surcharge inside it is a ' + _d(3.10 - round(_fsc(1.25, 6.0), 2)) + ' linehaul &mdash; always ask whether a quote is all-in before comparing it with another.'),
+ ('How do freight brokers make money on spot freight?','A broker sells the load to the shipper at one rate and buys a truck at a lower rate; the gap is the gross margin. On the LoadBoot benchmark that gap is about ' + str(_MR_MARKUP) + '% (for example ' + _d(_mrs('Dry Van')) + ' to the shipper versus ' + _d(_mrc('Dry Van')) + ' to the carrier on dry van). In the wider spot market it swings from single digits to well over 20%, because the broker commits the sell rate before knowing what a truck will cost that day.')]
 PREMIUM_ARTICLES.add('spot-market-freight-rates.html')
 BLOGPOSTS += [
  ('spot-market-freight-rates.html',
@@ -4040,47 +4253,40 @@ TLR_BODY=(
 'block of time and distance.</p>'
 '<p>Truckload rates are quoted two ways, and confusing them is the most expensive mistake in the business:</p>'
 '<ul>'
-'<li><b>Per mile (RPM).</b> A rate per loaded mile &mdash; $2.97 a mile, say. This is how carriers, brokers and dispatchers talk to '
+'<li><b>Per mile (RPM).</b> A rate per loaded mile &mdash; ' + _d(_mrc('Dry Van')) + ' a mile, say. This is how carriers, brokers and dispatchers talk to '
 'each other, because it is the only number that compares a 300-mile run with an 1,100-mile run.</li>'
-'<li><b>Flat / all-in / linehaul.</b> One number for the whole move &mdash; $2,376 for the load. This is how most shippers and most '
+'<li><b>Flat / all-in / linehaul.</b> One number for the whole move &mdash; ' + _money(_TL_BUY) + ' for the 800-mile load. This is how most shippers and most '
 'load board postings talk. It is the same rate wearing different clothes: divide by the loaded miles and you are back to RPM.</li>'
 '</ul>'
 '<p>Neither number means anything until you know whether it is <b>all-in</b> (linehaul plus fuel surcharge, sometimes plus '
-'accessorials) or <b>linehaul only</b>. An all-in $3.40 a mile with a $0.43 '
-'<a href="fuel-surcharge-trucking.html">fuel surcharge</a> buried inside it is a $2.97 linehaul, and the two are completely '
+'accessorials) or <b>linehaul only</b>. An all-in ' + _d(_mrc('Dry Van') + round(_fsc(1.25, 6.0), 2)) + ' a mile with a $0.43 '
+'<a href="fuel-surcharge-trucking.html">fuel surcharge</a> buried inside it is a ' + _d(_mrc('Dry Van')) + ' linehaul, and the two are completely '
 'different businesses. Ask the question out loud before you compare two quotes.</p>'
 +svc_banner('Check your lane before you answer the phone',
   'Live truckload rates per mile by equipment &mdash; what the carrier is paid, what brokers buy and sell at, what shippers pay.',
   'See live market rates','market-rates.html')+
 '<h2 id="now">Full truckload rates per mile right now (2026)</h2>'
 '<p>Below is the national truckload benchmark LoadBoot publishes and keeps current on the '
-'<a href="market-rates.html">live market rates page</a> &mdash; a September 2026 snapshot. Two columns matter: what the '
+'<a href="market-rates.html">live market rates page</a> &mdash; the figures as of ' + _MR_ASOF + ', read when this page was built. Two columns matter: what the '
 '<b>carrier</b> is paid for the truck, and what the <b>shipper</b> pays to have the load moved. The gap between them is the '
-'broker&rsquo;s gross margin, which on this benchmark runs about 15%.</p>'
+'broker&rsquo;s gross margin, which on this benchmark runs about ' + str(_MR_MARKUP) + '% on top of the carrier rate.</p>'
 '<table class="cmp"><thead><tr><th>Equipment</th><th>Carrier RPM</th><th>Shipper RPM</th><th>Typical range</th></tr></thead><tbody>'
-'<tr><td><a href="dry-van-freight-rates.html">Dry van</a></td><td><b>$2.97</b></td><td>$3.42</td><td>$2.38&ndash;$3.56</td></tr>'
-'<tr><td><a href="reefer-freight-rates.html">Reefer</a></td><td><b>$3.56</b></td><td>$4.09</td><td>$2.85&ndash;$4.27</td></tr>'
-'<tr><td><a href="flatbed-freight-rates.html">Flatbed</a></td><td><b>$3.54</b></td><td>$4.07</td><td>$2.83&ndash;$4.25</td></tr>'
-'<tr><td><a href="step-deck-freight-rates.html">Step deck</a></td><td><b>$3.59</b></td><td>$4.13</td><td>$2.87&ndash;$4.31</td></tr>'
-'<tr><td><a href="conestoga-freight-rates.html">Conestoga</a></td><td><b>$3.64</b></td><td>$4.19</td><td>$2.91&ndash;$4.37</td></tr>'
-'<tr><td><a href="power-only-freight-rates.html">Power only</a></td><td><b>$2.52</b></td><td>$2.90</td><td>$1.80&ndash;$3.50</td></tr>'
-'<tr><td><a href="box-truck-freight-rates.html">Box truck</a></td><td><b>$2.52</b></td><td>$2.90</td><td>$2.02&ndash;$3.02</td></tr>'
-'<tr><td><a href="hotshot-freight-rates.html">Hotshot</a></td><td><b>$2.35</b></td><td>$2.70</td><td>$1.80&ndash;$3.50</td></tr>'
++''.join(_mrrow(_e, '<a href="%s-freight-rates.html">%s</a>' % (_e.lower().replace(' ', '-'), _e[0] + _e[1:].lower())) for _e in _MR_EQS)+
 '</tbody></table>'
-'<p style="color:var(--muted);font-size:.95rem">National benchmarks, September 2026 snapshot. Lane, season, reload density and how badly the load needs to move '
+'<p style="color:var(--muted);font-size:.95rem">National benchmarks as of ' + _MR_ASOF + '. Lane, season, reload density and how badly the load needs to move '
 'will push a real quote anywhere inside &mdash; and sometimes outside &mdash; the range. Always check the '
 '<a href="market-rates.html">live page</a> rather than a number you wrote down last month.</p>'
 '<p>One line to hold onto: the American Transportation Research Institute puts the average marginal cost of operating a truck at '
 'roughly <b>$2.20&ndash;$2.30 a mile</b>. Put that next to the dry van carrier column and the shape of the business is obvious &mdash; '
-'a $2.97 all-in dry van rate is not a $2.97 profit. Run your own number in the '
+'a ' + _d(_mrc('Dry Van')) + ' all-in dry van rate is not a ' + _d(_mrc('Dry Van')) + ' profit. Run your own number in the '
 '<a href="cost-per-mile-calculator.html">cost per mile calculator</a> before you decide what a load is worth to you.</p>'
 '<h2 id="built">How a truckload rate is built: linehaul, fuel, accessorials</h2>'
 '<p>Every truckload rate, however it is quoted, is three things stacked on top of each other.</p>'
 '<ol>'
 '<li><b>Linehaul.</b> The price of the truck, the trailer and the driver for the distance. This is the part that is actually '
 'negotiable, and the part that moves with supply and demand.</li>'
-'<li><b>Fuel surcharge.</b> A formula, not an opinion: (diesel price &minus; a pegged base) &divide; assumed MPG. At around $3.85 a '
-'gallon that lands near <b>$0.23&ndash;$0.47 a mile</b> depending on the peg and the MPG assumption. It is designed to move when '
+'<li><b>Fuel surcharge.</b> A formula, not an opinion: (diesel price &minus; a pegged base) &divide; assumed MPG. At around ' + _DIESEL_S + ' a '
+'gallon that lands near <b>' + _fsc_s(2.5, 6.0) + '&ndash;' + _fsc_s(1.25, 5.5) + ' a mile</b> depending on the peg and the MPG assumption. It is designed to move when '
 'diesel moves, which is exactly why it should be stated separately &mdash; see the '
 '<a href="fuel-surcharge-trucking.html">fuel surcharge guide</a>.</li>'
 '<li><b>Accessorials.</b> The money that gets earned after the linehaul is agreed and lost after the invoice is sent: '
@@ -4108,18 +4314,18 @@ TLR_BODY=(
 'numbers rather than asking rates, are in the <a href="spot-market-freight-rates.html">spot market freight rates guide</a>, and the '
 'week-by-week direction is tracked in the <a href="freight-market-reports.html">weekly freight market reports</a>.</p>'
 '<h2 id="cost">What a full truckload costs on a real lane</h2>'
-'<p>Numbers beat adjectives. Here is an 800-mile dry van full truckload at the September 2026 benchmark, with a realistic 12% '
+'<p>Numbers beat adjectives. Here is an 800-mile dry van full truckload at the benchmark as of ' + _MR_ASOF + ', with a realistic 12% '
 'deadhead to get to the pickup.</p>'
 '<table class="cmp"><thead><tr><th>Line</th><th>Amount</th></tr></thead><tbody>'
-'<tr><td>Shipper pays (800 mi &times; $3.42)</td><td><b>$2,736</b></td></tr>'
-'<tr><td>Carrier is paid (800 mi &times; $2.97)</td><td><b>$2,376</b></td></tr>'
-'<tr><td>Broker gross margin</td><td>$360 (13.2%)</td></tr>'
+'<tr><td>Shipper pays (800 mi &times; ' + _d(_mrs('Dry Van')) + ')</td><td><b>' + _money(_TL_SELL) + '</b></td></tr>'
+'<tr><td>Carrier is paid (800 mi &times; ' + _d(_mrc('Dry Van')) + ')</td><td><b>' + _money(_TL_BUY) + '</b></td></tr>'
+'<tr><td>Broker gross margin</td><td>' + _money(_TL_SELL - _TL_BUY) + (' (%.1f%%)' % ((_TL_SELL - _TL_BUY) / _TL_SELL * 100)) + '</td></tr>'
 '<tr><td>Carrier cost, 896 mi incl. deadhead @ $2.25</td><td>&minus;$2,016</td></tr>'
-'<tr><td><b>Carrier gross before fixed costs</b></td><td><b>$360</b></td></tr>'
+'<tr><td><b>Carrier gross before fixed costs</b></td><td><b>' + ('&minus;' if _TL_GROSS < 0 else '') + _money(abs(_TL_GROSS)) + '</b></td></tr>'
 '<tr><td>One unpaid 3-hour detention @ $60/hr</td><td>&minus;$180</td></tr>'
 '</tbody></table>'
 '<p>Read the last two rows together. On an average lane, at an average rate, with an ordinary amount of deadhead, a single unpaid '
-'detention event takes <b>half</b> the gross on the whole trip. A cancelled load with no '
+'detention event takes ' + _tl_share() + '. A cancelled load with no '
 '<a href="tonu-policy.html">TONU</a> clause takes all of it and the day as well. This is the entire argument for treating '
 'accessorials as priced terms rather than favours &mdash; and for knowing your own cost per mile before the phone rings, not after '
 'the load is delivered.</p>'
@@ -4167,11 +4373,11 @@ TLR_BODY=(
   'Apply as a carrier','carrier-application.html'))
 
 TLR_FAQ=[
- ('What is the average truckload rate per mile in 2026?','It depends entirely on equipment. On the September 2026 national benchmark the carrier is paid about $2.97 a mile on dry van, $3.56 on reefer, $3.54 on flatbed, $3.59 on step deck and $2.52 on power only, with shipper-side rates running roughly 15% higher. Ranges are wide &mdash; dry van alone spans about $2.38 to $3.56 &mdash; because lane, season and reload density move a real quote more than the national average does. Check the live market rates page for the current figure rather than an average you read once.'),
- ('How much does a full truckload cost?','Multiply the loaded miles by the shipper rate per mile for your equipment. An 800-mile dry van full truckload at the September 2026 benchmark of $3.42 a mile costs about $2,736 all-in; the carrier moving it is typically paid around $2,376. Accessorials sit on top of that &mdash; detention after free time, lumper fees, layover if the load is held overnight &mdash; which is why they should be named as numbers on the rate confirmation before the truck moves.'),
+ ('What is the average truckload rate per mile in 2026?','It depends entirely on equipment. On the national benchmark as of ' + _MR_ASOF + ' the carrier is paid about ' + _d(_mrc('Dry Van')) + ' a mile on dry van, ' + _d(_mrc('Reefer')) + ' on reefer, ' + _d(_mrc('Flatbed')) + ' on flatbed, ' + _d(_mrc('Step Deck')) + ' on step deck and ' + _d(_mrc('Power Only')) + ' on power only, with shipper-side rates running roughly ' + str(_MR_MARKUP) + '% higher. Ranges are wide &mdash; dry van alone spans about ' + _d(_MR_LIVE['Dry Van']['low']) + ' to ' + _d(_MR_LIVE['Dry Van']['high']) + ' &mdash; because lane, season and reload density move a real quote more than the national average does. Check the live market rates page for the current figure rather than an average you read once.'),
+ ('How much does a full truckload cost?','Multiply the loaded miles by the shipper rate per mile for your equipment. An 800-mile dry van full truckload at the benchmark of ' + _d(_mrs('Dry Van')) + ' a mile (as of ' + _MR_ASOF + ') costs about ' + _money(_TL_SELL) + ' all-in; the carrier moving it is typically paid around ' + _money(_TL_BUY) + '. Accessorials sit on top of that &mdash; detention after free time, lumper fees, layover if the load is held overnight &mdash; which is why they should be named as numbers on the rate confirmation before the truck moves.'),
  ('What is the difference between a truckload rate and an LTL rate?','A truckload rate buys the whole trailer for one shipment, priced per mile or as one flat amount for the move. An LTL rate buys space on a trailer shared with other shippers, priced on weight, freight class, density and the number of terminals the shipment passes through. Under roughly 6 pallets LTL is usually cheaper; past about 12 pallets, or when the freight is fragile, high-value or time-critical, truckload usually wins on total cost because there is no terminal handling and no cross-docking.'),
  ('Are truckload spot rates higher than contract rates?','Sometimes. Truckload spot rates are priced for one truck on one lane this week, so they rise above contract rates when capacity is tight and fall below them when it is loose. Contract rates trade some of that upside for certainty on both sides. Neither is reliably higher over a full cycle, which is why most stable small fleets run a base of contract or dedicated volume and take spot freight on top of it.'),
- ('Does the truckload rate include fuel?','Only if the quote is all-in, and you should always ask. Most spot truckload quotes bundle the linehaul and the fuel surcharge into one number per mile. At around $3.85 a gallon the fuel component is roughly $0.23 to $0.47 a mile depending on the pegged base and the assumed MPG, so an all-in $3.40 a mile can be a $2.97 linehaul. Comparing an all-in quote with a linehaul-only quote is the most common way carriers underprice a load.'),
+ ('Does the truckload rate include fuel?','Only if the quote is all-in, and you should always ask. Most spot truckload quotes bundle the linehaul and the fuel surcharge into one number per mile. At around ' + _DIESEL_S + ' a gallon the fuel component is roughly ' + _fsc_s(2.5, 6.0) + ' to ' + _fsc_s(1.25, 5.5) + ' a mile depending on the pegged base and the assumed MPG, so an all-in ' + _d(_mrc('Dry Van') + round(_fsc(1.25, 6.0), 2)) + ' a mile can be a ' + _d(_mrc('Dry Van')) + ' linehaul. Comparing an all-in quote with a linehaul-only quote is the most common way carriers underprice a load.'),
  ('Who pays detention on a truckload shipment?','The party that booked the truck &mdash; normally the broker or the shipper &mdash; pays detention once free time expires, but only if the rate confirmation says so and only if the wait is documented. Two hours of free time per stop is the common standard, with billing after that; LoadBoot&rsquo;s published standard is $60 an hour after 2 free hours, pre-agreed on every posting and claimable from the trip record with GPS arrive and depart stamps already attached. Without a written clause and timestamped evidence, most detention invoices are simply never paid.')]
 
 BLOGPOSTS += [
@@ -4212,7 +4418,7 @@ EP27_TOC=[('rule','What actually changes in 2027'),('prebuy','The pre-buy is rea
 EP27_BODY=(
 '<p>The EPA&rsquo;s 2027 emissions rule is doing what emissions rules have always done: pulling truck orders forward. Fleets are buying now so they do not have to buy later. The obvious question for a one-truck or five-truck carrier is whether to do the same thing.</p>'
 '<p>The less obvious question &mdash; and the one that actually decides it &mdash; is whether a small carrier can join a pre-buy at all, and what happens to the used market if it cannot.</p>'
-'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Short version: the pre-buy is documented and large. FTR reported <b>30,500 Class 8 net orders in June 2026, up 241% year over year</b>, with 2026 build slots nearly gone. But those slots are being bought by fleets ordering in volume. For a carrier buying one truck, the decision is mostly a <b>used-truck</b> decision &mdash; and the cost of a 2027 truck is still being rewritten by EPA as of this month.</div></div>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Short version: the pre-buy is documented and large. FTR reported <b>' + fact('stat.class8.orders_line', '30,500 Class 8 net orders in June 2026, up 241% year over year', 'should-i-buy-a-truck-before-2027-epa-rule') + '</b>, with 2026 build slots nearly gone. But those slots are being bought by fleets ordering in volume. For a carrier buying one truck, the decision is mostly a <b>used-truck</b> decision &mdash; and the cost of a 2027 truck is still being rewritten by EPA as of this month.</div></div>'
 
 '<h2 id="rule">What actually changes in 2027</h2>'
 '<p>Model year 2027 tightens the NOx limit sharply and adds new low-load and idle test cycles, which is why manufacturers are adding aftertreatment heating hardware. That part is settled. The American Trucking Associations, National Tank Truck Carriers, the Truckload Carriers Association and 49 state trucking associations petitioned to push the standard to 2031; EPA rejected the delay and kept the model-year 2027 start date, as Commercial Carrier Journal reported.</p>'
@@ -4232,7 +4438,7 @@ EP27_BODY=(
 '<p>What is realistically available to a one-to-five truck operation right now is a unit already sitting on a lot, a fleet-spec order someone else released, or a used truck. Two of those three are the used market.</p>'
 
 +svc_banner('Make the truck you already have earn its keep',
-  'Loadboot books, negotiates and manages freight for owner-operators and small fleets at a flat 5% &mdash; no long-term contracts, no monthly fee, and every load priced against your cost per mile.',
+  'LoadBoot books, negotiates and manages freight for owner-operators and small fleets at a flat 5% &mdash; no long-term contracts, no monthly fee, and every load priced against your cost per mile.',
   'Apply as a carrier','carrier-application.html')+
 
 '<h2 id="used">The used market is where this lands</h2>'
@@ -4277,7 +4483,7 @@ EP27_BODY=(
 '<p>Nobody knows the final cost of a 2027 truck, because EPA is still writing it. Nobody knows where used prices go, because that depends on how much of the pre-buy actually gets built and how freight rates behave while it does. Nobody knows whether the post-pre-buy slump arrives on schedule or gets overwritten by the economy the way 2009 overwrote it.</p>'
 '<p>What is knowable is your side of it: what your truck is worth, what it is going to cost you to keep, what a payment does to your break-even rate, and how many bad weeks you can absorb before a payment becomes a problem. Those are the numbers that decide this, and they are the only ones in the whole discussion that you control.</p>'
 '<p>The pre-buy is a fleet event. Your decision is not. Price it off your own books.</p>'
-'<p class="small">Loadboot is a dispatch and carrier-operations platform, not a financial advisor or lender, and nothing here is a recommendation to buy, sell or finance equipment. Figures are attributed to the sources named; regulations, prices and market conditions change.</p>')
+'<p class="small">LoadBoot is a dispatch and carrier-operations platform, not a financial advisor or lender, and nothing here is a recommendation to buy, sell or finance equipment. Figures are attributed to the sources named; regulations, prices and market conditions change.</p>')
 EP27_FAQ=[
  ('Will a 2027 truck really cost more?','Almost certainly something, but the published estimates are far apart and the rule is still moving. EPA&rsquo;s own rulemaking put the technology cost at $4,827 per truck in 2017 dollars, about $6,243 in 2024 dollars. Joel Morrow of Alpha Drivers Transportation ballparked emission-reduction technology on current trucks at $20,000 to $40,000, per Overdrive. And in July 2026 EPA proposed rolling back the extended warranty and useful-life requirements, which it estimated could save up to $6,000 per diesel vehicle. Anyone quoting you one firm number today is quoting a number the rulemaking has not finished setting.'),
  ('Was the 2027 EPA rule delayed?','No. ATA, the Truckload Carriers Association, National Tank Truck Carriers and 49 state trucking associations asked EPA to push the standard to 2031, and EPA declined, keeping the model-year 2027 start. What EPA did propose in July 2026 was a set of amendments &mdash; dropping the extended emissions warranty back to 100,000 miles or five years, removing DEF derates in favor of visible or audible warnings, and delaying the extended useful-life requirement to model year 2030. The comment period closes 29 August 2026.'),
@@ -4303,10 +4509,10 @@ THUMBS['should-i-buy-a-truck-before-2027-epa-rule.html']=EP27_FEAT
 READTIME['should-i-buy-a-truck-before-2027-epa-rule.html']=9
 
 bcards = ''.join(blog_card(fn,t,ex,READTIME.get(fn,5)) for fn,t,d,ex,bl in BLOGPOSTS)
-blog_body = svc_hero('The Loadboot Blog','Practical guides for owner-operators and carriers &mdash; pricing, authority, finding loads, and running a more profitable truck.')
-blog_body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Guides &amp; resources</div><h2>Latest from Loadboot</h2></div><div class="bloggrid">%s</div></div></section>' % bcards
+blog_body = svc_hero('The LoadBoot Blog','Practical guides for owner-operators and carriers &mdash; pricing, authority, finding loads, and running a more profitable truck.')
+blog_body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Guides &amp; resources</div><h2>Latest from LoadBoot</h2></div><div class="bloggrid">%s</div></div></section>' % bcards
 blog_body += final_cta()
-page('blog.html','Loadboot Blog: Dispatch Tips &amp; Guides | Carriers','Practical truck dispatch guides for owner-operators and new-authority carriers: pricing, finding loads, dispatcher vs broker, and more.','blog.html', blog_body)
+page('blog.html','LoadBoot Blog: Dispatch Tips &amp; Guides | Carriers','Practical truck dispatch guides for owner-operators and new-authority carriers: pricing, finding loads, dispatcher vs broker, and more.','blog.html', blog_body)
 
 # ---------- LEGAL PAGES ----------
 # Privacy is a flagship page now, not a wall of text: built by privacy_module.py from what
@@ -4347,7 +4553,7 @@ ls_faqs = [
  ('How do I decide if a load is worth taking?','Start with your true cost per mile, then subtract every mile you will drive &mdash; loaded and empty &mdash; plus the time it ties up your truck. If the load does not clear your costs with a healthy margin, you either negotiate or pass. The tool does this math for you in seconds.'),
  ('Does deadhead really matter that much?','Yes. Empty miles to the pickup burn fuel and hours but earn nothing, so they quietly drag down your real rate per mile. A load that looks like $2.40 a mile can fall under $2.00 once deadhead is counted &mdash; which is exactly what the Load Score reveals.'),
  ('What is a good profit margin on a freight load?','Most healthy owner-operators aim for at least a 20&ndash;30% margin over their all-in cost. Set your target in the tool and it will tell you the lowest rate you should accept and suggest a counter-offer to get there.'),
- ('Can Loadboot just find good loads for me?','Yes &mdash; that is the whole point of a dispatcher. We screen loads against numbers like these, negotiate the rate, and keep your truck on profitable freight. Flat 5%, no long-term contracts.'),
+ ('Can LoadBoot just find good loads for me?','Yes &mdash; that is the whole point of a dispatcher. We screen loads against numbers like these, negotiate the rate, and keep your truck on profitable freight. Flat 5%, no long-term contracts.'),
 ]
 ls_faq_html, ls_faq_schema = faq_block(ls_faqs)
 ls_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px">
@@ -4355,18 +4561,18 @@ ls_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px">
 <p style="margin-top:14px">Every owner-operator faces the same question a dozen times a day: <em>should I take this load?</em> A broker throws a rate at you, the clock is ticking, and you have about thirty seconds to decide. Most drivers fall back on rate per mile &mdash; but that single number hides more than it shows. The Load Score tool above turns the offer into an honest answer by weighing everything that actually decides whether a load makes you money.</p>
 <h3 style="margin-top:26px">Why rate per mile alone will trick you</h3>
 <p>A load that reads $2.40 per mile sounds great until you count the 150 empty miles you will run just to reach the pickup. Those deadhead miles burn fuel and hours but pay nothing, so your real rate per mile drops fast. The same load can also strand you in a weak freight market where your next load runs cheap or empty. Time matters too: a load that ties up your truck for three days at a so-so rate can be worth less than a tighter one you can turn in a day. None of that shows up in the rate per mile &mdash; but all of it shows up in your bank account.</p>
-<h3 style="margin-top:22px">What the Loadboot Load Score measures</h3>
+<h3 style="margin-top:22px">What the LoadBoot Load Score measures</h3>
 <p>Instead of a single number, the Load Score blends five things real dispatchers weigh on every load: your profit margin after all-in costs, your true rate per mile across loaded <strong>and</strong> deadhead miles, how badly empty miles are dragging the rate, your profit per day, and the strength of the freight market where the load drops you. It rolls those into a score from 0 to 100 and a plain verdict &mdash; <strong>take it, negotiate, or pass</strong> &mdash; so you are not doing trucking math in your head at a truck stop.</p>
 <h3 style="margin-top:22px">Counter the offer &mdash; do not just accept or walk</h3>
 <p>The most profitable owner-operators rarely accept the first number, and they rarely hang up either. They counter. That is why the tool also gives you a suggested counter-offer: the exact total and rate per mile you should ask for to hit your target margin. Knowing that number before you call the broker back is the difference between hoping a load pays and knowing it does. If you want to sharpen the inputs first, run your numbers through our free <a href="tools.html">cost-per-mile and profit calculators</a>.</p>
 <h3 style="margin-top:22px">Let a dispatcher take this off your plate</h3>
-<p>This tool is free to use as often as you like &mdash; no signup, no catch. But if you would rather drive than screen loads all day, that is exactly what we do. A dedicated Loadboot dispatcher scores loads like this, negotiates the rate, and keeps your truck on freight that actually pays &mdash; flat 5%, no long-term contracts. <a href="contact.html">Get started in two minutes</a> or <a href="services.html">see everything we handle</a>.</p>
+<p>This tool is free to use as often as you like &mdash; no signup, no catch. But if you would rather drive than screen loads all day, that is exactly what we do. A dedicated LoadBoot dispatcher scores loads like this, negotiates the rate, and keeps your truck on freight that actually pays &mdash; flat 5%, no long-term contracts. <a href="contact.html">Get started in two minutes</a> or <a href="services.html">see everything we handle</a>.</p>
 </div></section>'''
 ls_body = svc_hero('Should You Take This Load?','Paste in any load offer and get an instant score, a clear take / negotiate / pass verdict, and a smart counter-offer &mdash; built on your real cost per mile. Free, no signup.')
-ls_body += '<section style="padding-top:10px"><div class="wrap">' + LS_HTML + '<p class="center" style="margin-top:22px;color:var(--muted);font-size:.9rem">Nothing you type is saved or sent anywhere &mdash; it all runs right in your browser.</p></div></section>'
+ls_body += '<section style="padding-top:10px"><div class="wrap">' + LS_HTML.replace('value="3.85"', 'value="%.2f"' % _DIESEL) + '<p class="center" style="margin-top:22px;color:var(--muted);font-size:.9rem">Nothing you type is saved or sent anywhere &mdash; it all runs right in your browser.</p></div></section>'
 ls_body += ls_seo + ls_faq_html + final_cta() + '<script>' + LS_JS + '</script>'
 ls_howto = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to decide whether to take a freight load","step":[{"@type":"HowToStep","name":"Enter the offer","text":"Enter what the load pays, the loaded miles, and the deadhead miles to the pickup."},{"@type":"HowToStep","name":"Add your costs","text":"Enter your all-in cost per mile and how many days the load will take."},{"@type":"HowToStep","name":"Read the score and verdict","text":"The Load Score returns a 0-100 score and a take, negotiate, or pass verdict based on profit, deadhead, time, and market."},{"@type":"HowToStep","name":"Counter the rate","text":"Use the suggested counter-offer to negotiate a rate that hits your target margin before you accept."}]}</script>'
-ls_app = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Load Score","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free tool that tells truckers and owner-operators whether a freight load is worth taking, with a take-negotiate-pass verdict and a suggested counter-offer."}</script>'
+ls_app = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"LoadBoot Load Score","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free tool that tells truckers and owner-operators whether a freight load is worth taking, with a take-negotiate-pass verdict and a suggested counter-offer."}</script>'
 page('load-score.html','Should You Take This Load? Free Load Score Tool for Truckers','Free tool that scores any freight load and tells you to take, negotiate, or pass — with a counter-offer based on your cost per mile.','load-score.html', ls_body, ls_app  + ls_faq_schema)
 
 # ---------- FREE TOOLS ----------
@@ -4376,11 +4582,11 @@ tools_faqs = [
  ('How do I calculate profit on a load?','Enter what the load pays, the total miles, your fuel price and MPG, plus any tolls or expenses. The Load Profit Calculator instantly shows your net profit and your rate per mile.'),
  ('What is a good rate per mile for owner-operators?','It depends on your costs, but most owner-operators need at least $1.80 to $2.00 per mile just to break even. Use the Cost-Per-Mile and Break-Even tools above to find your own number.'),
  ('Why does my cost per mile matter so much?','Your cost per mile is the foundation of every load decision. Any rate below it loses money. The calculator above turns your monthly fixed and variable costs into one number you can judge any rate against.'),
- ('Can Loadboot just handle all of this for me?','Yes &mdash; that is exactly what we do. We negotiate rates, plan lanes, and keep your truck loaded so you are not crunching these numbers on every load. Flat 5%, no long-term contracts.'),
+ ('Can LoadBoot just handle all of this for me?','Yes &mdash; that is exactly what we do. We negotiate rates, plan lanes, and keep your truck loaded so you are not crunching these numbers on every load. Flat 5%, no long-term contracts.'),
 ]
 tools_faq_html, tools_faq_schema = faq_block(tools_faqs)
-tools_intro = '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free trucker tools</div><h2>Free dispatch &amp; profit calculators for truckers</h2><p class="lead center" style="margin:0 auto">No login. No signup. Just fast, accurate calculators that owner-operators and fleets actually use to price loads, cut costs, and protect every mile &mdash; built by the dispatch team at Loadboot.</p></div></div></section>'
-tools_section = '<section style="padding-top:0"><div class="wrap">' + TOOLS_HTML + '</div></section>'
+tools_intro = '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free trucker tools</div><h2>Free dispatch &amp; profit calculators for truckers</h2><p class="lead center" style="margin:0 auto">No login. No signup. Just fast, accurate calculators that owner-operators and fleets actually use to price loads, cut costs, and protect every mile &mdash; built by the dispatch team at LoadBoot.</p></div></div></section>'
+tools_section = '<section style="padding-top:0"><div class="wrap">' + TOOLS_HTML.replace('value="3.85"', 'value="%.2f"' % _DIESEL) + '</div></section>'
 tools_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px">
 <h2>Know your numbers before you take the load</h2>
 <p style="margin-top:14px">Every profitable trucking business runs on a few simple numbers: what a load pays, what it actually costs to run those miles, and what is left over for you. The free calculators above put all of them in one place &mdash; no spreadsheet, no signup &mdash; so you can make a confident call on any load in seconds.</p>
@@ -4391,11 +4597,11 @@ tools_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px
 <h3 style="margin-top:22px">Fuel, take-home, detention &amp; deadhead</h3>
 <p>Diesel is the biggest variable cost on the road, so the <a href="tools.html#fuel">fuel cost calculator</a> helps you price any lane in seconds. The <a href="tools.html#takehome">owner-operator take-home calculator</a> shows what really lands in your pocket after fuel and fees, the <a href="tools.html#detention">detention pay calculator</a> tells you what a shipper owes for wasting your day, and the <a href="tools.html#deadhead">deadhead calculator</a> reveals how empty miles quietly shrink your real rate.</p>
 <h3 style="margin-top:22px">Want a dispatcher to handle the numbers for you?</h3>
-<p>These tools are free to use forever. But if you would rather spend your time driving than crunching rates, that is exactly what we do. <a href="contact.html">Get started with Loadboot</a> and a dedicated dispatcher will find the loads, run these numbers, and negotiate the rate for you &mdash; flat 5%, no long-term contracts. <a href="services.html">See all of our services</a>.</p>
+<p>These tools are free to use forever. But if you would rather spend your time driving than crunching rates, that is exactly what we do. <a href="contact.html">Get started with LoadBoot</a> and a dedicated dispatcher will find the loads, run these numbers, and negotiate the rate for you &mdash; flat 5%, no long-term contracts. <a href="services.html">See all of our services</a>.</p>
 </div></section>'''
 tools_body = svc_hero('Free Tools for Truckers &amp; Owner-Operators','Price loads, know your true cost per mile, and stop leaving money on the table &mdash; with the same calculators our dispatchers use every day. Free, no signup, instant results.')
 tools_body += LSP + tools_intro + tools_section + tools_seo + tools_faq_html + final_cta() + '<script>' + TOOLS_JS + '</script>'
-tools_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Free Trucker Tools","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home, detention and deadhead calculators for truck drivers and owner-operators."}</script>' + tools_faq_schema
+tools_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"LoadBoot Free Trucker Tools","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home, detention and deadhead calculators for truck drivers and owner-operators."}</script>' + tools_faq_schema
 page('tools.html','Trucking Calculators — Free Cost Per Mile & Rate Tools | LoadBoot','Free trucking calculators with no signup: cost per mile, profit per load, rate per mile, fuel, break-even and detention pay. Instant answers, no login.','tools.html', tools_body, tools_schema)
 
 
@@ -4411,7 +4617,7 @@ CPMC_CALC = ('<section style="padding-top:0"><div class="wrap">'
  '<div class="tk-in"><label for="x_permits">Plates, permits, ELD / month ($)</label><input type="number" id="x_permits" value="250" oninput="cpmc()"></div>'
  '<div class="tk-in"><label for="x_park">Parking &amp; other fixed / month ($)</label><input type="number" id="x_park" value="300" oninput="cpmc()"></div>'
  '<div class="tk-in"><label for="x_miles">Miles you run / month</label><input type="number" id="x_miles" value="9500" oninput="cpmc()"></div>'
- '<div class="tk-in"><label for="x_price">Diesel price ($/gal)</label><input type="number" id="x_price" value="3.85" step="0.01" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_price">Diesel price ($/gal)</label><input type="number" id="x_price" value="' + ('%.2f' % _DIESEL) + '" step="0.01" oninput="cpmc()"></div>'
  '<div class="tk-in"><label for="x_mpg">Truck MPG</label><input type="number" id="x_mpg" value="6.5" step="0.1" oninput="cpmc()"></div>'
  '<div class="tk-in"><label for="x_maint">Maintenance / mile ($)</label><input type="number" id="x_maint" value="0.20" step="0.01" oninput="cpmc()"></div>'
  '<div class="tk-in"><label for="x_tires">Tires / mile ($)</label><input type="number" id="x_tires" value="0.04" step="0.01" oninput="cpmc()"></div>'
@@ -4457,7 +4663,7 @@ CPMC_BODY_MID = ('<section class="bg-soft"><div class="wrap" style="max-width:88
  '</tbody></table>'
  '<p style="margin-top:14px">Plug your own numbers into the calculator above &mdash; averages are for sanity-checking, not for pricing your loads. Compare the result against <a href="market-rates.html">this week&rsquo;s market rates per mile</a> to see which lanes actually clear your break-even.</p>'
  '<h2>Six ways to cut your cost per mile</h2>'
- '<p><b>1. Kill deadhead</b> &mdash; empty miles carry full cost and zero revenue; one round-trip lane plan can cut CPM more than any fuel card. <b>2. Slow down 3&ndash;5 mph</b> &mdash; typically worth 0.5+ MPG, which is $0.04&ndash;$0.06/mi at today&rsquo;s diesel prices. <b>3. Shop insurance yearly</b> &mdash; renewals drift up; quotes pull them back. <b>4. Run more of the miles you already pay for</b> &mdash; fixed costs per mile fall as monthly miles rise. <b>5. Take the per diem deduction</b> &mdash; it does not change CPM, but <a href="truck-driver-per-diem-2026.html">$64 per night away</a> changes what you keep. <b>6. Stop paying for load-hunting time</b> &mdash; hours on load boards are unpaid work; a <a href="how-much-does-a-truck-dispatcher-cost.html">flat-fee dispatcher</a> costs 5% and gives you those hours back.</p>'
+ '<p><b>1. Kill deadhead</b> &mdash; empty miles carry full cost and zero revenue; one round-trip lane plan can cut CPM more than any fuel card. <b>2. Slow down 3&ndash;5 mph</b> &mdash; typically worth 0.5+ MPG, which is $0.04&ndash;$0.06/mi at today&rsquo;s diesel prices. <b>3. Shop insurance yearly</b> &mdash; renewals drift up; quotes pull them back. <b>4. Run more of the miles you already pay for</b> &mdash; fixed costs per mile fall as monthly miles rise. <b>5. Take the per diem deduction</b> &mdash; it does not change CPM, but <a href="truck-driver-per-diem-2026.html">' + _PD_NET_S + ' per night away</a> changes what you keep. <b>6. Stop paying for load-hunting time</b> &mdash; hours on load boards are unpaid work; a <a href="how-much-does-a-truck-dispatcher-cost.html">flat-fee dispatcher</a> costs 5% and gives you those hours back.</p>'
  '</div></div></section>')
 
 RELATED['cost-per-mile-calculator.html'] = [('tools.html','All Free Trucking Calculators'),('truckload-freight-rates.html','Truckload Freight Rates'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('market-rates.html','Market Rates Per Mile'),('how-much-does-a-truck-dispatcher-cost.html','Dispatcher Cost Guide'),('truck-driver-per-diem-2026.html','Per Diem 2026 Guide'),('carrier-application.html','Apply as Carrier'),('should-i-buy-a-truck-before-2027-epa-rule.html','Buy a Truck Before the 2027 EPA Rule?')]
@@ -4472,14 +4678,14 @@ _cpmc_faq_html, _cpmc_faq_sch = faq_block([
  ('Does this calculator include driver pay?',
   'Driver pay is an optional field. If you drive your own truck, leave it at zero and treat profit as your pay. If you put a company driver in the seat, enter their per-mile wage so the cost per mile reflects it.'),
  ('Is this trucking calculator really free?',
-  'Yes - free, no signup, no login, and it runs entirely in your browser. It is the same math our dispatch team uses when pricing loads for Loadboot carriers. We also have seven more free calculators covering profit per load, fuel, break-even, take-home pay and detention.'),
+  'Yes - free, no signup, no login, and it runs entirely in your browser. It is the same math our dispatch team uses when pricing loads for LoadBoot carriers. We also have seven more free calculators covering profit per load, fuel, break-even, take-home pay and detention.'),
 ])
 
 cpmc_body = svc_hero('Trucking Cost Per Mile Calculator','Enter your real costs &mdash; truck payment, insurance, fuel, maintenance &mdash; and see your true cost per mile, your break-even rate, and what any load actually pays you. Free, instant, no signup.')
 cpmc_body += CPMC_CALC + CPMC_BODY_TOP
-cpmc_body += '<section style="padding-top:0"><div class="wrap">' + svc_banner('Know your number. Then let us beat it.','Loadboot dispatchers price every load against YOUR cost per mile &mdash; flat 5%, no long-term contracts, no forced dispatch.','See how dispatch works','how-it-works.html') + '</div></section>'
+cpmc_body += '<section style="padding-top:0"><div class="wrap">' + svc_banner('Know your number. Then let us beat it.','LoadBoot dispatchers price every load against YOUR cost per mile &mdash; flat 5%, no long-term contracts, no forced dispatch.','See how dispatch works','how-it-works.html') + '</div></section>'
 cpmc_body += CPMC_BODY_MID + _cpmc_faq_html + final_cta()
-cpmc_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Trucking Cost Per Mile Calculator","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free cost per mile calculator for truckers: itemize fixed and variable costs to get true cost per mile, break-even rate and profit per mile."}</script>' + _cpmc_faq_sch
+cpmc_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"LoadBoot Trucking Cost Per Mile Calculator","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free cost per mile calculator for truckers: itemize fixed and variable costs to get true cost per mile, break-even rate and profit per mile."}</script>' + _cpmc_faq_sch
 page('cost-per-mile-calculator.html','Trucking Cost Per Mile Calculator (2026) &mdash; Free CPM &amp; Rates Per Mile | LoadBoot'.replace('&mdash;','—').replace('&amp;','&'),'Free trucking cost per mile calculator: itemize your fixed and variable costs and get your true cost per mile, break-even rate and profit per mile instantly. See how your CPM compares against published industry benchmarks. No signup, no login.','tools.html', cpmc_body, cpmc_schema)
 
 # ======================================================================
@@ -4542,8 +4748,8 @@ _faq_items = [
  ('Does LoadBoot handle maintenance, payroll, fuel cards and IFTA?', 'The fleet back office includes service logs with next-due dates, payroll entries built from delivered trips, EFS/Comdata/WEX fuel-card CSV import, per-trip P&amp;L with cost per mile, IFTA state miles from the GPS trail and per-diem tracking. See <a href="fleet-management.html">fleet management</a>.'),
  ('Is there an API for TMS integration?', 'Yes &mdash; the <a href="/app/developer/">developer portal</a> issues API keys and lets you register your own https webhook endpoints &mdash; load, trip, document and delivery events are then delivered automatically, with retries. Details on <a href="integrations.html">integrations</a>. Details on <a href="integrations.html">integrations</a>.'),
  ('Who runs LoadBoot&rsquo;s operations behind the scenes?', 'A staffed operations desk we document publicly: verifications approved same-day, claims checked against server-side GPS evidence, payment receipts verified by humans &mdash; maker and checker never the same account. See the <a href="command-center.html">Command Center page</a>.'),
- ('How much does Loadboot dispatch cost?', 'A flat 5% of the linehaul on loads we book for you &mdash; no sign-up fee, no monthly minimum, and no long-term contract. You only pay when we actually put money on your truck.'),
- ('Do I keep my own authority?', 'Yes. You keep your MC/DOT authority, your insurance and your broker relationships. Loadboot works on your behalf; we never take over your authority.'),
+ ('How much does LoadBoot dispatch cost?', 'A flat 5% of the linehaul on loads we book for you &mdash; no sign-up fee, no monthly minimum, and no long-term contract. You only pay when we actually put money on your truck.'),
+ ('Do I keep my own authority?', 'Yes. You keep your MC/DOT authority, your insurance and your broker relationships. LoadBoot works on your behalf; we never take over your authority.'),
  ('Is there a contract or cancellation fee?', 'No long-term contract and no cancellation fee. You can pause or stop any time. We keep your business by earning it, not by locking you in.'),
  ('What equipment types do you dispatch?', 'Dry van, reefer, flatbed, step deck, hotshot, power only and box truck / expedited. If you run mixed equipment, we handle that too.'),
  ('How fast can I get started?', 'Most carriers are set up the same day. Create your profile, send us your authority and insurance, and a dispatcher gets to work on your lanes.'),
@@ -4816,8 +5022,8 @@ bt += _sec('How it works', 'From sign-up to your first expedited run', _cards([
 ]))
 bt += _btfaq_html
 bt += final_cta()
-page('box-truck-dispatch.html', 'Box Truck &amp; Expedited Dispatch Service | Loadboot',
-     'Box truck, cargo van and expedited freight dispatch. Loadboot keeps your smaller equipment loaded with LTL, final-mile and hot loads. Flat 5%, no long-term contracts.',
+page('box-truck-dispatch.html', 'Box Truck &amp; Expedited Dispatch Service | LoadBoot',
+     'Box truck, cargo van and expedited freight dispatch. LoadBoot keeps your smaller equipment loaded with LTL, final-mile and hot loads. Flat 5%, no long-term contracts.',
      'services.html', bt, _btfaq_sch)
 
 
@@ -4978,8 +5184,8 @@ page('ifta-fuel-tax.html','IFTA Fuel Tax Guide — Quarterly Returns & Audits | 
 _ag_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"Independent Agent — Trucking Marketplace (Commission, Remote)","description":"Refer brokers, carriers and shippers to LoadBoot and earn 1% of every delivered load your referred clients move — recurring, uncapped, paid monthly. The software does the dispatch: live load board, GPS tracking, automatic invoicing and payments. You own the relationships.","datePosted":"2026-07-12","validThrough":"2027-07-12T23:59:59-05:00","employmentType":"CONTRACTOR","hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":0,"maxValue":10000}},"directApply":true}</script>'
 
 # ---- Careers ----
-car = svc_hero('Careers at Loadboot', 'We are building an honest dispatch company for the people who keep America moving. If that sounds like you, we would love to talk.')
-car += '<section><div class="wrap prose reveal"><h2>Why work here</h2><p>Loadboot exists to give carriers a dispatcher who actually has their back. We hire people who take that seriously &mdash; dispatchers, carrier-success reps, and builders who care about doing right by the driver on the other end of the phone.</p></div></section>'
+car = svc_hero('Careers at LoadBoot', 'We are building an honest dispatch company for the people who keep America moving. If that sounds like you, we would love to talk.')
+car += '<section><div class="wrap prose reveal"><h2>Why work here</h2><p>LoadBoot exists to give carriers a dispatcher who actually has their back. We hire people who take that seriously &mdash; dispatchers, carrier-success reps, and builders who care about doing right by the driver on the other end of the phone.</p></div></section>'
 # ---- OPEN ROLES — the Agent role is live and featured ----
 car += ('<section class="bg-soft" id="roles"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Open roles</div><h2>Two ways to join &mdash; we&rsquo;re hiring right now</h2></div>'
  '<div class="grid g2 reveal" style="max-width:980px;margin:0 auto">'
@@ -5038,7 +5244,7 @@ car += ('<section id="dispatcher-job"><div class="wrap prose reveal" style="max-
  '<p><a href="/app/agent/?join=dispatcher" class="btn btn-primary">Create your account &amp; apply as a dispatcher &rarr;</a></p>'
  '</div></section>')
 car += '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Life at LoadBoot</div><h2>What the work is actually like</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#127919;</div><h3>Real stakes, real people</h3><p>Every shift you keep a driver earning and a shipper informed. The feedback loop is measured in hours, not quarters.</p></div><div class="card reveal"><div class="icon">&#128200;</div><h3>Modern tooling</h3><p>Our Command Center automates the busywork — matching, documents, reminders — so your judgment goes where software cannot.</p></div><div class="card reveal"><div class="icon">&#127758;</div><h3>Remote-friendly</h3><p>Dispatch runs on outcomes, not seat time. Reliable coverage matters; your zip code does not.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Teams we hire for</div><h2>Where you could fit</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128222;</div><h3>Dispatch &amp; operations</h3><p>Load hunting, rate negotiation, trip babysitting, exception handling. Trucking experience wins; hustle and honesty are non-negotiable.</p></div><div class="card reveal"><div class="icon">&#129309;</div><h3>Carrier &amp; partner success</h3><p>Onboarding carriers, verifying brokers, keeping accounts healthy and honest.</p></div><div class="card reveal"><div class="icon">&#128187;</div><h3>Product &amp; engineering</h3><p>The platform behind it all — dispatch tooling, portals, automation and analytics.</p></div></div></div></section>'
-car += lead_form('careers', 'Apply to Loadboot', 'Tell us about yourself and what you would want to own here.',
+car += lead_form('careers', 'Apply to LoadBoot', 'Tell us about yourself and what you would want to own here.',
     [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True), ('phone', 'Phone', 'tel', False),
      ('company', 'Current / most recent role', 'text', False),
      ('message', 'What are you great at? Share a link to your CV or LinkedIn.', 'textarea', True)],
@@ -5159,8 +5365,8 @@ page('sms.html', 'Text Messages from LoadBoot \u2014 SMS Opt-In, Keywords and Di
  'contact.html', _sms, _sms_schema)
 
 # ---- Partner Program ----
-pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.', tert_label='How it works', tert_href='how-it-works.html', cta_href='/app/partner/', cta_label='Open the Partner Portal &rarr;', cta2_href='create-broker-account.html', cta2_label='Create a broker account')
-pp += m_zigzag('Partner with Loadboot', 'A network you can rely on', [
+pp = svc_hero('LoadBoot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.', tert_label='How it works', tert_href='how-it-works.html', cta_href='/app/partner/', cta_label='Open the Partner Portal &rarr;', cta2_href='create-broker-account.html', cta2_label='Create a broker account')
+pp += m_zigzag('Partner with LoadBoot', 'A network you can rely on', [
  ('shieldcheck', 'Vetted carriers', 'Work with carriers whose authority, insurance and compliance are actively tracked &mdash; fewer surprises, cleaner loads.'),
  ('doccheck', 'Clean documentation', 'Rate confirmations, BOLs and PODs handled properly and delivered on time, so billing and claims stay simple.'),
  ('headset', 'One point of contact', 'A professional dispatch team that answers the phone and communicates proactively on every load.'),
@@ -5177,16 +5383,16 @@ pp += lead_form('partner_inquiry', 'Become a partner', 'Tell us about your freig
      ('message', 'Lanes, freight type, and volume', 'textarea', False)],
     'Request partnership', 'Thanks — our partner team will reach out.')
 pp += m_gradcta('Already a partner?', 'Your loads, documents and live shipment status are waiting in the Partner Portal.', 'Open Partner Portal &rarr;', '/app/partner/', grad='linear-gradient(135deg,#111827 0%,#1f2937 55%,#312e81 100%)', btncolor='#818cf8', btntext='#fff')
-page('partners.html', 'Partner Program for Brokers, Shippers &amp; Facilities | Loadboot',
-     'Partner with Loadboot for a reliable, vetted carrier network and clean, on-time documentation. Built for brokers, shippers and facilities.',
+page('partners.html', 'Partner Program for Brokers, Shippers &amp; Facilities | LoadBoot',
+     'Partner with LoadBoot for a reliable, vetted carrier network and clean, on-time documentation. Built for brokers, shippers and facilities.',
      'partners.html', pp)
 
 # ---- Dedicated Carrier page (premium, ~14 sections) ----
 def _prose(h2, *paras):
     return '<section><div class="wrap prose reveal"><h2>%s</h2>%s</div></section>' % (h2, ''.join('<p>%s</p>' % p for p in paras))
 cp = svc_hero('Truck Dispatch Built Around Your Truck',
-    'Loadboot is a dispatcher in your corner &mdash; we find the loads, negotiate the rate, handle the paperwork and keep you moving, so you can focus on driving. Flat 5%, no long-term contracts, you keep your authority.')
-cp += _sec('Why carriers choose Loadboot', 'A dispatcher that actually has your back', _cards([
+    'LoadBoot is a dispatcher in your corner &mdash; we find the loads, negotiate the rate, handle the paperwork and keep you moving, so you can focus on driving. Flat 5%, no long-term contracts, you keep your authority.')
+cp += _sec('Why carriers choose LoadBoot', 'A dispatcher that actually has your back', _cards([
     ('&#128666;', 'We keep your truck loaded', 'Dedicated dispatchers work your lanes and preferences so you spend less time hunting boards and more time earning.'),
     ('&#128176;', 'Better rates, negotiated for you', 'We know the lanes and we counter &mdash; you get a rate that reflects what the freight is really worth.'),
     ('&#129309;', 'You keep your authority', 'Your MC/DOT, your insurance, your broker relationships. We work on your behalf; we never take over your authority.'),
@@ -5245,7 +5451,7 @@ cp += m_rail('Getting started', 'On your lanes the same day', '', [
  ('bolt', 'Start getting loads', 'A dispatcher goes to work on your lanes right away. No long-term contract, cancel anytime.'),
 ], accent='#ea580c')
 _cfaq_html, _cfaq_sch = faq_block([
-    ('What does Loadboot cost carriers?', 'A flat 5% of the linehaul on loads we book &mdash; no sign-up fee, no monthly minimum, no long-term contract. You only pay when we put money on your truck.'),
+    ('What does LoadBoot cost carriers?', 'A flat 5% of the linehaul on loads we book &mdash; no sign-up fee, no monthly minimum, no long-term contract. You only pay when we put money on your truck.'),
     ('Do I keep my own authority and insurance?', 'Yes. You keep your MC/DOT, your insurance and your broker relationships. We work on your behalf and never take over your authority.'),
     ('Do you work with new-authority carriers?', 'Absolutely &mdash; new-authority carriers are a core part of who we serve. We help you land early loads and build credibility.'),
     ('What equipment do you dispatch?', 'Dry van, reefer, flatbed, step deck, hotshot, power-only and box truck / expedited.'),
@@ -5260,7 +5466,7 @@ page('carriers.html', 'Truck Dispatch Service for Carriers — Flat 5% | LoadBoo
 # ---- Dedicated Broker page (~15 sections; brokers only) ----
 bp = svc_hero(cta_href='/app/partner/', cta_label='Post a load &rarr;', cta2_href='create-broker-account.html', cta2_label='How verification works', tert_label='How it works', tert_href='how-it-works.html', h1='A Reliable Carrier Network for Brokers', lead=
     'Post a load and reach vetted carriers whose authority, insurance and compliance are actively tracked &mdash; with clean, on-time documentation and one professional point of contact on every load.')
-bp += _sec('Why brokers work with Loadboot', 'Fewer surprises, cleaner loads', _cards([
+bp += _sec('Why brokers work with LoadBoot', 'Fewer surprises, cleaner loads', _cards([
     ('&#129309;', 'Vetted carriers', 'Carrier authority, insurance and compliance are actively monitored &mdash; you cover freight with less risk.'),
     ('&#128203;', 'Clean documentation', 'Rate confirmations, BOLs and PODs handled properly and returned on time, so billing and claims stay simple.'),
     ('&#128222;', 'One point of contact', 'A dispatch team that answers the phone and communicates proactively from tender to POD.'),
@@ -5312,7 +5518,7 @@ bp += lead_form('partner_inquiry', 'Become a broker partner', 'Tell us about you
      ('message', 'Lanes, freight type and typical volume', 'textarea', False)],
     'Request partnership', 'Thanks — our partner team will reach out.')
 _bfaq_html, _bfaq_sch = faq_block([
-    ('Who can post loads on Loadboot?', 'Approved broker partners. Because moving freight from shippers requires a broker license in the US, load posting is for licensed brokers &mdash; carrier and driver accounts are separate.'),
+    ('Who can post loads on LoadBoot?', 'Approved broker partners. Because moving freight from shippers requires a broker license in the US, load posting is for licensed brokers &mdash; carrier and driver accounts are separate.'),
     ('How are carriers vetted?', 'We actively track carrier authority, insurance and compliance, and only carriers who pass hard eligibility checks are offered your loads.'),
     ('Can I integrate with my TMS?', 'Yes &mdash; subscribe to load, trip, document and delivery events via webhooks and our API on approved endpoints.'),
     ('What visibility do I get?', 'Permitted live load and trip status, pickup and delivery progress, ETAs, document status and open exceptions &mdash; without exposing private carrier data.'),
@@ -5373,8 +5579,8 @@ REF_HERO = ('<section style="padding:104px 0 96px;background:linear-gradient(135
  '</div></section>')
 ref = REF_HERO
 ref += _sec('Who it is for', 'Pick the path that fits you', _cards([
-    ('&#128667;', 'Carriers &amp; drivers', 'Already rolling with Loadboot? Introduce another owner-operator or fleet. There is no limit on how many you can refer, and no cost to you or to them.'),
-    ('&#127970;', 'Dispatch shops &amp; agencies', 'Run a book of carriers you cannot fully cover? Refer the overflow to Loadboot and earn on the freight they haul &mdash; while they keep their own authority.'),
+    ('&#128667;', 'Carriers &amp; drivers', 'Already rolling with LoadBoot? Introduce another owner-operator or fleet. There is no limit on how many you can refer, and no cost to you or to them.'),
+    ('&#127970;', 'Dispatch shops &amp; agencies', 'Run a book of carriers you cannot fully cover? Refer the overflow to LoadBoot and earn on the freight they haul &mdash; while they keep their own authority.'),
     ('&#127908;', 'Creators &amp; influencers', 'Trucking audience on YouTube, TikTok or a newsletter? Become an affiliate partner &mdash; no client roster required, just a genuine recommendation.'),
 ], 'g3'))
 ref += '<section class="section"><div class="wrap"><div class="reveal" style="background:linear-gradient(120deg,#10223B,#0d2f56);border-radius:18px;padding:26px 30px;color:#fff">'
@@ -5387,12 +5593,12 @@ ref += m_rail('How it works', 'Four honest steps',
  'From your first share to your first payout &mdash; each step recorded, nothing owed until it is confirmed in writing.', [
  ('badge', 'Join the program', 'Create your account at loadboot.com/app/agent/ &mdash; your personal code and share link are live the moment verification clears. One link works for carriers, brokers and shippers.'),
  ('megaphone', 'Share it', 'Send your link, or introduce a carrier directly. Each carrier is credited to the first partner who referred them &mdash; recorded once, no double-claims.'),
- ('truck', 'They get rolling', 'Your referral runs their own freight with Loadboot at a flat 5% &mdash; no long-term contract. You earn only when they actually haul and we actually get paid.'),
- ('wallet', 'You get paid', 'Your reward is calculated from Loadboot&rsquo;s fee on that freight, held briefly to clear cancellations, then released for payout. A human approves every payment.'),
+ ('truck', 'They get rolling', 'Your referral runs their own freight with LoadBoot at a flat 5% &mdash; no long-term contract. You earn only when they actually haul and we actually get paid.'),
+ ('wallet', 'You get paid', 'Your reward is calculated from LoadBoot&rsquo;s fee on that freight, held briefly to clear cancellations, then released for payout. A human approves every payment.'),
 ], accent='#059669')
 ref += m_dark('Multi-level, minus the games', 'A share of our fee &mdash; not a pyramid',
- 'Nothing to buy, nothing marked up, and Loadboot always keeps the majority of its own fee.', [
- ('handshake', 'Paid from our cut', 'Rewards come out of the 5% dispatch fee Loadboot already earns. The carrier never pays more, and the load rate is never marked up to fund a referral.'),
+ 'Nothing to buy, nothing marked up, and LoadBoot always keeps the majority of its own fee.', [
+ ('handshake', 'Paid from our cut', 'Rewards come out of the 5% dispatch fee LoadBoot already earns. The carrier never pays more, and the load rate is never marked up to fund a referral.'),
  ('layers', 'Up to five levels', 'If a partner you brought in later refers someone themselves, you can earn a smaller share down the chain &mdash; up to five levels deep, with each level thinner than the last.'),
  ('scale', 'Terms being finalized', 'Exact percentages and payout rules are being finalized with legal before the program opens publicly. Apply now to join the early list &mdash; we confirm your terms in writing before anything is owed or paid.'),
 ], accent='#34d399', numbered=False)
@@ -5411,8 +5617,8 @@ ref += lead_form('referral', 'Apply as a referral partner', 'For agencies, dispa
      ('message', 'How would you like to work with us?', 'textarea', False)],
     'Apply to partner', 'Thanks — we&rsquo;ll review and reach out with your partner terms.')
 _rfaq_html, _rfaq_sch = faq_block([
-    ('Does it cost the carrier anything?', 'No. Referral rewards are paid entirely out of Loadboot&rsquo;s own 5% dispatch fee. The carrier pays the same flat 5% whether they were referred or not, and the load rate is never inflated to cover a referral.'),
-    ('When do I actually get paid?', 'You earn when a carrier you referred hauls freight through Loadboot and we collect our fee on it. Each reward is held for a short period to clear cancellations and adjustments, then released as payable. A person approves every payout &mdash; money never moves automatically.'),
+    ('Does it cost the carrier anything?', 'No. Referral rewards are paid entirely out of LoadBoot&rsquo;s own 5% dispatch fee. The carrier pays the same flat 5% whether they were referred or not, and the load rate is never inflated to cover a referral.'),
+    ('When do I actually get paid?', 'You earn when a carrier you referred hauls freight through LoadBoot and we collect our fee on it. Each reward is held for a short period to clear cancellations and adjustments, then released as payable. A person approves every payout &mdash; money never moves automatically.'),
     ('What is "multi-level"?', 'If someone you refer becomes a partner and refers others, you can earn a smaller share further down that chain &mdash; up to five levels, each thinner than the one above it. It is a thank-you funded by our fee, not a recruitment scheme, and there is nothing to buy to participate.'),
     ('Do I need my own carriers to be an affiliate?', 'No. Creators and influencers can join as affiliates with no client roster &mdash; you simply share your link with a trucking audience. Agencies and dispatch shops with their own carriers can refer overflow instead.'),
     ('Can I refer more than one carrier?', 'Yes &mdash; there is no cap. Each carrier is credited to the first partner who referred them, so introduce as many as you like.'),
@@ -5578,20 +5784,20 @@ resr += _sec('Accessorial policies — the LoadBoot standard', 'What every load 
  ('&#128170;', 'Driver Assist', '$75 typical when the driver does the dock&rsquo;s work &mdash; agreed in writing first. <a href="driver-assist-policy.html">Full guide &rarr;</a>'),
  ('&#128337;', 'FCFS', 'First come, first served &mdash; and the detention clock still starts at check-in. <a href="fcfs-policy.html">Full guide &rarr;</a>'),
 ], 'g3'))
-page('resources.html', 'Free Trucking &amp; Dispatch Resources for Carriers | Loadboot',
-     'Free carrier resources from Loadboot: the Load Score tool, trucking calculators, dispatch guides, FAQ and pricing &mdash; all in one place.',
+page('resources.html', 'Free Trucking &amp; Dispatch Resources for Carriers | LoadBoot',
+     'Free carrier resources from LoadBoot: the Load Score tool, trucking calculators, dispatch guides, FAQ and pricing &mdash; all in one place.',
      'resources.html', resr)
 
 # ---- Case Studies (clearly-labelled illustrative scenarios) ----
-cs = svc_hero('Example Dispatch Scenarios', 'Illustrative examples of how Loadboot dispatch works in practice. These are worked examples for education &mdash; not testimonials or guarantees of specific results.')
+cs = svc_hero('Example Dispatch Scenarios', 'Illustrative examples of how LoadBoot dispatch works in practice. These are worked examples for education &mdash; not testimonials or guarantees of specific results.')
 cs += _sec('Worked examples', 'How the math tends to work', _cards([
     ('&#128666;', 'New-authority owner-operator', 'A carrier fresh off getting their authority struggles to get broker callbacks. A dispatcher works established relationships to land steady lanes, and coaches them through their first rate cons and PODs. <em>Illustrative example.</em>'),
     ('&#10052;', 'Reefer running empty backhauls', 'A reefer operator deadheading home half the week. The dispatcher targets round-trip lanes to cut empty miles and lift effective rate-per-mile. <em>Illustrative example.</em>'),
     ('&#128230;', 'Box truck chasing hot loads', 'An expedited box truck wasting hours self-searching. Dispatch surfaces time-critical runs so the truck stays loaded on the routes that pay. <em>Illustrative example.</em>'),
 ]))
-cs += '<section class="bg-soft"><div class="wrap prose reveal center" style="text-align:center"><p style="color:var(--muted)">These scenarios are illustrative and for education only. Loadboot does not publish fabricated testimonials or promise specific earnings.</p><p><a href="contact.html" class="btn btn-primary">Talk to a dispatcher &rarr;</a></p></div></section>'
-page('case-studies.html', 'Example Truck Dispatch Scenarios | Loadboot',
-     'Illustrative, educational examples of how Loadboot dispatch works for owner-operators, reefer and box-truck carriers. Worked examples, not guarantees.',
+cs += '<section class="bg-soft"><div class="wrap prose reveal center" style="text-align:center"><p style="color:var(--muted)">These scenarios are illustrative and for education only. LoadBoot does not publish fabricated testimonials or promise specific earnings.</p><p><a href="contact.html" class="btn btn-primary">Talk to a dispatcher &rarr;</a></p></div></section>'
+page('case-studies.html', 'Example Truck Dispatch Scenarios | LoadBoot',
+     'Illustrative, educational examples of how LoadBoot dispatch works for owner-operators, reefer and box-truck carriers. Worked examples, not guarantees.',
      'case-studies.html', cs)
 
 # ---- Security / Trust ----
@@ -5604,7 +5810,7 @@ page('security.html','Is LoadBoot Safe? Security, Fraud &amp; Phishing Protectio
      'security.html', sec, sec_schema)
 
 # ---- System Status ----
-st = svc_hero('System Status', 'Live status for the Loadboot website, carrier portal, driver app and API. We publish issues here honestly.')
+st = svc_hero('System Status', 'Live status for the LoadBoot website, carrier portal, driver app and API. We publish issues here honestly.')
 _status_row = lambda name, sid, last: '<div style="display:flex;justify-content:space-between;padding:12px 0;%s"><span>%s</span><b id="%s" style="color:#64748b">Checking&hellip;</b></div>' % ('' if last else 'border-bottom:1px solid var(--border)', name, sid)
 st += ('<section><div class="wrap" style="max-width:820px"><div class="card reveal" style="text-align:left">'
        '<h3 style="margin-bottom:6px">Current status</h3><p id="lbStatusOverall" style="color:#64748b;margin-bottom:14px;font-size:.92rem">Running a live check&hellip;</p>'
@@ -5623,8 +5829,8 @@ st += ('<section><div class="wrap" style="max-width:820px"><div class="card reve
        'var t=setTimeout(function(){done(false);},7000);'
        'fetch(api,{method:"GET",headers:{"apikey":apikey}}).then(function(r){clearTimeout(t);done(r.status>0&&r.status<500);}).catch(function(){clearTimeout(t);done(false);});'
        '})();</script>')
-page('status.html', 'Loadboot System Status',
-     'Live operational status for the Loadboot website, carrier portal, driver app and API.',
+page('status.html', 'LoadBoot System Status',
+     'Live operational status for the LoadBoot website, carrier portal, driver app and API.',
      'status.html', st)
 
 # ---- Developer API (public docs; the page every syndication partner asks for) ----
@@ -5776,7 +5982,7 @@ _MR_JS = ("(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "';"
   ".then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(!d||!d.length)return;"
   "var tb=document.getElementById('mrRows');if(!tb)return;var asof='';"
   "tb.innerHTML=d.map(function(b){asof=b.as_of||asof;return '<tr><td><b>'+b.equipment+'</b><div class=\"mr-sub\">$'+Number(b.low).toFixed(2)+'–'+Number(b.high).toFixed(2)+'/mi range</div></td>'"
-  "+'<td class=\"mr-c\">$'+Number(b.carrier_rpm).toFixed(2)+'</td>'"
+  "+'<td class=\"mr-c\">$'+Number(b.carrier_rpm).toFixed(2)+(window.LBT?'<div>'+LBT(b)+'</div>':'')+'</td>'"
   "+'<td class=\"mr-b\">$'+Number(b.broker_buy_rpm).toFixed(2)+' / $'+Number(b.broker_sell_rpm).toFixed(2)+'</td>'"
   "+'<td class=\"mr-s\">$'+Number(b.shipper_rpm).toFixed(2)+'</td></tr>';}).join('');"
   "var el2=document.getElementById('mrAsOf');if(el2&&asof)el2.textContent='Updated '+asof+'.';"
@@ -5837,7 +6043,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '<p>Three blended layers, honestly labeled: <b>(1) Real LoadBoot bookings</b> \u2014 actual accepted rates on our marketplace, the strongest signal, refreshed continuously; <b>(2) Published national benchmarks</b> \u2014 published national industry indices, refreshed as new data lands and always shown with their as-of date; <b>(3) Confidence labels</b> \u2014 every lane result says whether it comes from lane-level bookings (HIGH), platform-wide data (MEDIUM) or the national benchmark (LOW). A rate is a guide, not a quote \u2014 but you always know exactly where it came from.</p></section>'
 
 '<section class="wrap mrx-sec"><h2>Freight rate FAQs</h2>'
-'<div class="mrx-faq"><h3>What is the average trucking rate per mile right now?</h3><p>National spot averages currently run roughly $2.00\u2013$2.70/mi for dry van, $2.15\u2013$3.40 for reefer and $2.20\u2013$3.70 for flatbed \u2014 the live table above shows this week\u2019s numbers by equipment and market side.</p></div>'
+'<div class="mrx-faq"><h3>What is the average trucking rate per mile right now?</h3><p>' + _MR_FAQ_AVG_HTML + '</p></div>'
 '<div class="mrx-faq"><h3>What is a good rate per mile for trucking in 2026?</h3><p>A good rate beats your all-in operating cost (~$1.80\u2013$2.00/mi for most owner-operators) by at least 20%. Practical minimums: $2.00\u2013$2.50/mi dry van, $2.50+ reefer and flatbed, $2.00+ hotshot.</p></div>'
 '<div class="mrx-faq"><h3>How much do freight brokers charge shippers?</h3><p>Brokers typically add a 12\u201318% margin on top of the carrier rate. That is why the shipper column above runs higher than the carrier column on the same lane \u2014 both sides are shown so everyone negotiates informed.</p></div>'
 '<div class="mrx-faq"><h3>What is the difference between spot rates and contract rates?</h3><p>Spot rates price one load, today, on the open market \u2014 they move daily with supply and demand. Contract rates lock a lane for 3\u201312 months and typically sit below spot in hot markets and above it in soft markets.</p></div>'
@@ -5853,13 +6059,13 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 
 
 _mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":['
-  '{"@type":"Question","name":"What is the average trucking rate per mile right now?","acceptedAnswer":{"@type":"Answer","text":"National spot averages currently run roughly $2.00-$2.70 per mile for dry van, $2.15-$3.40 for reefer and $2.20-$3.70 for flatbed, depending on lane and season. The live table on this page shows the date each benchmark was last updated."}},'
+  '{"@type":"Question","name":"What is the average trucking rate per mile right now?","acceptedAnswer":{"@type":"Answer","text":' + json.dumps(_MR_FAQ_AVG_TXT) + '}},'
   '{"@type":"Question","name":"What is the difference between shipper, broker and carrier rates?","acceptedAnswer":{"@type":"Answer","text":"The carrier rate is what the truck is paid. Brokers buy capacity at the carrier rate and sell the shipment to shippers with a typical 12-18% margin, so shipper rates run higher than carrier rates on the same lane."}},'
   '{"@type":"Question","name":"What is the minimum rate per mile a carrier should accept?","acceptedAnswer":{"@type":"Answer","text":"Most owner-operators need $2.00-$2.50 per mile for dry van and $2.50+ for reefer or flatbed to cover an all-in operating cost of roughly $1.80-$2.00 per mile plus margin."}}]}</script>'
-  '<script>' + _MR_JS + '</script>')
+  + _MR_TREND_JS + '<script>' + _MR_JS + '</script>')
 
 page('market-rates.html', 'Truckload Rates Per Mile 2026 — Carrier, Broker &amp; Shipper | LoadBoot',
-     'Current truckload freight rates per mile, September 2026: dry van $3.03, reefer $3.66, flatbed $3.62 to the carrier. Carrier, broker, shipper sides, dated.',
+     'Current truckload freight rates per mile, ' + _MR_MONTH + ': dry van ' + _mrd(_mrc('Dry Van')) + ', reefer ' + _mrd(_mrc('Reefer')) + ', flatbed ' + _mrd(_mrc('Flatbed')) + ' to the carrier. Carrier, broker, shipper sides, dated.',
      'market-rates.html', _mr_body + _mr_faq)
 
 # _acc_faq_schema must be defined BEFORE the equipment rate pages below use it. It used
@@ -6214,20 +6420,35 @@ _EQ_HAS_DISPATCH = {'dry-van','reefer','flatbed','hotshot','power-only','box-tru
 # shape, not its data. Snapshots live in rate_snapshots.json (append-only; add a week
 # with `python refresh_rate_snapshot.py`). Built here, BEFORE the hub loop, so each hub
 # can link forward to its newest dated post.
+def _mr_snaps():
+    # Since bl_mkt_0442 the snapshots come from app_private.rate_history through get_public_site_facts():
+    # Publish writes today's row and never an older one, so the store is append-only by construction and
+    # the weekly ritual (refresh_rate_snapshot.py) is gone. One snapshot per ISO week, the latest as_of wins.
+    # rate_snapshots.json stays as the offline fallback and the historical record.
+    by = {}
+    for r in (_SF.get('rate_history') or []):
+        try: by.setdefault(str(r['as_of']), {})[r['equipment']] = {'rpm': float(r['rpm']), 'source': r.get('source') or ''}
+        except (KeyError, TypeError, ValueError): continue
+    weeks = {}
+    for a in sorted(by):
+        if all(e in by[a] for e in _MR_EQS):
+            iy, iw, _ = __import__('datetime').date.fromisoformat(a).isocalendar()
+            weeks[(iy, iw)] = {'as_of': a, 'iso_year': iy, 'iso_week': iw, 'rates': by[a]}
+    if weeks:
+        return [weeks[k] for k in sorted(weeks)], 'live rate_history'
+    try:
+        with open(os.path.join(SRC, 'rate_snapshots.json'), encoding='utf-8') as _f:
+            return (json.load(_f).get('snapshots') or []), 'rate_snapshots.json (fallback)'
+    except FileNotFoundError:
+        return [], 'none'
 _MR_PAGES, _MR_LATEST = [], {}
-try:
-    with open(os.path.join(SRC, 'rate_snapshots.json'), encoding='utf-8') as _f:
-        _MR_SNAPS = json.load(_f).get('snapshots') or []
-    if _MR_SNAPS:
-        _MR_PAGES, _MR_LATEST = build_market_reports(_MR_SNAPS, _EQ_RATES, _acc_faq_schema)
-        print('market reports: %d pages from %d weekly snapshots' % (len(_MR_PAGES), len(_MR_SNAPS)))
-    else:
-        print('market reports: rate_snapshots.json has no snapshots - none built')
-except FileNotFoundError:
-    # Not fatal: the site must still build for someone who has not pulled the data file.
-    # It IS reported, because silently shipping without the reports is how a whole
-    # content engine disappears from a deploy without anyone noticing.
-    print('market reports: rate_snapshots.json NOT FOUND - no dated reports in this build')
+_MR_SNAPS, _MR_SNAPS_FROM = _mr_snaps()
+if _MR_SNAPS:
+    _MR_PAGES, _MR_LATEST = build_market_reports(_MR_SNAPS, _EQ_RATES, _acc_faq_schema)
+    print('market reports: %d pages from %d weekly snapshots (%s)' % (len(_MR_PAGES), len(_MR_SNAPS), _MR_SNAPS_FROM))
+else:
+    # Not fatal, but reported: silently shipping without the reports is how a content engine disappears.
+    print('market reports: NO snapshots (rate_history empty and rate_snapshots.json missing) - none built')
 
 # ---- Workstream 02: shipper-by-industry pages -------------------------------
 # The largest unclaimed page type in load-board SEO (audit 25 Aug 2026): no load board
@@ -6289,7 +6510,7 @@ _EQR_CSS = ('<style>'
 
 def _eqr_js(eq_name, lanes):
     import json as _j
-    return ("<script>(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "',EQ=" + _j.dumps(eq_name)
+    return (_MR_TREND_JS + "<script>(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "',EQ=" + _j.dumps(eq_name)
       + ",LANES=" + _j.dumps([m for _o, _d, m in lanes]) + ";"
       "fetch(SB+'/rest/v1/rpc/get_public_market_rates',{method:'POST',headers:{apikey:KEY,"
       "Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'})"
@@ -6305,6 +6526,7 @@ def _eqr_js(eq_name, lanes):
       "var mg=(b.broker_sell_rpm-b.broker_buy_rpm)/b.broker_sell_rpm*100;"
       "set('eqrMargin','About '+mg.toFixed(0)+'% gross margin at these numbers');"
       "if(b.as_of)set('eqrAsOf','Updated '+b.as_of);"
+      "var tt=document.getElementById('eqrTrend');if(tt&&window.LBT)tt.innerHTML=LBT(b);"
       "for(var k=0;k<LANES.length;k++){set('eqrLc'+k,m0(LANES[k]*b.carrier_rpm));"
       "set('eqrLs'+k,m0(LANES[k]*b.shipper_rpm));}"
       "set('eqrBd1',m2(b.carrier_rpm*0.78));set('eqrBd2',m2(b.carrier_rpm*0.22));"
@@ -6316,23 +6538,28 @@ def _eqr_js(eq_name, lanes):
 
 # R9 (2026-09-18) SEO: per-hub <title>/<meta> overrides. Only the slugs listed here change;
 # every other equipment hub keeps the shared frame below. Keys = hub slug.
+def _eq_desc(label, eq, tail):   # <=155 chars, live figures + month; the sentence shape is the R9/Phase-2 SEO wording
+    _r = _MR_LIVE[eq]
+    _s = '%s rates per mile, %s: %s/mi to the carrier, %s shipper side, %s\u2013%s range. %s' % (label, _MR_MONTH, _mrd(_r['carrier_rpm']), _mrd(_r['shipper_rpm']), _mrd(_r['low']), _mrd(_r['high']), tail)
+    if len(_s) > 155: print('WARN meta desc >155 (%d): %s' % (len(_s), _s))
+    return _s
 _EQ_SEO_OVERRIDE = {
  'flatbed': dict(
    title='Flatbed Freight Rates Per Mile 2026 \u2014 Current &amp; Average Flatbed Trucking Rates, Cost Per Mile for Carriers, Brokers &amp; Shippers | LoadBoot',
    desc='Current and average flatbed trucking rates per mile in 2026, updated as new national data lands: flatbed cost per mile for the carrier, what brokers buy and sell at, what shippers pay, plus lane examples, seasonality and the accessorials that move the real number.'),
  # Phase 2 ledger 2026-09-25 (box-truck, desc only, <=155 chars; title untouched - pos 7.7). Figures = get_public_market_rates() as_of 2026-09-18.
  'box-truck': dict(
-   desc='Box truck rates per mile, September 2026: $2.58/mi to the carrier, $2.97 shipper side, $2.06–$3.10 range. Live national box truck freight rates, 16–26 ft.'),
+   desc=_eq_desc('Box truck', 'Box Truck', 'Live national box truck freight rates, 16–26 ft.')),
  # Phase 2 ledger 2026-09-25 (#6 power-only, #7 step-deck): desc only, <=155 chars; titles untouched. Same as_of 2026-09-18 figures.
- 'power-only': dict(desc='Power only rates per mile, September 2026: $2.58/mi to the carrier, $2.97 shipper side, $1.80–$3.50 range. Live national power only trucking rates, dated.'),
- 'reefer': dict(desc='Reefer rates per mile, September 2026: $3.66/mi to the carrier, $4.21 shipper side, $2.93–$4.39 range. Current national reefer freight rates today, dated.'),
+ 'power-only': dict(desc=_eq_desc('Power only', 'Power Only', 'Live national power only trucking rates, dated.')),
+ 'reefer': dict(desc=_eq_desc('Reefer', 'Reefer', 'Current national reefer freight rates today, dated.')),
  # Phase 2 ledger 2026-09-25 (#3 hotshot, ported from the S1 branch and cut to <=155): desc only; title untouched (head query at 6.9).
- 'hotshot': dict(desc='Hotshot rates per mile, September 2026: $2.41/mi to the carrier, $2.77 shipper side, $1.80–$3.50 range. Live national hot shot trucking rates, dated.'),
- 'step-deck': dict(desc='Step deck rates per mile, September 2026: $3.67/mi to the carrier, $4.22 shipper side, $2.94–$4.40 range. Live national step deck freight rates, dated.'),
+ 'hotshot': dict(desc=_eq_desc('Hotshot', 'Hotshot', 'Live national hot shot trucking rates, dated.')),
+ 'step-deck': dict(desc=_eq_desc('Step deck', 'Step Deck', 'Live national step deck freight rates, dated.')),
  # Phase 2 ledger 2026-09-25 (dry-van, desc only; title locked - clicks growing). Figures = get_public_market_rates() as_of 2026-09-18.
  # Same day: cut from 261 to 155 chars (<=155 rule); keeps "current dry van rates" + "freight brokers" (ledger note d).
  'dry-van': dict(
-   desc='Dry van rates per mile, September 2026: $3.03/mi to the carrier, $3.48 shipper side, $2.42\u2013$3.64 range. Current dry van rates and what freight brokers pay.'),
+   desc=_eq_desc('Dry van', 'Dry Van', 'Current dry van rates and what freight brokers pay.')),
 }
 for _eq in _EQ_RATES:
     _n, _s = _eq['name'], _eq['slug']
@@ -6348,7 +6575,7 @@ for _eq in _EQ_RATES:
     _b += ('<section><div class="wrap">'
       '<div class="eqr-grid">'
       '<div class="eqr-c c"><div class="who">Carrier is paid</div><div class="big" id="eqrC">\u2014</div>'
-        '<div class="sub" id="eqrRange">Typical range</div></div>'
+        '<div class="sub" id="eqrRange">Typical range</div><div class="sub" id="eqrTrend"></div></div>'
       '<div class="eqr-c b"><div class="who">Broker buys \u2192 sells</div><div class="big" id="eqrB">\u2014</div>'
         '<div class="sub" id="eqrMargin">Gross margin</div></div>'
       '<div class="eqr-c s"><div class="who">Shipper pays</div><div class="big" id="eqrS">\u2014</div>'
@@ -6576,14 +6803,14 @@ page('cookies.html','Cookie Policy — Every Tag We Load, Named | LoadBoot',
      'cookies.html', ck, ck_schema)
 
 # ---- Accessibility ----
-acc = svc_hero('Accessibility', 'We want every carrier to be able to use Loadboot. Here is our commitment and how to reach us if something is not working for you.')
-acc += '<section><div class="wrap prose reveal"><h2>Our commitment</h2><p>We aim to meet widely-recognized accessibility guidelines (WCAG 2.1 AA) across our website and apps: readable contrast, keyboard navigation, descriptive labels, responsive layouts and support for screen readers. Accessibility is an ongoing effort and we fix issues as we find them.</p><h2>Need help or found a barrier?</h2><p>If any part of Loadboot is hard to use with assistive technology, please tell us &mdash; we take it seriously and will work with you directly. Email <a href="mailto:hello@loadboot.com">hello@loadboot.com</a> with the page and what you ran into.</p></div></section>'
-page('accessibility.html', 'Accessibility Statement | Loadboot',
-     'Loadboot is committed to an accessible website and apps (WCAG 2.1 AA). Learn about our commitment and how to report a barrier.',
+acc = svc_hero('Accessibility', 'We want every carrier to be able to use LoadBoot. Here is our commitment and how to reach us if something is not working for you.')
+acc += '<section><div class="wrap prose reveal"><h2>Our commitment</h2><p>We aim to meet widely-recognized accessibility guidelines (WCAG 2.1 AA) across our website and apps: readable contrast, keyboard navigation, descriptive labels, responsive layouts and support for screen readers. Accessibility is an ongoing effort and we fix issues as we find them.</p><h2>Need help or found a barrier?</h2><p>If any part of LoadBoot is hard to use with assistive technology, please tell us &mdash; we take it seriously and will work with you directly. Email <a href="mailto:hello@loadboot.com">hello@loadboot.com</a> with the page and what you ran into.</p></div></section>'
+page('accessibility.html', 'Accessibility Statement | LoadBoot',
+     'LoadBoot is committed to an accessible website and apps (WCAG 2.1 AA). Learn about our commitment and how to report a barrier.',
      'accessibility.html', acc)
 
 # ---- Carrier Application (dedicated apply page) ----
-capp = svc_hero('Apply to Loadboot', 'Get your truck loaded with a dispatcher in your corner. Apply in two minutes &mdash; flat 5%, no long-term contracts, cancel anytime.')
+capp = svc_hero('Apply to LoadBoot', 'Get your truck loaded with a dispatcher in your corner. Apply in two minutes &mdash; flat 5%, no long-term contracts, cancel anytime.')
 capp += lead_form('carrier_application', 'Carrier application', 'Tell us about your operation and a dispatcher gets you set up. A real person follows up fast.',
     [('company', 'Company / business name', 'text', True), ('name', 'Your name', 'text', True),
      ('email', 'Email', 'email', True), ('phone', 'Phone', 'tel', True),
@@ -6595,8 +6822,8 @@ capp += lead_form('carrier_application', 'Carrier application', 'Tell us about y
      ('message', 'Anything else we should know?', 'textarea', False)],
     'Submit application', 'Got it — a dispatcher will reach out shortly.')
 capp += REF_CAPTURE_JS
-page('carrier-application.html', 'Carrier Application &mdash; Apply for Truck Dispatch | Loadboot',
-     'Apply for Loadboot truck dispatch in two minutes. Owner-operators, fleets and new-authority carriers welcome. Flat 5%, no long-term contracts.',
+page('carrier-application.html', 'Carrier Application &mdash; Apply for Truck Dispatch | LoadBoot',
+     'Apply for LoadBoot truck dispatch in two minutes. Owner-operators, fleets and new-authority carriers welcome. Flat 5%, no long-term contracts.',
      'contact.html', capp)
 
 # ---- Unified account-creation hub (#44): carrier / broker / shipper / referral, tabbed ----
@@ -6715,9 +6942,9 @@ _HUB_ROLES = [
    'Send shipper inquiry', 'Thanks — our team will reach out to scope your freight.'),
 
   ('referral', '&#128200;', 'Referral', 'Referral &amp; influencer partners',
-   'Earn a share of Loadboot&rsquo;s dispatch fee for every carrier or broker you refer &mdash; they never pay extra.',
+   'Earn a share of LoadBoot&rsquo;s dispatch fee for every carrier or broker you refer &mdash; they never pay extra.',
    ['Earn ongoing commission on the dispatch fee of everyone you refer',
-    'They never pay more &mdash; your reward comes from Loadboot&rsquo;s own fee',
+    'They never pay more &mdash; your reward comes from LoadBoot&rsquo;s own fee',
     'Track your referrals, earnings and payouts right in your account',
     'Get a personal referral link and ready-to-share materials',
     'Commissions unlock after a short hold; payouts reviewed by a person',
@@ -6732,7 +6959,7 @@ _HUB_ROLES = [
     ('message', 'Who you reach &amp; how you&rsquo;d promote', 'textarea', False)],
    'Join the referral program', 'Thanks — we&rsquo;ll set up your referral link and reach out.'),
   ('agent', '&#129297;', 'Agent', 'Referral partners &amp; dispatchers',
-   'Refer carriers, brokers and shippers and earn 1% of the gross on every GPS-verified delivered load your referred clients move &mdash; paid from Loadboot&rsquo;s own fee.',
+   'Refer carriers, brokers and shippers and earn 1% of the gross on every GPS-verified delivered load your referred clients move &mdash; paid from LoadBoot&rsquo;s own fee.',
    ['1% of gross on every delivered load where any side of the deal is yours',
     'One referral link for everyone &mdash; the system detects carrier, broker or shipper automatically',
     'Recruit other agents and earn level 2&ndash;5 overrides on their referrals',
@@ -6748,7 +6975,7 @@ _HUB_ROLES = [
    'Apply &mdash; then open the Agent Portal', 'Thanks! Now create your login at loadboot.com/app/agent/ — your application links up automatically.'),
 ]
 
-hub = svc_hero('Create your Loadboot account',
+hub = svc_hero('Create your LoadBoot account',
     'One front door for everyone in the freight chain. Pick your role &mdash; carrier, broker, shipper, or referral partner &mdash; and get set up in minutes. Flat, transparent, no long-term contracts.', 'See all features', 'features.html')
 hub += _HUB_STYLE
 _tabbar = '<section style="padding-top:6px"><div class="wrap"><div class="hub-tabs reveal">'
@@ -6782,15 +7009,15 @@ page('get-started.html', 'Create Your LoadBoot Account — Carrier, Broker, Ship
      'get-started.html', hub)
 
 # ---- Login portal chooser ----
-lg = svc_hero('Log in to Loadboot', 'Choose your portal. Carrier owners use the Carrier Portal; drivers invited by their carrier use the Driver App.')
+lg = svc_hero('Log in to LoadBoot', 'Choose your portal. Carrier owners use the Carrier Portal; drivers invited by their carrier use the Driver App.')
 lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
     ('&#128667;', 'Carrier Portal', 'Manage loads, trips, documents, finance and your team. <a href="/app/carrier/">Open Carrier Portal &rarr;</a>'),
     ('&#128241;', 'Driver App', 'Invited by your carrier? Sign in with the email and password from your invite &mdash; your loads, GPS check-in, POD. <a href="/app/carrier/?role=driver">Driver sign-in &rarr;</a> &middot; <a href="apps.html">Get the app</a>'),
     ('&#129309;', 'Partner Portal', 'Brokers, shippers and facilities. <a href="/app/partner/">Open Partner Portal &rarr;</a>'),
     ('&#129297;', 'Agent Portal', 'Referral partners &amp; dispatchers &mdash; your referrals, earnings and payouts. <a href="/app/agent/">Open Agent Portal &rarr;</a>'),
     ('&#128104;&#8205;&#128187;', 'Developers &amp; API', 'API keys, docs and integrations. <a href="/app/developer/">Open Developer Portal &rarr;</a>'),
-    ('&#127970;', 'Command Center (Staff)', 'Loadboot team operations console. <a href="/app/command-center/">Open Command Center &rarr;</a>'),
-    ('&#10067;', 'Need an account?', 'New to Loadboot? Create an account for your role in minutes. <a href="get-started.html">Create an account &rarr;</a>'),
+    ('&#127970;', 'Command Center (Staff)', 'LoadBoot team operations console. <a href="/app/command-center/">Open Command Center &rarr;</a>'),
+    ('&#10067;', 'Need an account?', 'New to LoadBoot? Create an account for your role in minutes. <a href="get-started.html">Create an account &rarr;</a>'),
 ], 'g3'))
 page('login.html', 'Log in to LoadBoot — Carrier, Driver, Partner & Developer Portals',
      'Log in to your LoadBoot portal: Carrier, Driver App, Partner, Agent, Developer API or Command Center. New here? Create a carrier account with flat 5% dispatch.',
@@ -8482,7 +8709,7 @@ _ACC_PAGES = [
   steps=['Tap ARRIVE the moment you reach the gate &mdash; GPS + time recorded','App warns you 30 min before free time ends','One tap sends the broker the pre-drafted notification','Tap DEPART when released &mdash; detention minutes calculated automatically','Evidence pack + amount attach to the trip invoice'],
   mistakes=[('Arriving late','Detention starts from your ON-TIME arrival. Late arrival = clock starts at appointment anyway? No &mdash; late arrival usually voids it.'),('No written notice','Calling is not proof. Send the in-app notification so there is a timestamped record.'),('Missing out-time','An in-time without an out-time is half a claim. Stamp both.'),('Waiting to invoice','Submit with the delivery paperwork &mdash; weeks-old claims get "researched" forever.')],
   example=('781-mile load, 8:00 appointment, released 13:30', [('On-time arrival','8:00 AM &mdash; GPS stamped'),('Free time ends','10:00 AM'),('Released','1:30 PM &mdash; departure stamped'),('Billable detention','3.5 hours'),('Owed @ $60/hr','<b>$210</b>')]),
-  faq=[('Do I get detention if I am late?','Usually no &mdash; free time assumes an on-time arrival. Arrive inside the window and stamp it.'),('The facility says their records show less time?','Your GPS arrive/depart stamps plus a gate ticket photo beat memory. That is the point of the app.'),('Detention on both pickup AND delivery?','Yes &mdash; free time applies per stop.'),('Broker refuses to pay?','The claim, evidence and rate confirmation go through LoadBoot dispatch; refusals are tracked on the broker&rsquo;s record.')]),
+  faq=[('Do I get detention if I am late?','Usually no &mdash; free time assumes an on-time arrival. Arrive inside the window and stamp it.'),('The facility says their records show less time?','Your GPS arrive/depart stamps plus a gate ticket photo beat memory. That is the point of the app.'),('Detention on both pickup AND delivery?','Yes &mdash; free time applies per stop.'),('Broker refuses to pay?','The claim, evidence and rate confirmation go through LoadBoot dispatch; refusals are tracked on the broker&rsquo;s record.'),('Is there an Amazon Relay detention pay tracker?','Amazon Relay handles detention inside its own app and portal: its check-in/check-out record decides what is paid, and anything it missed is a dispute you file there with your own timestamps. LoadBoot cannot see or file a Relay claim, but the evidence above (gate photo, BOL in/out times, the notice sent before free time ended) wins a Relay dispute too. On LoadBoot loads the tracker is built in: GPS stamps and a drafted claim.')]),
  dict(slug='tonu-policy', name='TONU (Truck Ordered, Not Used)',
   defn='TONU compensates a carrier when a confirmed load cancels after the truck is committed or already moving to pickup.',
   std='$250 flat (typical range $150&ndash;$350)', ctx='A cancelled load costs the carrier the whole day: other freight was turned down and deadhead miles were often already burned.',
@@ -8998,13 +9225,13 @@ _SITEMAP_GROUPS = [
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
   ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('delete-account.html', 'Delete your account'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]
-_sm_body = svc_hero('Sitemap', 'Every page on Loadboot, in one place.')
+_sm_body = svc_hero('Sitemap', 'Every page on LoadBoot, in one place.')
 _sm_cols = ''
 for _g, _links in _SITEMAP_GROUPS:
     _items = ''.join('<li><a href="%s">%s</a></li>' % (u, t) for u, t in _links)
     _sm_cols += '<div class="card reveal"><h3>%s</h3><ul style="line-height:2.1;margin-top:8px">%s</ul></div>' % (_g, _items)
 _sm_body += '<section><div class="wrap"><div class="grid g3 reveal">%s</div></div></section>' % _sm_cols
-page('sitemap.html', 'Sitemap | Loadboot', 'Every page on the Loadboot website — services, resources, company and legal — in one place.', '', _sm_body)
+page('sitemap.html', 'Sitemap | LoadBoot', 'Every page on the LoadBoot website — services, resources, company and legal — in one place.', '', _sm_body)
 
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'
@@ -9101,7 +9328,7 @@ REDIRECTS += "/text-us.html /sms.html 301!\n"
 # It must follow APP_REF, not a hard-coded ref: a Deploy Preview that names the
 # production project in _redirects trips the PRODUCTION-ISOLATION gate below.
 REDIRECTS += "/o.gif https://%s.supabase.co/functions/v1/mail-open 200\n" % APP_REF
-REDIRECTS += "# Loadboot — canonical-URL consolidation: Google was indexing BOTH /page and\n"
+REDIRECTS += "# LoadBoot — canonical-URL consolidation: Google was indexing BOTH /page and\n"
 REDIRECTS += "# /page.html (impressions split across 29 duplicates in GSC). 301 the extensionless\n"
 REDIRECTS += "# form to the canonical .html form so link equity consolidates. Generated per build.\n"
 _rd_exclude = {'index.html', '404.html', 'dashboard.html'}
@@ -9115,7 +9342,7 @@ NOTFOUND = (
 '<!doctype html><html lang="en" class="no-js"><head><script>document.documentElement.classList.remove("no-js")</script><meta charset="utf-8">'
 '<meta name="viewport" content="width=device-width,initial-scale=1">'
 '<meta name="robots" content="noindex,follow">'
-'<title>Page not found &mdash; Loadboot</title>'
+'<title>Page not found &mdash; LoadBoot</title>'
 '<link rel="stylesheet" href="/styles.css?v=7">'
 '<link rel="icon" href="/favicon.ico?v=2">'
 '<style>.nf{min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px}'
@@ -9534,6 +9761,65 @@ _LLMS = """# LoadBoot — The Operating System for Trucking
 open(os.path.join(OUT,'llms.txt'),'w',encoding='utf-8').write(_LLMS)
 print('llms.txt written')
 
+# ---- Drift lint (MARKET-DATA plan step 5, 25 Sep 2026) -------------------------------------
+# On the market pages every "$x.xx per mile / per gallon" figure must have come from the registry this
+# build (rates, diesel, the FSC formula) or be on the short list of illustrative constants (pegs, ATRI cost,
+# the mock screenshot). Anything else is a hand-typed number that WILL go stale, so the build refuses.
+# Month words: "<Month> 2026" on these pages must be the benchmark month or an allowed historical one.
+# LOADBOOT_LINT=warn downgrades to a warning for a local experiment; Netlify runs it strict.
+_LINT_PAGES = ['market-rates.html', 'spot-market-freight-rates.html', 'truckload-freight-rates.html',
+               'fuel-surcharge-trucking.html', 'oversize-load-rates-per-mile.html', 'truck-driver-per-diem-2026.html',
+               'cost-per-mile-calculator.html', 'tools.html', 'load-score.html', 'freight-market-reports.html'] + \
+              ['%s-freight-rates.html' % _e.lower().replace(' ', '-') for _e in _MR_EQS]
+_LINT_KNOWN = set(['$%.2f' % _DIESEL] + ['$%.2f' % _fsc(_p, _m) for _p in (1.25, 2.0, 2.5) for _m in (5.0, 5.5, 6.0, 6.5)])
+for _e in _MR_EQS:
+    _LINT_KNOWN.update(_mrd(_MR_LIVE[_e][_k]) for _k in ('carrier_rpm', 'shipper_rpm', 'low', 'high'))
+    _LINT_KNOWN.add(_mrd(_MR_LIVE[_e]['carrier_rpm'] - round(_fsc(1.25, 6.0), 2)))   # the linehaul decomposition
+    _LINT_KNOWN.add(_mrd(_MR_LIVE[_e]['carrier_rpm'] + round(_fsc(1.25, 6.0), 2)))   # ... and the all-in composition
+for _e in ('Reefer', 'Flatbed', 'Step Deck'):
+    _LINT_KNOWN.add(_mrd(_MR_LIVE[_e]['carrier_rpm'] - _MR_LIVE['Dry Van']['carrier_rpm']))   # equipment premium over van (_SP_PREM)
+_LINT_KNOWN.add(_mrd(3.10 - round(_fsc(1.25, 6.0), 2)))   # the '$3.10 all-in' worked example on the truckload page
+_LINT_KNOWN.add('$%.2f' % (_fsc(1.25, 6.0) - _fsc(2.5, 6.5)))   # the peg/MPG spread on the fuel-surcharge page
+for _sn in _MR_SNAPS:
+    _LINT_KNOWN.update(_mrd(_v['rpm']) for _v in _sn['rates'].values())
+_LINT_ALLOW = {'$1.25', '$2.00', '$2.50',                      # FSC pegs
+               '$2.20', '$2.30',                               # ATRI marginal cost of operating
+               '$0.65',                                        # driver pay in the mock profit statement
+               '$0.04', '$0.07', '$0.20', '$0.25', '$0.60',    # FSC sensitivity notes ("each $0.25 of peg ...")
+               '$1.80', '$2.00', '$3.10', '$3.40', '$4.60', '$2.90',   # break-even / narrative examples
+               '$3.00', '$4.00', '$4.50', '$5.00', '$5.50', '$8.00', '$15.00'}   # oversize tiers
+_LINT_MONTHS_OK = {_MR_MONTH}
+_LINT_ALLOW_PAGE = {   # illustrative figures that live on one page only (mock screenshots, narrative examples)
+    'truck-driver-per-diem-2026.html': {'$3.85', '$2.79', '$1.92', '$0.87'},           # the mock profit statement (PD_SHOT2)
+    'cost-per-mile-calculator.html': {'$0.42', '$0.60', '$0.55', '$0.70', '$0.15', '$0.25', '$0.03', '$0.05', '$0.04', '$0.06'},
+    'freight-market-reports.html': {'$1.40'},                                            # 'if someone offers you $1.40 a mile on reefer'
+    'fuel-surcharge-trucking.html': {'$0.05'},                                           # '$0.05/gal brackets'
+    'spot-market-freight-rates.html': {'$0.50', '$1.00'},                                # 'can jump $0.50-$1.00/mi in weeks'
+}
+_LINT_MONTH_PAGES_SKIP = {'freight-market-reports.html'}   # its month words come from the snapshot dates
+_lint_bad = []
+_lint_re = re.compile(r'\$\d\.\d\d(?=\s*(?:/|per |a |an )\s*(?:mi\b|mile|gal|gallon))')
+_month_re = re.compile(r'\b(January|February|March|April|May|June|July|August|September|October|November|December) 20\d\d\b')
+for _pg in _LINT_PAGES:
+    try:
+        with open(os.path.join(OUT, _pg), encoding='utf-8') as _f: _html = _f.read()
+    except FileNotFoundError:
+        continue
+    _text = re.sub(r'<[^>]+>', '', _html)   # tags out, so '<b>$3.62</b> per mile' is one phrase
+    for _m in [_x.group(0) for _x in _lint_re.finditer(_text)]:
+        if _m not in _LINT_KNOWN and _m not in _LINT_ALLOW and _m not in _LINT_ALLOW_PAGE.get(_pg, ()):
+            _lint_bad.append('%s: %s (not from the registry)' % (_pg, _m))
+    for _x in ([] if _pg in _LINT_MONTH_PAGES_SKIP else _month_re.finditer(_text)):
+        if _x.group(0) not in _LINT_MONTHS_OK and _x.group(0) not in str(fact('stat.class8.orders_line', '')):
+            _lint_bad.append('%s: "%s" (month word not built from as_of)' % (_pg, _x.group(0)))
+if _FACT_MISSING:
+    print('site facts MISSING in the registry (defaults used): ' + ', '.join('%s=%r' % kv for kv in sorted(_FACT_MISSING.items())))
+if _lint_bad:
+    _msg = 'drift lint: %d hand-typed figure(s) on market pages:\n  ' % len(_lint_bad) + '\n  '.join(sorted(set(_lint_bad)))
+    if os.environ.get('LOADBOOT_LINT') == 'warn': print('WARN ' + _msg)
+    else: sys.exit('BUILD REFUSED - ' + _msg + '\n  Put the number in the registry (CC > Market data) or add it to _LINT_ALLOW with a reason.')
+else:
+    print('drift lint: clean (%d pages, %d registry figures known)' % (len(_LINT_PAGES), len(_LINT_KNOWN)))
 print("BUILD OK — publish dir:", OUT)
 print("BUILT:", sorted(os.listdir(OUT)))
 

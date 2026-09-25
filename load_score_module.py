@@ -267,7 +267,7 @@ function lsAddCompare(){if(!lsLast)lsRun();if(!lsLast)return;
 function lsRemoveCmp(i){lsCmp.splice(i,1);lsRenderCmp();}
 function lsClearCmp(){lsCmp=[];lsRenderCmp();}
 function lsCopy(){if(!lsLast)lsRun();if(!lsLast)return;var c=lsLast;
- var t='Loadboot Load Score'+(c.label?' ('+c.label+')':'')+': '+c.score+'/100 — '+c.vlabel+'. '+
+ var t='LoadBoot Load Score'+(c.label?' ('+c.label+')':'')+': '+c.score+'/100 — '+c.vlabel+'. '+
   'Net profit '+lsM0(c.profit)+', true rate '+lsM2(c.rpm)+'/mi over '+Math.round(c.total).toLocaleString()+' miles, '+lsM0(c.pday)+'/day. Scored free at loadboot.com/load-score';
  var btn=document.getElementById('ls_copybtn');
  function ok(){if(btn){var o=btn.innerHTML;btn.innerHTML='Copied ✓';setTimeout(function(){btn.innerHTML=o;},1600);}}

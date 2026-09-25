@@ -118,9 +118,9 @@ function receipt(host, d) {
     ]),
   ]) : null;
   const next = passed ? [
-    h('div', null, '1. We agree the truck with you — you see the carrier, the equipment and the lanes before anything starts.'),
-    h('div', null, '2. Then the paid trial begins on that live account: 10 working days, commission on every load you deliver.'),
-    h('div', { style: 'margin-top:8px;opacity:.85' }, 'We will message you with the truck details. Nothing else is needed from you right now.'),
+    h('div', null, '1. Open the Choose your carrier tab — every carrier open for a dedicated dispatcher is there with its full fleet book: equipment, trucks, floor, radius, the age of the authority. Names and contacts come after LoadBoot confirms.'),
+    h('div', null, '2. Read and accept the contact rules, then choose. LoadBoot confirms it and your paid trial begins on that live account: 10 working days, commission on every load you deliver.'),
+    h('div', { style: 'margin-top:8px;opacity:.85' }, 'Nothing else is needed from you — the tab is one tap away, at the top of this page.'),
   ] : [
     h('div', null, '1. We read every answer ourselves — this is not machine-marked.'),
     h('div', null, '2. If it looks right, you negotiate one real load with us — we play the broker.'),

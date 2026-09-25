@@ -1,0 +1,15 @@
+{
+ "_note": "Last good read of public.get_public_site_facts(). build_site.py uses this ONLY when the build-time read fails; refresh_rate_snapshot.py rewrites it on every successful fetch. Seeded by hand on 2026-09-25 with the figures the site carried before the registry existed; the diesel date is approximate (the $3.85 figure predates the registry).",
+ "fetched": "2026-09-25",
+ "facts": {
+  "perdiem.conus": {"value": "80", "kind": "number", "unit": "$/day", "as_of": "2026-10-01", "source": "IRS special transportation industry M&IE rate, CONUS (FY2027, Notice 2026-60; unchanged from FY2026)"},
+  "perdiem.oconus": {"value": "86", "kind": "number", "unit": "$/day", "as_of": "2026-10-01", "source": "IRS special transportation industry M&IE rate, outside CONUS (FY2027, Notice 2026-60; unchanged from FY2026)"},
+  "perdiem.deductible_pct": {"value": "80", "kind": "number", "unit": "%", "as_of": "2025-10-01", "source": "IRC 274(n)(3) - DOT hours-of-service workers"},
+  "stat.class8.orders_line": {"value": "30,500 Class 8 net orders in June 2026, up 241% year over year", "kind": "text", "unit": null, "as_of": "2026-07-10", "source": "FTR, June 2026 Class 8 orders"}
+ },
+ "diesel": {
+  "US average": {"usd_gal": 3.85, "as_of": "2026-07-01"}
+ },
+ "rate_history": [],
+ "rates_as_of": "2026-09-18"
+}
