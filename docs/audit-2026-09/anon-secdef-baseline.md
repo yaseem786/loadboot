@@ -156,3 +156,14 @@ service_role. Applied staging (38 → **32**, names = the staging list above) an
 **Rule from here (added to CLAUDE.md §4):** a migration that creates a `public` function must
 `revoke execute on function … from public, anon` explicitly — revoking from PUBLIC alone leaves the
 default-ACL anon grant in place — and must re-run the check above and compare names.
+
+### 25 Sep 2026 — market data registry (bl_mkt_0442), staging
+
+`bl_mkt_0442_site_facts_registry` adds ONE intentional anon name: **`get_public_site_facts()`** — the
+public-site build's read of site facts + diesel + rates `as_of`, same shape and reason as
+`get_public_market_rates` (reached by `build_site.py` on Netlify with the anon key, no session). The six
+staff functions it creates (`cc_site_facts`, `cc_site_fact_set`, `cc_site_publish_config_set`,
+`cc_site_rebuild`, `cc_market_rates_preview`, `cc_market_rates_publish`) are revoked from public + anon
+in the migration, which asserts that at the end. Staging name-level check after apply: **32 → 33**, the
+only added name is `get_public_site_facts`. **Prod: not applied yet** — when it is, prod becomes **34**
+and the 33-name catalog above gains exactly `get_public_site_facts`. CLAUDE.md §4 to be updated then.
