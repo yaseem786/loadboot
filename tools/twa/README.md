@@ -82,4 +82,6 @@ the targetSdk requirement.
   or after 3 s, whichever is first, so the app never hangs. The 2 s "service never connected" safety net
   now only fires if the service did not connect, so it cannot cut the validation wait short. The v1.0.2
   behaviour (launcher stays in the back stack, closes in onRestart) is unchanged.
-  File: `release/loadboot-v4.aab`.
+  Signed on the owner's Windows PC by double-clicking `SIGN-V4.bat` (repo root): it signs
+  `release/loadboot-v4-unsigned.aab` with the local upload keystore, checks the fingerprint is
+  A7:F2…F1:48 and writes `release/loadboot-v4.aab`. The key never leaves his machine.
