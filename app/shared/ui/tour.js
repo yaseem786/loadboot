@@ -135,6 +135,21 @@ export function createTour(opts) {
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   }
   function schedule() { if (!alive) return; cancelAnimationFrame(raf); raf = requestAnimationFrame(layout); }
+  // Position watch (25 Sep 2026). Scroll and resize events do not fire when the page moves under the tour for other
+  // reasons: a sheet locks the page (body position:fixed), a card loads above the target, or the view re-renders
+  // and replaces the target node. Poll the target's box and re-lay out when it changes; re-find a replaced target.
+  let watchT = 0, lastBox = '';
+  function watchTick() {
+    if (!alive || mode !== 'spot') return;
+    const step = steps[i]; if (!step) return;
+    if ((!target || !target.isConnected) && step.target) {
+      const n = find(step.target);
+      if (n) { target = n; if (ro) { try { ro.disconnect(); } catch (_) {} } try { ro = new ResizeObserver(schedule); ro.observe(n); } catch (_) {} }
+    }
+    if (!target) return;
+    const r = target.getBoundingClientRect(), k = Math.round(r.left) + ',' + Math.round(r.top) + ',' + Math.round(r.width) + ',' + Math.round(r.height);
+    if (k !== lastBox) { lastBox = k; schedule(); }
+  }
 
   // ---------- geometry ----------
   function layout() {
@@ -293,11 +308,12 @@ export function createTour(opts) {
   function begin(list, m, screen, from) {
     if (!list.length) return false;
     build(); alive = true; runMode = m; runScreen = screen || null; steps = list; lastFocus = document.activeElement;
+    clearInterval(watchT); lastBox = ''; watchT = setInterval(watchTick, 250);
     emit(m === 'screen' ? 'screen.start' : 'tour.start', { screen, total: list.length });
     show(clamp(from || 0, 0, list.length - 1)); return true;
   }
   function stop(reason) {
-    if (!alive) return; alive = false; unbind(); showing++;
+    if (!alive) return; alive = false; unbind(); showing++; clearInterval(watchT);
     card.classList.remove('lbt-in'); veil.classList.remove('lbt-on', 'lbt-pass'); document.body.classList.remove('lbt-lock');
     hole.classList.add('lbt-center'); blocks.forEach((b) => { b.style.cssText = 'display:none'; });
     const step = steps[i] || {};

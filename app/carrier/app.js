@@ -3831,7 +3831,9 @@ async function appView(user) {
     // Dispatcher card (bl_disp_0409): compact "Meet your dispatcher" + status; the full desk is the Dispatcher tab.
     const dispHost = h('div', null); econHost.parentNode.insertBefore(dispHost, econHost.nextSibling);
     try { import('./dispatcher-card.js').then((m) => m.mountDispatcherCard(dispHost)).catch(() => { try { dispHost.remove(); } catch (_) {} }); } catch (_) {}
-    try { mountStrengthCard(prefsHost); setTimeout(function () { try { maybeShowMicroAsk(); } catch (_) {} }, 1600); } catch (_) {}
+    // The "favorite lanes" micro-ask sheet waits while the guided tour is running or not yet seen: both at once put the
+    // sheet under the tour's veil and its page lock moved the dashboard under the coach card (owner phone, 25 Sep 2026).
+    try { mountStrengthCard(prefsHost); setTimeout(function () { try { const t9 = window.__lbTour; if (t9 && (t9.active || !t9.isDone())) return; maybeShowMicroAsk(); } catch (_) {} }, 1600); } catch (_) {}
     openPrompts();
   }
 

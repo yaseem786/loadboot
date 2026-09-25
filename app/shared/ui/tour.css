@@ -60,6 +60,9 @@ html[data-lbtheme="dark"] {
 .lbt-ico.green { background: linear-gradient(135deg, #34d399, #059669); box-shadow: 0 10px 24px -12px rgba(5,150,105,.8); }
 .lbt-ico.navy { background: linear-gradient(135deg, #334155, #0f172a); }
 .lbt-title { font-size: 1.12rem; font-weight: 800; letter-spacing: -.01em; margin: 0 0 6px; line-height: 1.25; }
+/* The title is an <h3>; portal skins colour every heading (carrier-dark.css: h1-h4 #eaf1fb), which made it white on a white
+   card when the phone is in light mode. Two classes outrank `html[data-lbtheme=dark] h3` and the bare `h3` rules. */
+.lbt-card .lbt-title { color: var(--lbt-ink); }
 .lbt-hero .lbt-title { font-size: 1.45rem; }
 .lbt-text { font-size: .93rem; color: var(--lbt-sub); margin: 0; }
 .lbt-text b, .lbt-text strong { color: var(--lbt-ink); font-weight: 700; }
