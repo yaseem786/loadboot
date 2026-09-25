@@ -2114,8 +2114,21 @@ def blog_post(fname,title,desc,excerpt,blocks):
         inner += ('<h2>%s</h2>' % b[2:]) if b.startswith('H:') else ('<p>%s</p>' % b)
     body += '<section><div class="wrap prose reveal" style="max-width:780px">%s</div></section>' % inner
     body += final_cta()
-    sch = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"%s","author":{"@type":"Organization","name":"Loadboot"},"publisher":{"@type":"Organization","name":"Loadboot"}}</script>' % title.replace('"',"'")
+    # S3 (seo-audit-2026-10): Article rich results need `image` and `datePublished`. Same fields as
+    # market_reports_module._article_common; the date is the article's first commit (BLOG_PUB).
+    pub = BLOG_PUB.get(fname)
+    art = {"@context":"https://schema.org","@type":"Article","headline":title.replace('"',"'"),"description":desc,
+           "image":["https://loadboot.com/og-image.png","https://loadboot.com/og-image-square.png"],
+           "mainEntityOfPage":{"@type":"WebPage","@id":"https://loadboot.com/"+fname},
+           "author":{"@type":"Organization","name":"Loadboot","url":"https://loadboot.com/"},
+           "publisher":{"@type":"Organization","name":"Loadboot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}}}
+    if pub:
+        art["datePublished"] = art["dateModified"] = pub
+    sch = '<script type="application/ld+json">%s</script>' % json.dumps(art, ensure_ascii=False, separators=(',',':'))
     page(fname,title,desc,'blog.html',body,sch)
+
+# First-publish date of the blog_post() articles that never became premium (git: 4cd1214, 27 Jun 2026).
+BLOG_PUB = {'how-to-get-loads-with-new-authority.html':'2026-06-27'}
 
 BLOGPOSTS = [
  ('truck-driver-per-diem-2026.html',
