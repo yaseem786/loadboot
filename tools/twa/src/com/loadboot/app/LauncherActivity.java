@@ -33,11 +33,17 @@ public class LauncherActivity extends Activity {
     private static final String EXTRA_LAUNCH_AS_TWA =
             "android.support.customtabs.extra.LAUNCH_AS_TRUSTED_WEB_ACTIVITY";
 
+    /** Digital Asset Links origin; relation 2 = CustomTabsService.RELATION_HANDLE_ALL_URLS. */
+    private static final String ORIGIN = "https://loadboot.com";
+    private static final int RELATION_HANDLE_ALL_URLS = 2;
+    private static final long VALIDATION_TIMEOUT_MS = 3000;
+
     /** Kept static so the service binding survives this activity finishing. */
     private static ServiceConnection sConnection;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean launched = false;
+    private boolean connected = false;
     private Uri url;
 
     @Override
@@ -55,30 +61,33 @@ public class LauncherActivity extends Activity {
             @Override public void onServiceConnected(ComponentName name, IBinder binder) {
                 try {
                     ICustomTabsService service = ICustomTabsService.Stub.asInterface(binder);
+                    connected = true;
                     service.warmup(0);
-                    ICustomTabsCallback.Stub cb = new ICustomTabsCallback.Stub() {
+                    final ICustomTabsCallback.Stub[] holder = new ICustomTabsCallback.Stub[1];
+                    final Runnable launch = new Runnable() {
+                        @Override public void run() { launchTwa(pkg, holder[0]); }
+                    };
+                    holder[0] = new ICustomTabsCallback.Stub() {
                         @Override public void onNavigationEvent(int e, Bundle b) {}
                         @Override public void extraCallback(String s, Bundle b) {}
                         @Override public void onMessageChannelReady(Bundle b) {}
                         @Override public void onPostMessage(String s, Bundle b) {}
+                        // Arrives on a binder thread; hop to the main thread before launching.
                         @Override public void onRelationshipValidationResult(
-                                int r, Uri o, boolean res, Bundle b) {}
+                                int r, Uri o, boolean res, Bundle b) { handler.post(launch); }
                     };
-                    service.newSession(cb);
-                    Intent i = new Intent(Intent.ACTION_VIEW, url);
-                    i.setPackage(pkg);
-                    Bundle extras = new Bundle();
-                    extras.putBinder(EXTRA_SESSION, cb.asBinder());
-                    i.putExtras(extras);
-                    i.putExtra(EXTRA_LAUNCH_AS_TWA, true);
-                    startActivity(i);
-                    launched = true;
-                    // v1.0.2 (24 Sep 2026): do NOT finish here. Chrome ties the TWA's trust to this
-                    // app's live session binder. Finishing 0.5 s after launch left the process with no
-                    // activity, and aggressive Android skins killed it — the session died with it and
-                    // Chrome fell back to a Custom Tab: the "X · loadboot.com · share" bar on top.
-                    // The official android-browser-helper launcher stays in the back stack the same way
-                    // and closes itself when the user comes back from the web app (onRestart below).
+                    service.newSession(holder[0]);
+                    // v1.0.3 (25 Sep 2026): on a cold start Chrome has to verify Digital Asset Links
+                    // over the network. If the TWA opens before that finishes, Chrome shows a Custom
+                    // Tab ("X · loadboot.com · share" bar). Ask Chrome to verify first and launch on
+                    // its answer — but never wait more than VALIDATION_TIMEOUT_MS.
+                    boolean asked = false;
+                    try {
+                        asked = service.validateRelationship(holder[0], RELATION_HANDLE_ALL_URLS,
+                                Uri.parse(ORIGIN), null);
+                    } catch (Exception ignored) {}
+                    if (asked) handler.postDelayed(launch, VALIDATION_TIMEOUT_MS);
+                    else launch.run();
                 } catch (Exception e) {
                     fallback();
                 }
@@ -91,10 +100,31 @@ public class LauncherActivity extends Activity {
         catch (Exception ignored) {}
         if (!ok) { fallback(); return; }
 
-        // Safety net: if the service never connects, open the plain browser.
+        // Safety net: if the service never connects, open the plain browser. Once connected, the
+        // validation wait (up to VALIDATION_TIMEOUT_MS) owns the launch, so this must not cut it short.
         handler.postDelayed(new Runnable() {
-            @Override public void run() { if (!launched) fallback(); }
+            @Override public void run() { if (!connected) fallback(); }
         }, 2000);
+    }
+
+    /** Main thread only. Runs once: on Chrome's validation answer or on the timeout, whichever is first. */
+    private void launchTwa(String pkg, ICustomTabsCallback.Stub cb) {
+        if (launched || isFinishing()) return;
+        launched = true;
+        Intent i = new Intent(Intent.ACTION_VIEW, url);
+        i.setPackage(pkg);
+        Bundle extras = new Bundle();
+        extras.putBinder(EXTRA_SESSION, cb.asBinder());
+        i.putExtras(extras);
+        i.putExtra(EXTRA_LAUNCH_AS_TWA, true);
+        try { startActivity(i); }
+        catch (Exception e) { launched = false; fallback(); return; }
+        // v1.0.2 (24 Sep 2026): do NOT finish here. Chrome ties the TWA's trust to this
+        // app's live session binder. Finishing 0.5 s after launch left the process with no
+        // activity, and aggressive Android skins killed it — the session died with it and
+        // Chrome fell back to a Custom Tab: the "X · loadboot.com · share" bar on top.
+        // The official android-browser-helper launcher stays in the back stack the same way
+        // and closes itself when the user comes back from the web app (onRestart below).
     }
 
     /** User pressed Back out of the web app and landed here: close the app, as the official launcher does. */
