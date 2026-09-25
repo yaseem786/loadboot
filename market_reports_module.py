@@ -54,6 +54,10 @@ _BREAKEVEN = 1.90
 # almost always the series being rebuilt underneath us.
 _MAX_PLAUSIBLE_WOW = 15.0
 
+# Article rich results need `image` (SEO audit S3). The same 1200x630 + 1200x1200
+# pair the page's og:image tags already point at.
+_ART_IMG = ['https://loadboot.com/og-image.png', 'https://loadboot.com/og-image-square.png']
+
 
 def _src_family(src):
     """Normalise a source string to its methodology family.
@@ -796,6 +800,7 @@ def _combined_report(snap, prev, eqs_by_name, acc_faq_schema, all_weeks, idx):
       "@context": "https://schema.org", "@type": "Article",
       "headline": "Freight Market Report — Week %02d, %d" % (wk, yr),
       "datePublished": snap['as_of'], "dateModified": snap['as_of'],
+      "image": _ART_IMG,
       "author": {"@type": "Organization", "name": "LoadBoot"},
       "publisher": {"@type": "Organization", "name": "LoadBoot"},
       "about": "National truckload freight rates per mile by equipment type"}) + '</script>')
@@ -970,6 +975,7 @@ def _deep_dive(snap, prev, eq, acc_faq_schema, combined_file):
       "@context": "https://schema.org", "@type": "Article",
       "headline": "%s Rates — Week %02d, %d" % (name, wk, yr),
       "datePublished": snap['as_of'], "dateModified": snap['as_of'],
+      "image": _ART_IMG,
       "author": {"@type": "Organization", "name": "LoadBoot"},
       "publisher": {"@type": "Organization", "name": "LoadBoot"}}) + '</script>')
 
