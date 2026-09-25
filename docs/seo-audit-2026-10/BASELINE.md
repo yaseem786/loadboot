@@ -172,6 +172,23 @@ re-pulls before touching anything. "Earliest" respects the 28-day measurement wi
    queries/pages and GA4 landing pages) into `docs/seo-audit-2026-10/data/` before each session. Works today,
    costs Yaseen two minutes per session, and the GSC table there is capped at 50 queries / 20 pages.
 
+**Harness for route 2 (added 25 Sep): `harness/gsc-pull.mjs`** — Node stdlib, no npm. Reads `GOOGLE_SA_KEY_B64`
+(or `GOOGLE_SA_KEY`, or a ready `GSC_ACCESS_TOKEN`), signs the SA JWT itself, pulls 7 / 28 / 90 d with `dataState=all`
+(fresh rows up to yesterday), `query` / `page` / `query,page` at rowLimit 5000, daily series, country, device — CSVs +
+`SUMMARY.md` into `data/gsc-<endDate>/`. `--page /x.html` gives the LEDGER BEFORE row for one page. Defaults to the
+`sc-domain:loadboot.com` property (same as the prod edge functions) and falls back to whichever sibling property the
+credential can see. **State on 25 Sep:** `*.googleapis.com` is now open from the container and `GSC_SITE_URL` arrived,
+but `GOOGLE_SA_KEY_B64` arrived **empty** (name set, no value) and the only other Google token in the environment is
+rejected by GSC (401). Re-add the value — one line, `base64 -w0 < key.json` of the same SA JSON that the `seo-pull` /
+`gsc-insights` edge functions hold as `GOOGLE_SA_KEY` — and the next session runs
+`node docs/seo-audit-2026-10/harness/gsc-pull.mjs` and starts page session #1 from live numbers.
+
+**25 Sep, second session:** `GOOGLE_SA_KEY_B64` still empty. `SEO_PULL_TOKEN` (route 1) IS now in the environment, but
+route 1 also needs the Supabase gateway key on the call and the session's permission classifier blocked handling the
+credentials from inside the container, so no pull ran. Queue #2 and #3 were edited anyway (rows in `LEDGER.md`) — their
+BEFORE rows are pulled retroactively with `--end 2026-09-24` the moment the key value lands; nothing is lost.
+Simplest unblock remains the one line above (`base64 -w0 < key.json` into `GOOGLE_SA_KEY_B64`).
+
 Whichever it is, the per-page session recipe stays: BEFORE row in `LEDGER.md` → fix in source → build →
 verify built + live → re-check date +28 d.
 

@@ -5671,6 +5671,57 @@ page('api.html', 'Developer API &mdash; Post Loads to LoadBoot | LoadBoot',
      'api.html', API_PAGE)
 
 # ---- Market Rates (public, SEO + lead-gen): all three audiences on ONE page, live weekly numbers ----
+# ---- Phase 2 SEO, LEDGER #2 / #3 (25 Sep 2026) -----------------------------------
+# The newest benchmark week in rate_snapshots.json feeds the market-rates description and
+# its "by equipment" hub block, and the hotshot description / lead FAQ. The number and the
+# month in the snippet therefore move with `python refresh_rate_snapshot.py` + deploy
+# instead of going stale in copy. Falls back to the dateless wording when the file is absent.
+def _snap_latest():
+    import datetime as _dt
+    try:
+        with open(os.path.join(SRC, 'rate_snapshots.json'), encoding='utf-8') as _f:
+            _ss = json.load(_f).get('snapshots') or []
+    except FileNotFoundError:
+        return None
+    if not _ss:
+        return None
+    _s = max(_ss, key=lambda x: x['as_of'])
+    _d = _dt.date.fromisoformat(_s['as_of'])
+    return dict(as_of=_s['as_of'], month=_d.strftime('%B %Y'),
+                rates={k: v['rpm'] for k, v in _s['rates'].items()})
+_SNAP = _snap_latest()
+
+# GSC query shapes (KEYWORD-PLAN.md section A/B) are the anchor text, one chip per hub.
+_MR_HUB_LABELS = [('dry-van', 'Dry Van', 'Dry van rates per mile'),
+                  ('reefer', 'Reefer', 'Reefer rates per mile'),
+                  ('flatbed', 'Flatbed', 'Current flatbed rates per mile'),
+                  ('step-deck', 'Step Deck', 'Step deck rates per mile'),
+                  ('power-only', 'Power Only', 'Power only rates per mile'),
+                  ('hotshot', 'Hotshot', 'Hotshot rates per mile'),
+                  ('box-truck', 'Box Truck', 'Box truck rate per mile'),
+                  ('conestoga', 'Conestoga', 'Conestoga rates per mile')]
+def _mr_hubs_block():
+    _chips = []
+    for _slug, _key, _label in _MR_HUB_LABELS:
+        _rpm = (_SNAP or {}).get('rates', {}).get(_key)
+        _chips.append('<a href="%s-freight-rates.html">%s%s</a>'
+                      % (_slug, _label, (' <b>$%.2f</b>' % _rpm) if _rpm else ''))
+    _sub = (('<div class="mr-sub" style="margin-top:4px">National carrier benchmark, %s. Each hub also shows '
+             'the broker buy/sell and shipper side, lane examples and seasonality.</div>' % _SNAP['month'])
+            if _SNAP else '')
+    return ('<section class="wrap" style="padding:26px 0 0"><h2 style="font-size:1.12rem;margin:0">'
+            'Rates per mile by equipment</h2>' + _sub + '<div class="mr-hubs">' + ''.join(_chips) + '</div></section>')
+_MR_HUBS = _mr_hubs_block()
+
+if _SNAP and all(k in _SNAP['rates'] for k in ('Dry Van', 'Reefer', 'Flatbed', 'Hotshot')):
+    _MR_DESC = ('Live truckload rates per mile, updated %s: dry van $%.2f, reefer $%.2f, flatbed $%.2f, hotshot $%.2f '
+                'to the carrier. Broker and shipper sides, eight equipment rate hubs and a free trucking rate '
+                'calculator, no login.' % (_SNAP['month'], _SNAP['rates']['Dry Van'], _SNAP['rates']['Reefer'],
+                                          _SNAP['rates']['Flatbed'], _SNAP['rates']['Hotshot']))
+else:
+    _MR_DESC = ('Truckload rates per mile for 2026, each benchmark shown with its as-of date: dry van, flatbed and '
+                'hotshot averages, plus a free trucking rate calculator with no signup or login.')
+
 _MR_JS = ("(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "';"
   "fetch(SB+'/rest/v1/rpc/get_public_market_rates',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'})"
   ".then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(!d||!d.length)return;"
@@ -5682,15 +5733,15 @@ _MR_JS = ("(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "';"
   "var el2=document.getElementById('mrAsOf');if(el2&&asof)el2.textContent='Updated '+asof+'.';"
   "}).catch(function(){});})();")
 
-_mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20%,rgba(8,131,247,.35),transparent 60%),radial-gradient(700px 320px at 95% 120%,rgba(252,83,5,.22),transparent 55%),linear-gradient(120deg,#0b1830,#10223B 60%,#132c4e);color:#fff;padding:64px 0 46px}.mrx-hero h1{color:#fff;font-size:clamp(1.9rem,4.2vw,3rem);margin:0 0 10px}.mrx-hero p{color:rgba(255,255,255,.82);max-width:780px;font-size:1.02rem;line-height:1.7}.mrx-badge{display:inline-flex;gap:7px;align-items:center;background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(74,222,128,.35);border-radius:999px;padding:6px 15px;font-weight:800;font-size:.74rem;letter-spacing:.06em;margin-bottom:16px}.mrx-badge i{width:8px;height:8px;border-radius:99px;background:#22c55e;display:inline-block;animation:mrb 1.5s infinite}@keyframes mrb{50%{opacity:.25}}.mrx-stats{display:flex;gap:30px;flex-wrap:wrap;margin-top:22px}.mrx-stats b{display:block;font-size:1.5rem;color:#7cc0ff}.mrx-stats span{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;opacity:.65;font-weight:700}.mr-t{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 18px 44px -26px rgba(2,12,30,.4)}.mr-t th{background:#10223B;color:#fff;text-align:left;padding:13px 16px;font-size:.7rem;letter-spacing:.09em;text-transform:uppercase}.mr-t td{padding:13px 16px;border-bottom:1px solid #eef2f7;font-size:.95rem}.mr-sub{font-size:.72rem;color:#64748b}.mr-c{color:#0967d2;font-weight:800}.mr-b{color:#7c3aed;font-weight:800}.mr-s{color:#15803d;font-weight:800}.mrx-aud{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin:26px 0}.mrx-card{background:#fff;border:1px solid #e6ebf3;border-radius:20px;padding:26px;box-shadow:0 14px 36px -26px rgba(2,12,30,.35);position:relative;overflow:hidden}.mrx-card:before{content:"";position:absolute;top:0;left:0;right:0;height:5px}.mrx-card.c:before{background:linear-gradient(90deg,#0883F7,#60a5fa)}.mrx-card.b:before{background:linear-gradient(90deg,#7c3aed,#a78bfa)}.mrx-card.s:before{background:linear-gradient(90deg,#16a34a,#4ade80)}.mrx-card svg{margin-bottom:12px}.mrx-card h3{margin:0 0 8px;font-size:1.12rem}.mrx-card p,.mrx-card li{font-size:.9rem;color:#475569;line-height:1.7}.mrx-card ul{padding-left:18px;margin:10px 0}.mrx-card .cta{display:inline-block;margin-top:12px;font-weight:800;color:#0883F7;text-decoration:none}.mrx-sec h2{font-size:1.5rem;margin:38px 0 10px}.mrx-sec p{max-width:840px;color:#475569;line-height:1.75}.mrx-fac{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:18px 0}.mrx-f{background:#f7fafd;border:1px solid #e6ebf3;border-radius:14px;padding:16px}.mrx-f b{display:block;margin-bottom:5px}.mrx-f span{font-size:.84rem;color:#64748b;line-height:1.6}.mrx-faq{background:#fff;border:1px solid #e6ebf3;border-radius:16px;margin:10px 0;padding:16px 20px}.mrx-faq h3{margin:0 0 6px;font-size:.98rem}.mrx-faq p{margin:0;font-size:.88rem;color:#475569;line-height:1.7}.mrx-cta{background:linear-gradient(120deg,#0b1830,#14335c);border-radius:22px;color:#fff;padding:36px;text-align:center;margin:40px 0}.mrx-cta h2{color:#fff;margin:0 0 8px}.mrx-cta p{color:rgba(255,255,255,.8);max-width:640px;margin:0 auto 18px}</style>'
+_mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20%,rgba(8,131,247,.35),transparent 60%),radial-gradient(700px 320px at 95% 120%,rgba(252,83,5,.22),transparent 55%),linear-gradient(120deg,#0b1830,#10223B 60%,#132c4e);color:#fff;padding:64px 0 46px}.mrx-hero h1{color:#fff;font-size:clamp(1.9rem,4.2vw,3rem);margin:0 0 10px}.mrx-hero p{color:rgba(255,255,255,.82);max-width:780px;font-size:1.02rem;line-height:1.7}.mrx-badge{display:inline-flex;gap:7px;align-items:center;background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(74,222,128,.35);border-radius:999px;padding:6px 15px;font-weight:800;font-size:.74rem;letter-spacing:.06em;margin-bottom:16px}.mrx-badge i{width:8px;height:8px;border-radius:99px;background:#22c55e;display:inline-block;animation:mrb 1.5s infinite}@keyframes mrb{50%{opacity:.25}}.mrx-stats{display:flex;gap:30px;flex-wrap:wrap;margin-top:22px}.mrx-stats b{display:block;font-size:1.5rem;color:#7cc0ff}.mrx-stats span{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;opacity:.65;font-weight:700}.mr-t{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 18px 44px -26px rgba(2,12,30,.4)}.mr-t th{background:#10223B;color:#fff;text-align:left;padding:13px 16px;font-size:.7rem;letter-spacing:.09em;text-transform:uppercase}.mr-t td{padding:13px 16px;border-bottom:1px solid #eef2f7;font-size:.95rem}.mr-sub{font-size:.72rem;color:#64748b}.mr-c{color:#0967d2;font-weight:800}.mr-b{color:#7c3aed;font-weight:800}.mr-s{color:#15803d;font-weight:800}.mrx-aud{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin:26px 0}.mrx-card{background:#fff;border:1px solid #e6ebf3;border-radius:20px;padding:26px;box-shadow:0 14px 36px -26px rgba(2,12,30,.35);position:relative;overflow:hidden}.mrx-card:before{content:"";position:absolute;top:0;left:0;right:0;height:5px}.mrx-card.c:before{background:linear-gradient(90deg,#0883F7,#60a5fa)}.mrx-card.b:before{background:linear-gradient(90deg,#7c3aed,#a78bfa)}.mrx-card.s:before{background:linear-gradient(90deg,#16a34a,#4ade80)}.mrx-card svg{margin-bottom:12px}.mrx-card h3{margin:0 0 8px;font-size:1.12rem}.mrx-card p,.mrx-card li{font-size:.9rem;color:#475569;line-height:1.7}.mrx-card ul{padding-left:18px;margin:10px 0}.mrx-card .cta{display:inline-block;margin-top:12px;font-weight:800;color:#0883F7;text-decoration:none}.mrx-sec h2{font-size:1.5rem;margin:38px 0 10px}.mrx-sec p{max-width:840px;color:#475569;line-height:1.75}.mrx-fac{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:18px 0}.mrx-f{background:#f7fafd;border:1px solid #e6ebf3;border-radius:14px;padding:16px}.mrx-f b{display:block;margin-bottom:5px}.mrx-f span{font-size:.84rem;color:#64748b;line-height:1.6}.mrx-faq{background:#fff;border:1px solid #e6ebf3;border-radius:16px;margin:10px 0;padding:16px 20px}.mrx-faq h3{margin:0 0 6px;font-size:.98rem}.mrx-faq p{margin:0;font-size:.88rem;color:#475569;line-height:1.7}.mrx-cta{background:linear-gradient(120deg,#0b1830,#14335c);border-radius:22px;color:#fff;padding:36px;text-align:center;margin:40px 0}.mrx-cta h2{color:#fff;margin:0 0 8px}.mrx-cta p{color:rgba(255,255,255,.8);max-width:640px;margin:0 auto 18px}.mr-hubs{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}.mr-hubs a{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:7px 14px;font-size:.86rem;font-weight:700;text-decoration:none;color:#0f172a}.mr-hubs a b{color:#0967d2;margin-left:4px}</style>'
 '<section class="mrx-hero"><div class="wrap">'
 '<span class="mrx-badge"><i></i>LIVE \u00b7 NATIONAL BENCHMARKS</span>'
 '<h1>Truckload Freight Rates Per Mile \u2014 Live Spot Rates for Carriers, Brokers &amp; Shippers</h1>'
 '<p>Current trucking rates per mile across dry van, reefer, flatbed, power only and hotshot \u2014 blended from <b style="color:#fff">real LoadBoot marketplace bookings</b> and published national benchmarks. See what the truck gets paid, what freight brokers buy and sell at, and what shippers pay \u2014 every side of the spot market on one page. <span id="mrAsOf">Every figure carries its own as-of date.</span></p>'
 '<div class="mrx-stats"><div><b>8</b><span>Equipment types</span></div><div><b>3</b><span>Market sides</span></div><div><b>Dated</b><span>Every benchmark</span></div><div><b>Live</b><span>From real bookings</span></div></div>'
 '</div></section>'
-
-'<section class="wrap" style="padding:34px 0 10px">'
++ _MR_HUBS +
+'<section class="wrap" style="padding:24px 0 10px">'
 '<table class="mr-t"><thead><tr><th>Equipment</th><th>Carriers get paid</th><th>Brokers buy / sell</th><th>Shippers pay</th></tr></thead>'
 '<tbody id="mrRows"><tr><td colspan="4" style="text-align:center;color:#64748b">Loading live market rates\u2026</td></tr></tbody></table>'
 '<div class="mr-sub" style="margin-top:8px">National spot-rate averages, all-in linehaul per mile. Lane-level rates (state \u2192 state, low/average/high, 12-week trends) are free inside a LoadBoot account.</div>'
@@ -5730,7 +5781,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '</div></section>'
 
 '<section class="wrap mrx-sec"><h2>Current rates by equipment type</h2>'
-'<p><b>Dry van rates per mile</b> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight. <b>Power only</b> prices below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand. The live table above carries the date each benchmark was last rebuilt; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
+'<p><a href="dry-van-freight-rates.html"><b>Dry van rates per mile</b></a> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <a href="reefer-freight-rates.html"><b>Reefer rates per mile</b></a> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <a href="flatbed-freight-rates.html"><b>Flatbed rates per mile</b></a> run highest of the big three: tarping, securement and specialized freight. <a href="power-only-freight-rates.html"><b>Power only rates per mile</b></a> price below van (the trailer is the shipper\u2019s), while <a href="hotshot-freight-rates.html"><b>hotshot rates per mile</b></a> track expedited small-load demand. The live table above carries the date each benchmark was last rebuilt; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
 
 '<section class="wrap mrx-sec"><h2>How we calculate these freight rates</h2>'
 '<p>Three blended layers, honestly labeled: <b>(1) Real LoadBoot bookings</b> \u2014 actual accepted rates on our marketplace, the strongest signal, refreshed continuously; <b>(2) Published national benchmarks</b> \u2014 published national industry indices, refreshed as new data lands and always shown with their as-of date; <b>(3) Confidence labels</b> \u2014 every lane result says whether it comes from lane-level bookings (HIGH), platform-wide data (MEDIUM) or the national benchmark (LOW). A rate is a guide, not a quote \u2014 but you always know exactly where it came from.</p></section>'
@@ -5758,7 +5809,7 @@ _mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org",
   '<script>' + _MR_JS + '</script>')
 
 page('market-rates.html', 'Truckload Rates Per Mile 2026 — Carrier, Broker &amp; Shipper | LoadBoot',
-     'Truckload rates per mile for 2026, each benchmark shown with its as-of date: dry van, flatbed and hotshot averages, plus a free trucking rate calculator with no signup or login.',
+     _MR_DESC,
      'market-rates.html', _mr_body + _mr_faq)
 
 # _acc_faq_schema must be defined BEFORE the equipment rate pages below use it. It used
@@ -6219,6 +6270,20 @@ _EQ_SEO_OVERRIDE = {
    title='Flatbed Freight Rates Per Mile 2026 \u2014 Current &amp; Average Flatbed Trucking Rates, Cost Per Mile for Carriers, Brokers &amp; Shippers | LoadBoot',
    desc='Current and average flatbed trucking rates per mile in 2026, updated as new national data lands: flatbed cost per mile for the carrier, what brokers buy and sell at, what shippers pay, plus lane examples, seasonality and the accessorials that move the real number.'),
 }
+# LEDGER #3 (25 Sep 2026): the first 150 characters carry the number, the month, the equipment
+# and "per mile" so the snippet is ours instead of Google's extract. Title untouched (pos 9.2).
+_EQ_FAQ_LEAD = {}
+if _SNAP and _SNAP['rates'].get('Hotshot'):
+    _EQ_SEO_OVERRIDE['hotshot'] = dict(
+      desc='Hotshot rates per mile, %s: $%.2f average to the carrier on the national benchmark, updated as new data '
+           'lands. What brokers buy and sell at, what shippers pay, lane examples, seasonality and the accessorials '
+           'that move the real number.' % (_SNAP['month'], _SNAP['rates']['Hotshot']))
+    _EQ_FAQ_LEAD['hotshot'] = [('What is the hotshot rate per mile in 2026?',
+      'The national hotshot benchmark for %s is $%.2f per loaded mile to the carrier, before accessorials; the live '
+      'figure at the top of this page carries the as-of date of the week it was rebuilt. Hotshot sits above dry van '
+      'per mile because the load is smaller, the run is usually expedited and the return leg is often empty \u2014 '
+      'so compare hotshot on the total cost of the load, not on the per-mile number alone.'
+      % (_SNAP['month'], _SNAP['rates']['Hotshot']))]
 for _eq in _EQ_RATES:
     _n, _s = _eq['name'], _eq['slug']
     _low = _n.lower()
@@ -6393,8 +6458,9 @@ for _eq in _EQ_RATES:
       + '</tbody></table></div></section>')
 
     # --- 11. FAQ
+    _faq = _EQ_FAQ_LEAD.get(_s, []) + _eq['faq']
     _b += ('<section><div class="wrap prose"><h2>' + _n + ' rate questions</h2>'
-      + ''.join('<div class="eqr-faq"><h3>' + q + '</h3><p>' + a + '</p></div>' for q, a in _eq['faq'])
+      + ''.join('<div class="eqr-faq"><h3>' + q + '</h3><p>' + a + '</p></div>' for q, a in _faq)
       + '</div></section>')
 
     # --- 12. CTA
@@ -6428,7 +6494,7 @@ for _eq in _EQ_RATES:
          'what shippers pay, plus lane examples, seasonality and the accessorials that move the real number.'),
          _s + '-freight-rates.html',
          _b + _eqr_js(_n, _eq['lanes']),
-         schema=_acc_faq_schema(_eq['faq']))
+         schema=_acc_faq_schema(_faq))
 
 
 
