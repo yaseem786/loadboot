@@ -179,8 +179,9 @@ verify built + live → re-check date +28 d.
 
 - **OS1** — `web_sessions.source_class='ai'` with null referrer = 1,376 sessions / 90 d; classifier or tagging bug; CC "AI" channel is inflated.
 - **OS2** — `app_private.seo_keywords` is empty; the CC SEO control screen (`cc_seo_overview`, `seo_enabled` flag off) has never been fed. Either feed it from the ledger or leave it off — decide, don't let it drift.
-- **OS3** — S3/S4 JSON-LD Article fields (14 reports + 2 articles).
-- **OS4** — S5 image weights (11 pages).
+- **OS3** — S3/S4 JSON-LD Article fields (14 reports + 2 articles). S3 closed (#27, `ea48297`). **S4 fixed 2026-09-25** — `rich_article(headline=)`, spot-market headline 113 → 77 chars, H1 unchanged.
+- **OS4** — S5 image weights (11 pages). **Fixed 2026-09-25** — 9 files re-encoded in place (same names, aspect kept, ≤ 2× display width); crawl: 0 pages with an image > 200 KB.
+- **S7** — `case-studies.html` orphan: **fixed 2026-09-25**, linked from the Related grid on `services.html`. Not from carriers/pricing (owner: measure only, no edit).
 - **OS5** — S10 `unsub.html` noindex — **fixed this session** (`_headers`).
 - **OS6** — Bing Webmaster Tools: Bing is the larger organic source right now and IndexNow is wired in the build (`api.indexnow.org` key file present); confirm the property is verified and the sitemap submitted there too — five-minute check for Yaseen.
 
