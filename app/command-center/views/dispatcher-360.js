@@ -19,7 +19,7 @@ import { ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSo
          ccDispatcherTestInvite, ccDispatcherTestReview, dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead,
          ccDispatcherKpis, ccDispatcherActivity } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
-import { ccDispatcherSetRejectReasons } from '../../shared/api.js';
+import { ccDispatcherSetRejectReasons, ccDispatcherChoices, ccDispatcherChoiceDecide } from '../../shared/api.js';   // bl_disp_0442 — carrier choices
 import { REASONS } from '../../agent/dispatcher-gaps.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { renderTestPanel } from './dispatcher-test.js';
@@ -278,11 +278,12 @@ export async function renderDispatcher360(host, query) {
   const root = el('div', { class: 'd3' }, el('div', { class: 'd3-empty' }, 'Loading dispatcher…'));
   mount(host, root);
 
-  const state = { dd: null, test: null, kpi: null, kpiDays: 30, bookings: null, comm: null, activity: null, carriers: [] };
+  const state = { dd: null, test: null, kpi: null, kpiDays: 30, bookings: null, comm: null, activity: null, carriers: [], choices: [] };
   const load = async (what) => {
     const all = !what;
     const jobs = [];
     if (all || what === 'dd') jobs.push(ccDispatcher360(id).then((r) => { state.dd = r; }));
+    if (all || what === 'dd') jobs.push(ccDispatcherChoices('all', id).then((r) => { state.choices = Array.isArray(r) ? r : []; }).catch(() => { state.choices = []; }));   // bl_disp_0442
     if (all || what === 'test') jobs.push(ccDispatcherTestReview(id).then((r) => { state.test = r; }).catch((e) => { state.test = { error: humanizeError(e) }; }));
     if (all || what === 'kpi') jobs.push(ccDispatcherKpis(id, state.kpiDays).then((r) => { state.kpi = r; }).catch((e) => { state.kpi = { error: humanizeError(e) }; }));
     if (all || what === 'bookings') jobs.push(ccDispatcherBookings({ user: id, limit: 200 }).then((r) => { state.bookings = Array.isArray(r) ? r : []; }).catch(() => { state.bookings = []; }));
@@ -590,6 +591,70 @@ export async function renderDispatcher360(host, query) {
     }, 'p', 'handshake');
     return el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [sel, b, el('span', { class: 'd3-mut', style: 'font-size:11.8px' }, 'The carrier gets an e-mail + a confirm card in their portal saying exactly what the dispatcher can see — never bank details. They can pause the dispatcher themselves.')]);
   }
+  // ---- bl_disp_0442: the candidate's carrier choice (from the Fleet Book in their portal)
+  const CHOICE_MK = { exact: ['EXACT MATCH', 'green'], partial: ['PARTIAL MATCH', 'amber'], related: ['RELATED CLASS', 'blue'], unknown: ['EQUIPMENT NOT ON FILE', 'violet'], none: ['OUTSIDE STATED EQUIPMENT', 'red'] };
+  function acceptChoice(c) {
+    const pp = state.dd.profile; const cr = c.carrier || {};
+    const needsTerms = !['trial', 'verified', 'active'].includes(pp.status);
+    // step 2: the SOP (pre-filled from the carrier's own preferences), then the one-step accept
+    const sopStep = (note) => editSop({ carrier_org_id: c.carrier_org_id, carrier: cr.name, sop: {} }, async (sop) => {
+      const r = await ccDispatcherChoiceDecide(c.id, 'accept', note, sop).catch((e) => ({ error: humanizeError(e) }));
+      if (r && r.error) { toast(r.error); return false; }
+      toast(r.trial_started ? '✓ Trial started + carrier assigned — candidate and carrier notified' : '✓ Carrier assigned — candidate and carrier notified');
+      if (r.warning) toast(r.warning);
+      rerender(); return true;
+    });
+    if (!needsTerms) { sopStep(null); return; }
+    // step 1: the trial terms — the same rule as "Move to trial": no 0% trials by accident
+    const pct = el('input', { class: 'd3-in', type: 'number', step: '0.25', min: '0', max: '5', value: pp.commission_pct != null && Number(pp.commission_pct) > 0 ? pp.commission_pct : 2.5, style: 'max-width:110px' });
+    const today = new Date().toISOString().slice(0, 10);
+    const ts = el('input', { class: 'd3-in', type: 'date', value: pp.trial_start || today });
+    const te = el('input', { class: 'd3-in', type: 'date', value: pp.trial_end || addWorkingDays(today, 10) });
+    const note = el('textarea', { class: 'd3-in', rows: '3', style: 'width:100%;resize:vertical', placeholder: 'Optional — printed in the trial e-mail as "A note from LoadBoot". E.g. First check-in call Monday 9am ET.' });
+    const err = el('div', { class: 'cc-sub', style: 'color:#dc2626;min-height:18px' });
+    const goBtn = btn('Next — SOP for ' + (cr.name || 'the carrier'), async () => {
+      const p = Number(pct.value); if (!(p > 0 && p <= 5)) { err.textContent = 'Commission must be above 0 and at most 5%.'; return; }
+      if (!ts.value || !te.value || te.value < ts.value) { err.textContent = 'Set a valid trial window.'; return; }
+      const r = await ccDispatcherSetTerms(id, p, ts.value, te.value).catch((e) => ({ error: humanizeError(e) }));
+      if (r && r.error) { err.textContent = r.error; return; }
+      dr.close(); sopStep(note.value.trim() || null);
+    }, 'p', 'play');
+    const dr = openDrawer('Accept the choice — trial terms first', el('div', { class: 'cc-form' }, [
+      el('p', { class: 'cc-sub', style: 'margin:0 0 10px;line-height:1.6' }, (pp.full_name || 'The candidate') + ' chose ' + (cr.name || 'a carrier') + '. Accepting does two things in one step: starts the commission-only trial with these terms, then assigns the carrier with the SOP you set next. The candidate gets the trial e-mail and the full carrier brief; the carrier gets the intro.'),
+      el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [el('span', { class: 'cc-sub' }, '% of gross'), pct, el('span', { class: 'cc-sub' }, 'from'), ts, el('span', { class: 'cc-sub' }, 'to'), te]),
+      el('div', { class: 'cc-sub', style: 'margin:13px 0 5px' }, 'A note from LoadBoot — optional.'), note, err,
+      el('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [goBtn, btn('Cancel', () => dr.close())]),
+    ]), { subtitle: 'Step 1 of 2 · terms are recorded in the terms log' });
+  }
+  async function declineChoice(c) {
+    const cr = c.carrier || {};
+    const reason = await askReason('Decline ' + (cr.name || 'this carrier') + ' for ' + (state.dd.profile.full_name || 'the candidate') + '? The candidate reads this and chooses again.');
+    if (reason === null) return;
+    const r = await ccDispatcherChoiceDecide(c.id, 'decline', reason || null, null).catch((e) => ({ error: humanizeError(e) }));
+    if (r && r.error) { toast(r.error); return; }
+    toast('✓ Declined — the carrier is free and the candidate was told to choose again'); rerender();
+  }
+  function choiceCards() {
+    const pend = (state.choices || []).filter((c) => c.status === 'pending');
+    return pend.map((c) => {
+      const pp = state.dd.profile; const cr = c.carrier || {}; const dp = c.dispatcher || {};
+      const m = CHOICE_MK[c.match_kind] || [String(c.match_kind || '').toUpperCase(), 'violet'];
+      const gone = cr.still_available === false;
+      const body = el('div', { class: 'd3-pad' }, [
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px' }, [el('b', { style: 'font-size:15px' }, cr.name || 'Carrier'), pill(m[0], m[1]), gone ? pill('No longer available — decline', 'red', 'alert') : '']),
+        el('div', { class: 'd3-mut', style: 'font-size:12.5px;line-height:1.7' }, [
+          'Chosen ' + dShort(c.created_at) + ' · carrier runs ' + ((cr.equipment || []).join(' / ') || 'equipment not on file') + ' · ' + (cr.trucks || 0) + ' truck' + (Number(cr.trucks) === 1 ? '' : 's') + (cr.home_base ? ' · ' + cr.home_base : '') + (cr.min_rpm != null ? ' · floor $' + Number(cr.min_rpm).toFixed(2) + '/mi' : ''),
+          el('br'), 'Candidate knows ' + ((dp.equipment || []).join(' / ') || 'nothing listed') + (dp.years_exp != null ? ' · ' + dp.years_exp + ' yr US dispatch' : '') + (dp.score ? ' · test ' + dp.score : '') + ' · status ' + (pp.status || '—'),
+        ]),
+        c.note ? el('div', { style: 'margin-top:8px;padding:8px 10px;border-left:3px solid #FC5305;background:rgba(252,83,5,.06);font-size:12.5px;line-height:1.5' }, ['“', c.note, '”']) : '',
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [
+          btn(['trial', 'verified', 'active'].includes(pp.status) ? 'Accept — assign this carrier' : 'Accept — start trial + assign', () => acceptChoice(c), 'p', 'handshake', gone ? { disabled: '' } : {}),
+          btn('Decline — candidate chooses again', () => declineChoice(c), 'danger', 'x'),
+        ]),
+      ]);
+      return card('Carrier choice waiting', 'Picked by the candidate from the Fleet Book in their portal · on hold until you decide', 'handshake', body, [], 'carriers');
+    });
+  }
   function carriersCard(full) {
     const live = (state.dd.assignments || []).filter((a) => a.status !== 'ended');
     const ended = (state.dd.assignments || []).filter((a) => a.status === 'ended');
@@ -810,9 +875,9 @@ export async function renderDispatcher360(host, query) {
   // ---- compose
   function body() {
     const left = []; const right = [];
-    if (tab === 'overview') { left.push(nbaCard(), readinessCard(), carriersCard(false), scorecardCard(false)); right.push(termsCard(), documentsCard(false), signalsCard(), activityCard(), noteCard()); }
+    if (tab === 'overview') { left.push(...choiceCards(), nbaCard(), readinessCard(), carriersCard(false), scorecardCard(false)); right.push(termsCard(), documentsCard(false), signalsCard(), activityCard(), noteCard()); }   // bl_disp_0442: a waiting carrier choice comes first
     else if (tab === 'test') { const h = el('div'); renderTestPanel(h, { userId: id, name: state.dd.profile.full_name, onChange: () => rerender('test') }); left.push(h); right.push(signalsCard(), applicationCard()); }
-    else if (tab === 'carriers') { left.push(carriersCard(true)); right.push(termsCard(), signalsCard(), activityCard()); }
+    else if (tab === 'carriers') { left.push(...choiceCards(), carriersCard(true)); right.push(termsCard(), signalsCard(), activityCard()); }
     else if (tab === 'performance') { left.push(scorecardCard(true), readinessCard()); right.push(termsCard(), signalsCard()); }
     else if (tab === 'loads') { left.push(loadsCard()); right.push(carriersCard(false), termsCard()); }
     else if (tab === 'money') { left.push(moneyCard()); right.push(termsCard(), activityCard()); }

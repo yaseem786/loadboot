@@ -1382,6 +1382,13 @@ async function agentPortal(user) {
     if (prof.status === 'skills_test') {
       const tHost = h('div', { id: 'dw-test' }, h('div', { class: 'cp-muted' }, 'Opening your test\u2026'));
       mount(host, h('div', null, [idVerifyCard || '', tHost]));
+      // bl_disp_0442: once the PASS is released, "Choose your carrier" (the Carrier Fleet Book) comes first
+      // and the test result moves one tab over. The server decides eligibility; false = not passed yet.
+      try {
+        const cyc = await import('../agent/choose-carrier.js');
+        const shown = await cyc.mountChooseCarrier(tHost, { testTab: async (h9) => { const m9 = await import('../agent/skills-test.js'); await m9.mountSkillsTest(h9); } });
+        if (shown) return;
+      } catch (e9) { try { console.warn('[choose-carrier] failed to load', e9); } catch (_) {} }
       try {
         const mod = await import('../agent/skills-test.js');
         await mod.mountSkillsTest(tHost);
@@ -1395,7 +1402,10 @@ async function agentPortal(user) {
     }
     if (['trial', 'verified', 'active'].includes(prof.status)) {
       const wsHost = h('div', { id: 'dw-host' }, h('div', { class: 'cp-muted' }, 'Opening your workspace…'));
-      mount(host, h('div', null, [idVerifyCard || '', statusCard, wsHost]));
+      const cycHost = h('div', { id: 'dw-choose' });
+      mount(host, h('div', null, [idVerifyCard || '', statusCard, cycHost, wsHost]));
+      // bl_disp_0442: on trial / verified with no carrier yet, the chooser sits above the workspace.
+      if (!asg.length && prof.status !== 'active') { import('../agent/choose-carrier.js').then((cyc) => cyc.mountChooseCarrier(cycHost, {})).catch(() => {}); }
       try {
         const mod = await import('../agent/dispatcher-workspace.js');
         await mod.mountDispatcherWorkspace(wsHost, {});

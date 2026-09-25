@@ -513,6 +513,14 @@ export const carrierDispatcherChangeRequest = (reason) => rpc('carrier_dispatche
 export const ccDispatcherContactRelease = (assignment, release, note) => rpc('cc_dispatcher_contact_release', { p_assignment: assignment, p_release: release !== false, p_note: note ?? null });
 export const ccDispatcherDelaySet = (carrierOrg, reason, note, etaDays) => rpc('cc_dispatcher_delay_set', { p_carrier_org: carrierOrg, p_reason: reason ?? null, p_note: note ?? null, p_eta_days: etaDays ?? null });   // bl_disp_0410
 export const ccDispatcherResendIntro = (assignment) => rpc('cc_dispatcher_resend_intro', { p_assignment: assignment });
+// bl_disp_0442 — "Choose your carrier": the Carrier Fleet Book inside the dispatcher portal.
+// Candidate side (eligibility is decided server-side: passed test released, or trial/verified with no carrier).
+export const dispatcherCarrierOptions = () => rpc('dispatcher_carrier_options', {});
+export const dispatcherChooseCarrier = (org, note) => rpc('dispatcher_choose_carrier', { p_org: org, p_note: note ?? null });
+export const dispatcherWithdrawChoice = () => rpc('dispatcher_withdraw_choice', {});
+// Staff side: the queue of choices and the one-step decision (accept = trial + assign; decline = candidate chooses again).
+export const ccDispatcherChoices = (status, user) => rpc('cc_dispatcher_choices', { p_status: status ?? 'pending', p_user: user ?? null });
+export const ccDispatcherChoiceDecide = (id, action, note, sop) => rpc('cc_dispatcher_choice_decide', { p_id: id, p_action: action, p_note: note ?? null, p_sop: sop ?? {} });
 export const carrierBookingAck = (booking, ok, note) => rpc('carrier_booking_ack', { p_booking: booking, p_ok: !!ok, p_note: note ?? null });
 // ---- Dispatcher Workspace P1 (bl_disp_0289) — board / posting / KPIs, acting for an assigned carrier ----
 export const dispatcherBoard = (org, limit) => rpc('dispatcher_board', { p_org: org, p_limit: limit ?? 20 });
