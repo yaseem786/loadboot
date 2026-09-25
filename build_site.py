@@ -9688,6 +9688,7 @@ for _e in _MR_EQS:
 for _e in ('Reefer', 'Flatbed', 'Step Deck'):
     _LINT_KNOWN.add(_mrd(_MR_LIVE[_e]['carrier_rpm'] - _MR_LIVE['Dry Van']['carrier_rpm']))   # equipment premium over van (_SP_PREM)
 _LINT_KNOWN.add(_mrd(3.10 - round(_fsc(1.25, 6.0), 2)))   # the '$3.10 all-in' worked example on the truckload page
+_LINT_KNOWN.add('$%.2f' % (_fsc(1.25, 6.0) - _fsc(2.5, 6.5)))   # the peg/MPG spread on the fuel-surcharge page
 for _sn in _MR_SNAPS:
     _LINT_KNOWN.update(_mrd(_v['rpm']) for _v in _sn['rates'].values())
 _LINT_ALLOW = {'$1.25', '$2.00', '$2.50',                      # FSC pegs
