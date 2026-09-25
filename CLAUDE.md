@@ -93,8 +93,9 @@ pastes that into the new session. Never make him reconstruct context from memory
 
 ## 4. Non-negotiables
 
-- **The anon-executable SECURITY DEFINER surface in `public` is 33 on prod** (32 on staging; the
-  two differ only by feature revision). Check it after every migration and **compare the NAMES, not just the
+- **The anon-executable SECURITY DEFINER surface in `public` is 34 on prod** (33 on staging; the
+  two differ only by `retell_inbound`). It was 33/32 until 25 Sep 2026, when `bl_mkt_0442` added
+  `get_public_site_facts` (the public-site build's registry read, same reason as `get_public_market_rates`). Check it after every migration and **compare the NAMES, not just the
   count** - two changes that cancel out leave the count unmoved. The full list, what each name
   is for, and the query are in `docs/audit-2026-09/anon-secdef-baseline.md`. If a name appears
   that is not on that list, something opened a door. (This said "27" until 9 Sep 2026; neither

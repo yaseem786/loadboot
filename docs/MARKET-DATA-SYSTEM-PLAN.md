@@ -1,5 +1,27 @@
 # Market data system — plan (written 25 Sep 2026, for the next session)
 
+## Status — 25 Sep 2026 evening: steps 1–8 built, on staging AND prod
+
+| Step | What shipped | Where |
+|---|---|---|
+| 1 Registry | `app_private.site_facts` (numbers + words, as_of/cadence/due_on/pages), `get_public_site_facts()` (the one new anon name) | `bl_mkt_0442` |
+| 2 Publish | `cc_market_rates_publish(van, reefer, flatbed, week, source, confirmed)`: derives the other 5 from CC-editable ratios in `rate_standards`, as_of = publish day, `rate_history` rows, keeps `rpm_*` standards in step, >15 % WoW asks once, fires the Netlify hook (`site_publish_config`, pasted in CC, never in a migration) | `bl_mkt_0442` |
+| 3 Diesel | edge fn `eia-diesel-pull` + cron Tue/Wed 14:00 UTC + `diesel_pull_record` (service-role only) + CC pull-now / override / setup | `bl_mkt_0443`, `0444` |
+| 4 Build | `build_site.py`: `fact(key)` registry read with `site_facts_fallback.json`; diesel, per diem, every worked FSC example, the oversize anchor, 7 meta descriptions and the "September 2026" words are computed; dated reports build from `rate_history` (`rate_snapshots.json` = fallback; the weekly script is retired) | commit `771b7e8` |
+| 5 Lint | build refuses a hand-typed $/mi or $/gal figure on the 18 market pages (tested by simulating diesel $4.10) | same |
+| 6 CC | `#/market-rates` → Overview / Rates · Publish / Registry / Diesel / Pages / Live view, all popups `openDrawer()` | `views/marketRates.js` |
+| 7 Email | `site.data_stale` in the catalog (S, staff, `staff_internal`), cron Mon 12:59 UTC, idempotent per day | `bl_mkt_0445` |
+| 8 Test | staging: throwaway publish (8 rows, history, standards, guard, restore), fact + stale badge, diesel kick end to end (`eia_key_missing` = only the key is missing), email dry-run. Prod: applied, anon 33 → 34 by name | this doc |
+
+**Owner's three actions (nothing here is typed for him):**
+1. **Netlify build hook** → Netlify → Site configuration → Build & deploy → Build hooks → add "LoadBoot CC publish" (branch main) → paste the URL in CC → Market data → Overview → *Set Netlify build hook*. Until then Publish saves but says "NO rebuild".
+2. **EIA** → free key at eia.gov/opendata → Supabase (prod) → Edge Functions → Secrets: `EIA_API_KEY` = the key, `EIA_WORKER_TOKEN` = the token shown in CC → Market data → Diesel → *Setup*. Then *Pull now*; the log should read `ok` with this week's period. Until then the site keeps the fallback $3.85 (the $6.529 in `fuel_prices` never reaches a page — `get_public_site_facts` sends diesel only after a verified pull).
+3. **First Publish** → DAT Trendlines → three numbers + the week → Publish. That also fixes the 18 Sep in-place revision (a fresh dated row for all 8).
+
+**Known loose ends:** the EIA duoarea ids (NUS, R10, R1X, R1Y, R1Z, R20, R30, R40, R50, SCA) could not be verified from the container; a wrong one shows as `partial` in CC with the raw sample in the log. `site_facts.pages` is filled by hand (seeded for the 4 keys); the build does not report usage back. The fallback diesel date (2026-07-01) is approximate. `rate_benchmarks.window_days` becomes 7 on the first Publish (was 30). The per-diem row is due 1 Oct 2026 — CC will badge it and Monday's mail will say so.
+
+---
+
 **Owner's goal (his words, 25 Sep 2026):** no page on loadboot.com may show stale data. Every
 number, and every word that changes week to week (diesel, rates per equipment, lane rates, "this week",
 "September 2026", dates), is controlled from ONE place in CC and published from there. When
