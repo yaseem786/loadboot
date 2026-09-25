@@ -63,3 +63,13 @@ Edit `android:versionCode` (integer, +1 every upload) and `android:versionName` 
 `AndroidManifest.xml`. Nothing else changes. The web app itself updates over the air —
 the AAB only needs re-uploading when the manifest/icons/launcher change or Play raises
 the targetSdk requirement.
+
+## History
+
+- **v1.0.2 (versionCode 3, 24 Sep 2026)** — the launcher no longer finishes 0.5 s after starting the
+  web app. That left the app process with no activity; aggressive Android skins killed it, the Custom
+  Tabs session died with it, and Chrome dropped from full-screen TWA to a Custom Tab with the
+  "X · loadboot.com · share" bar. It now stays in the back stack (like android-browser-helper's
+  LauncherActivity) and closes itself in onRestart when the user backs out of the web app.
+  Built in the cloud container with this recipe; icons copied byte-for-byte from v2; signed with the
+  upload key (A7:F2…F1:48). File: `release/loadboot-v3.aab`.

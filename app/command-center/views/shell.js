@@ -21,6 +21,8 @@ const NAV = [
   { group: 'Home', items: [
     { path: '/', label: 'Today', icon: 'home', perm: null },
     { path: '/automation', label: 'Task queue', icon: 'refresh', perm: null, flag: 'automation' },
+    // bl_priv_0437 — account-deletion requests (30-day legal clock). Badge = open requests.
+    { path: '/deletions', label: 'Deletion requests', icon: 'shield', perm: 'any:carriers.approve,finance.approve', badge: 'deletions' },
   ] },
   { group: 'Loads', items: [
     { path: '/loads', label: 'Loads & trips', icon: 'package', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view,dispatch.view' },

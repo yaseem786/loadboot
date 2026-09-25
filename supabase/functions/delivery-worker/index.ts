@@ -6,6 +6,7 @@
 // dispatchers and referral partners are excluded — those relationships run in writing.
 // The number is read from app_private.retell_config via the support_phone() RPC, never typed.
 // Same safety model: no RESEND_API_KEY => safe no-op. Identities: hello@ / dispatch@ / billing@.
+// v18 (2026-09-24): contact line follows the CC contact switch (WhatsApp / phone / both) — bl_comm_0438.
 // v10 (2026-08-01): outreach.* is pinned to the marketing identity — it was matching DISPATCH_RE on the word "carrier" and sending from dispatch@loadboot.com.
 // v13 (2026-08-01): new "support" identity (hello@loadboot.com) replaces "marketing" as the final fallback, so Command Center replies and transactional mail leave the main domain instead of the cold-outreach subdomain SENDER_MARKETING now points at.
 // v14 (2026-08-03): every link in the shell now carries its colour on an inner <span> with
@@ -89,10 +90,21 @@ Deno.serve(async (_req) => {
   let PHONE_DISPLAY = "";
   try { const { data: ph } = await sb.rpc("support_phone"); PHONE_DISPLAY = typeof ph === "string" ? ph : ""; } catch (_) { PHONE_DISPLAY = ""; }
   const PHONE_TEL = PHONE_DISPLAY.replace(/[^0-9+]/g, "");
+  // v18 (2026-09-24, bl_comm_0438): the contact line follows the ONE Command Center contact switch
+  // (lb_contact_channel): 'whatsapp' -> "WhatsApp us" with a wa.me link, 'phone' -> the call line,
+  // 'both' -> both. Owner rule: no email may hard-code the Retell/Riley phone number.
+  let CH = "phone", WA_DISPLAY = "", WA_URL = "";
+  try {
+    const { data: cc } = await sb.rpc("lb_contact_channel");
+    const c = (cc && typeof cc === "object") ? cc as Record<string, any> : null;
+    if (c) { CH = String(c.channel || "phone"); WA_DISPLAY = String(c.whatsapp?.display || ""); WA_URL = String(c.whatsapp?.url || ""); }
+  } catch (_) { /* keep the phone line */ }
+  const useWa = (CH === "whatsapp" || CH === "both") && !!WA_DISPLAY && /^https:\/\/wa\.me\/\d{8,15}$/.test(WA_URL);
+  const usePhone = !!PHONE_DISPLAY && (CH === "phone" || CH === "both" || !useWa);
 
   const NO_CALL_RE = /(agent|dispatcher|referral|commission|payout)/i;
   const wantsCall = (d: { template_key?: string | null; meta?: Record<string, unknown> | null }): boolean => {
-    if (!PHONE_DISPLAY) return false;
+    if (!useWa && !usePhone) return false;
     const role = String((d.meta?.role ?? d.meta?.audience ?? "") as string).toLowerCase();
     if (["agent", "dispatcher", "referral"].includes(role)) return false;
     if (d.meta?.no_call === true) return false;
@@ -102,8 +114,9 @@ Deno.serve(async (_req) => {
   const callBandHtml = () =>
     `<tr><td class="lb-pad" style="padding:0 32px 24px">
     <div style="border-top:1px solid #e8eef6;padding-top:13px;font-size:13px;line-height:1.7;color:#64748b">
-      &#128222; Rather just talk? Call us 24/7 on <a href="tel:${PHONE_TEL}" style="color:#0883F7;font-weight:800;text-decoration:none;white-space:nowrap">${PHONE_DISPLAY}</a>
-      &nbsp;&middot;&nbsp; or <a href="${SITE}/contact.html#call" style="color:#0883F7;font-weight:700;text-decoration:none">have us call you &rarr;</a>
+      ${useWa ? `&#128172; Rather just message? WhatsApp us 24/7 on <a href="${WA_URL}" style="color:#0883F7;font-weight:800;text-decoration:none;white-space:nowrap">${WA_DISPLAY}</a>
+      &nbsp;&middot;&nbsp; <a href="${WA_URL}" style="color:#16a34a;font-weight:700;text-decoration:none;white-space:nowrap">Open WhatsApp &rarr;</a>` : ""}${useWa && usePhone ? "<br>" : ""}${usePhone ? `&#128222; Rather just talk? Call us 24/7 on <a href="tel:${PHONE_TEL}" style="color:#0883F7;font-weight:800;text-decoration:none;white-space:nowrap">${PHONE_DISPLAY}</a>
+      &nbsp;&middot;&nbsp; or <a href="${SITE}/contact.html#call" style="color:#0883F7;font-weight:700;text-decoration:none">have us call you &rarr;</a>` : ""}
     </div>
   </td></tr>`;
 
@@ -266,7 +279,9 @@ Deno.serve(async (_req) => {
         html = shell(fragment || raw, unsubUrl, subject, withCall ? callBandHtml() : "");
       }
     }
-    const callLine = withCall ? `\n\nPrefer to talk? Call us 24/7 on ${PHONE_DISPLAY}, or book a time and we call you: ${SITE}/contact.html#call` : "";
+    const callLine = !withCall ? "" :
+      (useWa ? `\n\nPrefer to chat? WhatsApp us 24/7 on ${WA_DISPLAY}: ${WA_URL}` : "") +
+      (usePhone ? `\n\nPrefer to talk? Call us 24/7 on ${PHONE_DISPLAY}, or book a time and we call you: ${SITE}/contact.html#call` : "");
     const unsubscribeLine = unsubUrl ? `\n\n— LoadBoot · Support: ${SITE}/contact.html · Unsubscribe: ${unsubUrl}` : `\n\n— LoadBoot · Support: ${SITE}/contact.html`;
     const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + callLine + unsubscribeLine;
     try {

@@ -10,6 +10,17 @@ const BUCKET = 'documents';
 const safeName = (n) => (n || 'file').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 80);
 const rand = () => Math.random().toString(36).slice(2, 10);
 
+// audit 2026-09-24: while an account-deletion request is open, Storage and the documents table refuse new
+// files (bl_audit_0356 RLS). Turn that bare RLS error into a sentence the carrier can act on.
+export const UPLOADS_FROZEN_MSG = "Uploads are paused while an account-deletion request is open for this account. Cancel the request from your account settings to upload again, or contact support.";
+async function explainUploadError(sb, error) {
+  const raw = (error && error.message) || '';
+  if (/row-level security|violates|Unauthorized|403/i.test(raw)) {
+    try { const { data } = await sb.rpc('my_uploads_frozen'); if (data === true) return UPLOADS_FROZEN_MSG; } catch (_) {}
+  }
+  return raw || 'Upload failed.';
+}
+
 // Upload a File/Blob; returns { path, fileName, contentType, size } for the metadata RPC.
 export async function uploadDocument(file, kind, expectedOwner = null) {
   if (!file) throw new Error('No file selected.');
@@ -22,7 +33,7 @@ export async function uploadDocument(file, kind, expectedOwner = null) {
   const { error } = await sb.storage.from(BUCKET).upload(path, file, {
     contentType: file.type || 'application/octet-stream', upsert: false,
   });
-  if (error) throw new Error(error.message || 'Upload failed.');
+  if (error) throw new Error(await explainUploadError(sb, error));
   return { path, fileName: file.name, contentType: file.type || null, size: file.size || null };
 }
 

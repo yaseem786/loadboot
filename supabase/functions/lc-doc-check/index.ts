@@ -69,6 +69,8 @@ Deno.serve(async (req) => {
     const q = await fetch(`${URL_}/rest/v1/rpc/lc_ob_upload_check`, { method: "POST", headers: { apikey: ANON, Authorization: caller, "Content-Type": "application/json" }, body: JSON.stringify({ p_visitor_key: vkey, p_conversation_id: convId }) });
     const st = await q.json().catch(() => null);
     if (!q.ok) return json({ error: q.status >= 500 ? "service_unavailable" : "not_authorized" }, q.status >= 500 ? 503 : 403);
+    // audit 2026-09-24: an open account-deletion request freezes uploads (bl_audit_0356); say so instead of a bare 403
+    if (st && st.error === "frozen") return json({ error: "frozen", detail: "Uploads are paused while an account-deletion request is open for this account. Cancel the request from your account settings to upload again, or contact support." }, 403);
     if (!st || st.ok !== true || st.error) return json({ error: "not_authorized" }, 403);
 
     const path = `lc-onboarding/${vkey}/${crypto.randomUUID()}-${fname}`;

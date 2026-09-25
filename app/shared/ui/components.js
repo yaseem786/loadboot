@@ -142,23 +142,93 @@ export function avatar(name, fallback) {
 }
 
 // ---- slide-in drawer ----
+// Phones: a table with a header becomes a stack of cards. Every <td> gets data-label from its column
+// header; CSS (command-center.css, .lb-stack) shows "LABEL  value" rows under 640px. Idempotent.
+export function stackTables(scope) {
+  if (!scope || !scope.querySelectorAll) return;
+  scope.querySelectorAll('table').forEach((t) => {
+    const ths = Array.from(t.querySelectorAll('thead th'));
+    if (!ths.length) return;
+    const labels = ths.map((th) => (th.textContent || '').trim());
+    t.querySelectorAll('tbody tr').forEach((tr) => {
+      Array.from(tr.children).forEach((td, i) => { if (!td.hasAttribute('data-label')) td.setAttribute('data-label', labels[i] || ''); });
+    });
+    t.classList.add('lb-stack');
+  });
+}
+
+// ---- openDrawer: the ONE popup window used across the Command Center (130+ call sites) ----
+// bl_ui_0439 (24 Sep 2026): was a 560px side drawer that squeezed tables into one-word columns.
+// Now a centred, premium dialog on desktop and a bottom sheet on phones. Same API and the same
+// ids/classes (#cc-drawer-root, #cc-drawer-body, .cc-drawer-*), so every caller keeps working.
+//   opts.subtitle  — line under the title
+//   opts.size      — 'sm' (confirmations, ~520px) | 'md' (default, ~880px) | 'lg' (~1120px) | 'full'
+//                    'md' upgrades itself to 'lg' when a wide table (5+ columns) appears in the body.
+// Esc closes, the page behind does not scroll, focus returns to where it was.
 export function openDrawer(title, bodyNode, opts = {}) {
   const existing = document.getElementById('cc-drawer-root');
-  if (existing) existing.remove();
-  const close = () => { root.classList.remove('open'); setTimeout(() => root.remove(), 220); };
-  const panel = el('div', { class: 'cc-drawer-panel' }, [
+  if (existing) { try { existing._lbClose ? existing._lbClose(true) : existing.remove(); } catch (_) { existing.remove(); } }
+  const prevFocus = document.activeElement;
+  let size = ['sm', 'md', 'lg', 'full'].includes(opts.size) ? opts.size : 'md';
+  let closed = false;
+  let mo = null;
+  const titleId = 'cc-dlg-t-' + Math.random().toString(36).slice(2, 8);
+  const onKey = (e) => { if (e.key === 'Escape' && !closed) { e.stopPropagation(); close(); } };
+  const close = (instant) => {
+    if (closed) return;
+    closed = true;
+    document.removeEventListener('keydown', onKey, true);
+    try { if (mo) mo.disconnect(); } catch (_) {}
+    root.classList.remove('open');
+    if (!document.querySelector('.cc-xdlg-ovl')) document.documentElement.classList.remove('cc-dlg-lock');
+    if (instant === true) root.remove(); else setTimeout(() => root.remove(), 200);
+    try { if (instant !== true && prevFocus && prevFocus.focus && document.contains(prevFocus)) prevFocus.focus({ preventScroll: true }); } catch (_) {}
+  };
+  const xBtn = el('button', { class: 'cc-drawer-x', title: 'Close (Esc)', 'aria-label': 'Close', onClick: () => close() }, icon('x', 20));
+  const panel = el('div', { class: 'cc-drawer-panel', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId, tabindex: '-1', style: 'outline:none' }, [
+    el('div', { class: 'cc-dlg-grab', 'aria-hidden': 'true' }),
     el('div', { class: 'cc-drawer-head' }, [
-      el('div', null, [el('h3', null, title), opts.subtitle ? el('p', null, opts.subtitle) : '']),
-      el('button', { class: 'cc-drawer-x', title: 'Close', onClick: close }, icon('x', 20)),
+      el('div', { style: 'min-width:0' }, [el('h3', { id: titleId }, title), opts.subtitle ? el('p', null, opts.subtitle) : '']),
+      xBtn,
     ]),
     el('div', { class: 'cc-drawer-body', id: 'cc-drawer-body' }, bodyNode),
   ]);
-  const root = el('div', { class: 'cc-drawer-root', id: 'cc-drawer-root' }, [
-    el('div', { class: 'cc-drawer-scrim', onClick: close }), panel,
+  const root = el('div', { class: 'cc-drawer-root cc-dlg cc-dlg-' + size, id: 'cc-drawer-root' }, [
+    el('div', { class: 'cc-drawer-scrim', onClick: () => close() }), panel,
   ]);
+  root._lbClose = close;
+  const setSize = (s) => { root.classList.remove('cc-dlg-' + size); size = s; root.classList.add('cc-dlg-' + size); };
+  const wideTable = () => Array.from(panel.querySelectorAll('.cc-drawer-body table')).some(t => {
+    const r = t.querySelector('tr'); return r && r.children.length >= 5;
+  });
+  // Tables re-render inside popups, so one observer lives as long as the popup: it upgrades 'md' to
+  // 'lg' for wide tables and labels every cell so phones can show each row as a card (lb-stack).
+  let pending = false;
+  const tidy = () => {
+    pending = false;
+    if (closed) return;
+    if (size === 'md' && wideTable()) setSize('lg');
+    stackTables(panel);
+  };
+  tidy();
+  if (typeof MutationObserver !== 'undefined') {
+    mo = new MutationObserver(() => { if (!pending) { pending = true; requestAnimationFrame(tidy); } });
+    mo.observe(panel, { childList: true, subtree: true });
+  }
   document.body.appendChild(root);
-  requestAnimationFrame(() => root.classList.add('open'));
-  return { close, body: panel.querySelector('#cc-drawer-body') };
+  document.documentElement.classList.add('cc-dlg-lock');
+  document.addEventListener('keydown', onKey, true);
+  requestAnimationFrame(() => {
+    root.classList.add('open');
+    // Focus the first field if there is one, otherwise the close button — never leave focus behind the dialog.
+    setTimeout(() => {
+      try {
+        const f = panel.querySelector('.cc-drawer-body input:not([type=hidden]):not([disabled]), .cc-drawer-body textarea, .cc-drawer-body select');
+        if (f && !opts.noAutofocus) f.focus({ preventScroll: true }); else panel.focus({ preventScroll: true });
+      } catch (_) {}
+    }, 60);
+  });
+  return { close, body: panel.querySelector('#cc-drawer-body'), setSize };
 }
 
 // ---- card ----
@@ -236,7 +306,7 @@ export function askReason(title, opts = {}) {
       rbox || '',
       ta, err,
       el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [submit, cancel]),
-    ]), { subtitle: opts.subtitle || 'This is recorded and shared with the counterparty' });
+    ]), { subtitle: opts.subtitle || 'This is recorded and shared with the counterparty', size: 'sm' });
     setTimeout(() => { try { ta.focus(); } catch (_) {} }, 60);
   });
 }
@@ -250,6 +320,6 @@ export function askConfirm(title, opts = {}) {
     const drawer = openDrawer(title, el('div', null, [
       el('p', { style: 'margin:0 0 12px;line-height:1.6' }, opts.body || 'Are you sure?'),
       el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [yes, no]),
-    ]), { subtitle: opts.subtitle || 'Confirm action' });
+    ]), { subtitle: opts.subtitle || 'Confirm action', size: 'sm' });
   });
 }

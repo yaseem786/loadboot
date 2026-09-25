@@ -37,6 +37,8 @@ import { renderTrips } from './views/trips.js';
 import { renderComms } from './views/comms.js';
 import { renderFinance } from './views/finance.js';
 import { renderFeeApprovals } from './views/feeApprovals.js';
+import { renderDeletionRequests } from './views/deletionRequests.js';
+import { ccAccountDeletions } from '../shared/api.js';
 import { renderInvestors } from './views/investors.js';  // bl_inv_0401 investor capital desk
 import { renderFinanceAnalytics } from './views/financeAnalytics.js';
 import { renderSystemHealth } from './views/systemHealth.js';
@@ -223,6 +225,15 @@ async function boot() {
   const user = await getUser();
   const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled, teamChat: teamChatEnabled, opsMap: opsMapEnabled, announcements: announcementsEnabled, campaigns: campaignsEnabled, googleData: googleDataEnabled, load_marketplace: loadMarketplaceEnabled, referral_program: referralProgramEnabled });
   const { content, setActive } = shell;
+  // bl_priv_0437 — keep the Deletion requests badge honest: open count, refreshed every 5 min and after any action.
+  if (can('carriers.approve') || can('finance.approve')) {
+    const refreshDeletions = () => ccAccountDeletions('open')
+      .then((r) => { try { shell.setBadge('/deletions', Number((r && r.summary && r.summary.open) || 0)); } catch (_) {} })
+      .catch(() => {});
+    refreshDeletions();
+    setInterval(refreshDeletions, 5 * 60 * 1000);
+    window.addEventListener('lb:deletions-changed', refreshDeletions);
+  }
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
 
@@ -338,6 +349,7 @@ async function boot() {
     '/dispatch': tabbed('loads', 'dispatch'),
     '/carriers': tabbed('carriers', 'directory'),
     '/loads': tabbed('loads', 'board'),
+    '/deletions': () => { setActive('/deletions'); guard(['carriers.approve', 'finance.approve'], () => renderDeletionRequests(content))(); },   // bl_priv_0437
     '/documents': () => { setActive('/documents'); guard(['documents.view', 'documents.review'], () => renderDocuments(content))(); },
     '/booking-requests': () => { setActive('/loads'); guard(['loads.assign', 'loads.publish', 'carriers.view'], () => renderBookingRequests(content))(); },
     '/safety': () => { setActive('/compliance'); guard(['compliance.approve', 'carriers.view'], () => renderSafetyDesk(content))(); },

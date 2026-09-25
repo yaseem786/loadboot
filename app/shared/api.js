@@ -419,6 +419,27 @@ export const ccAccountDeletionProcess = async (id, action, note) => {
   }
   return result;
 };
+// bl_priv_0437 — Deletion desk (CC → Deletion requests). One enriched read + the per-file erasure review.
+export const ccAccountDeletions = (view) => rpc('cc_account_deletions', { p_view: view || 'open' });
+export const ccErasureItems = (requestId) => rpc('cc_erasure_items', { p_request_id: requestId });
+export const ccErasureDecide = (requestId, itemKey, decision, retentionClass, retainUntil, note) =>
+  rpc('cc_erasure_decide', { p_request_id: requestId, p_item_key: itemKey, p_decision: decision,
+    p_retention_class: retentionClass ?? null, p_retain_until: retainUntil ?? null, p_note: note ?? null });
+// erasure-purge removes the storage objects staff marked "remove". The server decides what; we only pass the request id.
+export async function ccErasurePurge(requestId) {
+  const sb = await getClient();
+  const { data: { session } } = await sb.auth.getSession();
+  let r;
+  try {
+    r = await fetch(sb.supabaseUrl + '/functions/v1/erasure-purge', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: sb.supabaseKey, Authorization: 'Bearer ' + ((session && session.access_token) || '') },
+      body: JSON.stringify({ request_id: requestId, dry_run: false }) });
+  } catch (_) { const e = new Error('File purge is not reachable.'); e.code = 'PURGE_NOT_LIVE'; throw e; }
+  if (r.status === 404) { const e = new Error('File purge is not live on this environment.'); e.code = 'PURGE_NOT_LIVE'; throw e; }
+  let body = null; try { body = await r.json(); } catch (_) {}
+  if (!r.ok || !body || body.error) { const e = new Error((body && body.error) || 'File purge failed.'); e.code = (body && body.error) || 'PURGE_FAILED'; throw e; }
+  return body;
+}
 export const ccAgentPayoutVerify = (user, ok, note) => rpc('cc_agent_payout_verify', { p_user: user, p_ok: ok, p_reason: note ?? null });
 // Alternative ("Other") payout methods: ask the agent for the exact missing receiving
 // fields, and record a reviewer's assessment of the rail itself (separate from verifying

@@ -153,3 +153,28 @@ hard-coded `sys_email` call with a brand-new key nobody registered.** In practic
 
 Docs: `claude/EMAIL-AUDIT-0391.md` (the audit) and `claude/EMAIL-CATALOG-PROD-0395.md`
 (what is live, and what is left).
+
+---
+
+## 7. Contact line — WhatsApp through the ONE switch, never the Riley phone (set 24 Sep 2026)
+
+The owner does not want the Retell/"Riley" line **+1 (469) 253-7575** shown to customers as the way to
+reach LoadBoot. Every email, template, CC screen and popup must use the contact switch instead:
+
+- Source of truth: `app_private.contact_channel` (CC contact-channel toggle; read with
+  `public.lb_contact_channel()`). On 24 Sep 2026 it is `whatsapp` = **+1 (815) 365-1168**,
+  link **https://wa.me/18153651168** (the Telnyx WhatsApp number).
+- In SQL-built emails write the tokens, never a number: `{{contact_inline}}`, `{{contact_sig}}`,
+  `{{whatsapp_url}}`, `{{whatsapp_display}}`. `app_private.contact_expand` fills them at send time
+  (`sys_email`, `outreach_prepare`), so flipping the switch changes every email with no deploy.
+- The `delivery-worker` footer (v18, `bl_comm_0438`) already follows the switch: WhatsApp line +
+  "Open WhatsApp" link when the channel is `whatsapp`, the call line only when it is `phone`/`both`.
+- Before shipping any new email, grep it for `253-7575` / `2537575`. The only allowed exceptions:
+  SMS START/STOP instructions (they must name the SMS number) and Riley's own caller id.
+
+## 8. Command Center popups — one component (set 24 Sep 2026)
+
+Every CC popup is `openDrawer()` in `app/shared/ui/components.js` — a centred premium dialog on
+desktop and a bottom sheet on phones (`bl_ui_0439`). Do not build a new side drawer or a hand-rolled
+`position:fixed` overlay. Pass `size: 'sm'` for confirmations, `'lg'` for wide tables (5+ columns
+auto-upgrade to `lg`). Esc closes it and the page behind does not scroll.

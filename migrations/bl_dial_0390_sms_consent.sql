@@ -15,6 +15,8 @@
 --   web_form      — portal signup checkbox (carriers today; brokers when the partner form gets one)
 --
 -- STAGING FIRST (snslhvmkjusozgjelghi), then production.
+-- STAGING: applied 2026-09-22.  PRODUCTION (rwscphuhpjoudvljvmdk): applied 2026-09-24 together with the
+-- bl_audit_0360 anon revoke in the same migration; anon SECURITY DEFINER surface verified 33, names unchanged.
 
 create table if not exists app_private.sms_consent (
   number               text primary key,
