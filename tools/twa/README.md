@@ -73,3 +73,13 @@ the targetSdk requirement.
   LauncherActivity) and closes itself in onRestart when the user backs out of the web app.
   Built in the cloud container with this recipe; icons copied byte-for-byte from v2; signed with the
   upload key (A7:F2…F1:48). File: `release/loadboot-v3.aab`.
+- **v1.0.3 (versionCode 4, 25 Sep 2026)** — cold starts (app swiped from recents, then opened from the
+  icon) sometimes still showed the "X · loadboot.com · share" bar; returning from background never did.
+  Cause (best explanation, not proven on a device): on a fresh launch Chrome has to verify Digital Asset
+  Links over the network, and the TWA was opened before that finished, so Chrome fell back to a Custom
+  Tab. The launcher now calls `validateRelationship(session, RELATION_HANDLE_ALL_URLS,
+  https://loadboot.com)` after `newSession` and opens the TWA on `onRelationshipValidationResult` —
+  or after 3 s, whichever is first, so the app never hangs. The 2 s "service never connected" safety net
+  now only fires if the service did not connect, so it cannot cut the validation wait short. The v1.0.2
+  behaviour (launcher stays in the back stack, closes in onRestart) is unchanged.
+  File: `release/loadboot-v4.aab`.
