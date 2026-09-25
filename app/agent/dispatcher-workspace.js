@@ -736,6 +736,8 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       h('div', { class: 'dw-avail', style: 'border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.06)' }, [h('b', { style: 'color:#fca5a5' }, [ic('alert', 16), ' Contact rule — permanent block']), h('div', { class: 'dw-muted', style: 'margin-top:4px;line-height:1.5' }, [
         h('div', null, 'Reach this carrier only through the LoadBoot WhatsApp group, your LoadBoot line and your LoadBoot mailbox. Never a personal phone, WhatsApp, e-mail or social account — yours or theirs. Never move the carrier, a driver, a broker or a load off LoadBoot.'),
         h('div', { style: 'margin-top:4px;color:#fff;font-weight:700' }, 'The carrier is told to report anything else. A confirmed report = same-day suspension, permanent block, no re-application.'),
+        // capacity policy — numbers mirror app_private.disp_capacity_policy() (trial 1 · then up to 3 carriers / 5 trucks after 3 delivered loads, added by LoadBoot)
+        h('div', { style: 'margin-top:6px' }, 'Carriers: one during the trial. After it, LoadBoot may add up to 3 carriers / 5 trucks once you have 3 delivered loads and no carrier report — you never add a carrier yourself.'),
       ])]),
       (s.scope_value || s.lanes || s.rules || s.min_rate || s.min_rate_note) ? h('div', { class: 'dw-avail' }, [h('b', { style: 'color:#7cc0ff' }, [ic('scale', 16), ' Your SOP for this carrier (set by LoadBoot)']), h('div', { class: 'dw-muted', style: 'line-height:1.8;margin-top:4px' }, [
         s.scope_value ? h('div', null, 'Scope: ' + s.scope_value + ' — only source loads inside this scope.') : null,

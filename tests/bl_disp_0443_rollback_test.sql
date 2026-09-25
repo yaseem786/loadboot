@@ -100,9 +100,26 @@ begin
   r := app_private.disp_choice_backfill_email();
   if (r->>'sent')::int <> 0 then raise exception 'c5 blocked candidate e-mailed %', r; end if;
 
+  -- c5b capacity policy (§11): trial = one carrier; a second needs verified + proof + no report
+  perform set_config('request.jwt.claims', json_build_object('role','authenticated','sub',v_staff)::text, true);
+  update app_private.dispatcher_profiles set status = 'trial', blocked_at = null, blocked_reason = null where user_id = v_disp;
+  update app_private.dispatcher_reports set status = 'dismissed' where dispatcher_user_id = v_disp and status in ('open','reviewing','upheld');
+  update app_private.dispatcher_assignments set status = 'ended', ended_at = now() where dispatcher_user_id = v_disp and status <> 'ended';
+  insert into app_private.carrier_onboarding(carrier_id, stage, decided_at) values ((select carrier_id from app_private.fleet_trucks where carrier_id <> v_c1 order by created_at limit 1), 'approved', now())
+    on conflict (carrier_id) do update set stage = 'approved';
+  r := public.cc_dispatcher_assign(v_disp, v_c1, '{}'::jsonb); if r->>'error' is not null then raise exception 'c5b first assign %', r; end if;
+  r := public.cc_dispatcher_assign(v_disp, (select carrier_id from app_private.fleet_trucks where carrier_id <> v_c1 order by created_at limit 1), '{}'::jsonb);
+  if r->>'error' not ilike '%trial = one carrier%' then raise exception 'c5b trial cap %', r; end if;
+  update app_private.dispatcher_profiles set status = 'verified' where user_id = v_disp;
+  r := public.cc_dispatcher_assign(v_disp, (select carrier_id from app_private.fleet_trucks where carrier_id <> v_c1 order by created_at limit 1), '{}'::jsonb);
+  if r->>'error' not ilike '%needs proof first%' then raise exception 'c5b proof %', r; end if;
+  perform set_config('request.jwt.claims', json_build_object('role','authenticated','sub',v_disp)::text, true);
+  r := public.dispatcher_capacity(); if (r->>'carriers')::int <> 1 or (r->>'allowed_now')::int <> 3 then raise exception 'c5b capacity %', r; end if;
+
   -- c6 anon can execute none of the three
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   if has_function_privilege('anon', 'public.carrier_report_dispatcher(text,text,text,text)', 'execute') or has_function_privilege('anon', 'public.cc_dispatcher_reports(text,uuid)', 'execute')
-     or has_function_privilege('anon', 'public.cc_dispatcher_report_decide(uuid,text,text)', 'execute') then raise exception 'c6 anon can execute'; end if;
+     or has_function_privilege('anon', 'public.cc_dispatcher_report_decide(uuid,text,text)', 'execute')
+     or has_function_privilege('anon', 'public.dispatcher_capacity()', 'execute') then raise exception 'c6 anon can execute'; end if;
   raise exception 'ROLLBACK-OK';
 end $t$;

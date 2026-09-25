@@ -427,3 +427,64 @@ begin
                 and has_function_privilege('anon', p.oid, 'execute'))
   then raise exception 'bl_disp_0443: a new public function is anon-executable'; end if;
 end $g$;
+
+-- ---------------------------------------------------------------- 11. carrier capacity policy (owner, 25 Sep 2026 evening)
+-- How many carriers a dispatcher may hold, stated in the portal and enforced where CC assigns:
+--   trial            → exactly ONE carrier (the one the candidate chose);
+--   verified/active  → up to 3 carriers / 5 active trucks, added by LoadBoot only (never self-chosen), and only with
+--                      proof: ≥3 delivered loads on the current carrier(s), no open or upheld carrier report;
+--   any open/upheld carrier report → no new carrier at all.
+-- The numbers live here once; the portal reads them through public.dispatcher_capacity().
+create or replace function app_private.disp_capacity_policy() returns jsonb
+language sql immutable as $$
+  select jsonb_build_object('version', 'v1-2026-09-25', 'trial_max_carriers', 1, 'max_carriers', 3, 'max_trucks', 5, 'proof_loads', 3)
+$$;
+revoke all on function app_private.disp_capacity_policy() from public, anon;
+
+-- The dispatcher's own numbers against the policy (portal card: "how many carriers can I have?").
+create or replace function public.dispatcher_capacity() returns jsonb
+language plpgsql stable security definer set search_path = app_private, public as $$
+declare v_uid uuid := auth.uid(); d record; pol jsonb := app_private.disp_capacity_policy(); v_carriers int; v_trucks int; v_delivered int; v_reports int;
+begin
+  if v_uid is null then return jsonb_build_object('error','not signed in'); end if;
+  select status, blocked_at into d from app_private.dispatcher_profiles where user_id = v_uid;
+  if d.status is null then return jsonb_build_object('error','not a dispatcher'); end if;
+  select count(*) into v_carriers from app_private.dispatcher_assignments a where a.dispatcher_user_id = v_uid and a.status in ('active','paused');
+  select count(*) into v_trucks from app_private.fleet_trucks t where coalesce(t.status,'active') not in ('inactive','retired')
+     and t.carrier_id in (select a.carrier_org_id from app_private.dispatcher_assignments a where a.dispatcher_user_id = v_uid and a.status in ('active','paused'));
+  select count(*) into v_delivered from app_private.dispatcher_bookings b where b.dispatcher_user_id = v_uid and b.status in ('delivered','invoiced','paid');
+  select count(*) into v_reports from app_private.dispatcher_reports r where r.dispatcher_user_id = v_uid and r.status in ('open','reviewing','upheld');
+  return pol || jsonb_build_object(
+    'status', d.status, 'carriers', v_carriers, 'trucks', v_trucks, 'delivered_loads', v_delivered, 'reports', v_reports,
+    'allowed_now', case when d.blocked_at is not null or v_reports > 0 then 0 when d.status = 'trial' then (pol->>'trial_max_carriers')::int else (pol->>'max_carriers')::int end,
+    'proof_met', v_delivered >= (pol->>'proof_loads')::int and v_reports = 0);
+end $$;
+revoke all on function public.dispatcher_capacity() from public, anon;
+grant execute on function public.dispatcher_capacity() to authenticated;
+
+-- Enforced where CC assigns (cc_dispatcher_assign — also the path Accept takes). Existing assignments are untouched.
+do $p$
+declare src text; anchor text; add text;
+begin
+  src := pg_get_functiondef('public.cc_dispatcher_assign'::regproc);
+  anchor := 'if v_dstatus not in (''trial'',''verified'',''active'') then return jsonb_build_object(''error'',''dispatcher must be in trial, verified or active before assignment''); end if;';
+  add := E'\n  -- bl_disp_0443 §11: capacity policy (app_private.disp_capacity_policy)\n'
+      || E'  declare pol jsonb := app_private.disp_capacity_policy(); v_cur int; v_tr int; v_new int; v_rep int; v_del int; begin\n'
+      || E'    select count(*) into v_cur from app_private.dispatcher_assignments a where a.dispatcher_user_id = p_dispatcher and a.status in (''active'',''paused'');\n'
+      || E'    if exists (select 1 from app_private.dispatcher_profiles where user_id = p_dispatcher and blocked_at is not null) then return jsonb_build_object(''error'',''permanently blocked — a carrier report was upheld''); end if;\n'
+      || E'    select count(*) into v_rep from app_private.dispatcher_reports r where r.dispatcher_user_id = p_dispatcher and r.status in (''open'',''reviewing'',''upheld'');\n'
+      || E'    if v_rep > 0 then return jsonb_build_object(''error'',''this dispatcher has '' || v_rep || '' open/upheld carrier report(s) — decide those before assigning another carrier''); end if;\n'
+      || E'    if v_dstatus = ''trial'' and v_cur >= (pol->>''trial_max_carriers'')::int then return jsonb_build_object(''error'',''trial = one carrier. Verify the dispatcher after the trial (3 delivered loads, clean record) before adding a second carrier''); end if;\n'
+      || E'    if v_cur >= (pol->>''max_carriers'')::int then return jsonb_build_object(''error'',''cap reached: '' || (pol->>''max_carriers'') || '' carriers per dispatcher''); end if;\n'
+      || E'    select count(*) into v_tr from app_private.fleet_trucks t where coalesce(t.status,''active'') not in (''inactive'',''retired'') and t.carrier_id in (select a.carrier_org_id from app_private.dispatcher_assignments a where a.dispatcher_user_id = p_dispatcher and a.status in (''active'',''paused''));\n'
+      || E'    select count(*) into v_new from app_private.fleet_trucks t where coalesce(t.status,''active'') not in (''inactive'',''retired'') and t.carrier_id = v_org;\n'
+      || E'    if v_cur > 0 and v_tr + v_new > (pol->>''max_trucks'')::int then return jsonb_build_object(''error'',''cap reached: '' || (v_tr + v_new) || '' trucks would exceed '' || (pol->>''max_trucks'') || '' per dispatcher''); end if;\n'
+      || E'    if v_cur > 0 then select count(*) into v_del from app_private.dispatcher_bookings b where b.dispatcher_user_id = p_dispatcher and b.status in (''delivered'',''invoiced'',''paid'');\n'
+      || E'      if v_del < (pol->>''proof_loads'')::int then return jsonb_build_object(''error'',''a second carrier needs proof first: '' || v_del || '' of '' || (pol->>''proof_loads'') || '' delivered loads on the current carrier(s)''); end if; end if;\n'
+      || E'  end;';
+  if src not like '%' || anchor || '%' then raise exception 'bl_disp_0443: cc_dispatcher_assign anchor missing'; end if;
+  if src like '%bl_disp_0443 §11%' then raise notice 'cc_dispatcher_assign already patched'; else execute replace(src, anchor, anchor || add); end if;
+end $p$;
+do $g$ begin
+  if has_function_privilege('anon', 'public.dispatcher_capacity()', 'execute') then raise exception 'bl_disp_0443: dispatcher_capacity anon-executable'; end if;
+end $g$;

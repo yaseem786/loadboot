@@ -28,6 +28,13 @@ owner's staging test. Front-end on `claude/serene-ptolemy-uk3hgy` (owner merges 
 5. **E-mail the candidates who already passed.** `app_private.disp_choice_backfill_email()` — run by hand on prod AFTER
    the Netlify deploy (the tab must exist). Idempotent (`disppass.choose:<attempt>`). 6 candidates on 25 Sep.
 
+6. **Capacity policy (§11, evening):** trial = **1** carrier (the chosen one); verified/active = up to **3 carriers / 5
+   trucks**, added by LoadBoot only, and only with **3 delivered loads** on the current carrier(s) and **no open/upheld
+   report**. Numbers live once in `app_private.disp_capacity_policy()`; the portal reads `public.dispatcher_capacity()`
+   (card "How many carriers can you dispatch for?" on the chooser; a line in the workspace carrier card); CC enforcement is
+   an anchor patch on `cc_dispatcher_assign` (also the path Accept takes). Existing assignments are untouched — David
+   Thompson keeps his 3 unless CC unassigns.
+
 ## Files
 
 | Layer | File |

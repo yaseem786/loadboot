@@ -523,6 +523,8 @@ export const ccDispatcherChoices = (status, user) => rpc('cc_dispatcher_choices'
 export const ccDispatcherChoiceDecide = (id, action, note, sop) => rpc('cc_dispatcher_choice_decide', { p_id: id, p_action: action, p_note: note ?? null, p_sop: sop ?? {} });
 // The contact-conduct terms a candidate accepts before the first choice (server holds the text + version).
 export const dispatcherAcceptConductTerms = () => rpc('dispatcher_accept_conduct_terms', {});
+// bl_disp_0443 §11 — how many carriers this dispatcher may hold (policy + own numbers).
+export const dispatcherCapacity = () => rpc('dispatcher_capacity', {});
 // bl_disp_0443 — carrier report → permanent block. Carrier side + staff queue and decision.
 export const carrierReportDispatcher = (kind, channel, contact, detail) => rpc('carrier_report_dispatcher', { p_kind: kind, p_channel: channel ?? null, p_contact: contact ?? null, p_detail: detail ?? null });
 export const ccDispatcherReports = (status, user) => rpc('cc_dispatcher_reports', { p_status: status ?? 'open', p_user: user ?? null });
