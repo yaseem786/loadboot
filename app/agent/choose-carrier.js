@@ -12,8 +12,9 @@
 // Everything that decides is on the SERVER: eligibility, availability, the hold, the match. This module
 // only paints what dispatcher_carrier_options() returns. What a candidate may see before an assignment is
 // decided there too (no owner/driver names, phones, dockets, documents, bank/factoring).
-import { dispatcherCarrierOptions, dispatcherChooseCarrier, dispatcherWithdrawChoice } from '../shared/api.js';
+import { dispatcherCarrierOptions, dispatcherChooseCarrier, dispatcherWithdrawChoice, dispatcherAcceptConductTerms } from '../shared/api.js';
 import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';
+import { icon } from '../shared/ui/icons.js';
 
 const h = (tag, attrs, kids) => {
   const e = document.createElement(tag);
@@ -51,6 +52,11 @@ const MATCH = {
 const CSS = `
 .cyc,.cyc *{box-sizing:border-box;min-width:0}
 .cyc{--line:rgba(130,165,225,.16);--panel:rgba(255,255,255,.03);--ink:#eaf1fb;--mut:#9fb0c9;--blue:#4EA6F9;--orange:#FC5305;font-family:Manrope,Inter,system-ui,sans-serif;color:var(--ink)}
+.cyc-terms{margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(239,68,68,.45);background:rgba(239,68,68,.07);font-size:.86rem;line-height:1.5;color:var(--text,#dfe9fb)}
+.cyc-terms-h{font-weight:900;color:#fca5a5;margin-bottom:6px;letter-spacing:.02em}
+.cyc-terms ol{margin:0;padding-left:20px}.cyc-terms li{margin:0 0 6px}
+.cyc-terms-c{margin-top:8px;font-weight:800;color:#fff}
+.cyc-terms-tick{display:flex;gap:10px;align-items:flex-start;margin-top:10px;font-size:.88rem;line-height:1.45;cursor:pointer}.cyc-terms-tick input{margin-top:3px;width:18px;height:18px;flex:none}
 .cyc-hero{border-radius:20px;padding:22px 18px;margin-bottom:14px;background:linear-gradient(135deg,#10223B 0%,#0d2a4d 55%,#0b1f3d 100%);border:1px solid rgba(8,131,247,.35);position:relative;overflow:hidden}
 .cyc-hero:before{content:"";position:absolute;right:-90px;top:-90px;width:280px;height:280px;border-radius:50%;background:radial-gradient(closest-side,rgba(8,131,247,.28),transparent)}
 .cyc-kick{font-size:.7rem;font-weight:900;letter-spacing:.14em;color:#7cc0ff}
@@ -99,6 +105,7 @@ const CSS = `
 .cyc-tabs{display:flex;gap:6px;padding:6px;border-radius:16px;background:var(--panel);border:1px solid var(--line);margin-bottom:14px;overflow:auto}
 .cyc-tab{flex:1;border:0;background:transparent;color:var(--mut);font-weight:800;font-family:inherit;padding:10px 14px;border-radius:12px;cursor:pointer;white-space:nowrap;font-size:.9rem}
 .cyc-tab.on{background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff}
+.cyc-tab{display:inline-flex;align-items:center;justify-content:center;gap:8px}.cyc-tab .cc-ico{display:inline-flex;line-height:0}
 /* the book (sheet) */
 .cyc-ovl{position:fixed;inset:0;background:rgba(2,8,20,.78);z-index:9400;display:flex;align-items:flex-end;justify-content:center;padding:0}
 @media(min-width:760px){.cyc-ovl{align-items:center;padding:18px}}
@@ -198,7 +205,7 @@ function openBook(b, idx, onChoose) {
       h('div', { class: 'cyc-sh' }, [
         h('div', { style: 'min-width:0' }, [
           h('div', { class: 'cyc-kick' }, 'CARRIER ' + pad2(idx + 1) + ' · FLEET BOOK'),
-          h('div', { class: 'cyc-h1', style: 'font-size:1.35rem' }, org.name || 'Carrier'),
+          h('div', { class: 'cyc-h1', style: 'font-size:1.35rem' }, org.label || org.name || 'Carrier'),
           h('div', { class: 'cyc-line' }, headline),
           h('div', { style: 'margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [b.match_kind ? matchPill(b.match_kind) : null, badges(b)]),
         ]),
@@ -265,8 +272,8 @@ function openBook(b, idx, onChoose) {
           ['4', 'Day 2–4 — book one good load at or above the floor, inside the constraints, RC in the carrier’s name before the truck moves. Then a second.'],
         ].map((s) => h('div', { class: 'cyc-step' }, [h('i', null, s[0]), h('div', null, s[1])]))), false),
         h('div', { class: 'cyc-span', style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-top:4px' }, [
-          onChoose ? h('button', { class: 'cyc-btn p', style: 'flex:0 1 auto;padding:13px 22px', onClick: () => { close(); onChoose(); } }, 'Choose ' + (org.name || 'this carrier')) : null,
-          h('div', { class: 'cyc-line', style: 'flex:1;min-width:220px' }, 'Contact details, driver names and documents are issued through the carrier’s WhatsApp group after the assignment — not before. Dispatcher copy · confidential.'),
+          onChoose ? h('button', { class: 'cyc-btn p', style: 'flex:0 1 auto;padding:13px 22px', onClick: () => { close(); onChoose(); } }, 'Choose ' + (org.label || org.name || 'this carrier')) : null,
+          h('div', { class: 'cyc-line', style: 'flex:1;min-width:220px' }, 'The carrier’s name, contact details, MC/DOT, driver names and documents are issued after LoadBoot confirms your choice — not before. Dispatcher copy · confidential.'),
         ]),
       ]),
     ]),
@@ -276,22 +283,41 @@ function openBook(b, idx, onChoose) {
 }
 
 // ---------------------------------------------------------------- choose dialog
-function confirmChoose(b) {
+// The contact rules (server text, bl_disp_0442 §3b). Shown in full the first time; accepted once per version.
+function termsAccepted(t) { return !!(t && t.accepted_version && t.accepted_version === t.version); }
+function termsBlock(t, compact) {
+  const rules = (t && t.rules) || [];
+  return h('div', { class: 'cyc-terms' + (compact ? ' compact' : '') }, [
+    h('div', { class: 'cyc-terms-h' }, ['🚫 ', (t && t.title) || 'Contact rules']),
+    h('ol', null, rules.map((r) => h('li', null, r))),
+    h('div', { class: 'cyc-terms-c' }, (t && t.consequence) || 'Confirmed off-platform contact = same-day suspension, permanent block, no re-application.'),
+  ]);
+}
+
+function confirmChoose(b, terms) {
   return new Promise((resolve) => {
     const close = (v) => { try { unlockPage(back); } catch (_) {} try { back.remove(); } catch (_) {} resolve(v); };
     const ta = h('textarea', { class: 'cyc-ta', placeholder: 'Optional — one line for LoadBoot. E.g. “Ran hotshots out of Ohio for two years; know the Cincinnati building-material lanes.”' });
     const err = h('div', { class: 'cp-err', style: 'min-height:18px;margin-top:6px' });
-    const ok = h('button', { class: 'cyc-btn p', onClick: () => close({ note: ta.value.trim() }) }, 'Yes — choose ' + ((b.org && b.org.name) || 'this carrier'));
+    const needTerms = !termsAccepted(terms);
+    const tick = h('input', { type: 'checkbox', id: 'cyc-terms-ok' });
+    const okBtn = () => { ok.disabled = needTerms && !tick.checked; };
+    tick.onchange = okBtn;
+    const ok = h('button', { class: 'cyc-btn p', onClick: () => close({ note: ta.value.trim(), acceptTerms: needTerms }) }, 'Yes — choose ' + ((b.org && (b.org.label || b.org.name)) || 'this carrier'));
     const back = h('div', { class: 'cyc-ovl cyc', onClick: (e) => { if (e.target === back) close(null); } }, [
       h('div', { class: 'cyc-sheet', style: 'max-width:520px;padding:22px' }, [
         h('div', { class: 'cyc-kick' }, 'CHOOSE YOUR CARRIER'),
-        h('div', { class: 'cyc-h1', style: 'font-size:1.3rem' }, (b.org && b.org.name) || 'This carrier'),
+        h('div', { class: 'cyc-h1', style: 'font-size:1.3rem' }, (b.org && (b.org.label || b.org.name)) || 'This carrier'),
         h('div', { class: 'cyc-sub', style: 'margin-bottom:12px' }, 'This puts the carrier on hold for you and sends your choice to LoadBoot. You can withdraw it until LoadBoot confirms. Once confirmed your paid trial starts and you receive the full operating brief.'),
         b.match_kind && b.match_kind !== 'exact' ? h('div', { class: 'cyc-note', style: 'margin-bottom:12px' }, (MATCH[b.match_kind] || MATCH.unknown)[3].toLowerCase().replace(/^./, (c) => c.toUpperCase()) + (b.match_missing && b.match_missing.length ? ' — this carrier runs ' + b.match_missing.join(' / ') + ', which you did not list in your application. Say in the note why you can handle it.' : '.')) : null,
-        ta, err,
+        ta,
+        needTerms ? termsBlock(terms) : h('div', { class: 'cyc-line', style: 'margin-top:10px' }, '✓ Contact rules accepted ' + (terms && terms.accepted_at ? fmtD(terms.accepted_at) : '') + ' — every contact with the carrier goes through LoadBoot channels only; anything else is a permanent block.'),
+        needTerms ? h('label', { for: 'cyc-terms-ok', class: 'cyc-terms-tick' }, [tick, h('span', null, 'I have read the contact rules and accept them. I understand a confirmed report means a permanent block.')]) : null,
+        err,
         h('div', { style: 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'cyc-btn g', onClick: () => close(null) }, 'Not yet'), ok]),
       ]),
     ]);
+    okBtn();
     document.body.appendChild(back); try { lockPage(back); } catch (_) {}
   });
 }
@@ -341,7 +367,7 @@ function pendingCard(o, reload) {
     h('div', { class: 'cyc-head', style: 'display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap' }, [
       h('div', { style: 'flex:1;min-width:200px' }, [
         h('div', { class: 'cyc-idx', style: 'color:#4ade80' }, '✓ YOUR CHOICE IS WITH LOADBOOT · ' + fmtDT(p.created_at).toUpperCase()),
-        h('div', { class: 'cyc-name' }, org.name || 'Carrier'),
+        h('div', { class: 'cyc-name' }, org.label || org.name || 'Carrier'),
         h('div', { class: 'cyc-line' }, org.summary || ''),
       ]),
       p.match_kind ? matchPill(p.match_kind) : null,
@@ -363,7 +389,7 @@ function carrierCard(b, idx, onChoose) {
     h('div', { class: 'cyc-head', style: 'display:flex;gap:10px;align-items:flex-start' }, [
       h('div', { style: 'flex:1;min-width:0' }, [
         h('div', { class: 'cyc-idx' }, 'CARRIER ' + pad2(idx + 1)),
-        h('div', { class: 'cyc-name' }, org.name || 'Carrier'),
+        h('div', { class: 'cyc-name' }, org.label || org.name || 'Carrier'),
         h('div', { class: 'cyc-line' }, org.summary || ''),
       ]),
       matchPill(b.match_kind),
@@ -404,17 +430,22 @@ export async function mountChooseCarrier(host, opts = {}) {
   const body = h('div');
   const reload = () => mountChooseCarrier(host, opts);
   const onChoose = async (b) => {
-    const ans = await confirmChoose(b);
+    const ans = await confirmChoose(b, o.conduct_terms);
     if (!ans) return;
+    if (ans.acceptTerms) {
+      const t = await dispatcherAcceptConductTerms().catch((e) => ({ error: (e && e.message) || 'could not record your acceptance' }));
+      if (t && t.error) { toast(t.error); return; }
+      o.conduct_terms = Object.assign({}, o.conduct_terms, { accepted_at: t.accepted_at, accepted_version: t.version });
+    }
     const r = await dispatcherChooseCarrier(b.org.id, ans.note || null).catch((e) => ({ error: (e && e.message) || 'could not send your choice' }));
-    if (r && r.error) { toast(r.error); if (/no longer|taken/i.test(r.error)) reload(); return; }
+    if (r && r.error) { toast(r.error); if (/no longer|taken/i.test(r.error) || r.code === 'terms_required') reload(); return; }
     toast('✓ Your choice is with LoadBoot'); reload();
   };
 
   // optional second tab: the test result (the caller passes a mounter so this module never imports the test)
   const tabs = opts.testTab ? h('div', { class: 'cyc-tabs' }, [
-    h('button', { class: 'cyc-tab on', onClick: (e) => { pick(0, e.currentTarget); } }, '🚚 Choose your carrier'),
-    h('button', { class: 'cyc-tab', onClick: (e) => { pick(1, e.currentTarget); } }, '📝 Your test result'),
+    h('button', { class: 'cyc-tab on', type: 'button', onClick: (e) => { pick(0, e.currentTarget); } }, [icon('truck', 16), ' Choose your carrier']),
+    h('button', { class: 'cyc-tab', type: 'button', onClick: (e) => { pick(1, e.currentTarget); } }, [icon('clipboard', 16), ' Your test result']),
   ]) : null;
   const testHost = h('div', { style: 'display:none' });
   let testMounted = false;
@@ -442,8 +473,10 @@ export async function mountChooseCarrier(host, opts = {}) {
       exact > 0
         ? h('div', { class: 'cyc-banner ok' }, [h('div', null, '✅'), h('div', null, [h('b', null, exact + (exact === 1 ? ' carrier matches' : ' carriers match') + ' your profile exactly'), ' — ' + (exact === 1 ? 'it is' : 'they are') + ' listed first. Every piece of equipment ' + (exact === 1 ? 'it runs' : 'they run') + ' is one you told us you can manage.'])])
         : h('div', { class: 'cyc-banner warn' }, [h('div', null, '⚠️'), h('div', null, [h('b', null, 'No exact match with your profile'), ' — but you can still choose from the following available carriers. The ones closest to your equipment are listed first. If you pick one outside your stated equipment, tell LoadBoot in the note why you can handle it.'])]),
+      h('div', { class: 'cyc-banner warn' }, [h('div', null, '🚫'), h('div', null, [h('b', null, 'Contact rules apply from the moment you choose. '), 'Every contact with a carrier goes through LoadBoot channels only — the carrier’s LoadBoot WhatsApp group, your LoadBoot line, your LoadBoot mailbox. Carriers are told to report anything else; a confirmed report is a same-day suspension and a permanent block. ', h('a', { href: '#', onClick: (e) => { e.preventDefault(); const x = e.currentTarget.parentNode.parentNode.nextSibling; if (x) x.style.display = x.style.display === 'none' ? '' : 'none'; } }, termsAccepted(o.conduct_terms) ? 'You accepted these rules — read again' : 'Read the rules')])]),
+      h('div', { style: 'display:none' }, termsBlock(o.conduct_terms)),
       h('div', { class: 'cyc-grid' }, o.carriers.map((b, i) => carrierCard(b, i, onChoose))),
-      h('div', { class: 'cyc-line', style: 'margin-top:12px;text-align:center' }, 'Dispatcher copy · confidential. Contact details are issued through each carrier’s WhatsApp group after the assignment, not here.'),
+      h('div', { class: 'cyc-line', style: 'margin-top:12px;text-align:center' }, 'Dispatcher copy · confidential. Carrier names, contacts, MC/DOT and documents are issued after LoadBoot confirms your choice, not here.'),
       historyBlock(o),
     ]);
   }

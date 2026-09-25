@@ -29,7 +29,7 @@ import { signedDocumentUrl } from '../../shared/storage.js';
 import { dispatchLiveJoin } from '../../shared/dispatch-live.js';
 import { renderRoster } from './dispatchers-roster.js';           // bl_disp_0313 — paged roster
 import { ccDispatchersPage } from '../../shared/api.js';
-import { ccDispatcherChoices } from '../../shared/api.js';   // bl_disp_0442 — carrier choices made by passed candidates
+import { ccDispatcherChoices, ccDispatcherReports } from '../../shared/api.js';   // bl_disp_0442 — carrier choices · bl_disp_0443 — carrier reports
 
 const PIPE = ['applied', 'screening', 'skills_test', 'trial', 'verified', 'active', 'suspended', 'rejected'];
 const STPILL = {
@@ -121,7 +121,7 @@ function dqStyle() {
 }
 
 export function renderDispatchers(host) {
-  const state = { q: '', st: 'all', rows: [], carriers: [], queue: null, dq: 'rc', presence: [], feed: [], comm: null, liveShown: false, choices: [] };
+  const state = { q: '', st: 'all', rows: [], carriers: [], queue: null, dq: 'rc', presence: [], feed: [], comm: null, liveShown: false, choices: [], reports: [] };
   const body = el('div');
   const queueBox = el('div');
   // bl_disp_0307: this box is now the command bar — ET clock, socket state, presence avatars
@@ -248,6 +248,8 @@ export function renderDispatchers(host) {
     state.queue = q;
     // bl_disp_0442: pending carrier choices ride along with the queue (own RPC, same 90 s cadence)
     try { const ch = await ccDispatcherChoices('pending'); state.choices = Array.isArray(ch) ? ch : []; } catch (_) { state.choices = []; }
+    // bl_disp_0443: open carrier reports (Uphold on the 360 = permanent block)
+    try { const rp = await ccDispatcherReports('open'); state.reports = Array.isArray(rp) ? rp : []; } catch (_) { state.reports = []; }
     if (state.comm === null) {
       const c = await ccDispatcherCommissionList(null).catch(() => []);
       state.comm = Array.isArray(c) ? c : [];
@@ -267,6 +269,7 @@ export function renderDispatchers(host) {
     const ut = (q.unread_threads || []).filter((t) => Number(t.unread) > 0), te = q.trials_ending || [];
     const ts = q.tests_to_score || [];   // bl_disp_0307: a submitted skills test waiting for a human
     const ch = state.choices || [];      // bl_disp_0442: a passed candidate picked a carrier — on hold until CC decides
+    const rp = state.reports || [];      // bl_disp_0443: a carrier reported their dispatcher — decide on the 360
     const stale = mv.filter((b) => Number(b.last_touch_min) > 240);
     const unread = ut.reduce((s, t) => s + Number(t.unread || 0), 0);
     const toPay = dqSum('approved'), toApprove = dqSum('draft');
@@ -283,6 +286,7 @@ export function renderDispatchers(host) {
       ['trials', String(te.length), 'Trial ends ≤3 d', te.length ? 'warm' : 'cool'],
       ['tests', String(ts.length), 'Tests to score', ts.length ? 'warm' : 'cool'],
       ['choices', String(ch.length), 'Carrier choices', ch.length ? 'hot' : 'cool'],
+      ['reports', String(rp.length), 'Carrier reports', rp.length ? 'hot' : 'cool'],
     ];
     const strip = el('div', { class: 'dq-triage' }, cells.map(([k, n, l, tone]) => el('button', {
       class: 'dq-t ' + tone + (state.dq === k ? ' sel' : ''), type: 'button',
@@ -372,6 +376,16 @@ export function renderDispatchers(host) {
         ]),
         el('div', { class: 'dq-act' }, [el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => byUser(t.user_id) }, 'Score it')]),
       ]));
+    } else if (state.dq === 'reports') {
+      // bl_disp_0443: the carrier pressed "Report a contact". Uphold (on the 360) = same-day suspension + permanent block.
+      head = 'Carrier reports waiting — Uphold blocks the dispatcher permanently, Dismiss tells the carrier';
+      list = rp.map((r) => { const d = r.dispatcher || {}, cr = r.carrier || {}; return el('div', { class: 'dq-rc' }, [
+        el('div', { class: 'dq-c1' }, [
+          el('div', { class: 'dq-lane' }, [(cr.name || 'carrier') + ' reported ' + (d.name || 'dispatcher') + ' ', el('span', { class: 'cc-pill cc-pill-red' }, r.kind_label || r.kind)]),
+          el('div', { class: 'dq-meta' }, Math.round(Number(r.age_hours || 0)) + ' h ago · ' + (r.channel || '—') + (r.contact_seen ? ' · seen ' + r.contact_seen : '') + ' · LoadBoot line ' + (d.line || 'none') + (r.detail ? ' · “' + r.detail.slice(0, 120) + (r.detail.length > 120 ? '…' : '') + '”' : '')),
+        ]),
+        el('div', { class: 'dq-act' }, [el('button', { class: 'lb-btn lb-btn-primary', onClick: () => { location.hash = '#/dispatcher?id=' + encodeURIComponent(r.dispatcher_user_id) + '&tab=carriers'; } }, 'Decide')]),
+      ]); });
     } else if (state.dq === 'choices') {
       // bl_disp_0442: the candidate chose from the Fleet Book in their portal. Accept (on the 360, Carriers tab)
       // = trial terms + SOP + assignment in one step; Decline frees the carrier and the candidate picks again.

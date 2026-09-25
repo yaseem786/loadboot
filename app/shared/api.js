@@ -521,6 +521,12 @@ export const dispatcherWithdrawChoice = () => rpc('dispatcher_withdraw_choice', 
 // Staff side: the queue of choices and the one-step decision (accept = trial + assign; decline = candidate chooses again).
 export const ccDispatcherChoices = (status, user) => rpc('cc_dispatcher_choices', { p_status: status ?? 'pending', p_user: user ?? null });
 export const ccDispatcherChoiceDecide = (id, action, note, sop) => rpc('cc_dispatcher_choice_decide', { p_id: id, p_action: action, p_note: note ?? null, p_sop: sop ?? {} });
+// The contact-conduct terms a candidate accepts before the first choice (server holds the text + version).
+export const dispatcherAcceptConductTerms = () => rpc('dispatcher_accept_conduct_terms', {});
+// bl_disp_0443 — carrier report → permanent block. Carrier side + staff queue and decision.
+export const carrierReportDispatcher = (kind, channel, contact, detail) => rpc('carrier_report_dispatcher', { p_kind: kind, p_channel: channel ?? null, p_contact: contact ?? null, p_detail: detail ?? null });
+export const ccDispatcherReports = (status, user) => rpc('cc_dispatcher_reports', { p_status: status ?? 'open', p_user: user ?? null });
+export const ccDispatcherReportDecide = (id, action, note) => rpc('cc_dispatcher_report_decide', { p_id: id, p_action: action, p_note: note ?? null });
 export const carrierBookingAck = (booking, ok, note) => rpc('carrier_booking_ack', { p_booking: booking, p_ok: !!ok, p_note: note ?? null });
 // ---- Dispatcher Workspace P1 (bl_disp_0289) — board / posting / KPIs, acting for an assigned carrier ----
 export const dispatcherBoard = (org, limit) => rpc('dispatcher_board', { p_org: org, p_limit: limit ?? 20 });

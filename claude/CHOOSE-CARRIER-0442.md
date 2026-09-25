@@ -3,6 +3,12 @@
 **Status (25 Sep 2026):** migration applied to **STAGING** (`snslhvmkjusozgjelghi`) and the rollback test
 passes there (8 checks, ends ROLLBACK-OK). **NOT on prod yet** — owner tests staging first, then prod.
 
+**Revision 25 Sep 2026 (same session, before prod):** owner decisions added on top — see `claude/CARRIER-REPORT-0443.md`.
+0442 itself now (a) hides the carrier's IDENTITY before CC accepts (no company name — the candidate sees a stable
+anonymous label `Carrier 7F3A`, plus authority age, equipment, floor, radius, home state), and (b) gates the first
+choice behind the contact-conduct terms (`dispatcher_accept_conduct_terms`, stored on the profile with a version).
+Re-applied to staging (sections 3b–6, 9); the updated rollback test (c1/c1b/c2 assertions) is green.
+
 ## What changed, in one paragraph
 
 Until now a candidate who passed the skills test got a hand-built PDF ("LoadBoot · Carrier Fleet Book")
@@ -69,15 +75,15 @@ number on staging e-mails. Prod is `whatsapp`. Flip staging in CC if you want pa
 
 ## Prod apply (after the staging test)
 
-1. `apply_migration` the file to `rwscphuhpjoudvljvmdk` (idempotent: `if not exists` / `create or replace` / `on conflict`).
-2. Run the anon SECURITY DEFINER query from `docs/audit-2026-09/anon-secdef-baseline.md` — expect the same 33 names.
-3. Compare `md5(pg_get_functiondef)` of the 15 functions between staging and prod.
+1. `apply_migration` the file to `rwscphuhpjoudvljvmdk` (idempotent: `if not exists` / `create or replace` / `on conflict`), **then `bl_disp_0443_carrier_report_and_block.sql`** (anchor patches assert their anchors; both verified present on prod 25 Sep).
+2. Run the anon SECURITY DEFINER query from `docs/audit-2026-09/anon-secdef-baseline.md` — expect **34** names on prod: the staging 33 plus `retell_inbound` (prod-only). Verified 25 Sep 2026 pre-apply: prod reads exactly those 34; the diff vs staging is `retell_inbound` alone.
+3. Compare `md5(pg_get_functiondef)` of the 15 + 0443's functions between staging and prod.
+5. After the Netlify deploy only: `select app_private.disp_choice_backfill_email();` on prod — e-mails the candidates who passed before the tab existed (6 on 25 Sep: Aleena, Yusuf, Raza, Navjot, Gursewak, Jugraj). Idempotent.
 4. Deploy the front-end (Netlify build from `main`).
 
 ## Open items / later
 
-- 5 prod candidates already sit at `skills_test` with a released pass — they will see the tab immediately after
-  the prod deploy. Decide whether to e-mail them (the new pass e-mail only fires for future passes).
+- ~~5 prod candidates already sit at `skills_test` with a released pass~~ → owner decided YES (25 Sep): `disp_choice_backfill_email()` in 0443, run by hand after the deploy. 6 candidates on prod that day.
 - The CC "Move to trial" button still exists for candidates who never chose; unchanged.
-- If the owner wants candidates to see driver names before assignment, flip `p_full` in
+- Owner decided (25 Sep): NO identity before acceptance — not even the company name. `p_full` stays false; if that ever changes, flip `p_full` in
   `dispatcher_carrier_options` (one argument) — the book already carries the fields behind the flag.

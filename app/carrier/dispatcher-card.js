@@ -58,7 +58,7 @@ export async function mountDispatcherCard(host) {
   let name, sub, status, avatar;
   if (a) {
     name = dp.name || 'Your LoadBoot dispatcher';
-    sub = 'Your dedicated LoadBoot dispatcher' + (a.assigned_at ? ' · since ' + day(a.assigned_at) : '') + (released ? '' : ' · direct line after compliance check');
+    sub = 'Your dedicated LoadBoot dispatcher' + (a.assigned_at ? ' · since ' + day(a.assigned_at) : '') + (released ? '' : ' · direct line after compliance check') + ' · reaches you only from the LoadBoot line and your LoadBoot group — anything else, report it in the Dispatcher tab';
     status = a.status === 'paused' ? pill('Paused by you', 'warn') : pill('Active', 'ok');
     avatar = h('div', { class: 'dc-avatar' }, initials(dp.name));
   } else if (stage === 'approved') {

@@ -35,8 +35,11 @@ html[data-lbtheme="dark"] {
   border-radius: var(--lbt-r); box-shadow: var(--lbt-shadow); border: 1px solid var(--lbt-line);
   font-family: var(--lb-font, 'Manrope', system-ui, sans-serif); line-height: 1.5;
   opacity: 0; transform: translateY(8px) scale(.98); transition: opacity .28s var(--lbt-ease), transform .32s var(--lbt-ease), top .42s var(--lbt-ease), left .42s var(--lbt-ease);
-  outline: none; overflow: hidden; }
-.lbt-card.lbt-in { opacity: 1; transform: none; }
+  outline: none; overflow: hidden;
+  /* 25 Sep 2026: a dismissed card fades to opacity 0 but stayed a fixed 380–440px box over the page and swallowed every
+     click under it (the agent portal's "Choose your carrier" tab sat exactly under the welcome card). Off = no pointer events. */
+  pointer-events: none; visibility: hidden; transition-property: opacity, transform, top, left, visibility; transition-delay: 0s, 0s, 0s, 0s, .28s; }
+.lbt-card.lbt-in { opacity: 1; transform: none; pointer-events: auto; visibility: visible; transition-delay: 0s; }
 .lbt-card.lbt-jump { transition: opacity .28s var(--lbt-ease), transform .32s var(--lbt-ease); }
 .lbt-card.lbt-hero { width: min(440px, calc(100vw - 24px)); }
 .lbt-arrow { position: absolute; width: 16px; height: 16px; background: var(--lbt-surface); border: 1px solid var(--lbt-line); transform: rotate(45deg); z-index: -1; }
