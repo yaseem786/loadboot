@@ -1,0 +1,61 @@
+pull,start,end,query,page,clicks,impressions,ctr,position
+28p,2026-08-26,2026-09-23,,freight-agent-vs-freight-broker.html,0,111,0,12.7
+28p,2026-08-26,2026-09-23,,freight-broker-software-cost.html,0,126,0,22.0
+7p,2026-09-16,2026-09-23,,freight-agent-vs-freight-broker.html,0,75,0,12.7
+7p,2026-09-16,2026-09-23,,freight-broker-software-cost.html,0,86,0,22.2
+90p,2026-06-25,2026-09-23,,freight-agent-vs-freight-broker.html,0,111,0,12.7
+90p,2026-06-25,2026-09-23,,freight-broker-software-cost.html,0,126,0,22.0
+28qp,2026-08-26,2026-09-23,"""claude.ai/referral/"" -site:claude.ai -site:anthropic.com",freight-agent-vs-freight-broker.html,0,6,0,2.2
+28qp,2026-08-26,2026-09-23,"""claude.ai/referral/"" -site:claude.ai -site:anthropic.com",freight-broker-software-cost.html,0,2,0,2.5
+28qp,2026-08-26,2026-09-23,cost of freight broker vs tms,freight-broker-software-cost.html,0,1,0,53
+28qp,2026-08-26,2026-09-23,freight agent vs freight broker,freight-agent-vs-freight-broker.html,0,15,0,16.5
+28qp,2026-08-26,2026-09-23,freight broker,freight-agent-vs-freight-broker.html,0,1,0,35
+28qp,2026-08-26,2026-09-23,freight broker platform,freight-broker-software-cost.html,0,1,0,19
+28qp,2026-08-26,2026-09-23,freight broker software cost,freight-broker-software-cost.html,0,28,0,37.2
+28qp,2026-08-26,2026-09-23,freight broker vs agent,freight-agent-vs-freight-broker.html,0,34,0,18.3
+28qp,2026-08-26,2026-09-23,freight broker vs freight agent,freight-agent-vs-freight-broker.html,0,3,0,24
+28qp,2026-08-26,2026-09-23,freight brokerage software cost,freight-broker-software-cost.html,0,8,0,50
+28qp,2026-08-26,2026-09-23,freight subscription,freight-broker-software-cost.html,0,1,0,19
+28qp,2026-08-26,2026-09-23,how does tms cost compare to using a freight broker?,freight-broker-software-cost.html,0,1,0,11
+28qp,2026-08-26,2026-09-23,i mean the software,freight-broker-software-cost.html,0,1,0,7
+28qp,2026-08-26,2026-09-23,its dispatch price,freight-broker-software-cost.html,0,1,0,46
+28qp,2026-08-26,2026-09-23,load broker definition,freight-agent-vs-freight-broker.html,0,1,0,31
+28qp,2026-08-26,2026-09-23,shippercrm,freight-broker-software-cost.html,0,1,0,71
+28qp,2026-08-26,2026-09-23,tms vs freight broker cost,freight-broker-software-cost.html,0,1,0,55
+28qp,2026-08-26,2026-09-23,trucking broker software,freight-broker-software-cost.html,0,1,0,74
+28qp,2026-08-26,2026-09-23,trucking brokerage software,freight-broker-software-cost.html,0,3,0,78
+28qp,2026-08-26,2026-09-23,what is a freight agent,freight-agent-vs-freight-broker.html,0,1,0,25
+28qp,2026-08-26,2026-09-23,what is freight agent,freight-agent-vs-freight-broker.html,0,4,0,26.8
+28qp,2026-08-26,2026-09-23,what is freight broker software,freight-broker-software-cost.html,0,2,0,90.5
+7qp,2026-09-16,2026-09-23,cost of freight broker vs tms,freight-broker-software-cost.html,0,1,0,53
+7qp,2026-09-16,2026-09-23,freight agent vs freight broker,freight-agent-vs-freight-broker.html,0,10,0,14
+7qp,2026-09-16,2026-09-23,freight broker platform,freight-broker-software-cost.html,0,1,0,19
+7qp,2026-09-16,2026-09-23,freight broker software cost,freight-broker-software-cost.html,0,19,0,34.7
+7qp,2026-09-16,2026-09-23,freight broker vs agent,freight-agent-vs-freight-broker.html,0,28,0,18.2
+7qp,2026-09-16,2026-09-23,freight broker vs freight agent,freight-agent-vs-freight-broker.html,0,3,0,24
+7qp,2026-09-16,2026-09-23,freight brokerage software cost,freight-broker-software-cost.html,0,4,0,59
+7qp,2026-09-16,2026-09-23,how does tms cost compare to using a freight broker?,freight-broker-software-cost.html,0,1,0,11
+7qp,2026-09-16,2026-09-23,i mean the software,freight-broker-software-cost.html,0,1,0,7
+7qp,2026-09-16,2026-09-23,its dispatch price,freight-broker-software-cost.html,0,1,0,46
+7qp,2026-09-16,2026-09-23,load broker definition,freight-agent-vs-freight-broker.html,0,1,0,31
+7qp,2026-09-16,2026-09-23,shippercrm,freight-broker-software-cost.html,0,1,0,71
+7qp,2026-09-16,2026-09-23,tms vs freight broker cost,freight-broker-software-cost.html,0,1,0,55
+7qp,2026-09-16,2026-09-23,trucking broker software,freight-broker-software-cost.html,0,1,0,74
+7qp,2026-09-16,2026-09-23,trucking brokerage software,freight-broker-software-cost.html,0,1,0,77
+7qp,2026-09-16,2026-09-23,what is freight broker software,freight-broker-software-cost.html,0,2,0,90.5
+90qp,2026-06-25,2026-09-23,"""claude.ai/referral/"" -site:claude.ai -site:anthropic.com",freight-agent-vs-freight-broker.html,0,6,0,2.2
+90qp,2026-06-25,2026-09-23,"""claude.ai/referral/"" -site:claude.ai -site:anthropic.com",freight-broker-software-cost.html,0,2,0,2.5
+90qp,2026-06-25,2026-09-23,cost of freight broker vs tms,freight-broker-software-cost.html,0,1,0,53
+90qp,2026-06-25,2026-09-23,freight agent vs freight broker,freight-agent-vs-freight-broker.html,0,15,0,16.5
+90qp,2026-06-25,2026-09-23,freight broker,freight-agent-vs-freight-broker.html,0,1,0,35
+90qp,2026-06-25,2026-09-23,freight broker platform,freight-broker-software-cost.html,0,1,0,19
+90qp,2026-06-25,2026-09-23,freight broker software cost,freight-broker-software-cost.html,0,28,0,37.2
+90qp,2026-06-25,2026-09-23,freight broker vs agent,freight-agent-vs-freight-broker.html,0,34,0,18.3
+90qp,2026-06-25,2026-09-23,freight broker vs freight agent,freight-agent-vs-freight-broker.html,0,3,0,24
+90qp,2026-06-25,2026-09-23,freight brokerage software cost,freight-broker-software-cost.html,0,8,0,50
+90qp,2026-06-25,2026-09-23,freight subscription,freight-broker-software-cost.html,0,1,0,19
+90qp,2026-06-25,2026-09-23,how does tms cost compare to using a freight broker?,freight-broker-software-cost.html,0,1,0,11
+90qp,2026-06-25,2026-09-23,i mean the software,freight-broker-software-cost.html,0,1,0,7
+90qp,2026-06-25,2026-09-23,its dispatch price,freight-broker-software-cost.html,0,1,0,46
+90qp,2026-06-25,2026-09-23,load broker definition,freight-agent-vs-freight-broker.html,0,1,0,31
+90qp,2026-06-25,2026-09-23,shippercrm,freight-broker-software-cost.html,0,1,0,71

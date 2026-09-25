@@ -91,6 +91,7 @@ FBS_BODY = (
 )
 
 FBS_FAQ = [
+ ('What is freight broker software?', 'Freight broker software is the set of tools a brokerage runs its loads through: a TMS as the system of record, a carrier vetting service, a tracking platform and a load board. Many vendors sell the TMS alone as &ldquo;broker software&rdquo;; most brokerages end up paying for all four, from four vendors.'),
  ('How much does freight broker software cost?', 'There is no single number. Broker TMS products are priced per user per month, usually in tiers, often with a one-time onboarding fee and an annual contract. Carrier vetting, tracking and load boards are separate subscriptions on top. The worksheet on this page shows how to price your own stack from real quotes rather than a published average.'),
  ('Does a new freight broker need a TMS on day one?', 'Usually not. In year one a brokerage needs carrier vetting, a place to post freight to real carriers, proof it can hand a customer, and clean per-load paperwork. A full TMS &mdash; customer receivables, EDI, multi-branch reporting &mdash; becomes worth its price once load volume justifies it.'),
  ('Is there free freight broker software?', 'Parts of the stack can be free. LoadBoot gives licensed brokers a verified load board with carrier vetting, GPS tracking, documents, claims and a published rate card at no charge, funded by a flat 5% dispatch fee on the carrier side. It is not a full TMS: customer invoicing, CRM, EDI and carrier payments are not included.'),
@@ -101,7 +102,7 @@ FBS_FAQ = [
 BROKER_GROWTH_ARTICLES = [
  dict(fname='freight-broker-software-cost.html',
       title='Freight Broker Software Cost in 2026: The Four-Tool Stack, Priced Honestly | LoadBoot',
-      desc='What freight broker software really costs in 2026: TMS, carrier vetting, tracking and load board &mdash; how each is priced, the costs that never appear on the quote, what a new brokerage actually needs in year one, and which parts can be free.',
+      desc='Freight broker software cost in 2026: the four tools (TMS, vetting, tracking, load board), how brokerage software is priced, and which parts can be free.',
       eyebrow='Freight Broker Costs', h1='Freight Broker Software Cost in 2026: The Four-Tool Stack, Priced Honestly',
       deck='A brokerage does not buy one piece of software. It buys four &mdash; and the other three are where the money and the risk sit. Here is the full structure of the bill, what a new authority needs in year one, and which parts can be free.',
       read_min=9, hero='', hero_alt='Freight broker comparing the cost of TMS, carrier vetting, tracking and load board software',
@@ -358,6 +359,7 @@ AB_BODY = (
 '<p>Related: <a href="how-to-become-a-freight-broker.html">how to become a freight broker</a>, <a href="freight-broker-startup-checklist.html">the startup checklist</a>, and <a href="create-agent-account.html">create an agent account</a>.</p>'
 )
 AB_FAQ = [
+ ('What is a freight agent?','A freight agent books freight under a licensed broker&rsquo;s authority. The agent brings shippers and covers their loads with carriers, but the loads move under the broker&rsquo;s MC, bond and contracts. The agent has no operating authority of its own and is paid a share of the margin by the broker.'),
  ('What is the difference between a freight agent and a freight broker?','A broker holds FMCSA authority and the $75,000 bond and is the legal party arranging freight. An agent works under a broker&rsquo;s authority, bringing shippers and carriers, and is paid a share of the margin by the broker.'),
  ('Can a freight agent work for more than one brokerage?','Only if the agent agreements allow it. Where they do, LoadBoot lets one agent account post under several brokerages, each confirmed by a code emailed to the brokerage&rsquo;s FMCSA-listed address.'),
  ('Does a freight agent need a bond or an MC number?','No. The loads move under the broker&rsquo;s MC and bond. The agent needs a brokerage willing to take them on and an agreement that sets the commission split and who owns the customer.'),
@@ -395,7 +397,7 @@ BROKER_GROWTH_ARTICLES += [
       toc=SC_TOC, body_html=SC_BODY, faqs=SC_FAQ, feat_svg=_feat('Filing to day 90','#FC5305'), pub='2026-09-13'),
  dict(fname='freight-agent-vs-freight-broker.html',
       title='Freight Agent vs Freight Broker: Authority, Pay, Risk and Working Under Several Brokerages | LoadBoot',
-      desc='The legal difference between a freight agent and a freight broker, how each is paid, who carries which risk, which path fits you, and how an agent can post under one or several brokerages on LoadBoot.',
+      desc='Freight broker vs agent: a broker holds FMCSA authority and the $75,000 bond; a freight agent works under a broker&rsquo;s MC for a share of the margin.',
       eyebrow='New Broker Guides', h1='Freight Agent vs Freight Broker',
       deck='Whose MC the load moves under decides the bond, the liability, the pay and whether you can work with more than one company. The plain version.',
       read_min=7, hero='', hero_alt='Freight agent and freight broker roles compared',
