@@ -1578,13 +1578,37 @@ EXTRA = {
    []),
  ],
  "Power Only": [
-  ("How power only dispatch works",
-   ["Power only gives you flexibility and lower overhead, because the trailer is supplied by the broker or shipper. You bring the tractor; we keep it connected to consistent drop-and-hook freight.",
-    "It is a great fit for carriers who want to stay loaded without the cost and maintenance of owning trailers."],
-   ["Drop-and-hook and pre-loaded trailers","Carrier and broker-supplied equipment","Dedicated and high-frequency lanes","Trailer interchange freight"]),
-  ("Keeping your tractor earning",
-   ["The key to power only is the right broker relationships and steady freight. We build those relationships and plan loads ahead so your tractor keeps moving and earning.",
-    "We confirm trailer interchange details before every load, so handoffs are clean and you are not stuck holding someone else's equipment problem."],
+  ("What a power only dispatcher does each day",
+   ["Power only freight moves on a trailer somebody else owns &mdash; a broker&rsquo;s trailer pool, a shipper&rsquo;s drop yard, a carrier&rsquo;s or a leasing company&rsquo;s equipment. You bring the power unit. Your dispatcher&rsquo;s job is to make sure that tractor always has a trailer worth pulling, and that every trailer you hook is one you were cleared to hook.",
+    "A normal day on the desk looks like this. In the morning your dispatcher checks where your tractor empties, your hours and your home-time plan. They work the power only filters on DAT, Truckstop and 123Loadboard, the broker trailer-pool programs you are set up on, and the LoadBoot board. Before offering you a load they confirm the trailer number, the yard it sits in, whether it is preloaded or a live load, the seal, and the interchange terms. You approve the rate con, LoadBoot approves it, and only then does the truck move. While you are loaded they stay on call for the check calls and the yard problems, and before you drop they are already lining up the reload near the drop yard &mdash; so you do not bobtail 150 miles to your next trailer."],
+   ["Preloaded drop-and-hook trailers at shipper yards","Broker trailer-pool loads","Live loads on a supplied trailer","Trailer repositioning and relocation moves","Recurring and dedicated power only lanes","Carrier-to-carrier trailer interchange freight"]),
+  ("Who power only dispatch is for",
+   ["LoadBoot dispatches power only for owner-operators and small fleets running under their own MC authority, anywhere in the lower 48. One dispatcher is assigned to your carrier and works a fixed number of trucks, so a two-truck fleet and a ten-unit fleet both get a dispatcher who knows every power unit by name.",
+    "Before you start you need: a Class 8 tractor (day cab or sleeper) with working air lines and a 7-way plug; your own active MC and USDOT; auto liability and cargo insurance; and <b>trailer interchange coverage</b> (or non-owned trailer physical damage), because most broker power only programs will not release a trailer without it. Some programs also set their own minimum authority age or insurance limits &mdash; your dispatcher tells you which ones you qualify for before chasing them, instead of after a wasted call. Newer authorities start on the programs that accept them; see <a href=\"new-authority-dispatch.html\">new authority dispatch</a>."],
+   ["Class 8 tractor, day cab or sleeper","Your own MC authority and USDOT","Trailer interchange insurance","ELD and the LoadBoot carrier app","1 to 10+ power units per carrier"]),
+  ("Power only dispatch cost, in one sentence",
+   ["LoadBoot charges a flat 5% of line-haul on each power only load your dispatcher books and you deliver &mdash; no setup fee, no monthly fee, no long-term contract (30 days&rsquo; notice), and nothing at all on a week your truck does not run. What that 5% covers, and what is never touched by it:",
+    '<table class="cmp"><thead><tr><th>Part of the load</th><th>What LoadBoot takes</th></tr></thead><tbody>'
+    '<tr><td>Line-haul (the linehaul rate on the rate con)</td><td>5%, invoiced once, at delivery</td></tr>'
+    '<tr><td>Fuel surcharge</td><td>0% &mdash; 100% yours</td></tr>'
+    '<tr><td>Detention, layover, TONU, lumper reimbursement</td><td>0% &mdash; 100% yours; your dispatcher claims them for you</td></tr>'
+    '<tr><td>Load search, broker and program setup, rate negotiation, check calls, paperwork</td><td>Included in the 5%</td></tr>'
+    '</tbody></table>',
+    "The broker or your factoring company pays you directly; LoadBoot never holds freight money. How that compares with percentage and flat-fee dispatchers is laid out on <a href=\"how-much-does-a-truck-dispatcher-cost.html\">how much a truck dispatcher costs</a>, and the terms in full are on <a href=\"pricing.html\">pricing</a>. Detention and TONU rules are on the <a href=\"detention-pay-policy.html\">detention pay</a> and <a href=\"tonu-policy.html\">TONU</a> pages."],
+   []),
+  ("What a power only load should pay",
+   ["Power only usually pays less per mile than a dry van load on the same lane, because you are not supplying the trailer &mdash; and it should, since you are not paying for one either. The mistake is accepting a power only rate that is priced like a bobtail move. Your dispatcher checks every offer against <a href=\"power-only-freight-rates.html\">current power only rates per mile</a> and against <a href=\"dry-van-freight-rates.html\">dry van rates</a> on the same lane, adds the deadhead to the yard, and never books below the floor rate in your SOP.",
+    "They also price the parts of power only that eat margin quietly: the empty miles to pick up a trailer, the wait when the preloaded trailer is not actually loaded, and the drop-yard detour on the other end. A load that looks good per loaded mile and bad per total mile gets turned down."],
+   []),
+  ("Your first week of power only dispatch",
+   ["<b>Day 1 &mdash; apply.</b> Authority, insurance (including trailer interchange), W-9 and a short dispatch agreement, in about five minutes on the <a href=\"carrier-application.html\">carrier application</a>. AI pre-checks every document; a person reviews it.",
+    "<b>Days 1&ndash;3 &mdash; matched by hand.</b> Our desk writes your SOP: home base, the lanes and regions you will run, your floor rate, day cab or sleeper, the trailer types you are willing to pull (53&prime; dry van, reefer, flatbed) and your home time. Then one LoadBoot-vetted dispatcher is assigned to your truck.",
+    "<b>Days 3&ndash;5 &mdash; program setups.</b> Your dispatcher sends your carrier packet to the broker power only programs and trailer pools that fit your lanes and your insurance, so the trailers are available to you before you need them.",
+    "<b>First load.</b> Found, negotiated to your floor, approved by you, approved by LoadBoot, then dispatched with the trailer number and yard details in the app. GPS and PODs run from your phone; one 5% invoice follows the delivery. The whole loop is on <a href=\"how-loadboot-dispatch-works.html\">how LoadBoot dispatch works</a>."],
+   []),
+  ("Is power only right for your truck?",
+   ["<b>Why carriers choose it:</b> no trailer payment, no trailer tires, brakes or annual inspections to fund, and drop-and-hook freight that usually means less time waiting at docks. It is also the fastest way to put a tractor to work while you decide whether to buy trailers at all.",
+    "<b>What to watch:</b> you depend on trailer availability at the yard; a pool trailer can arrive with flat tires, a bad light or an expired inspection, so you inspect before you hook and report it before you sign; and trailer interchange agreements make you responsible for the trailer while it is on your fifth wheel. A good power only dispatcher plans around all three &mdash; that is most of the job."],
    []),
  ],
  "Owner-Operator": [
@@ -1656,7 +1680,7 @@ def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs,shots=None):
     body += DOS_CSS + dos_steps('equipment', equipment=nl)
     # EXTRA unique sections (bullets -> cards, else prose)
     for i,(st,sp,sb) in enumerate(EXTRA.get(name,[])):
-        ps = ''.join('<p>%s</p>' % x for x in sp)
+        ps = ''.join(x if x.startswith('<') else '<p>%s</p>' % x for x in sp)
         if sb:
             cards = ''.join('<div class="card reveal"><div class="icon">%s</div><p>%s</p></div>' % (BOX, x) for x in sb)
             body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><h2>%s</h2></div><div class="prose reveal" style="max-width:820px;margin-bottom:34px">%s</div><div class="grid g3">%s</div></div></section>' % (st, ps, cards)
@@ -1725,15 +1749,20 @@ svc_page('hotshot-dispatch.html','Hotshot','Hotshot Dispatch Services | Loadboot
   ('What does hotshot dispatch cost?','A flat 5% of line-haul on loads we book and you deliver (fuel surcharge and accessorials excluded), no long-term contract.')])
 
 svc_page('power-only-dispatch.html','Power Only','Power Only Dispatch Services 2026 — Power Only Dispatcher, Drop-and-Hook Freight, Flat 5% | LoadBoot',
- 'Power only dispatch services for tractor-only carriers in the USA: a power only dispatcher booking drop-and-hook and trailer-supplied freight, negotiating every rate and handling broker setup. Flat 5% of line-haul, no long-term contracts.',
- 'Power Only Dispatch Services Across the USA','Flexible drop-and-hook freight for your tractor &mdash; we keep you pulling trailers and earning without the wait.',
- ['Power only gives you flexibility, but it takes the right broker relationships to stay loaded. We connect you with consistent power only freight and keep your tractor working.',
-  'We book drop-and-hook and trailer-supplied loads that fit your tractor, negotiate the rate, and handle the broker setup so you stay productive.'],
- ['Booking consistent power only / drop-and-hook freight','Rate negotiation on every load','Broker setup and communication handled','Trailer interchange details confirmed up front','Lane planning to reduce empty miles','Paperwork and check calls managed'],
- 'Power only carriers win on flexibility and uptime. We keep you connected to drop-and-hook freight, negotiate fair rates against <a href="power-only-freight-rates.html">current power only rates per mile</a>, and manage broker relationships so your tractor keeps earning. Straightforward dispatch, honest rates, no long-term contracts.',
- [('What is power only dispatch?','We book loads where the trailer is supplied by the broker or shipper, so you pull with your own tractor &mdash; flexible, drop-and-hook freight.'),
-  ('Can you keep my tractor consistently loaded?','Yes &mdash; we plan loads ahead and build broker relationships to keep your uptime high.'),
-  ('What does power only dispatch cost?','A flat 5% of line-haul on loads we book and you deliver (fuel surcharge and accessorials excluded), no long-term contract.')])
+ 'Power only dispatch services in the USA: a power only dispatcher books drop-and-hook and trailer-pool loads for your tractor. Flat 5% of line-haul.',
+ 'Power Only Dispatch Services Across the USA','A dedicated power only dispatcher for your tractor &mdash; drop-and-hook, preloaded and trailer-pool freight in the lower 48, every rate negotiated to your floor and every trailer interchange confirmed before you roll. Flat 5% of line-haul, only on loads you deliver.',
+ ['Power only dispatch is dispatch for a tractor without its own trailer: your dispatcher finds loads where the broker, shipper or another carrier supplies the trailer, gets you approved on the programs that post them, negotiates the rate and confirms the interchange before you hook.',
+  'At LoadBoot that dispatcher is assigned to your carrier by hand, books under your MC authority, and cannot put your truck on a load until you and LoadBoot have both approved the rate con. You keep your authority, your customers and 100% of fuel surcharge and accessorials.'],
+ ['Drop-and-hook, preloaded and trailer-pool loads found for your tractor','Setup on the broker power only programs your authority qualifies for','Trailer number, yard, seal and interchange terms confirmed before you hook','Every rate negotiated to your floor &mdash; per loaded mile and per total mile','Reloads lined up near the drop yard to cut bobtail miles','Detention, layover and TONU claimed for you &mdash; 100% yours'],
+ 'Power only carriers win on uptime and lose on empty miles. We keep your tractor hooked to paying freight, check every offer against <a href="power-only-freight-rates.html">current power only rates per mile</a>, and plan the next trailer before you drop the last one. One dedicated dispatcher, two approvals on every rate con, no long-term contract.',
+ [('What is power only dispatch?','Power only dispatch is booking loads for a tractor that does not bring its own trailer. The broker, shipper or another carrier supplies the trailer; your dispatcher finds the load, sets you up on the program that posts it, negotiates the rate and confirms the trailer interchange before you hook.'),
+  ('What does a power only dispatcher do?','They search power only and drop-and-hook freight on DAT, Truckstop, 123Loadboard, broker trailer-pool programs and the LoadBoot board; send your carrier packet; negotiate each rate to your floor; confirm the trailer number, yard and interchange terms; handle check calls while you are loaded; and line up the reload near your drop yard.'),
+  ('How much do power only dispatch services cost?','A flat 5% of line-haul on loads we book and you deliver. Fuel surcharge, detention, layover, TONU and lumper reimbursement are 100% yours. No setup fee, no monthly fee, no long-term contract &mdash; 30 days&rsquo; notice. See <a href="how-much-does-a-truck-dispatcher-cost.html">what a truck dispatcher costs</a>.'),
+  ('Do you offer power only dispatch in all of the USA?','Yes &mdash; we dispatch power only in the lower 48 states. Your dispatcher works the lanes and regions written into your SOP, whether that is regional drop-and-hook near home or over-the-road.'),
+  ('Do I need my own trailer for power only dispatch?','No. That is the point of power only: you supply the tractor and the trailer comes from the broker, shipper or another carrier. You do need trailer interchange insurance (or non-owned trailer physical damage), because most power only programs require it before they release a trailer.'),
+  ('Can you dispatch power only units for a small fleet?','Yes. One dispatcher is assigned to your carrier and works a fixed number of trucks, so every power unit in a 2 to 10+ truck fleet is dispatched by someone who knows it. Each truck gets its own SOP for lanes, floor rate and home time.'),
+  ('Can a new authority run power only loads?','Often, yes &mdash; but some broker power only programs set a minimum authority age or insurance limit. Your dispatcher starts you on the programs that accept your authority today and adds the others as you qualify. See <a href="new-authority-dispatch.html">new authority dispatch</a>.'),
+  ('Can you keep my tractor consistently loaded?','Nobody honest guarantees a load every day. What we do is plan the next trailer before you drop the current one, keep you set up on several power only programs instead of one, and turn down freight that pays well per loaded mile but badly per total mile.')])
 
 svc_page('owner-operator-dispatch.html','Owner-Operator','Owner-Operator Dispatch Services 2026 — Keep Your Authority, Flat 5% | LoadBoot',
  'Owner-operator dispatch services: keep your authority, book higher-paying loads, and offload the back office to a dedicated dispatcher. You approve every load and every rate. Flat 5%, no long-term contracts, cancel anytime.',
