@@ -1,6 +1,9 @@
 # Carrier report → permanent block, and the contact rule in both portals (bl_disp_0443)
 
 Status 25 Sep 2026: **staging applied**, `tests/bl_disp_0443_rollback_test.sql` green (6 checks, ROLLBACK-OK),
+
+> **PROD APPLIED 25 Sep 2026** (0442 full file, then 0443) on rwscphuhpjoudvljvmdk. Anon SECURITY DEFINER = 34 names, identical to the baseline (staging 33 + retell_inbound). All 30 touched functions match staging: 23 byte-identical md5, 7 identical once comments/whitespace are stripped (staging got comment-less copies during the revisions). Read-only smoke on prod: 4 open carriers render as `Carrier XXXX` with no name/MC, authority age shown; backfill would reach 6 candidates. Front-end: merge claude/serene-ptolemy-uk3hgy → main. Then: CC unassign David's GABE + MUNSTER, then `select app_private.disp_choice_backfill_email();`.
+
 `tests/bl_disp_0442_rollback_test.sql` re-run green with the 0442 revision. **NOT on prod** — goes with 0442 after the
 owner's staging test. Front-end on `claude/serene-ptolemy-uk3hgy` (owner merges → main → Netlify).
 
@@ -27,6 +30,13 @@ owner's staging test. Front-end on `claude/serene-ptolemy-uk3hgy` (owner merges 
    carrier, nothing else changes. **Mark reviewing** = status only.
 5. **E-mail the candidates who already passed.** `app_private.disp_choice_backfill_email()` — run by hand on prod AFTER
    the Netlify deploy (the tab must exist). Idempotent (`disppass.choose:<attempt>`). 6 candidates on 25 Sep.
+
+6. **Capacity policy (§11, evening):** trial = **1** carrier (the chosen one); verified/active = up to **3 carriers / 5
+   trucks**, added by LoadBoot only, and only with **3 delivered loads** on the current carrier(s) and **no open/upheld
+   report**. Numbers live once in `app_private.disp_capacity_policy()`; the portal reads `public.dispatcher_capacity()`
+   (card "How many carriers can you dispatch for?" on the chooser; a line in the workspace carrier card); CC enforcement is
+   an anchor patch on `cc_dispatcher_assign` (also the path Accept takes). Existing assignments are untouched — David
+   Thompson keeps his 3 unless CC unassigns.
 
 ## Files
 

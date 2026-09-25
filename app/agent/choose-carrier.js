@@ -6,13 +6,13 @@
 // book — truck specs, loading gear, preferences and floor, FMCSA authority age, cargo, timeline, and the
 // NULL / CONFIRM items to collect on the first call. Carriers whose equipment the candidate said they can
 // manage come first ("exact match"); when there is none the screen says so and still lets them choose.
-// Choosing puts the carrier on hold, tells Command Center (card + e-mail) and sends the candidate a
+// Choosing does not reserve the carrier (several candidates may pick the same one; CC decides), tells Command Center (card + e-mail) and sends the candidate a
 // receipt; CC's Accept starts the trial and assigns the carrier in one step.
 //
 // Everything that decides is on the SERVER: eligibility, availability, the hold, the match. This module
 // only paints what dispatcher_carrier_options() returns. What a candidate may see before an assignment is
 // decided there too (no owner/driver names, phones, dockets, documents, bank/factoring).
-import { dispatcherCarrierOptions, dispatcherChooseCarrier, dispatcherWithdrawChoice, dispatcherAcceptConductTerms } from '../shared/api.js';
+import { dispatcherCarrierOptions, dispatcherChooseCarrier, dispatcherWithdrawChoice, dispatcherAcceptConductTerms, dispatcherCapacity } from '../shared/api.js';
 import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';
 import { icon } from '../shared/ui/icons.js';
 
@@ -57,6 +57,11 @@ const CSS = `
 .cyc-terms ol{margin:0;padding-left:20px}.cyc-terms li{margin:0 0 6px}
 .cyc-terms-c{margin-top:8px;font-weight:800;color:#fff}
 .cyc-terms-tick{display:flex;gap:10px;align-items:flex-start;margin-top:10px;font-size:.88rem;line-height:1.45;cursor:pointer}.cyc-terms-tick input{margin-top:3px;width:18px;height:18px;flex:none}
+.cyc-cap{margin:0 0 14px;padding:14px 16px;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+.cyc-cap-h{display:flex;align-items:center;gap:8px;font-weight:900;color:#fff;margin-bottom:10px}
+.cyc-cap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.cyc-cap-step{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:.84rem;line-height:1.45;color:var(--mut)}
+.cyc-cap-step b{display:block;color:#fff;margin-bottom:3px}.cyc-cap-step.now{border-color:rgba(8,131,247,.55);background:rgba(8,131,247,.1)}
 .cyc-hero{border-radius:20px;padding:22px 18px;margin-bottom:14px;background:linear-gradient(135deg,#10223B 0%,#0d2a4d 55%,#0b1f3d 100%);border:1px solid rgba(8,131,247,.35);position:relative;overflow:hidden}
 .cyc-hero:before{content:"";position:absolute;right:-90px;top:-90px;width:280px;height:280px;border-radius:50%;background:radial-gradient(closest-side,rgba(8,131,247,.28),transparent)}
 .cyc-kick{font-size:.7rem;font-weight:900;letter-spacing:.14em;color:#7cc0ff}
@@ -308,7 +313,7 @@ function confirmChoose(b, terms) {
       h('div', { class: 'cyc-sheet', style: 'max-width:520px;padding:22px' }, [
         h('div', { class: 'cyc-kick' }, 'CHOOSE YOUR CARRIER'),
         h('div', { class: 'cyc-h1', style: 'font-size:1.3rem' }, (b.org && (b.org.label || b.org.name)) || 'This carrier'),
-        h('div', { class: 'cyc-sub', style: 'margin-bottom:12px' }, 'This puts the carrier on hold for you and sends your choice to LoadBoot. You can withdraw it until LoadBoot confirms. Once confirmed your paid trial starts and you receive the full operating brief.'),
+        h('div', { class: 'cyc-sub', style: 'margin-bottom:12px' }, 'This sends your choice to LoadBoot. Other candidates may choose the same carrier — LoadBoot decides who is assigned and tells everyone. You can withdraw it until LoadBoot decides. Once confirmed your paid trial starts and you receive the full operating brief.'),
         b.match_kind && b.match_kind !== 'exact' ? h('div', { class: 'cyc-note', style: 'margin-bottom:12px' }, (MATCH[b.match_kind] || MATCH.unknown)[3].toLowerCase().replace(/^./, (c) => c.toUpperCase()) + (b.match_missing && b.match_missing.length ? ' — this carrier runs ' + b.match_missing.join(' / ') + ', which you did not list in your application. Say in the note why you can handle it.' : '.')) : null,
         ta,
         needTerms ? termsBlock(terms) : h('div', { class: 'cyc-line', style: 'margin-top:10px' }, '✓ Contact rules accepted ' + (terms && terms.accepted_at ? fmtD(terms.accepted_at) : '') + ' — every contact with the carrier goes through LoadBoot channels only; anything else is a permanent block.'),
@@ -339,6 +344,21 @@ function askConfirm(title, body, okLabel, danger) {
 const toast = (msg) => { try { if (window.lbToast) return window.lbToast(msg); } catch (_) {} const t = h('div', { style: 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#10223B;color:#fff;border:1px solid rgba(8,131,247,.5);border-radius:12px;padding:11px 16px;font-weight:700;z-index:9600;font-family:Manrope,Inter,system-ui' }, msg); document.body.appendChild(t); setTimeout(() => t.remove(), 3200); };
 
 // ---------------------------------------------------------------- screens
+// bl_disp_0443 §11 — the capacity rule, stated where the choice is made (numbers come from the server policy).
+function capacityCard(cap) {
+  if (!cap || cap.error) return null;
+  const n = (k) => Number(cap[k] || 0);
+  return h('div', { class: 'cyc-cap' }, [
+    h('div', { class: 'cyc-cap-h' }, [icon('layers', 15), ' How many carriers can you dispatch for?']),
+    h('div', { class: 'cyc-cap-grid' }, [
+      h('div', { class: 'cyc-cap-step' + (cap.status === 'trial' || cap.status === 'skills_test' ? ' now' : '') }, [h('b', null, 'Trial · ' + n('trial_max_carriers') + ' carrier'), h('span', null, 'The one you choose here. Ten working days, paid on every load you deliver. No second carrier during the trial.')]),
+      h('div', { class: 'cyc-cap-step' + (cap.status === 'verified' || cap.status === 'active' ? ' now' : '') }, [h('b', null, 'After the trial · up to ' + n('max_carriers') + ' carriers / ' + n('max_trucks') + ' trucks'), h('span', null, 'Added by LoadBoot, not chosen here — once you have ' + n('proof_loads') + ' delivered loads on your current carrier and no carrier report against you.')]),
+      h('div', { class: 'cyc-cap-step' }, [h('b', null, 'Any carrier report open or upheld · 0'), h('span', null, 'No new carrier until it is resolved. An upheld report is a permanent block.')]),
+    ]),
+    cap.status !== 'skills_test' ? h('div', { class: 'cyc-line', style: 'margin-top:8px' }, 'You now: ' + n('carriers') + ' carrier' + (n('carriers') === 1 ? '' : 's') + ' · ' + n('trucks') + ' truck' + (n('trucks') === 1 ? '' : 's') + ' · ' + n('delivered_loads') + ' delivered load' + (n('delivered_loads') === 1 ? '' : 's') + (n('reports') ? ' · ' + n('reports') + ' report' : '') + ' · allowed now: ' + n('allowed_now')) : null,
+  ]);
+}
+
 function hero(o, title, sub) {
   const d = o.dispatcher || {};
   return h('div', { class: 'cyc-hero' }, [
@@ -346,8 +366,9 @@ function hero(o, title, sub) {
     h('div', { class: 'cyc-h1' }, title),
     h('div', { class: 'cyc-sub' }, sub),
     h('div', { class: 'cyc-kpis' }, [
-      h('div', { class: 'cyc-kpi' }, [h('b', null, String(o.available_count || 0)), h('span', null, 'Carriers open')]),
-      h('div', { class: 'cyc-kpi' }, [h('b', null, String(o.exact_count || 0)), h('span', null, 'Exact match')]),
+      // while a choice is pending the list is not computed, so the open/exact counts would read 0 — hide them
+      o.pending ? null : h('div', { class: 'cyc-kpi' }, [h('b', null, String(o.available_count || 0)), h('span', null, 'Carriers open')]),
+      o.pending ? null : h('div', { class: 'cyc-kpi' }, [h('b', null, String(o.exact_count || 0)), h('span', null, 'Exact match')]),
       o.score != null ? h('div', { class: 'cyc-kpi' }, [h('b', null, o.score + ' / ' + (o.max_score || 100)), h('span', null, 'Your test')]) : null,
       h('div', { class: 'cyc-kpi', style: 'flex:2;min-width:220px' }, [h('span', null, 'Your equipment (from your application)'), h('div', { class: 'cyc-chips' }, (d.equipment || []).length ? d.equipment.map((e) => chip(e, 'on')) : [chip('none listed — every carrier will show as outside your equipment', 'warn')])]),
     ]),
@@ -375,7 +396,7 @@ function pendingCard(o, reload) {
     kpiTiles(b), badges(b),
     p.note ? h('div', { class: 'cyc-note' }, ['Your note: ', p.note]) : null,
     h('div', { class: 'cyc-steps' }, [
-      ['1', 'LoadBoot reviews your choice — usually within one working day. The carrier is on hold for you meanwhile.'],
+      ['1', 'LoadBoot reviews your choice — usually within one working day. Other candidates may choose the same carrier; LoadBoot decides who is assigned and tells you either way.'],
       ['2', 'On acceptance your paid trial starts: you get the trial terms e-mail and this carrier’s full operating brief (truck, driver, rules, authority).'],
       ['3', 'Read the brief completely, then introduce yourself in the carrier’s WhatsApp group. Never contact the carrier before that.'],
     ].map((s) => h('div', { class: 'cyc-step' }, [h('i', null, s[0]), h('div', null, s[1])]))),
@@ -421,8 +442,8 @@ function historyBlock(o) {
 // to choose yet — the caller then falls back to its normal screen.
 export async function mountChooseCarrier(host, opts = {}) {
   ensureStyle();
-  let o = null;
-  try { o = await dispatcherCarrierOptions(); } catch (e) { o = { error: (e && e.message) || 'could not load' }; }
+  let o = null; let cap = null;
+  try { [o, cap] = await Promise.all([dispatcherCarrierOptions(), dispatcherCapacity().catch(() => null)]); } catch (e) { o = { error: (e && e.message) || 'could not load' }; }
   if (!o || o.error) return false;
   if (!o.eligible && !o.pending) return false;
 
@@ -458,7 +479,7 @@ export async function mountChooseCarrier(host, opts = {}) {
   if (o.pending) {
     mount(body, [
       hero(o, 'Your carrier choice is with LoadBoot', 'You chose a carrier. LoadBoot confirms it, sets your trial terms and opens your workspace — you get an e-mail the moment it is done.'),
-      pendingCard(o, reload), historyBlock(o),
+      pendingCard(o, reload), capacityCard(cap), historyBlock(o),
     ]);
   } else if (!o.carriers || !o.carriers.length) {
     mount(body, [
@@ -473,8 +494,9 @@ export async function mountChooseCarrier(host, opts = {}) {
       exact > 0
         ? h('div', { class: 'cyc-banner ok' }, [h('div', null, '✅'), h('div', null, [h('b', null, exact + (exact === 1 ? ' carrier matches' : ' carriers match') + ' your profile exactly'), ' — ' + (exact === 1 ? 'it is' : 'they are') + ' listed first. Every piece of equipment ' + (exact === 1 ? 'it runs' : 'they run') + ' is one you told us you can manage.'])])
         : h('div', { class: 'cyc-banner warn' }, [h('div', null, '⚠️'), h('div', null, [h('b', null, 'No exact match with your profile'), ' — but you can still choose from the following available carriers. The ones closest to your equipment are listed first. If you pick one outside your stated equipment, tell LoadBoot in the note why you can handle it.'])]),
-      h('div', { class: 'cyc-banner warn' }, [h('div', null, '🚫'), h('div', null, [h('b', null, 'Contact rules apply from the moment you choose. '), 'Every contact with a carrier goes through LoadBoot channels only — the carrier’s LoadBoot WhatsApp group, your LoadBoot line, your LoadBoot mailbox. Carriers are told to report anything else; a confirmed report is a same-day suspension and a permanent block. ', h('a', { href: '#', onClick: (e) => { e.preventDefault(); const x = e.currentTarget.parentNode.parentNode.nextSibling; if (x) x.style.display = x.style.display === 'none' ? '' : 'none'; } }, termsAccepted(o.conduct_terms) ? 'You accepted these rules — read again' : 'Read the rules')])]),
-      h('div', { style: 'display:none' }, termsBlock(o.conduct_terms)),
+      h('div', { class: 'cyc-banner warn' }, [h('div', null, '🚫'), h('div', null, [h('b', null, 'Contact rules apply from the moment you choose. '), 'Every contact with a carrier goes through LoadBoot channels only — the carrier’s LoadBoot WhatsApp group, your LoadBoot line, your LoadBoot mailbox. Carriers are told to report anything else; a confirmed report is a same-day suspension and a permanent block. ', h('a', { href: '#', role: 'button', 'aria-expanded': 'false', onClick: (e) => { e.preventDefault(); const a9 = e.currentTarget; const x = a9.parentNode.parentNode.nextSibling; if (!x) return; const open9 = x.style.display === 'none'; x.style.display = open9 ? '' : 'none'; a9.setAttribute('aria-expanded', open9 ? 'true' : 'false'); a9.textContent = open9 ? 'Hide the rules ▲' : (termsAccepted(o.conduct_terms) ? 'You accepted these rules — read again ▼' : 'Read the rules ▼'); } }, termsAccepted(o.conduct_terms) ? 'You accepted these rules — read again ▼' : 'Read the rules ▼')])]),
+      h('div', { style: 'display:none;margin:-4px 0 14px' }, [termsBlock(o.conduct_terms), h('div', { style: 'text-align:right;margin-top:6px' }, h('a', { href: '#', class: 'cyc-line', style: 'color:#7cc0ff;font-weight:700', onClick: (e) => { e.preventDefault(); const box = e.currentTarget.closest('div').parentNode; box.style.display = 'none'; const t9 = box.previousSibling && box.previousSibling.querySelector('a[aria-expanded]'); if (t9) { t9.setAttribute('aria-expanded', 'false'); t9.textContent = termsAccepted(o.conduct_terms) ? 'You accepted these rules — read again ▼' : 'Read the rules ▼'; } try { t9 && t9.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {} } }, 'Hide the rules ▲'))]),
+      capacityCard(cap),
       h('div', { class: 'cyc-grid' }, o.carriers.map((b, i) => carrierCard(b, i, onChoose))),
       h('div', { class: 'cyc-line', style: 'margin-top:12px;text-align:center' }, 'Dispatcher copy · confidential. Carrier names, contacts, MC/DOT and documents are issued after LoadBoot confirms your choice, not here.'),
       historyBlock(o),

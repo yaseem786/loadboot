@@ -1,5 +1,8 @@
 # Choose your carrier — the Carrier Fleet Book inside the dispatcher portal (bl_disp_0442)
 
+> **PROD APPLIED 25 Sep 2026** (0442 full file, then 0443) on rwscphuhpjoudvljvmdk. Anon SECURITY DEFINER = 34 names, identical to the baseline (staging 33 + retell_inbound). All 30 touched functions match staging: 23 byte-identical md5, 7 identical once comments/whitespace are stripped (staging got comment-less copies during the revisions). Read-only smoke on prod: 4 open carriers render as `Carrier XXXX` with no name/MC, authority age shown; backfill would reach 6 candidates. Front-end: merge claude/serene-ptolemy-uk3hgy → main. Then: CC unassign David's GABE + MUNSTER, then `select app_private.disp_choice_backfill_email();`.
+
+
 **Status (25 Sep 2026):** migration applied to **STAGING** (`snslhvmkjusozgjelghi`) and the rollback test
 passes there (8 checks, ends ROLLBACK-OK). **NOT on prod yet** — owner tests staging first, then prod.
 
@@ -36,6 +39,15 @@ again. The test-passed e-mail now points at the portal instead of "a coordinator
 | CC | `app/command-center/views/dispatcher-360.js` | **Carrier choice waiting** card (overview + Carriers tab): Accept (terms → SOP → one call) / Decline (reason → candidate e-mailed) |
 
 ## Rules baked in (owner decisions, 25 Sep 2026)
+
+- **Shared choice (revision 2, 25 Sep evening):** choosing does NOT reserve the carrier. Every eligible candidate
+  keeps seeing it; several may choose the same one. CC sees each request (queue cell **Carrier choices**, 360 card
+  per candidate with an amber "Also chosen by N others" pill) and accepts ONE. On accept the other pending choices on
+  that carrier are declined automatically: in-app card + e-mail `dispatcher.carrier.assigned_elsewhere` ("your chosen
+  carrier was assigned to another dispatcher — visit your portal and choose again"). The assigned carrier disappears
+  from every list (active assignment); unassign brings it back. The candidate who chose sees the "Your choice is with
+  LoadBoot" card instead of the list (one pending choice per candidate — a second request is refused server-side).
+  Rollback test c3/c6 cover it (rival candidate declined + e-mailed on accept).
 
 - **Available** = `organizations.kind='carrier'`, status active, `is_demo=false`, `carrier_onboarding.stage='approved'`,
   no `dispatcher_assignments` row in `active`/`paused`, and not on hold (`pending` choice) for another candidate.

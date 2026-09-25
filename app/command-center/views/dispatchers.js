@@ -268,7 +268,7 @@ export function renderDispatchers(host) {
     const ap = q.awaiting_approval || [], rc = q.awaiting_rc || [], mv = q.moving || [];
     const ut = (q.unread_threads || []).filter((t) => Number(t.unread) > 0), te = q.trials_ending || [];
     const ts = q.tests_to_score || [];   // bl_disp_0307: a submitted skills test waiting for a human
-    const ch = state.choices || [];      // bl_disp_0442: a passed candidate picked a carrier — on hold until CC decides
+    const ch = state.choices || [];      // bl_disp_0442: a passed candidate picked a carrier — several may pick the same one; CC accepts one
     const rp = state.reports || [];      // bl_disp_0443: a carrier reported their dispatcher — decide on the 360
     const stale = mv.filter((b) => Number(b.last_touch_min) > 240);
     const unread = ut.reduce((s, t) => s + Number(t.unread || 0), 0);
@@ -394,7 +394,7 @@ export function renderDispatchers(host) {
       list = ch.map((c) => { const d = c.dispatcher || {}, cr = c.carrier || {}; const m = MK[c.match_kind] || [c.match_kind, 'violet']; return el('div', { class: 'dq-rc' }, [
         el('div', { class: 'dq-c1' }, [
           el('div', { class: 'dq-lane' }, [(d.name || 'candidate') + ' → ' + (cr.name || 'carrier') + ' ', el('span', { class: 'cc-pill cc-pill-' + m[1] }, m[0])]),
-          el('div', { class: 'dq-meta' }, 'chose ' + Math.round(Number(c.age_hours || 0)) + ' h ago · knows ' + ((d.equipment || []).join('/') || '—') + ' · carrier runs ' + ((cr.equipment || []).join('/') || '—') + (d.score ? ' · test ' + d.score : '') + (cr.still_available === false ? ' · ⚠ CARRIER NO LONGER AVAILABLE' : '') + (c.note ? ' · “' + c.note + '”' : '')),
+          el('div', { class: 'dq-meta' }, (Number(cr.competing) > 0 ? '⚠ ' + cr.competing + ' other candidate' + (Number(cr.competing) === 1 ? '' : 's') + ' chose this carrier too · ' : '') + 'chose ' + Math.round(Number(c.age_hours || 0)) + ' h ago · knows ' + ((d.equipment || []).join('/') || '—') + ' · carrier runs ' + ((cr.equipment || []).join('/') || '—') + (d.score ? ' · test ' + d.score : '') + (cr.still_available === false ? ' · ⚠ CARRIER NO LONGER AVAILABLE' : '') + (c.note ? ' · “' + c.note + '”' : '')),
         ]),
         el('div', { class: 'dq-act' }, [el('button', { class: 'lb-btn lb-btn-primary', onClick: () => { location.hash = '#/dispatcher?id=' + encodeURIComponent(c.dispatcher_user_id) + '&tab=carriers'; } }, 'Decide')]),
       ]); });
