@@ -57,6 +57,13 @@ agent `disp-apply disp-status disp-steps disp-rules disp-academy` (carrier/app.j
 (dispatcher-workspace.js); investor `rec-hero rec-list ledger-hero pay-declare pay-list agr-card`; developer `dev-create dev-keys
 dev-quickstart dev-webhooks dev-events`. `tour.css` linked in all four `index.html`.
 
+Phone fixes, 25 Sep 2026 (owner tested on Android): compact coach card on phones (desktop unchanged); header height is
+measured (`topInset()`), not assumed; title colour pinned (carrier-dark.css whitened every h3); the carrier "favorite lanes"
+micro-ask waits while the tour is running/unseen; a 250 ms position watch follows a target that moves without a scroll event.
+**Screen changes:** after navigation the engine waits up to 7 s for the target, shows the card at 1.2 s with "Opening this
+screen…", and spotlights the view's empty state when the step has `emptyTarget` (carrier: `loads-empty`, `trips-empty`).
+If the real target renders later, the stop re-shows on it.
+
 Engine lesson (matters for any new stop): **`anchor` defeats `optional` and `emptyTitle`** — when the hook is missing the engine falls
 back to the anchor and shows the normal copy. So optional / empty-copy stops carry NO anchor (same as the carrier file).
 

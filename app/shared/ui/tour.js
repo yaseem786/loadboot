@@ -8,6 +8,7 @@
 //
 // A step:  { id, screen:'loads', route:'#loads', target:['[data-tour="x"]'], anchor:'.cp-content', title, text (trusted HTML),
 //            optional:true (drop the stop when target is missing) | emptyTitle/emptyText (show instead, centred),
+//            emptyTarget:['[data-tour="x-empty"]'] (the view's empty state: spotlit with the empty copy when target is missing),
 //            tip, tipKind:'warn', icon:'loads', tone:'orange', chapter:'Finding loads', placement:'auto',
 //            interact:true, advanceOn:'click', hero:true, kind:'welcome'|'done', roles:['owner'], padding:8, radius:14 }
 // Title/text/tip are code-defined markup from the portal's tour-content file — never user data.
@@ -35,7 +36,7 @@ const STR = {
   gotIt: 'Got it', of: 'of', tryIt: 'Try it — tap the highlighted button', help: 'Help', helpSub: 'Guides for this screen',
   tour: 'Take the 2-minute tour', tourDone: 'Replay the welcome tour', tourResume: 'Continue the tour', screenGuide: 'How this screen works',
   tips: 'Quick tips', support: 'Contact support', keys: '← → to move · Esc to close', nudge: 'New here? See how this screen works',
-  welcomeBack: 'Welcome back', resumeText: 'You were part-way through the tour. Pick up where you left off?', resume: 'Continue', restart: 'Start over',
+  loading: 'Opening this screen…', welcomeBack: 'Welcome back', resumeText: 'You were part-way through the tour. Pick up where you left off?', resume: 'Continue', restart: 'Start over',
 };
 
 // ---------- storage ----------
@@ -73,6 +74,7 @@ function waitFor(sel, ms) {
     (function tick() { const n = find(sel); if (n) return res(n); if (Date.now() - t0 > ms) return res(null); setTimeout(tick, 90); })();
   });
 }
+const arr = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const prefersReduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } };
 
@@ -140,8 +142,11 @@ export function createTour(opts) {
   // and replaces the target node. Poll the target's box and re-lay out when it changes; re-find a replaced target.
   let watchT = 0, lastBox = '';
   function watchTick() {
-    if (!alive || mode !== 'spot') return;
+    if (!alive) return;
     const step = steps[i]; if (!step) return;
+    // The stop was shown without its real target (slow screen, or the empty state): if the target turns up, re-show it.
+    if (curEmpty && !step.hero && step.target && find(step.target)) { curEmpty = false; show(i); return; }
+    if (mode !== 'spot') return;
     if ((!target || !target.isConnected) && step.target) {
       const n = find(step.target);
       if (n) { target = n; if (ro) { try { ro.disconnect(); } catch (_) {} } try { ro = new ResizeObserver(schedule); ro.observe(n); } catch (_) {} }
@@ -283,15 +288,31 @@ export function createTour(opts) {
   }
 
   // ---------- flow ----------
-  let showing = 0, dir = 1;
+  let showing = 0, dir = 1, curEmpty = false;
   async function show(k) {
     if (!alive) return;
     const my = ++showing; i = k; let step = steps[i]; if (!step) return stop('done');
     unbind(); card.classList.remove('lbt-in');   // the old card fades while the next screen loads
-    if (step.route && isFn(o.navigate) && route() !== String(step.route).replace('#', '')) { try { await o.navigate(step.route); } catch (_) {} }
-    let el9 = null;
-    if (!step.hero && step.target) el9 = await waitFor(step.target, step.wait != null ? step.wait : o.waitMs);
+    let moved = false;
+    if (step.route && isFn(o.navigate) && route() !== String(step.route).replace('#', '')) { moved = true; try { await o.navigate(step.route); } catch (_) {} }
+    // A screen that was just opened may still be fetching (the carrier board chains several calls; >3 s on a phone).
+    // Wait longer after a screen change, and stop waiting as soon as either the target or the view's empty state shows.
+    let el9 = null, onEmpty = false;
+    if (!step.hero && step.target) {
+      const all = arr(step.target).concat(arr(step.emptyTarget));
+      const ms = step.wait != null ? step.wait : (moved ? Math.max(o.waitMs, 7000) : o.waitMs);
+      el9 = await waitFor(all, moved ? Math.min(1200, ms) : ms);
+      if (!el9 && moved && ms > 1200 && alive && my === showing) {
+        // still loading: show the card now (no spotlight) with a small loading line, so the tour never looks stuck
+        target = null; mode = 'hero'; render(step);
+        const body9 = card.querySelector('.lbt-body'); if (body9) body9.appendChild(h('div', { class: 'lbt-loading' }, [h('i'), S.loading]));
+        veil.classList.add('lbt-on'); document.body.classList.add('lbt-lock'); layout(); requestAnimationFrame(() => { if (my === showing) card.classList.add('lbt-in'); });
+        el9 = await waitFor(all, ms - 1200);
+      }
+      if (el9 && step.emptyTarget && !find(step.target)) onEmpty = true;
+    }
     if (!alive || my !== showing) return;
+    curEmpty = onEmpty || (!step.hero && !el9);
     if (!step.hero && !el9 && step.anchor) el9 = find(step.anchor);   // generic place to point at when the precise hook is missing (normal copy)
     if (!step.hero && !el9 && (step.optional || step.missing === 'skip')) {
       // nothing to point at (empty board, setup already finished, no active load): drop the stop and move on
@@ -300,7 +321,7 @@ export function createTour(opts) {
       return show(dir < 0 ? Math.max(0, i - 1) : Math.min(i, steps.length - 1));
     }
     target = el9; mode = step.hero || !el9 ? 'hero' : 'spot';
-    if (!step.hero && !el9 && (step.emptyTitle || step.emptyText)) step = Object.assign({}, step, { title: step.emptyTitle || step.title, text: step.emptyText || step.text, tip: step.emptyTip != null ? step.emptyTip : step.tip, advanceOn: null, empty: true });
+    if (!step.hero && (!el9 || onEmpty) && (step.emptyTitle || step.emptyText)) step = Object.assign({}, step, { title: step.emptyTitle || step.title, text: step.emptyText || step.text, tip: step.emptyTip != null ? step.emptyTip : step.tip, advanceOn: null, empty: true });
     if (el9) { try { const tall = vwSmall(); el9.style.scrollMarginTop = (vwSmall() ? topInset() + 12 : 78) + 'px'; el9.scrollIntoView({ block: tall ? 'start' : 'center', inline: 'nearest', behavior: prefersReduced() ? 'auto' : 'smooth' }); } catch (_) {} }   // scroll-margin keeps it clear of the sticky header
     card.classList.remove('lbt-in'); render(step); veil.classList.add('lbt-on'); veil.classList.toggle('lbt-pass', !!(step.interact || step.advanceOn === 'click'));
     hole.querySelectorAll('.lbt-tapme').forEach((x) => x.remove()); if (step.advanceOn === 'click') hole.appendChild(h('i', { class: 'lbt-tapme' }));
