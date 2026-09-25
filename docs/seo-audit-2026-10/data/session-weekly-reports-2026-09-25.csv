@@ -1,0 +1,67 @@
+pull,start,end,query,page,clicks,impressions,ctr,position
+28p,2026-08-26,2026-09-23,,reefer-rates-week-34-2026.html,1,144,0.0069,6.3
+28p,2026-08-26,2026-09-23,,step-deck-rates-week-29-2026.html,1,100,0.01,6.4
+28p,2026-08-26,2026-09-23,,dry-van-rates-week-33-2026.html,0,121,0.0,6.7
+28p,2026-08-26,2026-09-23,,flatbed-rates-week-28-2026.html,0,77,0.0,17.1
+28p,2026-08-26,2026-09-23,,freight-market-report-week-28-2026.html,0,8,0.0,6.0
+28p,2026-08-26,2026-09-23,,freight-market-report-week-29-2026.html,0,30,0.0,6.2
+28p,2026-08-26,2026-09-23,,freight-market-report-week-30-2026.html,0,53,0.0,6.6
+28p,2026-08-26,2026-09-23,,freight-market-report-week-31-2026.html,0,83,0.0,6.9
+28p,2026-08-26,2026-09-23,,freight-market-report-week-33-2026.html,0,187,0.0,7.6
+28p,2026-08-26,2026-09-23,,freight-market-report-week-34-2026.html,0,236,0.0,5.6
+28p,2026-08-26,2026-09-23,,hotshot-rates-week-31-2026.html,0,80,0.0,8.5
+28p,2026-08-26,2026-09-23,,power-only-rates-week-30-2026.html,0,11,0.0,7.9
+7p,2026-09-16,2026-09-23,,reefer-rates-week-34-2026.html,1,42,0.023799999999999998,5.9
+7p,2026-09-16,2026-09-23,,dry-van-rates-week-33-2026.html,0,21,0.0,6.1
+7p,2026-09-16,2026-09-23,,flatbed-rates-week-28-2026.html,0,9,0.0,8.1
+7p,2026-09-16,2026-09-23,,freight-market-report-week-29-2026.html,0,1,0.0,10.0
+7p,2026-09-16,2026-09-23,,freight-market-report-week-30-2026.html,0,12,0.0,8.1
+7p,2026-09-16,2026-09-23,,freight-market-report-week-31-2026.html,0,13,0.0,7.5
+7p,2026-09-16,2026-09-23,,freight-market-report-week-33-2026.html,0,23,0.0,7.8
+7p,2026-09-16,2026-09-23,,freight-market-report-week-34-2026.html,0,24,0.0,5.6
+7p,2026-09-16,2026-09-23,,hotshot-rates-week-31-2026.html,0,28,0.0,7.2
+7p,2026-09-16,2026-09-23,,power-only-rates-week-30-2026.html,0,2,0.0,5.5
+7p,2026-09-16,2026-09-23,,step-deck-rates-week-29-2026.html,0,50,0.0,7.1
+90p,2026-06-25,2026-09-23,,reefer-rates-week-34-2026.html,1,144,0.0069,6.3
+90p,2026-06-25,2026-09-23,,step-deck-rates-week-29-2026.html,1,100,0.01,6.4
+90p,2026-06-25,2026-09-23,,dry-van-rates-week-33-2026.html,0,121,0.0,6.7
+90p,2026-06-25,2026-09-23,,flatbed-rates-week-28-2026.html,0,77,0.0,17.1
+90p,2026-06-25,2026-09-23,,freight-market-report-week-28-2026.html,0,8,0.0,6.0
+90p,2026-06-25,2026-09-23,,freight-market-report-week-29-2026.html,0,30,0.0,6.2
+90p,2026-06-25,2026-09-23,,freight-market-report-week-30-2026.html,0,53,0.0,6.6
+90p,2026-06-25,2026-09-23,,freight-market-report-week-31-2026.html,0,83,0.0,6.9
+90p,2026-06-25,2026-09-23,,freight-market-report-week-33-2026.html,0,187,0.0,7.6
+90p,2026-06-25,2026-09-23,,freight-market-report-week-34-2026.html,0,236,0.0,5.6
+90p,2026-06-25,2026-09-23,,hotshot-rates-week-31-2026.html,0,80,0.0,8.5
+90p,2026-06-25,2026-09-23,,power-only-rates-week-30-2026.html,0,11,0.0,7.9
+28qp,2026-08-26,2026-09-23,30 miles,freight-market-report-week-30-2026.html,0,1,0.0,5.0
+28qp,2026-08-26,2026-09-23,all in rate,reefer-rates-week-34-2026.html,0,1,0.0,3.0
+28qp,2026-08-26,2026-09-23,average dry van rate per mile,dry-van-rates-week-33-2026.html,0,1,0.0,48.0
+28qp,2026-08-26,2026-09-23,average flatbed rate per mile,flatbed-rates-week-28-2026.html,0,3,0.0,43.0
+28qp,2026-08-26,2026-09-23,average flatbed rates,flatbed-rates-week-28-2026.html,0,2,0.0,50.5
+28qp,2026-08-26,2026-09-23,box truck,freight-market-report-week-34-2026.html,0,1,0.0,3.0
+28qp,2026-08-26,2026-09-23,cargo van rates per mile 2026,freight-market-report-week-29-2026.html,0,1,0.0,9.0
+28qp,2026-08-26,2026-09-23,current flatbed rates per mile,flatbed-rates-week-28-2026.html,0,6,0.0,33.3
+28qp,2026-08-26,2026-09-23,dry van average rate per mile,dry-van-rates-week-33-2026.html,0,1,0.0,52.0
+28qp,2026-08-26,2026-09-23,dry van rates per mile,dry-van-rates-week-33-2026.html,0,1,0.0,1.0
+28qp,2026-08-26,2026-09-23,flatbed cost per mile,flatbed-rates-week-28-2026.html,0,2,0.0,55.5
+28qp,2026-08-26,2026-09-23,flatbed rate per mile,flatbed-rates-week-28-2026.html,0,2,0.0,35.5
+28qp,2026-08-26,2026-09-23,flatbed rates 2026,flatbed-rates-week-28-2026.html,0,1,0.0,10.0
+28qp,2026-08-26,2026-09-23,flatbed rates per mile,flatbed-rates-week-28-2026.html,0,2,0.0,36.0
+28qp,2026-08-26,2026-09-23,flatbed truck rates per mile,flatbed-rates-week-28-2026.html,0,1,0.0,47.0
+28qp,2026-08-26,2026-09-23,flatbed trucking rates per mile,flatbed-rates-week-28-2026.html,0,2,0.0,60.5
+28qp,2026-08-26,2026-09-23,hiring,flatbed-rates-week-28-2026.html,0,1,0.0,13.0
+28qp,2026-08-26,2026-09-23,hot shot rate sheet,hotshot-rates-week-31-2026.html,0,1,0.0,75.0
+28qp,2026-08-26,2026-09-23,hotshot rates per mile 2026,hotshot-rates-week-31-2026.html,0,33,0.0,8.2
+28qp,2026-08-26,2026-09-23,load rates 2026,freight-market-report-week-34-2026.html,0,2,0.0,8.0
+28qp,2026-08-26,2026-09-23,national dry van rate per mile,dry-van-rates-week-33-2026.html,0,1,0.0,7.0
+28qp,2026-08-26,2026-09-23,reefer rate per mile,reefer-rates-week-34-2026.html,0,1,0.0,10.0
+28qp,2026-08-26,2026-09-23,reefer rates per mile,reefer-rates-week-34-2026.html,0,1,0.0,8.0
+28qp,2026-08-26,2026-09-23,reefer shipping cpm,reefer-rates-week-34-2026.html,0,2,0.0,1.0
+28qp,2026-08-26,2026-09-23,step deck freight rates,step-deck-rates-week-29-2026.html,0,1,0.0,29.0
+28qp,2026-08-26,2026-09-23,step deck load rates,step-deck-rates-week-29-2026.html,0,1,0.0,41.0
+28qp,2026-08-26,2026-09-23,step deck rates,step-deck-rates-week-29-2026.html,0,2,0.0,6.0
+28qp,2026-08-26,2026-09-23,step deck rates per mile,step-deck-rates-week-29-2026.html,0,1,0.0,10.0
+28qp,2026-08-26,2026-09-23,what rate per mile should i be accepting on a dry van load from chicago to atlanta based on today's spot market?,dry-van-rates-week-33-2026.html,0,4,0.0,6.0
+28qp,2026-08-26,2026-09-23,what's the cost of moffett delivery for jobsite freight in 2026? austin,freight-market-report-week-30-2026.html,0,1,0.0,6.0
+28qp,2026-08-26,2026-09-23,yes,dry-van-rates-week-33-2026.html,0,1,0.0,6.0
