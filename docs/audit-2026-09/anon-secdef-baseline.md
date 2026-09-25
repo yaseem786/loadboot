@@ -174,3 +174,13 @@ lc_request_call, lc_send, lc_start, outreach_unsubscribe, partner_agent_confirm,
 partner_claim_confirm, partner_claim_get, retell_inbound, retell_webhook, submit_web_form, track_web_event.
 Staging = the same minus `retell_inbound` = 33. `diesel_pull_record` (0443) is service_role-only and asserted so.
 CLAUDE.md §4 updated to 34/33.
+
+### 25 Sep 2026 — unsubscribe engine (bl_comm_0446), staging
+
+`bl_comm_0446_unsubscribe_engine` adds **no anon name**. The preference page (`supabase/functions/unsubscribe`,
+`verify_jwt=false` as before) talks to three NEW service_role-only RPCs — `unsub_link_get`, `unsub_link_apply`,
+`unsub_link_reason` — with the service key it already held; `outreach_unsubscribe` keeps its anon grant (old links
+in inboxes) with a body that now routes through `app_private.unsub_apply`. The eleven staff RPCs (`cc_unsub_*`,
+`cc_email_can_send`) and the two worker guards (`cc_delivery_worker_unsubscribe`, `cc_delivery_worker_optional_allowed`,
+`cc_mail_unsubscribe_from`) are revoked from public + anon in the migration. Staging name-level check after apply:
+**33 → 33, identical name set.** Prod expectation: 34 → 34, identical.

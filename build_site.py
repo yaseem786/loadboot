@@ -5318,11 +5318,12 @@ page('full-truckload-vs-ltl.html', 'FTL vs LTL vs Partial Truckload — Key Diff
 # ---- Unsubscribe (outreach emails one-click) ----
 _unsub_js = ('<script>(function(){var q=new URLSearchParams(location.search);var e=q.get("e"),t=q.get("t");var el=document.getElementById("unsubMsg");'
  'if(!e||!t){el.textContent="Invalid unsubscribe link.";return;}'
- 'fetch("https://%s.supabase.co/rest/v1/rpc/outreach_unsubscribe",{method:"POST",headers:{"apikey":"%s","Authorization":"Bearer %s","Content-Type":"application/json"},body:JSON.stringify({p_email:e,p_token:t})})'
- '.then(function(r){return r.json()}).then(function(d){el.textContent=(d&&d.ok)?("You are unsubscribed. "+e+" will not receive outreach emails from us again."):"Invalid or expired link.";})'
- '.catch(function(){el.textContent="Something went wrong - email hello@loadboot.com and we will remove you manually.";});})();</script>') % (APP_REF, APP_ANON or '', APP_ANON or '')
-page('unsub.html', 'Unsubscribe | LoadBoot', 'Unsubscribe from LoadBoot outreach emails - one click, no questions asked.',
- 'contact.html', '<section><div class="wrap" style="max-width:640px;text-align:center;padding:90px 24px"><h1>Unsubscribe</h1><p class="lead center" id="unsubMsg" style="margin-top:16px">Working&hellip;</p><p style="margin-top:26px;color:#64748B;font-size:.9rem">Changed your mind? You can always find our free tools at <a href="market-rates.html" style="color:#0883F7">loadboot.com/market-rates</a>.</p></div></section>' + _unsub_js, '')
+ # bl_comm_0446 (25 Sep 2026): the preference centre lives in the unsubscribe edge function. This page only
+ # exists because older outreach emails link here; it hands the same e+t pair over and the page does the rest.
+ 'location.replace("https://%s.supabase.co/functions/v1/unsubscribe?e="+encodeURIComponent(e)+"&t="+encodeURIComponent(t));'
+ '})();</script>') % (APP_REF,)
+page('unsub.html', 'Email preferences | LoadBoot', 'Manage which LoadBoot emails you receive.',
+ 'contact.html', '<section><div class="wrap" style="max-width:640px;text-align:center;padding:90px 24px"><h1>Email preferences</h1><p class="lead center" id="unsubMsg" style="margin-top:16px">Opening your preferences&hellip;</p><p style="margin-top:26px;color:#64748B;font-size:.9rem">Changed your mind? You can always find our free tools at <a href="market-rates.html" style="color:#0883F7">loadboot.com/market-rates</a>.</p></div></section>' + _unsub_js, '')
 
 # ---- SMS program page (10DLC CTA verification) ----
 # Replaces text-us.html (24 Sep 2026). Campaign CS3VIAJ declares ONE opt-in method — the

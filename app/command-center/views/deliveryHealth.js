@@ -31,8 +31,9 @@ export function renderDeliveryHealth(host) {
   mount(host, el('div', null, [
     sectionHead('Delivery Health', 'Every campaign & transactional message flows through one delivery ledger. Bounces and complaints auto-suppress; failed sends retry up to 5× then move to dead letter.', headActions),
     kpis, pipeStrip, filterBar, body,
-    sectionHead('Suppression list', 'Hard opt-outs, bounces and complaints. Suppressed addresses are excluded from every future send.',
-      manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: addSuppression }, '+ Suppress address') : null),
+    sectionHead('Suppression list', 'Hard opt-outs, bounces and complaints. Suppressed addresses are excluded from every future send. Category unsubscribes (who stopped which emails, and why) live in Unsubscribes.',
+      [el('a', { class: 'lb-btn lb-btn-sm', href: '#/unsubscribes' }, 'Open Unsubscribes'),
+       manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: addSuppression }, '+ Suppress address') : null]),
     suppBox,
     sectionHead('Automations', 'Fire an acknowledgement automatically when a domain event happens (e.g. a website form is submitted). Off until you activate it.'),
     autoBox,

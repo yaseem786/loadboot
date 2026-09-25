@@ -31,7 +31,7 @@ export function renderAudiences(host) {
       statCard({ icon: 'users', label: 'Have preferences', value: String(s.total || 0), sub: 'carriers configured', accent: 'blue' }),
       statCard({ icon: 'check', label: 'Marketing opt-in', value: String(s.marketing_in || 0), sub: 'can receive marketing', accent: 'green' }),
       statCard({ icon: 'bell', label: 'Push opt-in', value: String(s.push_in || 0), sub: 'push allowed', accent: 'violet' }),
-      statCard({ icon: 'shield', label: 'Unsubscribed', value: String(s.unsubscribed || 0), sub: 'suppressed from marketing', accent: (s.unsubscribed || 0) > 0 ? 'amber' : 'green' }),
+      statCard({ icon: 'shield', label: 'Unsubscribed', value: String(s.unsubscribed || 0), sub: 'suppressed from marketing · open Unsubscribes', accent: (s.unsubscribed || 0) > 0 ? 'amber' : 'green', to: '/unsubscribes' }),
     ]);
   }
 
