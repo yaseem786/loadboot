@@ -1,0 +1,24 @@
+pull,window,query,page,clicks,impressions,ctr,position
+28d-page,2026-08-26→2026-09-23,,step-deck-freight-rates.html,6,227,2.64%,7.5
+7d-page,2026-09-16→2026-09-23,,step-deck-freight-rates.html,1,45,2.22%,12.1
+90d-page,2026-06-25→2026-09-23,,step-deck-freight-rates.html,6,227,2.64%,7.5
+28d-qp,2026-08-26→2026-09-23,flatbeds/step deck dispatch service,flatbed-dispatch.html,0,1,0.00%,25.0
+28d-qp,2026-08-26→2026-09-23,step deck freight rates,market-rates.html,0,1,0.00%,80.0
+28d-qp,2026-08-26→2026-09-23,step deck freight rates,step-deck-freight-rates.html,0,1,0.00%,23.0
+28d-qp,2026-08-26→2026-09-23,step deck freight rates,step-deck-rates-week-29-2026.html,0,1,0.00%,29.0
+28d-qp,2026-08-26→2026-09-23,step deck freight shipping,step-deck-freight-rates.html,0,5,0.00%,77.8
+28d-qp,2026-08-26→2026-09-23,step deck load rates,step-deck-freight-rates.html,0,1,0.00%,68.0
+28d-qp,2026-08-26→2026-09-23,step deck load rates,step-deck-rates-week-29-2026.html,0,1,0.00%,41.0
+28d-qp,2026-08-26→2026-09-23,step deck loads,step-deck-freight-rates.html,0,1,0.00%,65.0
+28d-qp,2026-08-26→2026-09-23,step deck rates,step-deck-rates-week-29-2026.html,0,2,0.00%,6.0
+28d-qp,2026-08-26→2026-09-23,step deck rates per mile,step-deck-freight-rates.html,0,2,0.00%,4.0
+28d-qp,2026-08-26→2026-09-23,step deck rates per mile,step-deck-rates-week-29-2026.html,0,1,0.00%,10.0
+7d-qp,2026-09-16→2026-09-23,step deck freight rates,market-rates.html,0,1,0.00%,80.0
+7d-qp,2026-09-16→2026-09-23,step deck freight rates,step-deck-rates-week-29-2026.html,0,1,0.00%,29.0
+7d-qp,2026-09-16→2026-09-23,step deck freight shipping,step-deck-freight-rates.html,0,3,0.00%,75.7
+7d-qp,2026-09-16→2026-09-23,step deck load rates,step-deck-freight-rates.html,0,1,0.00%,68.0
+7d-qp,2026-09-16→2026-09-23,step deck load rates,step-deck-rates-week-29-2026.html,0,1,0.00%,41.0
+7d-qp,2026-09-16→2026-09-23,step deck loads,step-deck-freight-rates.html,0,1,0.00%,65.0
+7d-qp,2026-09-16→2026-09-23,step deck rates,step-deck-rates-week-29-2026.html,0,1,0.00%,11.0
+7d-qp,2026-09-16→2026-09-23,step deck rates per mile,step-deck-freight-rates.html,0,1,0.00%,7.0
+7d-qp,2026-09-16→2026-09-23,step deck rates per mile,step-deck-rates-week-29-2026.html,0,1,0.00%,10.0

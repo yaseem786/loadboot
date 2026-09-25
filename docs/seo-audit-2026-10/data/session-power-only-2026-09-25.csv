@@ -1,0 +1,37 @@
+pull,window,query,page,clicks,impressions,ctr,position
+28d-page,2026-08-26→2026-09-23,,power-only-freight-rates.html,2,353,0.57%,6.8
+7d-page,2026-09-16→2026-09-23,,power-only-freight-rates.html,1,138,0.72%,6.1
+90d-page,2026-06-25→2026-09-23,,power-only-freight-rates.html,2,353,0.57%,6.8
+28d-qp,2026-08-26→2026-09-23,both,power-only-freight-rates.html,0,1,0.00%,3.0
+28d-qp,2026-08-26→2026-09-23,power only,market-rates.html,0,1,0.00%,2.0
+28d-qp,2026-08-26→2026-09-23,power only,power-only-freight-rates.html,0,2,0.00%,4.5
+28d-qp,2026-08-26→2026-09-23,power only dispatch,power-only-dispatch.html,0,10,0.00%,80.2
+28d-qp,2026-08-26→2026-09-23,power only dispatch in usa,power-only-dispatch.html,0,9,0.00%,52.0
+28d-qp,2026-08-26→2026-09-23,power only dispatch service,power-only-dispatch.html,0,15,0.00%,75.5
+28d-qp,2026-08-26→2026-09-23,power only dispatch services,power-only-dispatch.html,0,41,0.00%,77.7
+28d-qp,2026-08-26→2026-09-23,power only dispatcher,power-only-dispatch.html,0,8,0.00%,62.9
+28d-qp,2026-08-26→2026-09-23,power only freight rates,market-rates.html,0,2,0.00%,40.0
+28d-qp,2026-08-26→2026-09-23,power only freight rates,power-only-freight-rates.html,0,1,0.00%,29.0
+28d-qp,2026-08-26→2026-09-23,power only price in usa,power-only-freight-rates.html,0,2,0.00%,3.0
+28d-qp,2026-08-26→2026-09-23,power only rates per mile,power-only-freight-rates.html,0,12,0.00%,5.3
+28d-qp,2026-08-26→2026-09-23,power only truck price in usa,power-only-freight-rates.html,0,3,0.00%,6.0
+28d-qp,2026-08-26→2026-09-23,power only trucking rates,market-rates.html,0,21,0.00%,36.6
+28d-qp,2026-08-26→2026-09-23,power only trucking rates,power-only-freight-rates.html,0,10,0.00%,34.2
+28d-qp,2026-08-26→2026-09-23,power only units dispatch services,power-only-dispatch.html,0,6,0.00%,80.8
+28d-qp,2026-08-26→2026-09-23,semi-truck,power-only-freight-rates.html,0,1,0.00%,7.0
+28d-qp,2026-08-26→2026-09-23,spot,power-only-freight-rates.html,0,1,0.00%,10.0
+28d-qp,2026-08-26→2026-09-23,yes,power-only-freight-rates.html,0,1,0.00%,7.0
+28d-qp,2026-08-26→2026-09-23,сколько стоит?,power-only-freight-rates.html,0,1,0.00%,1.0
+7d-qp,2026-09-16→2026-09-23,power only,power-only-freight-rates.html,0,1,0.00%,2.0
+7d-qp,2026-09-16→2026-09-23,power only dispatch,power-only-dispatch.html,0,2,0.00%,80.5
+7d-qp,2026-09-16→2026-09-23,power only dispatch service,power-only-dispatch.html,0,3,0.00%,75.7
+7d-qp,2026-09-16→2026-09-23,power only dispatch services,power-only-dispatch.html,0,8,0.00%,77.1
+7d-qp,2026-09-16→2026-09-23,power only dispatcher,power-only-dispatch.html,0,1,0.00%,76.0
+7d-qp,2026-09-16→2026-09-23,power only freight rates,market-rates.html,0,1,0.00%,54.0
+7d-qp,2026-09-16→2026-09-23,power only freight rates,power-only-freight-rates.html,0,1,0.00%,29.0
+7d-qp,2026-09-16→2026-09-23,power only price in usa,power-only-freight-rates.html,0,2,0.00%,3.0
+7d-qp,2026-09-16→2026-09-23,power only rates per mile,power-only-freight-rates.html,0,8,0.00%,6.0
+7d-qp,2026-09-16→2026-09-23,power only trucking rates,power-only-freight-rates.html,0,2,0.00%,28.0
+7d-qp,2026-09-16→2026-09-23,power only units dispatch services,power-only-dispatch.html,0,1,0.00%,82.0
+7d-qp,2026-09-16→2026-09-23,semi-truck,power-only-freight-rates.html,0,1,0.00%,7.0
+7d-qp,2026-09-16→2026-09-23,spot,power-only-freight-rates.html,0,1,0.00%,10.0

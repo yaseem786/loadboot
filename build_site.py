@@ -1680,7 +1680,7 @@ svc_page('flatbed-dispatch.html','Flatbed','Flatbed Dispatch Services 2026 \u201
  ['Flatbed is skilled work, and it should pay like it. Too many flatbed operators end up hauling cheap freight because they don\'t have time to work the phones. We do that for you.',
   'Our dispatchers book steel, lumber, building materials, and machinery on lanes that fit your truck, confirm securement and permit details, and negotiate every rate so your skill is rewarded.'],
  ['High-paying flatbed and step-deck load booking','Rate negotiation on every confirmation','Permit and oversize/overweight coordination support','Securement and tarping details confirmed with the broker','Broker setup, calls, and paperwork handled','Lane planning to cut empty miles'],
- 'Flatbed carriers bring specialized skill, and brokers know it &mdash; but only if someone negotiates on your behalf. We push for premium flatbed rates, coordinate permits on oversized loads, and keep your trailer full on the lanes you want. A dedicated dispatcher in your corner, not a call center.',
+ 'Flatbed carriers bring specialized skill, and brokers know it &mdash; but only if someone negotiates on your behalf. We push for premium flatbed and <a href="step-deck-freight-rates.html">step deck rates per mile</a>, coordinate permits on oversized loads, and keep your trailer full on the lanes you want. A dedicated dispatcher in your corner, not a call center.',
  [('Do you dispatch step deck and oversize loads?','Yes &mdash; flatbed, step deck, and oversize/overweight freight, with permit coordination support.'),
   ('Can you keep me loaded on regional flatbed lanes?','Absolutely. Tell us your home base and preferred lanes and we plan loads to keep you regional if that\'s what you want.'),
   ('What does flatbed dispatch cost?','A flat 5% of line-haul on loads we book and you deliver (fuel surcharge and accessorials excluded), no long-term contract, cancel anytime.')])
@@ -1713,7 +1713,7 @@ svc_page('power-only-dispatch.html','Power Only','Power Only Dispatch Services 2
  ['Power only gives you flexibility, but it takes the right broker relationships to stay loaded. We connect you with consistent power only freight and keep your tractor working.',
   'We book drop-and-hook and trailer-supplied loads that fit your tractor, negotiate the rate, and handle the broker setup so you stay productive.'],
  ['Booking consistent power only / drop-and-hook freight','Rate negotiation on every load','Broker setup and communication handled','Trailer interchange details confirmed up front','Lane planning to reduce empty miles','Paperwork and check calls managed'],
- 'Power only carriers win on flexibility and uptime. We keep you connected to drop-and-hook freight, negotiate fair rates, and manage broker relationships so your tractor keeps earning. Straightforward dispatch, honest rates, no long-term contracts.',
+ 'Power only carriers win on flexibility and uptime. We keep you connected to drop-and-hook freight, negotiate fair rates against <a href="power-only-freight-rates.html">current power only rates per mile</a>, and manage broker relationships so your tractor keeps earning. Straightforward dispatch, honest rates, no long-term contracts.',
  [('What is power only dispatch?','We book loads where the trailer is supplied by the broker or shipper, so you pull with your own tractor &mdash; flexible, drop-and-hook freight.'),
   ('Can you keep my tractor consistently loaded?','Yes &mdash; we plan loads ahead and build broker relationships to keep your uptime high.'),
   ('What does power only dispatch cost?','A flat 5% of line-haul on loads we book and you deliver (fuel surcharge and accessorials excluded), no long-term contract.')])
@@ -5730,7 +5730,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '</div></section>'
 
 '<section class="wrap mrx-sec"><h2>Current rates by equipment type</h2>'
-'<p><b>Dry van rates per mile</b> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight. <b>Power only</b> prices below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand and <a href="box-truck-freight-rates.html">box truck rates per mile</a> sit lowest, priced on stops per day rather than miles. The live table above carries the date each benchmark was last rebuilt; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
+'<p><b>Dry van rates per mile</b> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight, with <a href="step-deck-freight-rates.html">step deck rates per mile</a> a notch above flatbed for the lower deck. <a href="power-only-freight-rates.html">Power only trucking rates</a> price below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand and <a href="box-truck-freight-rates.html">box truck rates per mile</a> sit lowest, priced on stops per day rather than miles. The live table above carries the date each benchmark was last rebuilt; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
 
 '<section class="wrap mrx-sec"><h2>How we calculate these freight rates</h2>'
 '<p>Three blended layers, honestly labeled: <b>(1) Real LoadBoot bookings</b> \u2014 actual accepted rates on our marketplace, the strongest signal, refreshed continuously; <b>(2) Published national benchmarks</b> \u2014 published national industry indices, refreshed as new data lands and always shown with their as-of date; <b>(3) Confidence labels</b> \u2014 every lane result says whether it comes from lane-level bookings (HIGH), platform-wide data (MEDIUM) or the national benchmark (LOW). A rate is a guide, not a quote \u2014 but you always know exactly where it came from.</p></section>'
@@ -6221,6 +6221,9 @@ _EQ_SEO_OVERRIDE = {
  # Phase 2 ledger 2026-09-25 (box-truck, desc only, <=155 chars; title untouched - pos 7.7). Figures = get_public_market_rates() as_of 2026-09-18.
  'box-truck': dict(
    desc='Box truck rates per mile, September 2026: $2.58/mi to the carrier, $2.97 shipper side, $2.06–$3.10 range. Live national box truck freight rates, 16–26 ft.'),
+ # Phase 2 ledger 2026-09-25 (#6 power-only, #7 step-deck): desc only, <=155 chars; titles untouched. Same as_of 2026-09-18 figures.
+ 'power-only': dict(desc='Power only rates per mile, September 2026: $2.58/mi to the carrier, $2.97 shipper side, $1.80–$3.50 range. Live national power only trucking rates, dated.'),
+ 'step-deck': dict(desc='Step deck rates per mile, September 2026: $3.67/mi to the carrier, $4.22 shipper side, $2.94–$4.40 range. Live national step deck freight rates, dated.'),
 }
 for _eq in _EQ_RATES:
     _n, _s = _eq['name'], _eq['slug']
