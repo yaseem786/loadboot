@@ -1798,9 +1798,9 @@ svc_page('owner-operator-dispatch.html','Owner-Operator','Owner-Operator Dispatc
  shots=('booking-rate-con.webp',720,2078,'A real rate confirmation — the rate, the lane and every accessorial term in writing before the truck moves','Your approval, in writing &mdash; a real rate confirmation, checked by LoadBoot before anything rolls.'))
 
 svc_page('new-authority-dispatch.html','New Authority','New Authority Truck Dispatch — Loads From Day One, No Minimum Authority Age | LoadBoot',
- 'Dispatch for new-authority carriers. We help you get set up with brokers, book your first loads, and start earning. Flat 5%, no long-term contracts, real guidance.',
+ 'Dispatch services for new authority: no minimum MC age, broker packets and setups handled, first loads booked. Flat 5% of line-haul, no long-term contract.',
  'New Authority Dispatch &mdash; Loads From Day One','Just got your MC? There is no minimum authority age here: same-day verification, broker packets handled, and direct offers start racing your truck &mdash; while we keep you off the cheap freight that sinks first-year carriers.',
- ['Getting your own authority is exciting &mdash; and overwhelming. Brokers want packets, setups, and paperwork before they\'ll give you a load, and the learning curve is steep. We guide you through all of it.',
+ ['Getting your own authority is exciting &mdash; and overwhelming. Brokers want packets, setups, and paperwork before they\'ll give you a load, and the learning curve is steep. We guide you through all of it &mdash; and if you want to do it yourself, our guide on <a href="how-to-get-loads-with-new-authority.html">how to get loads with new authority</a> covers every step.',
   'We handle broker setup, find loads that fit your truck, negotiate your rates, and show you how the back office works &mdash; so your first weeks on your own authority actually make money.'],
  ['Broker packet setup and onboarding handled for you','Booking your first loads on lanes you want','Rate negotiation so you don\'t start out on cheap freight','Guidance on factoring, insurance, and compliance','Help avoiding common new-authority mistakes','Flat 5%, no long-term contract &mdash; grow at your own pace'],
  'New-authority carriers are exactly who we love to help. Big dispatchers ignore you; we don\'t. We get you set up with brokers, keep you off cheap freight from day one, and walk you through the parts of trucking nobody explains. Start strong, with a dispatcher who actually answers.',
@@ -2204,7 +2204,7 @@ BLOGPOSTS = [
    'H:5. Watch out for non-paying brokers',
    'Always check a broker\'s credit and reputation before hauling. A load that never pays is worse than no load at all.',
    'H:The shortcut',
-   'All of this &mdash; broker setup, finding good loads, negotiating rates, and avoiding bad brokers &mdash; is exactly what a dispatcher does. If you would rather drive than spend your first months learning the back office the hard way, a dispatch service like Loadboot gets you set up and loaded from day one.']),
+   'All of this &mdash; broker setup, finding good loads, negotiating rates, and avoiding bad brokers &mdash; is exactly what a dispatcher does. If you would rather drive than spend your first months learning the back office the hard way, LoadBoot&rsquo;s <a href="new-authority-dispatch.html">dispatch services for new authority</a> get you set up and loaded from day one.']),
  ('owner-operator-dispatch-service-guide.html',
   'Owner-Operator Dispatch Service: The Complete Guide (2026)',
   'What an owner-operator dispatch service does, what it costs, how it works day to day, and how to choose one &mdash; a complete guide for single-truck operators.',
@@ -4815,6 +4815,8 @@ _adfaq_html,_adfaq_sch = faq_block([
  ('Do I need my own MC authority to work with LoadBoot?','Yes — LoadBoot dispatches carriers operating under their own authority. If you are still getting set up, this guide covers the steps, and we can point you in the right direction before you start.'),
  ('How long does new authority take to become active?','After filing, FMCSA authority typically involves a multi-week protest/vetting period before it becomes active — plan your insurance, BOC-3 and UCR during that window so you can roll the day it activates.'),
  ('What insurance do I need?','For-hire property carriers generally need liability coverage filed with FMCSA (commonly $750,000 minimum, with most brokers requiring $1M) plus cargo coverage that brokers expect (often $100,000). Confirm exact requirements for your operation.'),
+ ('What is included in a trucking authority package?','Usually the USDOT and MC number setup, a BOC-3 process-agent filing and UCR registration, sometimes with business formation, an EIN, IRP/IFTA paperwork or a drug-and-alcohol consortium added. The filings are the same ones you can make yourself on FMCSA.gov, and the government fees are the same either way &mdash; a package buys convenience, not a different authority.'),
+ ('How do I set up my USDOT and MC number?','In one online application with FMCSA. The USDOT number is assigned when you file; the MC authority then goes through FMCSA&rsquo;s vetting and protest period, and it activates only after your insurer&rsquo;s BMC-91/91X and your process agent&rsquo;s BOC-3 are on file. Finalize your legal entity, EIN and address first &mdash; changing them later means amendments.'),
  ('Can LoadBoot file these for me?','We are a dispatch service — we keep your compliance dates tracked and your documents organized in your carrier account, and we can refer you to reputable filing services. The filings themselves are yours or your agent&rsquo;s to make.'),
 ])
 adp = svc_hero('Trucking Authority &amp; DOT Setup — The Complete Roadmap','Every number, filing and deadline between you and your first legal load — explained in plain language, in the right order, with the traps new carriers actually fall into.')
@@ -4825,13 +4827,14 @@ adp += _sec('Start here','USDOT number vs MC authority — two different things'
 ]))
 adp += m_timeline('The order matters', 'The setup sequence that avoids re-work', [
  ('badge', 'Form your business entity', 'LLC or corporation, EIN from the IRS, business bank account. Brokers and factoring companies will ask for all three.'),
- ('clipboard', 'File USDOT + MC together', 'One URS filing covers both. Have your entity, EIN and address finalized first &mdash; changing them later means amendments.'),
+ ('clipboard', 'File USDOT + MC together', 'USDOT and MC number setup is one URS filing that covers both. Have your entity, EIN and address finalized first &mdash; changing them later means amendments.'),
  ('shieldcheck', 'Insurance filed by your insurer', 'Your insurance company files the BMC-91/91X liability form directly with FMCSA. Authority will not activate without it.'),
  ('pin', 'Designate a BOC-3 process agent', 'Required in every state you operate. See our BOC-3 guide &mdash; most carriers use a blanket agent service.'),
  ('calcheck', 'UCR registration', 'Annual Unified Carrier Registration once your USDOT is active. Fees are set annually by bracket of fleet size.'),
  ('layers', 'State-level items', 'IRP apportioned plates, IFTA license (see our IFTA guide), state permits (KYU, NY HUT, NM, OR) where you run.'),
 ], accent='#7c3aed')
 adp += _sec('Money talk','What setup realistically costs', '<div class="prose reveal" style="max-width:840px;margin:0 auto"><p>Plan for the FMCSA authority filing fee, BOC-3 agent service, UCR annual fee, IRP plates (varies widely by state and weight), and your down payment on insurance &mdash; insurance is by far the largest number for a new authority, and quotes vary dramatically by driving history, truck age and radius. Get several insurance quotes before you file anything; the rest of the costs are small by comparison. We deliberately do not print exact government fees here because they change &mdash; check FMCSA.gov for current amounts.</p></div>', soft=True)
+adp += _sec('Authority packages','Trucking authority packages &mdash; what you are actually buying', '<div class="prose reveal" style="max-width:840px;margin:0 auto"><p>A trucking authority package is a filing service&rsquo;s bundle of the steps above: usually the USDOT and MC number setup, a BOC-3 process-agent filing and UCR registration, and sometimes business formation, an EIN, IRP/IFTA paperwork or a drug-and-alcohol consortium enrollment. It is convenience, not a different kind of authority &mdash; the filings are the same ones you can make yourself, and the government fees inside the bundle are the same.</p><p>Before you buy one, check three things: which government fees are included and which are billed on top; whether the BOC-3 or anything else renews automatically every year; and that everything is filed in your exact legal entity name, because every broker and insurer will match against it. <b>Interstate</b> authority packages cover the federal USDOT + MC route on this page; <b>intrastate</b> packages cover your own state&rsquo;s registration instead, and what they include varies by state. LoadBoot does not sell authority packages &mdash; we dispatch you once your authority is active.</p></div>')
 adp += m_zigzag('The waiting period', 'What to do while your authority cooks', [
  ('doccheck', 'Build your document pack', 'W-9, COI, authority letter, insurance certificates &mdash; brokers ask for the same pack every time. Have it ready as PDFs.'),
  ('wallet', 'Line up factoring or cash buffer', 'Brokers commonly pay in 30 days. Decide now how you will cover fuel in week one.'),
@@ -4845,13 +4848,15 @@ adp += m_dark('Where LoadBoot fits', 'Set up once, tracked forever', '', [
 ], accent='#38bdf8', numbered=False)
 adp += _adfaq_html + _COMPL_DISC + final_cta()
 page('authority-dot-setup.html','Trucking Authority & DOT Setup Guide (USDOT, MC) | LoadBoot',
- 'Trucking authority and DOT setup step by step: USDOT and MC filing order, insurance, BOC-3, UCR, IRP, costs and the New Entrant audit for new carriers.',
+ 'USDOT and MC number setup in order: authority filing, insurance, BOC-3, UCR, IRP, the New Entrant audit, and what trucking authority packages include.',
  'services.html', adp, _adfaq_sch)
 
 # ---------- 2. BOC-3 / UCR ----------
 _bufaq_html,_bufaq_sch = faq_block([
  ('What happens if I skip UCR?','States enforce UCR at roadside and weigh stations — expect citations and fines, and some states hold registrations. It is one of the cheapest filings on your list; never let it lapse.'),
- ('Do I file BOC-3 myself?','For motor carriers, the BOC-3 must be filed by the process agent, electronically, with FMCSA. You choose the agent; they file.'),
+ ('How much does a BOC-3 cost?','FMCSA charges nothing to file a BOC-3 &mdash; what you pay is the process-agent company that files it. A blanket-agent service is usually a small one-time fee (tens of dollars, not hundreds); some bill yearly or fold it into an authority package, so check whether it renews automatically. The price is set by the agent company, not by FMCSA.'),
+ ('How often do you file a BOC-3?','Once. It stays on file with FMCSA while your authority is active. You need a new one only when you change process-agent companies &mdash; the new agent files it for you.'),
+ ('Do I file BOC-3 myself?','For motor carriers, the BOC-3 must be filed by the process agent, electronically (online), with FMCSA. You choose the agent; they file.'),
  ('Does UCR cover my trailer?','UCR fees are based on your power-unit count. Trailers are not counted as vehicles for UCR brackets.'),
  ('I only operate in one state — do I need these?','If you cross state lines for hire, yes. Pure intrastate carriers should check their state rules — some states have their own versions.'),
 ])
@@ -4879,7 +4884,7 @@ bup += _sec('Where LoadBoot fits','Never miss either one again', _cards([
 ]))
 bup += _bufaq_html + _COMPL_DISC + final_cta()
 page('boc3-ucr.html','BOC-3 Process Agents &amp; UCR Registration Explained | Loadboot',
- 'What BOC-3 process agents and UCR registration are, who must file, bracket fees, renewal windows, enforcement realities, and how to put both on autopilot.',
+ 'What a BOC-3 costs, who files it and how often, plus UCR registration: who must register, bracket fees, the renewal window and how both get enforced.',
  'services.html', bup, _bufaq_sch)
 
 # ---------- 3. Form 2290 (HVUT) ----------
