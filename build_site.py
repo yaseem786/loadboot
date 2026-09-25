@@ -8,6 +8,7 @@ from home_v2_module import (LBH_CSS, HS_CSS, header_v2, STANDARD_V2, COMPARE_V2,
 HEADER_V2 = True   # False -> previous header()/topbar markup
 HOME_V2 = True     # False -> previous NETWORKS band, COMPARE, BRIDGE, CARRIER_FLOW, PARTNER_FLOW, REFTEASER on the home page
 from motifs_module import mi, m_rail, m_timeline, m_split, m_dark, m_zigzag, m_statband, m_gradcta
+from dispatch_os_module import DOS_CSS, dos_steps, dos_layers, dos_roles, dos_who, dos_pages, DOS_RELATED   # 25 Sep 2026: the OS layer + dispatcher model as the code runs it
 from market_reports_module import build_market_reports   # workstream 01 layer 2: dated weekly reports
 from industry_pages_module import (build_industry_pages, build_industry_index,
                                    industry_links_for_equipment)  # workstream 02: shipper-by-industry pages
@@ -401,6 +402,9 @@ NAV_MENU = [
     ('freight-shipping-by-industry.html', 'Freight shipping by industry'),
     ('ship-direct-to-carrier.html', 'Ship direct to carriers'),
     ('us-truck-dispatcher.html', 'US truck dispatchers'),
+    ('how-loadboot-dispatch-works.html', 'How dispatch works (A to Z)'),
+    ('dedicated-truck-dispatcher.html', 'Dedicated dispatcher'),
+    ('broker-agents.html', 'For broker agents'),
     ('careers.html', 'Become a dispatcher (hiring)'),
     ('agents.html', 'Referral program &mdash; earn 1%'),
   ]),
@@ -476,7 +480,7 @@ def footer():
 <form class="news" onsubmit="event.preventDefault();var f=this,em=f.querySelector('input').value;var done=function(){f.innerHTML='<span style=\\'color:#86efac;font-weight:600\\'>Subscribed &mdash; thanks!</span>';};if(window.lbSubmitLead){window.lbSubmitLead('newsletter',{email:em}).then(done).catch(done);}else{done();}"><input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Subscribe</button></form></div>
 </div>
 <div class="links5">
-<div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">Dispatch Desk</a></div>
+<div><div class="foot-h">Dispatch</div><a href="how-loadboot-dispatch-works.html">How Dispatch Works (A to Z)</a><a href="dedicated-truck-dispatcher.html">Dedicated Dispatcher</a><a href="services.html">All Dispatch Services</a><a href="us-truck-dispatcher.html">US Truck Dispatcher</a><a href="ai-dispatch-for-owner-operators.html">AI Dispatch, Honestly</a><a href="truck-dispatcher-vs-dispatch-software.html">Dispatcher vs Software</a></div>
 <div><div class="foot-h">By haul</div><a href="otr-dispatch.html">OTR</a><a href="regional-truck-dispatch.html">Regional</a><a href="local-truck-dispatch.html">Local</a></div><div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 <div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="freight-shipping-by-industry.html">Freight Shipping by Industry</a><a href="agents.html">Referral Partner Program (Earn 1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a></div>
@@ -494,9 +498,10 @@ def footer():
 '''
 
 GA_ID = 'G-C2ELQ7H8EM'  # GA4 Measurement ID — injected on every page.
-LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Loadboot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Professional truck dispatch services for owner-operators, fleets, and new-authority carriers — flat 5%, no long-term contracts.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
+LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Loadboot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Truck dispatch for owner-operators, small fleets and new-authority carriers: a dedicated, LoadBoot-vetted dispatcher on your truck plus the platform that verifies, tracks and settles every load. Flat 5% of line-haul at delivery, no long-term contract.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
 GA_SNIPPET = ('<script async src="https://www.googletagmanager.com/gtag/js?id=%s"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag(\'js\',new Date());gtag(\'config\',\'%s\');</script>' % (GA_ID, GA_ID)) if GA_ID else ''
-HEADX = LOCALBIZ + GA_SNIPPET
+ORG_SCHEMA = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://loadboot.com/#org","name":"LoadBoot","legalName":"LoadBoot LLC","url":"https://loadboot.com/","logo":"https://loadboot.com/icon-512.png","slogan":"The Operating System for Trucking","description":"The Operating System for Trucking: a verified load board, carrier app, GPS proof, documents and settlements on one platform, with a LoadBoot-run network of dedicated, vetted truck dispatchers. Flat 5% of line-haul for carriers; free for brokers, shippers, broker agents and referral partners.","email":"hello@loadboot.com","telephone":"+1-469-253-7575","sameAs":["https://www.linkedin.com/company/135138228/","https://play.google.com/store/apps/details?id=com.loadboot.app"],"areaServed":{"@type":"Country","name":"United States"}}</script>'
+HEADX = LOCALBIZ + ORG_SCHEMA + GA_SNIPPET
 
 # First-party analytics beacon (privacy-safe). Posts pageviews to the context's Supabase
 # project via the public track_web_event RPC. Exposes window.lbTrack(type, extra) for events.
@@ -621,6 +626,16 @@ RELATED = {
  'truck-dispatcher-in-texas.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('truck-dispatcher-in-california.html','California Dispatch'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('carriers.html','For Carriers')],
  'truck-dispatcher-in-georgia.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('truck-dispatcher-in-texas.html','Texas Dispatch'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('carriers.html','For Carriers')],
 }
+
+RELATED.update(DOS_RELATED)
+_DOS_HUB = [('how-loadboot-dispatch-works.html','How LoadBoot Dispatch Works'),('dedicated-truck-dispatcher.html','Dedicated Truck Dispatcher')]
+for _f in ['dry-van-dispatch.html','reefer-dispatch.html','flatbed-dispatch.html','hotshot-dispatch.html','power-only-dispatch.html','box-truck-dispatch.html',
+           'new-authority-dispatch.html','owner-operator-dispatch.html','otr-dispatch.html','regional-truck-dispatch.html','local-truck-dispatch.html',
+           'carriers.html','services.html','pricing.html','carrier-application.html','case-studies.html','how-much-does-a-truck-dispatcher-cost.html',
+           'truck-dispatcher-vs-freight-broker.html','do-new-authority-carriers-need-a-dispatcher.html','owner-operator-dispatch-service-guide.html',
+           'truck-dispatcher-in-california.html','truck-dispatcher-in-texas.html','truck-dispatcher-in-georgia.html']:
+    RELATED[_f] = _DOS_HUB + [x for x in RELATED.get(_f, []) if x[0] not in ('how-loadboot-dispatch-works.html','dedicated-truck-dispatcher.html')]
+RELATED['brokers.html'] = [('broker-agents.html','For Broker Agents')] + RELATED['brokers.html']
 
 # ---- Inc 60: authentic photo bands. ONLY existing owned assets — no stock fakes, no fake clients.
 PAGE_PHOTOS = {
@@ -1138,8 +1153,8 @@ STATS = '''<div class="stats"><div class="wrap stats-grid">
 
 PROMISE = '''<section><div class="wrap"><div class="promise reveal"><div class="glow"></div>
 <div class="eyebrow" style="color:#93c5fd">Our Promise</div><h2>A dispatcher who actually has your back</h2>
-<p>Loadboot was built on a simple idea: treat every carrier's truck like it's our own business. You get real attention, honest rates, and someone who picks up the phone.</p>
-<p>We're a growing dispatch service &mdash; be one of our first carriers and grow with us.</p>
+<p>LoadBoot was built on a simple idea: a carrier should know exactly who is working their truck, who checked them, who approves the rate con, and how to leave. So we test every dispatcher, assign one by hand, approve every booking against your floor, and put the pause button in your app.</p>
+<p>We are a growing platform &mdash; be one of the carriers we build it around.</p>
 <div class="reply">&#9201;&#65039; We reply within 15 minutes during business hours</div></div></div></section>'''
 
 def linkcard(href,emoji,title,text):
@@ -1331,10 +1346,11 @@ HOW = '''<section id="how"><div class="wrap"><div class="sec-head reveal"><div c
 
 # ---------- HOME ----------
 home_faqs=[('Do I need my own authority (MC/DOT)?','Yes &mdash; we dispatch for carriers who hold their own operating authority. New-authority carriers are welcome, and we help with broker setup.'),
-('How do you charge?','A flat 5% of your gross on the loads we book &mdash; no hidden fees and no long-term contract. You only pay when you earn.'),
-('Is there a long-term contract?','No long-term lock-in. You sign a short dispatch agreement (it names LoadBoot as your dispatcher so brokers can work with us) and can end it with 30 days&rsquo; written notice; loads already booked finish under it. We earn your business load by load.'),
+('How do you charge?','A flat 5% of gross line-haul on loads your LoadBoot dispatcher books and you deliver, invoiced after delivery &mdash; fuel surcharge, detention, TONU, layover and lumper are 100% yours. No setup fee, no monthly fee, no long-term contract. See <a href="pricing.html">pricing</a>.'),
+('Who is my dispatcher &mdash; is it LoadBoot itself?','A LoadBoot-vetted dispatcher, dedicated to your truck: screened, tested (timed exam plus a voice negotiation drill), trialled for 10 working days on real trucks, then assigned to you by hand within 3 business days of your approval. They book under your authority as your agent, LoadBoot approves every rate confirmation before the truck moves, and LoadBoot pays them &mdash; never you. The whole loop is on <a href="how-loadboot-dispatch-works.html">how LoadBoot dispatch works</a>.'),
+('Is there a long-term contract?','No long-term lock-in. You sign a short Dispatch Service Agreement that lets your LoadBoot dispatcher book under your authority as your agent, and you can end it with 30 days&rsquo; written notice; loads already booked finish under it. You can also pause, or ask for a different dispatcher, from your app at any time.'),
 ('What kind of freight do you dispatch?','Dry van, reefer, flatbed, step deck, hotshot, power-only, and box truck/expedited.'),
-('How soon can you start?','Usually within a day or two of completing your carrier setup.'),
+('How soon can you start?','Setup takes about five minutes (or a chat). Once your documents are verified, our desk assigns your dedicated dispatcher within 3 business days &mdash; and if we run late, your Dispatcher tab shows exactly why.'),
 ('Do you work with new-authority carriers?','Absolutely &mdash; new carriers are a core part of who we help.'),
 ('Will I know the rate before I accept a load?','Always. Nothing is booked without your approval.'),
 ('Does LoadBoot sync with QuickBooks or my ELD?','Yes — native two-way QuickBooks Online sync is live, and Samsara/Motive ELDs connect with a pasted token. Fuel-card CSVs (EFS, Comdata, WEX) import straight onto trips. See <a href="integrations.html">integrations</a>.'),
@@ -1344,9 +1360,9 @@ home_faq_html, home_faq_schema = faq_block(home_faqs)
 HERO='''<section class="hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div>
 <div class="wrap hero-grid"><div>
 <span class="badge reveal"><span class="dot"></span> Carriers &middot; Brokers &middot; Shippers &mdash; one platform</span>
-<h1 class="reveal d1">Professional Truck Dispatch <span class="gradtext">&amp; a Load Board With Zero Ghosts</span></h1>
+<h1 class="reveal d1">Professional Truck Dispatch <span class="gradtext">&amp; a Verified Load Board, on One Platform</span></h1>
 <p class="reveal d1" style="color:#94a3b8;font-weight:500;font-size:1.08rem;margin:12px 0 0;letter-spacing:.02em">The Operating System for Trucking</p>
-<p class="lead reveal d2">Carriers book higher-paying freight with every rate in writing. Brokers and shippers post to verified capacity &mdash; and watch every mile on live GPS. One platform, honest by design: no ghost loads, no long-term contracts.</p>
+<p class="lead reveal d2">A dedicated, LoadBoot-vetted dispatcher on your truck. A platform that verifies every broker, tracks every mile and settles every load. Brokers and shippers post free to verified capacity. Flat 5%% of line-haul, only at delivery &mdash; no long-term contract.</p>
 <div class="hero-btns reveal d3"><a href="get-started.html" class="btn btn-primary">Get Started %s</a><a href="/app/partner/" class="btn btn-secondary">Post freight &mdash; broker / shipper</a><a href="how-it-works.html" class="btn btn-ghost">How it works &rarr;</a></div>
 <div class="trust reveal d3"><div>%s Verified on both sides</div><div>%s Every rate in writing</div><div>%s Flat 5%% &mdash; only when carriers earn</div></div></div>
 <div class="hero-visual reveal d2"><div class="hv-card"><div class="glow"></div>
@@ -1444,7 +1460,7 @@ BRIDGE = ('<section class="bg-soft"><div class="wrap"><div class="sec-head cente
 # REFTEASER — desire-driven earnings panel (bold gradient). Illustrative figures, clearly labelled + honest.
 REFTEASER = ('<section style="background:linear-gradient(135deg,#0b1220 0%,#12304f 55%,#3b1a0e 100%);color:#fff;position:relative;overflow:hidden">'
  '<div class="wrap" style="position:relative;z-index:1;padding:60px 0"><div class="sec-head center reveal" style="color:#fff">'
- '<div class="eyebrow" style="color:#fdba74">Agent Program &mdash; the independent dispatcher model</div>'
+ '<div class="eyebrow" style="color:#fdba74">Referral Partner program &mdash; bring the people, earn 1%</div>'
  '<h2 style="color:#fff;font-size:2.1rem">Bring the people. The software does the work. <span style="color:#34d399">You earn 1% &mdash; forever.</span></h2>'
  '<p class="lead center" style="color:#cbd5e1;max-width:720px;margin:14px auto 0">One link works for <b style="color:#fff">carriers, brokers and shippers</b>. Every GPS-verified delivered load your referred clients move pays you <b style="color:#fff">1% of the gross</b> &mdash; automatically, from LoadBoot&rsquo;s own fee. Recruit other agents and earn overrides <b style="color:#fff">5 levels deep</b>.</p></div>'
  '<div class="reveal" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:32px">'
@@ -1471,10 +1487,10 @@ if HOME_V2:
     _COMPARE, _BRIDGE, _CARRIER_FLOW, _PARTNER_FLOW, _REFTEASER = COMPARE_V2, BRIDGE_V2, CARRIER_FLOW_V2, PARTNER_FLOW_V2, REFTEASER_V2
 else:
     _COMPARE, _BRIDGE, _CARRIER_FLOW, _PARTNER_FLOW, _REFTEASER = COMPARE, BRIDGE, CARRIER_FLOW, PARTNER_FLOW, REFTEASER
-home_body = HERO+ROLEBAND+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+HOME_RATES+HOME_RATES_JS+_PARTNER_FLOW+_CARRIER_FLOW+_BRIDGE+WHOSERVE+_COMPARE+HOW+LSBAND+TOOLSPROMO+_REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
+home_body = HERO+ROLEBAND+STATS+SCROLLBAND+DOS_CSS+dos_steps('short')+WHYUS+dos_layers()+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+HOME_RATES+HOME_RATES_JS+_PARTNER_FLOW+_CARRIER_FLOW+_BRIDGE+dos_roles()+WHOSERVE+_COMPARE+HOW+LSBAND+TOOLSPROMO+_REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
 home_body += '<script>' + LS_JS + LIVEBOARD_JS + '</script>'
 page('index.html','Truck Dispatch & Verified Load Board for Carriers | LoadBoot',
-     'Truck dispatch and a verified load board with zero ghost loads on one platform. Flat 5% for carriers, free posting for brokers, live GPS tracking.',
+     'Truck dispatch and a verified load board on one platform: a dedicated, vetted dispatcher for your truck, live GPS proof, documents and settlements. Flat 5% of line-haul for carriers, free posting for brokers.',
      'index.html', home_body, home_faq_schema)
 
 # ---------- SERVICE PAGE BUILDER ----------
@@ -1637,6 +1653,7 @@ def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs,shots=None):
     # Why -> navy highlight panel
     body += '<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Why Loadboot</div><h2>Why %s carriers choose us</h2><p>%s</p></div></div></section>' % (nl, why)
     if shots: body += _real_screen(*shots)
+    body += DOS_CSS + dos_steps('equipment', equipment=nl)
     # EXTRA unique sections (bullets -> cards, else prose)
     for i,(st,sp,sb) in enumerate(EXTRA.get(name,[])):
         ps = ''.join('<p>%s</p>' % x for x in sp)
@@ -1646,10 +1663,10 @@ def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs,shots=None):
         else:
             body += '<section><div class="wrap prose reveal" style="max-width:820px"><h2>%s</h2>%s</div></section>' % (st, ps)
     # Tailored process steps
-    steps = [('1','Free consultation','Tell us about your truck, your authority, and the lanes you want to run.'),
-             ('2','We set you up','We handle broker setup and learn your equipment, preferences, and target rates.'),
-             ('3','We book &amp; negotiate','We find %s loads, negotiate the rate, and send the details for your approval.' % nl),
-             ('4','You drive, we handle the rest','You stay loaded and paid; we manage the brokers and the paperwork.')]
+    steps = [('1','Apply, get verified','Authority, insurance, W-9 and a short dispatch agreement &mdash; AI pre-checks every document, a person reviews it. Five minutes, or do it in chat.'),
+             ('2','Matched by hand in 3 business days','Our desk writes your SOP &mdash; %s lanes, floor rate, equipment, home time &mdash; and assigns one LoadBoot-vetted dispatcher to your truck.' % nl),
+             ('3','They book, you approve, we approve','Your dispatcher finds %s loads and negotiates to your floor. You approve every load; LoadBoot approves every rate con before the truck moves.' % nl),
+             ('4','Drive, get paid direct','GPS proof and documents run in the app; the broker or your factor pays you directly. One 5%% invoice at delivery. Pause or switch any time.')]
     sc = ''.join('<div class="step reveal"><div class="num">%s</div><h3>%s</h3><p>%s</p></div>' % s for s in steps)
     body += '<section><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">How it works</div><h2>How we keep your %s truck loaded</h2></div><div class="grid g4">%s</div></div></section>' % (nl, sc)
     # Stats band for visual weight
@@ -1675,7 +1692,7 @@ svc_page('reefer-dispatch.html','Reefer','Reefer Dispatch Services for Owner-Ope
   ('What does reefer dispatch cost?','A flat 5% of line-haul on loads we book and you deliver &mdash; fuel surcharge and accessorials excluded. No long-term contract: the dispatch agreement is month-to-month and you can cancel anytime.')])
 
 svc_page('flatbed-dispatch.html','Flatbed','Flatbed Dispatch Services 2026 \u2014 Flatbed Truck &amp; Step-Deck Dispatch Service for Owner-Operators, Flat 5% | LoadBoot',
- 'Flatbed dispatch services for owner-operators and small fleets in 2026: flatbed truck and step-deck dispatch that books high-paying steel, lumber and machinery loads, negotiates every rate and handles the brokers. Flat 5% of gross, no long-term contracts.',
+ 'Flatbed dispatch services for owner-operators and small fleets in 2026: flatbed truck and step-deck dispatch that books high-paying steel, lumber and machinery loads, negotiates every rate and handles the brokers. Flat 5% of line-haul, no long-term contracts.',
  'Flatbed Dispatch Services Across the USA','Steel, lumber, machinery, and oversized freight &mdash; we find the high-paying flatbed loads and handle the brokers, so you focus on securing and driving.',
  ['Flatbed is skilled work, and it should pay like it. Too many flatbed operators end up hauling cheap freight because they don\'t have time to work the phones. We do that for you.',
   'Our dispatchers book steel, lumber, building materials, and machinery on lanes that fit your truck, confirm securement and permit details, and negotiate every rate so your skill is rewarded.'],
@@ -1686,7 +1703,7 @@ svc_page('flatbed-dispatch.html','Flatbed','Flatbed Dispatch Services 2026 \u201
   ('What does flatbed dispatch cost?','A flat 5% of line-haul on loads we book and you deliver (fuel surcharge and accessorials excluded), no long-term contract, cancel anytime.')])
 
 svc_page('dry-van-dispatch.html','Dry Van','Dry Van Dispatch Services 2026 — Dry Van Dispatcher, Flat 5%, No Contracts | LoadBoot',
- 'Dry van dispatch services for owner-operators and fleets: a dedicated dry van dispatcher booking consistent van freight, negotiating every rate and handling the back office. Flat 5% of gross, no long-term contracts.',
+ 'Dry van dispatch services for owner-operators and fleets: a dedicated dry van dispatcher booking consistent van freight, negotiating every rate and handling the back office. Flat 5% of line-haul, no long-term contracts.',
  'Dry Van Dispatch Services Across the USA','Steady, consistent van freight that keeps your truck moving &mdash; booked, negotiated, and managed by a dedicated dispatcher.',
  ['Dry van is the backbone of freight, but consistency is everything. The difference between a good week and a bad one is having someone working loads ahead of you. That\'s what we do.',
   'We book reliable van freight on your preferred lanes, negotiate every rate, and keep your schedule full &mdash; so you\'re never sitting empty waiting for the next load.'],
@@ -1708,7 +1725,7 @@ svc_page('hotshot-dispatch.html','Hotshot','Hotshot Dispatch Services | Loadboot
   ('What does hotshot dispatch cost?','A flat 5% of line-haul on loads we book and you deliver (fuel surcharge and accessorials excluded), no long-term contract.')])
 
 svc_page('power-only-dispatch.html','Power Only','Power Only Dispatch Services 2026 — Power Only Dispatcher, Drop-and-Hook Freight, Flat 5% | LoadBoot',
- 'Power only dispatch services for tractor-only carriers in the USA: a power only dispatcher booking drop-and-hook and trailer-supplied freight, negotiating every rate and handling broker setup. Flat 5% of gross, no long-term contracts.',
+ 'Power only dispatch services for tractor-only carriers in the USA: a power only dispatcher booking drop-and-hook and trailer-supplied freight, negotiating every rate and handling broker setup. Flat 5% of line-haul, no long-term contracts.',
  'Power Only Dispatch Services Across the USA','Flexible drop-and-hook freight for your tractor &mdash; we keep you pulling trailers and earning without the wait.',
  ['Power only gives you flexibility, but it takes the right broker relationships to stay loaded. We connect you with consistent power only freight and keep your tractor working.',
   'We book drop-and-hook and trailer-supplied loads that fit your tractor, negotiate the rate, and handle the broker setup so you stay productive.'],
@@ -1739,11 +1756,12 @@ svc_page('new-authority-dispatch.html','New Authority','New Authority Truck Disp
  'New-authority carriers are exactly who we love to help. Big dispatchers ignore you; we don\'t. We get you set up with brokers, keep you off cheap freight from day one, and walk you through the parts of trucking nobody explains. Start strong, with a dispatcher who actually answers.',
  [('I just got my MC number &mdash; can you help?','Yes &mdash; new-authority carriers are a core part of who we serve. We handle broker setup and get you booking loads.'),
   ('Do you help with broker setup and packets?','Absolutely. We manage broker onboarding and packets so you can start hauling sooner.'),
-  ('What does it cost to start?','A flat 5% of gross on loads we book, with no long-term contract &mdash; you only pay when you earn.')],
+  ('What does it cost to start?','A flat 5% of line-haul on loads we book, with no long-term contract &mdash; you only pay when you earn.')],
  shots=('board-request-countdown.webp',1100,773,'Direct load offers racing a countdown on the phone — first acceptance wins','Offers come to YOU &mdash; direct loads with a countdown; first acceptance wins.'))
 
 # ---------- SERVICES HUB ----------
-serv_body = svc_hero('Truck Dispatch Services','Full-service dispatch for US carriers &mdash; from booking and rate negotiation to authority setup, compliance, and claims. One partner for the whole business.')
+serv_body = svc_hero('Truck Dispatch Services','Full-service truck dispatch for US carriers: a dedicated, LoadBoot-vetted dispatcher on your truck, plus the platform that verifies every broker, tracks every mile and settles every load. Flat 5% of line-haul at delivery &mdash; no long-term contract.')
+serv_body += DOS_CSS + dos_who()
 serv_body += FREIGHT_CARDS
 serv_body += '''<section><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Core Dispatch</div><h2>Everything you need to keep your truck moving</h2></div>
 <div class="grid g3">
@@ -1752,9 +1770,10 @@ serv_body += '''<section><div class="wrap"><div class="sec-head reveal"><div cla
 <div class="card reveal d2"><div class="icon">&#129309;</div><h3>Broker Communication</h3><p>Calls, packet setups, and check-ins handled for you.</p></div>
 <div class="card reveal"><div class="icon">&#129517;</div><h3>Route &amp; Lane Planning</h3><p>Smart planning to reduce empty miles.</p></div>
 <div class="card reveal d1"><div class="icon">&#128196;</div><h3>Document Management</h3><p>Rate cons, BOLs, and PODs &mdash; organized and on time.</p></div>
-<div class="card reveal d2"><div class="icon">&#128336;</div><h3>Dispatch Desk + On-Call</h3><p>A dedicated dispatcher during US business hours, and an on-call desk for every load in motion &mdash; breakdowns, late pickups, detention.</p></div>
+<div class="card reveal d2"><div class="icon">&#128336;</div><h3>Dispatch Desk + On-Call</h3><p>A dedicated dispatcher during US business hours (Eastern), an on-call desk for every load in motion &mdash; breakdowns, late pickups, detention &mdash; and Riley on the phone 24/7.</p></div>
 </div></div></section>'''
-serv_body += m_statband([('20+','services under one roof'),('5%','flat fee, no long-term contract'),('On-call','for loads in motion'),('1','partner for the whole business')])
+serv_body += dos_steps('full')
+serv_body += m_statband([('20+','services under one roof'),('5%','of line-haul, no long-term contract'),('3 days','business days to a dedicated dispatcher'),('2','approvals on every rate con')])
 serv_body += m_zigzag('Back-Office &middot; Money &middot; Claims', 'Everything around the load &mdash; handled for you', [
  ('clipboard','Broker Packet Onboarding','Get set up with brokers fast &mdash; packets, references, and setup forms completed for you.'),
  ('wallet','Factoring Setup','Get paid in hours, not weeks, through vetted factoring partners.'),
@@ -1779,7 +1798,7 @@ serv_body += '''<section><div class="wrap"><div class="sec-head reveal"><div cla
 serv_hub_faq_html, serv_hub_faq_schema = faq_block(home_faqs)
 serv_body += COMPARE + HOW + serv_hub_faq_html + final_cta()
 page('services.html','Truck Dispatch Services (Full List) | Loadboot',
-     'Full-service truck dispatch: load booking, rate negotiation, authority setup, IFTA, factoring, compliance, and freight-specific dispatch. Flat 5%, no long-term contracts.',
+     'Full-service truck dispatch: a dedicated, vetted dispatcher booking and negotiating your loads, plus authority setup, IFTA, factoring, compliance and claims on one platform. Flat 5% of line-haul, no long-term contracts.',
      'services.html', serv_body, serv_hub_faq_schema)
 
 # ---------------------------------------------------------------------------------------------
@@ -1788,7 +1807,7 @@ page('services.html','Truck Dispatch Services (Full List) | Loadboot',
 # meta description and its own facts (no shared template copy), because three near-identical
 # equipment pages is exactly the cannibalisation defect the SEO round already flagged.
 svc_page('otr-dispatch.html','OTR','OTR Dispatch Services 2026 — Over-the-Road Dispatcher for Owner-Operators, Flat 5% | LoadBoot',
- 'OTR dispatch for owner-operators and small fleets: a dedicated over-the-road dispatcher who negotiates the head-haul, works your backhaul before you unload, and plans multi-week trips around the home time you asked for. Flat 5% of gross, no long-term contract.',
+ 'OTR dispatch for owner-operators and small fleets: a dedicated over-the-road dispatcher who negotiates the head-haul, works your backhaul before you unload, and plans multi-week trips around the home time you asked for. Flat 5% of line-haul, no long-term contract.',
  'OTR Dispatch Services Across the USA','Over-the-road freight booked both ways &mdash; head-haul negotiated, reload worked before you empty, and a trip plan that ends where you want to be.',
  ["Over-the-road is the highest-mileage way to run, and the loneliest place to negotiate. You are 1,400 miles from home, the clock is running, and the broker knows it. A dedicated dispatcher changes that conversation.",
   "We book your outbound, negotiate it before you accept, and start working the return while you are still under load &mdash; so an OTR week is two paid legs, not one good load and one salvage job."],
@@ -1797,22 +1816,22 @@ svc_page('otr-dispatch.html','OTR','OTR Dispatch Services 2026 — Over-the-Road
  [('What counts as OTR freight?','Long-haul truckload that crosses regions and state lines &mdash; commonly quoted in the industry as trips from roughly 250 to 2,500-plus miles, with drivers turning about 2,500&ndash;3,000 miles a week and staying out two to three weeks at a time.'),
   ('Can you plan my OTR trip around home time?','Yes. Tell us your home base and the home time you want and we plan the trip toward it &mdash; the last leg is booked to bring you back, not to chase one more load.'),
   ('Do you work my backhaul before I deliver?','That is the point. Post your truck as booked in the carrier app with the delivery city and where you want the reload, and your dispatcher sources the return while you are still under load.'),
-  ('What does OTR dispatch cost?','A flat 5% of gross on loads we book. No long-term contract, no forced dispatch, cancel anytime.')])
+  ('What does OTR dispatch cost?','A flat 5% of line-haul on loads we book. No long-term contract, no forced dispatch, cancel anytime.')])
 
 svc_page('regional-truck-dispatch.html','Regional','Regional Truck Dispatch 2026 — Home Weekly, Lanes Inside Your Radius | LoadBoot',
- 'Regional truck dispatch for carriers who want to stay inside their home radius and be home weekly: back-to-back load planning, lane triangles instead of deadhead, and a dedicated dispatcher who respects the states you will not run. Flat 5% of gross.',
+ 'Regional truck dispatch for carriers who want to stay inside their home radius and be home weekly: back-to-back load planning, lane triangles instead of deadhead, and a dedicated dispatcher who respects the states you will not run. Flat 5% of line-haul.',
  'Regional Truck Dispatch Services','Freight that keeps you inside your radius and home on weekends &mdash; planned back-to-back so the next load is booked before you deliver the last one.',
  ["Regional carriers do not lose money on rate. They lose it on gaps &mdash; the Tuesday afternoon spent hunting a reload, the empty 120 miles back to a dock, the Friday load that lands 700 miles from the house.",
   "We plan your week as a sequence, not a series of one-off loads: shorter hauls, booked back-to-back, inside the radius you set, aimed at getting you home when you said you wanted to be home."],
  ['Load booking inside the home-base radius you set','Back-to-back planning so you never start from a standstill','Lane triangles that cut the empty return','Avoid-states and facility preferences respected','Weekend home time planned into the week','Rate negotiated and detention documented on every load'],
- "Regional running is a utilization game: more loads, shorter hauls, and no room for a dead afternoon. We keep the next load booked before the current one delivers, keep you inside your radius, and keep the week pointed at your home time &mdash; flat 5% of gross on loads we book, no long-term contract.",
+ "Regional running is a utilization game: more loads, shorter hauls, and no room for a dead afternoon. We keep the next load booked before the current one delivers, keep you inside your radius, and keep the week pointed at your home time &mdash; flat 5% of line-haul on loads we book, no long-term contract.",
  [('How far is regional?','Industry guides generally put regional inside roughly 500&ndash;1,000 miles of your home base, turning about 1,500&ndash;2,200 miles a week, with most carriers home on weekends. In practice we run to the radius you set in your profile.'),
   ('Is there enough regional freight for a full week?','There is &mdash; most truckload freight is regional-length. DAT&rsquo;s dry van reporting puts the average length of haul around 439 miles for dry van, 610 for reefer and 330 for flatbed.'),
   ('Can I block certain states or shippers?','Yes. Set avoid-states and facility dislikes in your dispatch preferences and we will not put you there.'),
   ('What do you need from me to keep me regional?','Your home base, the radius you will drive to pick up, and a truck posting confirmed in the app each morning &mdash; we only source for trucks we know are free.')])
 
 svc_page('local-truck-dispatch.html','Local','Local Truck Dispatch 2026 — 150 Air-Mile Freight, Home Every Night | LoadBoot',
- 'Local and short-haul truck dispatch: loads kept inside your 150 air-mile radius so the FMCSA short-haul exception holds, stops and dock time priced into the rate, and home every night. Flat 5% of gross, no long-term contract.',
+ 'Local and short-haul truck dispatch: loads kept inside your 150 air-mile radius so the FMCSA short-haul exception holds, stops and dock time priced into the rate, and home every night. Flat 5% of line-haul, no long-term contract.',
  'Local &amp; Short-Haul Truck Dispatch','Short-haul freight that keeps you inside your air-mile radius and home every night &mdash; with stops, wait time and driver assist priced in before you accept.',
  ["Local work is the only kind of trucking with a regulation drawn around it. Stay inside 150 air miles, get released inside 14 hours, and the paperwork burden drops away. Step outside it by one run and the day needs a log.",
   "So we dispatch local the way it has to be run: inside your radius, back to your reporting location in time, with the stops and the dock time on the confirmation instead of eating your afternoon for free."],
@@ -1827,11 +1846,11 @@ svc_page('local-truck-dispatch.html','Local','Local Truck Dispatch 2026 — 150 
 # ---------- ABOUT ----------
 # World-class About page (Uber/Amazon pattern) — sections live in about_module.py
 from about_module import ABOUT_CSS, about_sections
-about_body = ABOUT_CSS + about_sections()
+about_body = ABOUT_CSS + about_sections() + DOS_CSS + dos_layers() + dos_roles()
 
 _about_faq_html, _about_faq_schema = faq_block([
  # ---- General ----
- ('What exactly is LoadBoot?', 'LoadBoot is the operating system for US trucking: a verified load board with zero ghost loads, a flat-5% dispatch service, live GPS tracking with photo proof, document and compliance workflows, and payments/settlements — one platform serving carriers, freight brokers, shippers and dispatchers.'),
+ ('What exactly is LoadBoot?', 'LoadBoot is the operating system for US trucking: a verified load board, a dispatch network of dedicated, LoadBoot-vetted dispatchers at a flat 5% of line-haul, live GPS tracking with photo proof, document and compliance workflows, and payments/settlements — one platform serving carriers, freight brokers, shippers and dispatchers.'),
  ('How much does LoadBoot cost?', 'Carriers pay a flat 5% dispatch fee only on loads we book — no sign-up fee, no monthly minimum, no long-term contract. Brokers post loads completely free. Shippers get one transparent direct-to-carrier rate with no margin stacking. Referral partners earn instead of paying.'),
  ('How is LoadBoot different from DAT or Truckstop?', 'Load boards are paid search engines where 30–50% of postings are reposted or fake. LoadBoot verifies every load as real before it posts, pre-agrees detention/TONU/layover in writing on every posting, and adds dispatch, GPS proof and payments on top — carriers pay nothing monthly.'),
  ('How fast can I get started?', 'About 5 minutes. Open the chat bubble on any page and say &ldquo;set me up&rdquo; — our assistant verifies your FMCSA authority live, creates your account with a secure email link, checks your documents on the spot, and even signs your W-9 and dispatch agreement in chat. A human compliance review completes it, usually within a few business hours.'),
@@ -1896,7 +1915,7 @@ contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:8
 <a class="ap-tab" href="create-carrier-account.html"><span class="ap-i">&#128666;</span><span>Carrier / Owner-operator<small>Free account &rarr; verify &rarr; get loads</small></span></a>
 <a class="ap-tab" href="create-broker-account.html"><span class="ap-i">&#127970;</span><span>Broker (licensed)<small>Post loads free to verified carriers</small></span></a>
 <a class="ap-tab" href="create-shipper-account.html"><span class="ap-i">&#128230;</span><span>Shipper<small>Post your freight &amp; track it live</small></span></a>
-<a class="ap-tab" href="create-agent-account.html"><span class="ap-i">&#129309;</span><span>Agent (independent dispatcher)<small>Bring clients, earn 1% of every delivered load</small></span></a>
+<a class="ap-tab" href="create-agent-account.html"><span class="ap-i">&#129309;</span><span>Referral partner<small>Bring clients, earn 1% of every delivered load</small></span></a>
 <a class="ap-tab" href="create-agent-account.html"><span class="ap-i">&#127919;</span><span>Referral / Influencer<small>Earn from every load you refer</small></span></a>
 </div>
 <div class="ap-note">Signup takes ~2 minutes with just the basics &mdash; the rest of onboarding (verification, documents, W-9) happens inside your portal, step by step.</div>
@@ -1991,8 +2010,8 @@ page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create 
 
 # ---------- PRICING ----------
 pr_body = svc_hero('Simple, Honest Dispatch Pricing','One flat rate, no long-term contracts, no hidden fees. You only pay when we actually book you a load &mdash; so our goals and yours are always the same.')
-pr_body += '''<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Our Rate</div><h2>A flat 5% of gross &mdash; that's it</h2><p>No setup fees. No monthly minimums. No long-term contract. We charge 5% of the gross on the loads we book for you, and nothing on the weeks you don't run. If we don't add value, you can walk away anytime.</p><div class="reply">&#9989; You only pay when you earn</div></div></div></section>'''
-pr_inc = ['Dedicated dispatcher for your truck','Higher-paying load booking','Rate negotiation on every load','Broker setup and communication','Route and lane planning','Document and paperwork management','Business-hours desk + on-call while loaded','Help with factoring, IFTA, and compliance']
+pr_body += '''<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Our Rate</div><h2>A flat 5% of line-haul &mdash; that's it</h2><p>No setup fees. No monthly minimums. No long-term contract. We charge 5% of the gross line-haul on loads your dispatcher books and you deliver &mdash; fuel surcharge and accessorials are yours &mdash; and nothing on the weeks you don't run. If we don't add value, you can walk away anytime.</p><div class="reply">&#9989; You only pay when you earn</div></div></div></section>'''
+pr_inc = ['A dedicated, LoadBoot-vetted dispatcher for your truck &mdash; assigned by hand within 3 business days','Load sourcing on DAT, Truckstop, 123Loadboard, broker networks, direct shippers and the LoadBoot board','Rate negotiation to your floor on every load &mdash; you approve, then LoadBoot approves the rate con','The platform: verified board, carrier app, GPS proof, document vault, settlements ledger','Broker setup, check calls and communication','Route and reload planning to cut deadhead','Business-hours desk + on-call while loaded; Riley on the phone 24/7','Help with factoring, IFTA, and compliance','Pause or switch dispatcher from your app']
 _pr_receipt = ('<div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:30px;max-width:400px;margin:0 auto;box-shadow:0 30px 60px -30px rgba(15,23,42,.35)">'
  '<div style="font-family:Manrope;font-weight:800;font-size:1.05rem;margin-bottom:16px;display:flex;justify-content:space-between"><span>Example load</span><span style="color:#94a3b8;font-weight:600;font-size:.8rem">illustrative</span></div>'
  '<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f1f5f9;font-size:.95rem"><span style="color:#64748b">Linehaul (Dallas &rarr; Atlanta)</span><b>$2,640</b></div>'
@@ -2027,13 +2046,14 @@ pr_body += COMPARE
 pr_faq = [('Are there any setup or hidden fees?','No. There are no setup fees, monthly fees, or hidden charges. You pay a flat 5% only on the loads we book.'),
 ('What if I have a slow week?','You pay nothing on loads you don\'t run. We only earn when we book freight for you.'),
 ('Is there a contract?','A short dispatch agreement, no long-term lock-in &mdash; end it with 30 days&rsquo; written notice. We earn your business load by load.'),
-('How is the 5% calculated?','It\'s 5% of the gross (line-haul) on each load we book and you approve. Every delivered load auto-invoices the fee with a branded PDF &mdash; see <a href="payments-settlements.html">how payments &amp; settlements work</a>.'),
+('How is the 5% calculated?','It\'s 5% of the gross line-haul on each load your dispatcher books and you approve, once it delivers. Fuel surcharge, detention, TONU, layover and lumper are excluded &mdash; 100% yours. Every delivered load auto-invoices the fee with a branded PDF on Net-30 &mdash; see <a href="payments-settlements.html">how payments &amp; settlements work</a>.'),
+('Who pays my dispatcher?','LoadBoot does, out of its own side of the 5%. Your dispatcher\'s pay is never added to your invoice and never negotiated with you &mdash; see <a href="how-loadboot-dispatch-works.html">how LoadBoot dispatch works</a>.'),
 ('Do you work with new-authority carriers?','Yes &mdash; new authority carriers are a core part of who we help.'),
 ('What do brokers, shippers and agents pay?','Nothing to use the platform. The Partner Portal (posting, tracking, documents) and the Agent Portal are included free &mdash; LoadBoot&rsquo;s only revenue is the flat 5% dispatch fee on the carrier side, and agents are paid out of that same fee.')]
 pf_html, pf_sch = faq_block(pr_faq)
 pr_body += pf_html + final_cta()
 page('pricing.html','Pricing — Flat 5% for Carriers, Free for Brokers | LoadBoot',
-     'LoadBoot pricing: truck dispatch at a flat 5% of gross, no setup or monthly fees, free load posting for brokers. Pay only when your load books.',
+     'LoadBoot pricing: truck dispatch at a flat 5% of line-haul, earned at delivery, no setup or monthly fees, free load posting for brokers, shippers and broker agents. Accessorials are 100% yours.',
      'pricing.html', PHONE_STRIP + pr_body, pf_sch)
 
 # ---------- BLOG ----------
@@ -2103,7 +2123,7 @@ BLOGPOSTS = [
    'Say you run a 3,000 dollar load. A 5% fee is 150 dollars. If your dispatcher negotiates even 200 to 400 dollars more per load than you would have taken, and keeps you from running empty, the fee more than pays for itself &mdash; while giving you back the hours you would have spent on the phone with brokers.',
    'The real cost of dispatch is not the percentage. It is the cheap freight and empty miles you take when you are doing everything yourself.',
    'H:The bottom line',
-   'Expect to pay around 5% of gross for quality truck dispatch, with no long-term contract and no hidden fees. The right dispatcher should make you more than they cost &mdash; if they do not, you should be able to walk away anytime.']),
+   'Expect to pay around 5% of line-haul for quality truck dispatch, with no long-term contract and no hidden fees. The right dispatcher should make you more than they cost &mdash; if they do not, you should be able to walk away anytime.']),
  ('truck-dispatcher-vs-freight-broker.html',
   'Truck Dispatcher vs Freight Broker: The Difference, Costs & Who You Need (2026)',
   'Dispatcher vs broker vs factoring, explained in plain English: who works for the carrier, who legally moves the freight, how each gets paid (5% vs 15–25% margin), and which you actually need in 2026.',
@@ -2344,7 +2364,7 @@ A1_BODY=(
   'Reefer, flatbed, dry van, hotshot or power-only &mdash; see the full range of lanes and loads our dispatch team runs.',
   'Explore all dispatch services &rarr;','services.html')+
 '<h2 id="bottom-line">The bottom line</h2>'
-'<p>Expect to pay around <b>5% of gross</b> for quality truck dispatch, with no long-term contract and no hidden fees. The right dispatcher should '
+'<p>Expect to pay around <b>5% of line-haul</b> for quality truck dispatch, with no long-term contract and no hidden fees. The right dispatcher should '
 'make you more than they cost &mdash; in better rates, fewer empty miles, and the hours you get back. If they don&rsquo;t, you should be '
 'able to leave anytime. That&rsquo;s exactly how Loadboot works.</p>')
 
@@ -2663,7 +2683,7 @@ A4_BODY=(
 '<p>Plenty of owner-operators dispatch themselves, and some do it well. The real question is what your time is worth and whether you can '
 'consistently out-negotiate a full-time professional. Here&rsquo;s the honest trade-off:</p>'
 '<table class="cmp"><thead><tr><th>&nbsp;</th><th>Dispatch yourself</th><th>Owner-operator dispatch service</th></tr></thead><tbody>'
-'<tr><td>Cost</td><td>$0 in fees</td><td>~5% of gross on booked loads</td></tr>'
+'<tr><td>Cost</td><td>$0 in fees</td><td>~5% of line-haul on booked loads</td></tr>'
 '<tr><td>Your driving hours</td><td>Cut into by load hunting &amp; broker calls</td><td>Spent driving &mdash; the loads come to you</td></tr>'
 '<tr><td>Rate negotiation</td><td>As good as your own experience</td><td>Full-time negotiator working your lanes daily</td></tr>'
 '<tr><td>Deadhead</td><td>Whatever you can plan solo</td><td>Next load lined up before you&rsquo;re empty</td></tr>'
@@ -4277,7 +4297,7 @@ ls_body += '<section style="padding-top:10px"><div class="wrap">' + LS_HTML + '<
 ls_body += ls_seo + ls_faq_html + final_cta() + '<script>' + LS_JS + '</script>'
 ls_howto = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to decide whether to take a freight load","step":[{"@type":"HowToStep","name":"Enter the offer","text":"Enter what the load pays, the loaded miles, and the deadhead miles to the pickup."},{"@type":"HowToStep","name":"Add your costs","text":"Enter your all-in cost per mile and how many days the load will take."},{"@type":"HowToStep","name":"Read the score and verdict","text":"The Load Score returns a 0-100 score and a take, negotiate, or pass verdict based on profit, deadhead, time, and market."},{"@type":"HowToStep","name":"Counter the rate","text":"Use the suggested counter-offer to negotiate a rate that hits your target margin before you accept."}]}</script>'
 ls_app = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Load Score","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free tool that tells truckers and owner-operators whether a freight load is worth taking, with a take-negotiate-pass verdict and a suggested counter-offer."}</script>'
-page('load-score.html','Should You Take This Load? Free Load Score Tool for Truckers','Free tool that scores any freight load and tells you to take, negotiate, or pass — with a counter-offer based on your cost per mile.','load-score.html', ls_body, ls_app + ls_howto + ls_faq_schema)
+page('load-score.html','Should You Take This Load? Free Load Score Tool for Truckers','Free tool that scores any freight load and tells you to take, negotiate, or pass — with a counter-offer based on your cost per mile.','load-score.html', ls_body, ls_app  + ls_faq_schema)
 
 # ---------- FREE TOOLS ----------
 LSP = '<section><div class="wrap"><a href="load-score.html" class="reveal" style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:space-between;background:linear-gradient(135deg,#10223B,#1e3a8a);color:#fff;border-radius:22px;padding:30px 34px;text-decoration:none;box-shadow:0 30px 60px -34px rgba(15,23,42,.6)"><div style="max-width:640px"><div style="font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24;font-weight:700;margin-bottom:8px">Our #1 free tool</div><div style="font-family:\'Manrope\';font-weight:800;font-size:1.7rem;line-height:1.15;margin-bottom:8px">Should You Take This Load?</div><p style="color:#cbd5e1;margin:0;font-size:.97rem">Stop guessing. Get an instant take / negotiate / pass score on any load &mdash; with a suggested counter-offer built on your real costs.</p></div><span class="btn btn-primary" style="white-space:nowrap">Open Load Score &rarr;</span></a></div></section>'
@@ -4892,7 +4912,7 @@ car += ('<section class="bg-soft" id="roles"><div class="wrap"><div class="sec-h
  '<span style="position:absolute;top:14px;right:14px;background:#FC5305;color:#fff;font-size:.65rem;font-weight:900;padding:5px 11px;border-radius:999px;letter-spacing:.06em">&#9889; OPEN NOW &middot; REMOTE</span>'
  '<div class="icon">&#128222;</div><h3 style="color:#fff">US Truck Dispatcher &mdash; commission trial, then a written package</h3>'
  '<p style="color:#b9c6da">Dispatch for <b style="color:#7cc0ff">assigned US carriers</b> &mdash; hunt loads, negotiate rates, keep trucks loaded, manage trips and docs. <b style="color:#4ade80">Paid trial on commission &mdash; a % of gross on every load you deliver</b> (10 working days, from the day your first carrier is assigned); pass it and your written offer sets the package (base + per-truck + performance). Manage 1&ndash;3 trucks in the trial, ramp to 10&ndash;15.</p>'
- '<p style="color:#b9c6da;font-size:.9rem;margin-top:8px">Needs ~1&ndash;2 yrs US-trucking dispatch, strong English, <b>your own DAT/Truckstop login</b>, FMCSA/HOS, and hours that overlap the US East Coast. Strict screening + commission trial before hire.</p>'
+ '<p style="color:#b9c6da;font-size:.9rem;margin-top:8px">Needs ~1&ndash;2 yrs US-trucking dispatch, strong English, <b>proven load sourcing</b> (we test how you find loads &mdash; not whose board login it is), FMCSA/HOS, and hours that overlap the US East Coast. Strict screening + commission trial before hire.</p>'
  '<p style="color:#7cc0ff;font-weight:800;margin-top:10px">See the dispatcher role &rarr;</p></a>'
  '<a class="card reveal" href="agents.html" style="display:block;text-decoration:none"><div class="icon">&#129309;</div><h3>Freight Referral Partner &mdash; 1% recurring</h3><p>No experience needed. Refer carriers, brokers and shippers to LoadBoot with your link and earn <b style="color:#16a34a">1% of every delivered load your referred clients move &mdash; recurring, uncapped</b>, plus multi-level overrides. Commission only, paid from our fee &mdash; your clients never pay extra.</p><p style="color:#64748B;font-size:.85rem;margin-top:8px">Open signup &middot; remote &middot; commission (no salary)</p><p style="color:#0883F7;font-weight:800;margin-top:8px">See the program + earnings calculator &rarr;</p></a>'
  '</div></div></section>')
@@ -4908,7 +4928,7 @@ car += ('<section id="dispatcher-job"><div class="wrap prose reveal" style="max-
  '<div class="eyebrow">Full job description</div><h2>US Truck Dispatcher (Remote) &mdash; Commission Trial + Performance Package</h2>'
  '<p><b>About the role.</b> As a LoadBoot dispatcher you run day-to-day operations for the US carriers assigned to you &mdash; you find loads, negotiate rates, keep every truck loaded and manage the trip from booking to delivered POD. You are the carrier&rsquo;s dedicated dispatcher: you work <i>for</i> the carrier, under the carrier&rsquo;s own operating authority, and you are paid by LoadBoot &mdash; the carrier never pays you and you never touch freight money. This is a remote, full-time contractor role open worldwide, built for experienced US-trucking dispatchers.</p>'
  '<h3>What you&rsquo;ll do (responsibilities)</h3><ul>'
- '<li><b>Hunt and book loads</b> for your assigned carriers on the LoadBoot Carrier Network and your own DAT/Truckstop seat, matched to their lanes, equipment and minimum rate.</li>'
+ '<li><b>Hunt and book loads</b> for your assigned carriers on the LoadBoot board, the load boards you know (DAT, Truckstop, 123Loadboard), broker networks and direct shippers, matched to their lanes, equipment and minimum rate.</li>'
  '<li><b>Negotiate rates</b> with brokers to your carrier&rsquo;s target rate-per-mile &mdash; never haul below their cost per mile.</li>'
  '<li><b>Keep trucks loaded</b> &mdash; plan reloads off each drop point to cut deadhead, maximize utilization and respect the driver&rsquo;s home-time.</li>'
  '<li><b>Manage the trip</b> &mdash; pickups, appointments, check calls, HOS awareness, detention/TONU capture, and clean documents (rate cons, BOLs, PODs).</li>'
@@ -4918,7 +4938,7 @@ car += ('<section id="dispatcher-job"><div class="wrap prose reveal" style="max-
  '</ul>'
  '<h3>What we need (requirements)</h3><ul>'
  '<li><b>~1&ndash;2 years of US-trucking dispatch experience</b> (owner-operators or small fleets).</li>'
- '<li><b>Load-board proficiency &mdash; you should be able to operate DAT and Truckstop.</b> You bring <b>your own DAT/Truckstop login</b> &mdash; you never use the carrier&rsquo;s; hands-on board experience is essential.</li>'
+ '<li><b>Load-board proficiency &mdash; you should be able to operate DAT, Truckstop and 123Loadboard.</b> The skills test checks <b>how you find and vet loads</b>, not whose login the board is in; you never use the carrier&rsquo;s. Hands-on board experience is essential.</li>'
  '<li><b>Strong English</b> communication &mdash; you talk to US brokers and drivers all day.</li>'
  '<li><b>FMCSA / HOS knowledge</b> and solid US geography and lane sense.</li>'
  '<li><b>Rate negotiation</b> skill, organization and the ability to juggle several trucks at once.</li>'
@@ -4948,16 +4968,17 @@ car += lead_form('careers', 'Apply to Loadboot', 'Tell us about yourself and wha
      ('company', 'Current / most recent role', 'text', False),
      ('message', 'What are you great at? Share a link to your CV or LinkedIn.', 'textarea', True)],
     'Send application', 'Thanks — we&rsquo;ll be in touch.')
-_disp_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"US Truck Dispatcher (Remote, Commission Trial + Performance Package)","description":"Dispatch for assigned US carriers on the LoadBoot platform: hunt loads, negotiate rates, keep trucks loaded, manage trips and documents. 10-working-day trial paid on commission (a % of every delivered load), then a written package (base + per-truck + performance). Manage 1-15 trucks. Requires ~1-2 years US-trucking dispatch experience, strong English, your own DAT/Truckstop login, FMCSA/HOS knowledge and US Eastern business-hours availability. Strict screening before hire.","datePosted":"2026-07-22","validThrough":"2027-07-22T23:59:59-05:00","employmentType":["CONTRACTOR","FULL_TIME"],"hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":200,"maxValue":700}},"directApply":true}</script>'
+_disp_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"US Truck Dispatcher (Remote, Commission Trial + Performance Package)","description":"Dispatch for assigned US carriers on the LoadBoot platform: hunt loads, negotiate rates, keep trucks loaded, manage trips and documents. 10-working-day trial paid on commission (a % of every delivered load), then a written package (base + per-truck + performance). Manage 1-15 trucks. Requires ~1-2 years US-trucking dispatch experience, strong English, proven load sourcing on DAT/Truckstop/123Loadboard, FMCSA/HOS knowledge and US Eastern business-hours availability. Strict screening before hire.","datePosted":"2026-07-22","validThrough":"2027-07-22T23:59:59-05:00","employmentType":["CONTRACTOR","FULL_TIME"],"hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":200,"maxValue":700}},"directApply":true}</script>'
 page('careers.html', 'Careers at LoadBoot — Dispatcher & Referral Partner Roles',
      'Careers at LoadBoot: remote US truck dispatcher roles (commission trial, then a written package) and freight referral partners earning 1% of every delivered load. Remote friendly, apply fast.',
      'careers.html', car, _disp_job_schema + _ag_job_schema)
 
 # ---- US Truck Dispatcher (SEO landing) ----
 dsp = svc_hero('US Truck Dispatcher &mdash; Dedicated Dispatch Service for Carriers',
-  'LoadBoot is a US truck dispatch service: a dedicated dispatcher hunts loads, negotiates rates and keeps your trucks loaded &mdash; booked under your own authority, for a flat 5%, only when you get paid. No freight-money handling, no long contracts.')
+  'LoadBoot runs a US truck dispatch desk on its own platform: a dedicated, LoadBoot-vetted dispatcher is assigned to your truck by hand, hunts loads, negotiates to your floor and keeps you loaded &mdash; booked under your own authority, every rate con approved by LoadBoot, for a flat 5% of line-haul at delivery. No freight-money handling, no long-term contract.')
+dsp += DOS_CSS + dos_steps('short')
 dsp += _sec('What a LoadBoot dispatcher does', 'A dedicated dispatcher for your trucks', _cards([
- ('&#128269;','Finds and books your loads','Your dispatcher works the LoadBoot Carrier Network and your own DAT/Truckstop authority to source paying loads on your lanes &mdash; then books them under your MC, never re-brokering.'),
+ ('&#128269;','Finds and books your loads','Your dispatcher works the LoadBoot board, the load boards they know (DAT, Truckstop, 123Loadboard), broker networks and direct shippers to source paying loads on your lanes &mdash; then books them under your MC, never re-brokering.'),
  ('&#128176;','Negotiates the rate','Every load is negotiated to your minimum rate-per-mile and equipment, so your truck never runs cheap freight it cannot cover.'),
  ('&#128666;','Keeps trucks loaded','Reloads planned off your drop point to cut deadhead &mdash; high utilization, on-time delivery, and your home-time respected.'),
  ('&#128196;','Handles the paperwork','Rate confirmations, BOLs and PODs move through the platform; you drive, the ops run themselves.'),
@@ -4994,7 +5015,7 @@ dsp += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center 
  '<a href="/app/agent/?join=dispatcher" class="btn btn-secondary">Apply as a dispatcher</a>'
  '</div></div></div></section>')
 _dsp_faq_html, _dsp_faq_sch = faq_block([
- ('How much does a truck dispatcher cost?', 'LoadBoot charges a flat 5% of the linehaul on booked, delivered and paid loads - with no monthly retainer and nothing charged when the truck is not earning. Independent dispatchers typically charge 5-10% or a flat per-load or monthly fee.'),
+ ('How much does a truck dispatcher cost?', 'LoadBoot charges a flat 5% of the linehaul on booked, delivered and paid loads - with no monthly retainer and nothing charged when the truck is not earning. Freelance dispatchers typically charge 5-10% or a flat per-load or monthly fee.'),
  ('Is a dispatcher the same as a freight broker?', 'No. A freight broker arranges freight as a principal and needs FMCSA broker authority plus a $75,000 bond. A dispatcher works as the carrier\\u2019s agent - booking loads under the carrier\\u2019s own authority, taking no freight-money custody, and never allocating a load among competing carriers. LoadBoot operates on the dispatcher side of that line.'),
  ('Do I need my own operating authority?', 'Yes. You remain the motor carrier of record with your own MC/DOT and insurance. LoadBoot dispatches on your behalf; we do not re-broker your freight.'),
  ('Does LoadBoot handle the money?', 'No. Brokers pay you or your factoring company directly, bank to bank. LoadBoot runs the ledger and bills its own 5% fee - your linehaul never passes through us.'),
@@ -5006,7 +5027,11 @@ dsp += _dsp_faq_html + final_cta()
 page('us-truck-dispatcher.html', 'US Truck Dispatcher — Dedicated Dispatch at Flat 5% | LoadBoot',
  'US truck dispatcher service for owner-operators and small fleets: we find loads, negotiate rates and keep trucks moving under your authority, flat 5%.',
  'services.html', dsp, _dsp_schema + _dsp_faq_sch)
-RELATED['us-truck-dispatcher.html'] = [('owner-operator-dispatch.html','Owner-Operator Dispatch'),('new-authority-dispatch.html','New-Authority Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker'),('careers.html','Become a Dispatcher'),('carriers.html','For Carriers')]
+RELATED['us-truck-dispatcher.html'] = [('how-loadboot-dispatch-works.html','How LoadBoot Dispatch Works'),('dedicated-truck-dispatcher.html','Dedicated Truck Dispatcher'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('new-authority-dispatch.html','New-Authority Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker'),('careers.html','Become a Dispatcher'),('carriers.html','For Carriers')]
+
+# ---- 25 Sep 2026: the dispatcher model, A to Z — new URLs (see dispatch_os_module.py) ----
+for _fn, _t, _d, _b, _s in dos_pages():
+    page(_fn, _t, _d, ('brokers.html' if _fn == 'broker-agents.html' else 'services.html'), _b, _s)
 
 # ---- FTL vs LTL / Partial (SEO guide) ----
 ftl = svc_hero('Full Truckload (FTL) vs LTL vs Partial &mdash; What Pays Your Truck Best',
@@ -5280,7 +5305,7 @@ ref += _sec('Who it is for', 'Pick the path that fits you', _cards([
 ref += '<section class="section"><div class="wrap"><div class="reveal" style="background:linear-gradient(120deg,#10223B,#0d2f56);border-radius:18px;padding:26px 30px;color:#fff">'
 ref += '<div style="font-size:.72rem;font-weight:800;letter-spacing:.14em;color:#93c5fd;text-transform:uppercase;margin-bottom:6px">Now live — one program, one portal</div>'
 ref += '<h3 style="margin:0 0 8px;font-size:1.35rem">The referral program now runs inside the <span style="color:#FC5305">Agent Portal</span></h3>'
-ref += '<p style="color:#9fb0cc;line-height:1.75;margin:0 0 14px">Referral partners, influencers and independent dispatchers all use the SAME engine: create your agent account, get ONE link that works for carriers, brokers and shippers, and track every join, every delivered load and every dollar live — 1% of gross on delivered loads, levels 2&ndash;5 overrides when you recruit other agents, monthly payouts from $100.</p>'
+ref += '<p style="color:#9fb0cc;line-height:1.75;margin:0 0 14px">Referral partners and influencers use the SAME engine: create your agent account, get ONE link that works for carriers, brokers and shippers, and track every join, every delivered load and every dollar live — 1% of gross on delivered loads, levels 2&ndash;5 overrides when you recruit other agents, monthly payouts from $100.</p>'
 ref += '<a href="/app/agent/?join=referral" class="btn btn-primary" style="background:#FC5305;border:none;font-weight:800">Create your Referral Partner account &rarr;</a> <a href="agents.html" class="btn btn-secondary" style="margin-left:8px">Program details</a>'
 ref += '</div></div></section>'
 ref += m_rail('How it works', 'Four honest steps',
@@ -5326,7 +5351,7 @@ page('referral.html', 'Referral Program Update — Now the LoadBoot Agent Progra
      'referral.html', '<section class="section"><div class="wrap" style="text-align:center;padding:80px 0"><h1>The referral program is now the <span style="color:#FC5305">Agent Program</span></h1><p class="lead center" style="max-width:640px;margin:14px auto 24px">Same idea, bigger engine: one link for carriers, brokers and shippers \u00b7 1% of gross on every delivered load \u00b7 overrides 5 levels deep \u00b7 live chain tracking and monthly payouts.</p><a href="agents.html" class="btn btn-primary">See the Agent Program &rarr;</a> <a href="/app/agent/?join=referral" class="btn btn-secondary" style="margin-left:8px">Create your Referral Partner account</a></div></section>',
      '')
 
-# ---------- AGENT PROGRAM (independent dispatchers — pair-based 1% recurring) ----------
+# ---------- REFERRAL PARTNER PROGRAM (pair-based 1% recurring) ----------
 AGENT_CSS = '''<style>
 .ag-hero{background:linear-gradient(135deg,#0a1526,#10223B 55%,#0d2a4d);color:#fff;padding:86px 20px 70px;position:relative;overflow:hidden}
 .ag-hero:before{content:"";position:absolute;inset:0;background:radial-gradient(700px 300px at 80% 20%,rgba(8,131,247,.25),transparent 60%),radial-gradient(500px 260px at 15% 85%,rgba(252,83,5,.18),transparent 60%)}
@@ -5439,7 +5464,7 @@ _ag_faq_html, _ag_faq_sch = faq_block([
 page('agents.html', 'Referral Partner Program — Earn 1% Per Load | LoadBoot',
  'Referral partner program: refer a broker and carrier pair and earn 1% of every GPS-verified delivered load, recurring with no cap. No license needed.',
  'partners.html', AGENT_BODY + _ag_faq_html + final_cta(), _ag_job_schema + _ag_faq_sch)
-RELATED['agents.html'] = [('careers.html','US Dispatcher role'),('partners.html','Partner Portal'),('brokers.html','For Brokers'),('carriers.html','For Carriers'),('contact.html','Apply / Contact')]
+RELATED['agents.html'] = [('broker-agents.html','Broker Agents (different seat)'),('careers.html','US Dispatcher role'),('partners.html','Partner Portal'),('brokers.html','For Brokers'),('carriers.html','For Carriers'),('contact.html','Apply / Contact')]
 
 
 # ---- Resources ----
@@ -6616,7 +6641,7 @@ _HUB_ROLES = [
     ('audience', 'Audience size', 'select:Under 1k|1k-10k|10k-100k|100k+', False),
     ('message', 'Who you reach &amp; how you&rsquo;d promote', 'textarea', False)],
    'Join the referral program', 'Thanks — we&rsquo;ll set up your referral link and reach out.'),
-  ('agent', '&#129297;', 'Agent', 'Agents &amp; independent dispatchers',
+  ('agent', '&#129297;', 'Agent', 'Referral partners &amp; dispatchers',
    'Refer carriers, brokers and shippers and earn 1% of the gross on every GPS-verified delivered load your referred clients move &mdash; paid from Loadboot&rsquo;s own fee.',
    ['1% of gross on every delivered load where any side of the deal is yours',
     'One referral link for everyone &mdash; the system detects carrier, broker or shipper automatically',
@@ -6641,7 +6666,7 @@ for i, r in enumerate(_HUB_ROLES):
     rid, ic, short = r[0], r[1], r[2]
     _tabbar += '<button type="button" class="hub-tab%s" data-hub="%s"><span class="em">%s</span>%s</button>' % (
         ' on' if i == 0 else '', rid, ic, short)
-_tabbar += '</div><p class="hub-lede reveal">Not sure? Carriers and drivers start here. Brokers and shippers use the Partner Portal; creators earn with Referral; independent dispatchers join as Agents.</p></div></section>'
+_tabbar += '</div><p class="hub-lede reveal">Not sure? Carriers and drivers start here. Brokers, broker agents and shippers use the Partner Portal; referral partners earn 1% with one link; dispatchers apply through the Agent portal.</p></div></section>'
 hub += _tabbar
 for i, r in enumerate(_HUB_ROLES):
     rid, ic, short, longname, blurb, bullets, phref, plabel, fkey, fhead, fintro, ffields, fsubmit, fsuccess = r
@@ -6672,7 +6697,7 @@ lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
     ('&#128667;', 'Carrier Portal', 'Manage loads, trips, documents, finance and your team. <a href="/app/carrier/">Open Carrier Portal &rarr;</a>'),
     ('&#128241;', 'Driver App', 'Invited by your carrier? Sign in with the email and password from your invite &mdash; your loads, GPS check-in, POD. <a href="/app/carrier/?role=driver">Driver sign-in &rarr;</a> &middot; <a href="apps.html">Get the app</a>'),
     ('&#129309;', 'Partner Portal', 'Brokers, shippers and facilities. <a href="/app/partner/">Open Partner Portal &rarr;</a>'),
-    ('&#129297;', 'Agent Portal', 'Independent dispatchers &amp; agents &mdash; your referrals, earnings and payouts. <a href="/app/agent/">Open Agent Portal &rarr;</a>'),
+    ('&#129297;', 'Agent Portal', 'Referral partners &amp; dispatchers &mdash; your referrals, earnings and payouts. <a href="/app/agent/">Open Agent Portal &rarr;</a>'),
     ('&#128104;&#8205;&#128187;', 'Developers &amp; API', 'API keys, docs and integrations. <a href="/app/developer/">Open Developer Portal &rarr;</a>'),
     ('&#127970;', 'Command Center (Staff)', 'Loadboot team operations console. <a href="/app/command-center/">Open Command Center &rarr;</a>'),
     ('&#10067;', 'Need an account?', 'New to Loadboot? Create an account for your role in minutes. <a href="get-started.html">Create an account &rarr;</a>'),
@@ -6940,7 +6965,7 @@ feat += fsec('partners','For brokers &amp; shippers','Post once. Covered in minu
 
 feat += fsec('agents','Earn with us','An agent program with a real back office',
  fbody('Earn with us','An agent program with a real back office',
-  'Independent dispatchers and connectors bring clients to LoadBoot and earn 1% of gross on every delivered load their referred clients move &mdash; tracked live, paid monthly, with overrides five levels deep.',
+  'Referral partners and connectors bring clients to LoadBoot and earn 1% of gross on every delivered load their referred clients move &mdash; tracked live, paid monthly, with overrides five levels deep.',
   ['<b>1% of gross, recurring</b> &mdash; on every delivered load your referred clients run, for as long as they haul.',
    '<b>5-level overrides</b> &mdash; recruit agents and earn 0.50% / 0.25% / 0.15% / 0.10% on their production.',
    '<b>Live chain dashboard</b> &mdash; joins, postings, bookings and deliveries stream in real time.',
@@ -7015,7 +7040,7 @@ feat += fsec('backoffice','Back office','Payroll, IFTA, cost-per-mile and mainte
 
 _FEAT_FAQ = [
  ('Is every feature on this page actually live?', 'Yes. This page documents only what exists in the product today. Anything still in development (native mobile apps, direct fuel-card APIs) is explicitly labelled as roadmap on the integrations page.'),
- ('What does LoadBoot cost?', 'Carriers pay a flat 5% of gross on loads dispatched through LoadBoot. No signup fee, no monthly subscription, no long-term contracts. See the pricing page for full details.'),
+ ('What does LoadBoot cost?', 'Carriers pay a flat 5% of line-haul on loads dispatched through LoadBoot. No signup fee, no monthly subscription, no long-term contracts. See the pricing page for full details.'),
  ('Do I need an ELD to use GPS tracking?', 'No. Phone GPS works out of the box with geofenced arrive/depart proof. If you run Samsara or Motive, connect them directly and vehicle locations flow onto trips automatically.'),
  ('How does the QuickBooks integration work?', 'You connect your own QuickBooks Online company via OAuth. LoadBoot pushes delivered-freight invoices and expenses into your books and pulls paid status back. You can disconnect anytime.'),
  ('Can brokers and shippers use LoadBoot too?', 'Yes. Brokers and shippers post loads in the Partner Portal, get FMCSA-verified carriers in a 15-minute offer race, and track every shipment live with documents and payables handled in the same system.'),
@@ -7079,7 +7104,7 @@ _LBX_FAQ_G = [
   ('Who posts the loads on LoadBoot?', 'Verified freight brokers and direct shippers post through the Partner Portal with exact GPS-pinned facilities, auto-calculated road miles, a market-rate estimator and a mandatory accessorial rate card. Carriers see who posted every load, with a trust score, star rating, loads delivered and on-time percentage.'),
  ]),
  ('&#128666; For carriers &amp; owner-operators', 'ftx-green', [
-  ('Is the LoadBoot load board free?', 'Searching, filtering and booking are free — there is no monthly subscription. Carriers pay a flat 5% of gross only on loads dispatched through LoadBoot, and the settlement math (gross &minus; 5% = net) is printed on every trip. Classic boards charge $45–$150+ per month just to search.'),
+  ('Is the LoadBoot load board free?', 'Searching, filtering and booking are free — there is no monthly subscription. Carriers pay a flat 5% of line-haul only on loads dispatched through LoadBoot, and the settlement math (gross &minus; 5% = net) is printed on every trip. Classic boards charge $45–$150+ per month just to search.'),
   ('What is the best load board for owner-operators?', 'The best board for an owner-operator is the one that protects your time and your rate: no ghost loads, the full all-in rate and rate-per-mile up front, accessorial pay (detention, layover, TONU, lumper) in writing before you book, live deadhead from your actual GPS position, and booking that instantly produces a rate confirmation. That is exactly how the LoadBoot board is built.'),
   ('Can I find loads with a new MC or new authority?', 'Yes. LoadBoot verifies your MC/DOT authority, insurance and W-9 once, and from then on every load on the board is bookable in one tap — there is no authority-age wall. See our guide on getting loads with a new authority.'),
   ('Can I negotiate the rate on a load?', 'Yes — every card has Propose rate. You send your all-in counter with an optional note; the broker sees it and approves or declines in-app. Nothing is committed until the broker approves, and an approved counter books the load at your number.'),
@@ -7566,7 +7591,7 @@ def _acct_flagship(cfg):
     RELATED[cfg['fname']] = cfg['related']
     if cfg['fname'] != 'create-agent-account.html':
         b = PHONE_STRIP + b
-    page(cfg['fname'], cfg['title'], cfg['desc'], cfg['fname'], b, faq_schema + howto_schema)
+    page(cfg['fname'], cfg['title'], cfg['desc'], cfg['fname'], b, faq_schema)
 
 _ACCT_CARRIER = {'fname': 'create-carrier-account.html', 'title': 'Create a Carrier Account — Verified & Booking the Same Day | LoadBoot', 'desc': 'How to create a LoadBoot carrier account: FMCSA auto-verification from your DOT number, the exact documents to have in hand (COI, W-9, authority letter, factoring NOA), same-day review, and what unlocks when the VERIFIED badge lands.', 'kicker': 'For carriers &amp; owner-operators', 'h1': 'Create your carrier account &mdash; <span style="color:#4ade80">verified and booking the same day</span>', 'intro': 'About 5 minutes of your time: your DOT number pulls company details straight from FMCSA, the wizard walks equipment, lanes and payment (direct or <a href="factoring-noa.html" style="color:#7dd3fc">factoring with full NOA support</a>), documents verify the same day, and the VERIFIED badge opens the <a href="load-board.html" style="color:#7dd3fc">live board</a>.', 'ticks': ['FMCSA auto-verify from your DOT', 'Same-day document review', 'Free account &mdash; 5% only when we book you'], 'cta': ('Create your carrier account &rarr;', '/app/carrier/'), 'hero_shot': ('acct-carrier-profile.webp', 420, 909, 'Verified carrier account — MC and DOT on the profile, booking open, 10/10 documents', 'The real account &mdash; VERIFIED, booking open, 10/10 documents in.'), 'steps_h': 'Signup to first load in five steps', 'steps': [('Sign up with your company email', 'Create your login in the Carrier Portal. Type your DOT number and your legal name, entity type and authority details auto-fill from FMCSA &mdash; no re-typing federal records.'), ('Run the 5-step onboarding wizard', 'Company &rarr; equipment &amp; preferred lanes &rarr; dispatch preferences &rarr; payment (verified bank for direct pay, or your factoring company with the NOA) &rarr; e-sign the dispatch agreement and W-9 in-app (E-SIGN Act).'), ('Upload your documents', 'COI straight from your insurance agent, operating authority letter, and anything else on your checklist. Phone photos work &mdash; the built-in Scan-to-PDF turns pages into one clean file.'), ('Same-day review', 'LoadBoot checks your authority status against FMCSA, the insured name against your legal entity, and every expiry date. Each document runs Uploaded &rarr; In review &rarr; Approved on a visible tracker.'), ('VERIFIED &mdash; booking open', 'The badge lands on your profile, compliance gates open, and the board shows loads with the full rate card in writing. Book in one tap; the <a href="gps-tracking.html">trip runs itself</a>.')], 'docs_h': 'The documents to have in hand', 'docs': [('&#128737;', 'Active MC / USDOT authority', '&ldquo;Authorized for Property&rdquo; and for-hire. New authority is welcome &mdash; no minimum age on your MC. See <a href="authority-dot-setup.html">authority &amp; DOT setup</a>.'), ('&#128196;', 'Certificate of Insurance', 'From your agent: $1M auto liability and $100K cargo is the standard brokers expect. The insured name must match your authority exactly &mdash; the #1 rejection reason industry-wide.'), ('&#9997;&#65039;', 'W-9', 'Have yours ready &mdash; or skip the paperwork and e-sign one in-app; the PDF generates instantly.'), ('&#127974;', 'Factoring NOA letter', 'Only if you factor: the Notice of Assignment from your factoring company. LoadBoot verifies it and routes broker payments to your factor automatically.'), ('&#127974;', 'Bank verification', 'Direct pay: a voided check or bank letter so your remit-to is verified before the first settlement.'), ('&#128667;', 'Driver credentials', 'Fleet? CDL and medical card per driver &mdash; expiry tracking watches them so a lapse never surfaces at a roadside inspection.')], 'docs_note': 'Everything lives in the document vault with expiry reminders &mdash; you upload once and get warned before anything lapses.', 'shots_h': 'Real screens &mdash; verification you can watch', 'shots': [('acct-verification.webp', 420, 909, 'Compliance packet 10/10 verified with business profile from approved authority and W-9', 'The compliance packet &mdash; 10/10 verified, legal identity locked from your authority.'), ('acct-documents.webp', 420, 909, 'Document vault — MC/DOT authority and COI approved with visible review trackers', 'The vault &mdash; every document on a visible Uploaded &rarr; In review &rarr; Approved tracker.')], 'notes_k': 'Pass review the first time', 'notes_h': 'Why applications bounce &mdash; and how not to', 'notes': [('Expired or misnamed COI', 'Certificates that lapsed, or an insured name that does not match the authority. Ask your agent for a current COI in your exact legal name before you upload.'), ('Authority details that do not match FMCSA', 'LoadBoot reads the federal record; if your entity changed, update FMCSA first so the records agree.'), ('Factoring set up without the NOA', 'If you told us you factor, brokers pay your factor &mdash; but only once the NOA letter is on file and verified. Upload it with the packet.'), ('Blurry phone photos', 'Use the built-in Scan-to-PDF &mdash; it crops, straightens and bundles pages so reviewers can actually read them.')], 'faq_h': 'Carrier account FAQ', 'faq': [('How long does approval take?', 'Most carriers are verified the same day once documents are in. The tracker on each document shows exactly where it is.'), ('I have brand-new authority — can I join?', 'Yes. New-authority carriers are a core part of who LoadBoot serves; there is no minimum authority age. Start with the <a href="authority-dot-setup.html">authority setup guide</a> if you are still filing.'), ('What does it cost?', 'The account is free. LoadBoot earns a flat 5% only on loads it books for you — <a href="pricing.html">see pricing</a>.'), ('Do my drivers need their own accounts?', 'They get magic-link invites from your <a href="fleet-management.html">fleet roster</a> — one tap on their phone and their trips, navigation and document capture are ready.'), ('What happens when my COI expires?', 'The vault warns you before expiry. If a required document lapses, booking gates pause until the fresh one is approved — problems surface before a load, never during one.'), ('I use a factoring company — anything extra?', 'Just the NOA letter. Remit-to routing, per-broker control and the funding packet are built in — see <a href="factoring-noa.html">factoring &amp; NOA</a>.')], 'cta_h': 'Five minutes of your time. Verified today.', 'cta2': [('For carriers — the full pitch', 'carriers.html'), ('How you get paid', 'payments-settlements.html')], 'related': [('carriers.html', 'For Carriers'), ('authority-dot-setup.html', 'Authority & DOT Setup'), ('factoring-noa.html', 'Factoring & NOA'), ('payments-settlements.html', 'Payments & Settlements'), ('fleet-management.html', 'Fleet Management'), ('compliance.html', 'Compliance & Verification')]}
 _ACCT_BROKER = {'fname': 'create-broker-account.html', 'title': 'Create a Broker Account — Post Loads to a Verified Carrier Network | LoadBoot', 'desc': 'How licensed freight brokers join LoadBoot: MC screened live on FMCSA in seconds, one-click agreement, first posting in minutes with no documents to start — GPS proof, request-to-book and one-receipt payables built in.', 'kicker': 'For freight brokers', 'h1': 'Create your broker account &mdash; <span style="color:#4ade80">post once, covered in minutes</span>', 'intro': 'Load posting on LoadBoot is for licensed brokers &mdash; that is what keeps the board real. We read your broker authority live from FMCSA the moment you enter your MC (no PDF to upload), you accept one master agreement, and your first posting goes to verified, health-scored carriers with the rate card in writing, <a href="gps-tracking.html" style="color:#7dd3fc">live GPS tracking</a> and <a href="payments-settlements.html" style="color:#7dd3fc">one-receipt payables</a> built in.', 'ticks': ['MC screened live on FMCSA &mdash; seconds, no uploads', 'Post in minutes &mdash; documents only where they matter', 'Request-to-book &mdash; you approve every carrier'], 'cta': ('Create your broker account &rarr;', '/app/partner/'), 'hero_shot': ('acct-partner-signup.webp', 1100, 773, 'Partner signup with role selection — Freight Broker, Shipper, or Facility/Warehouse', 'The real signup &mdash; pick Freight Broker (or Broker Agent), enter your MC, and you are posting in minutes.'), 'steps_h': 'Signup to covered freight in five steps', 'steps': [('Create the account', 'Company email, password, your name &mdash; then choose <b>Freight Broker</b> (or <b>Broker Agent</b> if you post under a brokerage&rsquo;s authority). Shippers and facilities have their own paths.'), ('Screen your MC &mdash; seconds', 'Your brokerage legal name and MC (or USDOT) number. LoadBoot reads your broker authority live from FMCSA Licensing &amp; Insurance, with the SAFER snapshot as backup &mdash; FMCSA only keeps it active while the $75K BMC-84/85 is on file. Nothing to upload. Then confirm it is really your brokerage: automatic when your signup email is on your company domain, otherwise a code read by an automated call to your FMCSA-listed phone, or one click from the FMCSA-listed email. Nobody at LoadBoot has to pick up a phone. Then accept the Master Broker Agreement with one click.'), ('Post your first load', 'The wizard walks route (exact pins power the geofences), schedule, equipment and the full rate card &mdash; detention, TONU, layover terms printed on the posting.'), ('Carriers request, you approve', 'Your posting reaches verified carriers that fit the lane and equipment. New brokerages start with a few open postings and request-to-book: a carrier requests, you approve within 30 minutes, LoadBoot dispatch confirms the rate confirmation before the truck rolls. First acceptance wins &mdash; no double-booked trucks.'), ('Watch it move', 'The live map, milestone timeline and GPS-stamped claims replace check calls. Delivery flips the invoice into your payables with a PAY-BY deadline.')], 'docs_h': 'All you need to start', 'docs': [('&#128737;', 'Your broker MC number', 'That is the whole ask. Authority and bond are read live from the federal record &mdash; not a PDF you email us.'), ('&#129309;', 'Agents: your brokerage&rsquo;s MC', 'No MC of your own? Post under the brokerage you work for &mdash; or several. We screen each authority and email the brokerage&rsquo;s FMCSA-listed address a 6-digit code plus a confirm link; they give you the code, you type it, done. Brokerage already on LoadBoot? Its owner approves you under Agents &amp; team. Invited by them first? Confirmed the moment their MC passes.'), ('&#128203;', 'Later &mdash; the verification packet', 'Three things — W-9, bank instructions and a claims contact — lift the posting limit, turn on instant booking for carriers and move payables inside LoadBoot. Authority, bond and BOC-3 are filled in from the FMCSA screen; the agreement from your click. Nothing in it is needed for your first loads.'), ('&#128101;', 'Your team', 'Teammate emails — everyone gets their own login on the same brokerage account.')], 'docs_note': 'Documents arrive where they matter &mdash; first booking and first payment &mdash; not as a wall in front of your first post.', 'shots_h': 'Real screens &mdash; the posting flow your team gets', 'shots': [('partner-wizard-route.webp', 1100, 1006, 'Load posting wizard — route with exact address pins that power GPS geofences', 'The wizard &mdash; exact pins, real driving miles, and the pins arm the geofences.'), ('partner-offers.webp', 940, 1094, 'Direct offers panel — send to verified carriers with a first-accept-wins window', 'Offers &mdash; verified carriers, a 15-minute window, first acceptance wins.')], 'notes_k': 'Why the vetting is strict', 'notes_h': 'A board is only as good as its worst poster', 'notes': [('Licensed brokers only', 'Moving shipper freight requires a property-broker license — so posting is gated on it, read live from FMCSA rather than from a photocopy. A carrier MC cannot post. That is why carriers treat LoadBoot postings as real.'), ('Authority is not identity', 'Anyone can type a real MC. So every new brokerage account is claimed through the contact FMCSA lists for that company (a code by automated call to that phone, a link to that email, or a domain match), one MC can be held by one account only, and the real owner is warned if someone tries to register it.'), ('Your counterparties are vetted too', 'Carriers pass authority, insurance and account-health checks before your load is ever offered to them.'), ('The rate card is printed, not implied', 'Detention, TONU and layover terms ride every posting — disputes die young because both sides agreed in writing.'), ('Zero ghost loads policy', 'Every posting is reviewed by LoadBoot dispatch before it goes live, new brokerages start with a small posting allowance, stale postings auto-close and cancellations carry TONU exposure — the board stays real because fakes cost money and cannot scale.')], 'faq_h': 'Broker account FAQ', 'faq': [('Who can post loads?', 'Any property broker whose authority shows ACTIVE on FMCSA — screened live at signup, no documents to start — once the account is confirmed as really theirs (company-domain email, a code by automated call to the FMCSA-listed phone, or one click from the FMCSA-listed address). Agents post under their brokerage&rsquo;s MC once the brokerage confirms them. A carrier MC cannot post; carrier and shipper accounts are separate — see <a href="brokers.html">for brokers</a>.'), ('Do I have to upload my bond or W-9 before posting?', 'No. FMCSA keeps broker authority active only while a BMC-84/85 is on file, so the live authority check already covers the bond. The verification packet comes later and lifts the posting limit, turns on instant booking for carriers and moves payables inside LoadBoot — and it is only W-9, bank instructions and a claims contact, because authority, bond and BOC-3 were already read from FMCSA and the agreement was your one click.'), ('Why is there a posting limit at first?', 'New brokerages start with a few open postings and request-to-book, and the limit rises after your first delivered load. It is how the board stays free of ghost loads without asking you for a pile of PDFs on day one.'), ('How are carriers vetted?', 'Authority, insurance and compliance are tracked continuously, and only carriers who pass hard eligibility checks are offered your loads.'), ('Can I integrate my TMS?', 'Yes — load, trip, document and delivery events via webhooks and the API on approved endpoints.'), ('How do I pay carriers?', 'Payables group per trip — freight plus approved claims, one total, PAY-BY deadline. Pay with one receipt; the carrier (or their factor) confirms. See <a href="payments-settlements.html">payments &amp; settlements</a>.'), ('What visibility do I get?', 'Live load and trip status, geofenced arrive/depart stamps, ETAs, document status and open exceptions — without a single check call.')], 'cta_h': 'Post once. Covered in minutes — with proof.', 'cta2': [('For brokers — the full pitch', 'brokers.html'), ('How posting works', 'how-it-works.html')], 'related': [('brokers.html', 'For Brokers'), ('free-load-board-for-brokers.html', 'Free Load Board for Brokers'), ('payments-settlements.html', 'Payments & Settlements'), ('gps-tracking.html', 'GPS Tracking & Proof'), ('compliance.html', 'Compliance & Verification'), ('contact.html', 'Contact')]}
@@ -8014,7 +8039,7 @@ page('fleet-management.html', 'Trucking Fleet Management Software — Per-Trip P
 from how_module import HIW2_CSS, hiw_journey, hiw_chat5, hiw_band, hiw_engine
 hiw = FTX_CSS + LBX_CSS + HIW2_CSS
 
-_HIW_FAQ = [('What actually happens when I book a load?', 'The moment you tap Request to book (or accept a direct offer), first acceptance wins and every other offer closes — no double-booking. The rate confirmation is issued and e-signed in-app, the dispatch pack (pickup numbers, contacts, directions) generates instantly, and an 800-meter geofence arms at every stop.'), ('How fast is verification for a new account?', 'Carriers: FMCSA details auto-fill from your DOT number and document review typically completes the same day. Brokers: authority and the federal bond are checked against the FMCSA record at signup. Shippers and agents: minutes.'), ('Who is on the other side of my load?', 'Always a verified party. Carriers pass authority, insurance and health checks before they see freight; posting requires licensed broker or verified shipper status. Both sides of every load are vetted — that is why the board has zero ghost loads.'), ('Where does the money actually move?', 'Bank to bank, between payer and payee — LoadBoot runs the ledger around it: automatic DUE on delivery, PAY-BY deadlines, receipt-verified transfers, confirm-received loops, and factoring/NOA routing when an NOA is on file.'), ('How does matching decide which carriers see my load?', "Explainably: equipment and services fit, verified eligibility, distance from the pickup, the carrier's delivered history on similar lanes and their account-health score. Every match can be traced to those factors — if we cannot explain a ranking, we do not show it."), ('What does LoadBoot charge?', "One flat 5% dispatch fee on delivered loads, invoiced transparently to the carrier's account — never deducted from a factor's advance, never charged to brokers, shippers or agents for using the platform."), ('What if something goes wrong on the road?', 'The Emergency button verifies real breakdowns within a 2-hour window and reschedules with zero penalty. Detention, layover, TONU and lumper claims draft themselves from GPS trip data and ride the same invoice as the freight.')]
+_HIW_FAQ = [('Where does a human dispatcher fit into this loop?', 'Optionally, and without removing any approval. A LoadBoot-vetted dispatcher is assigned to your truck by hand within 3 business days, sources loads while your availability post is fresh, negotiates to your floor and logs the booking; you approve every load and LoadBoot approves every rate confirmation before the truck moves. Tracking, documents and the money rail are the same as the self-serve loop. See how LoadBoot dispatch works, A to Z.'), ('What actually happens when I book a load?', 'The moment you tap Request to book (or accept a direct offer), first acceptance wins and every other offer closes — no double-booking. The rate confirmation is issued and e-signed in-app, the dispatch pack (pickup numbers, contacts, directions) generates instantly, and an 800-meter geofence arms at every stop.'), ('How fast is verification for a new account?', 'Carriers: FMCSA details auto-fill from your DOT number and document review typically completes the same day. Brokers: authority and the federal bond are checked against the FMCSA record at signup. Shippers and agents: minutes.'), ('Who is on the other side of my load?', 'Always a verified party. Carriers pass authority, insurance and health checks before they see freight; posting requires licensed broker or verified shipper status. Both sides of every load are vetted — that is why the board has zero ghost loads.'), ('Where does the money actually move?', 'Bank to bank, between payer and payee — LoadBoot runs the ledger around it: automatic DUE on delivery, PAY-BY deadlines, receipt-verified transfers, confirm-received loops, and factoring/NOA routing when an NOA is on file.'), ('How does matching decide which carriers see my load?', "Explainably: equipment and services fit, verified eligibility, distance from the pickup, the carrier's delivered history on similar lanes and their account-health score. Every match can be traced to those factors — if we cannot explain a ranking, we do not show it."), ('What does LoadBoot charge?', "One flat 5% dispatch fee on delivered loads, invoiced transparently to the carrier's account — never deducted from a factor's advance, never charged to brokers, shippers or agents for using the platform."), ('What if something goes wrong on the road?', 'The Emergency button verifies real breakdowns within a 2-hour window and reschedules with zero penalty. Detention, layover, TONU and lumper claims draft themselves from GPS trip data and ride the same invoice as the freight.')]
 
 _hiw_schema = '<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What actually happens when I book a load?", "acceptedAnswer": {"@type": "Answer", "text": "The moment you tap Request to book (or accept a direct offer), first acceptance wins and every other offer closes \\u2014 no double-booking. The rate confirmation is issued and e-signed in-app, the dispatch pack (pickup numbers, contacts, directions) generates instantly, and an 800-meter geofence arms at every stop."}}, {"@type": "Question", "name": "How fast is verification for a new account?", "acceptedAnswer": {"@type": "Answer", "text": "Carriers: FMCSA details auto-fill from your DOT number and document review typically completes the same day. Brokers: authority and the federal bond are checked against the FMCSA record at signup. Shippers and agents: minutes."}}, {"@type": "Question", "name": "Who is on the other side of my load?", "acceptedAnswer": {"@type": "Answer", "text": "Always a verified party. Carriers pass authority, insurance and health checks before they see freight; posting requires licensed broker or verified shipper status. Both sides of every load are vetted \\u2014 that is why the board has zero ghost loads."}}, {"@type": "Question", "name": "Where does the money actually move?", "acceptedAnswer": {"@type": "Answer", "text": "Bank to bank, between payer and payee \\u2014 LoadBoot runs the ledger around it: automatic DUE on delivery, PAY-BY deadlines, receipt-verified transfers, confirm-received loops, and factoring/NOA routing when an NOA is on file."}}, {"@type": "Question", "name": "How does matching decide which carriers see my load?", "acceptedAnswer": {"@type": "Answer", "text": "Explainably: equipment and services fit, verified eligibility, distance from the pickup, the carrier\'s delivered history on similar lanes and their account-health score. Every match can be traced to those factors \u2014 if we cannot explain a ranking, we do not show it."}}, {"@type": "Question", "name": "What does LoadBoot charge?", "acceptedAnswer": {"@type": "Answer", "text": "One flat 5% dispatch fee on delivered loads, invoiced transparently to the carrier\'s account \\u2014 never deducted from a factor\'s advance, never charged to brokers, shippers or agents for using the platform."}}, {"@type": "Question", "name": "What if something goes wrong on the road?", "acceptedAnswer": {"@type": "Answer", "text": "The Emergency button verifies real breakdowns within a 2-hour window and reschedules with zero penalty. Detention, layover, TONU and lumper claims draft themselves from GPS trip data and ride the same invoice as the freight."}}]}</script>'
 
@@ -8035,7 +8060,8 @@ hiw += ('<section style="background:#0b1220;padding:0 0 40px"><div class="wrap">
  '<a href="#for-carriers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#128666; I haul the freight</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Carrier &mdash; board to booked to paid &darr;</div></a>'
  '<a href="#for-brokers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#127970; I post the loads</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Broker &mdash; posted to covered to settled &darr;</div></a>'
  '<a href="#for-shippers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#127981; I own the freight</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Shipper &mdash; requested to moved with proof &darr;</div></a>'
- '<a href="#for-agents" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#129309; I bring the people</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Agent &mdash; link to chain to 1% forever &darr;</div></a>'
+ '<a href="#for-agents" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#129309; I bring the people</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Referral partner &mdash; link to chain to 1% forever &darr;</div></a>'
+ '<a href="#with-dispatcher" style="text-decoration:none;background:rgba(252,83,5,.12);border:1px solid rgba(252,83,5,.4);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#128222; I want a dispatcher on my truck</b><div style="color:#fdba74;font-size:.82rem;margin-top:5px">Carrier + LoadBoot dispatcher &mdash; matched, booked, approved, paid &darr;</div></a>'
  '</div></div></section>')
 
 hiw += hiw_journey()
@@ -8053,6 +8079,19 @@ hiw += ('<section class="ftx-sec" id="for-carriers"><div class="wrap"><div class
  '<div class="reveal"><div style="max-width:340px;margin:0 auto"><img src="/shots/board-phone-available.webp" alt="The live board on the phone — verified loads with rate cards and deadhead from your GPS" width="420" height="909" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="height:12px"></div><div style="max-width:340px;margin:0 auto"><img src="/shots/pay-money-loop-phone.webp" alt="The receipt loop — payment sent with receipt and landing ETA, then confirmed received" width="420" height="909" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Real screens &mdash; the board where it starts, the receipt loop where it ends.</div></div>'
  '</div></div></section>')
 
+hiw += ('<section class="ftx-sec alt" id="with-dispatcher"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal" style="order:2"><div class="ftx-kicker">For carriers with a LoadBoot dispatcher</div><h2 class="ftx-h">Matched &rarr; booked for you &rarr; approved twice &rarr; paid direct</h2>'
+ '<p style="color:#475569;line-height:1.7">The self-serve loop above is always yours. Add a dedicated, LoadBoot-vetted dispatcher and the loop gains a person &mdash; without losing a single approval.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">1</span><div><b>Matched by hand within 3 business days</b> &mdash; our desk writes your SOP (lanes, floor rate, equipment, home time) and assigns one dispatcher who carries a fixed number of trucks. <a href="dedicated-truck-dispatcher.html">Why dedicated</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">2</span><div><b>They passed our test first</b> &mdash; timed exam with hard compliance gates, voice negotiation drill, 10-working-day trial with KPIs. <a href="how-loadboot-dispatch-works.html#step-3">The test</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">3</span><div><b>You confirm you are empty, they source</b> &mdash; DAT, Truckstop, 123Loadboard, broker networks, direct shippers and the LoadBoot board, only while your availability post is fresh.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">4</span><div><b>Two approvals on every rate con</b> &mdash; yours against your floor, then LoadBoot&rsquo;s desk before the truck moves. Booked under your authority as your agent, never re-brokered.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">5</span><div><b>Same tracking, same money rail</b> &mdash; geofenced GPS proof, POD in the vault, the broker or your factor pays you directly. LoadBoot invoices its flat 5% of line-haul after delivery. <a href="pricing.html">Pricing</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">6</span><div><b>Pause or switch from your app</b> &mdash; two buttons on the Dispatcher tab. 30 days&rsquo; notice to leave. <a href="how-loadboot-dispatch-works.html">All eight steps, A to Z</a>.</div></div>'
+ '</div></div>'
+ '<div class="reveal" style="order:1">' + DOS_CSS + dos_steps('short', eyebrow='The dispatcher loop', h2='Eight steps, one page', lead='') + '</div>'
+ '</div></div></section>')
 hiw += ('<section class="ftx-sec alt" id="for-brokers"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal" style="order:2"><div class="ftx-kicker">For freight brokers</div><h2 class="ftx-h">Posted &rarr; covered &rarr; watched &rarr; settled</h2>'
  '<div style="margin-top:12px">'
@@ -8109,8 +8148,8 @@ hiw += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '<a href="create-shipper-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#127981; Shipper</a>'
  '<a href="create-agent-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#129309; Agent</a>'
  '</div></div></section>')
-RELATED['how-it-works.html'] = [('load-board.html','Live Load Board'),('book-truck-loads.html','One-Tap Booking'),('gps-tracking.html','GPS Tracking & Proof'),('payments-settlements.html','Payments & Settlements'),('compliance.html','Compliance & Verification'),('features.html','All Features')]
-page('how-it-works.html', 'How LoadBoot Works — From Load to Paid for Every Role', 'How LoadBoot works from load to paid: posting with rates in writing, offers to FMCSA-verified carriers, e-signed rate confirmations and live GPS tracking.', 'how-it-works.html', hiw, _hiw_schema)
+RELATED['how-it-works.html'] = [('how-loadboot-dispatch-works.html','How Dispatch Works (A to Z)'),('load-board.html','Live Load Board'),('book-truck-loads.html','One-Tap Booking'),('gps-tracking.html','GPS Tracking & Proof'),('payments-settlements.html','Payments & Settlements'),('compliance.html','Compliance & Verification'),('features.html','All Features')]
+page('how-it-works.html', 'How LoadBoot Works — From Load to Paid for Every Role', 'How LoadBoot works from load to paid: posting with rates in writing, offers to FMCSA-verified carriers, a dedicated dispatcher if you want one, e-signed rate confirmations, live GPS tracking and direct payment.', 'how-it-works.html', hiw, _hiw_schema)
 
 # ---------- COMMAND CENTER — public transparency page ----------
 _cc_faq = [('Is the Command Center a product I can buy?', "No — it is LoadBoot's own operations desk, included in how the marketplace runs. You never pay for it separately; you feel it as same-day verification, verified claims, and receipts that actually get checked."), ('Do humans or software make the decisions?', 'Both, deliberately: software prepares — matching, documents, reminders, evidence — and a person approves anything that moves money or status. The maker and the checker are never the same account.'), ('Can staff edit GPS logs or timestamps?', 'No. Arrive/depart stamps are recorded server-side from GPS events. Nobody — carrier, broker, or LoadBoot staff — has an edit button on the event log.'), ('What does the Command Center see?', 'Role-scoped operational data: verification queues, active trips and exceptions, claims with their GPS evidence, and payment receipts awaiting verification. Private commercial data stays scoped to its owners.')]
@@ -8312,7 +8351,7 @@ ap = svc_hero('The LoadBoot App', 'One operating system for trucking &mdash; car
 ap += _sec('Your apps', 'Same account everywhere &mdash; phone, tablet, laptop.', _cards([
     ('&#128667;', 'LoadBoot Carrier', 'Post your truck, get matched loads, run trips with GPS &amp; detention proof, upload PODs, track your money. <a href="/app/carrier/">Open Carrier &rarr;</a>'),
     ('&#129309;', 'LoadBoot Partner', 'Brokers &amp; shippers: post loads, vet carriers by rating, track shipments live, manage documents. <a href="/app/partner/">Open Partner &rarr;</a>'),
-    ('&#129297;', 'LoadBoot Agent', 'Independent dispatchers: refer carriers, brokers &amp; shippers, track your referrals and earn 1% of every delivered load. <a href="/app/agent/">Open Agent &rarr;</a>'),
+    ('&#129297;', 'LoadBoot Agent', 'Two seats, one portal: referral partners track referrals and earn 1% of every delivered load; LoadBoot dispatchers apply, take the skills test and run their assigned carriers from a full workspace. <a href="/app/agent/">Open Agent &rarr;</a>'),
     ('&#128104;&#8205;&#128187;', 'LoadBoot Developer', 'API keys, docs and integrations for your systems. <a href="/app/developer/">Open Developer &rarr;</a>'),
     ('&#127970;', 'Command Center', 'LoadBoot staff operations console. <a href="/app/command-center/">Staff sign-in &rarr;</a>'),
 ], 'g2'))
@@ -8340,7 +8379,7 @@ ap += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color
  '</div></div></section>')
 page('apps.html', 'LoadBoot App — Carrier, Broker & Shipper Tools on Mobile',
      'The LoadBoot app on Google Play (and as a web app on iPhone): carriers book loads and run trips with GPS proof; brokers and shippers post loads free and track them live.',
-     'apps.html', ap)
+     'apps.html', ap, '<script type="application/ld+json">{"@context":"https://schema.org","@type":"MobileApplication","name":"LoadBoot Load Board & Dispatch","operatingSystem":"Android","applicationCategory":"BusinessApplication","installUrl":"https://play.google.com/store/apps/details?id=com.loadboot.app","url":"https://loadboot.com/apps.html","description":"Carrier app for owner-operators and small fleets: verified load board, dedicated dispatcher tab, GPS trip tracking with geofenced proof, documents, POD upload and settlements. Broker, shipper and referral partner portals in the same app.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@id":"https://loadboot.com/#org"}}</script>')
 
 # ---- Accessorial policy pages: full 12-section guides (linked from load details & app) ----
 _ACC_PAGES = [
@@ -8858,7 +8897,7 @@ for _p in _ACC_PAGES:
          (_seo['title'] if _seo else _name + ' Policy | LoadBoot'),
          (_seo['desc'] if _seo else (_p['defn'][:150])[:168]),
          _slug + '.html', _pg,
-         schema=(_acc_faq_schema(_p.get('faq') or []) + _acc_howto_schema(_name, _p.get('steps') or []) + _acc_fresh_schema(_name)))
+         schema=(_acc_faq_schema(_p.get('faq') or []) + _acc_fresh_schema(_name)))
 
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [
@@ -9343,7 +9382,15 @@ if _errors:
 
 # ---------- llms.txt — AI-crawler map of the site (emerging standard) ----------
 _LLMS = """# LoadBoot — The Operating System for Trucking
-> US truck dispatch + verified load board platform for carriers, freight brokers, shippers and referral agents. Flat 5% dispatch fee on the carrier side; portals are free. Not a freight broker — carriers keep their own authority.
+> The Operating System for Trucking: a verified load board, carrier app, GPS proof, documents and settlements on one platform, plus a LoadBoot-run network of dedicated, vetted truck dispatchers (screened, tested, trialled, assigned by hand within 3 business days, supervised by the Command Center, paid by LoadBoot). Flat 5% of line-haul on the carrier side, earned at delivery; portals are free for brokers, broker agents, shippers and referral partners. Not a freight broker — carriers keep their own authority; LoadBoot never holds freight money.
+
+## Dispatch (how it actually works)
+- [How LoadBoot dispatch works, A to Z](https://loadboot.com/how-loadboot-dispatch-works): apply → verified → matched by hand in 3 business days → dispatcher tested and trialled → you confirm empty, they source → two approvals on every rate con → GPS proof → paid direct → pause or switch.
+- [Dedicated truck dispatcher](https://loadboot.com/dedicated-truck-dispatcher): one dispatcher per carrier (enforced), fixed truck count, written SOP, KPIs, replaceable from the app.
+- [US truck dispatcher desk](https://loadboot.com/us-truck-dispatcher) · [All dispatch services](https://loadboot.com/services)
+- [AI dispatch, honestly](https://loadboot.com/ai-dispatch-for-owner-operators): AI reads documents, parses rate cons, answers the phone 24/7 (Riley), onboards in chat; a human dispatcher finds and negotiates loads; two humans approve every booking.
+- [Dispatcher vs dispatch software](https://loadboot.com/truck-dispatcher-vs-dispatch-software)
+- [Broker agents](https://loadboot.com/broker-agents): post under the brokerage that confirmed you (FMCSA-listed email code or owner approval), one account, many brokerages, free.
 
 ## Core
 - [How it works — all four roles](https://loadboot.com/how-it-works): the full loop: posted → offered (first accept wins) → booked (e-signed RC) → geofence-tracked → delivered (POD) → auto-invoiced → receipt-verified payment.
@@ -9368,7 +9415,7 @@ _LLMS = """# LoadBoot — The Operating System for Trucking
 
 ## Audiences
 - [Carriers](https://loadboot.com/carriers) · [Owner-operators](https://loadboot.com/owner-operator-dispatch) · [New authorities](https://loadboot.com/new-authority-dispatch)
-- [Freight brokers](https://loadboot.com/brokers) · [Shippers](https://loadboot.com/shipper-solutions) · [Agents — 1% per load](https://loadboot.com/agents)
+- [Freight brokers](https://loadboot.com/brokers) · [Broker agents](https://loadboot.com/broker-agents) · [Shippers](https://loadboot.com/shipper-solutions) · [Referral partners — 1% per load](https://loadboot.com/agents)
 - [Free load board for brokers](https://loadboot.com/free-load-board-for-brokers): post loads at $0, no subscription — a free alternative to paid load boards, for licensed brokers, with GPS/documents/payables included.
 - [Ship direct to carriers](https://loadboot.com/ship-direct-to-carrier): shippers post freight free to verified carriers, skip the broker markup, keep fraud protection + live GPS; moves under licensed brokerage where required.
 - Account setup guides: [carrier](https://loadboot.com/create-carrier-account) · [broker](https://loadboot.com/create-broker-account) · [shipper](https://loadboot.com/create-shipper-account) · [agent](https://loadboot.com/create-agent-account)
