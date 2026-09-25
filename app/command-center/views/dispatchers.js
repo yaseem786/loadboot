@@ -160,7 +160,10 @@ export function renderDispatchers(host) {
     onEvent: (e) => { dqFeed(e); paintQueue(); },   // bl_disp_0307 — hint only; paintQueue still refetches
     onPresence: (list) => paintPresence(list) });
   const ccPoll = setInterval(() => { if (document.visibilityState === 'visible') paintQueue(); }, 90000);
-  const ccMo = new MutationObserver(() => { if (!document.body.contains(presenceBox)) { clearInterval(ccPoll); clearInterval(dqTimer); try { ccLive.leave(); } catch (_) {} ccMo.disconnect(); } });
+  // UX audit CC6 (24 Sep 2026): this checked `document.body.contains(presenceBox)`, but since bl_disp_0316 the
+  // presence/queue/feed nodes stay detached until the Work-queue tab is opened — so the first DOM mutation on
+  // the Roster tab tore down the 90 s poll and the realtime channel. `host` is what the router mounts.
+  const ccMo = new MutationObserver(() => { if (!host.isConnected) { clearInterval(ccPoll); clearInterval(dqTimer); try { ccLive.leave(); } catch (_) {} ccMo.disconnect(); } });
   ccMo.observe(document.body, { childList: true, subtree: true });
 
   // ---- bl_disp_0307: one-second repaint of the ET clock and of every ticking countdown/age,

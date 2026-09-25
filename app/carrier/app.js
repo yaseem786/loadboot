@@ -837,7 +837,9 @@ async function agentPortal(user) {
   if (!feed || typeof feed !== 'object') feed = {};
   let r0 = null; try { r0 = await myReferral(); } catch (_) {}
   if (!feed || !feed.has_code) { notCarrier(); return; }
-  const money9 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const money9 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // ux-audit A4: "Jul 18, 6:16 AM" instead of "7/18/2026, 6:16:30 AM" (year only when it is not this year)
+  const fmtWhen9 = (v) => { const d = new Date(v); if (isNaN(d)) return ''; const o = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }; if (d.getFullYear() !== new Date().getFullYear()) o.year = 'numeric'; return d.toLocaleString(undefined, o); };
   // Phone camera photos are 5-15MB and blow past the storage bucket's object-size limit
   // ("The object exceeded the maximum allowed size"). Shrink large images client-side
   // (max 1800px, JPEG q0.82) before upload — invisible to the user, PDFs pass through.
@@ -1316,11 +1318,22 @@ async function agentPortal(user) {
           st.textContent = 'Upload failed \u2014 ' + ((e10 && e10.message) || 'please try again') + '.';
         }
       } });
-      return h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5)' }, [
+      // ux-audit A1 (24 Sep 2026): a verified / trial / active dispatcher is past the skills test, so the
+      // card says what the ID still gates (the carrier hand-over); on phone it folds to one line so the
+      // workspace tabs are not 560px down on every screen.
+      const past9 = ['trial', 'verified', 'active'].includes(prof.status);
+      const card9 = h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5)' }, [
         h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#fdba74' }, 'ACTION NEEDED \u2014 IDENTITY VERIFICATION'),
-        h('div', { style: 'font-size:1.1rem;font-weight:900;color:#fff;margin:6px 0 4px' }, 'Upload a government ID to continue'),
-        h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'Every LoadBoot dispatcher is verified before a carrier account is handed over \u2014 you will hold that carrier\u2019s authority documents and speak to brokers in their name. We check that the name and country on your application match your ID. Applications without a verified ID are not moved to the skills test.'),
+        h('div', { style: 'font-size:1.1rem;font-weight:900;color:#fff;margin:6px 0 4px' }, past9 ? 'Upload a government ID before your first carrier hand-over' : 'Upload a government ID to continue'),
+        h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'Every LoadBoot dispatcher is verified before a carrier account is handed over \u2014 you will hold that carrier\u2019s authority documents and speak to brokers in their name. We check that the name and country on your application match your ID.' + (past9 ? '' : ' Applications without a verified ID are not moved to the skills test.')),
         file, st,
+      ]);
+      let phone9 = false; try { phone9 = window.matchMedia('(max-width: 900px)').matches; } catch (_) {}
+      if (!(past9 && phone9)) return card9;
+      card9.style.marginBottom = '0'; card9.style.borderTopLeftRadius = '0'; card9.style.borderTopRightRadius = '0'; card9.style.borderTop = '0';
+      return h('details', { style: 'margin-bottom:12px' }, [
+        h('summary', { style: 'list-style:none;cursor:pointer;border-radius:14px;padding:11px 14px;background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5);font-weight:800;color:#fdba74;font-size:.84rem;display:flex;align-items:center;gap:8px' }, [h('span', null, '\u26a0'), h('span', { style: 'flex:1' }, 'Government ID still needed \u2014 tap to upload'), h('span', { style: 'opacity:.7' }, '\u25be')]),
+        card9,
       ]);
     })();
     // bl_disp_0378 — a rejected applicant gets a premium panel, not a flat status card: the decision,
@@ -1486,7 +1499,7 @@ async function agentPortal(user) {
             h('div', { style: 'height:6px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden' },
               h('div', { style: 'height:100%;width:' + (obCount * 25) + '%;border-radius:99px;background:linear-gradient(90deg,#FC5305,#4ade80)' })),
           ]);
-      mount(content, h('div', null, [refHome9,
+      const refKids9 = [refHome9,
         verifyCard,
         h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px' }, [
           tile9('Referred', String(k.referred || 0)), tile9('Brokers', String(k.brokers || 0)), tile9('Shippers', String(k.shippers || 0)), tile9('Carriers', String(k.carriers || 0)),
@@ -1528,8 +1541,15 @@ async function agentPortal(user) {
             ]);
           })(),
         ]),
-                agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.2)' }, (n.at ? new Date(n.at).toLocaleString() + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
-      ]));
+                agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.2)' }, (n.at ? fmtWhen9(n.at) + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
+      ];
+      // ux-audit A3 (24 Sep 2026): with the live referral home on top (dispatcher + partner), the legacy
+      // block below it repeated the link card, the seven tiles and the activity list — 4,969px on a phone.
+      // Keep what the home does not have: the pending-verification card, Invite by email, the explainer.
+      const refShown9 = refOnly ? refKids9 : [refKids9[0], obStatus === 'approved' ? null : refKids9[1],
+        h('div', { style: 'margin:0 0 12px' }, h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#FC5305', onClick: inviteModal9 }, [icon('mail', 15), ' Invite by email'])),
+        refKids9[6]];
+      mount(content, h('div', null, refShown9.filter(Boolean)));
     } else if (tab === 'verify') {
       // ---- VERIFICATION CENTER shared widgets (tracker + CC thread) ----
       const obDocs9 = (ob && ob.docs) || {};
@@ -1565,7 +1585,7 @@ async function agentPortal(user) {
           let msgs9 = []; try { msgs9 = (await agentMsgList()) || []; } catch (_) {}
           const list9 = h('div', { style: 'max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:4px 0' },
             msgs9.length ? msgs9.map((m9) => h('div', { style: 'max-width:85%;padding:8px 12px;border-radius:12px;font-size:.85rem;line-height:1.55;' + (m9.sender === 'agent' ? 'align-self:flex-end;background:rgba(8,131,247,.2);color:#dbeafe' : 'align-self:flex-start;background:rgba(255,255,255,.07);color:#e6edf8') }, [
-              h('div', null, m9.body), h('div', { style: 'font-size:.62rem;opacity:.6;margin-top:3px' }, (m9.sender === 'agent' ? 'You' : 'LoadBoot dispatch') + ' · ' + (m9.at ? new Date(m9.at).toLocaleString() : ''))]))
+              h('div', null, m9.body), h('div', { style: 'font-size:.62rem;opacity:.6;margin-top:3px' }, (m9.sender === 'agent' ? 'You' : 'LoadBoot dispatch') + ' · ' + (m9.at ? fmtWhen9(m9.at) : ''))]))
             : [h('div', { class: 'cp-muted' }, 'No messages yet — ask anything about your verification, documents or the program. Dispatch replies here and you get a notification.')]);
           const inp9 = h('input', { class: 'cp-in', placeholder: 'Type a message to dispatch…', style: 'flex:1;margin:0' });
           const send9 = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => {
@@ -2036,7 +2056,7 @@ async function agentPortal(user) {
       return h('button', { style: 'display:block;width:100%;text-align:left;background:' + (n.read_at ? 'transparent' : 'rgba(8,131,247,.09)') + ';border:0;border-bottom:1px solid rgba(255,255,255,.06);padding:10px 14px;cursor:pointer;color:inherit;font:inherit', onClick: async () => { try { await pocketMarkNotificationRead(n.id); } catch (_) {} agLoadBell(); } }, [
         h('div', { style: 'font-weight:800;font-size:.82rem' }, p9.title || n.template_key || 'Update'),
         p9.body ? h('div', { class: 'cp-row-s', style: 'margin-top:2px;line-height:1.5' }, String(p9.body).slice(0, 160)) : null,
-        h('div', { class: 'cp-row-s', style: 'margin-top:3px;opacity:.7;font-size:.68rem' }, new Date(n.created_at).toLocaleString()),
+        h('div', { class: 'cp-row-s', style: 'margin-top:3px;opacity:.7;font-size:.68rem' }, fmtWhen9(n.created_at)),
       ].filter(Boolean));
     })) : h('div', { class: 'cp-row-s', style: 'padding:18px 14px;text-align:center' }, 'Nothing yet — commissions, chain joins, payout and verification updates land here.'));
   }
@@ -2128,7 +2148,7 @@ async function agentPortal(user) {
 
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: trackLabel9 })),
+      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: refOnly ? 'Partner' : 'Dispatcher' })),   // ux-audit A7: the full track label sits in the side foot; the brand row has ~180px
       nav,
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, feed.name || trackLabel9), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),

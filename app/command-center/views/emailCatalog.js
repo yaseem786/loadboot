@@ -110,8 +110,16 @@ export async function renderEmailCatalog(host) {
     mount(listBox, sorted.map(code => {
       const g = groups.find(x => x.code === code);
       const items = byGroup.get(code);
-      return el('section', { style: 'margin:22px 0 10px' }, [
-        el('div', { style: 'display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px' }, [
+      // UX audit CC3 (24 Sep 2026): 228 emails in 8 groups drew as one 21,000px page. Each group is a
+      // <details>: folded on a phone (≤780px, the CC bar breakpoint), open on desktop. Search still
+      // narrows every group; a group that is open stays open across reloads within the session.
+      const phone = window.matchMedia('(max-width:780px)').matches;
+      const openKey = 'cc-email-catalog:open:' + code;
+      let wasOpen = null; try { wasOpen = sessionStorage.getItem(openKey); } catch (_) {}
+      const isOpen = wasOpen != null ? wasOpen === '1' : !phone;
+      const d = el('details', { class: 'cc-cat-group', style: 'margin:22px 0 10px', open: isOpen ? 'open' : null }, [
+        el('summary', { style: 'cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px' }, [
+          el('span', { class: 'cc-cat-caret', 'aria-hidden': 'true', style: 'font-size:.8rem;color:var(--lb-muted,#64748b)' }, isOpen ? '▾' : '▸'),
           el('h3', { style: 'margin:0;font-size:1rem' }, g ? g.label : 'Not grouped yet'),
           el('span', { class: 'cc-sub' }, items.length + ' email' + (items.length === 1 ? '' : 's')),
           g ? pill(g.opt_out_allowed ? 'opt-out allowed' : 'no opt-out', g.opt_out_allowed ? 'blue' : 'gray') : '',
@@ -119,6 +127,11 @@ export async function renderEmailCatalog(host) {
         g && g.description ? el('div', { class: 'cc-sub', style: 'margin:-4px 0 10px' }, g.description) : '',
         table(items),
       ]);
+      d.addEventListener('toggle', () => {
+        const c = d.querySelector('.cc-cat-caret'); if (c) c.textContent = d.open ? '▾' : '▸';
+        try { sessionStorage.setItem(openKey, d.open ? '1' : '0'); } catch (_) {}
+      });
+      return d;
     }));
   }
 

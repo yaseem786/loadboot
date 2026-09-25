@@ -45,6 +45,7 @@ export function dispatchLiveJoin(opts) {
     } catch (_) { return; }
     try {
       const ch = sb.channel(CHANNEL, { config: { presence: { key: uid } } });
+      state.pending = ch;                               // leave() can reach it before SUBSCRIBED
       ch.on('broadcast', { event: 'dispatch' }, (msg) => {
         const p = (msg && msg.payload) || {};
         // Never act on our own echo, and never trust the payload as data — it is a refetch hint.
@@ -64,7 +65,11 @@ export function dispatchLiveJoin(opts) {
       ch.on('presence', { event: 'join' }, pushPresence);
       ch.on('presence', { event: 'leave' }, pushPresence);
       ch.subscribe(async (status) => {
-        if (state.closed) { try { sb.removeChannel(ch); } catch (_) {} return; }
+        // UX audit CC4 (24 Sep 2026): this used to call sb.removeChannel(ch) when state.closed —
+        // but removeChannel → unsubscribe → this same callback with CLOSED → removeChannel → …
+        // "Maximum call stack size exceeded" on every Command Center teardown of the dispatchers
+        // screen (and on any websocket that never connected). leave() owns the removal now.
+        if (state.closed) return;
         if (status === 'SUBSCRIBED') {
           state.ch = ch; state.live = true;
           try { await ch.track({ role: o.role || 'cc', name: o.name || '', tab: state.tab, at: new Date().toISOString() }); } catch (_) {}
@@ -94,8 +99,11 @@ export function dispatchLiveJoin(opts) {
       if (state.ch && state.live) { state.ch.track({ role: o.role || 'cc', name: o.name || '', tab: tab, at: new Date().toISOString() }).catch(() => {}); }
     },
     leave: () => {
+      if (state.closed) return;
       state.closed = true; state.live = false;
-      if (state.ch) { (async () => { try { const sb = await getClient(); sb.removeChannel(state.ch); } catch (_) {} })(); state.ch = null; }
+      const ch = state.ch || state.pending;
+      state.ch = null; state.pending = null;
+      if (ch) { (async () => { try { const sb = await getClient(); sb.removeChannel(ch); } catch (_) {} })(); }
     },
   };
 }

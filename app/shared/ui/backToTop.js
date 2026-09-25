@@ -66,7 +66,9 @@
     '.lb-fd-hide{opacity:0!important;visibility:hidden!important;pointer-events:none!important;',
     'transition:opacity .2s ease,visibility .2s ease}',
     '@media (prefers-reduced-motion:reduce){#lb-rt{transition:none}}',
-    '@media print{#lb-rt{display:none!important}}'
+    '@media print{#lb-rt{display:none!important}}',
+    /* UX audit 24 Sep 2026: auto-scroll is a mouse-reader aid; on touch it was a third button in the phone's bottom-right corner. */
+    '@media (hover:none) and (pointer:coarse){#lb-rt{display:none!important}}'
   ].join('');
 
   var R = 21, C = 2 * Math.PI * R;

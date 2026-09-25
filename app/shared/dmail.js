@@ -102,7 +102,7 @@ const CSS = `
 .dm-cf{display:flex;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.07);flex:0 0 auto}.dm-cf .sv{margin-left:auto;font-size:.76rem;color:#6f84a1}
 .dm-tb{display:flex;gap:0;margin-left:6px}.dm-tb .dm-ib{width:32px;height:32px}
 .dm-toast{position:fixed;left:24px;bottom:24px;z-index:5000;display:flex;align-items:center;gap:14px;background:#1b2f4d;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 16px;box-shadow:0 18px 50px -12px rgba(0,0,0,.8);font-weight:600;animation:dmup .18s ease-out}.dm-toast button{border:0;background:transparent;color:#5fb0ff;font-weight:800}
-.dm-off{grid-column:1/-1}
+.dm-off{grid-column:1/-1}.dm:has(>.dm-off){min-height:0}.dm-main.dm-off{height:auto!important;min-height:0!important}
 @media(max-width:860px){.dm{grid-template-columns:1fr;gap:10px;min-height:0}.dm-rail{flex-direction:row;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}.dm-rail::-webkit-scrollbar{display:none}.dm-f{flex:0 0 auto;border:1px solid var(--line);padding:8px 14px;gap:8px}.dm-f .n{margin-left:4px}
  .dm-compose{position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:3000;margin:0;border-radius:18px;padding:15px 20px}.dm-who{display:none}
  .dm-row{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"star who meta" "star txt txt";padding:9px 12px 9px 4px;row-gap:2px}.dm-row .dm-chk{display:none}.dm-row .dm-starb{grid-area:star}.dm-row .who{grid-area:who}.dm-row .txt{grid-area:txt}.dm-row .meta{grid-area:meta}.dm-row:hover .acts{display:none}.dm-row:hover .meta .d{display:inline}

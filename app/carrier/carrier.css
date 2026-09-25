@@ -788,6 +788,10 @@ input[type="file"]:not([hidden])::file-selector-button:hover{background:#e2e8f2}
 .cp-rail-tg { position: absolute; top: 18px; right: 10px; width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.05); color: #8fa0bd; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; z-index: 3; transition: background .15s, color .15s; }
 .cp-rail-tg:hover, .cp-rail-tg:focus-visible { background: rgba(255,255,255,.12); color: #fff; outline: none; }
 .cp-side .cp-brandrow { padding-right: 40px; min-height: 30px; }
+/* ux-audit A7 (24 Sep 2026): a long descriptor ("Dispatcher · Partner") ran under the rail toggle — ellipsis instead */
+.cp-side .cp-brandrow .cc-brandrow { min-width: 0; }
+.cp-side .cp-brandrow .cc-brandrow > span + span { min-width: 0; }
+.cp-side .cp-brandrow .cc-brandrow > span + span > span + span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .cp-shell--rail { grid-template-columns: 72px 1fr; }
 .cp-shell--rail .cp-side { padding: 18px 12px; align-items: center; gap: 12px; }
 .cp-shell--rail .cp-rail-tg { position: static; margin: 0 auto; order: 1; }

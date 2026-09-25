@@ -343,6 +343,17 @@
 @media(max-width:780px){
   .cc-shell{grid-template-columns:1fr}
   .cc-content{padding:16px 16px 84px}
+  /* UX audit CC1 (24 Sep 2026): 17 views mount a bare table.cc-table with no .cc-table-wrap
+     scroller (partners, partner intake, forms, support, finance…). On a phone the table's
+     min-content width (up to 1,351px) became the page width and every one of those screens
+     scrolled sideways. A table with no wrap scrolls inside itself; wrapped ones are untouched. */
+  .cc-content table.cc-table:not(.cc-table-wrap > *):not(.cc-tablewrap > *){display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  /* same audit: the segmented filter (.cc-seg, inline-flex) ran to 562px on Finance / CRM / Email catalog / Compliance */
+  .cc-content .cc-seg{display:flex;flex-wrap:wrap;max-width:100%}
+  /* same audit: Settings rows = label + 240px input + Save on one line (473px); stack them on a phone */
+  .cc-set-row{flex-direction:column;align-items:stretch;gap:8px}
+  .cc-set-row>div:last-child{flex-wrap:wrap}
+  .cc-set-row input[style*="width:240px"]{width:100%!important;min-width:0;box-sizing:border-box}
 
   /* the full menu becomes a left drawer, opened from More */
   .cc-side{
