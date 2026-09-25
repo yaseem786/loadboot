@@ -4715,7 +4715,7 @@ bt += _sec('Freight we book', 'Box truck &amp; expedited freight we dispatch', _
     ('&#128736;', 'Equipment-matched only', 'Dock height, liftgate, pallet jack, weight &mdash; we check the requirements so you are never sent to freight you cannot load.'),
 ], 'g3'))
 bt += _sec('Rates', 'What drives box truck rates (and how we protect yours)', _cards([
-    ('&#128200;', 'Urgency premium', 'Expedited windows pay more &mdash; we chase the time-critical freight that values a reliable smaller truck.'),
+    ('&#128200;', 'Urgency premium', 'Expedited windows pay more &mdash; we chase the time-critical freight that values a reliable smaller truck. Current <a href="box-truck-freight-rates.html">box truck rates per mile</a> are on the rates hub, dated.'),
     ('&#128205;', 'Lane &amp; region balance', 'Final-mile-heavy metros pay differently than lane freight; we plan runs so you are not stuck deadheading home.'),
     ('&#9878;', 'Accessorials documented', 'Liftgate work, inside delivery, wait time &mdash; recorded with real timestamps and billed, not absorbed.'),
 ]), soft=True)
@@ -5017,7 +5017,7 @@ ftl += _sec('The three ways freight moves', 'FTL, LTL and partials — plain Eng
  ('&#127358;','Partial truckload','The middle: 6&ndash;18 pallets, no terminals &mdash; freight rides direct with one or two other partials. Ideal for box trucks, hotshots and filling unused deck space.'),
 ]))
 ftl += _sec('Who wins with partials', 'Small trucks and smart carriers', _cards([
- ('&#128667;','Box trucks &amp; hotshots','A 16&ndash;26 ft box truck cannot take a 38,000-lb FTL &mdash; partials sized to your real weight capacity are your paying freight. See <a href="box-truck-dispatch.html">box truck dispatch</a> and <a href="hotshot-dispatch.html">hotshot dispatch</a>.'),
+ ('&#128667;','Box trucks &amp; hotshots','A 16&ndash;26 ft box truck cannot take a 38,000-lb FTL &mdash; partials sized to your real weight capacity are your paying freight. See <a href="box-truck-dispatch.html">box truck dispatch</a>, <a href="box-truck-freight-rates.html">box truck rates per mile</a> and <a href="hotshot-dispatch.html">hotshot dispatch</a>.'),
  ('&#128176;','Filling empty space','Half-full trailer on a lane you are running anyway? A partial on top of your existing load is nearly pure margin.'),
  ('&#127970;','Brokers &amp; shippers','Post a partial with pallets, weight and dims and pay for the space you use &mdash; instead of buying a whole truck.'),
 ]))
@@ -5730,7 +5730,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '</div></section>'
 
 '<section class="wrap mrx-sec"><h2>Current rates by equipment type</h2>'
-'<p><b>Dry van rates per mile</b> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight. <b>Power only</b> prices below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand. The live table above carries the date each benchmark was last rebuilt; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
+'<p><b>Dry van rates per mile</b> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight. <b>Power only</b> prices below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand and <a href="box-truck-freight-rates.html">box truck rates per mile</a> sit lowest, priced on stops per day rather than miles. The live table above carries the date each benchmark was last rebuilt; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
 
 '<section class="wrap mrx-sec"><h2>How we calculate these freight rates</h2>'
 '<p>Three blended layers, honestly labeled: <b>(1) Real LoadBoot bookings</b> \u2014 actual accepted rates on our marketplace, the strongest signal, refreshed continuously; <b>(2) Published national benchmarks</b> \u2014 published national industry indices, refreshed as new data lands and always shown with their as-of date; <b>(3) Confidence labels</b> \u2014 every lane result says whether it comes from lane-level bookings (HIGH), platform-wide data (MEDIUM) or the national benchmark (LOW). A rate is a guide, not a quote \u2014 but you always know exactly where it came from.</p></section>'
@@ -6218,6 +6218,9 @@ _EQ_SEO_OVERRIDE = {
  'flatbed': dict(
    title='Flatbed Freight Rates Per Mile 2026 \u2014 Current &amp; Average Flatbed Trucking Rates, Cost Per Mile for Carriers, Brokers &amp; Shippers | LoadBoot',
    desc='Current and average flatbed trucking rates per mile in 2026, updated as new national data lands: flatbed cost per mile for the carrier, what brokers buy and sell at, what shippers pay, plus lane examples, seasonality and the accessorials that move the real number.'),
+ # Phase 2 ledger 2026-09-25 (box-truck, desc only, <=155 chars; title untouched - pos 7.7). Figures = get_public_market_rates() as_of 2026-09-18.
+ 'box-truck': dict(
+   desc='Box truck rates per mile, September 2026: $2.58/mi to the carrier, $2.97 shipper side, $2.06–$3.10 range. Live national box truck freight rates, 16–26 ft.'),
 }
 for _eq in _EQ_RATES:
     _n, _s = _eq['name'], _eq['slug']
