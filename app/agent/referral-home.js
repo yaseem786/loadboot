@@ -101,7 +101,7 @@ export async function mountReferralHome(host, ctx) {
       ])])
     : h('div', { class: 'rh-strip green' }, [h('span', null, '✅'), h('div', null, [h('b', { style: 'color:#4ade80' }, 'Verified partner. '), 'Every delivered load from your referrals credits 1% of gross to you the same moment the invoice is created — then 15 days of clearing, then it is yours to withdraw.'])]);
 
-  const hero = h('div', { class: 'rh-hero' }, [
+  const hero = h('div', { class: 'rh-hero', 'data-tour': 'ref-link' }, [
     h('div', { class: 'rh-kick' }, 'Your referral link · code ' + code),
     h('div', { style: 'font-size:1.35rem;font-weight:900;color:#fff;margin-top:6px;letter-spacing:-.01em' }, 'Bring the people. The software does the rest.'),
     h('div', { class: 'rh-sub', style: 'margin-top:4px' }, '1% of gross on every delivered load — carriers, brokers and shippers — for as long as they move freight. Levels 2–5 on partners you recruit.'),
@@ -116,7 +116,7 @@ export async function mountReferralHome(host, ctx) {
     strip,
   ]);
 
-  const kpis = h('div', { class: 'rh-kpis' }, [
+  const kpis = h('div', { class: 'rh-kpis', 'data-tour': 'ref-kpis' }, [
     kpi('Referred', String(chain.length)),
     kpi('Verified & moving', String(verifiedOrgs.length)),
     kpi('Loads delivered', String(delivered)),
@@ -214,7 +214,7 @@ export async function mountReferralHome(host, ctx) {
     return card;
   };
 
-  const refs = h('div', { class: 'rh-card' }, [
+  const refs = h('div', { class: 'rh-card', 'data-tour': 'ref-list' }, [
     h('div', { class: 'rh-x' }, [h('div', null, [h('h3', null, '👥 Your referrals — live'), h('div', { class: 'rh-sub' }, 'Each one is tied to you the moment they sign up through your link. Their progress updates here as it happens.')]),
       chain.length ? h('button', { class: 'rh-btn ghost', onClick: () => go('chain') }, 'Full list →') : null].filter(Boolean)),
     chain.length ? h('div', { class: 'rh-ref' }, (_dl ? [...chain].sort((x9, y9) => (actFor(y9).org_id === _dl) - (actFor(x9).org_id === _dl)) : chain).slice(0, 6).map(orgCard))

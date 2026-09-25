@@ -25,7 +25,7 @@ Paste this into the next session.
   profile / clear `lb_tour.carrier.v1` in localStorage and walk the owner flow once; `window.__lbTour.start()` replays.
 
 ## Waiting on owner
-- Merge `claude/sweet-albattani-glr8gy` into `main` (GitHub Desktop) and do the live walk above.
+- Merge `claude/amazing-mendel-nri5hm` into `main` (GitHub Desktop) — it carries steps 1+2 (`sweet-albattani`) and step 3 — then do the live walks (carrier above, four portals below).
 
 ## Next step, exactly
 1. (done) Wire into `app/carrier`: link `../shared/ui/tour.css` in `index.html`; in `app.js` `appView()`
@@ -40,7 +40,32 @@ Paste this into the next session.
    `disp-hero` (dispatcher-desk.js `.dd-hero`), `today` (driver-mode.js renderToday).
 3. Same engine for partner / agent portals: only a `tour-content.js` per portal.
 
-## Step 3 handoff — every portal except Command Center (owner decision, 25 Sep 2026)
+## Done (branch `claude/amazing-mendel-nri5hm`, 25 Sep 2026, third session) — step 3: partner, agent, investor, developer
+Branch = `claude/sweet-albattani-glr8gy` merged in + step 3 on top. **Merge `claude/amazing-mendel-nri5hm` into `main`** (it
+contains everything from steps 1-3). Command Center untouched, as decided.
+
+| Portal | Content file | Key / roles | Stops | Wired in |
+|---|---|---|---|---|
+| Partner (`app/partner/`) | `tour-content.js` | `partner` / `broker`, `shipper` (from `ov.kind`) | 10 / 9 | `app.js` `tourBoot()` after `bgo(btab)`, booted only when `isMyOrgAgent()` is false (agent slim workspace skips it); `pHelp.onRoute(btab)` in `bgo()` |
+| Agent (`app/agent/`) | `tour-content.js` | `agent` / `dispatcher`, `referral`, `both` (from `refOnly` / `optedIn`; `noTrack` = no tour until a track is picked) | 10 / 9 / 17 (dispatcher stops mostly `optional`) | `app/carrier/app.js` `agentPortal()` end: dynamic `import('../agent/tour-content.js')`, `agHelp.onRoute(tab)` in the agent `go()`. The carrier shell's own `if (!window.__LB_AGENT)` block is unchanged (agents never reach it). |
+| Investor (`app/investor/`) | `tour-content.js` | `investor` / `investor` | 6 | `app.js` `tourSync()` called at the end of `renderShell()`; created once, only when `S.agr.signed_date` is set (unsigned = agreement sheet, no tour). Sets `data-lbtheme=dark` on `<html>` if unset so the coach card uses dark tokens. English only (the portal is trilingual; tour copy is not). |
+| Developer (`app/developer/`) | `tour-content.js` | `developer` / `developer` | 6 | `app.js` after the shell mounts; single screen, `navigate` no-op |
+
+Hooks placed (all `data-tour=`): partner `dash-kpis post-load loads-list requests carriers packet invoices rates`;
+agent `disp-apply disp-status disp-steps disp-rules disp-academy` (carrier/app.js, via `agCard(title, kids, tourName)` third arg or
+`tourTag(el, name)`), `earnings payouts` (carrier/app.js), `ref-link ref-kpis ref-list` (referral-home.js), `dw-tabs dw-kpis dw-queue`
+(dispatcher-workspace.js); investor `rec-hero rec-list ledger-hero pay-declare pay-list agr-card`; developer `dev-create dev-keys
+dev-quickstart dev-webhooks dev-events`. `tour.css` linked in all four `index.html`.
+
+Engine lesson (matters for any new stop): **`anchor` defeats `optional` and `emptyTitle`** — when the hook is missing the engine falls
+back to the anchor and shows the normal copy. So optional / empty-copy stops carry NO anchor (same as the carrier file).
+
+Checks run: `node --check` on every edited file; content->view hook cross-check both ways; `previews/tour-smoke/` (stub page + Playwright
+`run.mjs`, usage in its header) drives all 10 flows through the real engine to their done card, with and without hooks: 0 errors.
+Not run against a live login (cloud session). Owner: clear `lb_tour.partner.v1` / `lb_tour.agent.v1` / `lb_tour.investor.v1` /
+`lb_tour.developer.v1` in localStorage (or `window.__lbTour.reset(); window.__lbTour.start()`) and walk each once.
+
+## Step 3 handoff — every portal except Command Center (owner decision, 25 Sep 2026) — DONE above, kept for reference
 
 Branch to work on: `claude/sweet-albattani-glr8gy` (already carries steps 1+2). Do NOT touch `main`.
 Owner approved the carrier copy as is; keep the same tone (plain English, no jargon, 6–11 stops per role).

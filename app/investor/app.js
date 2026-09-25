@@ -14,6 +14,8 @@
 import { getSession, signInWithPassword, signUp, signOut, onAuthChange, resetPassword,
          mfaVerify, mfaListFactors, mfaEnrollTotp, mfaEnrollPhone, mfaChallenge, mfaVerifyChallenge, mfaRequiredAny } from '../shared/session.js';
 import { el, mount } from '../shared/ui/dom.js';
+import { createTour, mountHelp } from '../shared/ui/tour.js';   // guided tour + floating "?" help (25 Sep 2026)
+import { INVESTOR_TOUR } from './tour-content.js';
 import { invMe, invClaimByEmail, invSelfOnboard, invPublishSelfDoc, invMyRequests, invDeclarePayment, invLedger, invStatements, invConfirmPayout,
          invSetLang, invFlag, invMyFlags, invSettings, invCurrentDoc, invSignDoc, invGrowth, invProjection,
          invUploadProof, invProofUrl, invProposeAmendment, invWithdrawAmendment, invMyAmendments, invAckExpense,
@@ -237,7 +239,28 @@ function renderShell() {
       ]))),
   ]));
   root.removeAttribute('aria-busy');
+  tourSync();
   ({ home: SIMPLE ? renderRecord : renderHome, plan: renderPlan, requests: renderRequests, ledger: renderLedger, payments: renderPayments, statements: renderStatements, agreement: renderAgreementTab })[S.tab](pane);
+}
+// Guided tour + floating "?" help (25 Sep 2026). Engine: ../shared/ui/tour.js, copy: ./tour-content.js.
+// Created once, on the first renderShell() after the agreement is signed (an unsigned investor gets the
+// agreement sheet instead; two overlays at once would fight). renderShell() rebuilds the whole shell on every
+// tab change, so the tour keeps its own nodes on document.body and only hears about the route here.
+// Progress is localStorage only (lb_tour.investor.v1).
+let ivTour = null, ivHelp = null;
+function tourSync() {
+  try {
+    if (!ivTour) {
+      if (!S.agr || !S.agr.signed_date) return;
+      const tourNav = (r) => { const t9 = String(r || '').replace(/^#/, '').split('/')[0] || 'home'; S.tab = TABS.includes(t9) ? t9 : 'home'; renderShell(); };
+      try { if (!document.documentElement.getAttribute('data-lbtheme')) document.documentElement.setAttribute('data-lbtheme', 'dark'); } catch (_) {}   // the portal is dark; tour.css keys its dark tokens off this
+      ivTour = createTour({ key: 'investor', version: 1, role: 'investor', flows: INVESTOR_TOUR.flows, screens: INVESTOR_TOUR.screens, navigate: tourNav, currentRoute: () => S.tab });
+      ivHelp = mountHelp(ivTour, { supportRoute: '#agreement', navigate: tourNav });
+      window.__lbTour = ivTour;   // replay hook; nothing depends on it
+      setTimeout(() => { try { ivTour.autoStart(); } catch (_) {} }, 600);   // after the first tab body has painted
+    }
+    if (ivHelp) ivHelp.onRoute(S.tab);
+  } catch (_) {}
 }
 function agrPicker() {
   if (S.agreements.length < 2) return null;
@@ -626,7 +649,7 @@ async function renderLedger(host) {
   ]));
   mount(host, [
     agrPicker(), el('h1', { class: 'iv-h1' }, t('l_title')), el('p', { class: 'iv-sub' }, t('l_sub')),
-    el('div', { class: 'iv-card hero' }, [
+    el('div', { class: 'iv-card hero', 'data-tour': 'ledger-hero' }, [
       el('p', { class: 'iv-eyebrow' }, t('l_remaining')), el('div', { class: 'iv-big' }, money(p.fund_cash)),
       el('p', { class: 'iv-muted', style: 'margin:6px 0 0' }, t('l_came_spent', money(p.funded), money(p.spent))),
     ]),
@@ -660,9 +683,9 @@ async function renderPayments(host) {
   ]));
   mount(host, [
     agrPicker(), el('h1', { class: 'iv-h1' }, t('p_title')), el('p', { class: 'iv-sub' }, t('p_sub')),
-    S.agr.status === 'wound_down' || (S.agr.position || {}).commitment_closed ? null : el('button', { class: 'iv-btn block', onClick: () => declareForm(null) }, '+ ' + t('p_record')),
+    S.agr.status === 'wound_down' || (S.agr.position || {}).commitment_closed ? null : el('button', { class: 'iv-btn block', 'data-tour': 'pay-declare', onClick: () => declareForm(null) }, '+ ' + t('p_record')),
     el('div', { style: 'height:12px' }),
-    rc.length ? el('div', { class: 'iv-list' }, rc.map(r => {
+    rc.length ? el('div', { class: 'iv-list', 'data-tour': 'pay-list' }, rc.map(r => {
       const neg = Number(r.amount) < 0;
       const tone = r.state === 'confirmed' ? 'ok' : r.state === 'rejected' ? 'due' : r.state === 'reversal' ? 'due' : 'wait';
       const label = { confirmed: t('p_confirmed'), rejected: t('p_rejected'), reversal: t('p_reversal') }[r.state] || t('p_awaiting');
@@ -1283,7 +1306,7 @@ async function renderRecord(host) {
     pendingReq ? el('button', { class: 'iv-warn', style: 'width:100%;text-align:start;cursor:pointer;font:inherit', onClick: () => openRequest((S.requests || []).find(r => r.status === 'pending')) }, [el('b', null, t('rec_req') + ' ' + money((S.requests || []).find(r => r.status === 'pending').amount)), ' — ', (S.requests || []).find(r => r.status === 'pending').reason || '', ' ›']) : null,
     recHero(p),
     el('div', { class: 'iv-sect' }, el('h2', null, t('rec_all'))),
-    ev.length ? el('div', { class: 'iv-list' }, groupDays(ev, e => el('button', { class: 'iv-row', onClick: e.open }, [
+    ev.length ? el('div', { class: 'iv-list', 'data-tour': 'rec-list' }, groupDays(ev, e => el('button', { class: 'iv-row', onClick: e.open }, [
       el('div', { class: 'ic ' + (e.kind === 'out' ? 'out' : 'in') }, icon(ic[e.kind])),
       el('div', null, [el('div', { class: 't' }, [el('span', { class: 'iv-tag ' + e.kind }, e.tag), e.title]), el('div', { class: 's' }, [el('b', { class: 'iv-tm' + (e.at ? '' : ' none') }, e.at ? fmtTime(e.at) : t('tx_notime')), e.sub ? ' · ' + e.sub : '']), e.proof === null ? null : el('div', { class: 's what' }, [e.proof ? el('span', { class: 'iv-proof ok' }, '📎 ' + t('rec_proof')) : el('span', { class: 'iv-proof' }, t('rec_noproof')), e.kind === 'out' && !e.ack ? el('small', { class: 'iv-new', style: 'margin-left:6px' }, t('ack_new')) : null])]),
       el('div', { class: 'amt ' + e.cls }, e.amt),
@@ -1299,7 +1322,7 @@ function renderAgreementTab(host) {
   mount(host, [
     agrPicker(), el('h1', { class: 'iv-h1' }, t('h_agreement')), el('p', { class: 'iv-sub' }, t('ag_tab_sub')),
     (p.open_questions || []).length ? el('div', { class: 'iv-open', id: 'iv-open-box' }, [el('b', null, t('h_open')), el('ul', null, p.open_questions.map(q => el('li', { 'data-q': q }, t('oq_' + q, pct(p.permanent_share_pct)))))]) : null,
-    el('div', { class: 'iv-card' }, [el('div', { class: 'iv-kv', style: 'margin-top:0' }, [kv(t('h_monthly'), (p.phase === 'recovering' ? pct(p.payback_rate_pct) + ' + ' : '') + pct(p.effective_share_pct), '', 'share'), kv(t('h_recovery'), money(p.recovered) + ' / ' + money(p.recovery_target), '', 'recovery'), kv(t('h_outstanding'), money(p.outstanding), '', 'outstanding'), kv(t('h_share_type'), p.share_type === 'equity' ? pct(p.equity_vested_pct) : p.share_type === 'profit_share' ? t('h_profit_share') : t('h_undecided'), '', 'share_type')])]),
+    el('div', { class: 'iv-card', 'data-tour': 'agr-card' }, [el('div', { class: 'iv-kv', style: 'margin-top:0' }, [kv(t('h_monthly'), (p.phase === 'recovering' ? pct(p.payback_rate_pct) + ' + ' : '') + pct(p.effective_share_pct), '', 'share'), kv(t('h_recovery'), money(p.recovered) + ' / ' + money(p.recovery_target), '', 'recovery'), kv(t('h_outstanding'), money(p.outstanding), '', 'outstanding'), kv(t('h_share_type'), p.share_type === 'equity' ? pct(p.equity_vested_pct) : p.share_type === 'profit_share' ? t('h_profit_share') : t('h_undecided'), '', 'share_type')])]),
     navRow('doc', t('doc_title'), S.agr.signed_date ? t('h_signed', fmtDate(S.agr.signed_date)) : t('h_draft'), () => showAgreement(), 'iv-doc-sub'),
     el('div', { style: 'height:8px' }),
     amendCard(p),
@@ -1327,7 +1350,7 @@ function recHero(p) {
   const toGive = Math.max(0, cap - funded);
   const pc = (n) => cap ? Math.max(0, Math.min(100, 100 * n / cap)) : 0;
   const seg = (cls, w, label, val) => el('div', { class: 'seg ' + cls, style: 'width:' + w + '%', title: label + ' · ' + val });
-  return el('div', { class: 'iv-card hero iv-rec-hero' }, [
+  return el('div', { class: 'iv-card hero iv-rec-hero', 'data-tour': 'rec-hero' }, [
     el('div', { class: 'iv-rec-top' }, [
       ring(p.funded_pct, '', t('rc_used')),
       el('div', { class: 'iv-rec-nums' }, [

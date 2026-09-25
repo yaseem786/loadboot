@@ -913,7 +913,8 @@ async function agentPortal(user) {
   const SIDE9 = { carrier: ['🚛', 'Carrier'], broker: ['🏢', 'Broker'], shipper: ['🏭', 'Shipper'] };
   const sideIc9 = (k9) => (SIDE9[k9] || ['🏢', k9 || ''])[0];
   const sideLb9 = (k9) => (SIDE9[k9] || ['🏢', String(k9 || '')])[1];
-  const agCard = (t9, kids9) => h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, t9)]), ...(Array.isArray(kids9) ? kids9 : [kids9])].filter(Boolean));
+  const tourTag = (el9, n9) => { try { if (el9 && el9.setAttribute) el9.setAttribute('data-tour', n9); } catch (_) {} return el9; };   // guided-tour hook (25 Sep 2026)
+  const agCard = (t9, kids9, tour9) => h('div', { class: 'cp-card', 'data-tour': tour9 || null }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, t9)]), ...(Array.isArray(kids9) ? kids9 : [kids9])].filter(Boolean));
   const tile9 = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:120px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;text-align:center' }, [
     h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:#7f92b3;text-transform:uppercase' }, lbl),
     h('div', { style: 'font-size:1.45rem;font-weight:900;margin-top:3px;color:' + (hi ? '#4ade80' : '#fff') }, val)]);
@@ -1268,8 +1269,8 @@ async function agentPortal(user) {
         ]);
       const wrap9 = h('div', null, [
         gate9 ? gate9.node : dHero(),
-        card9,
-        dSteps(null),
+        tourTag(card9, 'disp-apply'),
+        tourTag(dSteps(null), 'disp-steps'),
         dSalary(),
         dWhat(),
         dAcademy(),
@@ -1359,7 +1360,7 @@ async function agentPortal(user) {
       prof.review_note ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Note from the team: ' + prof.review_note) : '',
       prof.base_salary ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Salary terms: base ' + (prof.currency || 'PKR') + ' ' + Number(prof.base_salary).toLocaleString() + ' + ' + (prof.currency || 'PKR') + ' ' + Number(prof.per_truck || 0).toLocaleString() + ' per active truck + performance bonus.') : '',
     ])];
-    const statusCard = cards[0]; // keep a stable handle: the unshifts below change cards[0]
+    const statusCard = tourTag(cards[0], 'disp-status'); // keep a stable handle: the unshifts below change cards[0]
     // bl_disp_0318: a rejected applicant gets a real, server-gated way back in (14-day cooldown, max 3).
     if (prof.status === 'rejected') {
       const slot9 = h('div', null, []); cards.push(slot9); // synchronous slot: no dependence on mount timing
@@ -1433,9 +1434,9 @@ async function agentPortal(user) {
       h('div', null, '✕ Never re-broker or re-assign a booked load to another carrier.'),
       h('div', null, '✕ Never accept a load first and then hunt for a truck.'),
       h('div', { class: 'cp-muted', style: 'margin-top:4px' }, 'These keep you a bona fide agent of the carrier (FMCSA 88 FR 39368), not an unlicensed broker. Questions: hello@loadboot.com'),
-    ])]));
-    if (['screening', 'skills_test', 'trial', 'verified'].includes(prof.status)) cards.splice(1, 0, dSteps(prof.status));
-    cards.push(dAcademy());
+    ])], 'disp-rules'));
+    if (['screening', 'skills_test', 'trial', 'verified'].includes(prof.status)) cards.splice(1, 0, tourTag(dSteps(prof.status), 'disp-steps'));
+    cards.push(tourTag(dAcademy(), 'disp-academy'));
     mount(host, h('div', null, cards));
   }
 
@@ -1923,7 +1924,7 @@ async function agentPortal(user) {
         list9.length > LD.show ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:10px', onClick: () => { LD.show += 50; render(); } }, '↓ Show ' + Math.min(50, list9.length - LD.show) + ' more (' + (list9.length - LD.show) + ' left)') : null,
       ].filter(Boolean)));
     } else if (tab === 'earnings') {
-      const hostE = agCard('💰 Commission ledger', [h('div', { class: 'cp-muted' }, 'Loading…')]);
+      const hostE = agCard('💰 Commission ledger', [h('div', { class: 'cp-muted' }, 'Loading…')], 'earnings');
       mount(content, h('div', null, [
         h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px' }, [tile9('Clearing', money9(tt.accrued)), tile9('Payable', money9(tt.payable), true), tile9('Paid', money9(tt.paid), true)]),
         hostE]));
@@ -1935,7 +1936,7 @@ async function agentPortal(user) {
             pill(x.status)]))) : h('div', { class: 'cp-muted' }, 'Commissions appear here per delivered load — 1% of gross, 15-day clearing, then payable.')]);
       } catch (_) { mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, [icon('finance',15),' Commission ledger'])]), h('div', { class: 'cp-muted' }, 'Could not load.')]); }
     } else if (tab === 'payouts') {
-      const hostP = h('div');
+      const hostP = h('div', { 'data-tour': 'payouts' });
       mount(content, hostP);
       (async () => {
         let pc; try { pc = await agentPayoutCenter(); } catch (e9) { mount(hostP, agCard('🏦 Payout Center', [h('div', { class: 'cp-muted' }, (e9 && e9.message) || 'Could not load.')])); return; }
@@ -2031,11 +2032,13 @@ async function agentPortal(user) {
       ]));
     }
   }
+  let agTour = null, agHelp = null;   // guided tour + floating "?" (25 Sep 2026); set after the shell mounts below
   function go(id) { tab = id; if (location.hash !== '#' + id && location.hash.indexOf('#' + id + '/') !== 0) history.replaceState(null, '', '#' + id);  // keep #tab/<deep> (bl_agent_0403)
     Object.entries(links).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
     Object.entries(tabLinks).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
     const it = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it ? it[1] : 'Dashboard';
     (async () => { try { feed = (await agentFeed()) || feed; } catch (_) {} render(); })();
+    if (agHelp) { try { agHelp.onRoute(tab); } catch (_) {} }
   }
   // Big-brand Android back for the agent shell too: back → Dashboard first, then exit.
   initBackNav({ goHome: () => { if (tab !== 'dashboard') { go('dashboard'); return true; } return false; } });
@@ -2178,6 +2181,22 @@ async function agentPortal(user) {
   const it0 = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it0 ? it0[1] : 'Dashboard';
   render();
   root.setAttribute('aria-busy', 'false');
+  // Guided tour + floating "?" help (25 Sep 2026). Engine: ../shared/ui/tour.js, copy: ../agent/tour-content.js
+  // (loaded on demand so the carrier portal never fetches it). Flow follows the track: referral-only, dispatcher,
+  // or both. Someone who has not picked a track yet sees the chooser instead; the tour waits for the next visit.
+  // Progress is localStorage only (lb_tour.agent.v1).
+  if (!noTrack) {
+    import('../agent/tour-content.js').then((m9) => {
+      const AGENT_TOUR = m9.AGENT_TOUR || m9.default;
+      const tourNav = (r) => { const t9 = String(r || '').replace(/^#/, '').split('/')[0] || 'dashboard'; go(AGNAV.some((n) => n[0] === t9) ? t9 : 'dashboard'); };
+      const tourRole = refOnly ? 'referral' : (optedIn ? 'both' : 'dispatcher');
+      agTour = createTour({ key: 'agent', version: 1, role: tourRole, flows: AGENT_TOUR.flows, screens: AGENT_TOUR.screens, navigate: tourNav, currentRoute: () => tab });
+      agHelp = mountHelp(agTour, { supportRoute: '#settings', navigate: tourNav });
+      window.__lbTour = agTour;   // replay hook; nothing depends on it
+      agHelp.onRoute(tab);
+      setTimeout(() => { try { agTour.autoStart(); } catch (_) {} }, 500);
+    }).catch((e9) => { try { console.warn('[tour] agent content failed to load', e9); } catch (_) {} });
+  }
 }
 
 // 🟣 multi-stop route modal from a board card — shows the redacted route (City, ST + purpose);
@@ -2540,8 +2559,8 @@ async function appView(user) {
   try { attachPullToRefresh(content, async () => { render(); refreshUnread(); }); } catch (_) {}
   // Guided tour + floating "?" help (24 Sep 2026). Engine: ../shared/ui/tour.js, copy: ./tour-content.js.
   // The flow follows the person: owner, driver, or a driver who can see the board (in-house dispatcher).
-  // Progress is localStorage only (lb_tour.carrier.v1). The agent portal reuses this shell and gets its own
-  // content file later, so it is skipped here. autoStart() runs after the first go(tab) below.
+  // Progress is localStorage only (lb_tour.carrier.v1). The agent portal has its own shell (agentPortal) and
+  // its own tour (../agent/tour-content.js), so it is skipped here. autoStart() runs after the first go(tab) below.
   let tour = null, help = null;
   if (!window.__LB_AGENT) {
     try {
