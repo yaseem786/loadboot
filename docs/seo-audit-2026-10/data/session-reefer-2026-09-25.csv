@@ -1,0 +1,43 @@
+pull,window,query,page,clicks,impressions,ctr,position
+28d-page,2026-08-26→2026-09-23,,reefer-freight-rates.html,1,182,0.55%,10.2
+7d-page,2026-09-16→2026-09-23,,reefer-freight-rates.html,1,45,2.22%,10.8
+90d-page,2026-06-25→2026-09-23,,reefer-freight-rates.html,1,182,0.55%,10.2
+28d-qp,2026-08-26→2026-09-23,average reefer rate per mile,market-rates.html,0,1,0.00%,56.0
+28d-qp,2026-08-26→2026-09-23,average reefer rates,market-rates.html,0,6,0.00%,41.3
+28d-qp,2026-08-26→2026-09-23,current reefer market rates april 2025,reefer-freight-rates.html,0,1,0.00%,30.0
+28d-qp,2026-08-26→2026-09-23,current reefer rates,market-rates.html,0,4,0.00%,31.2
+28d-qp,2026-08-26→2026-09-23,how much can i charge?,reefer-freight-rates.html,0,1,0.00%,9.0
+28d-qp,2026-08-26→2026-09-23,national reefer rates,market-rates.html,0,2,0.00%,36.0
+28d-qp,2026-08-26→2026-09-23,national reefer rates,reefer-freight-rates.html,0,1,0.00%,45.0
+28d-qp,2026-08-26→2026-09-23,reefer container rates,reefer-freight-rates.html,0,1,0.00%,88.0
+28d-qp,2026-08-26→2026-09-23,reefer freight rates,market-rates.html,0,6,0.00%,33.8
+28d-qp,2026-08-26→2026-09-23,reefer freight rates 2023,market-rates.html,0,3,0.00%,47.0
+28d-qp,2026-08-26→2026-09-23,reefer freight rates per mile,market-rates.html,0,6,0.00%,41.7
+28d-qp,2026-08-26→2026-09-23,reefer full truckload rate,market-rates.html,0,8,0.00%,37.8
+28d-qp,2026-08-26→2026-09-23,reefer full truckload rate,reefer-freight-rates.html,0,3,0.00%,70.0
+28d-qp,2026-08-26→2026-09-23,reefer load rates,market-rates.html,0,4,0.00%,45.5
+28d-qp,2026-08-26→2026-09-23,reefer loads rates,market-rates.html,0,2,0.00%,47.0
+28d-qp,2026-08-26→2026-09-23,reefer rate,market-rates.html,0,2,0.00%,61.0
+28d-qp,2026-08-26→2026-09-23,reefer rate per mile,market-rates.html,0,1,0.00%,35.0
+28d-qp,2026-08-26→2026-09-23,reefer rate per mile,reefer-freight-rates.html,0,1,0.00%,31.0
+28d-qp,2026-08-26→2026-09-23,reefer rate per mile,reefer-rates-week-34-2026.html,0,1,0.00%,10.0
+28d-qp,2026-08-26→2026-09-23,reefer rates,market-rates.html,0,19,0.00%,42.7
+28d-qp,2026-08-26→2026-09-23,reefer rates,reefer-freight-rates.html,0,2,0.00%,41.5
+28d-qp,2026-08-26→2026-09-23,reefer rates per mile,reefer-rates-week-34-2026.html,0,1,0.00%,8.0
+28d-qp,2026-08-26→2026-09-23,reefer rates today,market-rates.html,0,4,0.00%,25.2
+28d-qp,2026-08-26→2026-09-23,reefer rates today,reefer-freight-rates.html,0,2,0.00%,10.5
+28d-qp,2026-08-26→2026-09-23,reefer shipping cpm,reefer-rates-week-34-2026.html,0,2,0.00%,1.0
+28d-qp,2026-08-26→2026-09-23,reefer spot rates,market-rates.html,0,4,0.00%,27.8
+28d-qp,2026-08-26→2026-09-23,reefer truck load rates,market-rates.html,0,1,0.00%,54.0
+28d-qp,2026-08-26→2026-09-23,refrigerated freight rates,reefer-freight-rates.html,0,3,0.00%,54.3
+28d-qp,2026-08-26→2026-09-23,refrigerated truck rates,reefer-freight-rates.html,0,1,0.00%,50.0
+7d-qp,2026-09-16→2026-09-23,average reefer rates,market-rates.html,0,3,0.00%,42.3
+7d-qp,2026-09-16→2026-09-23,national reefer rates,market-rates.html,0,2,0.00%,36.0
+7d-qp,2026-09-16→2026-09-23,reefer freight rates,market-rates.html,0,1,0.00%,45.0
+7d-qp,2026-09-16→2026-09-23,reefer freight rates per mile,market-rates.html,0,1,0.00%,74.0
+7d-qp,2026-09-16→2026-09-23,reefer full truckload rate,market-rates.html,0,8,0.00%,37.8
+7d-qp,2026-09-16→2026-09-23,reefer full truckload rate,reefer-freight-rates.html,0,3,0.00%,70.0
+7d-qp,2026-09-16→2026-09-23,reefer rate per mile,reefer-rates-week-34-2026.html,0,1,0.00%,10.0
+7d-qp,2026-09-16→2026-09-23,reefer rates,market-rates.html,0,8,0.00%,40.9
+7d-qp,2026-09-16→2026-09-23,reefer rates per mile,reefer-rates-week-34-2026.html,0,1,0.00%,8.0
+7d-qp,2026-09-16→2026-09-23,reefer rates today,market-rates.html,0,1,0.00%,11.0
