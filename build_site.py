@@ -604,9 +604,9 @@ RELATED = {
  'carriers.html':           [('carrier-application.html','Apply as Carrier'),('services.html','All Services'),('pricing.html','Pricing'),('tools.html','Free Trucking Tools'),('faq.html','FAQ')],
  'brokers.html':            [('partners.html','Partner Portal'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('how-it-works.html','How It Works')],
  'shipper-solutions.html':  [('brokers.html','For Brokers'),('partners.html','Partner Portal'),('security.html','Security & Trust'),('contact.html','Contact'),('faq.html','FAQ')],
- 'services.html':           [('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools')],
+ 'services.html':           [('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('case-studies.html','Example Dispatch Scenarios')],
  'pricing.html':            [('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('carriers.html','For Carriers')],
- 'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
+ 'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker'),('case-studies.html','Example Dispatch Scenarios')],
  'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('agents.html','Referral Program')],
  'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
  'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('truckload-freight-rates.html','Truckload Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('load-score.html','Load Score'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
@@ -2297,7 +2297,7 @@ PUB_DATES = {
  'truckload-freight-rates.html':'2026-09-21',
 }
 
-def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,body_html,faqs,feat_svg='',pub='2026-06-27'):
+def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,body_html,faqs,feat_svg='',pub='2026-06-27',headline=None):
     pub = PUB_DATES.get(fname, pub)
     # pub: real first-publish date (YYYY-MM-DD). Shown in the visible dateline and in Article schema.
     _pm={'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August','09':'September','10':'October','11':'November','12':'December'}
@@ -2316,7 +2316,7 @@ def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,bod
             'manage freight for owner-operators and fleets across the U.S. &mdash; flat 5%, no long-term contracts.</div></div></div></div>')
     fhtml,fsch=faq_block(faqs)
     body=crumb+herob+feat+'<div class="wrap art-grid">'+toch+'<div class="art-body">'+body_html+'</div></div>'+author+fhtml+final_cta()
-    art=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"'+e(h1)
+    art=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"'+e(headline or h1)
          +'","description":"'+e(desc)+'","image":"https://loadboot.com/'+(hero if asset_exists(hero) else 'icon-512.png')+'","author":{"@type":"Organization","name":"Loadboot"},'
          '"publisher":{"@type":"Organization","name":"Loadboot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}},'
          '"datePublished":"'+pub+'","dateModified":"'+pub+'"}</script>')
@@ -4003,7 +4003,8 @@ rich_article('spot-market-freight-rates.html',
  'Freight Rates &amp; Spot Market','Spot Market Freight Rates 2026: What Trucking Spot Rates Are, How They Compare to Contract &amp; Where to Find Them',
  'A spot rate is the price of one truck, on one lane, this week. It is the number every load board, rate confirmation and broker phone call is really about &mdash; and the number most carriers negotiate without ever seeing. Here is what it is, where it sits in 2026, what moves it and how to find it before you say yes.',
  10,'spot-market-freight-rates-hero.jpg','Truck on an interstate lane with a weekly spot rate chart overlaid, illustrating spot market freight rates versus contract rates',
- SPOT_TOC, SPOT_BODY, SPOT_FAQ, feat_svg=SPOT_FEAT)
+ SPOT_TOC, SPOT_BODY, SPOT_FAQ, feat_svg=SPOT_FEAT,
+ headline='Spot Market Freight Rates 2026: Spot vs Contract Rates and Where to Find Them')  # JSON-LD only; H1 is 113 chars, Google caps headline at 110
 THUMBS['spot-market-freight-rates.html']=SPOT_FEAT
 READTIME['spot-market-freight-rates.html']=10
 
