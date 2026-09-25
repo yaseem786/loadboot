@@ -1241,7 +1241,7 @@ LIVEBOARD = ('<section id="opportunities" class="bg-soft"><div class="wrap"><div
 HOME_RATES = ('<section id="market-rates" class="bg-soft"><div class="wrap">'
  '<div class="sec-head center reveal"><div class="eyebrow">Live Market Data</div>'
  '<h2>Today\u2019s Truckload Freight Rates Per Mile</h2>'
- '<p class="lead center" style="margin:0 auto;max-width:760px">Current national trucking rates per mile \u2014 dry van, reefer, flatbed and hotshot spot rates, blended from real LoadBoot bookings and published industry benchmarks. What carriers get paid, what freight brokers buy and sell at, and what shippers pay \u2014 <b>every figure dated</b>.</p></div>'
+ '<p class="lead center" style="margin:0 auto;max-width:760px">Current national trucking rates per mile \u2014 <a href="dry-van-freight-rates.html">dry van</a>, reefer, flatbed and hotshot spot rates, blended from real LoadBoot bookings and published industry benchmarks. What carriers get paid, what freight brokers buy and sell at, and what shippers pay \u2014 <b>every figure dated</b>.</p></div>'
  '<style>.hmr-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:22px 0}'
  '.hmr{background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:18px;text-align:center;box-shadow:0 12px 30px -24px rgba(2,12,30,.35);transition:transform .15s}'
  '.hmr:hover{transform:translateY(-3px)}'
@@ -3715,7 +3715,7 @@ FS_BODY=(
 '<tr><td>$2.50</td><td>6.5</td><td><b>$0.21</b></td><td>$104</td></tr>'
 '</tbody></table>'
 '<p>Read the top and bottom rows together. Same diesel, same 500 miles, same truck: <b>$216 against $104</b>. Nothing about the freight changed. Only the paperwork did. That spread &mdash; a bit over $0.22 a mile &mdash; is larger than most carriers&rsquo; entire net margin per mile.</p>'
-'<p>Now put it against the market. LoadBoot publishes <a href="market-rates.html">spot rates all-in</a> &mdash; linehaul and fuel combined &mdash; because that is the number that pays your bills. In July 2026 the all-in averages ran about <b>$3.03/mi dry van</b>, <b>$3.39 reefer</b> and <b>$3.72 flatbed</b>. Decompose the van number at a $1.25 peg and 6.0 MPG: $3.03 all-in &minus; $0.43 surcharge = a <b>$2.60 linehaul</b>. That $2.60 is the number to compare against your true cost per mile, and it is the number a broker quoting &ldquo;$3.03&rdquo; is hoping you will not work out.</p>'
+'<p>Now put it against the market. LoadBoot publishes <a href="market-rates.html">spot rates all-in</a> &mdash; linehaul and fuel combined &mdash; because that is the number that pays your bills. In July 2026 the all-in averages ran about <b><a href="dry-van-freight-rates.html">$3.03/mi dry van</a></b>, <b>$3.39 reefer</b> and <b>$3.72 flatbed</b>. Decompose the van number at a $1.25 peg and 6.0 MPG: $3.03 all-in &minus; $0.43 surcharge = a <b>$2.60 linehaul</b>. That $2.60 is the number to compare against your true cost per mile, and it is the number a broker quoting &ldquo;$3.03&rdquo; is hoping you will not work out.</p>'
 
 '<h2 id="gap">Why FSC never covers all your fuel</h2>'
 '<p>Here is the part that catches new authorities. The surcharge is designed to cover the fuel cost <em>above the peg</em>, on <em>loaded miles only</em>. Your truck burns diesel below the peg too, and it burns diesel empty.</p>'
@@ -3837,7 +3837,7 @@ SPOT_BODY=(
 '<h2 id="rates-2026">Where truckload spot rates sit in 2026</h2>'
 '<p>The national benchmarks below are the September 2026 snapshot published on the <a href="market-rates.html">LoadBoot market rates page</a>, which refreshes as new national data lands. The <b>carrier</b> column is what the truck is paid per loaded mile; the <b>shipper</b> column is what the freight sells for once a broker&rsquo;s margin sits on top. Treat them as the centre of a range, not a quote: the same dry van load can clear $2.40 on a backhaul and $3.50 on a tight headhaul the same week.</p>'
 '<table class="cmp"><thead><tr><th>Equipment</th><th>Carrier spot rate (per mile)</th><th>Shipper rate (per mile)</th><th>Typical range to carrier</th></tr></thead><tbody>'
-'<tr><td>Dry van</td><td><b>$2.97</b></td><td>$3.42</td><td>$2.38&ndash;$3.56</td></tr>'
+'<tr><td><a href="dry-van-freight-rates.html">Dry van</a></td><td><b>$2.97</b></td><td>$3.42</td><td>$2.38&ndash;$3.56</td></tr>'
 '<tr><td>Reefer</td><td><b>$3.56</b></td><td>$4.09</td><td>$2.85&ndash;$4.27</td></tr>'
 '<tr><td>Flatbed</td><td><b>$3.54</b></td><td>$4.07</td><td>$2.83&ndash;$4.25</td></tr>'
 '<tr><td>Step deck</td><td><b>$3.59</b></td><td>$4.13</td><td>$2.87&ndash;$4.31</td></tr>'
@@ -3898,7 +3898,7 @@ SPOT_BODY=(
 '<li><b>Price every load on all miles, not loaded miles.</b> A $2.97 load with 100 miles of deadhead on a 500-mile haul pays $2.48 for every mile the truck actually turns. That is the number to compare with your cost, and it is why a $2.75 load with no deadhead can beat a $3.10 load with 150.</li>'
 '<li><b>Separate fuel from linehaul.</b> Ask whether the quote is all-in. If it is, subtract the surcharge to see the real linehaul &mdash; that is the part you are negotiating.</li>'
 '<li><b>Negotiate the accessorials before the rate.</b> Detention after two hours, layover, TONU and lumper terms decide whether an average load is profitable. Get them on the <a href="how-to-read-a-rate-confirmation.html">rate confirmation</a> in numbers, not &ldquo;per industry standard.&rdquo;</li>'
-'<li><b>Use the benchmark as a floor, the lane as a ceiling.</b> A national dry van average of $2.97 is where the conversation starts on an average lane. A tight headhaul out of a busy region should clear well above it; do not accept the average on a lane that is paying a premium this week.</li>'
+'<li><b>Use the benchmark as a floor, the lane as a ceiling.</b> A <a href="dry-van-freight-rates.html">national dry van average</a> of $2.97 is where the conversation starts on an average lane. A tight headhaul out of a busy region should clear well above it; do not accept the average on a lane that is paying a premium this week.</li>'
 '<li><b>Walk away from the backhaul trap.</b> Taking a cheap load home is sometimes right and sometimes the most expensive decision of the month. Run the numbers on waiting a day, repositioning fifty miles, or booking a triangle instead of an out-and-back.</li>'
 '</ol>'
 '<p>A good dispatcher does all six of these on every load, which is what a <a href="how-much-does-a-truck-dispatcher-cost.html">flat 5% dispatch fee</a> buys: on a $1,485 load the fee is about $74, and a single well-negotiated accessorial pays it back. Carriers who prefer to run their own board can apply for a <a href="carrier-application.html">LoadBoot carrier account</a> and use the benchmark and Load Score for free.</p>'
@@ -5711,7 +5711,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '<section class="mrx-hero"><div class="wrap">'
 '<span class="mrx-badge"><i></i>LIVE \u00b7 NATIONAL BENCHMARKS</span>'
 '<h1>Truckload Freight Rates Per Mile \u2014 Live Spot Rates for Carriers, Brokers &amp; Shippers</h1>'
-'<p>Current trucking rates per mile across dry van, reefer, flatbed, power only and hotshot \u2014 blended from <b style="color:#fff">real LoadBoot marketplace bookings</b> and published national benchmarks. See what the truck gets paid, what freight brokers buy and sell at, and what shippers pay \u2014 every side of the spot market on one page. <span id="mrAsOf">Every figure carries its own as-of date.</span></p>'
+'<p>Current trucking rates per mile across <a href="dry-van-freight-rates.html" style="color:#fff;text-decoration:underline">dry van</a>, reefer, flatbed, power only and hotshot \u2014 blended from <b style="color:#fff">real LoadBoot marketplace bookings</b> and published national benchmarks. See what the truck gets paid, what freight brokers buy and sell at, and what shippers pay \u2014 every side of the spot market on one page. <span id="mrAsOf">Every figure carries its own as-of date.</span></p>'
 '<div class="mrx-stats"><div><b>8</b><span>Equipment types</span></div><div><b>3</b><span>Market sides</span></div><div><b>Dated</b><span>Every benchmark</span></div><div><b>Live</b><span>From real bookings</span></div></div>'
 '</div></section>'
 
@@ -5755,7 +5755,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '</div></section>'
 
 '<section class="wrap mrx-sec"><h2>Current rates by equipment type</h2>'
-'<p><b>Dry van rates per mile</b> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight. <b>Power only</b> prices below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand. The live table above carries the date each benchmark was last rebuilt; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
+'<p><a href="dry-van-freight-rates.html"><b>Dry van rates per mile</b></a> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight. <b>Power only</b> prices below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand. The live table above carries the date each benchmark was last rebuilt; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
 
 '<section class="wrap mrx-sec"><h2>How we calculate these freight rates</h2>'
 '<p>Three blended layers, honestly labeled: <b>(1) Real LoadBoot bookings</b> \u2014 actual accepted rates on our marketplace, the strongest signal, refreshed continuously; <b>(2) Published national benchmarks</b> \u2014 published national industry indices, refreshed as new data lands and always shown with their as-of date; <b>(3) Confidence labels</b> \u2014 every lane result says whether it comes from lane-level bookings (HIGH), platform-wide data (MEDIUM) or the national benchmark (LOW). A rate is a guide, not a quote \u2014 but you always know exactly where it came from.</p></section>'
@@ -6243,6 +6243,9 @@ _EQ_SEO_OVERRIDE = {
  'flatbed': dict(
    title='Flatbed Freight Rates Per Mile 2026 \u2014 Current &amp; Average Flatbed Trucking Rates, Cost Per Mile for Carriers, Brokers &amp; Shippers | LoadBoot',
    desc='Current and average flatbed trucking rates per mile in 2026, updated as new national data lands: flatbed cost per mile for the carrier, what brokers buy and sell at, what shippers pay, plus lane examples, seasonality and the accessorials that move the real number.'),
+ # Phase 2 ledger 2026-09-25 (dry-van, desc only; title locked - clicks growing). Figures = get_public_market_rates() as_of 2026-09-18.
+ 'dry-van': dict(
+   desc='Dry van rates per mile, September 2026: $3.03/mi average to the carrier, $3.48 shipper side, $2.42\u2013$3.64 typical range \u2014 current national dry van freight rates, updated as new data lands. What brokers buy and sell at, lane examples, seasonality and the accessorials that move the real number.'),
 }
 for _eq in _EQ_RATES:
     _n, _s = _eq['name'], _eq['slug']
@@ -8471,8 +8474,8 @@ _ACC_PAGES.append(dict(slug='emergency-rescheduling-policy', name='Emergency Res
 # ---- "broker refuses" escalation, FAQ schema, conversion CTA. (2026 keyword research)
 _ACC_SEO = {
  'detention-pay-policy': dict(
-   title='Detention Pay for Truckers 2026: How Much Is It \u2014 $50\u2013$100/Hour, Detention Charges in Trucking &amp; How to Claim | LoadBoot',
-   desc='How much is detention pay? Detention charges in trucking run $50\u2013$100/hr in 2026, after 2 hours of free time. Exactly how to claim detention pay, what evidence to collect, what to do when a broker refuses \u2014 plus how LoadBoot pays it automatically.',
+   title='Detention Pay for Truckers 2026: How Much Is Detention Pay Per Hour, What It Means, Detention Charges in Trucking &amp; How to Claim | LoadBoot',
+   desc='How much is detention pay for truckers? What detention pay means, the per-hour detention charges in trucking once free time runs out in 2026, exactly how to claim it, what evidence to collect, what to do when a broker refuses \u2014 and how LoadBoot pays $60/hr after 2 free hours, automatically.',
    ev=['Timestamped photo of your truck AT the gate on arrival (phone camera puts time + GPS in the file)',
        'The appointment time straight off the rate confirmation \u2014 on-time arrival is the foundation of every claim',
        'GPS arrive/depart stamps (ELD or the LoadBoot app records them for you)',
