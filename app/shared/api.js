@@ -1602,3 +1602,17 @@ export const ccInvPostUpdate  = (p) => rpc('cc_inv_post_update', { p });
 export const ccInvUpdates     = (limit) => rpc('cc_inv_updates', { p_limit: limit || 50 });
 // 0408 — attachments on capital requests (invoice / quote / screenshot)
 export const ccInvRequestAttach = (id, attachments) => rpc('cc_inv_request_attach', { p_request: id, p_attachments: attachments });
+
+// ---- Market data (bl_mkt_0442–0445, 25 Sep 2026): the CC "Market rates" screen. Every write is staff-only
+// server-side (settings.manage / content.publish / seo.manage) and rebuilds the public site through the hook.
+export const siteFacts = () => rpc('cc_site_facts');
+export const siteFactSet = (key, value, opts) => rpc('cc_site_fact_set', { p_key: key, p_value: value, p_opts: opts || {} });
+export const siteRebuild = (reason) => rpc('cc_site_rebuild', { p_reason: reason || 'manual' });
+export const sitePublishConfigSet = (url, enabled) => rpc('cc_site_publish_config_set', { p_url: url || null, p_enabled: enabled !== false });
+export const marketRatesPreview = (van, reefer, flatbed) => rpc('cc_market_rates_preview', { p_dry_van: van, p_reefer: reefer, p_flatbed: flatbed });
+export const marketRatesPublish = (van, reefer, flatbed, week, source, confirmed) =>
+  rpc('cc_market_rates_publish', { p_dry_van: van, p_reefer: reefer, p_flatbed: flatbed, p_week: week, p_source: source || null, p_confirmed: !!confirmed });
+export const dieselPullNow = () => rpc('cc_diesel_pull_now');
+export const dieselSet = (region, usdGal, asOf) => rpc('cc_diesel_set', { p_region: region, p_usd_gal: usdGal, p_as_of: asOf || null });
+export const dieselConfigSet = (url, anon, token) => rpc('cc_diesel_config_set', { p_function_url: url || null, p_anon_key: anon || null, p_worker_token: token || null });
+export const dieselWorkerToken = () => rpc('cc_diesel_worker_token');
