@@ -1,0 +1,94 @@
+{
+ "_note": "Last good read of public.get_public_market_rates(). build_site.py uses this ONLY when the build-time read fails; refresh_rate_snapshot.py rewrites it on every successful fetch. Figures carry their own as_of.",
+ "fetched": "2026-09-25",
+ "rows": [
+  {
+   "low": 2.06,
+   "high": 3.1,
+   "as_of": "2026-09-18",
+   "source": "National industry benchmarks (Sep 2026)",
+   "equipment": "Box Truck",
+   "carrier_rpm": 2.58,
+   "shipper_rpm": 2.97,
+   "broker_buy_rpm": 2.58,
+   "broker_sell_rpm": 2.97
+  },
+  {
+   "low": 2.98,
+   "high": 4.46,
+   "as_of": "2026-09-18",
+   "source": "National industry benchmarks (Sep 2026)",
+   "equipment": "Conestoga",
+   "carrier_rpm": 3.72,
+   "shipper_rpm": 4.28,
+   "broker_buy_rpm": 3.72,
+   "broker_sell_rpm": 4.28
+  },
+  {
+   "low": 2.42,
+   "high": 3.64,
+   "as_of": "2026-09-18",
+   "source": "National industry benchmarks (Sep 2026)",
+   "equipment": "Dry Van",
+   "carrier_rpm": 3.03,
+   "shipper_rpm": 3.48,
+   "broker_buy_rpm": 3.03,
+   "broker_sell_rpm": 3.48
+  },
+  {
+   "low": 2.9,
+   "high": 4.34,
+   "as_of": "2026-09-18",
+   "source": "National industry benchmarks (Sep 2026)",
+   "equipment": "Flatbed",
+   "carrier_rpm": 3.62,
+   "shipper_rpm": 4.16,
+   "broker_buy_rpm": 3.62,
+   "broker_sell_rpm": 4.16
+  },
+  {
+   "low": 1.8,
+   "high": 3.5,
+   "as_of": "2026-09-18",
+   "source": "National industry benchmarks (Sep 2026)",
+   "equipment": "Hotshot",
+   "carrier_rpm": 2.41,
+   "shipper_rpm": 2.77,
+   "broker_buy_rpm": 2.41,
+   "broker_sell_rpm": 2.77
+  },
+  {
+   "low": 1.8,
+   "high": 3.5,
+   "as_of": "2026-09-18",
+   "source": "National industry benchmarks (Sep 2026)",
+   "equipment": "Power Only",
+   "carrier_rpm": 2.58,
+   "shipper_rpm": 2.97,
+   "broker_buy_rpm": 2.58,
+   "broker_sell_rpm": 2.97
+  },
+  {
+   "low": 2.93,
+   "high": 4.39,
+   "as_of": "2026-09-18",
+   "source": "National industry benchmarks (Sep 2026)",
+   "equipment": "Reefer",
+   "carrier_rpm": 3.66,
+   "shipper_rpm": 4.21,
+   "broker_buy_rpm": 3.66,
+   "broker_sell_rpm": 4.21
+  },
+  {
+   "low": 2.94,
+   "high": 4.4,
+   "as_of": "2026-09-18",
+   "source": "National industry benchmarks (Sep 2026)",
+   "equipment": "Step Deck",
+   "carrier_rpm": 3.67,
+   "shipper_rpm": 4.22,
+   "broker_buy_rpm": 3.67,
+   "broker_sell_rpm": 4.22
+  }
+ ]
+}

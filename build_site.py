@@ -604,13 +604,13 @@ RELATED = {
  'carriers.html':           [('carrier-application.html','Apply as Carrier'),('services.html','All Services'),('pricing.html','Pricing'),('tools.html','Free Trucking Tools'),('faq.html','FAQ')],
  'brokers.html':            [('partners.html','Partner Portal'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('how-it-works.html','How It Works')],
  'shipper-solutions.html':  [('brokers.html','For Brokers'),('partners.html','Partner Portal'),('security.html','Security & Trust'),('contact.html','Contact'),('faq.html','FAQ')],
- 'services.html':           [('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('case-studies.html','Example Dispatch Scenarios')],
+ 'services.html':           [('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('case-studies.html','Example Dispatch Scenarios'),('otr-dispatch.html','OTR Dispatch'),('regional-truck-dispatch.html','Regional Dispatch'),('local-truck-dispatch.html','Local &amp; Short-Haul Dispatch')],
  'pricing.html':            [('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('carriers.html','For Carriers')],
  'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
  'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('agents.html','Referral Program')],
  'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
  'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('truckload-freight-rates.html','Truckload Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('load-score.html','Load Score'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
- 'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority')],
+ 'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority'),('do-new-authority-carriers-need-a-dispatcher.html','Do New Authorities Need a Dispatcher?')],
  'case-studies.html':       [('carriers.html','For Carriers'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('pricing.html','Pricing')],
  'authority-dot-setup.html':[('new-authority-dispatch.html','New Authority Dispatch'),('boc3-ucr.html','BOC-3 / UCR Guide'),('form-2290-hvut.html','Form 2290 (HVUT)'),('ifta-fuel-tax.html','IFTA Guide'),('carrier-application.html','Apply as Carrier')],
  'boc3-ucr.html':[('authority-dot-setup.html','Authority & DOT Setup'),('ifta-fuel-tax.html','IFTA Guide'),('form-2290-hvut.html','Form 2290 (HVUT)'),('new-authority-dispatch.html','New Authority Dispatch'),('carriers.html','For Carriers')],
@@ -619,11 +619,11 @@ RELATED = {
  'resources.html':          [('blog.html','Blog'),('tools.html','Free Trucking Tools'),('faq.html','FAQ'),('how-to-get-loads-with-new-authority.html','New Authority Guide'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
  'us-truck-dispatcher.html':[('owner-operator-dispatch.html','Owner-Operator Dispatch'),('new-authority-dispatch.html','New-Authority Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker'),('careers.html','Become a Dispatcher'),('carriers.html','For Carriers')],
  'how-much-does-a-truck-dispatcher-cost.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker'),('pricing.html','Pricing'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('carriers.html','For Carriers')],
- 'truck-dispatcher-vs-freight-broker.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('compliance.html','Compliance & Verification'),('carriers.html','For Carriers')],
+ 'truck-dispatcher-vs-freight-broker.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('compliance.html','Compliance & Verification'),('carriers.html','For Carriers'),('truck-dispatcher-vs-dispatch-software.html','Dispatcher vs Dispatch Software'),('do-new-authority-carriers-need-a-dispatcher.html','Do New Authorities Need a Dispatcher?')],
  'do-new-authority-carriers-need-a-dispatcher.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('new-authority-dispatch.html','New-Authority Dispatch'),('how-to-get-loads-with-new-authority.html','Getting Loads with New Authority'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('carriers.html','For Carriers')],
- 'owner-operator-dispatch-service-guide.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('pricing.html','Pricing'),('carriers.html','For Carriers')],
- 'truck-dispatcher-in-california.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('truck-dispatcher-in-texas.html','Texas Dispatch'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('carriers.html','For Carriers')],
- 'truck-dispatcher-in-texas.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('truck-dispatcher-in-california.html','California Dispatch'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('carriers.html','For Carriers')],
+ 'owner-operator-dispatch-service-guide.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('pricing.html','Pricing'),('carriers.html','For Carriers'),('ai-dispatch-for-owner-operators.html','AI Dispatch for Owner-Operators'),('should-i-buy-a-truck-before-2027-epa-rule.html','Buy a Truck Before the 2027 EPA Rule?')],
+ 'truck-dispatcher-in-california.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('truck-dispatcher-in-texas.html','Texas Dispatch'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('carriers.html','For Carriers'),('truck-dispatcher-in-georgia.html','Georgia &amp; Southeast Dispatch')],
+ 'truck-dispatcher-in-texas.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('truck-dispatcher-in-california.html','California Dispatch'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('carriers.html','For Carriers'),('truck-dispatcher-in-georgia.html','Georgia &amp; Southeast Dispatch')],
  'truck-dispatcher-in-georgia.html':[('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher'),('truck-dispatcher-in-texas.html','Texas Dispatch'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('carriers.html','For Carriers')],
 }
 
@@ -1278,6 +1278,81 @@ HOME_RATES_JS = ("<script>(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD
  "if(p)p.textContent='$'+Number(b.carrier_rpm).toFixed(2)+'/mi';if(r2)r2.textContent='range $'+Number(b.low).toFixed(2)+'\u2013'+Number(b.high).toFixed(2);});"
  "var a=document.getElementById('hmrAsOf');if(a&&asof)a.textContent='National spot averages, all-in linehaul per mile \u00b7 updated '+asof;"
  "}).catch(function(){});})();</script>")
+
+# ---- Build-time read of the live benchmark (SEO ledger notes b + e, 25 Sep 2026) ----
+# spot-market-freight-rates, truckload-freight-rates and the market-rates FAQ used to hard-code
+# "September 2026" figures that drifted from the live table inside the same month ($2.97 printed
+# while get_public_market_rates() read $3.03). They now print whatever the RPC returns at build
+# time. The RPC is STABLE, SECURITY DEFINER, anon-executable, and only SELECTs from
+# app_private.rate_benchmarks (checked 25 Sep 2026) - the same public read every visitor's browser
+# already makes on the homepage, so a preview/local build reading production here writes nothing.
+# If the read fails the build uses market_rates_fallback.json (the last good read, refreshed by
+# refresh_rate_snapshot.py) and says so loudly. Either way every figure carries its own as_of.
+# LOADBOOT_RATES_OFFLINE=1 skips the network read.
+_MR_EQS = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Conestoga', 'Power Only', 'Box Truck', 'Hotshot']
+def _mr_valid(rows):
+    by = {r.get('equipment'): r for r in (rows or []) if isinstance(r, dict)}
+    for e in _MR_EQS:
+        r = by.get(e)
+        if not r or not r.get('as_of'):
+            return None
+        try:
+            for k in ('carrier_rpm', 'shipper_rpm', 'low', 'high'):
+                r[k] = float(r[k])
+        except (TypeError, ValueError, KeyError):
+            return None
+    return by
+def _mr_load():
+    if os.environ.get('LOADBOOT_RATES_OFFLINE') != '1':
+        try:
+            import urllib.request
+            _req = urllib.request.Request('https://%s.supabase.co/rest/v1/rpc/get_public_market_rates' % PROD_REF,
+                data=b'{}', headers={'apikey': PROD_ANON, 'Authorization': 'Bearer ' + PROD_ANON,
+                                     'Content-Type': 'application/json'})
+            with urllib.request.urlopen(_req, timeout=20) as _r:
+                _by = _mr_valid(json.loads(_r.read().decode('utf-8')))
+            if _by:
+                return _by, 'live'
+            print('market rates: live read returned incomplete rows - using fallback')
+        except Exception as _ex:
+            print('market rates: live read FAILED (%s) - using fallback' % _ex)
+    with open(os.path.join(SRC, 'market_rates_fallback.json'), encoding='utf-8') as _f:
+        _fb = json.load(_f)
+    _by = _mr_valid(_fb.get('rows'))
+    if not _by:
+        sys.exit('BUILD REFUSED - market_rates_fallback.json is incomplete and the live read failed.')
+    return _by, 'fallback (fetched %s)' % _fb.get('fetched', '?')
+_MR_LIVE, _MR_FROM = _mr_load()
+_MR_ASOF = max(r['as_of'] for r in _MR_LIVE.values())
+_MR_MONTH = __import__('datetime').date.fromisoformat(_MR_ASOF).strftime('%B %Y')
+print('market rates: %s, as_of %s, dry van $%.2f' % (_MR_FROM, _MR_ASOF, _MR_LIVE['Dry Van']['carrier_rpm']))
+def _mrc(e): return _MR_LIVE[e]['carrier_rpm']
+def _mrs(e): return _MR_LIVE[e]['shipper_rpm']
+def _mrrow(e, label):   # one benchmark table row: equipment | carrier | shipper | low-high
+    r = _MR_LIVE[e]
+    return ('<tr><td>%s</td><td><b>$%.2f</b></td><td>$%.2f</td><td>$%.2f&ndash;$%.2f</td></tr>'
+            % (label, r['carrier_rpm'], r['shipper_rpm'], r['low'], r['high']))
+def _money(n): return '$' + format(int(round(n)), ',')
+_MR_MARKUP = int(round((_mrs('Dry Van') / _mrc('Dry Van') - 1) * 100))   # shipper over carrier, dry van
+def _d(x): return '$%.2f' % x
+# market-rates.html FAQ 'average trucking rate per mile right now' - visible text and FAQPage schema from one source
+_MR_FAQ_AVG = ('National benchmark averages paid to the carrier, as of %s: dry van %s per mile (range %s to %s), reefer %s (%s to %s) and flatbed %s (%s to %s). '
+    % tuple([_MR_ASOF] + [v for _e in ('Dry Van', 'Reefer', 'Flatbed') for v in (_d(_mrc(_e)), _d(_MR_LIVE[_e]['low']), _d(_MR_LIVE[_e]['high']))]))
+_MR_FAQ_AVG_HTML = _MR_FAQ_AVG + 'Shippers pay roughly %d%% more once a broker margin is added. The live table above shows the current figure for all eight equipment types and each market side.' % _MR_MARKUP
+_MR_FAQ_AVG_TXT = _MR_FAQ_AVG + 'Shippers pay roughly %d%% more once a broker margin is added. Lane, direction and season move a real quote more than the national average; the live table on this page shows the date each benchmark was last updated.' % _MR_MARKUP
+# spot page worked example: 500 loaded mi + 100 deadhead at ~$2.25/mi operating cost
+_SP_SELL, _SP_BUY = 500 * _mrs('Dry Van'), 500 * _mrc('Dry Van')
+_SP_NET = _SP_BUY - 600 * 2.25
+_SP_ALLMI = _SP_BUY / 600
+_SP_PREM = [_mrc(e) - _mrc('Dry Van') for e in ('Reefer', 'Flatbed', 'Step Deck')]
+_SP_SPREAD = _MR_LIVE['Dry Van']['high'] - _MR_LIVE['Dry Van']['low']
+def _sp_mgn(buy): return int(round((_mrs('Dry Van') - buy) / _mrs('Dry Van') * 100))
+# truckload page worked example: 800 loaded mi + 12% deadhead (896 mi) at $2.25
+_TL_SELL, _TL_BUY = 800 * _mrs('Dry Van'), 800 * _mrc('Dry Van')
+_TL_GROSS = _TL_BUY - 896 * 2.25
+def _tl_share():   # what one unpaid 3-hour detention ($180) does to that gross
+    if _TL_GROSS <= 180: return '<b>all</b> of the gross on the whole trip, and more'
+    return '<b>about %d%%</b> of the gross on the whole trip' % round(180 / _TL_GROSS * 100)
 
 # Public announcement bar — fetches active audience='public' announcements (get_active_public_announcements,
 # anon-granted) and renders a dismissible top bar. Emergencies show first in red. Dismissal is per-announcement
@@ -3616,7 +3691,7 @@ SW_FAQ=[
  ('How do I find carriers without a broker?', 'Post to a direct-shipper load board or a verified marketplace where carriers see and accept your freight. On LoadBoot, posting is free and every carrier is verified for you &mdash; see <a href="ship-direct-to-carrier.html">ship direct to carriers</a>.'),
  ('Can I ship direct on some lanes and use a broker on others?', 'Absolutely, and most smart shippers do. Go direct on your steady, known lanes to keep the margin, and lean on a licensed broker for unusual, oversized or one-off freight where risk absorption is worth the markup.'),
 ]
-RELATED['how-to-ship-without-a-broker.html'] = [('ship-direct-to-carrier.html','Ship Direct to Carriers'),('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('brokers.html','For Brokers'),('features.html','All Features'),('gps-tracking.html','GPS Tracking &amp; Proof')]
+RELATED['how-to-ship-without-a-broker.html'] = [('ship-direct-to-carrier.html','Ship Direct to Carriers'),('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('brokers.html','For Brokers'),('features.html','All Features'),('gps-tracking.html','GPS Tracking &amp; Proof'),('full-truckload-vs-ltl.html','FTL vs LTL vs Partial')]
 rich_article('how-to-ship-without-a-broker.html',
  'How to Ship Freight Without a Broker: Step-by-Step Guide',
  'How to ship freight directly to carriers without a broker: what a broker really does, the risks of going direct, a step-by-step process to do it safely, and how to keep the 15&ndash;20% savings without the fraud risk.',
@@ -3879,7 +3954,7 @@ SPOT_TOC=[('what-is','What a spot rate actually is'),('spot-vs-contract','Spot r
  ('carriers','For carriers: negotiating against the spot rate'),('brokers-shippers','For brokers &amp; shippers: when to go spot, and when not to')]
 SPOT_BODY=(
 '<p>Every load board, every rate confirmation and every &ldquo;what can you do it for?&rdquo; phone call is really about one number: the <b>spot rate</b>. It is the price of one truck, on one lane, this week &mdash; and it is the most quoted, least understood figure in trucking. Carriers accept it without knowing what it is benchmarked against. Brokers quote it as if it were fixed. Shippers discover it only when their contract carrier stops showing up. This guide explains what spot market freight rates are, how they differ from contract rates, where truckload spot rates sit in 2026, what moves them week to week, where to find them, and how each side of the load should negotiate against them.</p>'
-'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: a <b>spot rate</b> is the one-time price agreed for a single load moved now, set by how many trucks and how many loads are on that lane this week. A <b>contract rate</b> is a price agreed in advance for a lane over months. In the September 2026 national snapshot on the <a href="market-rates.html">LoadBoot market rates page</a>, the spot benchmark to the carrier runs about <b>$2.97/mile dry van</b>, <b>$3.54 flatbed</b> and <b>$3.56 reefer</b> &mdash; with brokers selling the same freight to shippers roughly 15% higher. Those numbers move every week; the mechanics below do not.</div></div>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: a <b>spot rate</b> is the one-time price agreed for a single load moved now, set by how many trucks and how many loads are on that lane this week. A <b>contract rate</b> is a price agreed in advance for a lane over months. In the national benchmark on the <a href="market-rates.html">LoadBoot market rates page</a> (as of ' + _MR_ASOF + '), the spot benchmark to the carrier runs about <b>' + _d(_mrc('Dry Van')) + '/mile dry van</b>, <b>' + _d(_mrc('Flatbed')) + ' flatbed</b> and <b>' + _d(_mrc('Reefer')) + ' reefer</b> &mdash; with brokers selling the same freight to shippers roughly ' + str(_MR_MARKUP) + '% higher. Those numbers move every week; the mechanics below do not.</div></div>'
 
 '<h2 id="what-is">What a spot rate actually is</h2>'
 '<p>&ldquo;Spot&rdquo; comes from the commodity markets: a spot price is the price for delivery <em>on the spot</em>, today, as opposed to a futures price agreed for later. In trucking the spot market is the pool of loads that are not covered by a standing agreement &mdash; freight that a shipper or broker has to place with whatever truck is available this week, at whatever that truck will accept. The rate that clears that transaction is the spot rate.</p>'
@@ -3904,18 +3979,13 @@ SPOT_BODY=(
 '<p>The relationship between the two is a cycle. In a soft market spot sits <em>below</em> contract, brokers buy cheap capacity and shippers wonder why they agreed to their routing guide. In a tight market spot sits <em>above</em> contract, tender rejections climb, and shippers pay spot anyway on the freight their contract carriers turn down. Most owner-operators live entirely in the spot market, which means their income tracks that cycle with no cushion &mdash; the reason a <a href="cost-per-mile-calculator.html">cost-per-mile floor</a> matters more to them than to anyone else in the chain.</p>'
 
 '<h2 id="rates-2026">Where truckload spot rates sit in 2026</h2>'
-'<p>The national benchmarks below are the September 2026 snapshot published on the <a href="market-rates.html">LoadBoot market rates page</a>, which refreshes as new national data lands. The <b>carrier</b> column is what the truck is paid per loaded mile; the <b>shipper</b> column is what the freight sells for once a broker&rsquo;s margin sits on top. Treat them as the centre of a range, not a quote: the same dry van load can clear $2.40 on a backhaul and $3.50 on a tight headhaul the same week.</p>'
+'<p>The national benchmarks below are the ' + _MR_MONTH + ' figures (as of ' + _MR_ASOF + ') published on the <a href="market-rates.html">LoadBoot market rates page</a>, read when this page was built. That page refreshes as new national data lands. The <b>carrier</b> column is what the truck is paid per loaded mile; the <b>shipper</b> column is what the freight sells for once a broker&rsquo;s margin sits on top. Treat them as the centre of a range, not a quote: the same dry van load can clear $2.40 on a backhaul and $3.50 on a tight headhaul the same week.</p>'
 '<table class="cmp"><thead><tr><th>Equipment</th><th>Carrier spot rate (per mile)</th><th>Shipper rate (per mile)</th><th>Typical range to carrier</th></tr></thead><tbody>'
-'<tr><td><a href="dry-van-freight-rates.html">Dry van</a></td><td><b>$2.97</b></td><td>$3.42</td><td>$2.38&ndash;$3.56</td></tr>'
-'<tr><td>Reefer</td><td><b>$3.56</b></td><td>$4.09</td><td>$2.85&ndash;$4.27</td></tr>'
-'<tr><td>Flatbed</td><td><b>$3.54</b></td><td>$4.07</td><td>$2.83&ndash;$4.25</td></tr>'
-'<tr><td>Step deck</td><td><b>$3.59</b></td><td>$4.13</td><td>$2.87&ndash;$4.31</td></tr>'
-'<tr><td>Conestoga</td><td><b>$3.64</b></td><td>$4.19</td><td>$2.91&ndash;$4.37</td></tr>'
-'<tr><td>Power only</td><td><b>$2.52</b></td><td>$2.90</td><td>$1.80&ndash;$3.50</td></tr>'
-'<tr><td>Box truck</td><td><b>$2.52</b></td><td>$2.90</td><td>$2.02&ndash;$3.02</td></tr>'
-'<tr><td>Hotshot</td><td><b>$2.35</b></td><td>$2.70</td><td>$1.80&ndash;$3.50</td></tr>'
++_mrrow('Dry Van','<a href="dry-van-freight-rates.html">Dry van</a>')+_mrrow('Reefer','Reefer')+_mrrow('Flatbed','Flatbed')
++_mrrow('Step Deck','Step deck')+_mrrow('Conestoga','Conestoga')+_mrrow('Power Only','Power only')
++_mrrow('Box Truck','Box truck')+_mrrow('Hotshot','Hotshot')+
 '</tbody></table>'
-'<p>Two things to read out of that table. First, the <b>equipment premium</b>: reefer, flatbed and step deck sit roughly $0.55&ndash;$0.65 a mile above dry van, because the trailer costs more, the freight needs more skill (tarping, securement, temperature control) and fewer trucks compete for it. Second, the <b>range is wider than the average</b>: a $1.20 spread between low and high on dry van means the lane, the day of the week and the negotiation matter as much as the market. Each equipment type has its own live hub &mdash; <a href="dry-van-freight-rates.html">dry van</a>, <a href="reefer-freight-rates.html">reefer</a>, <a href="flatbed-freight-rates.html">flatbed</a>, <a href="hotshot-freight-rates.html">hotshot</a>, <a href="power-only-freight-rates.html">power only</a> &mdash; with lane examples and seasonality.</p>'
+'<p>Two things to read out of that table. First, the <b>equipment premium</b>: reefer, flatbed and step deck sit roughly ' + _d(min(_SP_PREM)) + '&ndash;' + _d(max(_SP_PREM)) + ' a mile above dry van, because the trailer costs more, the freight needs more skill (tarping, securement, temperature control) and fewer trucks compete for it. Second, the <b>range is wider than the average</b>: a ' + _d(_SP_SPREAD) + ' spread between low and high on dry van means the lane, the day of the week and the negotiation matter as much as the market. Each equipment type has its own live hub &mdash; <a href="dry-van-freight-rates.html">dry van</a>, <a href="reefer-freight-rates.html">reefer</a>, <a href="flatbed-freight-rates.html">flatbed</a>, <a href="hotshot-freight-rates.html">hotshot</a>, <a href="power-only-freight-rates.html">power only</a> &mdash; with lane examples and seasonality.</p>'
 +svc_banner('See this week&rsquo;s spot benchmark before you quote or accept',
   'The LoadBoot market rates page shows the carrier rate, the broker buy and sell, and the shipper rate for every equipment type &mdash; free, no login, refreshed as national data lands.',
   'Open live market rates','market-rates.html')+
@@ -3924,14 +3994,14 @@ SPOT_BODY=(
 '<p>There is never one spot rate on a load; there are at least two. The <b>buy rate</b> is what the broker pays the carrier. The <b>sell rate</b> is what the broker charges the shipper. The gap is the broker&rsquo;s gross margin, and it is where most of the mistrust in spot freight lives &mdash; because the carrier only ever sees one side of it.</p>'
 '<p>On the LoadBoot benchmark the shipper rate sits about <b>15% above the carrier rate</b>. On a 500-mile dry van load at the September 2026 figures, that looks like this:</p>'
 '<table class="cmp"><thead><tr><th>Line</th><th>Per mile</th><th>500-mile load</th></tr></thead><tbody>'
-'<tr><td>Shipper pays (sell rate)</td><td>$3.42</td><td><b>$1,710</b></td></tr>'
-'<tr><td>Broker gross margin (~15%)</td><td>$0.45</td><td>$225</td></tr>'
-'<tr><td>Carrier is paid (buy rate)</td><td>$2.97</td><td><b>$1,485</b></td></tr>'
+'<tr><td>Shipper pays (sell rate)</td><td>' + _d(_mrs('Dry Van')) + '</td><td><b>' + _money(_SP_SELL) + '</b></td></tr>'
+'<tr><td>Broker gross margin (~' + str(_MR_MARKUP) + '%)</td><td>' + _d(_mrs('Dry Van') - _mrc('Dry Van')) + '</td><td>' + _money(_SP_SELL - _SP_BUY) + '</td></tr>'
+'<tr><td>Carrier is paid (buy rate)</td><td>' + _d(_mrc('Dry Van')) + '</td><td><b>' + _money(_SP_BUY) + '</b></td></tr>'
 '<tr><td>Carrier operating cost (ATRI $2.20&ndash;$2.30/mi, incl. 100 mi deadhead = 600 mi)</td><td>~$2.25</td><td>~$1,350</td></tr>'
-'<tr><td>Carrier margin before accessorials</td><td>&mdash;</td><td><b>~$135</b></td></tr>'
+'<tr><td>Carrier margin before accessorials</td><td>&mdash;</td><td><b>~' + ('&minus;' if _SP_NET < 0 else '') + _money(abs(_SP_NET)) + '</b></td></tr>'
 '</tbody></table>'
-'<p>Read the bottom row twice. At an average spot rate, on an average lane, with a normal amount of deadhead, the truck clears about $135 on a $1,710 load &mdash; and that is before a single hour of <a href="detention-pay-policy.html">detention</a>, a <a href="lumper-policy.html">lumper</a> or a cancelled pickup. It is why accessorials are not extras in the spot market; they are the margin. A single unpaid two-hour detention at $60/hour, or one <a href="tonu-policy.html">TONU</a> the broker &ldquo;forgets&rdquo;, wipes out the profit on the whole trip.</p>'
-'<p>Broker margins in the wider market are not fixed at 15%. On contract freight they tend to sit in the low-to-mid teens; on spot freight they swing much wider, because the broker committed a sell rate to the shipper before knowing what a truck would cost that day. A broker who priced a load at $3.42 on Monday and can only find a truck at $3.20 on Thursday made 6%. A broker who finds one at $2.60 made 24% &mdash; and the carrier who took $2.60 will never know. The LoadBoot benchmark exists to close exactly that information gap: both sides see the same buy and sell figures before anyone commits. Referral partners who introduce a carrier or a broker earn <a href="agents.html">1% of the freight that follows</a>, which only works if the freight is priced so that everyone stays in business.</p>'
+'<p>Read the bottom row twice. At an average spot rate, on an average lane, with a normal amount of deadhead, the truck ' + ('clears about ' if _SP_NET >= 0 else 'loses about ') + _money(abs(_SP_NET)) + ' on a ' + _money(_SP_SELL) + ' load &mdash; and that is before a single hour of <a href="detention-pay-policy.html">detention</a>, a <a href="lumper-policy.html">lumper</a> or a cancelled pickup. It is why accessorials are not extras in the spot market; they are the margin. A single unpaid two-hour detention at $60/hour, or one <a href="tonu-policy.html">TONU</a> the broker &ldquo;forgets&rdquo;, wipes out the profit on the whole trip.</p>'
+'<p>Broker margins in the wider market are not fixed at 15%. On contract freight they tend to sit in the low-to-mid teens; on spot freight they swing much wider, because the broker committed a sell rate to the shipper before knowing what a truck would cost that day. A broker who priced a load at ' + _d(_mrs('Dry Van')) + ' on Monday and can only find a truck at $3.20 on Thursday made ' + str(_sp_mgn(3.20)) + '%. A broker who finds one at $2.60 made ' + str(_sp_mgn(2.60)) + '% &mdash; and the carrier who took $2.60 will never know. The LoadBoot benchmark exists to close exactly that information gap: both sides see the same buy and sell figures before anyone commits. Referral partners who introduce a carrier or a broker earn <a href="agents.html">1% of the freight that follows</a>, which only works if the freight is priced so that everyone stays in business.</p>'
 
 '<h2 id="drivers">What moves spot market freight rates week to week</h2>'
 '<p>The spot rate is a supply-and-demand price, so anything that changes the number of trucks or the number of loads on a lane moves it. The recurring drivers, in rough order of how much they matter:</p>'
@@ -3964,13 +4034,13 @@ SPOT_BODY=(
 '<p>An owner-operator lives on spot rates, so the negotiation is the job. The discipline is not &ldquo;get the highest number&rdquo; &mdash; it is <em>know your floor, know the market, and never confuse the two</em>.</p>'
 '<ol>'
 '<li><b>Know your cost per mile before you look at a board.</b> Fuel, truck payment, insurance, maintenance, driver pay (or your own), and the empty miles to reach the pickup. The <a href="cost-per-mile-calculator.html">cost-per-mile calculator</a> does this in a minute; the industry average sits around $2.20&ndash;$2.30 per mile, but yours is the only one that matters.</li>'
-'<li><b>Price every load on all miles, not loaded miles.</b> A $2.97 load with 100 miles of deadhead on a 500-mile haul pays $2.48 for every mile the truck actually turns. That is the number to compare with your cost, and it is why a $2.75 load with no deadhead can beat a $3.10 load with 150.</li>'
+'<li><b>Price every load on all miles, not loaded miles.</b> A ' + _d(_mrc('Dry Van')) + ' load with 100 miles of deadhead on a 500-mile haul pays ' + _d(_SP_ALLMI) + ' for every mile the truck actually turns. That is the number to compare with your cost, and it is why a $2.75 load with no deadhead can beat a $3.10 load with 150.</li>'
 '<li><b>Separate fuel from linehaul.</b> Ask whether the quote is all-in. If it is, subtract the surcharge to see the real linehaul &mdash; that is the part you are negotiating.</li>'
 '<li><b>Negotiate the accessorials before the rate.</b> Detention after two hours, layover, TONU and lumper terms decide whether an average load is profitable. Get them on the <a href="how-to-read-a-rate-confirmation.html">rate confirmation</a> in numbers, not &ldquo;per industry standard.&rdquo;</li>'
-'<li><b>Use the benchmark as a floor, the lane as a ceiling.</b> A <a href="dry-van-freight-rates.html">national dry van average</a> of $2.97 is where the conversation starts on an average lane. A tight headhaul out of a busy region should clear well above it; do not accept the average on a lane that is paying a premium this week.</li>'
+'<li><b>Use the benchmark as a floor, the lane as a ceiling.</b> A <a href="dry-van-freight-rates.html">national dry van average</a> of ' + _d(_mrc('Dry Van')) + ' is where the conversation starts on an average lane. A tight headhaul out of a busy region should clear well above it; do not accept the average on a lane that is paying a premium this week.</li>'
 '<li><b>Walk away from the backhaul trap.</b> Taking a cheap load home is sometimes right and sometimes the most expensive decision of the month. Run the numbers on waiting a day, repositioning fifty miles, or booking a triangle instead of an out-and-back.</li>'
 '</ol>'
-'<p>A good dispatcher does all six of these on every load, which is what a <a href="how-much-does-a-truck-dispatcher-cost.html">flat 5% dispatch fee</a> buys: on a $1,485 load the fee is about $74, and a single well-negotiated accessorial pays it back. Carriers who prefer to run their own board can apply for a <a href="carrier-application.html">LoadBoot carrier account</a> and use the benchmark and Load Score for free.</p>'
+'<p>A good dispatcher does all six of these on every load, which is what a <a href="how-much-does-a-truck-dispatcher-cost.html">flat 5% dispatch fee</a> buys: on a ' + _money(_SP_BUY) + ' load the fee is about ' + _money(_SP_BUY * 0.05) + ', and a single well-negotiated accessorial pays it back. Carriers who prefer to run their own board can apply for a <a href="carrier-application.html">LoadBoot carrier account</a> and use the benchmark and Load Score for free.</p>'
 
 '<h2 id="brokers-shippers">For brokers &amp; shippers: when to go spot, and when not to</h2>'
 '<p>For a shipper, spot freight is not good or bad; it is a tool with a cost profile. It is the right tool for surge volume, one-off moves, lanes too thin to bid, and any week the contract carriers are rejecting tenders. It is the wrong tool for steady, predictable lanes in a rising market, where it will cost more every week and the service will get worse as capacity tightens. A routing guide with a spot backstop &mdash; contracted primaries, a broker or a direct carrier pool for the overflow &mdash; is how most freight actually moves.</p>'
@@ -3981,14 +4051,14 @@ SPOT_BODY=(
 '<li><b>Pay on the record.</b> GPS-stamped arrival and departure times settle detention in minutes; a signed, dated rate confirmation settles everything else. Brokers who pay accessorials promptly get first call on capacity when the market turns &mdash; which is when it matters.</li>'
 '</ul>'
 '<p>Shippers who want to skip the spread entirely can <a href="ship-direct-to-carrier.html">post freight directly to verified carriers</a>; brokers can post to the same carrier network free and see the buy/sell benchmark on every posting. Either way the spot rate is still the number in the room &mdash; the difference is whether both sides can see it.</p>'
-'<p class="small">Rates are national planning references from the LoadBoot market rates snapshot (September 2026), not quotes. Spot rates vary by lane, direction, equipment, season and week &mdash; check the live benchmark and your own rate confirmation before pricing or accepting a load. LoadBoot is a dispatch and carrier-operations platform, not a financial advisor.</p>')
+'<p class="small">Rates are national planning references from the LoadBoot market rates benchmark (as of ' + _MR_ASOF + '), not quotes. Spot rates vary by lane, direction, equipment, season and week &mdash; check the live benchmark and your own rate confirmation before pricing or accepting a load. LoadBoot is a dispatch and carrier-operations platform, not a financial advisor.</p>')
 SPOT_FAQ=[
  ('What is the spot rate in trucking?','The spot rate is the one-time price agreed to move a single load now, set by how many trucks and how many loads are on that lane this week. It is different from a contract rate, which is agreed in advance for a lane over a term of months. Most owner-operators and small fleets run almost entirely on spot rates, which is why their income rises and falls with the freight market.'),
- ('What are current spot market freight rates per mile?','In the September 2026 national snapshot on the LoadBoot market rates page, the spot benchmark paid to the carrier is about $2.97 per mile for dry van, $3.56 reefer, $3.54 flatbed, $3.59 step deck, $2.52 power only and $2.35 hotshot, with shippers paying roughly 15% more once a broker margin is added. Those figures move weekly and vary widely by lane and direction &mdash; check the live page and the per-equipment hubs before quoting or accepting.'),
+ ('What are current spot market freight rates per mile?','In the national benchmark on the LoadBoot market rates page (as of ' + _MR_ASOF + '), the spot benchmark paid to the carrier is about ' + _d(_mrc('Dry Van')) + ' per mile for dry van, ' + _d(_mrc('Reefer')) + ' reefer, ' + _d(_mrc('Flatbed')) + ' flatbed, ' + _d(_mrc('Step Deck')) + ' step deck, ' + _d(_mrc('Power Only')) + ' power only and ' + _d(_mrc('Hotshot')) + ' hotshot, with shippers paying roughly ' + str(_MR_MARKUP) + '% more once a broker margin is added. Those figures move weekly and vary widely by lane and direction &mdash; check the live page and the per-equipment hubs before quoting or accepting.'),
  ('Are spot rates higher than contract rates?','Sometimes. In a tight market, when trucks are scarce, spot rates rise above contract rates and contracted carriers start rejecting tenders, which pushes even more freight into the spot market. In a soft market, when trucks are plentiful, spot rates fall below contract and brokers cover freight cheaply. The two trade places over the freight cycle, which is why shippers keep a contract routing guide with a spot backstop.'),
  ('Where do you find spot rates for loads?','There is no single official number. Load boards show asking rates (usually low), paid subscription indexes aggregate real invoices by lane, free national benchmarks like the LoadBoot market rates page show the carrier, broker buy/sell and shipper rate by equipment, and your own past rate confirmations are the best data for the lanes you actually run. Use at least two sources on the same lane before you negotiate.'),
  ('What is the difference between a spot rate and the linehaul?','A spot quote is usually all-in: it bundles the linehaul (the price for the truck, driver and trailer) with the fuel surcharge and sometimes accessorials. The linehaul is the part you negotiate. An all-in $3.10 per mile with a $0.43 fuel surcharge inside it is a $2.67 linehaul &mdash; always ask whether a quote is all-in before comparing it with another.'),
- ('How do freight brokers make money on spot freight?','A broker sells the load to the shipper at one rate and buys a truck at a lower rate; the gap is the gross margin. On the LoadBoot benchmark that gap is about 15% (for example $3.42 to the shipper versus $2.97 to the carrier on dry van). In the wider spot market it swings from single digits to well over 20%, because the broker commits the sell rate before knowing what a truck will cost that day.')]
+ ('How do freight brokers make money on spot freight?','A broker sells the load to the shipper at one rate and buys a truck at a lower rate; the gap is the gross margin. On the LoadBoot benchmark that gap is about ' + str(_MR_MARKUP) + '% (for example ' + _d(_mrs('Dry Van')) + ' to the shipper versus ' + _d(_mrc('Dry Van')) + ' to the carrier on dry van). In the wider spot market it swings from single digits to well over 20%, because the broker commits the sell rate before knowing what a truck will cost that day.')]
 PREMIUM_ARTICLES.add('spot-market-freight-rates.html')
 BLOGPOSTS += [
  ('spot-market-freight-rates.html',
@@ -4040,39 +4110,32 @@ TLR_BODY=(
 'block of time and distance.</p>'
 '<p>Truckload rates are quoted two ways, and confusing them is the most expensive mistake in the business:</p>'
 '<ul>'
-'<li><b>Per mile (RPM).</b> A rate per loaded mile &mdash; $2.97 a mile, say. This is how carriers, brokers and dispatchers talk to '
+'<li><b>Per mile (RPM).</b> A rate per loaded mile &mdash; ' + _d(_mrc('Dry Van')) + ' a mile, say. This is how carriers, brokers and dispatchers talk to '
 'each other, because it is the only number that compares a 300-mile run with an 1,100-mile run.</li>'
-'<li><b>Flat / all-in / linehaul.</b> One number for the whole move &mdash; $2,376 for the load. This is how most shippers and most '
+'<li><b>Flat / all-in / linehaul.</b> One number for the whole move &mdash; ' + _money(_TL_BUY) + ' for the 800-mile load. This is how most shippers and most '
 'load board postings talk. It is the same rate wearing different clothes: divide by the loaded miles and you are back to RPM.</li>'
 '</ul>'
 '<p>Neither number means anything until you know whether it is <b>all-in</b> (linehaul plus fuel surcharge, sometimes plus '
-'accessorials) or <b>linehaul only</b>. An all-in $3.40 a mile with a $0.43 '
-'<a href="fuel-surcharge-trucking.html">fuel surcharge</a> buried inside it is a $2.97 linehaul, and the two are completely '
+'accessorials) or <b>linehaul only</b>. An all-in ' + _d(_mrc('Dry Van') + 0.43) + ' a mile with a $0.43 '
+'<a href="fuel-surcharge-trucking.html">fuel surcharge</a> buried inside it is a ' + _d(_mrc('Dry Van')) + ' linehaul, and the two are completely '
 'different businesses. Ask the question out loud before you compare two quotes.</p>'
 +svc_banner('Check your lane before you answer the phone',
   'Live truckload rates per mile by equipment &mdash; what the carrier is paid, what brokers buy and sell at, what shippers pay.',
   'See live market rates','market-rates.html')+
 '<h2 id="now">Full truckload rates per mile right now (2026)</h2>'
 '<p>Below is the national truckload benchmark LoadBoot publishes and keeps current on the '
-'<a href="market-rates.html">live market rates page</a> &mdash; a September 2026 snapshot. Two columns matter: what the '
+'<a href="market-rates.html">live market rates page</a> &mdash; the figures as of ' + _MR_ASOF + ', read when this page was built. Two columns matter: what the '
 '<b>carrier</b> is paid for the truck, and what the <b>shipper</b> pays to have the load moved. The gap between them is the '
-'broker&rsquo;s gross margin, which on this benchmark runs about 15%.</p>'
+'broker&rsquo;s gross margin, which on this benchmark runs about ' + str(_MR_MARKUP) + '% on top of the carrier rate.</p>'
 '<table class="cmp"><thead><tr><th>Equipment</th><th>Carrier RPM</th><th>Shipper RPM</th><th>Typical range</th></tr></thead><tbody>'
-'<tr><td><a href="dry-van-freight-rates.html">Dry van</a></td><td><b>$2.97</b></td><td>$3.42</td><td>$2.38&ndash;$3.56</td></tr>'
-'<tr><td><a href="reefer-freight-rates.html">Reefer</a></td><td><b>$3.56</b></td><td>$4.09</td><td>$2.85&ndash;$4.27</td></tr>'
-'<tr><td><a href="flatbed-freight-rates.html">Flatbed</a></td><td><b>$3.54</b></td><td>$4.07</td><td>$2.83&ndash;$4.25</td></tr>'
-'<tr><td><a href="step-deck-freight-rates.html">Step deck</a></td><td><b>$3.59</b></td><td>$4.13</td><td>$2.87&ndash;$4.31</td></tr>'
-'<tr><td><a href="conestoga-freight-rates.html">Conestoga</a></td><td><b>$3.64</b></td><td>$4.19</td><td>$2.91&ndash;$4.37</td></tr>'
-'<tr><td><a href="power-only-freight-rates.html">Power only</a></td><td><b>$2.52</b></td><td>$2.90</td><td>$1.80&ndash;$3.50</td></tr>'
-'<tr><td><a href="box-truck-freight-rates.html">Box truck</a></td><td><b>$2.52</b></td><td>$2.90</td><td>$2.02&ndash;$3.02</td></tr>'
-'<tr><td><a href="hotshot-freight-rates.html">Hotshot</a></td><td><b>$2.35</b></td><td>$2.70</td><td>$1.80&ndash;$3.50</td></tr>'
++''.join(_mrrow(_e, '<a href="%s-freight-rates.html">%s</a>' % (_e.lower().replace(' ', '-'), _e[0] + _e[1:].lower())) for _e in _MR_EQS)+
 '</tbody></table>'
-'<p style="color:var(--muted);font-size:.95rem">National benchmarks, September 2026 snapshot. Lane, season, reload density and how badly the load needs to move '
+'<p style="color:var(--muted);font-size:.95rem">National benchmarks as of ' + _MR_ASOF + '. Lane, season, reload density and how badly the load needs to move '
 'will push a real quote anywhere inside &mdash; and sometimes outside &mdash; the range. Always check the '
 '<a href="market-rates.html">live page</a> rather than a number you wrote down last month.</p>'
 '<p>One line to hold onto: the American Transportation Research Institute puts the average marginal cost of operating a truck at '
 'roughly <b>$2.20&ndash;$2.30 a mile</b>. Put that next to the dry van carrier column and the shape of the business is obvious &mdash; '
-'a $2.97 all-in dry van rate is not a $2.97 profit. Run your own number in the '
+'a ' + _d(_mrc('Dry Van')) + ' all-in dry van rate is not a ' + _d(_mrc('Dry Van')) + ' profit. Run your own number in the '
 '<a href="cost-per-mile-calculator.html">cost per mile calculator</a> before you decide what a load is worth to you.</p>'
 '<h2 id="built">How a truckload rate is built: linehaul, fuel, accessorials</h2>'
 '<p>Every truckload rate, however it is quoted, is three things stacked on top of each other.</p>'
@@ -4108,18 +4171,18 @@ TLR_BODY=(
 'numbers rather than asking rates, are in the <a href="spot-market-freight-rates.html">spot market freight rates guide</a>, and the '
 'week-by-week direction is tracked in the <a href="freight-market-reports.html">weekly freight market reports</a>.</p>'
 '<h2 id="cost">What a full truckload costs on a real lane</h2>'
-'<p>Numbers beat adjectives. Here is an 800-mile dry van full truckload at the September 2026 benchmark, with a realistic 12% '
+'<p>Numbers beat adjectives. Here is an 800-mile dry van full truckload at the benchmark as of ' + _MR_ASOF + ', with a realistic 12% '
 'deadhead to get to the pickup.</p>'
 '<table class="cmp"><thead><tr><th>Line</th><th>Amount</th></tr></thead><tbody>'
-'<tr><td>Shipper pays (800 mi &times; $3.42)</td><td><b>$2,736</b></td></tr>'
-'<tr><td>Carrier is paid (800 mi &times; $2.97)</td><td><b>$2,376</b></td></tr>'
-'<tr><td>Broker gross margin</td><td>$360 (13.2%)</td></tr>'
+'<tr><td>Shipper pays (800 mi &times; ' + _d(_mrs('Dry Van')) + ')</td><td><b>' + _money(_TL_SELL) + '</b></td></tr>'
+'<tr><td>Carrier is paid (800 mi &times; ' + _d(_mrc('Dry Van')) + ')</td><td><b>' + _money(_TL_BUY) + '</b></td></tr>'
+'<tr><td>Broker gross margin</td><td>' + _money(_TL_SELL - _TL_BUY) + (' (%.1f%%)' % ((_TL_SELL - _TL_BUY) / _TL_SELL * 100)) + '</td></tr>'
 '<tr><td>Carrier cost, 896 mi incl. deadhead @ $2.25</td><td>&minus;$2,016</td></tr>'
-'<tr><td><b>Carrier gross before fixed costs</b></td><td><b>$360</b></td></tr>'
+'<tr><td><b>Carrier gross before fixed costs</b></td><td><b>' + ('&minus;' if _TL_GROSS < 0 else '') + _money(abs(_TL_GROSS)) + '</b></td></tr>'
 '<tr><td>One unpaid 3-hour detention @ $60/hr</td><td>&minus;$180</td></tr>'
 '</tbody></table>'
 '<p>Read the last two rows together. On an average lane, at an average rate, with an ordinary amount of deadhead, a single unpaid '
-'detention event takes <b>half</b> the gross on the whole trip. A cancelled load with no '
+'detention event takes ' + _tl_share() + '. A cancelled load with no '
 '<a href="tonu-policy.html">TONU</a> clause takes all of it and the day as well. This is the entire argument for treating '
 'accessorials as priced terms rather than favours &mdash; and for knowing your own cost per mile before the phone rings, not after '
 'the load is delivered.</p>'
@@ -4167,11 +4230,11 @@ TLR_BODY=(
   'Apply as a carrier','carrier-application.html'))
 
 TLR_FAQ=[
- ('What is the average truckload rate per mile in 2026?','It depends entirely on equipment. On the September 2026 national benchmark the carrier is paid about $2.97 a mile on dry van, $3.56 on reefer, $3.54 on flatbed, $3.59 on step deck and $2.52 on power only, with shipper-side rates running roughly 15% higher. Ranges are wide &mdash; dry van alone spans about $2.38 to $3.56 &mdash; because lane, season and reload density move a real quote more than the national average does. Check the live market rates page for the current figure rather than an average you read once.'),
- ('How much does a full truckload cost?','Multiply the loaded miles by the shipper rate per mile for your equipment. An 800-mile dry van full truckload at the September 2026 benchmark of $3.42 a mile costs about $2,736 all-in; the carrier moving it is typically paid around $2,376. Accessorials sit on top of that &mdash; detention after free time, lumper fees, layover if the load is held overnight &mdash; which is why they should be named as numbers on the rate confirmation before the truck moves.'),
+ ('What is the average truckload rate per mile in 2026?','It depends entirely on equipment. On the national benchmark as of ' + _MR_ASOF + ' the carrier is paid about ' + _d(_mrc('Dry Van')) + ' a mile on dry van, ' + _d(_mrc('Reefer')) + ' on reefer, ' + _d(_mrc('Flatbed')) + ' on flatbed, ' + _d(_mrc('Step Deck')) + ' on step deck and ' + _d(_mrc('Power Only')) + ' on power only, with shipper-side rates running roughly ' + str(_MR_MARKUP) + '% higher. Ranges are wide &mdash; dry van alone spans about ' + _d(_MR_LIVE['Dry Van']['low']) + ' to ' + _d(_MR_LIVE['Dry Van']['high']) + ' &mdash; because lane, season and reload density move a real quote more than the national average does. Check the live market rates page for the current figure rather than an average you read once.'),
+ ('How much does a full truckload cost?','Multiply the loaded miles by the shipper rate per mile for your equipment. An 800-mile dry van full truckload at the benchmark of ' + _d(_mrs('Dry Van')) + ' a mile (as of ' + _MR_ASOF + ') costs about ' + _money(_TL_SELL) + ' all-in; the carrier moving it is typically paid around ' + _money(_TL_BUY) + '. Accessorials sit on top of that &mdash; detention after free time, lumper fees, layover if the load is held overnight &mdash; which is why they should be named as numbers on the rate confirmation before the truck moves.'),
  ('What is the difference between a truckload rate and an LTL rate?','A truckload rate buys the whole trailer for one shipment, priced per mile or as one flat amount for the move. An LTL rate buys space on a trailer shared with other shippers, priced on weight, freight class, density and the number of terminals the shipment passes through. Under roughly 6 pallets LTL is usually cheaper; past about 12 pallets, or when the freight is fragile, high-value or time-critical, truckload usually wins on total cost because there is no terminal handling and no cross-docking.'),
  ('Are truckload spot rates higher than contract rates?','Sometimes. Truckload spot rates are priced for one truck on one lane this week, so they rise above contract rates when capacity is tight and fall below them when it is loose. Contract rates trade some of that upside for certainty on both sides. Neither is reliably higher over a full cycle, which is why most stable small fleets run a base of contract or dedicated volume and take spot freight on top of it.'),
- ('Does the truckload rate include fuel?','Only if the quote is all-in, and you should always ask. Most spot truckload quotes bundle the linehaul and the fuel surcharge into one number per mile. At around $3.85 a gallon the fuel component is roughly $0.23 to $0.47 a mile depending on the pegged base and the assumed MPG, so an all-in $3.40 a mile can be a $2.97 linehaul. Comparing an all-in quote with a linehaul-only quote is the most common way carriers underprice a load.'),
+ ('Does the truckload rate include fuel?','Only if the quote is all-in, and you should always ask. Most spot truckload quotes bundle the linehaul and the fuel surcharge into one number per mile. At around $3.85 a gallon the fuel component is roughly $0.23 to $0.47 a mile depending on the pegged base and the assumed MPG, so an all-in ' + _d(_mrc('Dry Van') + 0.43) + ' a mile can be a ' + _d(_mrc('Dry Van')) + ' linehaul. Comparing an all-in quote with a linehaul-only quote is the most common way carriers underprice a load.'),
  ('Who pays detention on a truckload shipment?','The party that booked the truck &mdash; normally the broker or the shipper &mdash; pays detention once free time expires, but only if the rate confirmation says so and only if the wait is documented. Two hours of free time per stop is the common standard, with billing after that; LoadBoot&rsquo;s published standard is $60 an hour after 2 free hours, pre-agreed on every posting and claimable from the trip record with GPS arrive and depart stamps already attached. Without a written clause and timestamped evidence, most detention invoices are simply never paid.')]
 
 BLOGPOSTS += [
@@ -4460,7 +4523,7 @@ CPMC_BODY_MID = ('<section class="bg-soft"><div class="wrap" style="max-width:88
  '<p><b>1. Kill deadhead</b> &mdash; empty miles carry full cost and zero revenue; one round-trip lane plan can cut CPM more than any fuel card. <b>2. Slow down 3&ndash;5 mph</b> &mdash; typically worth 0.5+ MPG, which is $0.04&ndash;$0.06/mi at today&rsquo;s diesel prices. <b>3. Shop insurance yearly</b> &mdash; renewals drift up; quotes pull them back. <b>4. Run more of the miles you already pay for</b> &mdash; fixed costs per mile fall as monthly miles rise. <b>5. Take the per diem deduction</b> &mdash; it does not change CPM, but <a href="truck-driver-per-diem-2026.html">$64 per night away</a> changes what you keep. <b>6. Stop paying for load-hunting time</b> &mdash; hours on load boards are unpaid work; a <a href="how-much-does-a-truck-dispatcher-cost.html">flat-fee dispatcher</a> costs 5% and gives you those hours back.</p>'
  '</div></div></section>')
 
-RELATED['cost-per-mile-calculator.html'] = [('tools.html','All Free Trucking Calculators'),('truckload-freight-rates.html','Truckload Freight Rates'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('market-rates.html','Market Rates Per Mile'),('how-much-does-a-truck-dispatcher-cost.html','Dispatcher Cost Guide'),('truck-driver-per-diem-2026.html','Per Diem 2026 Guide'),('carrier-application.html','Apply as Carrier')]
+RELATED['cost-per-mile-calculator.html'] = [('tools.html','All Free Trucking Calculators'),('truckload-freight-rates.html','Truckload Freight Rates'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('market-rates.html','Market Rates Per Mile'),('how-much-does-a-truck-dispatcher-cost.html','Dispatcher Cost Guide'),('truck-driver-per-diem-2026.html','Per Diem 2026 Guide'),('carrier-application.html','Apply as Carrier'),('should-i-buy-a-truck-before-2027-epa-rule.html','Buy a Truck Before the 2027 EPA Rule?')]
 
 _cpmc_faq_html, _cpmc_faq_sch = faq_block([
  ('What is a good cost per mile for a trucking company in 2026?',
@@ -5837,7 +5900,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '<p>Three blended layers, honestly labeled: <b>(1) Real LoadBoot bookings</b> \u2014 actual accepted rates on our marketplace, the strongest signal, refreshed continuously; <b>(2) Published national benchmarks</b> \u2014 published national industry indices, refreshed as new data lands and always shown with their as-of date; <b>(3) Confidence labels</b> \u2014 every lane result says whether it comes from lane-level bookings (HIGH), platform-wide data (MEDIUM) or the national benchmark (LOW). A rate is a guide, not a quote \u2014 but you always know exactly where it came from.</p></section>'
 
 '<section class="wrap mrx-sec"><h2>Freight rate FAQs</h2>'
-'<div class="mrx-faq"><h3>What is the average trucking rate per mile right now?</h3><p>National spot averages currently run roughly $2.00\u2013$2.70/mi for dry van, $2.15\u2013$3.40 for reefer and $2.20\u2013$3.70 for flatbed \u2014 the live table above shows this week\u2019s numbers by equipment and market side.</p></div>'
+'<div class="mrx-faq"><h3>What is the average trucking rate per mile right now?</h3><p>' + _MR_FAQ_AVG_HTML + '</p></div>'
 '<div class="mrx-faq"><h3>What is a good rate per mile for trucking in 2026?</h3><p>A good rate beats your all-in operating cost (~$1.80\u2013$2.00/mi for most owner-operators) by at least 20%. Practical minimums: $2.00\u2013$2.50/mi dry van, $2.50+ reefer and flatbed, $2.00+ hotshot.</p></div>'
 '<div class="mrx-faq"><h3>How much do freight brokers charge shippers?</h3><p>Brokers typically add a 12\u201318% margin on top of the carrier rate. That is why the shipper column above runs higher than the carrier column on the same lane \u2014 both sides are shown so everyone negotiates informed.</p></div>'
 '<div class="mrx-faq"><h3>What is the difference between spot rates and contract rates?</h3><p>Spot rates price one load, today, on the open market \u2014 they move daily with supply and demand. Contract rates lock a lane for 3\u201312 months and typically sit below spot in hot markets and above it in soft markets.</p></div>'
@@ -5853,7 +5916,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 
 
 _mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":['
-  '{"@type":"Question","name":"What is the average trucking rate per mile right now?","acceptedAnswer":{"@type":"Answer","text":"National spot averages currently run roughly $2.00-$2.70 per mile for dry van, $2.15-$3.40 for reefer and $2.20-$3.70 for flatbed, depending on lane and season. The live table on this page shows the date each benchmark was last updated."}},'
+  '{"@type":"Question","name":"What is the average trucking rate per mile right now?","acceptedAnswer":{"@type":"Answer","text":' + json.dumps(_MR_FAQ_AVG_TXT) + '}},'
   '{"@type":"Question","name":"What is the difference between shipper, broker and carrier rates?","acceptedAnswer":{"@type":"Answer","text":"The carrier rate is what the truck is paid. Brokers buy capacity at the carrier rate and sell the shipment to shippers with a typical 12-18% margin, so shipper rates run higher than carrier rates on the same lane."}},'
   '{"@type":"Question","name":"What is the minimum rate per mile a carrier should accept?","acceptedAnswer":{"@type":"Answer","text":"Most owner-operators need $2.00-$2.50 per mile for dry van and $2.50+ for reefer or flatbed to cover an all-in operating cost of roughly $1.80-$2.00 per mile plus margin."}}]}</script>'
   '<script>' + _MR_JS + '</script>')
@@ -8356,7 +8419,7 @@ sdc += ('<section><div class="wrap"><div class="sec-head center reveal"><div cla
  + linkcard('create-shipper-account.html', '&#128221;', 'Create a shipper account', 'What to have ready and how your freight goes from posted to moving with proof.')
  + linkcard('gps-tracking.html', '&#128205;', 'GPS tracking &amp; proof', 'How live tracking and geofenced arrive/depart stamps protect your freight and settle disputes.')
  + '</div></div></section>')
-RELATED['ship-direct-to-carrier.html'] = [('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('how-to-ship-without-a-broker.html','Ship Without a Broker (Guide)'),('protect-freight-from-loss-damage-and-fraud.html','Protect Your Freight (Guide)'),('features.html','All Features'),('free-load-board-for-brokers.html','Free Load Board for Brokers')]
+RELATED['ship-direct-to-carrier.html'] = [('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('how-to-ship-without-a-broker.html','Ship Without a Broker (Guide)'),('protect-freight-from-loss-damage-and-fraud.html','Protect Your Freight (Guide)'),('features.html','All Features'),('free-load-board-for-brokers.html','Free Load Board for Brokers'),('full-truckload-vs-ltl.html','FTL vs LTL vs Partial')]
 page('ship-direct-to-carrier.html', 'Ship Direct to Carriers — Post Freight Free | LoadBoot',
      'Ship direct to verified carriers and skip the broker markup: authority and insurance checked for you, live GPS on every shipment, free for shippers.',
      'shipper-solutions.html', sdc, _sdc_faq_sch)
