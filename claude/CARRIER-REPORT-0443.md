@@ -1,6 +1,9 @@
 # Carrier report → permanent block, and the contact rule in both portals (bl_disp_0443)
 
 Status 25 Sep 2026: **staging applied**, `tests/bl_disp_0443_rollback_test.sql` green (6 checks, ROLLBACK-OK),
+
+> **PROD APPLIED 25 Sep 2026** (0442 full file, then 0443) on rwscphuhpjoudvljvmdk. Anon SECURITY DEFINER = 34 names, identical to the baseline (staging 33 + retell_inbound). All 30 touched functions match staging: 23 byte-identical md5, 7 identical once comments/whitespace are stripped (staging got comment-less copies during the revisions). Read-only smoke on prod: 4 open carriers render as `Carrier XXXX` with no name/MC, authority age shown; backfill would reach 6 candidates. Front-end: merge claude/serene-ptolemy-uk3hgy → main. Then: CC unassign David's GABE + MUNSTER, then `select app_private.disp_choice_backfill_email();`.
+
 `tests/bl_disp_0442_rollback_test.sql` re-run green with the 0442 revision. **NOT on prod** — goes with 0442 after the
 owner's staging test. Front-end on `claude/serene-ptolemy-uk3hgy` (owner merges → main → Netlify).
 

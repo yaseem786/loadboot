@@ -1,5 +1,8 @@
 # Choose your carrier — the Carrier Fleet Book inside the dispatcher portal (bl_disp_0442)
 
+> **PROD APPLIED 25 Sep 2026** (0442 full file, then 0443) on rwscphuhpjoudvljvmdk. Anon SECURITY DEFINER = 34 names, identical to the baseline (staging 33 + retell_inbound). All 30 touched functions match staging: 23 byte-identical md5, 7 identical once comments/whitespace are stripped (staging got comment-less copies during the revisions). Read-only smoke on prod: 4 open carriers render as `Carrier XXXX` with no name/MC, authority age shown; backfill would reach 6 candidates. Front-end: merge claude/serene-ptolemy-uk3hgy → main. Then: CC unassign David's GABE + MUNSTER, then `select app_private.disp_choice_backfill_email();`.
+
+
 **Status (25 Sep 2026):** migration applied to **STAGING** (`snslhvmkjusozgjelghi`) and the rollback test
 passes there (8 checks, ends ROLLBACK-OK). **NOT on prod yet** — owner tests staging first, then prod.
 
