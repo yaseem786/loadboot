@@ -8,6 +8,16 @@ number there hurts the most.
 
 **Owner decisions already made:**
 - Diesel: pulled **automatically** from a free API (EIA), not typed in by hand.
+- **Rates source (owner, 25 Sep 2026): DAT Trendlines**, the free weekly national van/reefer/flatbed averages.
+  Owner's position: using them does not breach DAT's terms. The session could not read DAT's terms (dat.com is
+  blocked from the cloud container), so this rests on the owner's call, recorded here as his decision.
+  Implementation keeps the risk low: the owner **reads** the three numbers and **types** them into CC
+  (no scraper hitting dat.com from our servers), and the page credits the source via the CC `source` field,
+  e.g. "DAT Trendlines national averages, week of <date>". Editable in CC; crediting is recommended.
+- **Word-level control (owner, 25 Sep 2026):** *everything* on the site that changes weekly, whether a number,
+  a short line or a single word ("this week", "September 2026", "about 15%", "half", a seasonal sentence),
+  must be editable from CC, including the manual ones. Nothing weekly may live only in `build_site.py`.
+- Lane rates stay in-app only (no public lane pages in this project).
 - Publish: not answered yet. **Default in this plan:** Publish in CC triggers a Netlify rebuild on its own,
   and the publish function refuses implausible values, so a bad number never gets to the rebuild.
   Ask him once, then proceed.
@@ -43,7 +53,7 @@ Lane rates: the public site has none. They exist only inside accounts (`cc_lane_
 | Data | Source | Free? | Who does it |
 |---|---|---|---|
 | **Diesel** (US avg + ~10 regions) | EIA Open Data API v2, weekly retail on-highway diesel (product `EPD2D`, area `NUS` + PADD regions; **verify the IDs against the API before coding**). Published Mondays ~5 pm ET (Tuesday after a holiday). | Yes. Needs a free API key from eia.gov/opendata. | **Auto:** edge function + pg_cron, Tuesday morning ET. CC shows the last pull and allows a manual override. |
-| **National rates, 3 anchors** (dry van, reefer, flatbed) | No free API for truckload spot rates. DAT RateView / Truckstop / Greenscreens are paid. DAT's free weekly "Trendlines" page publishes national van/reefer/flatbed averages. **Copying its numbers onto our site may breach DAT's terms. Not checked; owner decides.** Alternative: LoadBoot's own booked loads, once volume allows. | Partly | **Manual weekly:** owner types 3 numbers into CC and presses Publish (≈1 minute). |
+| **National rates, 3 anchors** (dry van, reefer, flatbed) | **DAT Trendlines** (free weekly national averages; owner's decision, see above). No free API exists (RateView / Truckstop / Greenscreens are paid), so no scraper. Later, LoadBoot's own booked loads can be blended in once volume allows. | Yes (page, not API) | **Manual weekly:** owner reads Trendlines, types 3 numbers + the Trendlines week into CC, and presses Publish (≈1 minute). |
 | **Other 5 equipment** (step deck, conestoga, power only, hotshot, box truck) | No public weekly source. Derived from the anchors with ratios stored in the DB and editable in CC. **How the Sep 2026 values were built is unknown; check `rate_standards` first.** | — | **Auto** from the anchors |
 | **Low / high, shipper, broker sides** | Today's data looks like low = 0.8×, high = 1.2× carrier, shipper = carrier × (1 + broker_margin ≈ 15%). Hotshot/power only use fixed 1.80–3.50. **This is inferred from the numbers, not read from code. Verify it in `rate_standards` before relying on it.** | — | **Auto** |
 | **Lane rates** (state → state, per equipment) | In-app only via `cc_lane_rate` (bookings blended with the benchmark). Public per-lane pages would be a new SEO product, a separate decision. | — | Auto (already) |
@@ -55,8 +65,13 @@ Lane rates: the public site has none. They exist only inside accounts (`cc_lane_
 
 Main-loop work: migrations, RLS/RBAC, secrets. Mechanical inventory can go to a haiku subagent.
 
-1. **Registry.** New `app_private.site_facts`: key (e.g. `diesel.us`, `rate.dry_van.carrier`,
-   `perdiem.transport.conus`), value, unit, as_of, source, cadence_days, updated_by, updated_at.
+1. **Registry — numbers AND words.** New `app_private.site_facts`: key (e.g. `diesel.us`,
+   `rate.dry_van.carrier`, `perdiem.transport.conus`, `copy.spot.season_line`), kind (`number` | `text`),
+   value, unit, as_of (set automatically on save), source, cadence_days, pages (where it is used),
+   updated_by, updated_at. Text keys hold the short weekly lines and single words, so the owner can change
+   any of them from CC without a deploy. Numbers that are *computed* (worked examples, "about 44%",
+   derived equipment) are not edited by hand. CC shows them read-only with the formula, so they can never
+   disagree with their inputs.
    Rates stay in `rate_benchmarks` (`site_facts` points at them) so existing RPCs keep working.
    `revoke ... from public, anon` on every new function, then compare the anon SECURITY DEFINER **names**
    against `docs/audit-2026-09/anon-secdef-baseline.md`.
@@ -70,7 +85,9 @@ Main-loop work: migrations, RLS/RBAC, secrets. Mechanical inventory can go to a 
 3. **Diesel auto-pull.** Edge function `eia-diesel-pull` + pg_cron (Tue ~14:00 UTC). Upserts `fuel_prices`
    with EIA's own period date as `as_of`. **The EIA key is a Supabase secret the owner enters himself.**
    On failure: CC warning. The last good value stays and is labelled with its real date.
-4. **Build reads everything.** Extend the `_MR_LIVE` pattern in `build_site.py` to diesel and slow facts.
+4. **Build reads everything.** Extend the `_MR_LIVE` pattern in `build_site.py` to diesel, slow facts and the
+   text keys. Pages reference them as `fact('copy.spot.season_line')`, one helper that also records which page
+   used which key (fed back into `site_facts.pages` for the CC "Pages" tab).
    Replace every hard-coded figure in section 1 (fuel-surcharge page, oversize "$3.72", diesel lines on
    spot/truckload), computing the worked examples as was done on 25 Sep. Weekly reports get built from
    `rate_history` instead of `rate_snapshots.json`, which retires the manual script.
@@ -80,7 +97,8 @@ Main-loop work: migrations, RLS/RBAC, secrets. Mechanical inventory can go to a 
    built from `as_of`.
 6. **CC screen "Market data".** Extend `app/command-center/views/marketRates.js`, using `openDrawer()` for
    any popup:
-   - Rates tab: 3 anchor inputs, the derived preview for all 8, Publish
+   - Rates tab: 3 anchor inputs + the Trendlines week + source line, the derived preview for all 8, Publish
+   - Words tab: every text key, grouped by page, with a live preview of the sentence it sits in; save = rebuild
    - Diesel tab: last EIA pull, status, manual override
    - Facts tab: slow facts with due dates
    - Pages tab: which pages use which key, and the last build time
@@ -96,5 +114,6 @@ Main-loop work: migrations, RLS/RBAC, secrets. Mechanical inventory can go to a 
 
 - Create a free EIA API key and add it as a Supabase secret.
 - Create a Netlify build hook and paste its URL into Vault.
-- Choose the rates source (DAT Trendlines vs a paid feed vs own data), a terms/legal call.
-- Every week: 3 numbers into CC → Publish. Diesel and everything else follow on their own.
+- (Done: rates source = DAT Trendlines, his call.)
+- Every week: read DAT Trendlines → 3 numbers into CC → Publish. Diesel pulls itself; derived numbers and
+  worked examples follow on their own; any weekly line or word he wants to change is edited in the Words tab.
