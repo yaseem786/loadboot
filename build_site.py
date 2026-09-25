@@ -6316,8 +6316,9 @@ _EQ_SEO_OVERRIDE = {
  'hotshot': dict(desc='Hotshot rates per mile, September 2026: $2.41/mi to the carrier, $2.77 shipper side, $1.80–$3.50 range. Live national hot shot trucking rates, dated.'),
  'step-deck': dict(desc='Step deck rates per mile, September 2026: $3.67/mi to the carrier, $4.22 shipper side, $2.94–$4.40 range. Live national step deck freight rates, dated.'),
  # Phase 2 ledger 2026-09-25 (dry-van, desc only; title locked - clicks growing). Figures = get_public_market_rates() as_of 2026-09-18.
+ # Same day: cut from 261 to 155 chars (<=155 rule); keeps "current dry van rates" + "freight brokers" (ledger note d).
  'dry-van': dict(
-   desc='Dry van rates per mile, September 2026: $3.03/mi average to the carrier, $3.48 shipper side, $2.42\u2013$3.64 typical range \u2014 current national dry van freight rates, updated as new data lands. What brokers buy and sell at, lane examples, seasonality and the accessorials that move the real number.'),
+   desc='Dry van rates per mile, September 2026: $3.03/mi to the carrier, $3.48 shipper side, $2.42\u2013$3.64 range. Current dry van rates and what freight brokers pay.'),
 }
 for _eq in _EQ_RATES:
     _n, _s = _eq['name'], _eq['slug']
