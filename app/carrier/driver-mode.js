@@ -155,7 +155,7 @@ export async function renderToday(content, ctx, api) {
     : (pi.platform === 'ios' && !pi.standalone) ? h('div', { class: 'cpx-banner amber' }, [h('span', null, icon('alert', 15)), h('span', null, 'Add LoadBoot to your Home Screen: tap Share ⎋ then “Add to Home Screen”'), h('span', { class: 'cpx-b-go' }, '›')]) : null;
   const can = (ctx.catalog && ctx.catalog.catalog || []).filter((c) => c.kind === 'optional' && perms.has(c.key)).map((c) => c.label);
   mount(content, h('div', null, [
-    h('div', { class: 'dm-hero' }, [
+    h('div', { class: 'dm-hero', 'data-tour': 'today' }, [
       h('div', null, [h('div', { class: 'dm-hi' }, 'Hi ' + ((ctx.fleet_driver && ctx.fleet_driver.name) || '').split(' ')[0]), h('div', { class: 'cp-row-s' }, 'Driving for ' + (ctx.carrier || 'your carrier'))]),
       h('span', { class: 'da-pill ' + (carrierOk ? 'ok' : 'warn') }, [h('i'), carrierOk ? 'Verified carrier' : 'Carrier setup pending']),
     ]),

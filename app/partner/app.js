@@ -10,6 +10,8 @@ import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange,
 import { brandLogo } from '../shared/ui/components.js';
 import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
 import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collapsible sidebar
+import { createTour, mountHelp } from '../shared/ui/tour.js';   // guided tour + floating "?" help (25 Sep 2026)
+import { PARTNER_TOUR } from './tour-content.js';
 import { printExecutedW9 } from '../carrier/w9-form.js';
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
 import { docTrustBadge } from '../shared/ui/docTrust.js';
@@ -1045,7 +1047,7 @@ function invoicesCard() {
     } catch (e) { mount(host, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load invoices.')); }
   }
   load();
-  return h('div', { class: 'cp-card', style: 'margin-top:16px' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, 'Invoices')]), payInfo, host]);
+  return h('div', { class: 'cp-card', style: 'margin-top:16px', 'data-tour': 'invoices' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, 'Invoices')]), payInfo, host]);
 }
 
 /* account & company settings */
@@ -1453,7 +1455,7 @@ function brokerCarriersPage() {
     `;
     document.head.appendChild(st);
   }
-  const wrap = h('div', null);
+  const wrap = h('div', { 'data-tour': 'carriers' });
   const grid = h('div', { class: 'cn-grid' });
   const q = h('input', { placeholder: 'Search carriers by name, DOT, MC, equipment, lane or home base\u2026' });
   const loc = h('input', { placeholder: 'Pickup / delivery state or city\u2026' });
@@ -1733,7 +1735,7 @@ function approvedPartnersCard() {
 }
 
 function bookRequestsCard() {
-  const card = h('div', { class: 'cp-card' });
+  const card = h('div', { class: 'cp-card', 'data-tour': 'requests' });
   const body = h('div', null, h('div', { class: 'cp-sub' }, 'Loading\u2026'));
   const render = async () => {
     let rows; try { rows = await bookRequestsQueue('pending'); } catch (_) { card.remove(); return; }
@@ -2916,7 +2918,7 @@ async function brokerDash(user, ov) {
     prevStep = step;
   }
   renderStep();
-  const form = h('div', { class: 'cp-card' }, [
+  const form = h('div', { class: 'cp-card', 'data-tour': 'post-load' }, [
     h('div', { class: 'cp-cardhead' }, [icon('plus', 18), h('h3', null, 'Post a load')]),
     stepHost,
   ]);
@@ -4333,7 +4335,7 @@ function packetDocRow(it, onAction) {
   ]);
 }
 function brokerOnboardingWizard() {
-  const card = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, (window.__lbKindLabel || 'Broker') + ' onboarding — step by step')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+  const card = h('div', { class: 'cp-card', 'data-tour': 'packet' }, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, (window.__lbKindLabel || 'Broker') + ' onboarding — step by step')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
   (async () => {
     let pk = { items: [] }; try { pk = await myOnboardingPacket() || { items: [] }; } catch (_) {}
     let prof = {}; try { prof = await partnerGetProfile() || {}; } catch (_) {}
@@ -4493,7 +4495,7 @@ function packetAgreementCards(skipPacket) {
     ['developers', 'API & Keys', 'zap'],
     ['account', 'Account', 'user'],
   ];
-  const myLoadsCard = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost]);
+  const myLoadsCard = h('div', { class: 'cp-card', 'data-tour': 'loads-list' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost]);
   const obHero = h('div');
   (async () => {
     let pk = null; try { pk = await myOnboardingPacket(); } catch (_) { return; }
@@ -4669,7 +4671,7 @@ function packetAgreementCards(skipPacket) {
     claims: [claimsCard()],
     requests: ov.kind === 'shipper' ? [bookRequestsCard()] : [bookRequestsCard(), shipmentInboxCard()],
     carriers: [brokerCarriersPage()],
-    rates: [(() => { const hst = h('div'); renderMarketWidget(hst); return hst; })()],
+    rates: [(() => { const hst = h('div', { 'data-tour': 'rates' }); renderMarketWidget(hst); return hst; })()],
     network: [approvedPartnersCard(), ratingCard(), referralCard()],
     agents: ov.kind === 'broker' ? [h('div', { id: 'bd-agents' })] : [],  // mounted lazily on first visit (see brender)
     onboarding: [brokerOnboardingWizard()],
@@ -4868,7 +4870,7 @@ function packetAgreementCards(skipPacket) {
     return el;
   };
   const bdKpis = () => {
-    const el = h('div', { class: 'bd-kgrid' });
+    const el = h('div', { class: 'bd-kgrid', 'data-tour': 'dash-kpis' });
     const tile = (v, l, sub9, a) => h('div', { class: 'bd-k', style: '--bd-a:' + a }, [h('b', null, String(v)), h('div', { class: 'l' }, l), h('div', { class: 's' }, sub9)]);
     mount(el, [
       tile(ov.loads_submitted || 0, 'Submitted', 'all time', '#0883F7'),
@@ -5066,6 +5068,7 @@ function packetAgreementCards(skipPacket) {
     mount(bContent, h('div', null, PAGES[btab] || []));
     if (btab === 'agents' && ov.kind === 'broker') { const ah = PAGES.agents[0]; if (ah && !ah.__mounted) { ah.__mounted = true; mountBrokerAgents(ah); } }
   }
+  let pTour = null, pHelp = null;   // guided tour handles (set in tourBoot below)
   function bgo(id) {
     btab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
     Object.keys(bLinks).forEach((k) => bLinks[k].forEach((a) => {
@@ -5074,6 +5077,7 @@ function packetAgreementCards(skipPacket) {
     }));
     const it = BNAV.find((n) => n[0] === btab); bTitle.textContent = it ? it[1] : 'Dashboard';
     brender();
+    if (pHelp) { try { pHelp.onRoute(btab); } catch (_) {} }
   }
   window.addEventListener('hashchange', () => { const t9 = (location.hash || '').replace('#', ''); if (t9 && t9 !== btab && BNAV.some((n) => n[0] === t9)) bgo(t9); });
   // Big-brand Android back: back → Dashboard first, exit only from Dashboard.
@@ -5139,10 +5143,23 @@ function packetAgreementCards(skipPacket) {
   bgo(btab);
   root.setAttribute('aria-busy', 'false');
   loadList();
+  // Guided tour + floating "?" help (25 Sep 2026). Engine: ../shared/ui/tour.js, copy: ./tour-content.js.
+  // Role = the org kind (broker / shipper). Progress is localStorage only (lb_tour.partner.v1). Booted only
+  // once the agent check below says this is NOT the agent slim workspace — the agent portal owns that tour.
+  const tourBoot = () => {
+    try {
+      const tourNav = (r) => { const t9 = String(r || '').replace(/^#/, '').split('/')[0] || 'dashboard'; bgo(BNAV.some((n) => n[0] === t9) ? t9 : 'dashboard'); };
+      pTour = createTour({ key: 'partner', version: 1, role: ov.kind === 'shipper' ? 'shipper' : 'broker', flows: PARTNER_TOUR.flows, screens: PARTNER_TOUR.screens, navigate: tourNav, currentRoute: () => btab });
+      pHelp = mountHelp(pTour, { supportRoute: '#account', navigate: tourNav });
+      window.__lbTour = pTour;   // replay hook; nothing depends on it
+      pHelp.onRoute(btab);
+      setTimeout(() => { try { pTour.autoStart(); } catch (_) {} }, 500);
+    } catch (_) { pTour = null; pHelp = null; }
+  };
   // ---- AGENT SLIM WORKSPACE: agents only POST + TRACK — no broker portal around it ----
   (async () => {
     let isAgentWs = false; try { isAgentWs = !!(await isMyOrgAgent()); } catch (_) {}
-    if (!isAgentWs) return;
+    if (!isAgentWs) { tourBoot(); return; }
     const embedded9 = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();
     // AGENT DARK SKIN: the wizard must look like a native agent-portal page, not a white broker page
     try {

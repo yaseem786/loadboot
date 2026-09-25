@@ -367,7 +367,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   let feed = null; let tab = (opts.tab) || (sessionStorage.getItem('dw_tab') || 'today');
   const clockEl = h('div', { class: 'dw-clock' });
   const body = h('div');
-  const tabsEl = h('div', { class: 'dw-tabs', role: 'tablist' });
+  const tabsEl = h('div', { class: 'dw-tabs', role: 'tablist', 'data-tour': 'dw-tabs' });
   root.append(clockEl, tabsEl, body);
   // phones: every data table becomes a stack of labelled cards (CSS reads td[data-l]); re-labelled on every repaint
   const labelTables = () => { try { body.querySelectorAll('.dw-table').forEach((tb) => { const hs = Array.from(tb.querySelectorAll('th')).map((x) => (x.textContent || '').trim()); tb.querySelectorAll('tr').forEach((tr) => Array.from(tr.children).forEach((td, i) => { if (td.tagName === 'TD' && hs[i] != null && !td.hasAttribute('data-l')) td.setAttribute('data-l', hs[i]); })); }); } catch (_) {} };
@@ -681,7 +681,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
 
   function kpis() {
     const k = feed.kpi || {}; const c = feed.commission || {};
-    return h('div', { class: 'dw-kpis' }, [
+    return h('div', { class: 'dw-kpis', 'data-tour': 'dw-kpis' }, [
       ['Loads moving', k.active], ['Awaiting RC', k.awaiting_rc], ['Awaiting approval', k.awaiting_approval],
       ['Gross · 7 days', money(k.gross_7d)], ['Avg $/mile', k.avg_rpm != null ? '$' + Number(k.avg_rpm).toFixed(2) : '—'], ['Commission pending', money(Number(c.pending || 0) + Number(c.approved || 0))],
     ].map(([l, v]) => h('div', { class: 'dw-kpi' }, [h('b', null, v == null ? '—' : String(v)), h('span', null, l)])));
@@ -697,7 +697,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         h('div', { class: 'dw-muted' }, A().length + ' carrier' + (A().length === 1 ? '' : 's') + ' · ' + trucksAll().length + ' truck' + (trucksAll().length === 1 ? '' : 's') + ' · ' + B().filter((b) => MOVING.includes(b.status)).length + ' load' + (B().filter((b) => MOVING.includes(b.status)).length === 1 ? '' : 's') + ' moving'),
       ]),
       kpis(),
-      h('div', { class: 'dw-card' }, [h('h3', null, ['Work queue', h('button', { class: 'dw-btn sm ghost', onClick: load }, [ic('refresh', 14), 'Refresh'])]),
+      h('div', { class: 'dw-card', 'data-tour': 'dw-queue' }, [h('h3', null, ['Work queue', h('button', { class: 'dw-btn sm ghost', onClick: load }, [ic('refresh', 14), 'Refresh'])]),
         q.length ? q.map((x) => h('div', { class: 'dw-q' + (x.hot ? ' hot' : ''), style: x.go ? 'cursor:pointer' : '', tabindex: x.go ? '0' : null, role: x.go ? 'button' : null, onKeydown: (e) => { if (x.go && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go(x); } }, onClick: () => go(x) }, [h('div', { class: 'ic' }, ic(x.ic, 20)), h('div', null, [h('b', null, x.t), h('div', { class: 'dw-muted' }, x.s)])]))
           : h('div', { class: 'dw-ok' }, 'Nothing urgent. Trucks are covered, RCs are in, check calls are current.')]),
       h('div', { class: 'dw-card' }, [h('h3', null, 'Rules of the road'), h('div', { class: 'dw-muted', style: 'line-height:1.9' }, [

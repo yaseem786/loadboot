@@ -202,7 +202,7 @@ export async function renderDispatcherDesk(host) {
   // ---------- hero ----------
   let hero;
   if (a) {
-    hero = h('div', { class: 'dd-hero' }, [
+    hero = h('div', { class: 'dd-hero', 'data-tour': 'disp-hero' }, [
       h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap' }, [
         h('div', { class: 'dd-eyebrow' }, 'Your dedicated dispatcher'),
         a.status === 'paused' ? pill('Paused by you', 'warn') : pill('Active', 'ok'),
@@ -226,7 +226,7 @@ export async function renderDispatcherDesk(host) {
     ]);
   } else if (approved) {
     const left = sla.business_days_left; const overdue = !!sla.overdue;
-    hero = h('div', { class: 'dd-hero' }, [
+    hero = h('div', { class: 'dd-hero', 'data-tour': 'disp-hero' }, [
       h('div', { class: 'dd-eyebrow' }, 'Dedicated dispatcher'),
       h('h2', { class: 'dd-h1' }, overdue ? 'Your match is taking longer than ' + slaDays + ' business days' : 'Assigning your dedicated dispatcher'),
       h('p', { class: 'dd-sub' }, overdue
@@ -236,13 +236,13 @@ export async function renderDispatcherDesk(host) {
       stepper,
     ]);
   } else if (stage === 'rejected') {
-    hero = h('div', { class: 'dd-hero' }, [h('div', { class: 'dd-eyebrow' }, 'Dedicated dispatcher'), h('h2', { class: 'dd-h1' }, 'Verification was not approved'), h('p', { class: 'dd-sub' }, ob.note || 'Contact support and we will tell you exactly what to fix.'), h('div', { class: 'dd-btnrow' }, [h('button', { class: 'dd-cta', onClick: () => nav('support') }, 'Talk to support')]), stepper]);
+    hero = h('div', { class: 'dd-hero', 'data-tour': 'disp-hero' }, [h('div', { class: 'dd-eyebrow' }, 'Dedicated dispatcher'), h('h2', { class: 'dd-h1' }, 'Verification was not approved'), h('p', { class: 'dd-sub' }, ob.note || 'Contact support and we will tell you exactly what to fix.'), h('div', { class: 'dd-btnrow' }, [h('button', { class: 'dd-cta', onClick: () => nav('support') }, 'Talk to support')]), stepper]);
   } else if (stage === 'info_needed') {
-    hero = h('div', { class: 'dd-hero' }, [h('div', { class: 'dd-eyebrow' }, 'Dedicated dispatcher'), h('h2', { class: 'dd-h1' }, 'One thing is needed before we continue'), h('p', { class: 'dd-sub' }, ob.note || 'LoadBoot asked for a document fix — check your Documents page.'), h('div', { class: 'dd-btnrow' }, [h('button', { class: 'dd-cta', onClick: () => nav('documents') }, 'Open Documents')]), stepper]);
+    hero = h('div', { class: 'dd-hero', 'data-tour': 'disp-hero' }, [h('div', { class: 'dd-eyebrow' }, 'Dedicated dispatcher'), h('h2', { class: 'dd-h1' }, 'One thing is needed before we continue'), h('p', { class: 'dd-sub' }, ob.note || 'LoadBoot asked for a document fix — check your Documents page.'), h('div', { class: 'dd-btnrow' }, [h('button', { class: 'dd-cta', onClick: () => nav('documents') }, 'Open Documents')]), stepper]);
   } else if (inReview) {
-    hero = h('div', { class: 'dd-hero' }, [h('div', { class: 'dd-eyebrow' }, 'Dedicated dispatcher'), h('h2', { class: 'dd-h1' }, 'Verification in progress'), h('p', { class: 'dd-sub' }, 'LoadBoot is reviewing your documents (usually under 24 hours). The moment you are approved, the ' + slaDays + '-business-day clock starts and your dispatcher is assigned.'), ob.submitted_at ? h('p', { class: 'dd-sub', style: 'margin-top:6px;font-size:.8rem' }, 'Submitted ' + when(ob.submitted_at)) : null, stepper]);
+    hero = h('div', { class: 'dd-hero', 'data-tour': 'disp-hero' }, [h('div', { class: 'dd-eyebrow' }, 'Dedicated dispatcher'), h('h2', { class: 'dd-h1' }, 'Verification in progress'), h('p', { class: 'dd-sub' }, 'LoadBoot is reviewing your documents (usually under 24 hours). The moment you are approved, the ' + slaDays + '-business-day clock starts and your dispatcher is assigned.'), ob.submitted_at ? h('p', { class: 'dd-sub', style: 'margin-top:6px;font-size:.8rem' }, 'Submitted ' + when(ob.submitted_at)) : null, stepper]);
   } else {
-    hero = h('div', { class: 'dd-hero' }, [h('div', { class: 'dd-eyebrow' }, 'Dedicated dispatcher'), h('h2', { class: 'dd-h1' }, 'A dedicated dispatcher is waiting for your trucks'), h('p', { class: 'dd-sub' }, 'Finish verification and LoadBoot assigns a screened, supervised dispatcher to you within ' + slaDays + ' business days. LoadBoot pays them — your only fee is the flat 5% on loads you deliver.'), h('div', { class: 'dd-btnrow' }, [h('button', { class: 'dd-cta', onClick: () => nav('onboarding') }, [icon('shield', 16), ' Start verification']), h('button', { class: 'dd-cta ghost', onClick: () => nav('documents') }, 'Upload documents')]), stepper]);
+    hero = h('div', { class: 'dd-hero', 'data-tour': 'disp-hero' }, [h('div', { class: 'dd-eyebrow' }, 'Dedicated dispatcher'), h('h2', { class: 'dd-h1' }, 'A dedicated dispatcher is waiting for your trucks'), h('p', { class: 'dd-sub' }, 'Finish verification and LoadBoot assigns a screened, supervised dispatcher to you within ' + slaDays + ' business days. LoadBoot pays them — your only fee is the flat 5% on loads you deliver.'), h('div', { class: 'dd-btnrow' }, [h('button', { class: 'dd-cta', onClick: () => nav('onboarding') }, [icon('shield', 16), ' Start verification']), h('button', { class: 'dd-cta ghost', onClick: () => nav('documents') }, 'Upload documents')]), stepper]);
   }
 
   // ---------- contact: WhatsApp (the LoadBoot line) in EVERY state; dispatcher line + mailbox after release ----------
