@@ -14,6 +14,7 @@
 // decided there too (no owner/driver names, phones, dockets, documents, bank/factoring).
 import { dispatcherCarrierOptions, dispatcherChooseCarrier, dispatcherWithdrawChoice, dispatcherAcceptConductTerms } from '../shared/api.js';
 import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';
+import { icon } from '../shared/ui/icons.js';
 
 const h = (tag, attrs, kids) => {
   const e = document.createElement(tag);
@@ -104,6 +105,7 @@ const CSS = `
 .cyc-tabs{display:flex;gap:6px;padding:6px;border-radius:16px;background:var(--panel);border:1px solid var(--line);margin-bottom:14px;overflow:auto}
 .cyc-tab{flex:1;border:0;background:transparent;color:var(--mut);font-weight:800;font-family:inherit;padding:10px 14px;border-radius:12px;cursor:pointer;white-space:nowrap;font-size:.9rem}
 .cyc-tab.on{background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff}
+.cyc-tab{display:inline-flex;align-items:center;justify-content:center;gap:8px}.cyc-tab .cc-ico{display:inline-flex;line-height:0}
 /* the book (sheet) */
 .cyc-ovl{position:fixed;inset:0;background:rgba(2,8,20,.78);z-index:9400;display:flex;align-items:flex-end;justify-content:center;padding:0}
 @media(min-width:760px){.cyc-ovl{align-items:center;padding:18px}}
@@ -442,8 +444,8 @@ export async function mountChooseCarrier(host, opts = {}) {
 
   // optional second tab: the test result (the caller passes a mounter so this module never imports the test)
   const tabs = opts.testTab ? h('div', { class: 'cyc-tabs' }, [
-    h('button', { class: 'cyc-tab on', onClick: (e) => { pick(0, e.currentTarget); } }, '🚚 Choose your carrier'),
-    h('button', { class: 'cyc-tab', onClick: (e) => { pick(1, e.currentTarget); } }, '📝 Your test result'),
+    h('button', { class: 'cyc-tab on', type: 'button', onClick: (e) => { pick(0, e.currentTarget); } }, [icon('truck', 16), ' Choose your carrier']),
+    h('button', { class: 'cyc-tab', type: 'button', onClick: (e) => { pick(1, e.currentTarget); } }, [icon('clipboard', 16), ' Your test result']),
   ]) : null;
   const testHost = h('div', { style: 'display:none' });
   let testMounted = false;
