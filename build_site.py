@@ -1381,6 +1381,10 @@ def _diesel_pick():
     return float(fb['usd_gal']), str(fb.get('as_of') or '?'), 'fallback'
 _DIESEL, _DIESEL_ASOF, _DIESEL_FROM = _diesel_pick()
 _DIESEL_S = '$%.2f' % _DIESEL
+def _ymd_long(d):                                           # '2026-09-21' -> 'Sep 21, 2026'; anything else unchanged
+    import datetime as _dtm
+    try: return _dtm.date.fromisoformat(str(d)).strftime('%b %-d, %Y')
+    except (TypeError, ValueError): return str(d)
 def _fsc(peg, mpg): return (_DIESEL - peg) / mpg          # fuel surcharge per mile, the industry formula
 def _fsc_s(peg, mpg): return '$%.2f' % _fsc(peg, mpg)
 def _fs_row(peg, mpg, mpg_label):                            # one row of the worked-example FSC table
@@ -3915,7 +3919,7 @@ FS_BODY=(
 '<p>None of this is exotic. It is simply the difference between a surcharge you can calculate yourself and a surcharge you have to take somebody&rsquo;s word on &mdash; and the second kind is how <a href="how-to-avoid-cheap-freight.html">cheap freight</a> disguises itself as a good rate.</p>'
 
 '<h2 id="worked">What FSC pays: worked 2026 examples</h2>'
-'<p>Take diesel at <b>' + _DIESEL_S + '/gal</b> &mdash; the working assumption in the LoadBoot <a href="cost-per-mile-calculator.html">cost-per-mile calculator</a>. Here is what the same truck, on the same lane, earns in surcharge under different terms:</p>'
+'<p>Take diesel at <b>' + _DIESEL_S + '/gal</b> &mdash; ' + ('the EIA weekly US average for the week of ' + _ymd_long(_DIESEL_ASOF) if not str(_DIESEL_FROM).startswith('fallback') else 'the last published US average') + ', the same figure the <a href="tools.html">LoadBoot trucking calculators</a> start from. Here is what the same truck, on the same lane, earns in surcharge under different terms:</p>'
 '<table class="cmp"><thead><tr><th>Peg</th><th>MPG divisor</th><th>FSC per mile</th><th>On a 500-mi load</th></tr></thead><tbody>'
 + ''.join(_fs_row(_p, _m, _ml) for _p, _m, _ml in ((1.25, 6.0, '6.0'), (1.25, 5.5, '5.5 (reefer/heavy)'), (2.0, 6.0, '6.0'), (2.5, 6.0, '6.0'), (2.5, 6.5, '6.5'))) +
 '</tbody></table>'
