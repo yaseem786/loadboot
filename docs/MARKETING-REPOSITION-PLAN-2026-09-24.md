@@ -1,6 +1,8 @@
 # Marketing site re-imagining plan — "The Operating System for Trucking" + the dispatcher model as it really runs
 
-24 Sep 2026 · Plan only, nothing shipped · Based on `main` @ e19fe63 (code is the tie-breaker over older design docs)
+24 Sep 2026 · Plan · Based on `main` @ e19fe63 (code is the tie-breaker over older design docs)
+
+> **Status 25 Sep 2026: executed in one pass** on branch `claude/great-keller-1cdb4y` (`dispatch_os_module.py` + edits to `build_site.py`, `home_v2_module.py`, `about_module.py`). Measurement record and re-check plan: `docs/seo/DISPATCH-OS-KEYWORD-MAP-2026-09-25.md`. Owner decisions taken: fee stays a flat 5 % of line-haul; dispatchers are LoadBoot's own (hired and paid by LoadBoot); the §6 six-round sequence was collapsed into one release.
 
 Sources read for this plan: `build_site.py` + `*_module.py` (live page source; the root `*.html` files are a stale snapshot), `app/carrier/dispatcher-desk.js`, `app/agent/dispatcher-workspace.js`, `app/command-center/views/dispatchers.js`, migrations `bl_disp_0140…0410`, `docs/DISPATCHER-PORTAL-AUDIT.md`, `docs/seo/WEEKLY-LOG.md` (R10), `docs/audit-2026-09/90-DAY-PLAN.md`, `docs/audit-2026-09/COMPETITION-AND-WEDGE.md`, `docs/research/independent-dispatcher-payment-model.md`, plus a web pass on 2026 competitor positioning and Google's current structured-data docs (sources at the end).
 

@@ -155,7 +155,8 @@ def about_sections():
       '<span class="tag" style="background:rgba(167,139,250,.2);color:#c4b5fd">🧑‍✈️ For Dispatchers &amp; Referral Partners</span>'
       '<h3>Build your book on honest rails.</h3>'
       '<p class="ab2-quote">"I wanted to dispatch the right way — I just needed the platform that does too."</p>'
-      '<ul><li>US dispatcher seats with real tooling — matching, rate cons, tracking, settlements (<a href="careers.html" style="color:#c4b5fd">careers</a>)</li>'
+      '<ul><li>Dispatcher seats you have to earn: screening, a timed exam, a voice drill and a 10-day trial — then a mailbox, a softphone and a workspace built for the job (<a href="careers.html" style="color:#c4b5fd">careers</a>)</li>'
+      '<li>Every dispatcher is assigned to a carrier by hand, books under that carrier&rsquo;s authority, and is paid by LoadBoot — never by the carrier (<a href="how-loadboot-dispatch-works.html" style="color:#c4b5fd">how dispatch works</a>)</li>'
       '<li>Referral partners earn <b>1% of gross on every load</b> their carriers run — for as long as they run</li>'
       '<li>Transparent statements in the platform; no clawback games</li></ul>'
       '<a class="ab2-cta" href="create-agent-account.html">Become a partner →</a></div></div></div></section>')
@@ -194,6 +195,6 @@ def about_sections():
       '<a class="ab2-door" href="create-carrier-account.html"><span class="ic">🚚</span><b>Carrier / Owner-Op</b><p>Verified loads, written detention, flat 5% when we book you.</p><span>Start free →</span></a>'
       '<a class="ab2-door" href="create-broker-account.html"><span class="ic">🏢</span><b>Freight Broker</b><p>Post free forever to FMCSA-verified, GPS-tracked capacity.</p><span>Post loads $0 →</span></a>'
       '<a class="ab2-door" href="create-shipper-account.html"><span class="ic">📦</span><b>Shipper</b><p>Direct-to-carrier rates with live tracking and photo proof.</p><span>Ship direct →</span></a>'
-      '<a class="ab2-door" href="create-agent-account.html"><span class="ic">📣</span><b>Dispatcher / Partner</b><p>Careers and a 1%-of-gross referral program that pays forever.</p><span>Join us →</span></a>'
+      '<a class="ab2-door" href="create-agent-account.html"><span class="ic">📣</span><b>Dispatcher / Referral Partner</b><p>Tested dispatcher seats, and a 1%-of-gross referral program that pays forever.</p><span>Join us →</span></a>'
       '</div></div></section>')
     return ''.join(S)
