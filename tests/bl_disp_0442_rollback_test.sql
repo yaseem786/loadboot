@@ -22,7 +22,7 @@ begin
   -- the candidate knows Reefer only; carrier 1 runs Dry Van + Reefer (partial), carrier 2 runs Reefer (exact)
   update app_private.fleet_trucks set equipment = 'Reefer', status = 'active' where carrier_id = v_c2;
   update app_private.fleet_trucks set equipment = case when unit_no = (select min(unit_no) from app_private.fleet_trucks where carrier_id = v_c1) then 'Dry Van' else 'Reefer' end, status = 'active' where carrier_id = v_c1;
-  update app_private.dispatcher_profiles set status = 'skills_test', skills = coalesce(skills,'{}'::jsonb) || '{"equipment":["Reefer"]}'::jsonb, commission_pct = 0, trial_start = null, trial_end = null where user_id = v_disp;
+  update app_private.dispatcher_profiles set status = 'skills_test', skills = coalesce(skills,'{}'::jsonb) || '{"equipment":["Reefer"]}'::jsonb, commission_pct = 0, trial_start = null, trial_end = null, conduct_terms_accepted_at = null, conduct_terms_version = null, blocked_at = null where user_id = v_disp;
   delete from app_private.skills_test_attempts where user_id = v_disp;
   insert into app_private.skills_test_attempts(user_id, attempt_no, status, minutes, invited_at, start_by, started_at, ends_at, submitted_at, decision, staff_score, max_score, reviewed_at, passed_email_at)
     values (v_disp, 1, 'scored', 45, now() - interval '1 day', now() + interval '1 day', now() - interval '3 hours', now() - interval '2 hours', now() - interval '2 hours', 'pass', 81, 100, now() - interval '1 hour', now() - interval '1 hour');
@@ -39,6 +39,17 @@ begin
   if (o->'carriers'->0->'authority') ? 'mc' or (o->'carriers'->0->'authority') ? 'dot' or (o->'carriers'->0->'ops') ? 'factoring_status' then raise exception 'c1 leaked docket/factoring'; end if;
   if (o->'carriers'->0->'fleet'->>'count')::int < 1 or not ((o->'carriers'->0->'fleet'->'trucks'->0) ? 'equipment') then raise exception 'c1 truck spec missing %', o->'carriers'->0->'fleet'; end if;
   if jsonb_typeof(o->'carriers'->0->'gaps') <> 'array' or jsonb_typeof(o->'carriers'->0->'timeline') <> 'array' then raise exception 'c1 gaps/timeline'; end if;
+  -- identity rule (25 Sep 2026): no company name before acceptance — only the anonymous label; authority age still shown
+  if (o->'carriers'->0->'org'->>'name') is not null or (o->'carriers'->0->'org'->>'label') not like 'Carrier %' then raise exception 'c1 leaked carrier name %', o->'carriers'->0->'org'; end if;
+  if (o->'carriers'->0->'fleet'->'trucks'->0->'availability') ? 'driver_name' then raise exception 'c1 leaked driver name'; end if;
+  if (o->'conduct_terms'->>'version') is null or (o->'conduct_terms'->>'accepted_at') is not null then raise exception 'c1 conduct terms %', o->'conduct_terms'; end if;
+
+  -- c1b choosing before the contact rules are accepted is refused; accepting stamps the profile
+  r := public.dispatcher_choose_carrier(v_c2, 'too early');
+  if (r->>'code') is distinct from 'terms_required' then raise exception 'c1b terms gate %', r; end if;
+  r := public.dispatcher_accept_conduct_terms();
+  if not coalesce((r->>'ok')::boolean,false) then raise exception 'c1b accept %', r; end if;
+  if (select conduct_terms_version from app_private.dispatcher_profiles where user_id = v_disp) <> (o->'conduct_terms'->>'version') then raise exception 'c1b version not stamped'; end if;
 
   -- c2 choose → pending row, staff card + staff e-mail, receipt card + receipt e-mail
   r := public.dispatcher_choose_carrier(v_c2, 'I ran reefers out of Laredo for two years.');
@@ -57,6 +68,9 @@ begin
                and p.proname in ('dispatcher_choose_carrier','cc_dispatcher_choice_decide','disp_test_pass_email','disp_carrier_book','dispatcher_withdraw_choice')
                and (pg_get_functiondef(p.oid) like '%253-7575%' or pg_get_functiondef(p.oid) like '%2537575%')) then raise exception 'c2 riley number hard-coded'; end if;
   if exists (select 1 from app_private.message_deliveries where idempotency_key like 'disp.choice.%:' || v_choice::text and meta->>'body_html' like '%{{contact_inline}}%') then raise exception 'c2 contact token not expanded'; end if;
+  -- the candidate's receipt never carries the carrier's real name; the staff notice does
+  if exists (select 1 from app_private.message_deliveries m join public.organizations o on o.id = v_c2 where m.idempotency_key = 'disp.choice.receipt:' || v_choice::text and m.meta->>'body_html' ilike '%' || o.name || '%') then raise exception 'c2 receipt leaked carrier name'; end if;
+  if not exists (select 1 from app_private.message_deliveries m join public.organizations o on o.id = v_c2 where m.idempotency_key = 'disp.choice.staff:' || v_choice::text and m.meta->>'body_html' ilike '%' || o.name || '%') then raise exception 'c2 staff notice missing carrier name'; end if;
 
   -- c3 pending state: nothing else to choose, the carrier is held, a second choice is refused
   o := public.dispatcher_carrier_options();
@@ -111,6 +125,8 @@ begin
   -- the existing trial + brief + carrier intro e-mails fired through the existing functions
   select count(*) into n from app_private.message_deliveries where template_key in ('dispatcher.trial.welcome','dispatcher.assigned.brief','dispatcher.assigned.carrier') and scheduled_at > now() - interval '1 minute';
   if n < 2 then raise exception 'c6 downstream e-mails % (want >= 2: trial + brief; carrier intro needs an owner e-mail)', n; end if;
+  -- bl_disp_0443: the trial e-mail carries the contact rule
+  if not exists (select 1 from app_private.message_deliveries where template_key = 'dispatcher.trial.welcome' and scheduled_at > now() - interval '1 minute' and meta->>'body_html' like '%Contact rule%permanent block%') then raise exception 'c6 trial e-mail lacks the contact rule'; end if;
   if not app_private.disp_carrier_available(v_c1) then raise exception 'c6 other carrier must stay open'; end if;
 
   -- c7 assigned now → not eligible; a screening candidate → not eligible
@@ -128,6 +144,7 @@ begin
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   if has_function_privilege('anon', 'public.dispatcher_carrier_options()', 'execute') or has_function_privilege('anon', 'public.dispatcher_choose_carrier(uuid,text)', 'execute')
      or has_function_privilege('anon', 'public.dispatcher_withdraw_choice()', 'execute') or has_function_privilege('anon', 'public.cc_dispatcher_choices(text,uuid)', 'execute')
-     or has_function_privilege('anon', 'public.cc_dispatcher_choice_decide(uuid,text,text,jsonb)', 'execute') then raise exception 'c8 anon can execute'; end if;
+     or has_function_privilege('anon', 'public.cc_dispatcher_choice_decide(uuid,text,text,jsonb)', 'execute')
+     or has_function_privilege('anon', 'public.dispatcher_accept_conduct_terms()', 'execute') then raise exception 'c8 anon can execute'; end if;
   raise exception 'ROLLBACK-OK';
 end $t$;

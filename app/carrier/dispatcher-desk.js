@@ -7,7 +7,7 @@
 // Backend: public.carrier_dispatcher_desk(), carrier_dispatcher_change_request(),
 //   carrier_dispatcher_pause(), dispatcher_thread_list/send/mark_read (all existing + 0408).
 import { carrierDispatcherDesk, carrierDispatcherChangeRequest, carrierDispatcherPause,
-  dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead } from '../shared/api.js';
+  dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead, carrierReportDispatcher } from '../shared/api.js';
 import { el, mount } from '../shared/ui/dom.js';
 import { icon } from '../shared/ui/icons.js';
 
@@ -363,10 +363,52 @@ export async function renderDispatcherDesk(host) {
   const youGet = card('What your dispatcher does for you', 'The standard every LoadBoot dispatcher is held to', h('div', { class: 'dd-list' }, YOU_GET.map((r) => h('div', { class: 'dd-row' }, [h('div', { class: 'dd-check on' }, icon('check', 13)), h('div', { class: 'l' }, [h('b', null, r[0]), h('span', null, r[1])])]))));
   const how = card('How the LoadBoot dispatcher program works', 'Plain answers to the four questions every carrier asks', h('div', null, HOW.map((r, i) => h('details', { class: 'dd-faq', open: window.innerWidth > 560 }, [h('summary', null, [h('span', { class: 'ic' }, icon(r[0], 15)), r[1]]), h('p', null, r[2])]))));
 
+  // ---------- bl_disp_0443: the ONE rule that protects the carrier, and the report form behind it ----------
+  let protect = null;
+  if (a) {
+    const lineTxt = a && released && c.phone ? 'the LoadBoot line ' + c.phone : 'the LoadBoot line shown on this page';
+    const repHost = h('div');
+    const openReport = () => {
+      const kind = h('select', { class: 'cp-in' }, [
+        h('option', { value: 'off_platform_contact' }, 'Contacted me from a number / account that is not LoadBoot'),
+        h('option', { value: 'asked_personal_contact' }, 'Asked for my personal number, WhatsApp or e-mail'),
+        h('option', { value: 'off_platform_offer' }, 'Offered to work outside LoadBoot'),
+        h('option', { value: 'other' }, 'Something else'),
+      ]);
+      const chan = h('select', { class: 'cp-in' }, ['call', 'sms', 'whatsapp', 'email', 'social', 'other'].map((v) => h('option', { value: v }, v === 'sms' ? 'Text / SMS' : v === 'email' ? 'E-mail' : v === 'social' ? 'Facebook / Instagram / other social' : v[0].toUpperCase() + v.slice(1))));
+      const seen = h('input', { class: 'cp-in', placeholder: 'The number, WhatsApp or address they used (e.g. +1 555 010 0199)' });
+      const ta = h('textarea', { class: 'cp-in', rows: 3, placeholder: 'What happened, in one or two lines. Screenshots can be sent to LoadBoot afterwards.' });
+      const e2 = h('div', { class: 'cp-err', style: 'display:none' });
+      const go = h('button', { class: 'dd-cta danger', onClick: async () => {
+        go.disabled = true; e2.style.display = 'none';
+        try { const r = await carrierReportDispatcher(kind.value, chan.value, seen.value, ta.value); if (r && r.error) throw new Error(r.error);
+          mount(repHost, h('div', { class: 'cp-row-s', style: 'margin-top:10px;padding:12px;border-radius:14px;border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.08);color:#dfe9fb' }, [h('b', { style: 'color:#6ee7b7' }, '✓ Report sent to LoadBoot. '), 'Do not respond to that contact. We review every report, usually within one working day, and come back to you here and by e-mail.']));
+          toast('Report sent — LoadBoot is reviewing it', 'ok');
+        } catch (err) { e2.textContent = (err && err.message) || 'Could not send the report.'; e2.style.display = ''; go.disabled = false; }
+      } }, [icon('alert', 14), ' Send report to LoadBoot']);
+      mount(repHost, h('div', { style: 'margin-top:10px;padding:12px;border-radius:14px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.06)' }, [
+        h('div', { style: 'font-weight:800;color:#fca5a5;margin-bottom:6px' }, 'Report a contact outside LoadBoot'),
+        h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'Only LoadBoot sees this. The dispatcher is not told who reported.'),
+        h('div', { style: 'display:grid;gap:8px' }, [kind, chan, seen, ta]), e2,
+        h('div', { class: 'dd-btnrow', style: 'margin-top:8px' }, [go, h('button', { class: 'dd-cta ghost', onClick: () => mount(repHost, []) }, 'Cancel')]),
+      ]));
+    };
+    protect = card('Protect yourself — one rule', 'Standard on every dispatcher marketplace: nothing outside the platform is covered', h('div', null, [
+      h('div', { class: 'dd-list' }, [
+        h('div', { class: 'dd-row' }, [h('div', { class: 'dd-check on' }, icon('check', 13)), h('div', null, [h('b', null, (dp.first_name || 'Your dispatcher') + ' reaches you only from ' + lineTxt + ' and your LoadBoot WhatsApp group.'), ' Every call and message there is logged with LoadBoot.'])]),
+        h('div', { class: 'dd-row' }, [h('div', { class: 'dd-check', style: 'background:rgba(239,68,68,.18);color:#fca5a5' }, icon('alert', 13)), h('div', null, [h('b', null, 'Any other number, WhatsApp, e-mail or social account claiming to be your dispatcher: do not respond — report it here.'), ' LoadBoot reviews every report. A dispatcher who breaks this rule is blocked from LoadBoot permanently.'])]),
+        h('div', { class: 'dd-row' }, [h('div', { class: 'dd-check', style: 'background:rgba(245,158,11,.18);color:#fcd34d' }, icon('shield', 13)), h('div', null, [h('b', null, 'Work arranged outside LoadBoot channels is not covered by LoadBoot'), ' — no logged calls, no rate confirmation in your name, no LoadBoot support if it goes wrong.'])]),
+      ]),
+      h('div', { class: 'dd-btnrow', style: 'margin-top:10px' }, [h('button', { class: 'dd-cta danger', onClick: openReport }, [icon('alert', 14), ' Report a contact'])]),
+      repHost,
+    ]));
+  }
+
   mount(host, h('div', { class: 'dd-wrap' }, [
     hero,
     blockers,
     contact,
+    protect,
     stats,
     thread,
     setup,

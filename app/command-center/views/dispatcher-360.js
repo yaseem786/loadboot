@@ -20,6 +20,7 @@ import { ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSo
          ccDispatcherKpis, ccDispatcherActivity } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { ccDispatcherSetRejectReasons, ccDispatcherChoices, ccDispatcherChoiceDecide } from '../../shared/api.js';   // bl_disp_0442 — carrier choices
+import { ccDispatcherReports, ccDispatcherReportDecide } from '../../shared/api.js';   // bl_disp_0443 — carrier reports → permanent block
 import { REASONS } from '../../agent/dispatcher-gaps.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { renderTestPanel } from './dispatcher-test.js';
@@ -278,12 +279,13 @@ export async function renderDispatcher360(host, query) {
   const root = el('div', { class: 'd3' }, el('div', { class: 'd3-empty' }, 'Loading dispatcher…'));
   mount(host, root);
 
-  const state = { dd: null, test: null, kpi: null, kpiDays: 30, bookings: null, comm: null, activity: null, carriers: [], choices: [] };
+  const state = { dd: null, test: null, kpi: null, kpiDays: 30, bookings: null, comm: null, activity: null, carriers: [], choices: [], reports: [] };
   const load = async (what) => {
     const all = !what;
     const jobs = [];
     if (all || what === 'dd') jobs.push(ccDispatcher360(id).then((r) => { state.dd = r; }));
     if (all || what === 'dd') jobs.push(ccDispatcherChoices('all', id).then((r) => { state.choices = Array.isArray(r) ? r : []; }).catch(() => { state.choices = []; }));   // bl_disp_0442
+    if (all || what === 'dd') jobs.push(ccDispatcherReports('all', id).then((r) => { state.reports = Array.isArray(r) ? r : []; }).catch(() => { state.reports = []; }));   // bl_disp_0443
     if (all || what === 'test') jobs.push(ccDispatcherTestReview(id).then((r) => { state.test = r; }).catch((e) => { state.test = { error: humanizeError(e) }; }));
     if (all || what === 'kpi') jobs.push(ccDispatcherKpis(id, state.kpiDays).then((r) => { state.kpi = r; }).catch((e) => { state.kpi = { error: humanizeError(e) }; }));
     if (all || what === 'bookings') jobs.push(ccDispatcherBookings({ user: id, limit: 200 }).then((r) => { state.bookings = Array.isArray(r) ? r : []; }).catch(() => { state.bookings = []; }));
@@ -655,6 +657,51 @@ export async function renderDispatcher360(host, query) {
       return card('Carrier choice waiting', 'Picked by the candidate from the Fleet Book in their portal · on hold until you decide', 'handshake', body, [], 'carriers');
     });
   }
+  // bl_disp_0443 — a carrier reported this dispatcher. Uphold = same-day suspension + permanent block (no reinstate,
+  // no re-apply, assignment ended, line + mailbox released). Dismiss = the carrier is told, nothing changes.
+  function reportCards() {
+    const reps = state.reports || [];
+    const open = reps.filter((r) => r.status === 'open' || r.status === 'reviewing');
+    const upheld = reps.filter((r) => r.status === 'upheld');
+    const out = [];
+    if (upheld.length) {
+      const u = upheld[0];
+      out.push(card('Permanently blocked', 'A carrier report of contact outside LoadBoot channels was upheld ' + dShort(u.decided_at) + ' · no reinstate, no re-apply', 'alert',
+        el('div', { class: 'd3-pad d3-mut', style: 'font-size:12.5px;line-height:1.6' }, [el('b', { style: 'color:#dc2626' }, (u.carrier || {}).name || 'Carrier'), ' · ' + (u.kind_label || u.kind) + (u.contact_seen ? ' · seen: ' + u.contact_seen : ''), u.decision_note ? el('div', null, '“' + u.decision_note + '”') : '']), [], 'carriers'));
+    }
+    open.forEach((r) => {
+      const cr = r.carrier || {}, dp = r.dispatcher || {};
+      const body = el('div', { class: 'd3-pad' }, [
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px' }, [el('b', { style: 'font-size:15px' }, cr.name || 'Carrier'), pill(r.kind_label || r.kind, 'red', 'alert'), r.status === 'reviewing' ? pill('Reviewing', 'amber') : '']),
+        el('div', { class: 'd3-mut', style: 'font-size:12.5px;line-height:1.7' }, [
+          'Reported ' + ago(r.created_at) + ' · channel ' + (r.channel || '—') + ' · contact seen: ', el('b', null, r.contact_seen || '—'),
+          el('br'), 'Dispatcher’s LoadBoot line: ' + (dp.line || 'none active') + ' · assignment ' + (r.assignment_status || '—') + ' · ' + (dp.open_reports || 0) + ' open report' + (Number(dp.open_reports) === 1 ? '' : 's') + ' on this dispatcher',
+        ]),
+        r.detail ? el('div', { style: 'margin-top:8px;padding:8px 10px;border-left:3px solid #dc2626;background:rgba(220,38,38,.06);font-size:12.5px;line-height:1.5' }, ['“', r.detail, '”']) : '',
+        el('div', { class: 'd3-mut', style: 'font-size:12px;margin-top:8px' }, 'Check the call log and the shared thread first: the LoadBoot line is the only number the dispatcher may use. Uphold blocks the account permanently and ends every assignment; the carrier and the dispatcher are both e-mailed.'),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [
+          btn('Uphold — permanent block', () => decideReport(r, 'uphold'), 'danger', 'x'),
+          btn('Dismiss — no breach found', () => decideReport(r, 'dismiss'), '', 'check'),
+          r.status !== 'reviewing' ? btn('Mark reviewing', () => decideReport(r, 'reviewing'), '', 'eye') : '',
+        ]),
+      ]);
+      out.push(card('Carrier report waiting', 'Filed by the carrier in their Dispatcher tab · Report a contact', 'alert', body, [], 'carriers'));
+    });
+    return out;
+  }
+  async function decideReport(r, action) {
+    let note = null;
+    if (action === 'uphold') {
+      if (!(await askConfirm('Permanently block ' + (state.dd.profile.full_name || 'this dispatcher') + '?', { body: 'Same-day suspension, every assignment ended, LoadBoot line and mailbox released, no reinstate and no re-apply. The carrier is told the report was upheld; the dispatcher gets the decision letter. This cannot be undone from Command Center.', danger: true }))) return;
+      note = await askReason('Note for the dispatcher’s decision letter (optional — what the evidence showed)'); if (note === null) return;
+    } else if (action === 'dismiss') {
+      note = await askReason('Why no breach? (the carrier reads this line)'); if (note === null) return;
+    }
+    const res = await ccDispatcherReportDecide(r.id, action, note).catch((e) => ({ error: humanizeError(e) }));
+    if (res && res.error) { toast(res.error); return; }
+    toast(action === 'uphold' ? '✓ Blocked permanently — carrier and dispatcher e-mailed' : action === 'dismiss' ? '✓ Dismissed — carrier told' : '✓ Marked reviewing');
+    rerender();
+  }
   function carriersCard(full) {
     const live = (state.dd.assignments || []).filter((a) => a.status !== 'ended');
     const ended = (state.dd.assignments || []).filter((a) => a.status === 'ended');
@@ -875,9 +922,9 @@ export async function renderDispatcher360(host, query) {
   // ---- compose
   function body() {
     const left = []; const right = [];
-    if (tab === 'overview') { left.push(...choiceCards(), nbaCard(), readinessCard(), carriersCard(false), scorecardCard(false)); right.push(termsCard(), documentsCard(false), signalsCard(), activityCard(), noteCard()); }   // bl_disp_0442: a waiting carrier choice comes first
+    if (tab === 'overview') { left.push(...reportCards(), ...choiceCards(), nbaCard(), readinessCard(), carriersCard(false), scorecardCard(false)); right.push(termsCard(), documentsCard(false), signalsCard(), activityCard(), noteCard()); }   // bl_disp_0442: a waiting carrier choice comes first
     else if (tab === 'test') { const h = el('div'); renderTestPanel(h, { userId: id, name: state.dd.profile.full_name, onChange: () => rerender('test') }); left.push(h); right.push(signalsCard(), applicationCard()); }
-    else if (tab === 'carriers') { left.push(...choiceCards(), carriersCard(true)); right.push(termsCard(), signalsCard(), activityCard()); }
+    else if (tab === 'carriers') { left.push(...reportCards(), ...choiceCards(), carriersCard(true)); right.push(termsCard(), signalsCard(), activityCard()); }
     else if (tab === 'performance') { left.push(scorecardCard(true), readinessCard()); right.push(termsCard(), signalsCard()); }
     else if (tab === 'loads') { left.push(loadsCard()); right.push(carriersCard(false), termsCard()); }
     else if (tab === 'money') { left.push(moneyCard()); right.push(termsCard(), activityCard()); }

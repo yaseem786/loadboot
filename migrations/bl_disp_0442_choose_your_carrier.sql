@@ -202,8 +202,36 @@ begin
 end $$;
 revoke all on function app_private.disp_choice_eligibility(uuid) from public, anon;
 
+-- ---------------------------------------------------------------- 3b. identity rule + conduct terms (owner, 25 Sep 2026)
+-- Before Command Center accepts the choice the candidate sees NO carrier identity: no company name, no
+-- owner/driver names, phones, e-mails, MC/DOT. Only the operation: equipment, trucks, floor, radius, home
+-- state and the AGE of the authority. The stable anonymous label below is what the candidate and every
+-- candidate-facing e-mail call the carrier until acceptance.
+create or replace function app_private.disp_carrier_label(p_org uuid) returns text
+language sql immutable as $$ select 'Carrier ' || upper(left(md5(p_org::text), 4)) $$;
+revoke all on function app_private.disp_carrier_label(uuid) from public, anon;
+
+-- The contact-conduct terms every candidate accepts BEFORE the first choice (stored on the profile with
+-- the version). One source of truth: the portal renders these lines, the trial e-mail repeats them.
+create or replace function app_private.disp_conduct_terms() returns jsonb
+language sql immutable as $$
+  select jsonb_build_object(
+    'version', 'v1-2026-09-25',
+    'title', 'Contact rules — accepted before you choose',
+    'rules', jsonb_build_array(
+      'Every contact with a carrier goes through LoadBoot channels only: the carrier''s LoadBoot WhatsApp dispatch group, your LoadBoot line and your LoadBoot mailbox. Never a personal phone, personal WhatsApp, personal e-mail, or social media — yours or theirs.',
+      'Never ask a carrier for a personal number and never give yours. Never move a carrier, a driver, a broker or a load off LoadBoot, during the assignment or after it ends.',
+      'Carriers are told to report any contact that does not come from your LoadBoot line or the LoadBoot group. A report is investigated by LoadBoot. A confirmed report means your account is suspended the same day and blocked permanently: every assignment ends, your LoadBoot line and mailbox are released, and you cannot be reinstated or re-apply.',
+      'Names, phones, dockets and documents you see after an assignment are confidential to that assignment. The carrier approves every load — you never book, commit or promise without their OK.'),
+    'consequence', 'Confirmed off-platform contact = same-day suspension, permanent block, no re-application.')
+$$;
+revoke all on function app_private.disp_conduct_terms() from public, anon;
+
+alter table app_private.dispatcher_profiles add column if not exists conduct_terms_accepted_at timestamptz;
+alter table app_private.dispatcher_profiles add column if not exists conduct_terms_version text;
+
 -- ---------------------------------------------------------------- 4. the Fleet Book, as JSON
--- p_full = false is what a candidate sees before an assignment (no names, phones, dockets, docs).
+-- p_full = false is what a candidate sees before an assignment (no company name, owner/driver names, phones, dockets, docs).
 create or replace function app_private.disp_carrier_book(p_org uuid, p_full boolean default false) returns jsonb
 language plpgsql stable security definer set search_path = app_private, public as $$
 declare o record; pf record; pr record; ob record; sf record; snap jsonb; v_home text; v_city text; v_state text;
@@ -296,7 +324,7 @@ begin
     v_home);
 
   return jsonb_build_object(
-    'org', jsonb_build_object('id', o.id, 'name', o.name, 'home_base', v_home, 'city', v_city, 'state', v_state,
+    'org', jsonb_build_object('id', o.id, 'name', case when p_full then o.name end, 'label', app_private.disp_carrier_label(o.id), 'home_base', v_home, 'city', v_city, 'state', v_state,
              'joined_at', o.created_at, 'approved_at', case when ob.stage = 'approved' then ob.decided_at end, 'summary', v_summary),
     'equipment', v_equip,
     'equipment_labels', (select coalesce(array_agg(app_private.disp_equip_label(e) order by e), '{}'::text[]) from unnest(v_equip) e),
@@ -345,7 +373,7 @@ begin
   if v_uid is null then return jsonb_build_object('error','not signed in'); end if;
   el := app_private.disp_choice_eligibility(v_uid);
   if (el->>'reason') = 'not_dispatcher' then return jsonb_build_object('error','not a dispatcher'); end if;
-  select full_name, years_exp, load_boards, skills, status into d from app_private.dispatcher_profiles where user_id = v_uid;
+  select full_name, years_exp, load_boards, skills, status, conduct_terms_accepted_at, conduct_terms_version into d from app_private.dispatcher_profiles where user_id = v_uid;
   v_disp := app_private.disp_dispatcher_equipment(v_uid);
 
   -- the pending pick (renders as the "with LoadBoot" card, book included)
@@ -353,7 +381,7 @@ begin
            'note', c.dispatcher_note, 'match_kind', c.match_kind, 'book', app_private.disp_carrier_book(c.carrier_org_id, false))
     into v_pending from app_private.dispatcher_carrier_choices c where c.dispatcher_user_id = v_uid and c.status = 'pending' limit 1;
 
-  select coalesce(jsonb_agg(jsonb_build_object('id', c.id, 'carrier', o.name, 'status', c.status, 'created_at', c.created_at,
+  select coalesce(jsonb_agg(jsonb_build_object('id', c.id, 'carrier', case when c.status = 'accepted' then o.name else app_private.disp_carrier_label(o.id) end, 'status', c.status, 'created_at', c.created_at,
            'decided_at', c.decided_at, 'decision_note', c.decision_note) order by c.created_at desc), '[]'::jsonb)
     into v_history from app_private.dispatcher_carrier_choices c join public.organizations o on o.id = c.carrier_org_id
    where c.dispatcher_user_id = v_uid and c.status in ('declined','withdrawn','accepted');
@@ -388,10 +416,27 @@ begin
         'equipment', (select coalesce(array_agg(app_private.disp_equip_label(e) order by e), '{}'::text[]) from unnest(v_disp) e),
         'hours', d.skills->>'availability_hours', 'timezone', d.skills->>'timezone'),
     'exact_count', v_exact, 'available_count', jsonb_array_length(v_list),
+    'conduct_terms', app_private.disp_conduct_terms() || jsonb_build_object('accepted_at', d.conduct_terms_accepted_at, 'accepted_version', d.conduct_terms_version),
     'carriers', v_list, 'pending', v_pending, 'history', v_history);
 end $$;
 revoke all on function public.dispatcher_carrier_options() from public, anon;
 grant execute on function public.dispatcher_carrier_options() to authenticated;
+
+-- ---------------------------------------------------------------- 5b. candidate: accept the contact-conduct terms
+create or replace function public.dispatcher_accept_conduct_terms() returns jsonb
+language plpgsql security definer set search_path = app_private, public as $$
+declare v_uid uuid := auth.uid(); v_ver text := app_private.disp_conduct_terms()->>'version'; v_name text;
+begin
+  if v_uid is null then return jsonb_build_object('error','not signed in'); end if;
+  update app_private.dispatcher_profiles set conduct_terms_accepted_at = now(), conduct_terms_version = v_ver, updated_at = now()
+   where user_id = v_uid returning full_name into v_name;
+  if not found then return jsonb_build_object('error','not a dispatcher'); end if;
+  perform app_private.disp_audit('dispatcher.conduct_terms.accepted', 'dispatcher', v_uid::text, null,
+    coalesce(v_name,'dispatcher') || ' accepted the contact-conduct terms ' || v_ver, jsonb_build_object('version', v_ver));
+  return jsonb_build_object('ok', true, 'version', v_ver, 'accepted_at', now());
+end $$;
+revoke all on function public.dispatcher_accept_conduct_terms() from public, anon;
+grant execute on function public.dispatcher_accept_conduct_terms() to authenticated;
 
 -- ---------------------------------------------------------------- 6. candidate: choose
 create or replace function public.dispatcher_choose_carrier(p_org uuid, p_note text default null) returns jsonb
@@ -399,7 +444,7 @@ language plpgsql security definer set search_path = app_private, public as $$
 declare v_uid uuid := auth.uid(); el jsonb; d record; o record; v_disp text[]; v_carr text[]; v_match text; v_id uuid;
         v_book jsonb; v_note text; v_mail text; v_staff text := app_private.disp_contact()->>'email'; v_html text; v_text text;
         v_score text; v_boards text; v_equip_d text; v_equip_c text; v_contact text := app_private.disp_contact()->>'email';
-        v_cc_url text; v_match_label text;
+        v_cc_url text; v_match_label text; v_label text;
 begin
   if v_uid is null then return jsonb_build_object('error','not signed in'); end if;
   el := app_private.disp_choice_eligibility(v_uid);
@@ -407,6 +452,9 @@ begin
   if not coalesce((el->>'eligible')::boolean, false) then return jsonb_build_object('error','choosing a carrier opens once your skills test is marked passed'); end if;
   if coalesce((el->>'has_pending')::boolean, false) then return jsonb_build_object('error','your choice is already with LoadBoot — withdraw it first if you want to change it'); end if;
   if p_org is null then return jsonb_build_object('error','pick a carrier'); end if;
+  if not exists (select 1 from app_private.dispatcher_profiles where user_id = v_uid and conduct_terms_version = app_private.disp_conduct_terms()->>'version')
+    then return jsonb_build_object('error','accept the contact rules first', 'code', 'terms_required'); end if;
+  v_label := app_private.disp_carrier_label(p_org);
   if not app_private.disp_carrier_available(p_org, v_uid) then return jsonb_build_object('error','this carrier is no longer open — pick another'); end if;
 
   select full_name, years_exp, load_boards, skills, status into d from app_private.dispatcher_profiles where user_id = v_uid;
@@ -474,15 +522,15 @@ begin
 
   -- ---- the candidate: in-app + receipt e-mail
   perform app_private.disp_notify(v_uid, 'dispatcher', 'dispatcher.carrier.chosen.receipt',
-    'Your choice is with LoadBoot: ' || coalesce(o.name,'carrier'),
+    'Your choice is with LoadBoot: ' || v_label,
     'We confirm the carrier, set your trial terms and open your workspace. You will get an e-mail the moment it is done.',
     '/app/agent/#dashboard', false);
   select u.email into v_mail from auth.users u where u.id = v_uid;
   if v_mail is not null then
     v_html := '<div style="font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;font-size:15px;line-height:1.65">'
       || app_private.disp_head('LoadBoot Dispatch &middot; Carrier choice', 'Your choice is with LoadBoot')
-      || '<p style="margin:0 0 14px">Dear ' || app_private.disp_esc(coalesce(nullif(d.full_name,''),'Dispatcher')) || ', you chose <b>' || app_private.disp_esc(coalesce(o.name,'a carrier')) || '</b>. This carrier is now on hold for you while LoadBoot confirms it.</p>'
-      || app_private.disp_strip('Carrier', app_private.disp_esc(coalesce(o.name,'—')), 'Runs', app_private.disp_esc(v_equip_c), 'Your fit', '<span style="color:' || case v_match when 'exact' then '#4ade80' else '#FC5305' end || '">' || v_match_label || '</span>')
+      || '<p style="margin:0 0 14px">Dear ' || app_private.disp_esc(coalesce(nullif(d.full_name,''),'Dispatcher')) || ', you chose <b>' || v_label || '</b>. This carrier is now on hold for you while LoadBoot confirms it.</p>'
+      || app_private.disp_strip('Carrier', v_label, 'Runs', app_private.disp_esc(v_equip_c), 'Your fit', '<span style="color:' || case v_match when 'exact' then '#4ade80' else '#FC5305' end || '">' || v_match_label || '</span>')
       || app_private.disp_box('What happens next',
            '<b>1.</b> LoadBoot reviews your choice &mdash; usually within one working day.<br>'
         || '<b>2.</b> On acceptance your paid trial starts: you receive the trial terms e-mail and this carrier&rsquo;s full operating brief (truck, driver, rules, authority) in a second e-mail.<br>'
@@ -491,9 +539,9 @@ begin
       || app_private.disp_btn('Open my portal', 'https://loadboot.com/app/agent/#dashboard')
       || '<p style="margin:0 0 16px"><b>LoadBoot Dispatch</b><br><span style="color:#64748b;font-size:13px">{{contact_inline}}<br>' || v_contact || '</span></p>'
       || '<p style="color:#8ea2c3;font-size:12px;margin:0">You are receiving this because you chose a carrier in your LoadBoot dispatcher portal. Transactional notice about your application.</p></div>';
-    v_text := 'Dear ' || coalesce(nullif(d.full_name,''),'Dispatcher') || E',\n\nYou chose ' || coalesce(o.name,'a carrier') || E'. It is on hold for you while LoadBoot confirms it (usually within one working day). On acceptance your paid trial starts and you receive the trial terms and the carrier''s full brief by e-mail.\n\nChanged your mind? Withdraw the choice in your portal: https://loadboot.com/app/agent/#dashboard\n\nLoadBoot Dispatch - {{contact_inline}} - ' || v_contact;
+    v_text := 'Dear ' || coalesce(nullif(d.full_name,''),'Dispatcher') || E',\n\nYou chose ' || v_label || E'. It is on hold for you while LoadBoot confirms it (usually within one working day). On acceptance your paid trial starts and you receive the trial terms and the carrier''s full brief by e-mail.\n\nChanged your mind? Withdraw the choice in your portal: https://loadboot.com/app/agent/#dashboard\n\nLoadBoot Dispatch - {{contact_inline}} - ' || v_contact;
     begin
-      perform app_private.sys_email(v_mail, 'dispatcher.carrier.chosen.receipt', 'Your carrier choice is with LoadBoot: ' || coalesce(o.name,'carrier'), v_html, v_text, 'disp.choice.receipt:' || v_id::text);
+      perform app_private.sys_email(v_mail, 'dispatcher.carrier.chosen.receipt', 'Your carrier choice is with LoadBoot: ' || v_label, v_html, v_text, 'disp.choice.receipt:' || v_id::text);
     exception when others then null; end;
   end if;
 
@@ -567,11 +615,12 @@ grant execute on function public.cc_dispatcher_choices(text, uuid) to authentica
 create or replace function public.cc_dispatcher_choice_decide(p_id uuid, p_action text, p_note text default null, p_sop jsonb default '{}'::jsonb) returns jsonb
 language plpgsql security definer set search_path = app_private, public as $$
 declare c record; d record; o record; r jsonb; r2 jsonb; v_trial boolean := false; v_mail text; v_html text; v_text text;
-        v_contact text := app_private.disp_contact()->>'email'; v_note text := nullif(btrim(coalesce(p_note,'')), '');
+        v_contact text := app_private.disp_contact()->>'email'; v_note text := nullif(btrim(coalesce(p_note,'')), ''); v_label text;
 begin
   if not app_private.disp_is_staff() then return jsonb_build_object('error','not authorized'); end if;
   select * into c from app_private.dispatcher_carrier_choices where id = p_id for update;
   if c.id is null then return jsonb_build_object('error','choice not found'); end if;
+  v_label := app_private.disp_carrier_label(c.carrier_org_id);
   if c.status <> 'pending' then return jsonb_build_object('error','this choice was already ' || c.status); end if;
   select full_name, status into d from app_private.dispatcher_profiles where user_id = c.dispatcher_user_id;
   select id, name into o from public.organizations where id = c.carrier_org_id;
@@ -601,21 +650,21 @@ begin
      where id = c.id;
     perform app_private.disp_notify(c.dispatcher_user_id, 'dispatcher', 'dispatcher.carrier.declined',
       'Please choose another carrier',
-      'LoadBoot could not confirm ' || coalesce(o.name,'that carrier') || coalesce(': ' || v_note, '.') || ' Your "Choose your carrier" tab is open again.',
+      'LoadBoot could not confirm ' || v_label || coalesce(': ' || v_note, '.') || ' Your "Choose your carrier" tab is open again.',
       '/app/agent/#dashboard', false);
     select u.email into v_mail from auth.users u where u.id = c.dispatcher_user_id;
     if v_mail is not null then
       v_html := '<div style="font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;font-size:15px;line-height:1.65">'
         || app_private.disp_head('LoadBoot Dispatch &middot; Carrier choice', 'Please choose another carrier')
-        || '<p style="margin:0 0 14px">Dear ' || app_private.disp_esc(coalesce(nullif(d.full_name,''),'Dispatcher')) || ', LoadBoot could not confirm <b>' || app_private.disp_esc(coalesce(o.name,'that carrier')) || '</b> for you.</p>'
+        || '<p style="margin:0 0 14px">Dear ' || app_private.disp_esc(coalesce(nullif(d.full_name,''),'Dispatcher')) || ', LoadBoot could not confirm <b>' || v_label || '</b> for you.</p>'
         || case when v_note is not null then app_private.disp_box('From LoadBoot', replace(app_private.disp_esc(v_note), E'\n', '<br>'), 'note') else '' end
         || app_private.disp_box('What to do now', 'Open your portal &mdash; the <b>Choose your carrier</b> tab is open again with every carrier that is available today. Pick the one that fits your experience best; the carriers whose equipment you know are listed first.')
         || app_private.disp_btn('Choose another carrier', 'https://loadboot.com/app/agent/#dashboard')
         || '<p style="margin:0 0 16px"><b>LoadBoot Dispatch</b><br><span style="color:#64748b;font-size:13px">{{contact_inline}}<br>' || v_contact || '</span></p>'
         || '<p style="color:#8ea2c3;font-size:12px;margin:0">Transactional notice about your LoadBoot dispatcher application.</p></div>';
-      v_text := 'Dear ' || coalesce(nullif(d.full_name,''),'Dispatcher') || E',\n\nLoadBoot could not confirm ' || coalesce(o.name,'that carrier') || coalesce(E' for you: ' || v_note, ' for you.') || E'\n\nPlease choose another carrier in your portal: https://loadboot.com/app/agent/#dashboard\n\nLoadBoot Dispatch - {{contact_inline}} - ' || v_contact;
+      v_text := 'Dear ' || coalesce(nullif(d.full_name,''),'Dispatcher') || E',\n\nLoadBoot could not confirm ' || v_label || coalesce(E' for you: ' || v_note, ' for you.') || E'\n\nPlease choose another carrier in your portal: https://loadboot.com/app/agent/#dashboard\n\nLoadBoot Dispatch - {{contact_inline}} - ' || v_contact;
       begin
-        perform app_private.sys_email(v_mail, 'dispatcher.carrier.declined', 'Please choose another carrier — ' || coalesce(o.name,'LoadBoot'), v_html, v_text, 'disp.choice.declined:' || c.id::text);
+        perform app_private.sys_email(v_mail, 'dispatcher.carrier.declined', 'Please choose another carrier — ' || v_label, v_html, v_text, 'disp.choice.declined:' || c.id::text);
       exception when others then null; end;
     end if;
     perform app_private.disp_audit('dispatcher.carrier.choice.decline', 'dispatcher_choice', c.id::text, c.carrier_org_id,
