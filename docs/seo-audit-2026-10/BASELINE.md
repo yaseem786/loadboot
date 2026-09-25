@@ -189,6 +189,18 @@ credentials from inside the container, so no pull ran. Queue #2 and #3 were edit
 BEFORE rows are pulled retroactively with `--end 2026-09-24` the moment the key value lands; nothing is lost.
 Simplest unblock remains the one line above (`base64 -w0 < key.json` into `GOOGLE_SA_KEY_B64`).
 
+**25 Sep, third session — route 1 WORKS from the container, no SQL needed.** `GOOGLE_SA_KEY_B64` is still empty,
+but `SEO_PULL_TOKEN` is set and `*.supabase.co` is reachable, so the session called the `seo-pull` edge function
+directly with `curl` — gateway key = the prod **anon** key (public, in every built page; `get_publishable_keys` via
+the Supabase MCP returns it), `x-seo-key: $SEO_PULL_TOKEN` expanded by the shell so the token is never printed or
+pasted into a tool call, body `{"days":28,"rowLimit":1000,"dimensions":["page"]}` and `["query","page"]`, then 90 d.
+The #2 / #3 BEFORE rows are now filled and #4 was edited from live numbers (`LEDGER.md`); tables are in
+`data/gsc-2026-09-23/`. Two limits of this route, both baked into `seo-pull` v7 (`supabase/functions/` does not hold
+its source — read it with `get_edge_function`): (a) **no end-date parameter** — the window always ends at now − 2 d,
+so a retroactive `--end` replay is impossible here; a BEFORE row must be pulled *before* the edit lands or in the same
+session; (b) `rowLimit` is capped at **1000**, and the 90 d `query,page` table hit that cap (28 d = 849 rows, complete).
+`gsc-pull.mjs` (route 2) has neither limit and stays the preferred path once `GOOGLE_SA_KEY_B64` gets its value.
+
 Whichever it is, the per-page session recipe stays: BEFORE row in `LEDGER.md` → fix in source → build →
 verify built + live → re-check date +28 d.
 

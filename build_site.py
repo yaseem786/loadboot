@@ -6284,6 +6284,21 @@ if _SNAP and _SNAP['rates'].get('Hotshot'):
       'per mile because the load is smaller, the run is usually expedited and the return leg is often empty \u2014 '
       'so compare hotshot on the total cost of the load, not on the per-mile number alone.'
       % (_SNAP['month'], _SNAP['rates']['Hotshot']))]
+# LEDGER #4 (25 Sep 2026): dry-van hub, same snippet shape as #3. BEFORE 28 d 5 / 493 / 1.01 % / 11.2;
+# its named queries (dry van rates per mile 6 @ 48.7, average dry van rate per mile 2 @ 29.5, current dry van
+# rates 2 @ 45.0) never saw the number or the month in the description. Title untouched (page 1/2 edge).
+if _SNAP and _SNAP['rates'].get('Dry Van'):
+    _EQ_SEO_OVERRIDE['dry-van'] = dict(
+      desc='Dry van rates per mile, %s: $%.2f average to the carrier on the national benchmark, updated as new data '
+           'lands. Current dry van freight rates for carriers, brokers and shippers, lane examples, seasonality and '
+           'the accessorials that move the real number.' % (_SNAP['month'], _SNAP['rates']['Dry Van']))
+    _EQ_FAQ_LEAD['dry-van'] = [('What is the average dry van rate per mile in 2026?',
+      'The national dry van benchmark for %s is $%.2f per loaded mile to the carrier, before fuel surcharge and '
+      'accessorials; the live figure at the top of this page carries the as-of date of the week it was rebuilt. Dry '
+      'van is the most rate-sensitive equipment on the board because there is a van in almost every market, so the '
+      'number moves with lane balance and season far more than with scarcity \u2014 the same lane run in the other '
+      'direction can sit on the opposite side of the average.'
+      % (_SNAP['month'], _SNAP['rates']['Dry Van']))]
 for _eq in _EQ_RATES:
     _n, _s = _eq['name'], _eq['slug']
     _low = _n.lower()

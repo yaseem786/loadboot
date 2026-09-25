@@ -1,0 +1,1001 @@
+query,page,clicks,impressions,ctr,position
+"loadboot","https://loadboot.com/",69,227,30.40,1.1
+"loadboot","https://loadboot.com/login.html",2,128,1.56,1.0
+"cdl","https://loadboot.com/",1,1,100.00,3.0
+"load boot","https://loadboot.com/",1,3,33.33,1.7
+"loadboot","https://loadboot.com/apps.html",1,100,1.00,1.0
+"""claude.ai/referral/"" -site:claude.ai -site:anthropic.com","https://loadboot.com/freight-agent-vs-freight-broker.html",0,6,0.00,2.2
+"""claude.ai/referral/"" -site:claude.ai -site:anthropic.com","https://loadboot.com/freight-broker-software-cost.html",0,2,0.00,2.5
+"""claude.ai/referral/"" -site:claude.ai -site:anthropic.com","https://loadboot.com/how-new-freight-brokers-find-carriers.html",0,3,0.00,3.0
+"""claude.ai/referral/"" -site:claude.ai -site:anthropic.com","https://loadboot.com/how-to-become-a-freight-broker.html",0,2,0.00,1.0
+"""claude.ai/referral/"" -site:claude.ai -site:anthropic.com","https://loadboot.com/where-freight-brokers-get-loads.html",0,1,0.00,4.0
+"""done"" ""deliveries"" ""load"" -site:reddit.com -site:twitter.com -site:x.com -site:wykop.pl -site:tripadvisor.com -site:youtube.com -site:yelp.com -site:booking.com -site:facebook.com -site:instagram.com -site:tiktok.com","https://loadboot.com/features",0,5,0.00,5.2
+"""done"" ""deliveries"" ""load"" -site:reddit.com -site:twitter.com -site:x.com -site:wykop.pl -site:tripadvisor.com -site:youtube.com -site:yelp.com -site:booking.com -site:facebook.com -site:instagram.com -site:tiktok.com","https://loadboot.com/features.html",0,1,0.00,8.0
+"**truck driver detention (keith request)","https://loadboot.com/detention-pay-policy.html",0,2,0.00,85.5
+"1 hour authority","https://loadboot.com/authority-dot-setup.html",0,1,0.00,51.0
+"2024 per diem rates for truck drivers","https://loadboot.com/truck-driver-per-diem-2026.html",0,1,0.00,72.0
+"26ft box truck rate per mile","https://loadboot.com/market-rates.html",0,1,0.00,29.0
+"30 miles","https://loadboot.com/freight-market-report-week-30-2026.html",0,1,0.00,5.0
+"agricultural freight","https://loadboot.com/agriculture-and-produce-freight-shipping.html",0,4,0.00,98.3
+"agricultural shipping","https://loadboot.com/agriculture-and-produce-freight-shipping.html",0,2,0.00,73.0
+"agriculture freight","https://loadboot.com/agriculture-and-produce-freight-shipping.html",0,6,0.00,92.2
+"all in rate","https://loadboot.com/reefer-rates-week-34-2026.html",0,1,0.00,3.0
+"amazon relay detention pay","https://loadboot.com/detention-pay-policy.html",0,1,0.00,47.0
+"amazon relay detention pay tracker","https://loadboot.com/detention-pay-policy.html",0,11,0.00,42.8
+"any reviews","https://loadboot.com/features.html",0,1,0.00,1.0
+"any reviews","https://loadboot.com/ghost-loads-load-board-problems.html",0,1,0.00,4.0
+"any reviews","https://loadboot.com/services.html",0,1,0.00,5.0
+"are shipping regulations strict enough anchor that framing","https://loadboot.com/building-materials-freight-shipping.html",0,2,0.00,75.0
+"atlanta to orlando","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,4.0
+"average box truck rate per mile","https://loadboot.com/box-truck-freight-rates.html",0,5,0.00,29.6
+"average cost per mile for trucking","https://loadboot.com/cost-per-mile-calculator.html",0,3,0.00,97.3
+"average cost per mile trucking","https://loadboot.com/cost-per-mile-calculator.html",0,3,0.00,91.3
+"average dry van rate per mile","https://loadboot.com/dry-van-freight-rates.html",0,2,0.00,29.5
+"average dry van rate per mile","https://loadboot.com/dry-van-rates-week-33-2026.html",0,1,0.00,48.0
+"average dry van rate per mile","https://loadboot.com/market-rates.html",0,9,0.00,44.4
+"average flatbed freight rate per mile","https://loadboot.com/market-rates.html",0,7,0.00,42.7
+"average flatbed rate per mile","https://loadboot.com/flatbed-freight-rates.html",0,5,0.00,22.6
+"average flatbed rate per mile","https://loadboot.com/flatbed-rates-week-28-2026.html",0,3,0.00,43.0
+"average flatbed rate per mile","https://loadboot.com/market-rates",0,3,0.00,54.0
+"average flatbed rate per mile","https://loadboot.com/market-rates.html",0,52,0.00,44.3
+"average flatbed rates","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,34.0
+"average flatbed rates","https://loadboot.com/flatbed-rates-week-28-2026.html",0,2,0.00,50.5
+"average flatbed rates","https://loadboot.com/market-rates.html",0,3,0.00,41.0
+"average flatbed trucking rates","https://loadboot.com/flatbed-freight-rates.html",0,2,0.00,37.0
+"average flatbed trucking rates","https://loadboot.com/market-rates.html",0,34,0.00,41.9
+"average freight rate","https://loadboot.com/market-rates.html",0,1,0.00,50.0
+"average freight rate per mile","https://loadboot.com/market-rates",0,1,0.00,59.0
+"average freight rate per mile","https://loadboot.com/market-rates.html",0,20,0.00,57.5
+"average freight rates","https://loadboot.com/market-rates.html",0,13,0.00,44.3
+"average full truckload rates","https://loadboot.com/market-rates.html",0,1,0.00,55.0
+"average lumper fee","https://loadboot.com/lumper-policy.html",0,3,0.00,63.3
+"average per mile trucking rate","https://loadboot.com/market-rates.html",0,8,0.00,63.6
+"average rate per mile","https://loadboot.com/market-rates.html",0,3,0.00,66.7
+"average rate per mile dry van","https://loadboot.com/market-rates.html",0,4,0.00,56.0
+"average rate per mile for dry van","https://loadboot.com/market-rates.html",0,1,0.00,48.0
+"average rate per mile for flatbed","https://loadboot.com/market-rates",0,1,0.00,46.0
+"average rate per mile for flatbed","https://loadboot.com/market-rates.html",0,4,0.00,45.8
+"average rate per mile for trucking","https://loadboot.com/market-rates.html",0,1,0.00,71.0
+"average rate per mile trucking","https://loadboot.com/market-rates.html",0,3,0.00,72.7
+"average reefer rate per mile","https://loadboot.com/market-rates.html",0,2,0.00,38.5
+"average reefer rates","https://loadboot.com/market-rates.html",0,6,0.00,41.3
+"average truck cost per mile","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,90.0
+"average truck rate per mile","https://loadboot.com/market-rates.html",0,3,0.00,68.3
+"average trucking cost per mile","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,97.0
+"average trucking rate per mile","https://loadboot.com/market-rates",0,3,0.00,95.3
+"average trucking rate per mile","https://loadboot.com/market-rates.html",0,24,0.00,66.1
+"average trucking rates per mile","https://loadboot.com/market-rates",0,1,0.00,97.0
+"average trucking rates per mile","https://loadboot.com/market-rates.html",0,10,0.00,69.0
+"average truckload rate per mile","https://loadboot.com/market-rates",0,1,0.00,99.0
+"average truckload rate per mile","https://loadboot.com/market-rates.html",0,14,0.00,57.5
+"backhaul trucking rates","https://loadboot.com/market-rates.html",0,1,0.00,41.0
+"best load boards for dispatcher","https://loadboot.com/",0,1,0.00,86.0
+"best load boards for dispatcher","https://loadboot.com/careers",0,1,0.00,58.0
+"best trucking rates","https://loadboot.com/market-rates.html",0,1,0.00,23.0
+"bobtail fee","https://loadboot.com/blog.html",0,4,0.00,71.8
+"bobtail fee","https://loadboot.com/lumper-policy.html",0,11,0.00,31.9
+"bobtail fee","https://loadboot.com/resources.html",0,9,0.00,73.6
+"boc 3 $25","https://loadboot.com/boc3-ucr.html",0,5,0.00,86.8
+"boc 3 and ucr filing","https://loadboot.com/boc3-ucr.html",0,1,0.00,80.0
+"boc 3 cost","https://loadboot.com/boc3-ucr",0,2,0.00,91.5
+"boc 3 cost","https://loadboot.com/boc3-ucr.html",0,5,0.00,90.6
+"boc 3 filing","https://loadboot.com/boc3-ucr.html",0,1,0.00,64.0
+"boc 3 filing cost","https://loadboot.com/boc3-ucr",0,1,0.00,91.0
+"boc 3 filing cost","https://loadboot.com/boc3-ucr.html",0,2,0.00,90.0
+"boc 3 online","https://loadboot.com/boc3-ucr.html",0,1,0.00,77.0
+"boc 3 registration","https://loadboot.com/boc3-ucr.html",0,5,0.00,92.2
+"boc process agent","https://loadboot.com/boc3-ucr.html",0,1,0.00,76.0
+"boc-3 $25","https://loadboot.com/boc3-ucr",0,1,0.00,85.0
+"boc-3 $25","https://loadboot.com/boc3-ucr.html",0,9,0.00,87.3
+"boc-3 agent","https://loadboot.com/boc3-ucr.html",0,1,0.00,98.0
+"boc-3 filing","https://loadboot.com/boc3-ucr.html",0,1,0.00,68.0
+"boc-3 registration","https://loadboot.com/boc3-ucr",0,1,0.00,89.0
+"boc-3 registration","https://loadboot.com/boc3-ucr.html",0,1,0.00,93.0
+"booking loads","https://loadboot.com/book-truck-loads.html",0,2,0.00,37.0
+"boot trucking","https://loadboot.com/",0,2,0.00,40.5
+"both","https://loadboot.com/power-only-freight-rates.html",0,1,0.00,3.0
+"box truck","https://loadboot.com/freight-market-report-week-34-2026.html",0,1,0.00,3.0
+"box truck delivery rates","https://loadboot.com/box-truck-freight-rates.html",0,1,0.00,44.0
+"box truck freight rates","https://loadboot.com/box-truck-freight-rates.html",0,1,0.00,39.0
+"box truck freight rates","https://loadboot.com/market-rates",0,2,0.00,42.0
+"box truck freight rates","https://loadboot.com/market-rates.html",0,9,0.00,41.8
+"box truck load rates","https://loadboot.com/market-rates.html",0,1,0.00,47.0
+"box truck mileage rate","https://loadboot.com/box-truck-freight-rates.html",0,3,0.00,36.3
+"box truck rate per mile","https://loadboot.com/box-truck-freight-rates.html",0,1,0.00,42.0
+"box truck rate per mile","https://loadboot.com/market-rates.html",0,1,0.00,46.0
+"box truck rate per mile calculator","https://loadboot.com/cost-per-mile-calculator.html",0,5,0.00,81.6
+"box truck rate per mile calculator","https://loadboot.com/tools.html",0,1,0.00,62.0
+"box truck rates per mile","https://loadboot.com/box-truck-freight-rates.html",0,1,0.00,43.0
+"box truck rates per mile","https://loadboot.com/market-rates.html",0,12,0.00,39.2
+"box truck rates per mile 2026","https://loadboot.com/market-rates.html",0,1,0.00,7.0
+"broker boards for freight","https://loadboot.com/brokers.html",0,1,0.00,62.0
+"broker dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,3,0.00,59.3
+"broker load board","https://loadboot.com/brokers.html",0,1,0.00,67.0
+"broker rate confirmation","https://loadboot.com/how-to-read-a-rate-confirmation.html",0,2,0.00,59.0
+"broker vs dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,7,0.00,69.9
+"broker-free freight","https://loadboot.com/how-to-ship-without-a-broker.html",0,5,0.00,49.8
+"brokerage dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,2,0.00,45.0
+"brokerage license for trucking","https://loadboot.com/how-to-become-a-freight-broker.html",0,1,0.00,48.0
+"brokerload","https://loadboot.com/create-broker-account.html",0,1,0.00,70.0
+"brokers that work with new authority","https://loadboot.com/how-to-get-loads-with-new-authority.html",0,1,0.00,67.0
+"brokers who work with new authority","https://loadboot.com/how-to-get-loads-with-new-authority.html",0,3,0.00,49.3
+"building materials shipping protection","https://loadboot.com/building-materials-freight-shipping.html",0,4,0.00,31.0
+"bulk load board rates","https://loadboot.com/market-rates",0,2,0.00,44.0
+"bulk load board rates","https://loadboot.com/market-rates.html",0,1,0.00,3.0
+"calculate cost per mile trucking","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,80.0
+"calculate dollars per mile","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,87.0
+"calculate truck profit per mile software","https://loadboot.com/tools.html",0,1,0.00,54.0
+"calculating cost per mile","https://loadboot.com/cost-per-mile-calculator.html",0,3,0.00,92.7
+"canastoga","https://loadboot.com/market-rates.html",0,1,0.00,3.0
+"cargo van freight rates","https://loadboot.com/market-rates.html",0,2,0.00,43.5
+"cargo van load rates","https://loadboot.com/market-rates.html",0,3,0.00,41.7
+"cargo van loads rates","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,44.0
+"cargo van loads rates","https://loadboot.com/market-rates.html",0,2,0.00,47.5
+"cargo van rate per mile","https://loadboot.com/market-rates",0,1,0.00,37.0
+"cargo van rate per mile","https://loadboot.com/market-rates.html",0,2,0.00,47.0
+"cargo van rates per mile 2025","https://loadboot.com/market-rates.html",0,1,0.00,58.0
+"cargo van rates per mile 2026","https://loadboot.com/freight-market-report-week-29-2026.html",0,1,0.00,9.0
+"cargobot load board","https://loadboot.com/",0,7,0.00,76.3
+"cargobot load board","https://loadboot.com/features.html",0,2,0.00,100.0
+"cargobot load board","https://loadboot.com/how-it-works.html",0,3,0.00,93.7
+"cargobot load board","https://loadboot.com/load-board.html",0,1,0.00,57.0
+"carrier desk login","https://loadboot.com/login.html",0,23,0.00,6.2
+"carrier remote jobs","https://loadboot.com/agents.html",0,1,0.00,3.0
+"carrier set up","https://loadboot.com/create-carrier-account.html",0,2,0.00,97.5
+"carrier sign up","https://loadboot.com/create-carrier-account",0,1,0.00,59.0
+"carrier sign up","https://loadboot.com/create-carrier-account.html",0,2,0.00,36.5
+"cattle loads dispatch","https://loadboot.com/",0,1,0.00,55.0
+"cdl","https://loadboot.com/hotshot-dispatch.html",0,1,0.00,1.0
+"cdl calculator","https://loadboot.com/tools.html",0,1,0.00,91.0
+"central dispatch cost","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,1,0.00,83.0
+"central dispatch prices","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,1,0.00,85.0
+"commercial truck business","https://loadboot.com/market-rates.html",0,1,0.00,1.0
+"compare truckload freight rates","https://loadboot.com/market-rates",0,1,0.00,43.0
+"conestoga freight quote","https://loadboot.com/conestoga-freight-rates.html",0,4,0.00,56.5
+"conestoga freight shipping","https://loadboot.com/conestoga-freight-rates.html",0,4,0.00,45.3
+"connect shippers with carriers","https://loadboot.com/ship-direct-to-carrier.html",0,4,0.00,76.3
+"connect your own freight carriers","https://loadboot.com/how-to-ship-without-a-broker.html",0,12,0.00,73.1
+"connect your own freight carriers","https://loadboot.com/ship-direct-to-carrier.html",0,13,0.00,65.2
+"construction materials shipping","https://loadboot.com/building-materials-freight-shipping.html",0,1,0.00,100.0
+"cost of freight broker vs tms","https://loadboot.com/freight-broker-software-cost.html",0,1,0.00,53.0
+"cost of trucking per mile","https://loadboot.com/cost-per-mile-calculator.html",0,6,0.00,81.2
+"cost per mile","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,85.0
+"cost per mile calculator","https://loadboot.com/cost-per-mile-calculator.html",0,2,0.00,78.0
+"cost per mile calculator trucking","https://loadboot.com/cost-per-mile-calculator.html",0,16,0.00,50.4
+"cost per mile for trucking","https://loadboot.com/cost-per-mile-calculator.html",0,3,0.00,76.3
+"cost per mile trucking","https://loadboot.com/cost-per-mile-calculator.html",0,11,0.00,76.3
+"cost per mile trucking calculator","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,12.0
+"cpm calculator trucking","https://loadboot.com/cost-per-mile-calculator.html",0,4,0.00,77.5
+"cross-border trucking rates","https://loadboot.com/market-rates.html",0,2,0.00,79.5
+"current dry van rates","https://loadboot.com/dry-van-freight-rates.html",0,2,0.00,45.0
+"current dry van rates","https://loadboot.com/market-rates.html",0,16,0.00,21.8
+"current dry van rates per mile","https://loadboot.com/market-rates.html",0,1,0.00,1.0
+"current flatbed freight rates","https://loadboot.com/market-rates.html",0,8,0.00,31.6
+"current flatbed rates","https://loadboot.com/flatbed-freight-rates.html",0,2,0.00,27.0
+"current flatbed rates","https://loadboot.com/market-rates.html",0,8,0.00,40.4
+"current flatbed rates per mile","https://loadboot.com/flatbed-freight-rates.html",0,10,0.00,14.0
+"current flatbed rates per mile","https://loadboot.com/flatbed-rates-week-28-2026.html",0,6,0.00,33.3
+"current flatbed rates per mile","https://loadboot.com/market-rates",0,5,0.00,48.0
+"current flatbed rates per mile","https://loadboot.com/market-rates.html",0,33,0.00,41.5
+"current freight rate","https://loadboot.com/market-rates.html",0,4,0.00,45.3
+"current freight rate per mile","https://loadboot.com/market-rates.html",0,3,0.00,59.0
+"current freight rates","https://loadboot.com/market-rates",0,5,0.00,24.6
+"current freight rates","https://loadboot.com/market-rates.html",0,67,0.00,33.2
+"current freight rates for trucking","https://loadboot.com/market-rates",0,2,0.00,49.5
+"current freight rates for trucking","https://loadboot.com/market-rates.html",0,20,0.00,42.8
+"current freight rates per mile","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,3.0
+"current freight rates per mile","https://loadboot.com/market-rates",0,7,0.00,20.6
+"current freight rates per mile","https://loadboot.com/market-rates.html",0,35,0.00,36.7
+"current fuel surcharge per mile","https://loadboot.com/fuel-surcharge-trucking",0,1,0.00,93.0
+"current hotshot rates per mile","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,7.0
+"current market rate","https://loadboot.com/market-rates.html",0,1,0.00,3.0
+"current reefer market rates april 2025","https://loadboot.com/reefer-freight-rates.html",0,1,0.00,30.0
+"current reefer rates","https://loadboot.com/market-rates.html",0,9,0.00,40.9
+"current trucking rates","https://loadboot.com/market-rates",0,2,0.00,23.5
+"current trucking rates","https://loadboot.com/market-rates.html",0,14,0.00,26.7
+"current trucking rates per mile","https://loadboot.com/market-rates",0,1,0.00,11.0
+"current trucking rates per mile","https://loadboot.com/market-rates.html",0,11,0.00,34.1
+"current truckload rates","https://loadboot.com/market-rates.html",0,12,0.00,27.3
+"detention charges trucking","https://loadboot.com/detention-pay-policy.html",0,20,0.00,79.0
+"detention fee trucking","https://loadboot.com/detention-pay-policy.html",0,8,0.00,84.3
+"detention fees trucking","https://loadboot.com/detention-pay-policy.html",0,3,0.00,96.0
+"detention pay","https://loadboot.com/detention-pay-policy.html",0,22,0.00,63.2
+"detention pay for truck drivers","https://loadboot.com/detention-pay-policy.html",0,4,0.00,70.5
+"detention pay for truckers","https://loadboot.com/detention-pay-policy.html",0,9,0.00,59.7
+"detention pay meaning","https://loadboot.com/detention-pay-policy.html",0,7,0.00,58.3
+"detention pay trucking","https://loadboot.com/detention-pay-policy.html",0,17,0.00,54.5
+"detention rates trucking","https://loadboot.com/detention-pay-policy.html",0,1,0.00,91.0
+"detention stamp","https://loadboot.com/detention-pay-policy.html",0,1,0.00,28.0
+"detention trucking requirements","https://loadboot.com/detention-pay-policy.html",0,2,0.00,79.0
+"difference between a freight factoring agent and truck dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,5,0.00,47.6
+"difference between broker and dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,5,0.00,86.8
+"difference between dispatcher and broker","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,1,0.00,80.0
+"difference between freight broker and dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,7,0.00,78.7
+"difference between truck dispatcher and freight broker","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,2,0.00,74.0
+"digital dispatcher pricing","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,3,0.00,79.3
+"direct shipper load boards","https://loadboot.com/ship-direct-to-carrier",0,1,0.00,48.0
+"dispatch broker","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,11,0.00,64.0
+"dispatch companies for owner operators","https://loadboot.com/owner-operator-dispatch.html",0,1,0.00,93.0
+"dispatch company for flatbed drivers","https://loadboot.com/flatbed-dispatch.html",0,4,0.00,50.0
+"dispatch fee","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,4,0.00,76.0
+"dispatch fee","https://loadboot.com/pricing.html",0,2,0.00,82.5
+"dispatch fees","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,3,0.00,79.7
+"dispatch fees","https://loadboot.com/pricing.html",0,2,0.00,75.0
+"dispatch for hotshot","https://loadboot.com/hotshot-dispatch.html",0,1,0.00,79.0
+"dispatch for hotshot loads","https://loadboot.com/hotshot-dispatch.html",0,2,0.00,77.0
+"dispatch load board","https://loadboot.com/",0,2,0.00,27.5
+"dispatch load board","https://loadboot.com/blog.html",0,1,0.00,48.0
+"dispatch loads","https://loadboot.com/blog.html",0,5,0.00,45.6
+"dispatch loads","https://loadboot.com/resources.html",0,2,0.00,56.0
+"dispatch pricing","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,4,0.00,46.8
+"dispatch pricing","https://loadboot.com/pricing.html",0,2,0.00,75.5
+"dispatch service cost","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,16,0.00,80.6
+"dispatch service cost","https://loadboot.com/us-truck-dispatcher.html",0,4,0.00,93.5
+"dispatch services for hotshot","https://loadboot.com/hotshot-dispatch.html",0,4,0.00,78.0
+"dispatch services for new authority","https://loadboot.com/new-authority-dispatch.html",0,2,0.00,69.5
+"dispatch services for owner operators","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,2,0.00,3.0
+"dispatch vs broker","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,1,0.00,85.0
+"dispatch! pricing","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,1,0.00,82.0
+"dispatchdirect pricing","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,2,0.00,79.0
+"dispatcher broker","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,5,0.00,61.6
+"dispatcher fee","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,5,0.00,48.8
+"dispatcher for cargo van loads","https://loadboot.com/dry-van-dispatch.html",0,2,0.00,48.0
+"dispatcher load board","https://loadboot.com/blog.html",0,1,0.00,45.0
+"dispatcher vs broker","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,11,0.00,72.1
+"dispatcher vs freight broker","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,3,0.00,71.3
+"dispatchers for hotshot loads","https://loadboot.com/services",0,1,0.00,89.0
+"dispatching for dry van drivers","https://loadboot.com/dry-van-dispatch.html",0,1,0.00,82.0
+"dispatching load boards","https://loadboot.com/blog.html",0,4,0.00,49.8
+"dispatching load boards","https://loadboot.com/local-truck-dispatch.html",0,1,0.00,49.0
+"dispatching loads","https://loadboot.com/blog.html",0,1,0.00,42.0
+"dispatching services for owner operators","https://loadboot.com/owner-operator-dispatch.html",0,1,0.00,69.0
+"dispatchmax pricing","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,2,0.00,78.0
+"dispatchmax pricing","https://loadboot.com/pricing.html",0,4,0.00,79.3
+"do they hire people","https://loadboot.com/agents.html",0,1,0.00,2.0
+"do they hire people","https://loadboot.com/careers.html",0,1,0.00,1.0
+"do truck drivers get per diem","https://loadboot.com/truck-driver-per-diem-2026.html",0,1,0.00,98.0
+"do you have to go through customs for a layover","https://loadboot.com/layover-policy",0,1,0.00,100.0
+"dot per diem 2025","https://loadboot.com/truck-driver-per-diem-2026.html",0,1,0.00,68.0
+"dr dispatch pricing","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,8,0.00,62.0
+"driver assist in trucking","https://loadboot.com/driver-assist-policy.html",0,1,0.00,9.0
+"driver load","https://loadboot.com/driver-assist-policy.html",0,1,0.00,63.0
+"dry van","https://loadboot.com/market-rates.html",0,1,0.00,2.0
+"dry van average rate","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,58.0
+"dry van average rate per mile","https://loadboot.com/dry-van-freight-rates.html",0,2,0.00,51.0
+"dry van average rate per mile","https://loadboot.com/dry-van-rates-week-33-2026.html",0,1,0.00,52.0
+"dry van average rate per mile","https://loadboot.com/market-rates.html",0,4,0.00,28.0
+"dry van dispatch","https://loadboot.com/dry-van-dispatch.html",0,39,0.00,69.8
+"dry van dispatch service","https://loadboot.com/dry-van-dispatch.html",0,42,0.00,72.6
+"dry van dispatch services","https://loadboot.com/dry-van-dispatch.html",0,81,0.00,70.8
+"dry van dispatcher","https://loadboot.com/dry-van-dispatch.html",0,53,0.00,46.1
+"dry van freight brokers","https://loadboot.com/dry-van-freight-rates.html",0,8,0.00,38.8
+"dry van freight loads","https://loadboot.com/dry-van-freight-rates.html",0,4,0.00,46.0
+"dry van freight rates","https://loadboot.com/dry-van-freight-rates.html",0,4,0.00,51.3
+"dry van freight rates","https://loadboot.com/market-rates.html",0,6,0.00,33.7
+"dry van freight rates today","https://loadboot.com/market-rates.html",0,1,0.00,51.0
+"dry van freight truck","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,42.0
+"dry van load","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,48.0
+"dry van load dispatching","https://loadboot.com/dry-van-dispatch.html",0,1,0.00,83.0
+"dry van load rates","https://loadboot.com/dry-van-freight-rates.html",0,2,0.00,47.0
+"dry van load rates","https://loadboot.com/market-rates.html",0,9,0.00,36.3
+"dry van loads available","https://loadboot.com/dry-van-freight-rates.html",0,2,0.00,22.0
+"dry van loads rates","https://loadboot.com/market-rates.html",0,3,0.00,66.3
+"dry van market rates","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,56.0
+"dry van market rates","https://loadboot.com/market-rates.html",0,6,0.00,28.3
+"dry van national average","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,20.0
+"dry van quote","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,7.0
+"dry van rate","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,53.0
+"dry van rate per mile","https://loadboot.com/market-rates.html",0,4,0.00,48.8
+"dry van rates","https://loadboot.com/dry-van-freight-rates.html",0,5,0.00,52.8
+"dry van rates","https://loadboot.com/market-rates.html",0,2,0.00,45.0
+"dry van rates 2024","https://loadboot.com/dry-van-freight-rates.html",0,2,0.00,47.5
+"dry van rates 2024","https://loadboot.com/market-rates.html",0,1,0.00,42.0
+"dry van rates per mile","https://loadboot.com/dry-van-freight-rates.html",0,6,0.00,48.7
+"dry van rates per mile","https://loadboot.com/dry-van-rates-week-33-2026.html",0,1,0.00,1.0
+"dry van rates per mile","https://loadboot.com/market-rates",0,4,0.00,39.3
+"dry van rates per mile","https://loadboot.com/market-rates.html",0,50,0.00,40.4
+"dry van rates today","https://loadboot.com/market-rates.html",0,1,0.00,11.0
+"dry van reefer flatbed rates per mile trends","https://loadboot.com/market-rates",0,13,0.00,7.6
+"dry van shipping quotes","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,86.0
+"dry van spot rates","https://loadboot.com/market-rates.html",0,3,0.00,28.3
+"dry van truck rates","https://loadboot.com/market-rates.html",0,1,0.00,48.0
+"dry van truckloads","https://loadboot.com/dry-van-freight-rates.html",0,5,0.00,37.8
+"dump truck hauling rates per mile","https://loadboot.com/market-rates.html",0,1,0.00,63.0
+"expedited dry van freight","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,55.0
+"expedited trucking rates","https://loadboot.com/market-rates.html",0,2,0.00,35.0
+"factoring noa","https://loadboot.com/factoring-noa.html",0,5,0.00,59.2
+"farm freight","https://loadboot.com/agriculture-and-produce-freight-shipping.html",0,1,0.00,44.0
+"farm product ship loading","https://loadboot.com/agriculture-and-produce-freight-shipping.html",0,3,0.00,13.0
+"fcfs delivery meaning","https://loadboot.com/fcfs-policy.html",0,2,0.00,37.5
+"fcfs in trucking","https://loadboot.com/fcfs-policy.html",0,7,0.00,12.0
+"fcfs mean","https://loadboot.com/fcfs-policy",0,3,0.00,68.7
+"fcfs meaning","https://loadboot.com/fcfs-policy.html",0,6,0.00,21.5
+"fcfs meaning in trucking","https://loadboot.com/fcfs-policy",0,1,0.00,51.0
+"fcfs meaning in trucking","https://loadboot.com/fcfs-policy.html",0,92,0.00,10.8
+"fcfs trucking","https://loadboot.com/fcfs-policy",0,2,0.00,24.5
+"fcfs trucking","https://loadboot.com/fcfs-policy.html",0,11,0.00,15.5
+"figuring fuel surcharge","https://loadboot.com/fuel-surcharge-trucking",0,1,0.00,93.0
+"file boc 3 online","https://loadboot.com/boc3-ucr.html",0,1,0.00,97.0
+"flat bed freight quote","https://loadboot.com/flatbed-freight-rates.html",0,8,0.00,68.6
+"flat bed rates","https://loadboot.com/market-rates.html",0,1,0.00,79.0
+"flatbed average per mile","https://loadboot.com/market-rates.html",0,6,0.00,43.2
+"flatbed brokers near me","https://loadboot.com/flatbed-dispatch.html",0,1,0.00,3.0
+"flatbed cost per mile","https://loadboot.com/flatbed-freight-rates.html",0,12,0.00,32.8
+"flatbed cost per mile","https://loadboot.com/flatbed-rates-week-28-2026.html",0,2,0.00,55.5
+"flatbed cost per mile","https://loadboot.com/market-rates.html",0,56,0.00,41.7
+"flatbed dispatch","https://loadboot.com/flatbed-dispatch.html",0,19,0.00,32.6
+"flatbed dispatch service","https://loadboot.com/flatbed-dispatch.html",0,15,0.00,27.5
+"flatbed dispatch services","https://loadboot.com/flatbed-dispatch.html",0,47,0.00,30.1
+"flatbed freight","https://loadboot.com/flatbed-dispatch.html",0,1,0.00,4.0
+"flatbed freight loads","https://loadboot.com/flatbed-dispatch.html",0,1,0.00,19.0
+"flatbed freight quote","https://loadboot.com/flatbed-freight-rates.html",0,5,0.00,69.2
+"flatbed freight rate","https://loadboot.com/flatbed-freight-rates.html",0,2,0.00,39.5
+"flatbed freight rate","https://loadboot.com/market-rates.html",0,1,0.00,41.0
+"flatbed freight rates","https://loadboot.com/flatbed-freight-rates.html",0,5,0.00,40.6
+"flatbed freight rates","https://loadboot.com/market-rates.html",0,8,0.00,41.5
+"flatbed freight rates per mile","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,29.0
+"flatbed freight rates per mile","https://loadboot.com/market-rates.html",0,12,0.00,49.6
+"flatbed load board broker","https://loadboot.com/flatbed-dispatch.html",0,1,0.00,57.0
+"flatbed load rates","https://loadboot.com/flatbed-freight-rates.html",0,4,0.00,40.8
+"flatbed load rates","https://loadboot.com/market-rates.html",0,18,0.00,48.5
+"flatbed loads rates","https://loadboot.com/flatbed-freight-rates.html",0,5,0.00,41.6
+"flatbed loads rates","https://loadboot.com/market-rates.html",0,20,0.00,46.9
+"flatbed national average","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,33.0
+"flatbed national rates","https://loadboot.com/market-rates.html",0,1,0.00,32.0
+"flatbed quote","https://loadboot.com/flatbed-freight-rates.html",0,3,0.00,54.0
+"flatbed rate","https://loadboot.com/flatbed-freight-rates.html",0,3,0.00,37.3
+"flatbed rate","https://loadboot.com/market-rates.html",0,7,0.00,41.4
+"flatbed rate per mile","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,25.0
+"flatbed rate per mile","https://loadboot.com/flatbed-rates-week-28-2026.html",0,2,0.00,35.5
+"flatbed rate per mile","https://loadboot.com/market-rates",0,2,0.00,64.5
+"flatbed rate per mile","https://loadboot.com/market-rates.html",0,16,0.00,46.4
+"flatbed rates","https://loadboot.com/flatbed-freight-rates.html",0,3,0.00,41.3
+"flatbed rates","https://loadboot.com/market-rates.html",0,4,0.00,62.0
+"flatbed rates 2026","https://loadboot.com/flatbed-rates-week-28-2026.html",0,1,0.00,10.0
+"flatbed rates march 2024","https://loadboot.com/market-rates.html",0,3,0.00,51.0
+"flatbed rates per mile","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,25.0
+"flatbed rates per mile","https://loadboot.com/flatbed-rates-week-28-2026.html",0,2,0.00,36.0
+"flatbed rates per mile","https://loadboot.com/market-rates",0,2,0.00,54.5
+"flatbed rates per mile","https://loadboot.com/market-rates.html",0,16,0.00,50.6
+"flatbed rates today","https://loadboot.com/market-rates.html",0,3,0.00,27.7
+"flatbed shipping quotes","https://loadboot.com/flatbed-freight-rates.html",0,2,0.00,72.0
+"flatbed shipping rates","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,88.0
+"flatbed shipping rates","https://loadboot.com/market-rates.html",0,4,0.00,74.8
+"flatbed shipping rates per mile","https://loadboot.com/market-rates.html",0,5,0.00,52.2
+"flatbed shipping rates usa","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,9.0
+"flatbed spot rates","https://loadboot.com/flatbed-freight-rates.html",0,4,0.00,43.5
+"flatbed spot rates","https://loadboot.com/market-rates.html",0,17,0.00,33.4
+"flatbed truck broker","https://loadboot.com/flatbed-dispatch.html",0,1,0.00,5.0
+"flatbed truck dispatch","https://loadboot.com/flatbed-dispatch.html",0,9,0.00,48.1
+"flatbed truck dispatch service","https://loadboot.com/flatbed-dispatch.html",0,4,0.00,73.8
+"flatbed truck freight rates","https://loadboot.com/flatbed-freight-rates.html",0,4,0.00,48.0
+"flatbed truck freight rates","https://loadboot.com/market-rates.html",0,21,0.00,51.8
+"flatbed truck rates","https://loadboot.com/flatbed-freight-rates.html",0,6,0.00,41.7
+"flatbed truck rates","https://loadboot.com/market-rates.html",0,28,0.00,53.0
+"flatbed truck rates per mile","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,55.0
+"flatbed truck rates per mile","https://loadboot.com/flatbed-rates-week-28-2026.html",0,1,0.00,47.0
+"flatbed truck rates per mile","https://loadboot.com/market-rates",0,2,0.00,48.0
+"flatbed truck rates per mile","https://loadboot.com/market-rates.html",0,15,0.00,41.4
+"flatbed truck shipping rates","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,73.0
+"flatbed truck shipping rates","https://loadboot.com/market-rates.html",0,1,0.00,67.0
+"flatbed trucking quotes","https://loadboot.com/flatbed-freight-rates.html",0,2,0.00,69.0
+"flatbed trucking rates","https://loadboot.com/flatbed-freight-rates.html",0,7,0.00,44.7
+"flatbed trucking rates","https://loadboot.com/market-rates.html",0,15,0.00,43.8
+"flatbed trucking rates per mile","https://loadboot.com/flatbed-freight-rates.html",0,4,0.00,25.5
+"flatbed trucking rates per mile","https://loadboot.com/flatbed-rates-week-28-2026.html",0,2,0.00,60.5
+"flatbed trucking rates per mile","https://loadboot.com/market-rates",0,6,0.00,55.2
+"flatbed trucking rates per mile","https://loadboot.com/market-rates.html",0,60,0.00,39.9
+"flatbed trucking rates per mile 2023","https://loadboot.com/market-rates.html",0,3,0.00,43.3
+"flatbeds/step deck dispatch service","https://loadboot.com/flatbed-dispatch.html",0,1,0.00,25.0
+"fleet card accounting integration","https://loadboot.com/integrations.html",0,1,0.00,78.0
+"fleetseek finding new carriers","https://loadboot.com/how-new-freight-brokers-find-carriers.html",0,3,0.00,20.0
+"flying j points calculator","https://loadboot.com/tools.html",0,2,0.00,59.0
+"food and beverage freight shipping","https://loadboot.com/food-and-beverage-freight-shipping.html",0,11,0.00,64.0
+"food and beverage shipping","https://loadboot.com/food-and-beverage-freight-shipping.html",0,1,0.00,20.0
+"for night","https://loadboot.com/detention-pay-policy.html",0,1,0.00,1.0
+"frcb approval process","https://loadboot.com/how-to-become-a-freight-broker.html",0,1,0.00,74.0
+"free cost per mile calculator","https://loadboot.com/cost-per-mile-calculator.html",0,2,0.00,76.0
+"free load board for dispatchers","https://loadboot.com/resources.html",0,2,0.00,50.0
+"free load board with rates","https://loadboot.com/load-board-subscription-cost",0,3,0.00,94.3
+"free load boards for dispatchers","https://loadboot.com/resources",0,1,0.00,93.0
+"free load boards with rates","https://loadboot.com/load-board-subscription-cost",0,1,0.00,100.0
+"freight account","https://loadboot.com/create-shipper-account.html",0,6,0.00,50.7
+"freight agent vs dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,2,0.00,61.0
+"freight agent vs freight broker","https://loadboot.com/freight-agent-vs-freight-broker.html",0,15,0.00,16.5
+"freight broker","https://loadboot.com/freight-agent-vs-freight-broker.html",0,1,0.00,35.0
+"freight broker","https://loadboot.com/how-to-become-a-freight-broker.html",0,1,0.00,20.0
+"freight broker and dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,6,0.00,60.8
+"freight broker boards","https://loadboot.com/brokers.html",0,5,0.00,65.6
+"freight broker dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,2,0.00,56.0
+"freight broker load board","https://loadboot.com/brokers.html",0,2,0.00,71.5
+"freight broker platform","https://loadboot.com/freight-broker-software-cost.html",0,1,0.00,19.0
+"freight broker rates spot market 2026","https://loadboot.com/market-rates.html",0,2,0.00,9.5
+"freight broker software cost","https://loadboot.com/freight-broker-software-cost.html",0,25,0.00,37.6
+"freight broker software quickbooks","https://loadboot.com/integrations.html",0,6,0.00,83.0
+"freight broker vs agent","https://loadboot.com/freight-agent-vs-freight-broker.html",0,34,0.00,18.3
+"freight broker vs dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,55,0.00,67.5
+"freight broker vs dispatcher salary","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,2,0.00,58.5
+"freight broker vs freight agent","https://loadboot.com/freight-agent-vs-freight-broker.html",0,3,0.00,24.0
+"freight broker vs truck dispatcher","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,3,0.00,68.3
+"freight broker without lost freight shipments","https://loadboot.com/how-to-ship-without-a-broker.html",0,1,0.00,40.0
+"freight brokerage software cost","https://loadboot.com/freight-broker-software-cost.html",0,8,0.00,50.0
+"freight cost per mile","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,81.0
+"freight cost per mile","https://loadboot.com/market-rates.html",0,9,0.00,60.3
+"freight dispatch","https://loadboot.com/truck-dispatcher-in-texas",0,1,0.00,23.0
+"freight dispatcher load board","https://loadboot.com/local-truck-dispatch.html",0,2,0.00,50.5
+"freight factoring vs broker pay","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,8,0.00,54.1
+"freight hauling rates","https://loadboot.com/market-rates.html",0,2,0.00,38.5
+"freight lane rates","https://loadboot.com/market-rates",0,7,0.00,43.4
+"freight lane rates","https://loadboot.com/market-rates.html",0,65,0.00,51.8
+"freight lanes and rates","https://loadboot.com/market-rates.html",0,1,0.00,53.0
+"freight load rates","https://loadboot.com/market-rates.html",0,6,0.00,49.2
+"freight market","https://loadboot.com/freight-market-reports.html",0,1,0.00,7.0
+"freight market rates","https://loadboot.com/market-rates",0,3,0.00,52.3
+"freight market rates","https://loadboot.com/market-rates.html",0,21,0.00,43.0
+"freight prices per mile","https://loadboot.com/market-rates",0,1,0.00,50.0
+"freight prices per mile","https://loadboot.com/market-rates.html",0,9,0.00,51.6
+"freight quote flatbed","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,64.0
+"freight rate benchmark dat truckstop lane rates","https://loadboot.com/market-rates",0,5,0.00,8.8
+"freight rate benchmark dat truckstop lane rates","https://loadboot.com/market-rates.html",0,1,0.00,2.0
+"freight rate per mile","https://loadboot.com/market-rates",0,2,0.00,62.5
+"freight rate per mile","https://loadboot.com/market-rates.html",0,33,0.00,51.8
+"freight rates by state","https://loadboot.com/market-rates.html",0,9,0.00,37.1
+"freight rates for trucking","https://loadboot.com/market-rates",0,4,0.00,48.5
+"freight rates for trucking","https://loadboot.com/market-rates.html",0,41,0.00,49.3
+"freight rates per mile","https://loadboot.com/market-rates",0,3,0.00,44.0
+"freight rates per mile","https://loadboot.com/market-rates.html",0,22,0.00,49.3
+"freight rates per pallet","https://loadboot.com/market-rates.html",0,1,0.00,98.0
+"freight rates this week","https://loadboot.com/market-rates.html",0,14,0.00,34.4
+"freight rates today","https://loadboot.com/market-rates",0,4,0.00,39.3
+"freight rates today","https://loadboot.com/market-rates.html",0,44,0.00,41.0
+"freight rates trucking","https://loadboot.com/market-rates.html",0,16,0.00,51.8
+"freight rates trucking today","https://loadboot.com/market-rates",0,4,0.00,35.8
+"freight rates trucking today","https://loadboot.com/market-rates.html",0,58,0.00,37.1
+"freight rates truckload","https://loadboot.com/market-rates.html",0,6,0.00,41.0
+"freight rescue hotshot service","https://loadboot.com/hotshot-freight-rates.html",0,5,0.00,35.2
+"freight shipping food","https://loadboot.com/food-and-beverage-freight-shipping.html",0,3,0.00,17.7
+"freight spot rate","https://loadboot.com/market-rates.html",0,2,0.00,81.5
+"freight spot rates","https://loadboot.com/market-rates",0,1,0.00,82.0
+"freight spot rates","https://loadboot.com/market-rates.html",0,26,0.00,76.5
+"freight subscription","https://loadboot.com/freight-broker-software-cost.html",0,1,0.00,19.0
+"freight subscription","https://loadboot.com/load-board-subscription-cost",0,1,0.00,65.0
+"freight truck rates","https://loadboot.com/market-rates.html",0,5,0.00,42.8
+"freight trucking rates","https://loadboot.com/market-rates",0,4,0.00,45.3
+"freight trucking rates","https://loadboot.com/market-rates.html",0,10,0.00,48.3
+"freightsmith lumper receipt","https://loadboot.com/lumper-policy.html",0,2,0.00,21.0
+"freightvana carrier requirements","https://loadboot.com/freight-shipping-by-industry.html",0,1,0.00,75.0
+"fuel card quickbooks integration","https://loadboot.com/integrations.html",0,1,0.00,33.0
+"fuel surcharge calculation","https://loadboot.com/fuel-surcharge-trucking",0,1,0.00,92.0
+"fuel surcharge calculator","https://loadboot.com/fuel-surcharge-trucking",0,1,0.00,90.0
+"fuel surcharge formula","https://loadboot.com/fuel-surcharge-trucking",0,1,0.00,89.0
+"fuel surcharge rate per mile","https://loadboot.com/fuel-surcharge-trucking",0,1,0.00,96.0
+"fuel surcharge trucking","https://loadboot.com/fuel-surcharge-trucking",0,2,0.00,70.5
+"full load freight rates","https://loadboot.com/market-rates.html",0,4,0.00,39.0
+"full truck freight rates","https://loadboot.com/market-rates.html",0,12,0.00,46.4
+"full truck load cost per mile","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,53.0
+"full truck load cost per mile","https://loadboot.com/market-rates.html",0,6,0.00,54.8
+"full truck load rates","https://loadboot.com/market-rates",0,2,0.00,44.0
+"full truck load rates","https://loadboot.com/market-rates.html",0,2,0.00,46.5
+"full truckload freight rates","https://loadboot.com/market-rates.html",0,10,0.00,59.2
+"full truckload rate","https://loadboot.com/market-rates.html",0,1,0.00,56.0
+"full truckload rates","https://loadboot.com/market-rates",0,2,0.00,46.5
+"full truckload rates","https://loadboot.com/market-rates.html",0,89,0.00,49.8
+"fuze load board","https://loadboot.com/load-board.html",0,1,0.00,24.0
+"ghost loads","https://loadboot.com/ghost-loads-load-board-problems.html",0,4,0.00,9.0
+"ghost loads trucking","https://loadboot.com/ghost-loads-load-board-problems.html",0,3,0.00,9.3
+"hauling rates","https://loadboot.com/market-rates.html",0,1,0.00,55.0
+"hauling rates per mile","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,77.0
+"hauling rates per mile","https://loadboot.com/market-rates.html",0,4,0.00,66.3
+"heavy haul load rates","https://loadboot.com/market-rates",0,1,0.00,55.0
+"hopper bottom dispatch","https://loadboot.com/truck-dispatcher-in-california",0,1,0.00,30.0
+"hopper bottom freight rates","https://loadboot.com/market-rates.html",0,6,0.00,33.2
+"hopper bottom rates","https://loadboot.com/market-rates.html",0,1,0.00,36.0
+"hot shot cost","https://loadboot.com/hotshot-freight-rates.html",0,3,0.00,45.7
+"hot shot cost per mile","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,36.0
+"hot shot dispatch","https://loadboot.com/hotshot-dispatch.html",0,6,0.00,82.3
+"hot shot dispatch service","https://loadboot.com/hotshot-dispatch.html",0,3,0.00,78.3
+"hot shot dispatch services","https://loadboot.com/hotshot-dispatch.html",0,15,0.00,77.9
+"hot shot expediting","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,3.0
+"hot shot final mile","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,3.0
+"hot shot freight rates","https://loadboot.com/hotshot-freight-rates.html",0,5,0.00,14.8
+"hot shot freight rates","https://loadboot.com/market-rates.html",0,5,0.00,44.2
+"hot shot load prices","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,50.0
+"hot shot near me","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,3.0
+"hot shot pay per mile","https://loadboot.com/hotshot-freight-rates.html",0,2,0.00,31.5
+"hot shot price","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,2.0
+"hot shot prices per mile","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,40.0
+"hot shot pricing","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,9.0
+"hot shot rate calculator","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,83.0
+"hot shot rate calculator","https://loadboot.com/hotshot-freight-rates.html",0,2,0.00,25.5
+"hot shot rate calculator","https://loadboot.com/market-rates.html",0,1,0.00,79.0
+"hot shot rate calculator","https://loadboot.com/resources",0,1,0.00,96.0
+"hot shot rate calculator","https://loadboot.com/tools.html",0,1,0.00,79.0
+"hot shot rate sheet","https://loadboot.com/hotshot-freight-rates.html",0,2,0.00,53.0
+"hot shot rate sheet","https://loadboot.com/hotshot-rates-week-31-2026.html",0,1,0.00,75.0
+"hot shot rates per mile","https://loadboot.com/market-rates.html",0,1,0.00,32.0
+"hot shot shipping rates","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,7.0
+"hot shot trucking bidding websites","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,5.0
+"hot shot trucking pay per load","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,42.0
+"hot shot trucking rates","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,48.0
+"hot shot trucking rates per mile","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,35.0
+"hotshot car hauling rates","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,32.0
+"hotshot dispatch","https://loadboot.com/hotshot-dispatch.html",0,5,0.00,61.2
+"hotshot dispatch service","https://loadboot.com/hotshot-dispatch.html",0,1,0.00,74.0
+"hotshot dispatch services","https://loadboot.com/hotshot-dispatch.html",0,7,0.00,75.9
+"hotshot dispatch services united states","https://loadboot.com/hotshot-dispatch.html",0,8,0.00,70.9
+"hotshot dispatching","https://loadboot.com/hotshot-dispatch.html",0,1,0.00,74.0
+"hotshot dispatching services","https://loadboot.com/hotshot-dispatch.html",0,4,0.00,75.0
+"hotshot factoring company checklist","https://loadboot.com/freight-broker-startup-checklist.html",0,1,0.00,94.0
+"hotshot freight rates","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,24.0
+"hotshot freight rates","https://loadboot.com/market-rates.html",0,6,0.00,41.8
+"hotshot load dispatch","https://loadboot.com/hotshot-dispatch.html",0,2,0.00,66.0
+"hotshot price","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,12.0
+"hotshot price per mile","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,27.0
+"hotshot price per mile","https://loadboot.com/market-rates.html",0,1,0.00,28.0
+"hotshot prices","https://loadboot.com/hotshot-freight-rates.html",0,2,0.00,29.5
+"hotshot pricing","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,39.0
+"hotshot rates","https://loadboot.com/hotshot-freight-rates.html",0,2,0.00,36.5
+"hotshot rates houston","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,46.0
+"hotshot rates per mile 2026","https://loadboot.com/hotshot-freight-rates.html",0,27,0.00,6.9
+"hotshot rates per mile 2026","https://loadboot.com/hotshot-rates-week-31-2026.html",0,29,0.00,8.5
+"hotshot rates per mile 2026","https://loadboot.com/market-rates.html",0,4,0.00,7.0
+"hotshot trucking dispatch","https://loadboot.com/hotshot-dispatch.html",0,3,0.00,79.3
+"hotshot trucking dispatch services","https://loadboot.com/hotshot-dispatch.html",0,4,0.00,74.8
+"hotshot trucking in north dakota rates","https://loadboot.com/hotshot-freight-rates.html",0,2,0.00,46.0
+"hotshot trucking prices","https://loadboot.com/hotshot-freight-rates.html",0,1,0.00,42.0
+"how are lumper fees calculated","https://loadboot.com/lumper-policy.html",0,5,0.00,56.4
+"how are they paid","https://loadboot.com/",0,1,0.00,1.0
+"how are they paid","https://loadboot.com/agents.html",0,1,0.00,2.0
+"how are they paid","https://loadboot.com/features.html",0,1,0.00,4.0
+"how do brokers find freight","https://loadboot.com/how-new-freight-brokers-find-carriers.html",0,7,0.00,38.7
+"how do brokers find freight","https://loadboot.com/where-freight-brokers-get-loads.html",0,3,0.00,39.0
+"how do brokers find loads","https://loadboot.com/where-freight-brokers-get-loads.html",0,1,0.00,24.0
+"how do brokers get loads","https://loadboot.com/brokers",0,1,0.00,94.0
+"how do brokers get loads","https://loadboot.com/where-freight-brokers-get-loads.html",0,2,0.00,23.0
+"how do freight brokers bid on loads","https://loadboot.com/where-freight-brokers-get-loads.html",0,1,0.00,37.0
+"how do freight brokers find carriers","https://loadboot.com/how-new-freight-brokers-find-carriers.html",0,1,0.00,34.0
+"how do freight brokers find loads","https://loadboot.com/where-freight-brokers-get-loads.html",0,5,0.00,40.8
+"how do freight brokers get loads","https://loadboot.com/where-freight-brokers-get-loads.html",0,1,0.00,32.0
+"how do i find out the going rate for a specific lane before i call a broker to negotiate?","https://loadboot.com/market-rates.html",0,1,0.00,3.0
+"how do you calculate a fuel surcharge","https://loadboot.com/fuel-surcharge-trucking",0,4,0.00,89.8
+"how do you dispatch trucks from home","https://loadboot.com/referral",0,1,0.00,3.0
+"how freight brokers find shippers","https://loadboot.com/where-freight-brokers-get-loads.html",0,1,0.00,11.0
+"how is layover pay calculated for truckers?","https://loadboot.com/layover-policy.html",0,7,0.00,10.7
+"how load booking works in truck dispatching","https://loadboot.com/blog.html",0,3,0.00,53.3
+"how much can i charge?","https://loadboot.com/reefer-freight-rates.html",0,1,0.00,9.0
+"how much did dispatch cost to make","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,1,0.00,62.0
+"how much did it cost to make dispatch","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,1,0.00,82.0
+"how much do oversize loads pay per mile","https://loadboot.com/cost-per-mile-calculator.html",0,2,0.00,89.0
+"how much do oversize loads pay per mile","https://loadboot.com/oversize-load-rates-per-mile.html",0,5,0.00,17.0
+"how much do oversize loads pay per mile","https://loadboot.com/tools.html",0,13,0.00,33.2
+"how much do truck dispatchers make per load","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,11,0.00,35.8
+"how much does a load of logs cost","https://loadboot.com/load-board-subscription-cost",0,1,0.00,96.0
+"how much does dispatch cost","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,2,0.00,68.5
+"how much does it cost to haul a tractor per mile","https://loadboot.com/tools.html",0,2,0.00,42.5
+"how much does it cost to start a dispatch company","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,2,0.00,60.5
+"how much is a layover in trucking","https://loadboot.com/layover-policy.html",0,3,0.00,6.3
+"how much is a mile pro","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,76.0
+"how much is a tonu","https://loadboot.com/tonu-policy.html",0,5,0.00,12.2
+"how much is a tonu charge","https://loadboot.com/tonu-policy.html",0,4,0.00,10.3
+"how much is detention pay","https://loadboot.com/detention-pay-policy.html",0,25,0.00,48.2
+"how much is detention pay for truckers","https://loadboot.com/detention-pay-policy.html",0,32,0.00,59.9
+"how much is dispatch on steam","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,1,0.00,64.0
+"how much is layover pay for owner operators","https://loadboot.com/layover-policy",0,11,0.00,7.4
+"how much is layover pay for owner operators","https://loadboot.com/layover-policy.html",0,57,0.00,10.8
+"how much is layover pay for truck drivers","https://loadboot.com/layover-policy",0,8,0.00,44.6
+"how much is layover pay for truck drivers","https://loadboot.com/layover-policy.html",0,126,0.00,32.5
+"how much is truck driver per diem","https://loadboot.com/truck-driver-per-diem-2026.html",0,1,0.00,92.0
+"how much should i get paid","https://loadboot.com/market-rates.html",0,1,0.00,1.0
+"how often do you file boc-3","https://loadboot.com/boc3-ucr.html",0,1,0.00,96.0
+"how to avoid lumper fees","https://loadboot.com/lumper-policy.html",0,3,0.00,76.7
+"how to become a broker for trucking","https://loadboot.com/how-to-become-a-freight-broker.html",0,2,0.00,47.5
+"how to become a freight broker usa 2026","https://loadboot.com/how-to-become-a-freight-broker.html",0,1,0.00,36.0
+"how to become a freight carrier","https://loadboot.com/how-to-become-a-freight-broker.html",0,1,0.00,43.0
+"how to become a load broker","https://loadboot.com/create-broker-account.html",0,4,0.00,92.0
+"how to become a load dispatcher","https://loadboot.com/careers",0,2,0.00,63.5
+"how to become a truck dispatcher broker","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,1,0.00,87.0
+"how to become a truck load dispatcher","https://loadboot.com/careers",0,1,0.00,63.0
+"how to book a load as a dispatcher","https://loadboot.com/blog.html",0,1,0.00,53.0
+"how to book freight loads","https://loadboot.com/book-truck-loads.html",0,3,0.00,57.3
+"how to calculate cpm in trucking","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,77.0
+"how to calculate diesel fuel surcharge","https://loadboot.com/fuel-surcharge-trucking",0,2,0.00,79.5
+"how to calculate fuel surcharge","https://loadboot.com/fuel-surcharge-trucking.html",0,1,0.00,88.0
+"how to calculate fuel surcharge per mile","https://loadboot.com/fuel-surcharge-trucking.html",0,1,0.00,85.0
+"how to create a broker","https://loadboot.com/create-broker-account.html",0,3,0.00,82.3
+"how to create a freight broker website","https://loadboot.com/create-broker-account",0,1,0.00,78.0
+"how to create your own broker","https://loadboot.com/create-broker-account.html",0,1,0.00,97.0
+"how to determine fuel surcharge","https://loadboot.com/fuel-surcharge-trucking",0,2,0.00,86.5
+"how to dispatch your own loads","https://loadboot.com/owner-operator-dispatch.html",0,1,0.00,62.0
+"how to figure out fuel surcharge","https://loadboot.com/fuel-surcharge-trucking",0,1,0.00,91.0
+"how to figure truck freight rates","https://loadboot.com/market-rates.html",0,2,0.00,98.0
+"how to find owner operators to dispatch","https://loadboot.com/owner-operator-dispatch.html",0,2,0.00,78.0
+"how to get freight as a broker","https://loadboot.com/how-to-become-a-freight-broker.html",0,2,0.00,45.5
+"how to get freight from shippers","https://loadboot.com/where-freight-brokers-get-loads.html",0,1,0.00,34.0
+"how to get load from broker","https://loadboot.com/brokers.html",0,1,0.00,95.0
+"how to get loads from brokers","https://loadboot.com/how-to-get-loads-with-new-authority.html",0,2,0.00,56.0
+"how to get loads with new authority","https://loadboot.com/how-to-get-loads-with-new-authority.html",0,14,0.00,39.1
+"how to get loads with new authority","https://loadboot.com/new-authority-dispatch.html",0,3,0.00,78.0
+"how to onboard fleet accounts","https://loadboot.com/create-carrier-account.html",0,1,0.00,93.0
+"how to reduce cost per mile trucking","https://loadboot.com/tools.html",0,2,0.00,38.5
+"how to ship freight without a freight broker","https://loadboot.com/how-to-ship-without-a-broker.html",0,2,0.00,8.0
+"hvut 2290 due date","https://loadboot.com/form-2290-hvut",0,1,0.00,64.0
+"hvut 2290 due date","https://loadboot.com/form-2290-hvut.html",0,20,0.00,74.1
+"hvut due date","https://loadboot.com/form-2290-hvut.html",0,4,0.00,71.3
+"i am a 35-44 year old founder in the transportation industry. my job seniority is at the owner level. i work at a company with 1-249 employees. my main motivations: * find consistent, high-paying loads to remain profitable * reduce empty miles and improve route efficiency * gain more control over schedule and business decisions * access reliable brokers and avoid payment risk * use simple tools that save time and reduce admin work my main pain points: * unpredictable freight volume and rate volatility * difficulty finding quality loads without wasting time * rising fuel, maintenance, and operating costs * limited visibility into fair market rates * risk of working with unreliable brokers or delayed payments how do startup services differ in cost and service levels?","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,1,0.00,3.0
+"i am owner operator","https://loadboot.com/detention-pay-policy.html",0,1,0.00,12.0
+"i have a box truck","https://loadboot.com/layover-policy.html",0,1,0.00,2.0
+"i mean the software","https://loadboot.com/freight-broker-software-cost.html",0,1,0.00,7.0
+"i want to start one","https://loadboot.com/",0,1,0.00,1.0
+"ifta fuel tax by state","https://loadboot.com/ifta-fuel-tax",0,1,0.00,98.0
+"independent","https://loadboot.com/truck-dispatcher-vs-freight-broker.html",0,1,0.00,3.0
+"industry based shipping","https://loadboot.com/freight-shipping-by-industry.html",0,1,0.00,96.0
+"instant book loads","https://loadboot.com/book-truck-loads.html",0,5,0.00,24.4
+"intermodal trucking rates","https://loadboot.com/market-rates.html",0,1,0.00,62.0
+"internet dispatcher pricing","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,3,0.00,36.7
+"interstate authority packages","https://loadboot.com/authority-dot-setup.html",0,20,0.00,86.8
+"intrastate authority packages","https://loadboot.com/authority-dot-setup.html",0,4,0.00,82.3
+"is there a free tool that shows current average spot rates by lane so i can benchmark what a broker is offering me?","https://loadboot.com/market-rates.html",0,8,0.00,10.0
+"is there a trucking app that shows me both the current market rate and the broker's estimated margin on a load?","https://loadboot.com/market-rates.html",0,1,0.00,5.0
+"its dispatch price","https://loadboot.com/freight-broker-software-cost.html",0,1,0.00,46.0
+"its dispatch price","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,7,0.00,54.6
+"its dispatch price","https://loadboot.com/pricing.html",0,10,0.00,64.4
+"its dispatch pricing","https://loadboot.com/pricing.html",0,2,0.00,64.0
+"layover charges","https://loadboot.com/layover-policy.html",0,2,0.00,4.0
+"layover charges in trucking","https://loadboot.com/layover-policy.html",0,4,0.00,8.0
+"layover fee","https://loadboot.com/layover-policy",0,1,0.00,54.0
+"layover fee","https://loadboot.com/layover-policy.html",0,12,0.00,34.8
+"layover fee in trucking","https://loadboot.com/layover-policy.html",0,2,0.00,40.5
+"layover fee trucking","https://loadboot.com/layover-policy.html",0,1,0.00,10.0
+"layover in trucking","https://loadboot.com/layover-policy.html",0,3,0.00,28.3
+"layover meaning in trucking","https://loadboot.com/layover-policy.html",0,2,0.00,47.5
+"layover pay","https://loadboot.com/layover-policy",0,5,0.00,29.8
+"layover pay","https://loadboot.com/layover-policy.html",0,55,0.00,43.1
+"layover pay for truck drivers","https://loadboot.com/layover-policy",0,2,0.00,57.0
+"layover pay for truck drivers","https://loadboot.com/layover-policy.html",0,14,0.00,43.6
+"layover pay for truckers","https://loadboot.com/layover-policy",0,11,0.00,48.0
+"layover pay for truckers","https://loadboot.com/layover-policy.html",0,112,0.00,40.0
+"layover pay in trucking","https://loadboot.com/layover-policy",0,14,0.00,45.3
+"layover pay in trucking","https://loadboot.com/layover-policy.html",0,89,0.00,41.8
+"layover pay trucking","https://loadboot.com/layover-policy",0,6,0.00,47.7
+"layover pay trucking","https://loadboot.com/layover-policy.html",0,126,0.00,40.2
+"layover pay trucking $200 new listing","https://loadboot.com/layover-policy",0,1,0.00,49.0
+"layover pay vs detention pay","https://loadboot.com/layover-policy",0,1,0.00,33.0
+"layover payment","https://loadboot.com/layover-policy.html",0,1,0.00,57.0
+"layover rate","https://loadboot.com/layover-policy.html",0,1,0.00,8.0
+"layover trucking","https://loadboot.com/layover-policy.html",0,2,0.00,41.5
+"layover trucking meaning","https://loadboot.com/layover-policy.html",0,2,0.00,41.0
+"layover vs detention","https://loadboot.com/layover-policy",0,2,0.00,41.5
+"layover vs detention pay","https://loadboot.com/layover-policy",0,1,0.00,56.0
+"layover+dock","https://loadboot.com/layover-policy.html",0,2,0.00,11.0
+"layover.com","https://loadboot.com/layover-policy.html",0,5,0.00,24.2
+"lcpc process shipper account","https://loadboot.com/create-shipper-account.html",0,11,0.00,8.5
+"line haul rate","https://loadboot.com/market-rates.html",0,3,0.00,49.7
+"line haul rates","https://loadboot.com/market-rates.html",0,1,0.00,47.0
+"linehaul rate","https://loadboot.com/market-rates",0,1,0.00,43.0
+"linehaul rate","https://loadboot.com/market-rates.html",0,1,0.00,24.0
+"livestock hauling rates per mile 2022","https://loadboot.com/market-rates.html",0,1,0.00,61.0
+"livestock hauling rates per mile 2025","https://loadboot.com/market-rates.html",0,1,0.00,49.0
+"load board api","https://loadboot.com/api.html",0,1,0.00,6.0
+"load board application","https://loadboot.com/carrier-application.html",0,2,0.00,60.5
+"load board dispatcher","https://loadboot.com/blog.html",0,2,0.00,46.5
+"load board for brokers to find shippers","https://loadboot.com/brokers.html",0,2,0.00,95.5
+"load board login","https://loadboot.com/",0,1,0.00,60.0
+"load board login","https://loadboot.com/login",0,1,0.00,74.0
+"load board login","https://loadboot.com/login.html",0,7,0.00,33.3
+"load board prices","https://loadboot.com/market-rates.html",0,1,0.00,50.0
+"load board prices","https://loadboot.com/resources.html",0,1,0.00,55.0
+"load board pricing","https://loadboot.com/resources.html",0,1,0.00,63.0
+"load board subscription","https://loadboot.com/load-board-subscription-cost",0,2,0.00,35.5
+"load boards for new authority","https://loadboot.com/how-to-get-loads-with-new-authority.html",0,4,0.00,61.5
+"load booking","https://loadboot.com/",0,2,0.00,44.0
+"load booking","https://loadboot.com/book-truck-loads.html",0,1,0.00,40.0
+"load booking automation","https://loadboot.com/book-truck-loads.html",0,1,0.00,77.0
+"load broker definition","https://loadboot.com/freight-agent-vs-freight-broker.html",0,1,0.00,31.0
+"load clearance and routing services","https://loadboot.com/services.html",0,1,0.00,93.0
+"load count","https://loadboot.com/load-score.html",0,3,0.00,55.3
+"load dispatch","https://loadboot.com/blog.html",0,1,0.00,53.0
+"load dispatch","https://loadboot.com/local-truck-dispatch.html",0,1,0.00,58.0
+"load dispatch","https://loadboot.com/new-authority-dispatch.html",0,1,0.00,42.0
+"load dispatch","https://loadboot.com/truck-dispatcher-in-california",0,1,0.00,42.0
+"load dispatching for dry van","https://loadboot.com/dry-van-dispatch.html",0,8,0.00,83.4
+"load job","https://loadboot.com/agents.html",0,1,0.00,46.0
+"load prices","https://loadboot.com/market-rates.html",0,1,0.00,40.0
+"load rates","https://loadboot.com/market-rates",0,2,0.00,40.0
+"load rates","https://loadboot.com/market-rates.html",0,13,0.00,56.5
+"load rates 2026","https://loadboot.com/freight-market-report-week-34-2026.html",0,2,0.00,8.0
+"loadboard login","https://loadboot.com/login.html",0,1,0.00,42.0
+"loadboat","https://loadboot.com/",0,2,0.00,1.0
+"loadboot","https://loadboot.com/about.html",0,98,0.00,1.0
+"loadboot","https://loadboot.com/apps",0,4,0.00,5.5
+"loadboot","https://loadboot.com/brokers",0,3,0.00,1.0
+"loadboot","https://loadboot.com/brokers.html",0,2,0.00,1.0
+"loadboot","https://loadboot.com/careers",0,3,0.00,3.3
+"loadboot","https://loadboot.com/careers.html",0,21,0.00,1.0
+"loadboot","https://loadboot.com/carrier-application.html",0,5,0.00,1.0
+"loadboot","https://loadboot.com/carriers",0,3,0.00,1.0
+"loadboot","https://loadboot.com/carriers.html",0,11,0.00,1.0
+"loadboot","https://loadboot.com/contact.html",0,62,0.00,1.0
+"loadboot","https://loadboot.com/create-carrier-account",0,2,0.00,1.0
+"loadboot","https://loadboot.com/create-carrier-account.html",0,4,0.00,1.5
+"loadboot","https://loadboot.com/create-shipper-account.html",0,3,0.00,7.0
+"loadboot","https://loadboot.com/faq.html",0,1,0.00,1.0
+"loadboot","https://loadboot.com/features.html",0,39,0.00,1.3
+"loadboot","https://loadboot.com/free-load-board-for-brokers",0,2,0.00,1.0
+"loadboot","https://loadboot.com/freight-shipping-by-industry",0,1,0.00,1.0
+"loadboot","https://loadboot.com/get-started.html",0,81,0.00,1.1
+"loadboot","https://loadboot.com/how-it-works",0,1,0.00,1.0
+"loadboot","https://loadboot.com/how-it-works.html",0,38,0.00,1.3
+"loadboot","https://loadboot.com/how-to-read-a-rate-confirmation.html",0,1,0.00,1.0
+"loadboot","https://loadboot.com/load-board.html",0,19,0.00,1.0
+"loadboot","https://loadboot.com/load-score",0,1,0.00,1.0
+"loadboot","https://loadboot.com/market-rates.html",0,2,0.00,1.0
+"loadboot","https://loadboot.com/new-authority-dispatch",0,3,0.00,1.0
+"loadboot","https://loadboot.com/owner-operator-dispatch",0,3,0.00,1.0
+"loadboot","https://loadboot.com/partners.html",0,1,0.00,1.0
+"loadboot","https://loadboot.com/pricing",0,1,0.00,1.0
+"loadboot","https://loadboot.com/pricing.html",0,4,0.00,1.5
+"loadboot","https://loadboot.com/privacy.html",0,7,0.00,2.1
+"loadboot","https://loadboot.com/resources.html",0,1,0.00,1.0
+"loadboot","https://loadboot.com/security.html",0,12,0.00,1.3
+"loadboot","https://loadboot.com/services",0,1,0.00,1.0
+"loadboot","https://loadboot.com/services.html",0,1,0.00,1.0
+"loadboot","https://loadboot.com/ship-direct-to-carrier",0,1,0.00,1.0
+"loadboot","https://loadboot.com/ship-direct-to-carrier.html",0,1,0.00,1.0
+"loadboot","https://loadboot.com/shipper-solutions",0,2,0.00,1.0
+"loadboot","https://loadboot.com/shipper-solutions.html",0,2,0.00,5.0
+"loadboot","https://loadboot.com/terms.html",0,86,0.00,4.1
+"loadboss","https://loadboot.com/",0,1,0.00,55.0
+"loadbot","https://loadboot.com/",0,2,0.00,63.5
+"loadbot","https://loadboot.com/terms.html",0,1,0.00,65.0
+"loadconnect","https://loadboot.com/",0,1,0.00,55.0
+"loaded mile rate","https://loadboot.com/market-rates.html",0,1,0.00,76.0
+"loaded mile trucking rate","https://loadboot.com/market-rates.html",0,1,0.00,65.0
+"loading costs","https://loadboot.com/load-board-subscription-cost",0,1,0.00,43.0
+"loading fee","https://loadboot.com/load-board-subscription-cost",0,1,0.00,72.0
+"loading fees","https://loadboot.com/load-board-subscription-cost",0,1,0.00,51.0
+"loadstop enterprise carrier onboarding","https://loadboot.com/carrier-application.html",0,1,0.00,56.0
+"loboot","https://loadboot.com/",0,1,0.00,9.0
+"low boy dispatch services","https://loadboot.com/new-authority-dispatch.html",0,4,0.00,93.5
+"low boy dispatch services","https://loadboot.com/services",0,1,0.00,69.0
+"lowboy trucking rates","https://loadboot.com/market-rates",0,3,0.00,43.3
+"lowboy trucking rates","https://loadboot.com/market-rates.html",0,3,0.00,44.7
+"lumber fee meaning","https://loadboot.com/lumper-policy.html",0,12,0.00,41.2
+"lumper charge","https://loadboot.com/lumper-policy.html",0,3,0.00,79.3
+"lumper charges","https://loadboot.com/lumper-policy.html",0,3,0.00,77.3
+"lumper fee","https://loadboot.com/lumper-policy.html",0,31,0.00,67.9
+"lumper fee definition","https://loadboot.com/lumper-policy.html",0,16,0.00,71.4
+"lumper fee in trucking","https://loadboot.com/lumper-policy.html",0,7,0.00,42.1
+"lumper fee meaning","https://loadboot.com/lumper-policy.html",0,19,0.00,49.1
+"lumper fee receipt","https://loadboot.com/lumper-policy.html",0,2,0.00,50.5
+"lumper fee trucking","https://loadboot.com/lumper-policy.html",0,23,0.00,44.2
+"lumper fees","https://loadboot.com/lumper-policy.html",0,32,0.00,55.0
+"lumper fees in trucking","https://loadboot.com/lumper-policy.html",0,2,0.00,48.5
+"lumper fees meaning","https://loadboot.com/lumper-policy.html",0,13,0.00,44.1
+"lumper in trucking","https://loadboot.com/lumper-policy.html",0,14,0.00,30.6
+"lumper pay","https://loadboot.com/lumper-policy.html",0,4,0.00,66.8
+"lumper payments","https://loadboot.com/lumper-policy.html",0,9,0.00,77.0
+"lumper payments made easy","https://loadboot.com/lumper-policy.html",0,1,0.00,64.0
+"lumper receipt","https://loadboot.com/lumper-policy.html",0,26,0.00,58.5
+"lumper receipts","https://loadboot.com/lumper-policy.html",0,2,0.00,62.0
+"lumper trucking","https://loadboot.com/lumper-policy.html",0,18,0.00,26.4
+"lumpers fee","https://loadboot.com/lumper-policy.html",0,2,0.00,51.5
+"lumpers in trucking","https://loadboot.com/lumper-policy.html",0,1,0.00,37.0
+"national average flatbed rates","https://loadboot.com/flatbed-freight-rates.html",0,4,0.00,29.5
+"national average flatbed rates","https://loadboot.com/market-rates.html",0,4,0.00,35.5
+"national average freight rates","https://loadboot.com/market-rates.html",0,6,0.00,40.0
+"national average rate per mile","https://loadboot.com/market-rates.html",0,3,0.00,60.7
+"national dry van rate per mile","https://loadboot.com/dry-van-rates-week-33-2026.html",0,1,0.00,7.0
+"national dry van rates","https://loadboot.com/dry-van-freight-rates.html",0,2,0.00,41.0
+"national flatbed rates","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,30.0
+"national flatbed rates","https://loadboot.com/market-rates.html",0,2,0.00,36.5
+"national freight rates","https://loadboot.com/market-rates.html",0,1,0.00,34.0
+"national reefer rates","https://loadboot.com/market-rates.html",0,2,0.00,36.0
+"national reefer rates","https://loadboot.com/reefer-freight-rates.html",0,1,0.00,45.0
+"new authority carriers","https://loadboot.com/how-to-get-loads-with-new-authority.html",0,1,0.00,8.0
+"next month","https://loadboot.com/flatbed-freight-rates.html",0,1,0.00,6.0
+"no touch freight","https://loadboot.com/driver-assist-policy.html",0,1,0.00,2.0
+"noa factoring","https://loadboot.com/factoring-noa",0,2,0.00,35.5
+"noa factoring","https://loadboot.com/factoring-noa.html",0,1,0.00,86.0
+"noa in trucking","https://loadboot.com/factoring-noa.html",0,11,0.00,44.5
+"noa meaning in trucking","https://loadboot.com/factoring-noa.html",0,5,0.00,53.6
+"noa trucking","https://loadboot.com/factoring-noa.html",0,4,0.00,34.8
+"notice of assignment trucking","https://loadboot.com/factoring-noa",0,2,0.00,67.0
+"notice of assignment upload","https://loadboot.com/factoring-noa.html",0,1,0.00,59.0
+"online carrier setup","https://loadboot.com/create-carrier-account.html",0,2,0.00,77.5
+"open deck freight market","https://loadboot.com/freight-market-reports.html",0,2,0.00,20.5
+"operator dispatch","https://loadboot.com/owner-operator-dispatch.html",0,1,0.00,37.0
+"otr load board","https://loadboot.com/otr-dispatch.html",0,1,0.00,40.0
+"over the road dry van freight","https://loadboot.com/dry-van-freight-rates.html",0,5,0.00,42.6
+"over the road rates","https://loadboot.com/market-rates",0,1,0.00,34.0
+"over the road rates","https://loadboot.com/market-rates.html",0,6,0.00,42.3
+"oversize freight rates","https://loadboot.com/oversize-load-rates-per-mile.html",0,5,0.00,53.4
+"oversize load cost per mile","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,94.0
+"oversize load cost per mile","https://loadboot.com/oversize-load-rates-per-mile.html",0,4,0.00,36.5
+"oversize load rates","https://loadboot.com/oversize-load-rates-per-mile.html",0,1,0.00,34.0
+"oversize load shipping rates","https://loadboot.com/oversize-load-rates-per-mile.html",0,4,0.00,28.8
+"oversized trucking rates","https://loadboot.com/market-rates.html",0,2,0.00,70.0
+"oversized trucking rates","https://loadboot.com/oversize-load-rates-per-mile.html",0,18,0.00,18.4
+"owner operator","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,2.0
+"owner operator book your own loads","https://loadboot.com/owner-operator-dispatch.html",0,1,0.00,61.0
+"owner operator dispatch","https://loadboot.com/owner-operator-dispatch-service-guide.html",0,1,0.00,55.0
+"owner operator dispatch","https://loadboot.com/owner-operator-dispatch.html",0,8,0.00,48.1
+"owner operator dispatch service","https://loadboot.com/owner-operator-dispatch.html",0,10,0.00,48.9
+"owner operator dispatch services","https://loadboot.com/owner-operator-dispatch.html",0,77,0.00,52.2
+"owner operator loads rates","https://loadboot.com/market-rates.html",0,4,0.00,53.5
+"owner operator trucking company with no forced dispatch","https://loadboot.com/owner-operator-dispatch-service-guide.html",0,3,0.00,61.0
+"owner operators looking for dispatchers","https://loadboot.com/owner-operator-dispatch.html",0,1,0.00,67.0
+"owner-operator dispatch","https://loadboot.com/owner-operator-dispatch.html",0,13,0.00,48.5
+"pallet rates trucking","https://loadboot.com/market-rates.html",0,1,0.00,69.0
+"pallet trucking rates","https://loadboot.com/market-rates.html",0,4,0.00,90.0
+"partial truckload calculator","https://loadboot.com/resources.html",0,3,0.00,98.0
+"partial truckload calculator","https://loadboot.com/tools.html",0,1,0.00,95.0
+"pay per mile calculator","https://loadboot.com/cost-per-mile-calculator.html",0,4,0.00,86.8
+"people fleet manager","https://loadboot.com/fleet-management.html",0,2,0.00,51.0
+"peoplenet fleet","https://loadboot.com/fleet-management.html",0,3,0.00,62.0
+"peoplenet fleet manage","https://loadboot.com/fleet-management",0,1,0.00,76.0
+"peoplenet fleet manage","https://loadboot.com/fleet-management.html",0,5,0.00,69.8
+"peoplenet fleet management","https://loadboot.com/fleet-management",0,2,0.00,62.0
+"peoplenet fleet manager","https://loadboot.com/fleet-management",0,2,0.00,67.5
+"peoplenet fleet manager","https://loadboot.com/fleet-management.html",0,36,0.00,62.8
+"peoplenet manager","https://loadboot.com/fleet-management.html",0,3,0.00,66.7
+"per diem for truck drivers","https://loadboot.com/truck-driver-per-diem-2026.html",0,1,0.00,55.0
+"per diem for truck drivers 2025","https://loadboot.com/truck-driver-per-diem-2026.html",0,1,0.00,98.0
+"per diem for truck drivers 2026","https://loadboot.com/truck-driver-per-diem-2026.html",0,1,0.00,16.0
+"per diem for truckers","https://loadboot.com/truck-driver-per-diem-2026.html",0,1,0.00,85.0
+"per diem in trucking","https://loadboot.com/truck-driver-per-diem-2026.html",0,1,0.00,74.0
+"per mile calculator","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,79.0
+"per mile trucking rates","https://loadboot.com/market-rates.html",0,2,0.00,69.0
+"pilot points calculator","https://loadboot.com/tools.html",0,3,0.00,66.7
+"power only","https://loadboot.com/market-rates.html",0,1,0.00,2.0
+"power only","https://loadboot.com/power-only-freight-rates.html",0,2,0.00,4.5
+"power only dispatch","https://loadboot.com/power-only-dispatch.html",0,17,0.00,81.6
+"power only dispatch in usa","https://loadboot.com/power-only-dispatch.html",0,14,0.00,60.8
+"power only dispatch service","https://loadboot.com/power-only-dispatch.html",0,41,0.00,76.9
+"power only dispatch services","https://loadboot.com/power-only-dispatch.html",0,68,0.00,79.8
+"power only dispatcher","https://loadboot.com/power-only-dispatch.html",0,19,0.00,70.8
+"power only freight rates","https://loadboot.com/market-rates.html",0,5,0.00,41.6
+"power only freight rates","https://loadboot.com/power-only-freight-rates.html",0,1,0.00,29.0
+"power only price in usa","https://loadboot.com/power-only-freight-rates.html",0,2,0.00,3.0
+"power only rates per mile","https://loadboot.com/market-rates",0,1,0.00,15.0
+"power only rates per mile","https://loadboot.com/market-rates.html",0,2,0.00,31.0
+"power only rates per mile","https://loadboot.com/power-only-freight-rates.html",0,12,0.00,5.3
+"power only rates per mile","https://loadboot.com/tools.html",0,1,0.00,27.0
+"power only truck price in usa","https://loadboot.com/power-only-freight-rates.html",0,3,0.00,6.0
+"power only trucking rates","https://loadboot.com/market-rates",0,1,0.00,51.0
+"power only trucking rates","https://loadboot.com/market-rates.html",0,35,0.00,41.3
+"power only trucking rates","https://loadboot.com/power-only-freight-rates.html",0,10,0.00,34.2
+"power only units dispatch services","https://loadboot.com/power-only-dispatch.html",0,15,0.00,82.3
+"price dispatch","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,1,0.00,26.0
+"price per mile","https://loadboot.com/market-rates.html",0,1,0.00,2.0
+"prices","https://loadboot.com/market-rates.html",0,1,0.00,2.0
+"produce freight","https://loadboot.com/agriculture-and-produce-freight-shipping.html",0,2,0.00,44.5
+"produce freight rates","https://loadboot.com/agriculture-and-produce-freight-shipping.html",0,1,0.00,52.0
+"produce freight rates","https://loadboot.com/market-rates.html",0,5,0.00,59.2
+"profit per load calculator","https://loadboot.com/tools.html",0,1,0.00,63.0
+"quickbooks","https://loadboot.com/us-truck-dispatcher.html",0,1,0.00,7.0
+"quickbooks enterprise support number","https://loadboot.com/features",0,1,0.00,55.0
+"rate calculator for trucking","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,97.0
+"rate con","https://loadboot.com/how-to-read-a-rate-confirmation",0,1,0.00,52.0
+"rate confirmation","https://loadboot.com/how-to-read-a-rate-confirmation",0,5,0.00,71.0
+"rate confirmation","https://loadboot.com/how-to-read-a-rate-confirmation.html",0,1,0.00,70.0
+"rate confirmation eform - click here","https://loadboot.com/how-to-read-a-rate-confirmation",0,3,0.00,48.0
+"rate confirmation eform - click here","https://loadboot.com/how-to-read-a-rate-confirmation.html",0,3,0.00,47.3
+"rate confirmation eform click here","https://loadboot.com/how-to-read-a-rate-confirmation",0,1,0.00,51.0
+"rate cons","https://loadboot.com/how-to-read-a-rate-confirmation",0,1,0.00,52.0
+"rate index for trucking","https://loadboot.com/market-rates.html",0,2,0.00,59.5
+"rate per mile 2020","https://loadboot.com/market-rates.html",0,4,0.00,77.3
+"rate per mile calculator","https://loadboot.com/cost-per-mile-calculator.html",0,1,0.00,83.0
+"rate per mile trucking","https://loadboot.com/market-rates.html",0,16,0.00,65.8
+"rate trucking","https://loadboot.com/market-rates.html",0,6,0.00,50.8
+"ratecon","https://loadboot.com/how-to-read-a-rate-confirmation",0,2,0.00,52.5
+"rates for truck loads","https://loadboot.com/market-rates",0,2,0.00,43.0
+"rates for truck loads","https://loadboot.com/market-rates.html",0,15,0.00,43.7
+"rates per mile for trucking","https://loadboot.com/market-rates.html",0,1,0.00,88.0
+"real time freight load board","https://loadboot.com/",0,1,0.00,85.0
+"real time lading volgen","https://loadboot.com/gps-tracking.html",0,4,0.00,89.5
+"reed load board","https://loadboot.com/",0,1,0.00,81.0
+"reefer container rates","https://loadboot.com/reefer-freight-rates.html",0,1,0.00,88.0
+"reefer dispatch service","https://loadboot.com/reefer-dispatch.html",0,1,0.00,77.0
+"reefer dispatch services","https://loadboot.com/reefer-dispatch.html",0,1,0.00,80.0
+"reefer freight rates","https://loadboot.com/market-rates.html",0,8,0.00,43.3
+"reefer freight rates 2023","https://loadboot.com/market-rates.html",0,3,0.00,47.0
+"reefer freight rates per mile","https://loadboot.com/market-rates",0,1,0.00,55.0
+"reefer freight rates per mile","https://loadboot.com/market-rates.html",0,13,0.00,53.8
+"reefer full truckload rate","https://loadboot.com/market-rates.html",0,13,0.00,54.5
+"reefer full truckload rate","https://loadboot.com/reefer-freight-rates.html",0,3,0.00,70.0
+"reefer load rates","https://loadboot.com/market-rates.html",0,9,0.00,55.0
+"reefer loads rates","https://loadboot.com/market-rates.html",0,5,0.00,54.4
+"reefer rate","https://loadboot.com/market-rates.html",0,2,0.00,61.0
+"reefer rate per mile","https://loadboot.com/market-rates",0,2,0.00,62.5
+"reefer rate per mile","https://loadboot.com/market-rates.html",0,4,0.00,51.8
+"reefer rate per mile","https://loadboot.com/reefer-freight-rates.html",0,1,0.00,31.0
+"reefer rate per mile","https://loadboot.com/reefer-rates-week-34-2026.html",0,1,0.00,10.0
+"reefer rates","https://loadboot.com/market-rates.html",0,25,0.00,45.5
+"reefer rates","https://loadboot.com/reefer-freight-rates.html",0,2,0.00,41.5
+"reefer rates per mile","https://loadboot.com/reefer-rates-week-34-2026.html",0,1,0.00,8.0
+"reefer rates today","https://loadboot.com/market-rates.html",0,4,0.00,25.3
+"reefer rates today","https://loadboot.com/reefer-freight-rates.html",0,2,0.00,10.5
+"reefer shipping cpm","https://loadboot.com/reefer-rates-week-34-2026.html",0,2,0.00,1.0
+"reefer spot rates","https://loadboot.com/market-rates.html",0,5,0.00,38.6
+"reefer truck load rates","https://loadboot.com/market-rates.html",0,3,0.00,61.3
+"refrigerated freight rates","https://loadboot.com/market-rates.html",0,4,0.00,63.8
+"refrigerated freight rates","https://loadboot.com/reefer-freight-rates.html",0,3,0.00,54.3
+"refrigerated truck rates","https://loadboot.com/reefer-freight-rates.html",0,1,0.00,50.0
+"regional freight rates","https://loadboot.com/market-rates.html",0,4,0.00,33.8
+"remote","https://loadboot.com/",0,1,0.00,1.0
+"remote","https://loadboot.com/careers.html",0,1,0.00,2.0
+"remote carriers","https://loadboot.com/agents.html",0,1,0.00,15.0
+"remote dispatch","https://loadboot.com/careers",0,1,0.00,9.0
+"remote truck dispatch jobs","https://loadboot.com/agents.html",0,1,0.00,13.0
+"rest api tutorial for truck drivers","https://loadboot.com/integrations.html",0,1,0.00,215.0
+"retail freight","https://loadboot.com/retail-and-ecommerce-freight-shipping.html",0,3,0.00,20.3
+"rgn load rates","https://loadboot.com/market-rates.html",0,1,0.00,76.0
+"schedule of heavy highway vehicles","https://loadboot.com/form-2290-hvut.html",0,1,0.00,80.0
+"semi freight rates","https://loadboot.com/market-rates.html",0,5,0.00,40.2
+"semi-truck","https://loadboot.com/power-only-freight-rates.html",0,1,0.00,7.0
+"shipbob lost in transit","https://loadboot.com/protect-freight-from-loss-damage-and-fraud",0,1,0.00,31.0
+"shipper 360","https://loadboot.com/shipper-solutions",0,1,0.00,47.0
+"shipper account","https://loadboot.com/create-shipper-account",0,1,0.00,8.0
+"shipper account","https://loadboot.com/create-shipper-account.html",0,10,0.00,37.5
+"shipper load board no brokers","https://loadboot.com/how-to-ship-without-a-broker.html",0,6,0.00,54.3
+"shipper loads","https://loadboot.com/blog.html",0,2,0.00,60.0
+"shipper registration","https://loadboot.com/create-shipper-account.html",0,2,0.00,81.0
+"shippercrm","https://loadboot.com/freight-broker-software-cost.html",0,1,0.00,71.0
+"shipping board","https://loadboot.com/shipper-solutions.html",0,4,0.00,89.8
+"shipping connections load board","https://loadboot.com/ship-direct-to-carrier.html",0,1,0.00,63.0
+"shipwell load board","https://loadboot.com/shipper-solutions.html",0,1,0.00,69.0
+"short haul trucking rates","https://loadboot.com/market-rates",0,3,0.00,46.7
+"short haul trucking rates","https://loadboot.com/market-rates.html",0,48,0.00,45.7
+"smartbroker shipping","https://loadboot.com/how-to-ship-without-a-broker",0,1,0.00,43.0
+"southeast region","https://loadboot.com/market-rates.html",0,1,0.00,2.0
+"spot","https://loadboot.com/market-rates.html",0,1,0.00,13.0
+"spot","https://loadboot.com/power-only-freight-rates.html",0,1,0.00,10.0
+"spot freight rate","https://loadboot.com/market-rates.html",0,2,0.00,92.5
+"spot freight rates","https://loadboot.com/market-rates.html",0,1,0.00,59.0
+"spot market freight rate trends load to truck ratio","https://loadboot.com/market-rates",0,11,0.00,6.8
+"spot market freight rate trends load to truck ratio","https://loadboot.com/market-rates.html",0,1,0.00,7.0
+"spot market freight rates","https://loadboot.com/market-rates",0,2,0.00,45.5
+"spot market freight rates","https://loadboot.com/market-rates.html",0,49,0.00,78.7
+"spot market rates","https://loadboot.com/market-rates",0,1,0.00,75.0
+"spot market rates","https://loadboot.com/market-rates.html",0,17,0.00,44.2
+"spot quote","https://loadboot.com/dry-van-freight-rates.html",0,1,0.00,2.0
+"spot rate trucking","https://loadboot.com/market-rates.html",0,4,0.00,69.8
+"spot rates trucking","https://loadboot.com/market-rates.html",0,12,0.00,73.3
+"spot trucking rates","https://loadboot.com/market-rates.html",0,2,0.00,70.5
+"spot truckload capacity broker","https://loadboot.com/market-rates.html",0,1,0.00,34.0
+"standard layover fee trucking","https://loadboot.com/layover-policy.html",0,3,0.00,22.7
+"standard layover in trucking","https://loadboot.com/layover-policy.html",0,7,0.00,7.1
+"steamboat load board","https://loadboot.com/",0,7,0.00,68.4
+"steel freight","https://loadboot.com/metals-and-steel-freight-shipping.html",0,1,0.00,6.0
+"steel shipping","https://loadboot.com/metals-and-steel-freight-shipping.html",0,1,0.00,95.0
+"steel shipping on a flatbed","https://loadboot.com/metals-and-steel-freight-shipping.html",0,1,0.00,57.0
+"step deck freight rates","https://loadboot.com/market-rates.html",0,1,0.00,80.0
+"step deck freight rates","https://loadboot.com/step-deck-freight-rates.html",0,1,0.00,23.0
+"step deck freight rates","https://loadboot.com/step-deck-rates-week-29-2026.html",0,1,0.00,29.0
+"step deck freight shipping","https://loadboot.com/step-deck-freight-rates.html",0,5,0.00,77.8
+"step deck load rates","https://loadboot.com/step-deck-freight-rates.html",0,1,0.00,68.0
+"step deck load rates","https://loadboot.com/step-deck-rates-week-29-2026.html",0,1,0.00,41.0
+"step deck loads","https://loadboot.com/step-deck-freight-rates.html",0,1,0.00,65.0
+"step deck rates","https://loadboot.com/step-deck-rates-week-29-2026.html",0,2,0.00,6.0
+"step deck rates per mile","https://loadboot.com/step-deck-freight-rates.html",0,2,0.00,4.0
+"step deck rates per mile","https://loadboot.com/step-deck-rates-week-29-2026.html",0,1,0.00,10.0
+"t dispatch pricing","https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",0,4,0.00,48.5
+"t dispatch pricing","https://loadboot.com/pricing.html",0,2,0.00,70.0
+"t o n u","https://loadboot.com/tonu-policy",0,3,0.00,45.7
+"t o n u","https://loadboot.com/tonu-policy.html",0,61,0.00,37.8
+"tms vs freight broker cost","https://loadboot.com/freight-broker-software-cost.html",0,1,0.00,55.0
+"toll real-time freight rates","https://loadboot.com/market-rates.html",0,1,0.00,41.0
+"tonu","https://loadboot.com/tonu-policy",0,1,0.00,47.0
+"tonu","https://loadboot.com/tonu-policy.html",0,30,0.00,36.0
+"tonu charge","https://loadboot.com/tonu-policy.html",0,19,0.00,38.2
+"tonu charges","https://loadboot.com/tonu-policy",0,1,0.00,35.0
+"tonu charges","https://loadboot.com/tonu-policy.html",0,6,0.00,21.5
+"tonu charges in trucking","https://loadboot.com/tonu-policy.html",0,1,0.00,47.0
+"tonu definition","https://loadboot.com/tonu-policy.html",0,8,0.00,17.6
+"tonu fee","https://loadboot.com/tonu-policy",0,1,0.00,32.0
+"tonu fee","https://loadboot.com/tonu-policy.html",0,14,0.00,19.8
+"tonu fee in trucking","https://loadboot.com/tonu-policy.html",0,1,0.00,30.0
+"tonu fee meaning","https://loadboot.com/tonu-policy.html",0,3,0.00,26.3
+"tonu fees","https://loadboot.com/tonu-policy.html",0,4,0.00,29.3
+"tonu full form","https://loadboot.com/tonu-policy.html",0,1,0.00,51.0
+"tonu in logistics","https://loadboot.com/tonu-policy.html",0,2,0.00,49.0
