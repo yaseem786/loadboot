@@ -110,7 +110,7 @@ titles match the build on 130/131 (prod is at this commit).
 | S8 | Thin pages (< 300 words) | status 215, accessibility 269 (referral gone) | Expected |
 | S9 | `sitemap.xml` carries `<changefreq>` only | all | Google ignores changefreq; `<lastmod>` is the field it reads. Only worth adding if it is a real per-page date (build has none) — **do not fake it with the build date** |
 | S10 | `unsub.html` is excluded from the sitemap but not `noindex`; Bing sends it 32 organic landings in 90 d, `privacy.html` 15 | 2 | Add `<meta name="robots" content="noindex">` to unsub.html; privacy is fine |
-| S11 | Blog thumbnail without width/height | 1 (`blog.html`) | CLS nit |
+| S11 | Blog thumbnail without width/height | 1 (`blog.html`) | CLS nit — **fixed 2026-09-25**: `blog_card()` in `build_site.py` emits `width="1200" height="675"` (16:9; the S5 re-encode to 800×450 keeps the ratio). Root `blog.html` is a stale leftover, not published — Netlify serves `site/` only |
 | S12 | Rendered pass: every page logs 3 console errors — clarity.ms and googletagmanager blocked by the container proxy, trustpilot widget 405 over http from localhost | harness artefacts, not site bugs | none |
 
 **False positives to ignore:** 358 "broken #fragment" hits are all `contact.html#quote` / `#create`. The
