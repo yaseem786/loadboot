@@ -567,6 +567,17 @@ def _season_note(month):
             'positioned, then a sharp drop once it is in place and a slide into the January floor.')
 
 
+def _article_common(fname):
+    # S3 (seo-audit-2026-10): Article rich results need `image`. The site OG images (1200x630, 1200x1200)
+    # are on every page already; publisher logo is the Organization logo in build_site.ORG_SCHEMA.
+    return {
+      "image": ["https://loadboot.com/og-image.png", "https://loadboot.com/og-image-square.png"],
+      "mainEntityOfPage": {"@type": "WebPage", "@id": "https://loadboot.com/%s" % fname},
+      "author": {"@type": "Organization", "name": "LoadBoot", "url": "https://loadboot.com/"},
+      "publisher": {"@type": "Organization", "name": "LoadBoot",
+                    "logo": {"@type": "ImageObject", "url": "https://loadboot.com/icon-512.png"}}}
+
+
 def _combined_report(snap, prev, eqs_by_name, acc_faq_schema, all_weeks, idx):
     yr, wk = snap['iso_year'], snap['iso_week']
     mon, sun = _week_dates(yr, wk)
@@ -796,8 +807,7 @@ def _combined_report(snap, prev, eqs_by_name, acc_faq_schema, all_weeks, idx):
       "@context": "https://schema.org", "@type": "Article",
       "headline": "Freight Market Report — Week %02d, %d" % (wk, yr),
       "datePublished": snap['as_of'], "dateModified": snap['as_of'],
-      "author": {"@type": "Organization", "name": "LoadBoot"},
-      "publisher": {"@type": "Organization", "name": "LoadBoot"},
+      **_article_common(fname),
       "about": "National truckload freight rates per mile by equipment type"}) + '</script>')
 
     return dict(
@@ -970,8 +980,7 @@ def _deep_dive(snap, prev, eq, acc_faq_schema, combined_file):
       "@context": "https://schema.org", "@type": "Article",
       "headline": "%s Rates — Week %02d, %d" % (name, wk, yr),
       "datePublished": snap['as_of'], "dateModified": snap['as_of'],
-      "author": {"@type": "Organization", "name": "LoadBoot"},
-      "publisher": {"@type": "Organization", "name": "LoadBoot"}}) + '</script>')
+      **_article_common(fname)}) + '</script>')
 
     return dict(
       fname=fname,

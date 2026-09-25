@@ -2114,8 +2114,21 @@ def blog_post(fname,title,desc,excerpt,blocks):
         inner += ('<h2>%s</h2>' % b[2:]) if b.startswith('H:') else ('<p>%s</p>' % b)
     body += '<section><div class="wrap prose reveal" style="max-width:780px">%s</div></section>' % inner
     body += final_cta()
-    sch = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"%s","author":{"@type":"Organization","name":"Loadboot"},"publisher":{"@type":"Organization","name":"Loadboot"}}</script>' % title.replace('"',"'")
+    # S3 (seo-audit-2026-10): Article rich results need `image` and `datePublished`. Same fields as
+    # market_reports_module._article_common; the date is the article's first commit (BLOG_PUB).
+    pub = BLOG_PUB.get(fname)
+    art = {"@context":"https://schema.org","@type":"Article","headline":title.replace('"',"'"),"description":desc,
+           "image":["https://loadboot.com/og-image.png","https://loadboot.com/og-image-square.png"],
+           "mainEntityOfPage":{"@type":"WebPage","@id":"https://loadboot.com/"+fname},
+           "author":{"@type":"Organization","name":"Loadboot","url":"https://loadboot.com/"},
+           "publisher":{"@type":"Organization","name":"Loadboot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}}}
+    if pub:
+        art["datePublished"] = art["dateModified"] = pub
+    sch = '<script type="application/ld+json">%s</script>' % json.dumps(art, ensure_ascii=False, separators=(',',':'))
     page(fname,title,desc,'blog.html',body,sch)
+
+# First-publish date of the blog_post() articles that never became premium (git: 4cd1214, 27 Jun 2026).
+BLOG_PUB = {'how-to-get-loads-with-new-authority.html':'2026-06-27'}
 
 BLOGPOSTS = [
  ('truck-driver-per-diem-2026.html',
@@ -4854,7 +4867,7 @@ page('authority-dot-setup.html','Trucking Authority & DOT Setup Guide (USDOT, MC
 # ---------- 2. BOC-3 / UCR ----------
 _bufaq_html,_bufaq_sch = faq_block([
  ('What happens if I skip UCR?','States enforce UCR at roadside and weigh stations — expect citations and fines, and some states hold registrations. It is one of the cheapest filings on your list; never let it lapse.'),
- ('How much does a BOC-3 cost?','FMCSA charges nothing to file a BOC-3 &mdash; what you pay is the process-agent company that files it. A blanket-agent service is usually a small one-time fee (tens of dollars, not hundreds); some bill yearly or fold it into an authority package, so check whether it renews automatically. The price is set by the agent company, not by FMCSA.'),
+ ('How much does a BOC-3 cost?','FMCSA charges nothing to file a BOC-3 &mdash; what you pay is the process-agent company that files it. A blanket-agent service is usually a small one-time fee, typically about $50&ndash;$100; some bill yearly or fold it into an authority package, so check whether it renews automatically. The price is set by the agent company, not by FMCSA.'),
  ('How often do you file a BOC-3?','Once. It stays on file with FMCSA while your authority is active. You need a new one only when you change process-agent companies &mdash; the new agent files it for you.'),
  ('Do I file BOC-3 myself?','For motor carriers, the BOC-3 must be filed by the process agent, electronically (online), with FMCSA. You choose the agent; they file.'),
  ('Does UCR cover my trailer?','UCR fees are based on your power-unit count. Trailers are not counted as vehicles for UCR brackets.'),
@@ -4883,7 +4896,7 @@ bup += _sec('Where LoadBoot fits','Never miss either one again', _cards([
  ('&#129309;','Trusted referrals','Need a blanket agent or filing service? We will point you to reputable options — no kickback games.'),
 ]))
 bup += _bufaq_html + _COMPL_DISC + final_cta()
-page('boc3-ucr.html','BOC-3 Process Agents &amp; UCR Registration Explained | Loadboot',
+page('boc3-ucr.html','BOC-3 Process Agents &amp; UCR Registration Explained | LoadBoot',
  'What a BOC-3 costs, who files it and how often, plus UCR registration: who must register, bracket fees, the renewal window and how both get enforced.',
  'services.html', bup, _bufaq_sch)
 
@@ -5320,7 +5333,7 @@ import partner_landing_module as _plm   # premium landing system (also imported 
 # The previous body is still built above as `bp`; it is no longer published, kept for reference.
 _bp2, _bfaq_sch2 = _plm.broker_product_landing({'linkcard': linkcard, 'carrier_network_section': carrier_network_section})
 page('brokers.html', 'Freight Broker Load Board — Verified Carriers, Proof on Every Load | LoadBoot',
-     'Freight brokers post loads free and cover them with carriers that pass four gates: live FMCSA authority, the dispatched VIN on the certificate of insurance, executed paperwork and an availability post confirmed in the last 24 hours. Live GPS, geofenced stamps, one settlement receipt, API.',
+     'Freight brokers post loads free, covered by carriers that pass four gates: live FMCSA authority, VIN on the COI, signed paperwork, 24-hour availability.',
      'partners.html', _bp2, _bfaq_sch2)
 
 # ---- Shipper Solutions page (Inc 58, directive #37) — INQUIRY/CONSULTATION ONLY.

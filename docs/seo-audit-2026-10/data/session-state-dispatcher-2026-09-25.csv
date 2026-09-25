@@ -1,0 +1,13 @@
+pull,start,end,query,page,clicks,impressions,ctr,position
+28p,2026-08-26,2026-09-23,,truck-dispatcher-in-california.html,0,5,0,16
+28p,2026-08-26,2026-09-23,,truck-dispatcher-in-georgia.html,0,2,0,7
+28p,2026-08-26,2026-09-23,,truck-dispatcher-in-texas.html,0,2,0,7
+90p,2026-06-25,2026-09-23,,truck-dispatcher-in-california,0,14,0,13.9
+90p,2026-06-25,2026-09-23,,truck-dispatcher-in-california.html,0,12,0,32.2
+90p,2026-06-25,2026-09-23,,truck-dispatcher-in-georgia,0,3,0,6
+90p,2026-06-25,2026-09-23,,truck-dispatcher-in-georgia.html,0,2,0,7
+90p,2026-06-25,2026-09-23,,truck-dispatcher-in-texas,0,2,0,15
+90p,2026-06-25,2026-09-23,,truck-dispatcher-in-texas.html,0,3,0,11
+90qp,2026-06-25,2026-09-23,freight dispatch,truck-dispatcher-in-texas,0,1,0,23
+90qp,2026-06-25,2026-09-23,hopper bottom dispatch,truck-dispatcher-in-california,0,1,0,30
+90qp,2026-06-25,2026-09-23,load dispatch,truck-dispatcher-in-california,0,1,0,42
