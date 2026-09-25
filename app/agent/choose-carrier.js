@@ -366,8 +366,9 @@ function hero(o, title, sub) {
     h('div', { class: 'cyc-h1' }, title),
     h('div', { class: 'cyc-sub' }, sub),
     h('div', { class: 'cyc-kpis' }, [
-      h('div', { class: 'cyc-kpi' }, [h('b', null, String(o.available_count || 0)), h('span', null, 'Carriers open')]),
-      h('div', { class: 'cyc-kpi' }, [h('b', null, String(o.exact_count || 0)), h('span', null, 'Exact match')]),
+      // while a choice is pending the list is not computed, so the open/exact counts would read 0 — hide them
+      o.pending ? null : h('div', { class: 'cyc-kpi' }, [h('b', null, String(o.available_count || 0)), h('span', null, 'Carriers open')]),
+      o.pending ? null : h('div', { class: 'cyc-kpi' }, [h('b', null, String(o.exact_count || 0)), h('span', null, 'Exact match')]),
       o.score != null ? h('div', { class: 'cyc-kpi' }, [h('b', null, o.score + ' / ' + (o.max_score || 100)), h('span', null, 'Your test')]) : null,
       h('div', { class: 'cyc-kpi', style: 'flex:2;min-width:220px' }, [h('span', null, 'Your equipment (from your application)'), h('div', { class: 'cyc-chips' }, (d.equipment || []).length ? d.equipment.map((e) => chip(e, 'on')) : [chip('none listed — every carrier will show as outside your equipment', 'warn')])]),
     ]),
