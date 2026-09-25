@@ -6,9 +6,12 @@ route, why), show all of it in CC in the right place, and refuse with the reason
 Claude in a session, a cron) later tries to send that person the thing they opted out of. Amazon /
 Uber standard: per-category preferences, one-click honoured instantly, reasons collected, nothing silent.
 
-**Status:** staging applied + tested 25 Sep 2026 (anon surface 33 → 33, identical names). Prod: owner
-applies `migrations/bl_comm_0446_unsubscribe_engine.sql`, deploys the two edge functions, pushes the site
-(unsub.html). Order below.
+**Status:** staging applied + tested 25 Sep 2026 (anon surface 33 → 33, identical names). Both edge
+functions are deployed on staging (`unsubscribe` verify_jwt off — it did not exist on staging before;
+`delivery-worker` v19, verify_jwt on, as on prod) and the page was exercised end-to-end with a throwaway
+delivery row (GET honoured a Summaries unsubscribe, reason attached, RFC 8058 POST ok, resubscribe ok,
+rows deleted). Prod: owner applies `migrations/bl_comm_0446_unsubscribe_engine.sql`, deploys the two
+edge functions, pushes the site (unsub.html). Order below.
 
 ---
 
