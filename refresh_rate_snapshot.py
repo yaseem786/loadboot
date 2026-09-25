@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
-"""refresh_rate_snapshot.py -- append this week's benchmark snapshot to rate_snapshots.json.
+"""refresh_rate_snapshot.py -- refresh the build's two fallback files (and the historical snapshot store).
+
+Since 25 Sep 2026 (bl_mkt_0442-0444) the dated weekly reports are built from app_private.rate_history
+through get_public_site_facts(), and rates are published from CC, so this is NO LONGER a weekly ritual.
+Run it when you want market_rates_fallback.json / site_facts_fallback.json (what the build uses when
+the live read fails) to carry the latest good read. The rate_snapshots.json append below is kept as the
+offline historical record; the rules it enforces still hold.
+
+Original notes:
 
     python refresh_rate_snapshot.py
 
@@ -35,6 +43,8 @@ STORE = os.path.join(HERE, 'rate_snapshots.json')
 # build_site.py reads the benchmark live at build time and falls back to this file when it cannot
 # (SEO ledger notes b + e, 25 Sep 2026). Every successful fetch here refreshes it.
 FALLBACK = os.path.join(HERE, 'market_rates_fallback.json')
+SF_URL = URL.rsplit('/', 1)[0] + '/get_public_site_facts'
+SF_FALLBACK = os.path.join(HERE, 'site_facts_fallback.json')
 
 
 def fetch():
@@ -45,7 +55,27 @@ def fetch():
         return json.loads(r.read().decode('utf-8'))
 
 
+def refresh_site_facts():
+    req = urllib.request.Request(SF_URL, data=b'{}', headers={
+        'apikey': ANON, 'Authorization': 'Bearer ' + ANON, 'Content-Type': 'application/json'})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        sf = json.loads(r.read().decode('utf-8'))
+    if not isinstance(sf, dict) or not isinstance(sf.get('facts'), dict):
+        print('get_public_site_facts returned an unexpected shape; site_facts_fallback.json unchanged.'); return
+    old = json.load(open(SF_FALLBACK, encoding='utf-8')) if os.path.exists(SF_FALLBACK) else {}
+    if not sf.get('diesel') and old.get('diesel'):
+        sf['diesel'] = old['diesel']   # no verified diesel pull yet: keep the fallback's figure and its date
+    sf['_note'] = old.get('_note', '')
+    sf['fetched'] = datetime.date.today().isoformat()
+    json.dump(sf, open(SF_FALLBACK, 'w', encoding='utf-8'), indent=1)
+    print('Refreshed site_facts_fallback.json (%d facts, %d rate_history rows, diesel %s).' % (len(sf['facts']), len(sf.get('rate_history') or []), 'live' if sf.get('diesel_verified') else 'kept'))
+
+
 def main():
+    try:
+        refresh_site_facts()
+    except Exception as ex:
+        print('site facts refresh FAILED: %s (continuing with rates)' % ex)
     try:
         rows = fetch()
     except Exception as ex:

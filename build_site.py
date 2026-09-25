@@ -1326,6 +1326,73 @@ _MR_LIVE, _MR_FROM = _mr_load()
 _MR_ASOF = max(r['as_of'] for r in _MR_LIVE.values())
 _MR_MONTH = __import__('datetime').date.fromisoformat(_MR_ASOF).strftime('%B %Y')
 print('market rates: %s, as_of %s, dry van $%.2f' % (_MR_FROM, _MR_ASOF, _MR_LIVE['Dry Van']['carrier_rpm']))
+
+# ---- Site facts registry (bl_mkt_0442, 25 Sep 2026) ---------------------------------------
+# Every weekly number and word on the site that is NOT a rate comes from app_private.site_facts and
+# app_private.fuel_prices through ONE anon RPC, get_public_site_facts(): diesel, slow facts (IRS per diem),
+# short weekly lines, and rate_history for the dated reports. Same shape as _mr_load(): live read on
+# production, site_facts_fallback.json when the read fails (refresh_rate_snapshot.py refreshes the file).
+def _sf_fallback():
+    with open(os.path.join(SRC, 'site_facts_fallback.json'), encoding='utf-8') as _f:
+        return json.load(_f)
+def _sf_load():
+    if os.environ.get('LOADBOOT_RATES_OFFLINE') != '1':
+        try:
+            import urllib.request
+            _req = urllib.request.Request('https://%s.supabase.co/rest/v1/rpc/get_public_site_facts' % PROD_REF,
+                data=b'{}', headers={'apikey': PROD_ANON, 'Authorization': 'Bearer ' + PROD_ANON,
+                                     'Content-Type': 'application/json'})
+            with urllib.request.urlopen(_req, timeout=20) as _r:
+                _sf = json.loads(_r.read().decode('utf-8'))
+            if isinstance(_sf, dict) and isinstance(_sf.get('facts'), dict):
+                return _sf, 'live'
+            print('site facts: live read returned an unexpected shape - using fallback')
+        except Exception as _ex:
+            print('site facts: live read FAILED (%s) - using fallback' % _ex)
+    _sf = _sf_fallback()
+    return _sf, 'fallback (fetched %s)' % _sf.get('fetched', '?')
+_SF, _SF_FROM = _sf_load()
+_SF_FACTS = _SF.get('facts') or {}
+_FACT_USED, _FACT_MISSING = {}, {}
+def fact(key, default=None, page=None):
+    """One site fact by key. kind=number comes back as float. A key the registry does not have falls
+    back to `default` and is listed at the end of the build, so a missing row is visible, never silent."""
+    if page: _FACT_USED.setdefault(key, set()).add(page)
+    r = _SF_FACTS.get(key)
+    if not r or r.get('value') in (None, ''):
+        _FACT_MISSING[key] = default
+        return default
+    v = r['value']
+    if r.get('kind') == 'number':
+        try: return float(v)
+        except (TypeError, ValueError): return default
+    return v
+def fact_asof(key):
+    return (_SF_FACTS.get(key) or {}).get('as_of') or ''
+# Diesel (US average, $/gal). get_public_site_facts() sends fuel_prices only while a verified pull (EIA or a CC
+# override) stands behind it; otherwise the fallback file's figure is used, labelled with its own date.
+def _diesel_pick():
+    d = (_SF.get('diesel') or {}).get('US average') or {}
+    try:
+        v = float(d.get('usd_gal')); a = str(d.get('as_of') or '')
+        if 2.0 <= v <= 8.0 and a: return v, a, _SF_FROM
+    except (TypeError, ValueError): pass
+    fb = (_sf_fallback().get('diesel') or {}).get('US average') or {}
+    return float(fb['usd_gal']), str(fb.get('as_of') or '?'), 'fallback'
+_DIESEL, _DIESEL_ASOF, _DIESEL_FROM = _diesel_pick()
+_DIESEL_S = '$%.2f' % _DIESEL
+def _fsc(peg, mpg): return (_DIESEL - peg) / mpg          # fuel surcharge per mile, the industry formula
+def _fsc_s(peg, mpg): return '$%.2f' % _fsc(peg, mpg)
+def _fs_row(peg, mpg, mpg_label):                            # one row of the worked-example FSC table
+    return '<tr><td>$%.2f</td><td>%s</td><td><b>%s</b></td><td>%s</td></tr>' % (peg, mpg_label, _fsc_s(peg, mpg), _money(_fsc(peg, mpg) * 500))
+# IRS special transportation-industry per diem (changes every 1 Oct; the registry row carries due_on).
+_PD_RATE = fact('perdiem.conus', 80, 'truck-driver-per-diem-2026')
+_PD_OCONUS = fact('perdiem.oconus', 86, 'truck-driver-per-diem-2026')
+_PD_PCT = fact('perdiem.deductible_pct', 80, 'truck-driver-per-diem-2026')
+_PD_NET = _PD_RATE * _PD_PCT / 100.0                        # $ per night that reaches the return
+def _pd_i(n): return '$' + format(int(round(n)), ',')
+_PD_RATE_S, _PD_OCONUS_S, _PD_NET_S, _PD_PCT_S = _pd_i(_PD_RATE), _pd_i(_PD_OCONUS), _pd_i(_PD_NET), '%d%%' % _PD_PCT
+print('site facts: %s, %d keys; diesel %s/gal as_of %s (%s); per diem %s x %s' % (_SF_FROM, len(_SF_FACTS), _DIESEL_S, _DIESEL_ASOF, _DIESEL_FROM, _PD_RATE_S, _PD_PCT_S))
 def _mrc(e): return _MR_LIVE[e]['carrier_rpm']
 def _mrs(e): return _MR_LIVE[e]['shipper_rpm']
 def _mrrow(e, label):   # one benchmark table row: equipment | carrier | shipper | low-high
@@ -1335,6 +1402,7 @@ def _mrrow(e, label):   # one benchmark table row: equipment | carrier | shipper
 def _money(n): return '$' + format(int(round(n)), ',')
 _MR_MARKUP = int(round((_mrs('Dry Van') / _mrc('Dry Van') - 1) * 100))   # shipper over carrier, dry van
 def _d(x): return '$%.2f' % x
+_mrd = _d   # rebinding-proof alias: a later loop reuses the name _d, so post-5200 code (meta descs, lint) calls _mrd
 # market-rates.html FAQ 'average trucking rate per mile right now' - visible text and FAQPage schema from one source
 _MR_FAQ_AVG = ('National benchmark averages paid to the carrier, as of %s: dry van %s per mile (range %s to %s), reefer %s (%s to %s) and flatbed %s (%s to %s). '
     % tuple([_MR_ASOF] + [v for _e in ('Dry Van', 'Reefer', 'Flatbed') for v in (_d(_mrc(_e)), _d(_MR_LIVE[_e]['low']), _d(_MR_LIVE[_e]['high']))]))
@@ -1461,7 +1529,7 @@ _tp = [
 ]
 _tpcards = ''.join('<a class="linkcard reveal" href="tools.html#%s"><div class="icon">%s</div><h3>%s</h3><p>%s</p><span class="arw">Open tool %s</span></a>' % (a,b,c,d,ARW) for a,b,c,d in _tp)
 TOOLSPROMO = '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free for drivers &mdash; no login</div><h2>Free trucking calculators that pay for themselves</h2><p class="lead center" style="margin:0 auto">Owner-operators use these every day to price loads, know their real cost per mile, and stop hauling cheap freight. 100% free, right in your browser &mdash; no signup needed.</p></div><div class="grid g3 reveal">' + _tpcards + '</div><div class="center" style="margin-top:32px"><a href="tools.html" class="btn btn-primary">Open all free tools %s</a></div></div></section>' % ARW
-LSBAND = '<section id="load-score-home" class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free decision tool &mdash; no login</div><h2>Should you take this load? Find out in 3 seconds.</h2><p class="lead center" style="margin:0 auto">The one tool every owner-operator needs daily. Enter any offer and get a clear <b>take / negotiate / pass</b> verdict &mdash; with a smart counter-offer built on your real costs.</p></div>' + LS_HTML + '<div class="center" style="margin-top:24px"><a href="load-score.html" class="btn btn-secondary">How the Load Score works &rarr;</a></div></div></section>'
+LSBAND = '<section id="load-score-home" class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free decision tool &mdash; no login</div><h2>Should you take this load? Find out in 3 seconds.</h2><p class="lead center" style="margin:0 auto">The one tool every owner-operator needs daily. Enter any offer and get a clear <b>take / negotiate / pass</b> verdict &mdash; with a smart counter-offer built on your real costs.</p></div>' + LS_HTML.replace('value="3.85"', 'value="%.2f"' % _DIESEL) + '<div class="center" style="margin-top:24px"><a href="load-score.html" class="btn btn-secondary">How the Load Score works &rarr;</a></div></div></section>'
 # Static, timeless ILLUSTRATIVE examples only. No dates, no "available now", no live DB query.
 # Columns: origin, destination, equipment, loaded_miles, example_rate, weight
 PLB_SAMPLES = [
@@ -2207,8 +2275,8 @@ BLOG_PUB = {'how-to-get-loads-with-new-authority.html':'2026-06-27'}
 
 BLOGPOSTS = [
  ('truck-driver-per-diem-2026.html',
-  'Truck Driver Per Diem 2026: The $12,800 Most Owner-Operators Never Claim',
-  'IRS per diem for truck drivers is $80/day in 2026 and 80% deductible. 200 nights out is $12,800 in deductions — and most owner-operators lose it because they cannot prove the days.',
+  'Truck Driver Per Diem 2026: The ' + _pd_i(200 * _PD_NET) + ' Most Owner-Operators Never Claim',
+  'IRS per diem for truck drivers is ' + _PD_RATE_S + '/day in 2026 and ' + _PD_PCT_S + ' deductible. 200 nights out is ' + _pd_i(200 * _PD_NET) + ' in deductions — and most owner-operators lose it because they cannot prove the days.',
   'You do not need a single meal receipt. You DO need proof of the nights you were away — and that is exactly where most drivers lose thousands. Here is the 2026 rule, the real math, and how to make the proof build itself.',
   []),
  ('ghost-loads-load-board-problems.html',
@@ -3263,12 +3331,12 @@ READTIME={'ghost-loads-load-board-problems.html':9,'how-to-avoid-cheap-freight.h
 # ---------- PER DIEM (money page: trucking tax deductions) ----------
 PREMIUM_ARTICLES.add('truck-driver-per-diem-2026.html')
 
-PD_FEAT = ('<svg viewBox="0 0 900 320" role="img" aria-label="Truck driver per diem 2026: $80 per day, 80% deductible, proven by GPS trip records">'
+PD_FEAT = ('<svg viewBox="0 0 900 320" role="img" aria-label="Truck driver per diem 2026: ' + _PD_RATE_S + ' per day, ' + _PD_PCT_S + ' deductible, proven by GPS trip records">'
  '<defs><linearGradient id="pdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#14532d"/></linearGradient></defs>'
  '<rect width="900" height="320" rx="18" fill="url(#pdg)"/>'
  '<text x="48" y="86" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#4ade80" letter-spacing="3">IRS PER DIEM &#183; 2026</text>'
- '<text x="48" y="140" font-family="Manrope,Arial" font-weight="900" font-size="46" fill="#ffffff">$80/day &#215; 80% = $64</text>'
- '<text x="48" y="180" font-family="Manrope,Arial" font-weight="800" font-size="24" fill="#fbbf24">200 nights out = $12,800 deducted</text>'
+ '<text x="48" y="140" font-family="Manrope,Arial" font-weight="900" font-size="46" fill="#ffffff">' + _PD_RATE_S + '/day &#215; ' + _PD_PCT_S + ' = ' + _PD_NET_S + '</text>'
+ '<text x="48" y="180" font-family="Manrope,Arial" font-weight="800" font-size="24" fill="#fbbf24">200 nights out = ' + _pd_i(200 * _PD_NET) + ' deducted</text>'
  '<text x="48" y="222" font-family="Inter,Arial" font-size="17" fill="#93a4bd">No meal receipts needed. Only proof of the nights away &#8212;</text>'
  '<text x="48" y="248" font-family="Inter,Arial" font-size="17" fill="#93a4bd">which is exactly what most drivers cannot produce.</text>'
  '<g transform="translate(640,70)">'
@@ -3276,7 +3344,7 @@ PD_FEAT = ('<svg viewBox="0 0 900 320" role="img" aria-label="Truck driver per d
  '<text x="18" y="34" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#7f92b3">NIGHTS AWAY</text>'
  '<text x="18" y="72" font-family="Manrope,Arial" font-weight="900" font-size="34" fill="#4ade80">214</text>'
  '<text x="18" y="102" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#7f92b3">DEDUCTION</text>'
- '<text x="18" y="140" font-family="Manrope,Arial" font-weight="900" font-size="30" fill="#ffffff">$13,696</text>'
+ '<text x="18" y="140" font-family="Manrope,Arial" font-weight="900" font-size="30" fill="#ffffff">' + _pd_i(214 * _PD_NET) + '</text>'
  '<text x="18" y="164" font-family="Inter,Arial" font-size="12" fill="#93a4bd">counted from GPS trips</text>'
  '</g></svg>')
 
@@ -3289,8 +3357,8 @@ PD_SHOT1 = ('<figure class="art-shot"><svg viewBox="0 0 880 520" role="img" aria
  # per diem hero box
  '<rect x="28" y="86" width="824" height="112" rx="12" fill="#0d2b1c" stroke="#22c55e" stroke-opacity=".38"/>'
  '<text x="48" y="116" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#4ade80">&#128716; Per diem &#8212; 214 nights away</text>'
- '<text x="48" y="158" font-family="Manrope,Arial" font-weight="900" font-size="34" fill="#4ade80">$13,696</text>'
- '<text x="48" y="182" font-family="Inter,Arial" font-size="13" fill="#93a4bd">214 nights &#215; $80/day &#215; 80% deductible &#183; counted automatically from your GPS trip records</text>'
+ '<text x="48" y="158" font-family="Manrope,Arial" font-weight="900" font-size="34" fill="#4ade80">' + _pd_i(214 * _PD_NET) + '</text>'
+ '<text x="48" y="182" font-family="Inter,Arial" font-size="13" fill="#93a4bd">214 nights &#215; ' + _PD_RATE_S + '/day &#215; ' + _PD_PCT_S + ' deductible &#183; counted automatically from your GPS trip records</text>'
  # deadlines
  '<text x="28" y="228" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#dbe6f5">&#128197; Deadlines</text>'
  '<g font-family="Inter,Arial" font-size="13">'
@@ -3352,15 +3420,15 @@ PD_CALC = ('<div class="pdcalc">'
  '<output id="pdOut">220</output></div>'
  '<input id="pdNights" type="range" min="50" max="330" step="5" value="220" aria-label="Nights away from home per year">'
  '<div class="pdc-grid">'
- '<div class="pdc-tile"><span>YOUR DEDUCTION</span><b id="pdDed">$14,080</b><i>nights &#215; $80 &#215; 80%</i></div>'
- '<div class="pdc-tile pdc-hi"><span>CASH BACK IN YOUR POCKET</span><b id="pdSave">$5,209</b><i>estimated, ~37% marginal rate</i></div>'
+ '<div class="pdc-tile"><span>YOUR DEDUCTION</span><b id="pdDed">' + _pd_i(220 * _PD_NET) + '</b><i>nights &#215; ' + _PD_RATE_S + ' &#215; ' + _PD_PCT_S + '</i></div>'
+ '<div class="pdc-tile pdc-hi"><span>CASH BACK IN YOUR POCKET</span><b id="pdSave">' + _pd_i(220 * _PD_NET * 0.37) + '</b><i>estimated, ~37% marginal rate</i></div>'
  '</div>'
  '<div class="pdc-note">Most drivers claim <b>none of this</b> &mdash; not because they are not owed it, but because they cannot prove the nights. Loadboot GPS-stamps every trip, so the proof writes itself.</div>'
  '<a class="pdc-cta" href="get-started.html">Get my nights counted automatically &rarr;</a>'
  '<script>(function(){var r=document.getElementById("pdNights"),o=document.getElementById("pdOut"),'
  'd=document.getElementById("pdDed"),s=document.getElementById("pdSave");if(!r)return;'
  'function f(n){return "$"+Math.round(n).toLocaleString();}'
- 'function u(){var n=+r.value;var ded=n*80*0.8;o.textContent=n;d.textContent=f(ded);s.textContent=f(ded*0.37);}'
+ 'function u(){var n=+r.value;var ded=n*' + ('%g' % _PD_RATE) + '*' + ('%g' % (_PD_PCT / 100.0)) + ';o.textContent=n;d.textContent=f(ded);s.textContent=f(ded*0.37);}'
  'r.addEventListener("input",u);u();})();</script>'
  '</div>')
 
@@ -3378,21 +3446,18 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<h2 id="what-is-per-diem">What per diem actually is (2026 rates)</h2>'
  '<p>Per diem is a <b>flat daily allowance</b> the IRS lets you deduct for <b>meals and incidental expenses</b> while you are away from your tax home overnight &mdash; instead of saving and adding up every receipt.</p>'
  '<ul>'
- '<li><b>$80 per full day</b> inside the continental U.S. (CONUS) for the special transportation-industry rate.</li>'
- '<li><b>$86 per day</b> if your route takes you outside CONUS.</li>'
+ '<li><b>' + _PD_RATE_S + ' per full day</b> inside the continental U.S. (CONUS) for the special transportation-industry rate.</li>'
+ '<li><b>' + _PD_OCONUS_S + ' per day</b> if your route takes you outside CONUS.</li>'
  '<li><b>Partial days</b> (the day you leave and the day you get home) are claimed at a reduced amount &mdash; commonly treated as 75% of the standard rate.</li>'
- '<li><b>80% is deductible</b> for workers subject to DOT hours-of-service rules. Everyone else in business only gets 50% &mdash; truckers get a better deal.</li>'
+ '<li><b>' + _PD_PCT_S + ' is deductible</b> for workers subject to DOT hours-of-service rules. Everyone else in business only gets 50% &mdash; truckers get a better deal.</li>'
  '</ul>'
- '<p>So the number that actually reaches your tax return is <b>$80 &times; 80% = $64 per night</b>.</p>'
+ '<p>So the number that actually reaches your tax return is <b>' + _PD_RATE_S + ' &times; ' + _PD_PCT_S + ' = ' + _PD_NET_S + ' per night</b>.</p>'
  '<p>One important limit: in trucking, per diem covers <b>meals and incidentals only</b> &mdash; not lodging. Tips, laundry on the road, that kind of thing. Your truck payment, fuel and repairs are separate deductions entirely.</p>'
 
  '<h2 id="the-math">The math: what it is really worth</h2>'
  '<p>Run it on your own year:</p>'
- '<table><thead><tr><th>Nights away</th><th>Deduction ($64/night)</th><th>Roughly saved*</th></tr></thead><tbody>'
- '<tr><td>150</td><td>$9,600</td><td>~$3,500</td></tr>'
- '<tr><td>200</td><td>$12,800</td><td>~$4,700</td></tr>'
- '<tr><td>250</td><td>$16,000</td><td>~$5,900</td></tr>'
- '<tr><td>300</td><td>$19,200</td><td>~$7,100</td></tr>'
+ '<table><thead><tr><th>Nights away</th><th>Deduction (' + _PD_NET_S + '/night)</th><th>Roughly saved*</th></tr></thead><tbody>'
+ + ''.join('<tr><td>%d</td><td>%s</td><td>~%s</td></tr>' % (_n, _pd_i(_n * _PD_NET), _pd_i(round(_n * _PD_NET * 0.37, -2))) for _n in (150, 200, 250, 300)) +
  '</tbody></table>'
  '<p class="small">*A deduction is not a refund &mdash; it lowers the income you are taxed on. For a self-employed owner-operator, the combined bite of self-employment tax (15.3%) plus federal income tax often lands somewhere near the mid-30s as a marginal rate, so every $100 deducted commonly keeps roughly $35&ndash;$37 in your pocket. Your exact number depends on your bracket. Talk to your CPA.</p>'
  '<p>Even at the low end, this single line is usually worth <b>more than a month of net revenue</b> to a solo owner-operator. And notice what it costs you to claim it: nothing. You already slept in the truck.</p>'
@@ -3439,7 +3504,7 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<tr><td>2023</td><td>$69</td><td>80%</td><td>$11,040</td></tr>'
  '<tr><td>2024</td><td>$69&ndash;$80</td><td>80%</td><td>$11,040+</td></tr>'
  '<tr><td>2025</td><td>$80</td><td>80%</td><td>$12,800</td></tr>'
- '<tr><td><b>2026</b></td><td><b>$80</b></td><td><b>80%</b></td><td><b>$12,800</b></td></tr>'
+ '<tr><td><b>2026</b></td><td><b>' + _PD_RATE_S + '</b></td><td><b>' + _PD_PCT_S + '</b></td><td><b>' + _pd_i(200 * _PD_NET) + '</b></td></tr>'
  '</tbody></table></div>'
  '<p>Rates change each October 1 with the federal fiscal year, so a calendar tax year can straddle two rates &mdash; the IRS lets you use the rate in effect for each night, or apply a consistent method. Partial travel days count as &frac34; of a day. When in doubt, your nights-away log decides everything, which is exactly the record most drivers never kept &mdash; and the one Loadboot builds automatically.</p>'
  '<h2 id="beyond">Beyond per diem: the rest of the money</h2>'
@@ -3464,30 +3529,30 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '</ol>'
 
  '<h2 id="bottom-line">The bottom line</h2>'
- '<p>Per diem is the rare deduction that is large, legal, and free &mdash; you have already earned it by sleeping in the truck. The only thing standing between you and roughly <b>$64 for every night you were out</b> is a record of the nights.</p>'
+ '<p>Per diem is the rare deduction that is large, legal, and free &mdash; you have already earned it by sleeping in the truck. The only thing standing between you and roughly <b>' + _PD_NET_S + ' for every night you were out</b> is a record of the nights.</p>'
  '<p>You can build that record by hand, in a notebook, hoping you remember. Or you can run your freight on a system that <b>stamps every trip with GPS by default</b>, counts the nights for you, files the detention you earned, and hands you a Schedule C rollup and a per-load profit statement at the end of it.</p>'
  '<p>The deduction was always yours. Loadboot just makes it provable.</p>'
  '<p class="small">Loadboot is a dispatch and carrier-operations platform, not a tax preparer or CPA firm. The figures here are estimates to help you plan; per diem rates, deductibility and eligibility change and depend on your circumstances. Confirm your numbers with a qualified tax professional before filing.</p>')
 
 PD_FAQ = [
  ('What is the truck driver per diem rate for 2026?',
-  'For 2026 the IRS special transportation-industry rate is $80 per full day within the continental U.S. (CONUS) and $86 per day outside CONUS. Partial travel days &mdash; the day you leave and the day you return &mdash; are claimed at a reduced amount, commonly 75% of the standard rate.'),
+  'For 2026 the IRS special transportation-industry rate is ' + _PD_RATE_S + ' per full day within the continental U.S. (CONUS) and ' + _PD_OCONUS_S + ' per day outside CONUS. Partial travel days &mdash; the day you leave and the day you return &mdash; are claimed at a reduced amount, commonly 75% of the standard rate.'),
  ('Is truck driver per diem 80% or 100% deductible?',
-  'It is 80% deductible for workers subject to DOT hours-of-service rules, which includes truck drivers. Regular business travellers only get 50%. So the effective deduction is $80 &times; 80% = $64 per full night away.'),
+  'It is ' + _PD_PCT_S + ' deductible for workers subject to DOT hours-of-service rules, which includes truck drivers. Regular business travellers only get 50%. So the effective deduction is ' + _PD_RATE_S + ' &times; ' + _PD_PCT_S + ' = ' + _PD_NET_S + ' per full night away.'),
  ('Can a company driver on a W-2 claim per diem?',
   'No. After the Tax Cuts and Jobs Act removed unreimbursed employee expenses, W-2 company drivers cannot deduct per diem on their tax return. Only self-employed owner-operators filing Schedule C can claim it. Some carriers instead run a per diem PAY program through payroll, which is a different thing entirely.'),
  ('Do I need meal receipts to claim per diem?',
   'No. That is the whole advantage of a flat per diem &mdash; you do not save individual meal receipts. But you DO need records proving which nights you were away from your tax home overnight. Trip records, ELD logs or GPS-stamped load records all work. Loadboot produces this automatically from your trips.'),
  ('How much is per diem worth to an owner-operator?',
-  'At $64 per night, 200 nights away is $12,800 in deductions and 250 nights is $16,000. Depending on your bracket and self-employment tax, that typically keeps roughly $4,700&ndash;$5,900 of real cash in your pocket. Specialists note that drivers who skip it lose over $11,000 in deductions a year.'),
+  'At ' + _PD_NET_S + ' per night, 200 nights away is ' + _pd_i(200 * _PD_NET) + ' in deductions and 250 nights is ' + _pd_i(250 * _PD_NET) + '. Depending on your bracket and self-employment tax, that typically keeps roughly ' + _pd_i(round(200 * _PD_NET * 0.37, -2)) + '&ndash;' + _pd_i(round(250 * _PD_NET * 0.37, -2)) + ' of real cash in your pocket. Specialists note that drivers who skip it lose over $11,000 in deductions a year.'),
  ('What proof does the IRS want for per diem?',
   'Evidence of the days you were travelling away from your tax home overnight &mdash; not meal receipts. A dated, objective record is what matters. GPS-stamped pickup and delivery times, like the ones Loadboot writes on every trip, are exactly that kind of record.'),
 ]
 
 rich_article('truck-driver-per-diem-2026.html',
- 'Truck Driver Per Diem 2026: Rates, Rules &amp; the $12,800',
- 'IRS per diem for truck drivers 2026: $80/day, 80% deductible ($64/night). 200 nights out = $12,800 in deductions. Who can claim it, the proof the IRS wants, and how to make that proof build itself.',
- 'Trucking Tax Deductions','Truck Driver Per Diem 2026: The $12,800 Most Owner-Operators Never Claim',
+ 'Truck Driver Per Diem 2026: Rates, Rules &amp; the ' + _pd_i(200 * _PD_NET) + '',
+ 'IRS per diem for truck drivers 2026: ' + _PD_RATE_S + '/day, ' + _PD_PCT_S + ' deductible (' + _PD_NET_S + '/night). 200 nights out = ' + _pd_i(200 * _PD_NET) + ' in deductions. Who can claim it, the proof the IRS wants, and how to make that proof build itself.',
+ 'Trucking Tax Deductions','Truck Driver Per Diem 2026: The ' + _pd_i(200 * _PD_NET) + ' Most Owner-Operators Never Claim',
  'The IRS does not want your meal receipts. It wants proof of the nights you were away &mdash; and that is exactly where drivers lose thousands. Here is the 2026 rule, the real math, and how to make the record write itself.',
  9,'owner-operator-dispatch-hero.jpg','Owner-operator truck driver reviewing per diem tax deductions and trip records',
  PD_TOC, PD_BODY, PD_FAQ, feat_svg=PD_FEAT)
@@ -3717,14 +3782,14 @@ OS_TOC=[('what-counts','What counts as an oversize load'),('rates','Oversize rat
  ('brokers','For brokers &amp; shippers'),('paid','Getting every extra paid in writing')]
 OS_BODY=(
 '<p>Ask ten carriers how much oversize loads pay per mile and you will get ten answers &mdash; because &ldquo;oversize&rdquo; covers everything from a 9-foot-wide excavator that needs one permit to a 200,000-lb transformer that needs a police escort and a bridge engineer. This guide puts real 2026 numbers on the whole range: what counts as oversize, what each tier actually pays per mile, what permits and pilot cars cost, and how to price a move so the extras land in your pocket instead of coming out of it.</p>'
-'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: in 2026, permit-only oversize loads typically pay <b>$4.00&ndash;$5.50 per mile</b>, escorted loads <b>$5.00&ndash;$8.00</b>, and superloads <b>$8.00&ndash;$15.00+</b> &mdash; against a legal flatbed spot average around <b>$3.72 all-in</b>. The premium is not a gift: it pays for permits, escorts, daylight-only clocks and empty return miles.</div></div>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: in 2026, permit-only oversize loads typically pay <b>$4.00&ndash;$5.50 per mile</b>, escorted loads <b>$5.00&ndash;$8.00</b>, and superloads <b>$8.00&ndash;$15.00+</b> &mdash; against a legal flatbed spot average around <b>' + _d(_mrc('Flatbed')) + ' all-in</b>. The premium is not a gift: it pays for permits, escorts, daylight-only clocks and empty return miles.</div></div>'
 '<h2 id="what-counts">What counts as an oversize load</h2>'
 '<p>A load is oversize the moment it exceeds any standard legal limit on the route. The federal baseline most states follow: <b>8&rsquo;6&rdquo; (102&rdquo;) wide</b>, <b>13&rsquo;6&rdquo; tall</b> (14&rsquo; in much of the West), legal trailer length, and <b>80,000 lbs gross</b> vehicle weight. Cross one line &mdash; a 10-foot-wide combine header, a 14&rsquo;2&rdquo; press brake, a 90,000-lb gross move &mdash; and every state you touch wants a permit and sets its own rules for escorts, travel hours and routing.</p>'
 '<p>Two facts drive everything else in this guide. First, <b>oversize is a per-state game</b>: a load that runs clean in Texas may need a pilot car in Louisiana. Second, <b>dimensions decide cost tiers</b>: each foot of width or height past the threshold can add an escort, a curfew, or a routing survey &mdash; and the rate has to absorb all of it.</p>'
 '<h2 id="rates">Oversize rates per mile in 2026</h2>'
-'<p>Anchor on the legal market first: the <a href="market-rates.html">live flatbed spot average</a> is about <b>$3.72 per loaded mile all-in</b> in July 2026. Oversize prices off that baseline in tiers:</p>'
+'<p>Anchor on the legal market first: the <a href="market-rates.html">live flatbed spot average</a> is about <b>' + _d(_mrc('Flatbed')) + ' per loaded mile all-in</b> in ' + _MR_MONTH + '. Oversize prices off that baseline in tiers:</p>'
 '<table class="cmp"><thead><tr><th>Tier</th><th>Typical 2026 rate</th><th>What it looks like</th></tr></thead><tbody>'
-'<tr><td>Legal flatbed / step deck</td><td><b>$3.00&ndash;$4.50/mi</b> (avg ~$3.72)</td><td>Within all legal limits &mdash; no permits</td></tr>'
+'<tr><td>Legal flatbed / step deck</td><td><b>$3.00&ndash;$4.50/mi</b> (avg ~' + _d(_mrc('Flatbed')) + ')</td><td>Within all legal limits &mdash; no permits</td></tr>'
 '<tr><td>Permit-only oversize</td><td><b>$4.00&ndash;$5.50/mi</b></td><td>Modest width/height over legal; permits, no escorts</td></tr>'
 '<tr><td>Escorted oversize</td><td><b>$5.00&ndash;$8.00/mi</b></td><td>Wide/tall enough to require 1&ndash;2 pilot cars, daylight-only</td></tr>'
 '<tr><td>Superload / heavy haul</td><td><b>$8.00&ndash;$15.00+/mi</b></td><td>Multi-axle trailers, engineering reviews, police escorts &mdash; short moves can price far higher</td></tr>'
@@ -3770,7 +3835,7 @@ OS_BODY=(
 '<p>Oversize moves fail on paperwork more than on pavement. Before the truck moves, the <a href="how-to-read-a-rate-confirmation.html">rate confirmation</a> should name, in numbers: the linehaul, who purchases permits, who arranges and pays escorts, <a href="detention-pay-policy.html">detention</a> after free time, <a href="layover-policy.html">layover</a> for curfew and weekend holds, and a <a href="tonu-policy.html">TONU</a> for late cancellations &mdash; because a cancelled superload has often already paid for permits and scheduled escorts. On LoadBoot, a load cannot even post without its accessorial rate card, and heavy-haul or oversize moves are coordinated case by case with permit and routing support &mdash; <a href="contact.html">ask about your setup</a>. Referral partners who know equipment dealers and machinery movers can <a href="agents.html">earn 1% introducing them</a>.</p>'
 '<p>The oversize market pays professionals well precisely because amateurs get hurt in it. Know your tier, price the whole move, and get every dollar of it in writing.</p>')
 OS_FAQ=[
- ('How much do oversize loads pay per mile in 2026?','Permit-only oversize typically pays $4.00&ndash;$5.50 per mile, escorted loads $5.00&ndash;$8.00, and superloads $8.00&ndash;$15.00 or more &mdash; against a legal flatbed spot average of roughly $3.72 all-in. Short superload moves can price far above these ranges because fixed costs dominate.'),
+ ('How much do oversize loads pay per mile in 2026?','Permit-only oversize typically pays $4.00&ndash;$5.50 per mile, escorted loads $5.00&ndash;$8.00, and superloads $8.00&ndash;$15.00 or more &mdash; against a legal flatbed spot average of roughly ' + _d(_mrc('Flatbed')) + ' all-in. Short superload moves can price far above these ranges because fixed costs dominate.'),
  ('What makes a load oversize?','Exceeding any legal limit on the route &mdash; the common baseline is 8&rsquo;6&rdquo; (102&rdquo;) wide, 13&rsquo;6&rdquo; tall (14&rsquo; in much of the West), legal trailer length, or 80,000 lbs gross weight. Each state on the route then requires its own permit and sets its own escort and travel-hour rules.'),
  ('Who pays for permits and pilot cars?','Whoever the rate confirmation says &mdash; which is why it must be settled in writing before dispatch. The professional standard is that permits and escorts are priced as line items on top of the linehaul, so they are pass-through costs to the shipper rather than deductions from the carrier&rsquo;s rate.'),
  ('Why are oversize rates so much higher than regular flatbed?','Daylight-only travel, weekend and metro curfews, rare backhauls, specialized trailers and securement skill, and real routing risk. A truck on wide loads may run half the weekly miles of a legal flatbed, so each mile has to earn roughly twice as much.'),
@@ -3786,7 +3851,7 @@ BLOGPOSTS += [
 RELATED['oversize-load-rates-per-mile.html'] = [('flatbed-dispatch.html','Flatbed Dispatch'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('market-rates.html','Market Rates Per Mile'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('detention-pay-policy.html','Detention Pay'),('carrier-application.html','Apply as Carrier')]
 rich_article('oversize-load-rates-per-mile.html',
  'Oversize Load Rates 2026: Pay Per Mile ($4&ndash;$15+)',
- 'How much do oversize loads pay per mile? 2026 rates: $4–$5.50 permit-only, $5–$8 escorted, $8–$15+ superloads vs ~$3.72 legal flatbed. Permit fees, pilot car costs, and how to price the whole move.',
+ 'How much do oversize loads pay per mile? 2026 rates: $4–$5.50 permit-only, $5–$8 escorted, $8–$15+ superloads vs ~' + _d(_mrc('Flatbed')) + ' legal flatbed. Permit fees, pilot car costs, and how to price the whole move.',
  'Freight Rates &amp; Heavy Haul','How Much Do Oversize Loads Pay Per Mile? 2026 Oversize &amp; Heavy Haul Rates',
  'Oversize pays $4 to $15+ per mile in 2026 &mdash; but permits, pilot cars and daylight-only clocks eat amateurs alive. Here are the real rate tiers, the real costs underneath them, and the math for pricing the whole move.',
  10,'oversize-load-hero.jpg','Oversize load on a multi-axle trailer with pilot car escort and OVERSIZE LOAD banner',
@@ -3801,7 +3866,7 @@ FS_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs>
  '<text x="200" y="52" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#93c5fd">FUEL SURCHARGE FORMULA</text>'
  '<rect x="34" y="70" width="332" height="52" rx="8" fill="#0b1220" opacity=".72"/>'
  '<text x="200" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="#fff">(Diesel &#8722; Peg) &#247; MPG</text>'
- '<text x="200" y="113" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="#FC5305">= $0.23 &#8211; $0.47 per mile</text>'
+ '<text x="200" y="113" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="#FC5305">= ' + _fsc_s(2.5, 6.0) + ' &#8211; ' + _fsc_s(1.25, 5.5) + ' per mile</text>'
  '<text x="200" y="152" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8">DOE weekly index &#183; loaded miles &#183; 2026</text></svg>')
 FS_TOC=[('what-is','What a fuel surcharge actually is'),('formula','The FSC formula &mdash; three numbers, nothing else'),
  ('doe','The DOE index every surcharge points at'),('worked','What FSC pays: worked 2026 examples'),
@@ -3809,11 +3874,11 @@ FS_TOC=[('what-is','What a fuel surcharge actually is'),('formula','The FSC form
  ('brokers','For brokers &amp; shippers: an FSC that survives audit'),('writing','Getting the surcharge paid in writing')]
 FS_BODY=(
 '<p>The fuel surcharge is the most misunderstood line on a rate confirmation. Carriers treat it as bonus money. Brokers quote it as if it were charity. Shippers audit it once a year and discover they have been paying a peg nobody has updated since 2019. All three are wrong in the same way: the fuel surcharge is not a discount, a bonus or a courtesy &mdash; it is a <b>price-indexing mechanism</b>, and it has exactly three inputs. This guide shows the formula, the index it points at, what it pays in 2026 dollars, and the gap it leaves behind that quietly eats owner-operators.</p>'
-'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: fuel surcharge per mile = <b>(current diesel price per gallon &minus; the base &ldquo;peg&rdquo; price) &divide; truck MPG</b>. At $3.85/gal diesel with the common 6.0 MPG divisor, that is about <b>$0.43/mile</b> on a $1.25 peg, <b>$0.31/mile</b> on a $2.00 peg, and <b>$0.23/mile</b> on a $2.50 peg. Same fuel, same truck &mdash; the peg alone moves the money by nearly 90%.</div></div>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: fuel surcharge per mile = <b>(current diesel price per gallon &minus; the base &ldquo;peg&rdquo; price) &divide; truck MPG</b>. At ' + _DIESEL_S + '/gal diesel with the common 6.0 MPG divisor, that is about <b>' + _fsc_s(1.25, 6.0) + '/mile</b> on a $1.25 peg, <b>' + _fsc_s(2.0, 6.0) + '/mile</b> on a $2.00 peg, and <b>' + _fsc_s(2.5, 6.0) + '/mile</b> on a $2.50 peg. Same fuel, same truck &mdash; the peg alone moves the money by nearly 90%.</div></div>'
 
 '<h2 id="what-is">What a fuel surcharge actually is</h2>'
 '<p>Freight rates are negotiated weeks or months before the truck rolls. Diesel is not. A lane priced when diesel sat at $3.40 becomes a losing lane at $4.60, and a windfall at $2.90. Rather than reprice every lane every week, the industry split the rate into two parts: a <b>linehaul</b> that covers the truck, the driver, the trailer and the profit, and a <b>fuel surcharge</b> that floats with the diesel market.</p>'
-'<p>That split matters more than it sounds. The linehaul is what you negotiated. The surcharge is what the formula produces. When a broker says &ldquo;I got you $3.10 a mile,&rdquo; the only useful follow-up question is: <em>is that linehaul, or is that all-in?</em> Because $3.10 all-in on a $0.43 surcharge is a $2.67 linehaul &mdash; and $2.67 is a very different business than $3.10.</p>'
+'<p>That split matters more than it sounds. The linehaul is what you negotiated. The surcharge is what the formula produces. When a broker says &ldquo;I got you $3.10 a mile,&rdquo; the only useful follow-up question is: <em>is that linehaul, or is that all-in?</em> Because $3.10 all-in on a ' + _fsc_s(1.25, 6.0) + ' surcharge is a ' + _d(3.10 - round(_fsc(1.25, 6.0), 2)) + ' linehaul &mdash; and $2.67 is a very different business than $3.10.</p>'
 '<p>Four parties, four reasons to care:</p>'
 '<ul>'
 '<li><b>Carriers and owner-operators:</b> the surcharge is the only part of the rate that moves when your biggest variable cost moves. If it is missing, mispegged, or paid on the wrong miles, every diesel spike comes straight out of your margin.</li>'
@@ -3850,25 +3915,21 @@ FS_BODY=(
 '<p>None of this is exotic. It is simply the difference between a surcharge you can calculate yourself and a surcharge you have to take somebody&rsquo;s word on &mdash; and the second kind is how <a href="how-to-avoid-cheap-freight.html">cheap freight</a> disguises itself as a good rate.</p>'
 
 '<h2 id="worked">What FSC pays: worked 2026 examples</h2>'
-'<p>Take diesel at <b>$3.85/gal</b> &mdash; the working assumption in the LoadBoot <a href="cost-per-mile-calculator.html">cost-per-mile calculator</a>. Here is what the same truck, on the same lane, earns in surcharge under different terms:</p>'
+'<p>Take diesel at <b>' + _DIESEL_S + '/gal</b> &mdash; the working assumption in the LoadBoot <a href="cost-per-mile-calculator.html">cost-per-mile calculator</a>. Here is what the same truck, on the same lane, earns in surcharge under different terms:</p>'
 '<table class="cmp"><thead><tr><th>Peg</th><th>MPG divisor</th><th>FSC per mile</th><th>On a 500-mi load</th></tr></thead><tbody>'
-'<tr><td>$1.25</td><td>6.0</td><td><b>$0.43</b></td><td>$216</td></tr>'
-'<tr><td>$1.25</td><td>5.5 (reefer/heavy)</td><td><b>$0.47</b></td><td>$236</td></tr>'
-'<tr><td>$2.00</td><td>6.0</td><td><b>$0.31</b></td><td>$154</td></tr>'
-'<tr><td>$2.50</td><td>6.0</td><td><b>$0.23</b></td><td>$113</td></tr>'
-'<tr><td>$2.50</td><td>6.5</td><td><b>$0.21</b></td><td>$104</td></tr>'
++ ''.join(_fs_row(_p, _m, _ml) for _p, _m, _ml in ((1.25, 6.0, '6.0'), (1.25, 5.5, '5.5 (reefer/heavy)'), (2.0, 6.0, '6.0'), (2.5, 6.0, '6.0'), (2.5, 6.5, '6.5'))) +
 '</tbody></table>'
-'<p>Read the top and bottom rows together. Same diesel, same 500 miles, same truck: <b>$216 against $104</b>. Nothing about the freight changed. Only the paperwork did. That spread &mdash; a bit over $0.22 a mile &mdash; is larger than most carriers&rsquo; entire net margin per mile.</p>'
-'<p>Now put it against the market. LoadBoot publishes <a href="market-rates.html">spot rates all-in</a> &mdash; linehaul and fuel combined &mdash; because that is the number that pays your bills. In July 2026 the all-in averages ran about <b><a href="dry-van-freight-rates.html">$3.03/mi dry van</a></b>, <b>$3.39 reefer</b> and <b>$3.72 flatbed</b>. Decompose the van number at a $1.25 peg and 6.0 MPG: $3.03 all-in &minus; $0.43 surcharge = a <b>$2.60 linehaul</b>. That $2.60 is the number to compare against your true cost per mile, and it is the number a broker quoting &ldquo;$3.03&rdquo; is hoping you will not work out.</p>'
+'<p>Read the top and bottom rows together. Same diesel, same 500 miles, same truck: <b>' + _money(_fsc(1.25, 6.0) * 500) + ' against ' + _money(_fsc(2.5, 6.5) * 500) + '</b>. Nothing about the freight changed. Only the paperwork did. That spread &mdash; about $' + ('%.2f' % (_fsc(1.25, 6.0) - _fsc(2.5, 6.5))) + ' a mile &mdash; is larger than most carriers&rsquo; entire net margin per mile.</p>'
+'<p>Now put it against the market. LoadBoot publishes <a href="market-rates.html">spot rates all-in</a> &mdash; linehaul and fuel combined &mdash; because that is the number that pays your bills. In ' + _MR_MONTH + ' the all-in averages ran about <b><a href="dry-van-freight-rates.html">' + _d(_mrc('Dry Van')) + '/mi dry van</a></b>, <b>' + _d(_mrc('Reefer')) + ' reefer</b> and <b>' + _d(_mrc('Flatbed')) + ' flatbed</b>. Decompose the van number at a $1.25 peg and 6.0 MPG: ' + _d(_mrc('Dry Van')) + ' all-in &minus; ' + _fsc_s(1.25, 6.0) + ' surcharge = a <b>' + _d(_mrc('Dry Van') - round(_fsc(1.25, 6.0), 2)) + ' linehaul</b>. That ' + _d(_mrc('Dry Van') - round(_fsc(1.25, 6.0), 2)) + ' is the number to compare against your true cost per mile, and it is the number a broker quoting &ldquo;$3.03&rdquo; is hoping you will not work out.</p>'
 
 '<h2 id="gap">Why FSC never covers all your fuel</h2>'
 '<p>Here is the part that catches new authorities. The surcharge is designed to cover the fuel cost <em>above the peg</em>, on <em>loaded miles only</em>. Your truck burns diesel below the peg too, and it burns diesel empty.</p>'
-'<p>Run the full picture on that 500-mile van load at $3.85/gal, 6.0 MPG, $1.25 peg, with 100 miles of deadhead to get to the shipper:</p>'
+'<p>Run the full picture on that 500-mile van load at ' + _DIESEL_S + '/gal, 6.0 MPG, $1.25 peg, with 100 miles of deadhead to get to the shipper:</p>'
 '<ul>'
 '<li>Total miles driven: <b>600</b> (500 loaded + 100 empty)</li>'
-'<li>Diesel burned: 600 &divide; 6.0 = <b>100 gallons</b> &rarr; 100 &times; $3.85 = <b>$385 of fuel</b></li>'
-'<li>Surcharge collected: 500 loaded miles &times; $0.43 = <b>$216</b></li>'
-'<li><b>Fuel not covered by the surcharge: $169</b> &mdash; 44% of the fuel bill, which must come out of the linehaul</li>'
+'<li>Diesel burned: 600 &divide; 6.0 = <b>100 gallons</b> &rarr; 100 &times; ' + _DIESEL_S + ' = <b>' + _money(100 * _DIESEL) + ' of fuel</b></li>'
+'<li>Surcharge collected: 500 loaded miles &times; ' + _fsc_s(1.25, 6.0) + ' = <b>' + _money(_fsc(1.25, 6.0) * 500) + '</b></li>'
+'<li><b>Fuel not covered by the surcharge: ' + _money(100 * _DIESEL - _fsc(1.25, 6.0) * 500) + '</b> &mdash; ' + str(int(round((100 * _DIESEL - _fsc(1.25, 6.0) * 500) / (100 * _DIESEL) * 100))) + '% of the fuel bill, which must come out of the linehaul</li>'
 '</ul>'
 '<div class="callout cl-warn"><span class="ic">&#9888;</span><div>The surcharge is a hedge, not a reimbursement. It exists so a diesel spike does not destroy a rate you agreed to last month &mdash; not to make your fuel free. Any lane plan that assumes &ldquo;fuel is covered by FSC&rdquo; is under-priced from the first mile. Empty miles are where this bleeds fastest.</div></div>'
 '<p>This is exactly why <a href="cost-per-mile-calculator.html">knowing your own cost per mile</a> is not optional. Industry research (ATRI) has put the average marginal cost of running a truck at roughly <b>$2.20&ndash;$2.30 per mile</b> including driver wages in recent years; a solo owner-operator driving their own truck typically lands between <b>$1.40 and $1.90</b> before paying themselves. Your break-even is a linehaul number. Compare the surcharge to your fuel, and the linehaul to your cost &mdash; never mix the two.</p>'
@@ -3914,10 +3975,10 @@ FS_BODY=(
 '<p>The habit worth building is simple: work the formula yourself before you say yes. Three numbers, one division, ten seconds. It turns the most misunderstood line on the rate con into the one you can defend &mdash; and it is the same discipline that gets <a href="detention-pay-policy.html">detention</a>, <a href="layover-policy.html">layover</a> and <a href="lumper-policy.html">lumper</a> money paid instead of argued about.</p>'
 '<p class="small">Figures are planning references, not quotes. Diesel prices, pegs and surcharge programs vary by contract, region and week &mdash; verify the current DOE/EIA index and your own rate confirmation before pricing a load. LoadBoot is a dispatch and carrier-operations platform, not a tax or financial advisor.</p>')
 FS_FAQ=[
- ('How do you calculate a fuel surcharge in trucking?','Subtract the base &ldquo;peg&rdquo; price from the current diesel price per gallon, then divide by the assumed MPG. At $3.85/gal diesel with a $1.25 peg and a 6.0 MPG divisor: ($3.85 &minus; $1.25) &divide; 6.0 = $0.43 per mile. Multiply by the paid miles &mdash; usually loaded miles only &mdash; to get the surcharge on the load. On a 500-mile run that is about $216.'),
- ('What is a normal fuel surcharge per mile in 2026?','It depends entirely on the peg and divisor, not on any industry standard. At $3.85/gal diesel and 6.0 MPG, a $1.25 peg produces about $0.43/mile, a $2.00 peg about $0.31, and a $2.50 peg about $0.23. That is why &ldquo;what is a normal FSC&rdquo; is the wrong question &mdash; ask what peg and what divisor the contract uses, because those two numbers move the answer by roughly $0.20 a mile.'),
+ ('How do you calculate a fuel surcharge in trucking?','Subtract the base &ldquo;peg&rdquo; price from the current diesel price per gallon, then divide by the assumed MPG. At ' + _DIESEL_S + '/gal diesel with a $1.25 peg and a 6.0 MPG divisor: (' + _DIESEL_S + ' &minus; $1.25) &divide; 6.0 = ' + _fsc_s(1.25, 6.0) + ' per mile. Multiply by the paid miles &mdash; usually loaded miles only &mdash; to get the surcharge on the load. On a 500-mile run that is about ' + _money(_fsc(1.25, 6.0) * 500) + '.'),
+ ('What is a normal fuel surcharge per mile in 2026?','It depends entirely on the peg and divisor, not on any industry standard. At ' + _DIESEL_S + '/gal diesel and 6.0 MPG, a $1.25 peg produces about ' + _fsc_s(1.25, 6.0) + '/mile, a $2.00 peg about ' + _fsc_s(2.0, 6.0) + ', and a $2.50 peg about ' + _fsc_s(2.5, 6.0) + '. That is why &ldquo;what is a normal FSC&rdquo; is the wrong question &mdash; ask what peg and what divisor the contract uses, because those two numbers move the answer by roughly $0.20 a mile.'),
  ('What is the fuel surcharge peg or base price?','The diesel price at which the surcharge equals zero &mdash; the fuel cost assumed to be already covered inside the linehaul. $1.25/gal is a legacy peg from the late 1990s that is still widely used; newer contracts commonly set $2.00&ndash;$2.50. A higher peg should come with a higher linehaul; if it does not, the carrier is absorbing the difference.'),
- ('Does the fuel surcharge cover all my fuel?','No, and it is not designed to. It covers fuel cost above the peg, on loaded miles only. On a 500-mile load with 100 miles of deadhead at $3.85/gal and 6.0 MPG, the truck burns about 100 gallons ($385 of fuel) while a $1.25-peg surcharge pays about $216 &mdash; leaving roughly $169, about 44% of the fuel bill, to come out of the linehaul. Price the linehaul against your cost per mile, not against the surcharge.'),
+ ('Does the fuel surcharge cover all my fuel?','No, and it is not designed to. It covers fuel cost above the peg, on loaded miles only. On a 500-mile load with 100 miles of deadhead at ' + _DIESEL_S + '/gal and 6.0 MPG, the truck burns about 100 gallons (' + _money(100 * _DIESEL) + ' of fuel) while a $1.25-peg surcharge pays about ' + _money(_fsc(1.25, 6.0) * 500) + ' &mdash; leaving roughly ' + _money(100 * _DIESEL - _fsc(1.25, 6.0) * 500) + ', about ' + str(int(round((100 * _DIESEL - _fsc(1.25, 6.0) * 500) / (100 * _DIESEL) * 100))) + '% of the fuel bill, to come out of the linehaul. Price the linehaul against your cost per mile, not against the surcharge.'),
  ('Which diesel index do fuel surcharges use?','Almost always the U.S. Energy Information Administration (EIA/DOE) weekly On-Highway Diesel Fuel Price, published every Monday. It reports a national average plus regional PADD averages. Which one your contract names matters: California and the West Coast typically run well above the national average, so a West Coast carrier paid off the national index under-recovers on every mile.'),
  ('Is an all-in rate better than linehaul plus fuel surcharge?','For short spot loads, all-in is usually cleaner &mdash; diesel will not move before you deliver, and one number is easier to compare. For contract or dedicated lanes running for months, insist on the split, because otherwise you carry the entire fuel risk for the life of the agreement. The real mistake is comparing an all-in offer against a linehaul-only offer; always ask &ldquo;is that all-in?&rdquo; before you negotiate.')]
 PREMIUM_ARTICLES.add('fuel-surcharge-trucking.html')
@@ -3930,7 +3991,7 @@ BLOGPOSTS += [
 RELATED['fuel-surcharge-trucking.html'] = [('market-rates.html','Market Rates Per Mile'),('truckload-freight-rates.html','Truckload Freight Rates'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('how-to-avoid-cheap-freight.html','How to Avoid Cheap Freight'),('ifta-fuel-tax.html','IFTA Fuel Tax'),('carrier-application.html','Apply as Carrier')]
 rich_article('fuel-surcharge-trucking.html',
  'Fuel Surcharge in Trucking 2026: How to Calculate FSC Per Mile',
- 'How to calculate a fuel surcharge: (diesel price &minus; peg) &divide; MPG. 2026 examples — $0.23–$0.47 per mile depending on peg and divisor, the DOE weekly index, all-in vs linehaul + FSC, and why FSC never covers all your fuel.',
+ 'How to calculate a fuel surcharge: (diesel price &minus; peg) &divide; MPG. 2026 examples — ' + _fsc_s(2.5, 6.0) + '–' + _fsc_s(1.25, 5.5) + ' per mile depending on peg and divisor, the DOE weekly index, all-in vs linehaul + FSC, and why FSC never covers all your fuel.',
  'Freight Rates &amp; Fuel','How to Calculate a Fuel Surcharge in Trucking (2026 FSC Formula &amp; Rates)',
  'The fuel surcharge has exactly three inputs: the diesel index, the peg, and the MPG divisor. Change the peg alone and the same 500-mile load pays $216 or $104. Here is the formula, the index everyone points at, and the fuel gap it leaves behind.',
  9,'fuel-surcharge-hero.jpg','Truck fueling at a diesel island with the weekly DOE on-highway diesel price used to set fuel surcharges',
@@ -3962,7 +4023,7 @@ SPOT_BODY=(
 '<ul>'
 '<li><b>It is a market price, not a list price.</b> Nobody sets it. It is the point where the number of available trucks on a lane meets the number of loads needing to move. When trucks outnumber loads, it falls. When loads outnumber trucks, it rises &mdash; sometimes by a dollar a mile in a single week.</li>'
 '<li><b>It is lane-specific and direction-specific.</b> A national average is a starting point, not a quote. Outbound from a region that produces more freight than it consumes pays well (a <em>headhaul</em>); the return trip into that region pays poorly (a <em>backhaul</em>), because trucks are already heading there empty.</li>'
-'<li><b>It is usually quoted all-in.</b> Most spot quotes bundle the linehaul, the <a href="fuel-surcharge-trucking.html">fuel surcharge</a> and sometimes the accessorials into one number per mile or one flat amount. That is convenient and dangerous: an all-in $3.10 with $0.43 of fuel inside it is a $2.67 linehaul, and the two are very different businesses.</li>'
+'<li><b>It is usually quoted all-in.</b> Most spot quotes bundle the linehaul, the <a href="fuel-surcharge-trucking.html">fuel surcharge</a> and sometimes the accessorials into one number per mile or one flat amount. That is convenient and dangerous: an all-in $3.10 with ' + _fsc_s(1.25, 6.0) + ' of fuel inside it is a ' + _d(3.10 - round(_fsc(1.25, 6.0), 2)) + ' linehaul, and the two are very different businesses.</li>'
 '</ul>'
 '<p>The spot rate is also the number that every other rate in the industry is measured against. Contract rates are negotiated as a discount or premium to it. Broker margins are the gap between two versions of it. And the <a href="how-to-read-a-rate-confirmation.html">rate confirmation</a> you sign is a spot rate frozen into writing for one load.</p>'
 
@@ -3992,7 +4053,7 @@ SPOT_BODY=(
 
 '<h2 id="spread">The spread: carrier rate, broker margin, shipper rate</h2>'
 '<p>There is never one spot rate on a load; there are at least two. The <b>buy rate</b> is what the broker pays the carrier. The <b>sell rate</b> is what the broker charges the shipper. The gap is the broker&rsquo;s gross margin, and it is where most of the mistrust in spot freight lives &mdash; because the carrier only ever sees one side of it.</p>'
-'<p>On the LoadBoot benchmark the shipper rate sits about <b>15% above the carrier rate</b>. On a 500-mile dry van load at the September 2026 figures, that looks like this:</p>'
+'<p>On the LoadBoot benchmark the shipper rate sits about <b>15% above the carrier rate</b>. On a 500-mile dry van load at the ' + _MR_MONTH + ' figures, that looks like this:</p>'
 '<table class="cmp"><thead><tr><th>Line</th><th>Per mile</th><th>500-mile load</th></tr></thead><tbody>'
 '<tr><td>Shipper pays (sell rate)</td><td>' + _d(_mrs('Dry Van')) + '</td><td><b>' + _money(_SP_SELL) + '</b></td></tr>'
 '<tr><td>Broker gross margin (~' + str(_MR_MARKUP) + '%)</td><td>' + _d(_mrs('Dry Van') - _mrc('Dry Van')) + '</td><td>' + _money(_SP_SELL - _SP_BUY) + '</td></tr>'
@@ -4008,7 +4069,7 @@ SPOT_BODY=(
 '<ul>'
 '<li><b>Tender rejections.</b> When contracted carriers start turning down loads, that freight spills into the spot market and spot prices rise. Rejection rates are the earliest signal that the market is tightening &mdash; they move before the rate does.</li>'
 '<li><b>Seasonality.</b> Produce season lifts reefer rates from spring through summer, starting in the south and moving north; construction season lifts flatbed through summer; retail peak lifts dry van from October into December; January is the annual trough for almost everything. Holiday weeks and the annual roadside inspection blitz in May pull trucks off the road and spike short-term rates.</li>'
-'<li><b>Diesel.</b> Fuel moves the all-in spot quote directly through the <a href="fuel-surcharge-trucking.html">fuel surcharge</a> &mdash; roughly $0.23&ndash;$0.47 a mile at $3.85/gal depending on the peg &mdash; and moves the linehaul indirectly, because carriers who cannot cover fuel park trucks, which tightens supply.</li>'
+'<li><b>Diesel.</b> Fuel moves the all-in spot quote directly through the <a href="fuel-surcharge-trucking.html">fuel surcharge</a> &mdash; roughly ' + _fsc_s(2.5, 6.0) + '&ndash;' + _fsc_s(1.25, 5.5) + ' a mile at ' + _DIESEL_S + '/gal depending on the peg &mdash; and moves the linehaul indirectly, because carriers who cannot cover fuel park trucks, which tightens supply.</li>'
 '<li><b>Regional imbalance.</b> Lanes out of freight-heavy regions pay more than lanes into them. Weather, port volumes, a plant shutdown or a harvest can flip a lane&rsquo;s balance in a week.</li>'
 '<li><b>Capacity entering and leaving.</b> Trucks are added when rates are high and cut when rates are low, always with a lag. Carrier exits during a long soft market are what eventually turn it: fewer trucks, same freight, higher spot rate.</li>'
 '<li><b>Day of the week.</b> Loads posted late Friday for a Monday delivery, or on the day of pickup, pay a premium because the pool of available trucks is smallest. The same lane midweek with a two-day lead pays less.</li>'
@@ -4057,7 +4118,7 @@ SPOT_FAQ=[
  ('What are current spot market freight rates per mile?','In the national benchmark on the LoadBoot market rates page (as of ' + _MR_ASOF + '), the spot benchmark paid to the carrier is about ' + _d(_mrc('Dry Van')) + ' per mile for dry van, ' + _d(_mrc('Reefer')) + ' reefer, ' + _d(_mrc('Flatbed')) + ' flatbed, ' + _d(_mrc('Step Deck')) + ' step deck, ' + _d(_mrc('Power Only')) + ' power only and ' + _d(_mrc('Hotshot')) + ' hotshot, with shippers paying roughly ' + str(_MR_MARKUP) + '% more once a broker margin is added. Those figures move weekly and vary widely by lane and direction &mdash; check the live page and the per-equipment hubs before quoting or accepting.'),
  ('Are spot rates higher than contract rates?','Sometimes. In a tight market, when trucks are scarce, spot rates rise above contract rates and contracted carriers start rejecting tenders, which pushes even more freight into the spot market. In a soft market, when trucks are plentiful, spot rates fall below contract and brokers cover freight cheaply. The two trade places over the freight cycle, which is why shippers keep a contract routing guide with a spot backstop.'),
  ('Where do you find spot rates for loads?','There is no single official number. Load boards show asking rates (usually low), paid subscription indexes aggregate real invoices by lane, free national benchmarks like the LoadBoot market rates page show the carrier, broker buy/sell and shipper rate by equipment, and your own past rate confirmations are the best data for the lanes you actually run. Use at least two sources on the same lane before you negotiate.'),
- ('What is the difference between a spot rate and the linehaul?','A spot quote is usually all-in: it bundles the linehaul (the price for the truck, driver and trailer) with the fuel surcharge and sometimes accessorials. The linehaul is the part you negotiate. An all-in $3.10 per mile with a $0.43 fuel surcharge inside it is a $2.67 linehaul &mdash; always ask whether a quote is all-in before comparing it with another.'),
+ ('What is the difference between a spot rate and the linehaul?','A spot quote is usually all-in: it bundles the linehaul (the price for the truck, driver and trailer) with the fuel surcharge and sometimes accessorials. The linehaul is the part you negotiate. An all-in $3.10 per mile with a ' + _fsc_s(1.25, 6.0) + ' fuel surcharge inside it is a ' + _d(3.10 - round(_fsc(1.25, 6.0), 2)) + ' linehaul &mdash; always ask whether a quote is all-in before comparing it with another.'),
  ('How do freight brokers make money on spot freight?','A broker sells the load to the shipper at one rate and buys a truck at a lower rate; the gap is the gross margin. On the LoadBoot benchmark that gap is about ' + str(_MR_MARKUP) + '% (for example ' + _d(_mrs('Dry Van')) + ' to the shipper versus ' + _d(_mrc('Dry Van')) + ' to the carrier on dry van). In the wider spot market it swings from single digits to well over 20%, because the broker commits the sell rate before knowing what a truck will cost that day.')]
 PREMIUM_ARTICLES.add('spot-market-freight-rates.html')
 BLOGPOSTS += [
@@ -4116,7 +4177,7 @@ TLR_BODY=(
 'load board postings talk. It is the same rate wearing different clothes: divide by the loaded miles and you are back to RPM.</li>'
 '</ul>'
 '<p>Neither number means anything until you know whether it is <b>all-in</b> (linehaul plus fuel surcharge, sometimes plus '
-'accessorials) or <b>linehaul only</b>. An all-in ' + _d(_mrc('Dry Van') + 0.43) + ' a mile with a $0.43 '
+'accessorials) or <b>linehaul only</b>. An all-in ' + _d(_mrc('Dry Van') + round(_fsc(1.25, 6.0), 2)) + ' a mile with a $0.43 '
 '<a href="fuel-surcharge-trucking.html">fuel surcharge</a> buried inside it is a ' + _d(_mrc('Dry Van')) + ' linehaul, and the two are completely '
 'different businesses. Ask the question out loud before you compare two quotes.</p>'
 +svc_banner('Check your lane before you answer the phone',
@@ -4142,8 +4203,8 @@ TLR_BODY=(
 '<ol>'
 '<li><b>Linehaul.</b> The price of the truck, the trailer and the driver for the distance. This is the part that is actually '
 'negotiable, and the part that moves with supply and demand.</li>'
-'<li><b>Fuel surcharge.</b> A formula, not an opinion: (diesel price &minus; a pegged base) &divide; assumed MPG. At around $3.85 a '
-'gallon that lands near <b>$0.23&ndash;$0.47 a mile</b> depending on the peg and the MPG assumption. It is designed to move when '
+'<li><b>Fuel surcharge.</b> A formula, not an opinion: (diesel price &minus; a pegged base) &divide; assumed MPG. At around ' + _DIESEL_S + ' a '
+'gallon that lands near <b>' + _fsc_s(2.5, 6.0) + '&ndash;' + _fsc_s(1.25, 5.5) + ' a mile</b> depending on the peg and the MPG assumption. It is designed to move when '
 'diesel moves, which is exactly why it should be stated separately &mdash; see the '
 '<a href="fuel-surcharge-trucking.html">fuel surcharge guide</a>.</li>'
 '<li><b>Accessorials.</b> The money that gets earned after the linehaul is agreed and lost after the invoice is sent: '
@@ -4234,7 +4295,7 @@ TLR_FAQ=[
  ('How much does a full truckload cost?','Multiply the loaded miles by the shipper rate per mile for your equipment. An 800-mile dry van full truckload at the benchmark of ' + _d(_mrs('Dry Van')) + ' a mile (as of ' + _MR_ASOF + ') costs about ' + _money(_TL_SELL) + ' all-in; the carrier moving it is typically paid around ' + _money(_TL_BUY) + '. Accessorials sit on top of that &mdash; detention after free time, lumper fees, layover if the load is held overnight &mdash; which is why they should be named as numbers on the rate confirmation before the truck moves.'),
  ('What is the difference between a truckload rate and an LTL rate?','A truckload rate buys the whole trailer for one shipment, priced per mile or as one flat amount for the move. An LTL rate buys space on a trailer shared with other shippers, priced on weight, freight class, density and the number of terminals the shipment passes through. Under roughly 6 pallets LTL is usually cheaper; past about 12 pallets, or when the freight is fragile, high-value or time-critical, truckload usually wins on total cost because there is no terminal handling and no cross-docking.'),
  ('Are truckload spot rates higher than contract rates?','Sometimes. Truckload spot rates are priced for one truck on one lane this week, so they rise above contract rates when capacity is tight and fall below them when it is loose. Contract rates trade some of that upside for certainty on both sides. Neither is reliably higher over a full cycle, which is why most stable small fleets run a base of contract or dedicated volume and take spot freight on top of it.'),
- ('Does the truckload rate include fuel?','Only if the quote is all-in, and you should always ask. Most spot truckload quotes bundle the linehaul and the fuel surcharge into one number per mile. At around $3.85 a gallon the fuel component is roughly $0.23 to $0.47 a mile depending on the pegged base and the assumed MPG, so an all-in ' + _d(_mrc('Dry Van') + 0.43) + ' a mile can be a ' + _d(_mrc('Dry Van')) + ' linehaul. Comparing an all-in quote with a linehaul-only quote is the most common way carriers underprice a load.'),
+ ('Does the truckload rate include fuel?','Only if the quote is all-in, and you should always ask. Most spot truckload quotes bundle the linehaul and the fuel surcharge into one number per mile. At around ' + _DIESEL_S + ' a gallon the fuel component is roughly ' + _fsc_s(2.5, 6.0) + ' to ' + _fsc_s(1.25, 5.5) + ' a mile depending on the pegged base and the assumed MPG, so an all-in ' + _d(_mrc('Dry Van') + round(_fsc(1.25, 6.0), 2)) + ' a mile can be a ' + _d(_mrc('Dry Van')) + ' linehaul. Comparing an all-in quote with a linehaul-only quote is the most common way carriers underprice a load.'),
  ('Who pays detention on a truckload shipment?','The party that booked the truck &mdash; normally the broker or the shipper &mdash; pays detention once free time expires, but only if the rate confirmation says so and only if the wait is documented. Two hours of free time per stop is the common standard, with billing after that; LoadBoot&rsquo;s published standard is $60 an hour after 2 free hours, pre-agreed on every posting and claimable from the trip record with GPS arrive and depart stamps already attached. Without a written clause and timestamped evidence, most detention invoices are simply never paid.')]
 
 BLOGPOSTS += [
@@ -4275,7 +4336,7 @@ EP27_TOC=[('rule','What actually changes in 2027'),('prebuy','The pre-buy is rea
 EP27_BODY=(
 '<p>The EPA&rsquo;s 2027 emissions rule is doing what emissions rules have always done: pulling truck orders forward. Fleets are buying now so they do not have to buy later. The obvious question for a one-truck or five-truck carrier is whether to do the same thing.</p>'
 '<p>The less obvious question &mdash; and the one that actually decides it &mdash; is whether a small carrier can join a pre-buy at all, and what happens to the used market if it cannot.</p>'
-'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Short version: the pre-buy is documented and large. FTR reported <b>30,500 Class 8 net orders in June 2026, up 241% year over year</b>, with 2026 build slots nearly gone. But those slots are being bought by fleets ordering in volume. For a carrier buying one truck, the decision is mostly a <b>used-truck</b> decision &mdash; and the cost of a 2027 truck is still being rewritten by EPA as of this month.</div></div>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Short version: the pre-buy is documented and large. FTR reported <b>' + fact('stat.class8.orders_line', '30,500 Class 8 net orders in June 2026, up 241% year over year', 'should-i-buy-a-truck-before-2027-epa-rule') + '</b>, with 2026 build slots nearly gone. But those slots are being bought by fleets ordering in volume. For a carrier buying one truck, the decision is mostly a <b>used-truck</b> decision &mdash; and the cost of a 2027 truck is still being rewritten by EPA as of this month.</div></div>'
 
 '<h2 id="rule">What actually changes in 2027</h2>'
 '<p>Model year 2027 tightens the NOx limit sharply and adds new low-load and idle test cycles, which is why manufacturers are adding aftertreatment heating hardware. That part is settled. The American Trucking Associations, National Tank Truck Carriers, the Truckload Carriers Association and 49 state trucking associations petitioned to push the standard to 2031; EPA rejected the delay and kept the model-year 2027 start date, as Commercial Carrier Journal reported.</p>'
@@ -4426,7 +4487,7 @@ ls_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px">
 <p>This tool is free to use as often as you like &mdash; no signup, no catch. But if you would rather drive than screen loads all day, that is exactly what we do. A dedicated Loadboot dispatcher scores loads like this, negotiates the rate, and keeps your truck on freight that actually pays &mdash; flat 5%, no long-term contracts. <a href="contact.html">Get started in two minutes</a> or <a href="services.html">see everything we handle</a>.</p>
 </div></section>'''
 ls_body = svc_hero('Should You Take This Load?','Paste in any load offer and get an instant score, a clear take / negotiate / pass verdict, and a smart counter-offer &mdash; built on your real cost per mile. Free, no signup.')
-ls_body += '<section style="padding-top:10px"><div class="wrap">' + LS_HTML + '<p class="center" style="margin-top:22px;color:var(--muted);font-size:.9rem">Nothing you type is saved or sent anywhere &mdash; it all runs right in your browser.</p></div></section>'
+ls_body += '<section style="padding-top:10px"><div class="wrap">' + LS_HTML.replace('value="3.85"', 'value="%.2f"' % _DIESEL) + '<p class="center" style="margin-top:22px;color:var(--muted);font-size:.9rem">Nothing you type is saved or sent anywhere &mdash; it all runs right in your browser.</p></div></section>'
 ls_body += ls_seo + ls_faq_html + final_cta() + '<script>' + LS_JS + '</script>'
 ls_howto = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to decide whether to take a freight load","step":[{"@type":"HowToStep","name":"Enter the offer","text":"Enter what the load pays, the loaded miles, and the deadhead miles to the pickup."},{"@type":"HowToStep","name":"Add your costs","text":"Enter your all-in cost per mile and how many days the load will take."},{"@type":"HowToStep","name":"Read the score and verdict","text":"The Load Score returns a 0-100 score and a take, negotiate, or pass verdict based on profit, deadhead, time, and market."},{"@type":"HowToStep","name":"Counter the rate","text":"Use the suggested counter-offer to negotiate a rate that hits your target margin before you accept."}]}</script>'
 ls_app = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Load Score","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free tool that tells truckers and owner-operators whether a freight load is worth taking, with a take-negotiate-pass verdict and a suggested counter-offer."}</script>'
@@ -4443,7 +4504,7 @@ tools_faqs = [
 ]
 tools_faq_html, tools_faq_schema = faq_block(tools_faqs)
 tools_intro = '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free trucker tools</div><h2>Free dispatch &amp; profit calculators for truckers</h2><p class="lead center" style="margin:0 auto">No login. No signup. Just fast, accurate calculators that owner-operators and fleets actually use to price loads, cut costs, and protect every mile &mdash; built by the dispatch team at Loadboot.</p></div></div></section>'
-tools_section = '<section style="padding-top:0"><div class="wrap">' + TOOLS_HTML + '</div></section>'
+tools_section = '<section style="padding-top:0"><div class="wrap">' + TOOLS_HTML.replace('value="3.85"', 'value="%.2f"' % _DIESEL) + '</div></section>'
 tools_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px">
 <h2>Know your numbers before you take the load</h2>
 <p style="margin-top:14px">Every profitable trucking business runs on a few simple numbers: what a load pays, what it actually costs to run those miles, and what is left over for you. The free calculators above put all of them in one place &mdash; no spreadsheet, no signup &mdash; so you can make a confident call on any load in seconds.</p>
@@ -4474,7 +4535,7 @@ CPMC_CALC = ('<section style="padding-top:0"><div class="wrap">'
  '<div class="tk-in"><label for="x_permits">Plates, permits, ELD / month ($)</label><input type="number" id="x_permits" value="250" oninput="cpmc()"></div>'
  '<div class="tk-in"><label for="x_park">Parking &amp; other fixed / month ($)</label><input type="number" id="x_park" value="300" oninput="cpmc()"></div>'
  '<div class="tk-in"><label for="x_miles">Miles you run / month</label><input type="number" id="x_miles" value="9500" oninput="cpmc()"></div>'
- '<div class="tk-in"><label for="x_price">Diesel price ($/gal)</label><input type="number" id="x_price" value="3.85" step="0.01" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_price">Diesel price ($/gal)</label><input type="number" id="x_price" value="' + ('%.2f' % _DIESEL) + '" step="0.01" oninput="cpmc()"></div>'
  '<div class="tk-in"><label for="x_mpg">Truck MPG</label><input type="number" id="x_mpg" value="6.5" step="0.1" oninput="cpmc()"></div>'
  '<div class="tk-in"><label for="x_maint">Maintenance / mile ($)</label><input type="number" id="x_maint" value="0.20" step="0.01" oninput="cpmc()"></div>'
  '<div class="tk-in"><label for="x_tires">Tires / mile ($)</label><input type="number" id="x_tires" value="0.04" step="0.01" oninput="cpmc()"></div>'
@@ -4520,7 +4581,7 @@ CPMC_BODY_MID = ('<section class="bg-soft"><div class="wrap" style="max-width:88
  '</tbody></table>'
  '<p style="margin-top:14px">Plug your own numbers into the calculator above &mdash; averages are for sanity-checking, not for pricing your loads. Compare the result against <a href="market-rates.html">this week&rsquo;s market rates per mile</a> to see which lanes actually clear your break-even.</p>'
  '<h2>Six ways to cut your cost per mile</h2>'
- '<p><b>1. Kill deadhead</b> &mdash; empty miles carry full cost and zero revenue; one round-trip lane plan can cut CPM more than any fuel card. <b>2. Slow down 3&ndash;5 mph</b> &mdash; typically worth 0.5+ MPG, which is $0.04&ndash;$0.06/mi at today&rsquo;s diesel prices. <b>3. Shop insurance yearly</b> &mdash; renewals drift up; quotes pull them back. <b>4. Run more of the miles you already pay for</b> &mdash; fixed costs per mile fall as monthly miles rise. <b>5. Take the per diem deduction</b> &mdash; it does not change CPM, but <a href="truck-driver-per-diem-2026.html">$64 per night away</a> changes what you keep. <b>6. Stop paying for load-hunting time</b> &mdash; hours on load boards are unpaid work; a <a href="how-much-does-a-truck-dispatcher-cost.html">flat-fee dispatcher</a> costs 5% and gives you those hours back.</p>'
+ '<p><b>1. Kill deadhead</b> &mdash; empty miles carry full cost and zero revenue; one round-trip lane plan can cut CPM more than any fuel card. <b>2. Slow down 3&ndash;5 mph</b> &mdash; typically worth 0.5+ MPG, which is $0.04&ndash;$0.06/mi at today&rsquo;s diesel prices. <b>3. Shop insurance yearly</b> &mdash; renewals drift up; quotes pull them back. <b>4. Run more of the miles you already pay for</b> &mdash; fixed costs per mile fall as monthly miles rise. <b>5. Take the per diem deduction</b> &mdash; it does not change CPM, but <a href="truck-driver-per-diem-2026.html">' + _PD_NET_S + ' per night away</a> changes what you keep. <b>6. Stop paying for load-hunting time</b> &mdash; hours on load boards are unpaid work; a <a href="how-much-does-a-truck-dispatcher-cost.html">flat-fee dispatcher</a> costs 5% and gives you those hours back.</p>'
  '</div></div></section>')
 
 RELATED['cost-per-mile-calculator.html'] = [('tools.html','All Free Trucking Calculators'),('truckload-freight-rates.html','Truckload Freight Rates'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('market-rates.html','Market Rates Per Mile'),('how-much-does-a-truck-dispatcher-cost.html','Dispatcher Cost Guide'),('truck-driver-per-diem-2026.html','Per Diem 2026 Guide'),('carrier-application.html','Apply as Carrier'),('should-i-buy-a-truck-before-2027-epa-rule.html','Buy a Truck Before the 2027 EPA Rule?')]
@@ -5922,7 +5983,7 @@ _mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org",
   '<script>' + _MR_JS + '</script>')
 
 page('market-rates.html', 'Truckload Rates Per Mile 2026 — Carrier, Broker &amp; Shipper | LoadBoot',
-     'Current truckload freight rates per mile, September 2026: dry van $3.03, reefer $3.66, flatbed $3.62 to the carrier. Carrier, broker, shipper sides, dated.',
+     'Current truckload freight rates per mile, ' + _MR_MONTH + ': dry van ' + _mrd(_mrc('Dry Van')) + ', reefer ' + _mrd(_mrc('Reefer')) + ', flatbed ' + _mrd(_mrc('Flatbed')) + ' to the carrier. Carrier, broker, shipper sides, dated.',
      'market-rates.html', _mr_body + _mr_faq)
 
 # _acc_faq_schema must be defined BEFORE the equipment rate pages below use it. It used
@@ -6277,20 +6338,35 @@ _EQ_HAS_DISPATCH = {'dry-van','reefer','flatbed','hotshot','power-only','box-tru
 # shape, not its data. Snapshots live in rate_snapshots.json (append-only; add a week
 # with `python refresh_rate_snapshot.py`). Built here, BEFORE the hub loop, so each hub
 # can link forward to its newest dated post.
+def _mr_snaps():
+    # Since bl_mkt_0442 the snapshots come from app_private.rate_history through get_public_site_facts():
+    # Publish writes today's row and never an older one, so the store is append-only by construction and
+    # the weekly ritual (refresh_rate_snapshot.py) is gone. One snapshot per ISO week, the latest as_of wins.
+    # rate_snapshots.json stays as the offline fallback and the historical record.
+    by = {}
+    for r in (_SF.get('rate_history') or []):
+        try: by.setdefault(str(r['as_of']), {})[r['equipment']] = {'rpm': float(r['rpm']), 'source': r.get('source') or ''}
+        except (KeyError, TypeError, ValueError): continue
+    weeks = {}
+    for a in sorted(by):
+        if all(e in by[a] for e in _MR_EQS):
+            iy, iw, _ = __import__('datetime').date.fromisoformat(a).isocalendar()
+            weeks[(iy, iw)] = {'as_of': a, 'iso_year': iy, 'iso_week': iw, 'rates': by[a]}
+    if weeks:
+        return [weeks[k] for k in sorted(weeks)], 'live rate_history'
+    try:
+        with open(os.path.join(SRC, 'rate_snapshots.json'), encoding='utf-8') as _f:
+            return (json.load(_f).get('snapshots') or []), 'rate_snapshots.json (fallback)'
+    except FileNotFoundError:
+        return [], 'none'
 _MR_PAGES, _MR_LATEST = [], {}
-try:
-    with open(os.path.join(SRC, 'rate_snapshots.json'), encoding='utf-8') as _f:
-        _MR_SNAPS = json.load(_f).get('snapshots') or []
-    if _MR_SNAPS:
-        _MR_PAGES, _MR_LATEST = build_market_reports(_MR_SNAPS, _EQ_RATES, _acc_faq_schema)
-        print('market reports: %d pages from %d weekly snapshots' % (len(_MR_PAGES), len(_MR_SNAPS)))
-    else:
-        print('market reports: rate_snapshots.json has no snapshots - none built')
-except FileNotFoundError:
-    # Not fatal: the site must still build for someone who has not pulled the data file.
-    # It IS reported, because silently shipping without the reports is how a whole
-    # content engine disappears from a deploy without anyone noticing.
-    print('market reports: rate_snapshots.json NOT FOUND - no dated reports in this build')
+_MR_SNAPS, _MR_SNAPS_FROM = _mr_snaps()
+if _MR_SNAPS:
+    _MR_PAGES, _MR_LATEST = build_market_reports(_MR_SNAPS, _EQ_RATES, _acc_faq_schema)
+    print('market reports: %d pages from %d weekly snapshots (%s)' % (len(_MR_PAGES), len(_MR_SNAPS), _MR_SNAPS_FROM))
+else:
+    # Not fatal, but reported: silently shipping without the reports is how a content engine disappears.
+    print('market reports: NO snapshots (rate_history empty and rate_snapshots.json missing) - none built')
 
 # ---- Workstream 02: shipper-by-industry pages -------------------------------
 # The largest unclaimed page type in load-board SEO (audit 25 Aug 2026): no load board
@@ -6379,23 +6455,28 @@ def _eqr_js(eq_name, lanes):
 
 # R9 (2026-09-18) SEO: per-hub <title>/<meta> overrides. Only the slugs listed here change;
 # every other equipment hub keeps the shared frame below. Keys = hub slug.
+def _eq_desc(label, eq, tail):   # <=155 chars, live figures + month; the sentence shape is the R9/Phase-2 SEO wording
+    _r = _MR_LIVE[eq]
+    _s = '%s rates per mile, %s: %s/mi to the carrier, %s shipper side, %s\u2013%s range. %s' % (label, _MR_MONTH, _mrd(_r['carrier_rpm']), _mrd(_r['shipper_rpm']), _mrd(_r['low']), _mrd(_r['high']), tail)
+    if len(_s) > 155: print('WARN meta desc >155 (%d): %s' % (len(_s), _s))
+    return _s
 _EQ_SEO_OVERRIDE = {
  'flatbed': dict(
    title='Flatbed Freight Rates Per Mile 2026 \u2014 Current &amp; Average Flatbed Trucking Rates, Cost Per Mile for Carriers, Brokers &amp; Shippers | LoadBoot',
    desc='Current and average flatbed trucking rates per mile in 2026, updated as new national data lands: flatbed cost per mile for the carrier, what brokers buy and sell at, what shippers pay, plus lane examples, seasonality and the accessorials that move the real number.'),
  # Phase 2 ledger 2026-09-25 (box-truck, desc only, <=155 chars; title untouched - pos 7.7). Figures = get_public_market_rates() as_of 2026-09-18.
  'box-truck': dict(
-   desc='Box truck rates per mile, September 2026: $2.58/mi to the carrier, $2.97 shipper side, $2.06–$3.10 range. Live national box truck freight rates, 16–26 ft.'),
+   desc=_eq_desc('Box truck', 'Box Truck', 'Live national box truck freight rates, 16–26 ft.')),
  # Phase 2 ledger 2026-09-25 (#6 power-only, #7 step-deck): desc only, <=155 chars; titles untouched. Same as_of 2026-09-18 figures.
- 'power-only': dict(desc='Power only rates per mile, September 2026: $2.58/mi to the carrier, $2.97 shipper side, $1.80–$3.50 range. Live national power only trucking rates, dated.'),
- 'reefer': dict(desc='Reefer rates per mile, September 2026: $3.66/mi to the carrier, $4.21 shipper side, $2.93–$4.39 range. Current national reefer freight rates today, dated.'),
+ 'power-only': dict(desc=_eq_desc('Power only', 'Power Only', 'Live national power only trucking rates, dated.')),
+ 'reefer': dict(desc=_eq_desc('Reefer', 'Reefer', 'Current national reefer freight rates today, dated.')),
  # Phase 2 ledger 2026-09-25 (#3 hotshot, ported from the S1 branch and cut to <=155): desc only; title untouched (head query at 6.9).
- 'hotshot': dict(desc='Hotshot rates per mile, September 2026: $2.41/mi to the carrier, $2.77 shipper side, $1.80–$3.50 range. Live national hot shot trucking rates, dated.'),
- 'step-deck': dict(desc='Step deck rates per mile, September 2026: $3.67/mi to the carrier, $4.22 shipper side, $2.94–$4.40 range. Live national step deck freight rates, dated.'),
+ 'hotshot': dict(desc=_eq_desc('Hotshot', 'Hotshot', 'Live national hot shot trucking rates, dated.')),
+ 'step-deck': dict(desc=_eq_desc('Step deck', 'Step Deck', 'Live national step deck freight rates, dated.')),
  # Phase 2 ledger 2026-09-25 (dry-van, desc only; title locked - clicks growing). Figures = get_public_market_rates() as_of 2026-09-18.
  # Same day: cut from 261 to 155 chars (<=155 rule); keeps "current dry van rates" + "freight brokers" (ledger note d).
  'dry-van': dict(
-   desc='Dry van rates per mile, September 2026: $3.03/mi to the carrier, $3.48 shipper side, $2.42\u2013$3.64 range. Current dry van rates and what freight brokers pay.'),
+   desc=_eq_desc('Dry van', 'Dry Van', 'Current dry van rates and what freight brokers pay.')),
 }
 for _eq in _EQ_RATES:
     _n, _s = _eq['name'], _eq['slug']
@@ -9589,6 +9670,64 @@ _LLMS = """# LoadBoot — The Operating System for Trucking
 open(os.path.join(OUT,'llms.txt'),'w',encoding='utf-8').write(_LLMS)
 print('llms.txt written')
 
+# ---- Drift lint (MARKET-DATA plan step 5, 25 Sep 2026) -------------------------------------
+# On the market pages every "$x.xx per mile / per gallon" figure must have come from the registry this
+# build (rates, diesel, the FSC formula) or be on the short list of illustrative constants (pegs, ATRI cost,
+# the mock screenshot). Anything else is a hand-typed number that WILL go stale, so the build refuses.
+# Month words: "<Month> 2026" on these pages must be the benchmark month or an allowed historical one.
+# LOADBOOT_LINT=warn downgrades to a warning for a local experiment; Netlify runs it strict.
+_LINT_PAGES = ['market-rates.html', 'spot-market-freight-rates.html', 'truckload-freight-rates.html',
+               'fuel-surcharge-trucking.html', 'oversize-load-rates-per-mile.html', 'truck-driver-per-diem-2026.html',
+               'cost-per-mile-calculator.html', 'tools.html', 'load-score.html', 'freight-market-reports.html'] + \
+              ['%s-freight-rates.html' % _e.lower().replace(' ', '-') for _e in _MR_EQS]
+_LINT_KNOWN = set(['$%.2f' % _DIESEL] + ['$%.2f' % _fsc(_p, _m) for _p in (1.25, 2.0, 2.5) for _m in (5.0, 5.5, 6.0, 6.5)])
+for _e in _MR_EQS:
+    _LINT_KNOWN.update(_mrd(_MR_LIVE[_e][_k]) for _k in ('carrier_rpm', 'shipper_rpm', 'low', 'high'))
+    _LINT_KNOWN.add(_mrd(_MR_LIVE[_e]['carrier_rpm'] - round(_fsc(1.25, 6.0), 2)))   # the linehaul decomposition
+    _LINT_KNOWN.add(_mrd(_MR_LIVE[_e]['carrier_rpm'] + round(_fsc(1.25, 6.0), 2)))   # ... and the all-in composition
+for _e in ('Reefer', 'Flatbed', 'Step Deck'):
+    _LINT_KNOWN.add(_mrd(_MR_LIVE[_e]['carrier_rpm'] - _MR_LIVE['Dry Van']['carrier_rpm']))   # equipment premium over van (_SP_PREM)
+_LINT_KNOWN.add(_mrd(3.10 - round(_fsc(1.25, 6.0), 2)))   # the '$3.10 all-in' worked example on the truckload page
+for _sn in _MR_SNAPS:
+    _LINT_KNOWN.update(_mrd(_v['rpm']) for _v in _sn['rates'].values())
+_LINT_ALLOW = {'$1.25', '$2.00', '$2.50',                      # FSC pegs
+               '$2.20', '$2.30',                               # ATRI marginal cost of operating
+               '$0.65',                                        # driver pay in the mock profit statement
+               '$0.04', '$0.07', '$0.20', '$0.25', '$0.60',    # FSC sensitivity notes ("each $0.25 of peg ...")
+               '$1.80', '$2.00', '$3.10', '$3.40', '$4.60', '$2.90',   # break-even / narrative examples
+               '$3.00', '$4.00', '$4.50', '$5.00', '$5.50', '$8.00', '$15.00'}   # oversize tiers
+_LINT_MONTHS_OK = {_MR_MONTH}
+_LINT_ALLOW_PAGE = {   # illustrative figures that live on one page only (mock screenshots, narrative examples)
+    'truck-driver-per-diem-2026.html': {'$3.85', '$2.79', '$1.92', '$0.87'},           # the mock profit statement (PD_SHOT2)
+    'cost-per-mile-calculator.html': {'$0.42', '$0.60', '$0.55', '$0.70', '$0.15', '$0.25', '$0.03', '$0.05', '$0.04', '$0.06'},
+    'freight-market-reports.html': {'$1.40'},                                            # 'if someone offers you $1.40 a mile on reefer'
+    'fuel-surcharge-trucking.html': {'$0.05'},                                           # '$0.05/gal brackets'
+    'spot-market-freight-rates.html': {'$0.50', '$1.00'},                                # 'can jump $0.50-$1.00/mi in weeks'
+}
+_LINT_MONTH_PAGES_SKIP = {'freight-market-reports.html'}   # its month words come from the snapshot dates
+_lint_bad = []
+_lint_re = re.compile(r'\$\d\.\d\d(?=\s*(?:/|per |a |an )\s*(?:mi\b|mile|gal|gallon))')
+_month_re = re.compile(r'\b(January|February|March|April|May|June|July|August|September|October|November|December) 20\d\d\b')
+for _pg in _LINT_PAGES:
+    try:
+        with open(os.path.join(OUT, _pg), encoding='utf-8') as _f: _html = _f.read()
+    except FileNotFoundError:
+        continue
+    _text = re.sub(r'<[^>]+>', '', _html)   # tags out, so '<b>$3.62</b> per mile' is one phrase
+    for _m in [_x.group(0) for _x in _lint_re.finditer(_text)]:
+        if _m not in _LINT_KNOWN and _m not in _LINT_ALLOW and _m not in _LINT_ALLOW_PAGE.get(_pg, ()):
+            _lint_bad.append('%s: %s (not from the registry)' % (_pg, _m))
+    for _x in ([] if _pg in _LINT_MONTH_PAGES_SKIP else _month_re.finditer(_text)):
+        if _x.group(0) not in _LINT_MONTHS_OK and _x.group(0) not in str(fact('stat.class8.orders_line', '')):
+            _lint_bad.append('%s: "%s" (month word not built from as_of)' % (_pg, _x.group(0)))
+if _FACT_MISSING:
+    print('site facts MISSING in the registry (defaults used): ' + ', '.join('%s=%r' % kv for kv in sorted(_FACT_MISSING.items())))
+if _lint_bad:
+    _msg = 'drift lint: %d hand-typed figure(s) on market pages:\n  ' % len(_lint_bad) + '\n  '.join(sorted(set(_lint_bad)))
+    if os.environ.get('LOADBOOT_LINT') == 'warn': print('WARN ' + _msg)
+    else: sys.exit('BUILD REFUSED - ' + _msg + '\n  Put the number in the registry (CC > Market data) or add it to _LINT_ALLOW with a reason.')
+else:
+    print('drift lint: clean (%d pages, %d registry figures known)' % (len(_LINT_PAGES), len(_LINT_KNOWN)))
 print("BUILD OK — publish dir:", OUT)
 print("BUILT:", sorted(os.listdir(OUT)))
 

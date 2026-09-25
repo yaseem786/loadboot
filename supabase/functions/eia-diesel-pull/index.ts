@@ -17,7 +17,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const URL_ = Deno.env.get("SUPABASE_URL") || "";
 const SVC = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-const WORKER = Deno.env.get("LB_WORKER_TOKEN") || "";
+const WORKER = Deno.env.get("EIA_WORKER_TOKEN") || Deno.env.get("LB_WORKER_TOKEN") || ""; // bl_mkt_0444: prod has its own token
 const EIA_KEY = Deno.env.get("EIA_API_KEY") || "";
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json" } });
 
