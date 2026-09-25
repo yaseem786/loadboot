@@ -455,7 +455,7 @@ def header_v1(active):
 </div></header>''' % (links, mob, ARW)
 
 def header(active):
-    return header_v2(active) if HEADER_V2 else header_v1(active)
+    return _contact_header(header_v2(active) if HEADER_V2 else header_v1(active))
 
 
 # WEB-4: 'Research LoadBoot with AI' footer. Owner-flippable build switch (True = rendered).
@@ -574,6 +574,55 @@ _CONTACT_SWITCH = ("<script>(function(){"
   "if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',go);}else{go();}"
   "})();</script>") % (APP_REF, APP_ANON)
 HEADX = HEADX + _CONTACT_SWITCH
+
+# CLAUDE.md §7 (25 Sep 2026): the HEADER no longer ships the Riley line in the built HTML. The switch above only
+# rewrites after the fetch lands, so the phone number sat in the static header (crawlers, no-JS, first paint).
+# The build now reads the same public.lb_contact_channel() and, when the channel is whatsapp, renders every
+# data-lb-contact link in the header exactly as the switch would (same labels, so no flash), and hides the
+# data-lb-callonly bits. On phone/both the header is left as it was. Body, footer and schema.org keep the phone
+# version and stay on the runtime switch. A flip in CC applies at runtime at once and to the static header on
+# the next build (every market-data Publish rebuilds).
+_CONTACT_FALLBACK = {'channel': 'whatsapp',
+                     'whatsapp': {'url': 'https://wa.me/18153651168', 'display': '+1 (815) 365-1168'}}
+def _contact_load():
+    if os.environ.get('LOADBOOT_RATES_OFFLINE') != '1':
+        try:
+            import urllib.request
+            _req = urllib.request.Request('https://%s.supabase.co/rest/v1/rpc/lb_contact_channel' % PROD_REF,
+                data=b'{}', headers={'apikey': PROD_ANON, 'Authorization': 'Bearer ' + PROD_ANON,
+                                     'Content-Type': 'application/json'})
+            with urllib.request.urlopen(_req, timeout=20) as _r:
+                _c = json.loads(_r.read().decode('utf-8'))
+            if isinstance(_c, dict) and _c.get('channel'):
+                return _c, 'live'
+            print('contact channel: live read returned an unexpected shape - using fallback')
+        except Exception as _ex:
+            print('contact channel: live read FAILED (%s) - using fallback' % _ex)
+    return _CONTACT_FALLBACK, 'fallback'
+_CONTACT, _CONTACT_FROM = _contact_load()
+_CONTACT_WA = _CONTACT.get('whatsapp') or {}
+_CONTACT_HDR_WA = (_CONTACT.get('channel') == 'whatsapp' and str(_CONTACT_WA.get('url') or '').startswith('https://wa.me/')
+                   and bool(_CONTACT_WA.get('display')))
+print('contact channel: %s (%s), header ships %s' % (_CONTACT.get('channel'), _CONTACT_FROM,
+      'WhatsApp ' + _CONTACT_WA.get('display', '') if _CONTACT_HDR_WA else 'the phone line'))
+_CONTACT_HDR_LABEL = {'topbar': '&#128172; WhatsApp&nbsp; %s', 'nav': '&#128172; WhatsApp us &mdash; %s',
+                      'footer': '&#128172; %s &middot; WhatsApp', 'inline': '%s on WhatsApp'}
+def _contact_header(h):
+    if not _CONTACT_HDR_WA:
+        return h
+    import html as _html
+    _u, _d = _html.escape(_CONTACT_WA['url']), _html.escape(_CONTACT_WA['display'])
+    def _a(m):
+        kind = m.group(2)
+        attrs = re.sub(r'\shref="tel:[^"]*"', '', m.group(1))
+        return '<a%s href="%s" rel="noopener" target="_blank" data-lb-contact="%s"%s>%s</a>' % (
+            attrs, _u, kind, m.group(3), _CONTACT_HDR_LABEL.get(kind, _CONTACT_HDR_LABEL['inline']) % _d)
+    h = re.sub(r'<a((?:\s[^>]*?)?)\sdata-lb-contact="(\w+)"([^>]*)>.*?</a>', _a, h, flags=re.S)
+    h = re.sub(r'(<[a-z]+\b[^>]*?)\sdata-lb-callonly(?=[\s>])', r'\1 style="display:none" data-lb-callonly', h)
+    h = h.replace('Riley answers 24/7', 'WhatsApp any hour')
+    if re.search(r'253-?7575|2537575', h):
+        sys.exit('BUILD REFUSED - the header still carries the Riley line while the contact channel is whatsapp (CLAUDE.md §7).')
+    return h
 
 
 def _breadcrumb(fname, title):
