@@ -107,7 +107,7 @@ TOOLS_HTML = r'''<div class="tk-wrap"><div class="tk-grid">
  </div>
  <div class="tk-out"><div><div class="big pos" id="t_take">$0</div><div class="lbl">Your weekly take-home</div></div>
   <div class="side"><b id="t_feeamt">$0</b>dispatch fee<br><b id="t_year">$0</b>/yr (est.)</div></div>
- <p class="tk-note">At a flat 5%, Loadboot only earns when we book you a paying load.</p>
+ <p class="tk-note">At a flat 5%, LoadBoot only earns when we book you a paying load.</p>
 </div>
 
 <div class="tk-card" id="detention">
