@@ -5,6 +5,8 @@
 import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
 import { brandLogo } from '../shared/ui/components.js';
+import { createTour, mountHelp } from '../shared/ui/tour.js';   // guided tour + floating "?" help (25 Sep 2026)
+import { DEVELOPER_TOUR } from './tour-content.js';
 import { createApiKey, listApiKeys, revokeApiKey, myWebhooks, myWebhookCreate, myWebhookDelete } from '../shared/api.js';
 import { initTelemetry } from '../shared/telemetry.js';
 initTelemetry();  // real-user error + Core Web Vitals capture
@@ -130,12 +132,12 @@ function appView(user) {
       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { await signOut(); boot(); } }, 'Sign out'),
     ]),
     h('div', { class: 'cp-content' }, [
-      h('div', { class: 'cp-card' }, [
+      h('div', { class: 'cp-card', 'data-tour': 'dev-create' }, [
         h('div', { class: 'cp-cardhead' }, [h('h3', null, 'Create an API key')]),
         h('div', { class: 'dev-createrow' }, [nameIn, createBtn]), err, revealHost,
       ]),
-      h('div', { class: 'cp-card', style: 'margin-top:16px' }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, 'Your API keys')]), listHost]),
-      h('div', { class: 'cp-card', style: 'margin-top:16px' }, [
+      h('div', { class: 'cp-card', style: 'margin-top:16px', 'data-tour': 'dev-keys' }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, 'Your API keys')]), listHost]),
+      h('div', { class: 'cp-card', style: 'margin-top:16px', 'data-tour': 'dev-quickstart' }, [
         h('div', { class: 'cp-cardhead' }, [h('h3', null, 'Quickstart')]),
         h('p', { class: 'dev-p' }, 'Base URL'), h('pre', { class: 'dev-pre' }, API_BASE),
         h('p', { class: 'dev-p' }, 'Authenticate with your key in the Authorization header. Example — fetch public load opportunities:'),
@@ -178,14 +180,14 @@ function appView(user) {
           b.disabled = false; b.textContent = t;
         } }, '+ Add webhook endpoint');
         draw();
-        return h('div', { class: 'cp-card', style: 'margin-top:16px' }, [
+        return h('div', { class: 'cp-card', style: 'margin-top:16px', 'data-tour': 'dev-webhooks' }, [
           h('div', { class: 'cp-cardhead' }, [h('h3', null, 'Webhooks — self-serve')]),
           h('p', { class: 'dev-p' }, 'Register an https endpoint and LoadBoot POSTs every matching event to it automatically, with retries. Up to 5 endpoints per account.'),
           h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:8px' }, [nameIn, urlIn, evIn]),
           h('div', { style: 'margin-top:10px' }, addBtn), msg, listHost,
         ]);
       })(),
-      h('div', { class: 'cp-card', style: 'margin-top:16px' }, [
+      h('div', { class: 'cp-card', style: 'margin-top:16px', 'data-tour': 'dev-events' }, [
         h('div', { class: 'cp-cardhead' }, [h('h3', null, 'Event catalog')]),
         h('p', { class: 'dev-p' }, 'The platform emits these domain events. Register an https endpoint below and every matching event is delivered to it automatically (retried on failure) — the same stream powers the internal event log.'),
         h('table', { class: 'cp-table' }, [
@@ -208,6 +210,18 @@ function appView(user) {
   ])));
   root.setAttribute('aria-busy', 'false');
   load();
+  // Guided tour + floating "?" help (25 Sep 2026). Engine: ../shared/ui/tour.js, copy: ./tour-content.js.
+  // One screen, no routing: navigate is a no-op and the route is always 'home'. Progress is localStorage only
+  // (lb_tour.developer.v1). Created once per page; a sign-out reloads the page (watchAuth), so no cleanup here.
+  try {
+    if (!window.__lbTour) {
+      const tour = createTour({ key: 'developer', version: 1, role: 'developer', flows: DEVELOPER_TOUR.flows, screens: DEVELOPER_TOUR.screens, navigate: () => {}, currentRoute: () => 'home' });
+      const help = mountHelp(tour, { supportRoute: '', navigate: () => {} });
+      window.__lbTour = tour;   // replay hook; nothing depends on it
+      help.onRoute('home');
+      setTimeout(() => { try { tour.autoStart(); } catch (_) {} }, 500);
+    }
+  } catch (_) {}
 }
 
 let _hadSession = false, _watching = false;

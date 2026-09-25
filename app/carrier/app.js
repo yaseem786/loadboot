@@ -112,6 +112,8 @@ import { showWhatsNew } from '../shared/whatsnew.js';
 import { initInstallPrompt } from '../shared/installprompt.js';
 import { renderFaq, CARRIER_FAQ } from '../shared/faq.js';
 import { myDriverContext } from '../shared/api.js';   // bl_drv_0344 driver mode
+import { createTour, mountHelp } from '../shared/ui/tour.js';   // guided tour + floating "?" help (24 Sep 2026)
+import { CARRIER_TOUR } from './tour-content.js';
 initTelemetry();  // real-user error + Core Web Vitals capture
 
 // Agent portal runs the SAME bundle as the carrier app, told apart only by URL path.
@@ -911,7 +913,8 @@ async function agentPortal(user) {
   const SIDE9 = { carrier: ['🚛', 'Carrier'], broker: ['🏢', 'Broker'], shipper: ['🏭', 'Shipper'] };
   const sideIc9 = (k9) => (SIDE9[k9] || ['🏢', k9 || ''])[0];
   const sideLb9 = (k9) => (SIDE9[k9] || ['🏢', String(k9 || '')])[1];
-  const agCard = (t9, kids9) => h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, t9)]), ...(Array.isArray(kids9) ? kids9 : [kids9])].filter(Boolean));
+  const tourTag = (el9, n9) => { try { if (el9 && el9.setAttribute) el9.setAttribute('data-tour', n9); } catch (_) {} return el9; };   // guided-tour hook (25 Sep 2026)
+  const agCard = (t9, kids9, tour9) => h('div', { class: 'cp-card', 'data-tour': tour9 || null }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, t9)]), ...(Array.isArray(kids9) ? kids9 : [kids9])].filter(Boolean));
   const tile9 = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:120px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;text-align:center' }, [
     h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:#7f92b3;text-transform:uppercase' }, lbl),
     h('div', { style: 'font-size:1.45rem;font-weight:900;margin-top:3px;color:' + (hi ? '#4ade80' : '#fff') }, val)]);
@@ -1266,8 +1269,8 @@ async function agentPortal(user) {
         ]);
       const wrap9 = h('div', null, [
         gate9 ? gate9.node : dHero(),
-        card9,
-        dSteps(null),
+        tourTag(card9, 'disp-apply'),
+        tourTag(dSteps(null), 'disp-steps'),
         dSalary(),
         dWhat(),
         dAcademy(),
@@ -1357,7 +1360,7 @@ async function agentPortal(user) {
       prof.review_note ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Note from the team: ' + prof.review_note) : '',
       prof.base_salary ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Salary terms: base ' + (prof.currency || 'PKR') + ' ' + Number(prof.base_salary).toLocaleString() + ' + ' + (prof.currency || 'PKR') + ' ' + Number(prof.per_truck || 0).toLocaleString() + ' per active truck + performance bonus.') : '',
     ])];
-    const statusCard = cards[0]; // keep a stable handle: the unshifts below change cards[0]
+    const statusCard = tourTag(cards[0], 'disp-status'); // keep a stable handle: the unshifts below change cards[0]
     // bl_disp_0318: a rejected applicant gets a real, server-gated way back in (14-day cooldown, max 3).
     if (prof.status === 'rejected') {
       const slot9 = h('div', null, []); cards.push(slot9); // synchronous slot: no dependence on mount timing
@@ -1431,9 +1434,9 @@ async function agentPortal(user) {
       h('div', null, '✕ Never re-broker or re-assign a booked load to another carrier.'),
       h('div', null, '✕ Never accept a load first and then hunt for a truck.'),
       h('div', { class: 'cp-muted', style: 'margin-top:4px' }, 'These keep you a bona fide agent of the carrier (FMCSA 88 FR 39368), not an unlicensed broker. Questions: hello@loadboot.com'),
-    ])]));
-    if (['screening', 'skills_test', 'trial', 'verified'].includes(prof.status)) cards.splice(1, 0, dSteps(prof.status));
-    cards.push(dAcademy());
+    ])], 'disp-rules'));
+    if (['screening', 'skills_test', 'trial', 'verified'].includes(prof.status)) cards.splice(1, 0, tourTag(dSteps(prof.status), 'disp-steps'));
+    cards.push(tourTag(dAcademy(), 'disp-academy'));
     mount(host, h('div', null, cards));
   }
 
@@ -1921,7 +1924,7 @@ async function agentPortal(user) {
         list9.length > LD.show ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:10px', onClick: () => { LD.show += 50; render(); } }, '↓ Show ' + Math.min(50, list9.length - LD.show) + ' more (' + (list9.length - LD.show) + ' left)') : null,
       ].filter(Boolean)));
     } else if (tab === 'earnings') {
-      const hostE = agCard('💰 Commission ledger', [h('div', { class: 'cp-muted' }, 'Loading…')]);
+      const hostE = agCard('💰 Commission ledger', [h('div', { class: 'cp-muted' }, 'Loading…')], 'earnings');
       mount(content, h('div', null, [
         h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px' }, [tile9('Clearing', money9(tt.accrued)), tile9('Payable', money9(tt.payable), true), tile9('Paid', money9(tt.paid), true)]),
         hostE]));
@@ -1933,7 +1936,7 @@ async function agentPortal(user) {
             pill(x.status)]))) : h('div', { class: 'cp-muted' }, 'Commissions appear here per delivered load — 1% of gross, 15-day clearing, then payable.')]);
       } catch (_) { mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, [icon('finance',15),' Commission ledger'])]), h('div', { class: 'cp-muted' }, 'Could not load.')]); }
     } else if (tab === 'payouts') {
-      const hostP = h('div');
+      const hostP = h('div', { 'data-tour': 'payouts' });
       mount(content, hostP);
       (async () => {
         let pc; try { pc = await agentPayoutCenter(); } catch (e9) { mount(hostP, agCard('🏦 Payout Center', [h('div', { class: 'cp-muted' }, (e9 && e9.message) || 'Could not load.')])); return; }
@@ -2029,11 +2032,13 @@ async function agentPortal(user) {
       ]));
     }
   }
+  let agTour = null, agHelp = null;   // guided tour + floating "?" (25 Sep 2026); set after the shell mounts below
   function go(id) { tab = id; if (location.hash !== '#' + id && location.hash.indexOf('#' + id + '/') !== 0) history.replaceState(null, '', '#' + id);  // keep #tab/<deep> (bl_agent_0403)
     Object.entries(links).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
     Object.entries(tabLinks).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
     const it = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it ? it[1] : 'Dashboard';
     (async () => { try { feed = (await agentFeed()) || feed; } catch (_) {} render(); })();
+    if (agHelp) { try { agHelp.onRoute(tab); } catch (_) {} }
   }
   // Big-brand Android back for the agent shell too: back → Dashboard first, then exit.
   initBackNav({ goHome: () => { if (tab !== 'dashboard') { go('dashboard'); return true; } return false; } });
@@ -2176,6 +2181,22 @@ async function agentPortal(user) {
   const it0 = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it0 ? it0[1] : 'Dashboard';
   render();
   root.setAttribute('aria-busy', 'false');
+  // Guided tour + floating "?" help (25 Sep 2026). Engine: ../shared/ui/tour.js, copy: ../agent/tour-content.js
+  // (loaded on demand so the carrier portal never fetches it). Flow follows the track: referral-only, dispatcher,
+  // or both. Someone who has not picked a track yet sees the chooser instead; the tour waits for the next visit.
+  // Progress is localStorage only (lb_tour.agent.v1).
+  if (!noTrack) {
+    import('../agent/tour-content.js').then((m9) => {
+      const AGENT_TOUR = m9.AGENT_TOUR || m9.default;
+      const tourNav = (r) => { const t9 = String(r || '').replace(/^#/, '').split('/')[0] || 'dashboard'; go(AGNAV.some((n) => n[0] === t9) ? t9 : 'dashboard'); };
+      const tourRole = refOnly ? 'referral' : (optedIn ? 'both' : 'dispatcher');
+      agTour = createTour({ key: 'agent', version: 1, role: tourRole, flows: AGENT_TOUR.flows, screens: AGENT_TOUR.screens, navigate: tourNav, currentRoute: () => tab });
+      agHelp = mountHelp(agTour, { supportRoute: '#settings', navigate: tourNav });
+      window.__lbTour = agTour;   // replay hook; nothing depends on it
+      agHelp.onRoute(tab);
+      setTimeout(() => { try { agTour.autoStart(); } catch (_) {} }, 500);
+    }).catch((e9) => { try { console.warn('[tour] agent content failed to load', e9); } catch (_) {} });
+  }
 }
 
 // 🟣 multi-stop route modal from a board card — shows the redacted route (City, ST + purpose);
@@ -2536,6 +2557,20 @@ async function appView(user) {
   root.setAttribute('aria-busy', 'false');
   // Pull-to-refresh (big-brand standard): re-runs the current view + unread count.
   try { attachPullToRefresh(content, async () => { render(); refreshUnread(); }); } catch (_) {}
+  // Guided tour + floating "?" help (24 Sep 2026). Engine: ../shared/ui/tour.js, copy: ./tour-content.js.
+  // The flow follows the person: owner, driver, or a driver who can see the board (in-house dispatcher).
+  // Progress is localStorage only (lb_tour.carrier.v1). The agent portal has its own shell (agentPortal) and
+  // its own tour (../agent/tour-content.js), so it is skipped here. autoStart() runs after the first go(tab) below.
+  let tour = null, help = null;
+  if (!window.__LB_AGENT) {
+    try {
+      const tourNav = (r) => go(String(r || '').replace(/^#/, '').split('/')[0] || 'dashboard');   // routes come as '#loads'
+      const tourRole = DRV ? ((DRV.perms || []).includes('loads.view_board') ? 'dispatcher' : 'driver') : 'owner';
+      tour = createTour({ key: 'carrier', version: 1, role: tourRole, flows: CARRIER_TOUR.flows, screens: CARRIER_TOUR.screens, navigate: tourNav, currentRoute: () => tab });
+      help = mountHelp(tour, { supportRoute: '#support', navigate: tourNav });
+      window.__lbTour = tour;   // replay hook for Settings / support; nothing depends on it
+    } catch (_) { tour = null; help = null; }
+  }
 
   function go(id) {
     tab = id; if (location.hash !== '#' + id && location.hash.indexOf('#' + id + '/') !== 0) history.replaceState(null, '', '#' + id);  // keep #tab/<deep> (bl_agent_0403); replace, not push — keeps Back working / no hash pile-up
@@ -2546,6 +2581,7 @@ async function appView(user) {
     const item = NAV.find(n => n[0] === tab);
     titleEl.textContent = item ? item[1] : ({ notifications: 'Notifications', onboarding: 'Onboarding', settings: 'Settings', reinstate: 'Account reinstatement' }[tab] || 'Dashboard');
     render();
+    if (help) { try { help.onRoute(tab); } catch (_) {} }
   }
   window.addEventListener('hashchange', () => { let t = (location.hash || '').replace('#', ''); if (t.indexOf('/') > 0) { const p9 = t.split('/'); t = p9[0]; if (p9[1]) window.__lbDeepEnt = { tab: t, id: p9.slice(1).join('/') }; }
     if (t && t !== tab && (NAV.some(n => n[0] === t) || EXTRA_TABS.includes(t))) go(t); else if (t === tab && window.__lbDeepEnt) render(); });
@@ -3437,7 +3473,7 @@ async function appView(user) {
 
     // 1) "Complete your setup" — gaps coloured by the GLOBAL tone tokens, each linking to the exact step.
     const gaps = Array.isArray(d.setup_gaps) ? d.setup_gaps : [];
-    const setupCard = gaps.length ? h('div', { class: 'cp-card' }, [
+    const setupCard = gaps.length ? h('div', { class: 'cp-card', 'data-tour': 'dash-setup' }, [
       cardHead('Complete your setup', acct.onboarding_complete ? 'Almost there' : 'Action needed'),
       h('div', null, gaps.map(g => { const t = toneOf(g.tone); return h('button', {
         class: 'cp-rowbtn', style: 'border-left:4px solid ' + t.c + ';background:' + t.bg,
@@ -3473,7 +3509,7 @@ async function appView(user) {
     ]);
 
     // 3) KPI strip from the aggregate (falls back to overview).
-    const kpis = h('div', { class: 'cp-kpis' }, [
+    const kpis = h('div', { class: 'cp-kpis', 'data-tour': 'dash-kpis' }, [
       statTile('Active trips', String(k.active_trips ?? ov.trips_active ?? 0), 'trips', 'blue', () => go('trips')),
       statTile('Offers for you', String(k.open_offers ?? 0), 'docs', 'violet', () => go('loads')),
       statTile('Delivered this week', String(k.delivered_this_week ?? 0), 'dash', 'green', () => go('trips')),
@@ -4246,7 +4282,7 @@ async function appView(user) {
     try { const k9 = sessionStorage.getItem('lb:avail:kind'); if (k9) { sessionStorage.removeItem('lb:avail:kind');
       if (k9 === '__reactivate__') { const p9 = (postings || []).find(x9 => x9.status === 'paused'); setTimeout(() => openPostingForm(p9 || null, p9 ? undefined : 'empty'), 300); }
       else setTimeout(() => openPostingForm(null, k9), 300); } } catch (_) {}
-    const truckCard = h('div', { class: 'cp-card', style: 'margin-bottom:12px' }, [
+    const truckCard = h('div', { class: 'cp-card', style: 'margin-bottom:12px', 'data-tour': 'loads-post' }, [
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, [icon('truck',15),' Post your availability']), h('div', { class: 'cp-row-s' }, 'Where is the truck today — empty, or booked and needing a backhaul? Post it daily; your dispatcher only works posted trucks.')]),
         h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' }, [
@@ -4407,7 +4443,7 @@ async function appView(user) {
     const fCount = () => { const n = [fOrigin, fDest, fEq, fRpm, fRate, fSize].filter(x => (x.value || '').trim()).length; fChip.style.display = n ? 'inline-block' : 'none'; fChip.textContent = n + ' active'; };
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount)); fSize.addEventListener('change', () => { fCount(); renderList(); });
     const fToggle = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { const open = fBody.style.display !== 'none'; fBody.style.display = open ? 'none' : 'flex'; fToggle.firstChild.textContent = open ? '⚙ Filters ▾' : '⚙ Filters ▴'; } }, [h('span', null, '⚙ Filters ▾'), fChip]);
-    const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px' }, [
+    const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px', 'data-tour': 'loads-filters' }, [
       h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [fToggle, favBtn, tbBtn]),
       fBody,
     ]);
@@ -4935,7 +4971,7 @@ async function appView(user) {
 
       ].filter(Boolean));
     })();
-    const gridHost = h('div', { class: 'cp-loadgrid', id: 'cp-loadgrid-host' });
+    const gridHost = h('div', { class: 'cp-loadgrid', id: 'cp-loadgrid-host', 'data-tour': 'loads-list' });
     mount(availWrap, h('div', null, [availHostL, truckCard, filterBar, setupBanner, bestCard, gridHost].filter(Boolean)));
     mount(content, h('div', null, [gpsBanner, capNudge, tabsBar, reqHost, availWrap].filter(Boolean)));
     renderList();
@@ -5079,7 +5115,7 @@ function tripStepper(status) {
     } catch (_) {}
     if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card', style: 'text-align:center;padding:26px 16px' }, [h('div', { style: 'font-size:40px;line-height:1' }, '🚛'), h('div', { class: 'cp-row-t', style: 'margin:10px 0 4px' }, 'No trips yet'), h('div', { class: 'cp-muted' }, 'Book a load and it appears here with live tracking, documents and settlement.'), h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: () => go('loads') }, '🔎 Browse the Load Board')])); return; }
     const PHONE9 = window.innerWidth <= 560; let doneSeen9 = 0;
-    mount(content, h('div', { class: 'cp-card' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => { const cardOf = () => {
+    mount(content, h('div', { class: 'cp-card', 'data-tour': 'trips-list' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => { const cardOf = () => {
       const active = t.status === 'planned' || t.status === 'dispatched' || t.status === 'in_transit';
       const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { ev.currentTarget.disabled = true; try { const _ct3516 = ev.currentTarget; await pocketConfirmTrip(t.id); _ct3516.textContent = 'Confirmed ✓'; } catch (x) { _ct3516.textContent = 'Error'; } } }, 'Confirm') : null;
       const share = active ? h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => shareLoc(ev, t.id) }, [icon('pin',15),' Share location']) : null;
@@ -5152,7 +5188,7 @@ function tripStepper(status) {
         } }, 'Submit rating');
         rateW.appendChild(h('div', { class: 'cp-inlineform' }, [h('div', { class: 'cp-row-s' }, 'Rate the posting party for this trip:'), starsBar, cmt, send]));
       } }, '⭐ Rate') : null;
-      const pod = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+      const pod = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', 'data-tour': 'trip-pod', onClick: () => {
         if (podW.firstChild) { podW.innerHTML = ''; return; }
         showCarrierPod(t, podW);
       } }, [icon('docs',15),' Proof of delivery']) : null;
@@ -5528,7 +5564,7 @@ function tripStepper(status) {
           h('button', { class: 'cp-btn ghost', style: 'width:100%;margin-top:8px', onClick: () => { if (close9) close9(); go('support'); } }, '🎫 Open a support ticket'),
         ].filter(Boolean));
       } }, '📞 Contact');
-      const chips = h('div', { class: 'cp-trip-actions', style: 'margin-top:10px' }, [confirm, start, deliver, loadDetBtn, dpackBtn, dwell, accBtn, pod, issue, emergency, contactBtn, cancelBtn].filter(Boolean));
+      const chips = h('div', { class: 'cp-trip-actions', style: 'margin-top:10px', 'data-tour': 'trip-actions' }, [confirm, start, deliver, loadDetBtn, dpackBtn, dwell, accBtn, pod, issue, emergency, contactBtn, cancelBtn].filter(Boolean));
       const moreW = h('div', { style: 'display:none' }, [h('div', { class: 'cp-trip-actions' }, [settleBtn, sheetBtn, rcBtn, packBtn, history, nav, share, live, assign, reloadBtn, rateBtn].filter(Boolean))]);
       const moreT = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'width:100%;margin-top:8px', onClick: (ev) => {
         const open = moreW.style.display !== 'none';
@@ -6438,7 +6474,7 @@ function tripStepper(status) {
           ? 'You can run ONE load at a time. Add another truck so a second load can be booked while the first is still rolling \u2014 each truck runs its own load, with its own driver. Add the truck below, add its driver, then tap \u201cInvite & set permissions\u201d so their phone tracks that load.'
           : 'Each of your ' + trucks.length + ' trucks can carry its own load at the same time (' + trucks.length + ' concurrent loads). Invite each driver to the app so every truck is tracked separately.'),
       ]),
-      h('div', { class: 'cp-card', 'data-lb': 'drivers-card' }, [
+      h('div', { class: 'cp-card', 'data-lb': 'drivers-card', 'data-tour': 'fleet-list' }, [
         cardHead('Drivers', drivers.length + ' total'),
         h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', 'data-lb': 'add-driver', onClick: () => driverForm(null) }, '+ Add driver'),
         driverList,
@@ -7224,7 +7260,7 @@ function tripStepper(status) {
     ];
     let sec = 'earn';
     try { if (window.__finSec9) { sec = window.__finSec9; window.__finSec9 = null; } } catch (_) {}
-    const secHost = h('div');
+    const secHost = h('div', { 'data-tour': 'fin-summary' });
     const nav = h('div', { class: 'finnav' });
     const paint = () => {
       mount(nav, SECS.map(([k, lbl]) => h('button', { class: 'cp-btn cp-btn-sm ' + (sec === k ? '' : 'ghost'), onClick: () => { sec = k; paint(); } }, lbl)));
@@ -7878,7 +7914,7 @@ function tripStepper(status) {
     } catch (_) {}
     const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
     mount(content, h('div', null, [shareBanner9, noaBanner9, scanCard, 
-      h('div', { class: 'cp-card' }, [cardHead('What LoadBoot needs from you',
+      h('div', { class: 'cp-card', 'data-tour': 'docs-list' }, [cardHead('What LoadBoot needs from you',
           c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
             : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
         sorted.length ? h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, sorted.map(reqRow)) : h('div', { class: 'cp-muted' }, 'No requirements listed.')]),
@@ -8618,6 +8654,7 @@ function tripStepper(status) {
   }
   go(tab);
   refreshUnread();
+  if (tour) setTimeout(() => { try { tour.autoStart(); } catch (_) {} }, 500);
 }
 
 /* ---------- auth watch (only reload on real sign-out) ---------- */

@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../app/shared/tokens.css"><link rel="stylesheet" href="../../app/shared/ui/tour.css"></head>
+<body><div class="cp-shell"><header class="cp-top"><div class="cp-top-right"><button class="cp-iconbtn cp-bell" title="Notifications">bell</button></div></header>
+<div class="cp-content iv-shell" id="c"></div></div>
+<script type="module">
+import { createTour, mountHelp } from '../../app/shared/ui/tour.js';
+const q = new URLSearchParams(location.search); const portal = q.get('portal'), role = q.get('role'), empty = q.get('empty') === '1';
+const m = await import(`../../app/${portal}/tour-content.js`); const T = m.default;
+const c = document.getElementById('c'); let route = 'home';
+// build every hook the content names (unless empty=1), so the engine has something to spotlight
+const hooks = new Set(); Object.values(T.flows).flat().forEach((s) => (s.target || []).forEach((t) => { const mm = /^\[data-tour="([a-z-]+)"\]$/.exec(t); if (mm) hooks.add(mm[1]); }));
+if (!empty) hooks.forEach((hk) => { const d = document.createElement('div'); d.className = 'cp-card'; d.setAttribute('data-tour', hk); d.style.cssText = 'height:60px;margin:8px;border:1px solid #ccc'; d.textContent = hk; c.appendChild(d); });
+window.__log = []; window.__err = [];
+window.addEventListener('error', (e) => window.__err.push(String(e.message)));
+window.addEventListener('unhandledrejection', (e) => window.__err.push(String(e.reason)));
+const tour = createTour({ key: 'smoke-' + portal, version: 1, role, flows: T.flows, screens: T.screens, waitMs: 200,
+  navigate: (r) => { route = String(r).replace('#', ''); window.__log.push('nav:' + route); }, currentRoute: () => route,
+  onEvent: (n, d) => window.__log.push(n + ':' + (d.id || d.at || '')) });
+const help = mountHelp(tour, { supportRoute: '#x', navigate: () => {} }); help.onRoute(route);
+window.__tour = tour; tour.reset(); tour.start();
+</script></body></html>
