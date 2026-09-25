@@ -10,6 +10,8 @@ import { siteFacts, siteFactSet, siteRebuild, sitePublishConfigSet, marketRatesP
          dieselPullNow, dieselSet, dieselConfigSet, dieselWorkerToken, setRateStandard } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
+// The owner's step-by-step runbook (claude.ai artifact, private to his account): DAT → Rates · Publish, diesel, per diem.
+const RUNBOOK_URL = 'https://claude.ai/artifact/W8zBPTECQ3M4YZ1wHMRF9i';
 const D = (n) => (n == null || isNaN(+n)) ? '—' : '$' + (+n).toFixed(2);
 const dt = (s) => s ? String(s).slice(0, 10) : '—';
 const ago = (ts) => { if (!ts) return 'never'; const m = Math.round((Date.now() - new Date(ts)) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
@@ -33,7 +35,8 @@ export function renderMarketRatesCC(host) {
   let data = null, tab = 'overview';
   const body = el('div', null, el('div', { class: 'cc-sub' }, 'Loading market data…'));
   const view = el('div', { class: 'cc-view' }, [
-    sectionHead('Market data', 'The one place every weekly number and word on loadboot.com comes from. Publish rebuilds the site; nothing weekly lives in the build any more.'),
+    sectionHead('Market data', 'The one place every weekly number and word on loadboot.com comes from. Publish rebuilds the site; nothing weekly lives in the build any more.',
+      [el('a', { class: 'lb-btn lb-btn-primary', href: RUNBOOK_URL, target: '_blank', rel: 'noopener', title: 'Where to read DAT, EIA and IRS figures and where each goes in this screen (opens in a new tab; private to the owner\'s claude.ai account)' }, 'Weekly guide \u2197')]),
     el('div', { id: 'md-tabs' }),
     body,
   ]);
