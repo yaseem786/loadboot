@@ -115,10 +115,16 @@ export function renderMarketRatesCC(host) {
       const [v, r, f] = nums(); if ([v, r, f].some(isNaN)) return toast('All three anchors are needed', 'error');
       try {
         const rows = await marketRatesPreview(v, r, f);
-        mount(preview, table(['Equipment', 'Carrier $/mi', 'Low – high', 'Now', 'Move', 'How'], rows.map(x => {
+        mount(preview, el('div', { style: 'margin-top:12px' }, [
+          el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px' }, [
+            el('div', { class: 'cc-sub', style: 'margin:0' }, 'Preview — not published yet'),
+            btn('Close preview', () => preview.replaceChildren(), 'lb-btn-ghost'),
+          ]),
+          table(['Equipment', 'Carrier $/mi', 'Low – high', 'Now', 'Move', 'How'], rows.map(x => {
           const c = cur[x.equipment] || {}; const pct = c.rpm_avg ? ((x.rpm_avg - c.rpm_avg) / c.rpm_avg * 100) : null;
           return [x.equipment, D(x.rpm_avg), D(x.rpm_low) + ' – ' + D(x.rpm_high), D(c.rpm_avg), pct == null ? '—' : el('span', { style: Math.abs(pct) > 15 ? 'color:#b91c1c;font-weight:700' : '' }, (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%'), x.basis];
-        })));
+          })),
+        ]));
       } catch (e) { toast(humanizeError(e), 'error'); }
     }
     async function doPublish(confirmed) {
