@@ -70,7 +70,7 @@ number on staging e-mails. Prod is `whatsapp`. Flip staging in CC if you want pa
 ## Prod apply (after the staging test)
 
 1. `apply_migration` the file to `rwscphuhpjoudvljvmdk` (idempotent: `if not exists` / `create or replace` / `on conflict`).
-2. Run the anon SECURITY DEFINER query from `docs/audit-2026-09/anon-secdef-baseline.md` — expect the same 33 names.
+2. Run the anon SECURITY DEFINER query from `docs/audit-2026-09/anon-secdef-baseline.md` — expect **34** names on prod: the staging 33 plus `retell_inbound` (prod-only). Verified 25 Sep 2026 pre-apply: prod reads exactly those 34; the diff vs staging is `retell_inbound` alone.
 3. Compare `md5(pg_get_functiondef)` of the 15 functions between staging and prod.
 4. Deploy the front-end (Netlify build from `main`).
 
