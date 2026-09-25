@@ -1,0 +1,396 @@
+window,dims,query,page,clicks,impressions,ctr,position
+28d 2026-08-26..2026-09-23,page,,https://loadboot.com/market-rates.html,16,4177,0.0038,21.3
+7d 2026-09-16..2026-09-23,page,,https://loadboot.com/market-rates.html,4,1067,0.0037,20.6
+90d 2026-06-25..2026-09-23,page,,https://loadboot.com/market-rates.html,20,6170,0.0032,28.4
+28d 2026-08-26..2026-09-23,"query,page",truckload freight rates,https://loadboot.com/market-rates.html,0,60,0,21.8
+28d 2026-08-26..2026-09-23,"query,page",full truckload rates,https://loadboot.com/market-rates.html,0,48,0,46.0
+28d 2026-08-26..2026-09-23,"query,page",truckload rates,https://loadboot.com/market-rates.html,0,39,0,34.3
+28d 2026-08-26..2026-09-23,"query,page",freight lane rates,https://loadboot.com/market-rates.html,0,38,0,45.8
+28d 2026-08-26..2026-09-23,"query,page",flatbed cost per mile,https://loadboot.com/market-rates.html,0,34,0,34.3
+28d 2026-08-26..2026-09-23,"query,page",current freight rates,https://loadboot.com/market-rates.html,0,33,0,27.2
+28d 2026-08-26..2026-09-23,"query,page",flatbed trucking rates per mile,https://loadboot.com/market-rates.html,0,32,0,34.4
+28d 2026-08-26..2026-09-23,"query,page",trucking rates,https://loadboot.com/market-rates.html,0,32,0,29.3
+28d 2026-08-26..2026-09-23,"query,page",average flatbed trucking rates,https://loadboot.com/market-rates.html,0,30,0,41.3
+28d 2026-08-26..2026-09-23,"query,page",freight rates trucking today,https://loadboot.com/market-rates.html,0,30,0,33.5
+28d 2026-08-26..2026-09-23,"query,page",average flatbed rate per mile,https://loadboot.com/market-rates.html,0,29,0,40.2
+28d 2026-08-26..2026-09-23,"query,page",freight rates for trucking,https://loadboot.com/market-rates.html,0,28,0,46.1
+28d 2026-08-26..2026-09-23,"query,page",truckload rate,https://loadboot.com/market-rates.html,0,28,0,36.8
+28d 2026-08-26..2026-09-23,"query,page",truckload spot rates,https://loadboot.com/market-rates.html,0,25,0,23.7
+28d 2026-08-26..2026-09-23,"query,page",current flatbed rates per mile,https://loadboot.com/market-rates.html,0,24,0,34.2
+28d 2026-08-26..2026-09-23,"query,page",truck freight rates in,https://loadboot.com/market-rates.html,0,24,0,48.6
+28d 2026-08-26..2026-09-23,"query,page",trucking freight rates,https://loadboot.com/market-rates.html,0,24,0,45.0
+28d 2026-08-26..2026-09-23,"query,page",short haul trucking rates,https://loadboot.com/market-rates.html,0,23,0,45.4
+28d 2026-08-26..2026-09-23,"query,page",dry van rates per mile,https://loadboot.com/market-rates.html,0,21,0,30.9
+28d 2026-08-26..2026-09-23,"query,page",flatbed truck freight rates,https://loadboot.com/market-rates.html,0,21,0,48.8
+28d 2026-08-26..2026-09-23,"query,page",power only trucking rates,https://loadboot.com/market-rates.html,0,21,0,36.6
+28d 2026-08-26..2026-09-23,"query,page",truck loads rates,https://loadboot.com/market-rates.html,0,21,0,29.7
+28d 2026-08-26..2026-09-23,"query,page",flatbed truck rates,https://loadboot.com/market-rates.html,0,20,0,49.4
+28d 2026-08-26..2026-09-23,"query,page",reefer rates,https://loadboot.com/market-rates.html,0,19,0,42.7
+28d 2026-08-26..2026-09-23,"query,page",spot market freight rates,https://loadboot.com/market-rates.html,0,19,0,74.9
+28d 2026-08-26..2026-09-23,"query,page",flatbed load rates,https://loadboot.com/market-rates.html,0,18,0,47.7
+28d 2026-08-26..2026-09-23,"query,page",flatbed loads rates,https://loadboot.com/market-rates.html,0,18,0,45.2
+28d 2026-08-26..2026-09-23,"query,page",flatbed spot rates,https://loadboot.com/market-rates.html,0,18,0,33.4
+28d 2026-08-26..2026-09-23,"query,page",freight rates today,https://loadboot.com/market-rates.html,0,18,0,34.6
+28d 2026-08-26..2026-09-23,"query,page",flatbed trucking rates,https://loadboot.com/market-rates.html,0,17,0,43.3
+28d 2026-08-26..2026-09-23,"query,page",spot market rates,https://loadboot.com/market-rates.html,0,16,0,46.1
+28d 2026-08-26..2026-09-23,"query,page",current dry van rates,https://loadboot.com/market-rates.html,0,15,0,21.5
+28d 2026-08-26..2026-09-23,"query,page",average trucking rate per mile,https://loadboot.com/market-rates.html,0,14,0,53.2
+28d 2026-08-26..2026-09-23,"query,page",current freight rates per mile,https://loadboot.com/market-rates.html,0,14,0,25.9
+28d 2026-08-26..2026-09-23,"query,page",freight rate per mile,https://loadboot.com/market-rates.html,0,14,0,46.4
+28d 2026-08-26..2026-09-23,"query,page",truck load rates,https://loadboot.com/market-rates.html,0,13,0,37.8
+28d 2026-08-26..2026-09-23,"query,page",flatbed rate per mile,https://loadboot.com/market-rates.html,0,12,0,40.8
+28d 2026-08-26..2026-09-23,"query,page",truck freight rates,https://loadboot.com/market-rates.html,0,12,0,45.2
+28d 2026-08-26..2026-09-23,"query,page",trucking prices,https://loadboot.com/market-rates.html,0,12,0,39
+28d 2026-08-26..2026-09-23,"query,page",freight market rates,https://loadboot.com/market-rates.html,0,11,0,37.5
+28d 2026-08-26..2026-09-23,"query,page",freight spot rates,https://loadboot.com/market-rates.html,0,11,0,70.5
+28d 2026-08-26..2026-09-23,"query,page",trucking spot rates,https://loadboot.com/market-rates.html,0,11,0,77.8
+28d 2026-08-26..2026-09-23,"query,page",current freight rates for trucking,https://loadboot.com/market-rates.html,0,10,0,36
+28d 2026-08-26..2026-09-23,"query,page",freight rates trucking,https://loadboot.com/market-rates.html,0,10,0,50.7
+28d 2026-08-26..2026-09-23,"query,page",full truck freight rates,https://loadboot.com/market-rates.html,0,10,0,44.8
+28d 2026-08-26..2026-09-23,"query,page",truck freight rates per mile,https://loadboot.com/market-rates.html,0,10,0,42.7
+28d 2026-08-26..2026-09-23,"query,page",truck lines freight rates,https://loadboot.com/market-rates.html,0,10,0,41.8
+28d 2026-08-26..2026-09-23,"query,page",flatbed freight rates,https://loadboot.com/market-rates.html,0,9,0,41.3
+28d 2026-08-26..2026-09-23,"query,page",flatbed rates per mile,https://loadboot.com/market-rates.html,0,9,0,41.8
+28d 2026-08-26..2026-09-23,"query,page",freight rates this week,https://loadboot.com/market-rates.html,0,9,0,29.6
+28d 2026-08-26..2026-09-23,"query,page",reefer full truckload rate,https://loadboot.com/market-rates.html,0,9,0,37.6
+28d 2026-08-26..2026-09-23,"query,page",average freight rate per mile,https://loadboot.com/market-rates.html,0,8,0,49.4
+28d 2026-08-26..2026-09-23,"query,page",current flatbed freight rates,https://loadboot.com/market-rates.html,0,8,0,31.6
+28d 2026-08-26..2026-09-23,"query,page",current trucking rates,https://loadboot.com/market-rates.html,0,8,0,22.6
+28d 2026-08-26..2026-09-23,"query,page",dry van load rates,https://loadboot.com/market-rates.html,0,8,0,34.9
+28d 2026-08-26..2026-09-23,"query,page",freight rates by state,https://loadboot.com/market-rates.html,0,8,0,35.5
+28d 2026-08-26..2026-09-23,"query,page",average freight rates,https://loadboot.com/market-rates.html,0,7,0,42
+28d 2026-08-26..2026-09-23,"query,page",average truckload rate per mile,https://loadboot.com/market-rates.html,0,7,0,51.1
+28d 2026-08-26..2026-09-23,"query,page",current flatbed rates,https://loadboot.com/market-rates.html,0,7,0,38.9
+28d 2026-08-26..2026-09-23,"query,page",dry van market rates,https://loadboot.com/market-rates.html,0,7,0,28.1
+28d 2026-08-26..2026-09-23,"query,page",flatbed rate,https://loadboot.com/market-rates.html,0,7,0,41.4
+28d 2026-08-26..2026-09-23,"query,page",freight rates per mile,https://loadboot.com/market-rates.html,0,7,0,32.3
+28d 2026-08-26..2026-09-23,"query,page",is there a free tool that shows current average spot rates by lane so i can benchmark what a broker is offering me?,https://loadboot.com/market-rates.html,0,7,0,10.3
+28d 2026-08-26..2026-09-23,"query,page",rate per mile trucking,https://loadboot.com/market-rates.html,0,7,0,53.1
+28d 2026-08-26..2026-09-23,"query,page",truck spot rates,https://loadboot.com/market-rates.html,0,7,0,26.1
+28d 2026-08-26..2026-09-23,"query,page",trucking rates per mile,https://loadboot.com/market-rates.html,0,7,0,60.3
+28d 2026-08-26..2026-09-23,"query,page",truckload pricing,https://loadboot.com/market-rates.html,0,7,0,37
+28d 2026-08-26..2026-09-23,"query,page",average reefer rates,https://loadboot.com/market-rates.html,0,6,0,41.3
+28d 2026-08-26..2026-09-23,"query,page",dry van freight rates,https://loadboot.com/market-rates.html,0,6,0,27.8
+28d 2026-08-26..2026-09-23,"query,page",flatbed truck rates per mile,https://loadboot.com/market-rates.html,0,6,0,28.2
+28d 2026-08-26..2026-09-23,"query,page",hopper bottom freight rates,https://loadboot.com/market-rates.html,0,6,0,33.2
+28d 2026-08-26..2026-09-23,"query,page",rates for truck loads,https://loadboot.com/market-rates.html,0,6,0,40.7
+28d 2026-08-26..2026-09-23,"query,page",reefer freight rates,https://loadboot.com/market-rates.html,0,6,0,33.8
+28d 2026-08-26..2026-09-23,"query,page",reefer freight rates per mile,https://loadboot.com/market-rates.html,0,6,0,41.7
+28d 2026-08-26..2026-09-23,"query,page",spot rates trucking,https://loadboot.com/market-rates.html,0,6,0,68
+28d 2026-08-26..2026-09-23,"query,page",truck rates,https://loadboot.com/market-rates.html,0,6,0,34
+28d 2026-08-26..2026-09-23,"query,page",average dry van rate per mile,https://loadboot.com/market-rates.html,0,5,0,43.2
+28d 2026-08-26..2026-09-23,"query,page",current trucking rates per mile,https://loadboot.com/market-rates.html,0,5,0,26.6
+28d 2026-08-26..2026-09-23,"query,page",current truckload rates,https://loadboot.com/market-rates.html,0,5,0,16.8
+28d 2026-08-26..2026-09-23,"query,page",dry van spot rates,https://loadboot.com/market-rates.html,0,5,0,27.8
+28d 2026-08-26..2026-09-23,"query,page",flatbed freight rates per mile,https://loadboot.com/market-rates.html,0,5,0,41.2
+28d 2026-08-26..2026-09-23,"query,page",freight trucking rates,https://loadboot.com/market-rates.html,0,5,0,46.4
+28d 2026-08-26..2026-09-23,"query,page",full load freight rates,https://loadboot.com/market-rates.html,0,5,0,38.6
+28d 2026-08-26..2026-09-23,"query,page",hot shot freight rates,https://loadboot.com/market-rates.html,0,5,0,44.2
+28d 2026-08-26..2026-09-23,"query,page",load rates,https://loadboot.com/market-rates.html,0,5,0,67.4
+28d 2026-08-26..2026-09-23,"query,page",reefer load rates,https://loadboot.com/market-rates.html,0,5,0,43.6
+28d 2026-08-26..2026-09-23,"query,page",trucking load rates,https://loadboot.com/market-rates.html,0,5,0,41.6
+28d 2026-08-26..2026-09-23,"query,page",trucking prices per mile,https://loadboot.com/market-rates.html,0,5,0,58.8
+28d 2026-08-26..2026-09-23,"query,page",truckload freight rate,https://loadboot.com/market-rates.html,0,5,0,43
+28d 2026-08-26..2026-09-23,"query,page",average flatbed freight rate per mile,https://loadboot.com/market-rates.html,0,4,0,39
+28d 2026-08-26..2026-09-23,"query,page",average per mile trucking rate,https://loadboot.com/market-rates.html,0,4,0,63.5
+28d 2026-08-26..2026-09-23,"query,page",box truck freight rates,https://loadboot.com/market-rates.html,0,4,0,37.2
+28d 2026-08-26..2026-09-23,"query,page",box truck rates per mile,https://loadboot.com/market-rates.html,0,4,0,29.5
+28d 2026-08-26..2026-09-23,"query,page",current reefer rates,https://loadboot.com/market-rates.html,0,4,0,31.2
+28d 2026-08-26..2026-09-23,"query,page",dry van average rate per mile,https://loadboot.com/market-rates.html,0,4,0,28
+28d 2026-08-26..2026-09-23,"query,page",dry van rate per mile,https://loadboot.com/market-rates.html,0,4,0,40.5
+28d 2026-08-26..2026-09-23,"query,page",flatbed average per mile,https://loadboot.com/market-rates.html,0,4,0,44.8
+28d 2026-08-26..2026-09-23,"query,page",flatbed rates,https://loadboot.com/market-rates.html,0,4,0,62
+28d 2026-08-26..2026-09-23,"query,page",flatbed shipping rates,https://loadboot.com/market-rates.html,0,4,0,74.8
+28d 2026-08-26..2026-09-23,"query,page",freight prices per mile,https://loadboot.com/market-rates.html,0,4,0,54.8
+28d 2026-08-26..2026-09-23,"query,page",freight rates truckload,https://loadboot.com/market-rates.html,0,4,0,38.5
+28d 2026-08-26..2026-09-23,"query,page",full truckload freight rates,https://loadboot.com/market-rates.html,0,4,0,55.8
+28d 2026-08-26..2026-09-23,"query,page",hotshot rates per mile 2026,https://loadboot.com/market-rates.html,0,4,0,7
+28d 2026-08-26..2026-09-23,"query,page",national average flatbed rates,https://loadboot.com/market-rates.html,0,4,0,35.5
+28d 2026-08-26..2026-09-23,"query,page",national average freight rates,https://loadboot.com/market-rates.html,0,4,0,37.5
+28d 2026-08-26..2026-09-23,"query,page",over the road rates,https://loadboot.com/market-rates.html,0,4,0,39
+28d 2026-08-26..2026-09-23,"query,page",reefer rates today,https://loadboot.com/market-rates.html,0,4,0,25.2
+28d 2026-08-26..2026-09-23,"query,page",reefer spot rates,https://loadboot.com/market-rates.html,0,4,0,27.8
+28d 2026-08-26..2026-09-23,"query,page",refrigerated freight rates,https://loadboot.com/market-rates.html,0,4,0,63.8
+28d 2026-08-26..2026-09-23,"query,page",regional freight rates,https://loadboot.com/market-rates.html,0,4,0,33.8
+28d 2026-08-26..2026-09-23,"query,page",truck load freight rates,https://loadboot.com/market-rates.html,0,4,0,36.8
+28d 2026-08-26..2026-09-23,"query,page",trucking rate per mile,https://loadboot.com/market-rates.html,0,4,0,70
+28d 2026-08-26..2026-09-23,"query,page",truckload freight rates per mile,https://loadboot.com/market-rates.html,0,4,0,40
+28d 2026-08-26..2026-09-23,"query,page",van freight rates,https://loadboot.com/market-rates.html,0,4,0,37.5
+28d 2026-08-26..2026-09-23,"query,page",where do you find spot rates for loads,https://loadboot.com/market-rates.html,0,4,0,30
+28d 2026-08-26..2026-09-23,"query,page",average flatbed rates,https://loadboot.com/market-rates.html,0,3,0,41
+28d 2026-08-26..2026-09-23,"query,page",average trucking rates per mile,https://loadboot.com/market-rates.html,0,3,0,53
+28d 2026-08-26..2026-09-23,"query,page",dry van loads rates,https://loadboot.com/market-rates.html,0,3,0,66.3
+28d 2026-08-26..2026-09-23,"query,page",flatbed rates today,https://loadboot.com/market-rates.html,0,3,0,27.7
+28d 2026-08-26..2026-09-23,"query,page",freight cost per mile,https://loadboot.com/market-rates.html,0,3,0,51.3
+28d 2026-08-26..2026-09-23,"query,page",freight load rates,https://loadboot.com/market-rates.html,0,3,0,42.3
+28d 2026-08-26..2026-09-23,"query,page",hauling rates per mile,https://loadboot.com/market-rates.html,0,3,0,62.7
+28d 2026-08-26..2026-09-23,"query,page",produce freight rates,https://loadboot.com/market-rates.html,0,3,0,58.7
+28d 2026-08-26..2026-09-23,"query,page",rate trucking,https://loadboot.com/market-rates.html,0,3,0,48.3
+28d 2026-08-26..2026-09-23,"query,page",reefer freight rates 2023,https://loadboot.com/market-rates.html,0,3,0,47
+28d 2026-08-26..2026-09-23,"query,page",semi freight rates,https://loadboot.com/market-rates.html,0,3,0,37.7
+28d 2026-08-26..2026-09-23,"query,page",trucking rates per mile 2025,https://loadboot.com/market-rates.html,0,3,0,73
+28d 2026-08-26..2026-09-23,"query,page",what are truckload rates right now?,https://loadboot.com/market-rates.html,0,3,0,11
+28d 2026-08-26..2026-09-23,"query,page",what is the average freight rate per mile,https://loadboot.com/market-rates.html,0,3,0,61.3
+28d 2026-08-26..2026-09-23,"query,page",average rate per mile dry van,https://loadboot.com/market-rates.html,0,2,0,39
+28d 2026-08-26..2026-09-23,"query,page",average rate per mile for flatbed,https://loadboot.com/market-rates.html,0,2,0,41.5
+28d 2026-08-26..2026-09-23,"query,page",box truck rates per mile 2026,https://loadboot.com/market-rates.html,0,2,0,7.5
+28d 2026-08-26..2026-09-23,"query,page",cargo van load rates,https://loadboot.com/market-rates.html,0,2,0,40.5
+28d 2026-08-26..2026-09-23,"query,page",cross-border trucking rates,https://loadboot.com/market-rates.html,0,2,0,79.5
+28d 2026-08-26..2026-09-23,"query,page",flat bed rates,https://loadboot.com/market-rates.html,0,2,0,81
+28d 2026-08-26..2026-09-23,"query,page",flatbed rates march 2024,https://loadboot.com/market-rates.html,0,2,0,48.5
+28d 2026-08-26..2026-09-23,"query,page",freight hauling rates,https://loadboot.com/market-rates.html,0,2,0,38.5
+28d 2026-08-26..2026-09-23,"query,page",freight spot rate,https://loadboot.com/market-rates.html,0,2,0,81.5
+28d 2026-08-26..2026-09-23,"query,page",freight truck rates,https://loadboot.com/market-rates.html,0,2,0,31
+28d 2026-08-26..2026-09-23,"query,page",full truck load cost per mile,https://loadboot.com/market-rates.html,0,2,0,52
+28d 2026-08-26..2026-09-23,"query,page",full truck load rates,https://loadboot.com/market-rates.html,0,2,0,46.5
+28d 2026-08-26..2026-09-23,"query,page",hotshot freight rates,https://loadboot.com/market-rates.html,0,2,0,44
+28d 2026-08-26..2026-09-23,"query,page",lowboy trucking rates,https://loadboot.com/market-rates.html,0,2,0,42
+28d 2026-08-26..2026-09-23,"query,page",national average rate per mile,https://loadboot.com/market-rates.html,0,2,0,60.5
+28d 2026-08-26..2026-09-23,"query,page",national flatbed rates,https://loadboot.com/market-rates.html,0,2,0,36.5
+28d 2026-08-26..2026-09-23,"query,page",national reefer rates,https://loadboot.com/market-rates.html,0,2,0,36
+28d 2026-08-26..2026-09-23,"query,page",oversized trucking rates,https://loadboot.com/market-rates.html,0,2,0,70
+28d 2026-08-26..2026-09-23,"query,page",owner operator loads rates,https://loadboot.com/market-rates.html,0,2,0,51
+28d 2026-08-26..2026-09-23,"query,page",power only freight rates,https://loadboot.com/market-rates.html,0,2,0,40
+28d 2026-08-26..2026-09-23,"query,page",rate index for trucking,https://loadboot.com/market-rates.html,0,2,0,59.5
+28d 2026-08-26..2026-09-23,"query,page",rate per mile 2020,https://loadboot.com/market-rates.html,0,2,0,74.5
+28d 2026-08-26..2026-09-23,"query,page",reefer loads rates,https://loadboot.com/market-rates.html,0,2,0,47
+28d 2026-08-26..2026-09-23,"query,page",reefer rate,https://loadboot.com/market-rates.html,0,2,0,61
+28d 2026-08-26..2026-09-23,"query,page",spot freight rate,https://loadboot.com/market-rates.html,0,2,0,92.5
+28d 2026-08-26..2026-09-23,"query,page",spot rate trucking,https://loadboot.com/market-rates.html,0,2,0,69
+28d 2026-08-26..2026-09-23,"query,page",spot trucking rates,https://loadboot.com/market-rates.html,0,2,0,70.5
+28d 2026-08-26..2026-09-23,"query,page",truck freight prices,https://loadboot.com/market-rates.html,0,2,0,45.5
+28d 2026-08-26..2026-09-23,"query,page",truck freight rates from,https://loadboot.com/market-rates.html,0,2,0,52.5
+28d 2026-08-26..2026-09-23,"query,page",truck freight rates rates,https://loadboot.com/market-rates.html,0,2,0,42.5
+28d 2026-08-26..2026-09-23,"query,page",truck load rate,https://loadboot.com/market-rates.html,0,2,0,42.5
+28d 2026-08-26..2026-09-23,"query,page",truck loads price,https://loadboot.com/market-rates.html,0,2,0,47.5
+28d 2026-08-26..2026-09-23,"query,page",truck rates per mile,https://loadboot.com/market-rates.html,0,2,0,49
+28d 2026-08-26..2026-09-23,"query,page",trucking freight rates chart,https://loadboot.com/market-rates.html,0,2,0,33.5
+28d 2026-08-26..2026-09-23,"query,page",trucking rate,https://loadboot.com/market-rates.html,0,2,0,48.5
+28d 2026-08-26..2026-09-23,"query,page",trucking rates per mile 2024,https://loadboot.com/market-rates.html,0,2,0,63.5
+28d 2026-08-26..2026-09-23,"query,page",van truckload rate,https://loadboot.com/market-rates.html,0,2,0,30
+28d 2026-08-26..2026-09-23,"query,page",yes,https://loadboot.com/market-rates.html,0,2,0,16.5
+28d 2026-08-26..2026-09-23,"query,page",26ft box truck rate per mile,https://loadboot.com/market-rates.html,0,1,0,29
+28d 2026-08-26..2026-09-23,"query,page",alfalfa pellets,https://loadboot.com/market-rates.html,0,1,0,2
+28d 2026-08-26..2026-09-23,"query,page",average freight rate,https://loadboot.com/market-rates.html,0,1,0,50
+28d 2026-08-26..2026-09-23,"query,page",average rate per mile,https://loadboot.com/market-rates.html,0,1,0,47
+28d 2026-08-26..2026-09-23,"query,page",average rate per mile for trucking,https://loadboot.com/market-rates.html,0,1,0,71
+28d 2026-08-26..2026-09-23,"query,page",average rate per mile trucking,https://loadboot.com/market-rates.html,0,1,0,74
+28d 2026-08-26..2026-09-23,"query,page",average reefer rate per mile,https://loadboot.com/market-rates.html,0,1,0,56
+28d 2026-08-26..2026-09-23,"query,page",backhaul trucking rates,https://loadboot.com/market-rates.html,0,1,0,41
+28d 2026-08-26..2026-09-23,"query,page",best trucking rates,https://loadboot.com/market-rates.html,0,1,0,23
+28d 2026-08-26..2026-09-23,"query,page",box truck load rates,https://loadboot.com/market-rates.html,0,1,0,47
+28d 2026-08-26..2026-09-23,"query,page",bulk load board rates,https://loadboot.com/market-rates.html,0,1,0,3
+28d 2026-08-26..2026-09-23,"query,page",canastoga,https://loadboot.com/market-rates.html,0,1,0,3
+28d 2026-08-26..2026-09-23,"query,page",cargo van freight rates,https://loadboot.com/market-rates.html,0,1,0,41
+28d 2026-08-26..2026-09-23,"query,page",cargo van rate per mile,https://loadboot.com/market-rates.html,0,1,0,49
+28d 2026-08-26..2026-09-23,"query,page",commercial truck business,https://loadboot.com/market-rates.html,0,1,0,1
+28d 2026-08-26..2026-09-23,"query,page",current dry van rates per mile,https://loadboot.com/market-rates.html,0,1,0,1
+28d 2026-08-26..2026-09-23,"query,page",current market rate,https://loadboot.com/market-rates.html,0,1,0,3
+28d 2026-08-26..2026-09-23,"query,page",current spot rates trucking,https://loadboot.com/market-rates.html,0,1,0,11
+28d 2026-08-26..2026-09-23,"query,page",dry van,https://loadboot.com/market-rates.html,0,1,0,2
+28d 2026-08-26..2026-09-23,"query,page",dry van freight rates today,https://loadboot.com/market-rates.html,0,1,0,51
+28d 2026-08-26..2026-09-23,"query,page",dry van rates 2024,https://loadboot.com/market-rates.html,0,1,0,42
+28d 2026-08-26..2026-09-23,"query,page",dry van rates today,https://loadboot.com/market-rates.html,0,1,0,11
+28d 2026-08-26..2026-09-23,"query,page",dump truck hauling rates per mile,https://loadboot.com/market-rates.html,0,1,0,63
+28d 2026-08-26..2026-09-23,"query,page",flatbed freight rate,https://loadboot.com/market-rates.html,0,1,0,41
+28d 2026-08-26..2026-09-23,"query,page",flatbed national rates,https://loadboot.com/market-rates.html,0,1,0,32
+28d 2026-08-26..2026-09-23,"query,page",flatbed shipping rates per mile,https://loadboot.com/market-rates.html,0,1,0,52
+28d 2026-08-26..2026-09-23,"query,page",flatbed truck shipping rates,https://loadboot.com/market-rates.html,0,1,0,67
+28d 2026-08-26..2026-09-23,"query,page",flatbed trucking rates per mile 2023,https://loadboot.com/market-rates.html,0,1,0,38
+28d 2026-08-26..2026-09-23,"query,page",freight lanes and rates,https://loadboot.com/market-rates.html,0,1,0,53
+28d 2026-08-26..2026-09-23,"query,page",freight rates per pallet,https://loadboot.com/market-rates.html,0,1,0,98
+28d 2026-08-26..2026-09-23,"query,page",hauling rates,https://loadboot.com/market-rates.html,0,1,0,55
+28d 2026-08-26..2026-09-23,"query,page",hot shot rate calculator,https://loadboot.com/market-rates.html,0,1,0,79
+28d 2026-08-26..2026-09-23,"query,page",how do i find out the going rate for a specific lane before i call a broker to negotiate?,https://loadboot.com/market-rates.html,0,1,0,3
+28d 2026-08-26..2026-09-23,"query,page",how much should i get paid,https://loadboot.com/market-rates.html,0,1,0,1
+28d 2026-08-26..2026-09-23,"query,page",intermodal trucking rates,https://loadboot.com/market-rates.html,0,1,0,62
+28d 2026-08-26..2026-09-23,"query,page",is there a trucking app that shows me both the current market rate and the broker's estimated margin on a load?,https://loadboot.com/market-rates.html,0,1,0,5
+28d 2026-08-26..2026-09-23,"query,page",line haul rate,https://loadboot.com/market-rates.html,0,1,0,23
+28d 2026-08-26..2026-09-23,"query,page",line haul rates,https://loadboot.com/market-rates.html,0,1,0,47
+28d 2026-08-26..2026-09-23,"query,page",linehaul rate,https://loadboot.com/market-rates.html,0,1,0,24
+28d 2026-08-26..2026-09-23,"query,page",livestock hauling rates per mile 2025,https://loadboot.com/market-rates.html,0,1,0,49
+28d 2026-08-26..2026-09-23,"query,page",load board prices,https://loadboot.com/market-rates.html,0,1,0,50
+28d 2026-08-26..2026-09-23,"query,page",loadboot,https://loadboot.com/market-rates.html,0,1,0,1
+28d 2026-08-26..2026-09-23,"query,page",loaded mile trucking rate,https://loadboot.com/market-rates.html,0,1,0,65
+28d 2026-08-26..2026-09-23,"query,page",national freight rates,https://loadboot.com/market-rates.html,0,1,0,34
+28d 2026-08-26..2026-09-23,"query,page",pallet trucking rates,https://loadboot.com/market-rates.html,0,1,0,97
+28d 2026-08-26..2026-09-23,"query,page",per mile trucking rates,https://loadboot.com/market-rates.html,0,1,0,68
+28d 2026-08-26..2026-09-23,"query,page",power only,https://loadboot.com/market-rates.html,0,1,0,2
+28d 2026-08-26..2026-09-23,"query,page",price per mile,https://loadboot.com/market-rates.html,0,1,0,2
+28d 2026-08-26..2026-09-23,"query,page",prices,https://loadboot.com/market-rates.html,0,1,0,2
+28d 2026-08-26..2026-09-23,"query,page",reefer rate per mile,https://loadboot.com/market-rates.html,0,1,0,35
+28d 2026-08-26..2026-09-23,"query,page",reefer truck load rates,https://loadboot.com/market-rates.html,0,1,0,54
+28d 2026-08-26..2026-09-23,"query,page",southeast region,https://loadboot.com/market-rates.html,0,1,0,2
+28d 2026-08-26..2026-09-23,"query,page",spot,https://loadboot.com/market-rates.html,0,1,0,13
+28d 2026-08-26..2026-09-23,"query,page",spot freight rates,https://loadboot.com/market-rates.html,0,1,0,59
+28d 2026-08-26..2026-09-23,"query,page",spot truckload capacity broker,https://loadboot.com/market-rates.html,0,1,0,34
+28d 2026-08-26..2026-09-23,"query,page",step deck freight rates,https://loadboot.com/market-rates.html,0,1,0,80
+28d 2026-08-26..2026-09-23,"query,page",toll real-time freight rates,https://loadboot.com/market-rates.html,0,1,0,41
+28d 2026-08-26..2026-09-23,"query,page",truck freight rate per mile,https://loadboot.com/market-rates.html,0,1,0,45
+28d 2026-08-26..2026-09-23,"query,page",truck load pricing,https://loadboot.com/market-rates.html,0,1,0,29
+28d 2026-08-26..2026-09-23,"query,page",truck rate per mile,https://loadboot.com/market-rates.html,0,1,0,68
+28d 2026-08-26..2026-09-23,"query,page",truck rates today,https://loadboot.com/market-rates.html,0,1,0,10
+28d 2026-08-26..2026-09-23,"query,page",trucking per mile rates,https://loadboot.com/market-rates.html,0,1,0,68
+28d 2026-08-26..2026-09-23,"query,page",trucking rates chart,https://loadboot.com/market-rates.html,0,1,0,48
+28d 2026-08-26..2026-09-23,"query,page",trucking rates per mile 2023,https://loadboot.com/market-rates.html,0,1,0,53
+28d 2026-08-26..2026-09-23,"query,page",trucking rates today,https://loadboot.com/market-rates.html,0,1,0,15
+28d 2026-08-26..2026-09-23,"query,page",trucking spot rate,https://loadboot.com/market-rates.html,0,1,0,68
+28d 2026-08-26..2026-09-23,"query,page",uber freight rates per mile,https://loadboot.com/market-rates.html,0,1,0,22
+28d 2026-08-26..2026-09-23,"query,page",us freight rates,https://loadboot.com/market-rates.html,0,1,0,78
+28d 2026-08-26..2026-09-23,"query,page",us truck freight rates,https://loadboot.com/market-rates.html,0,1,0,50
+28d 2026-08-26..2026-09-23,"query,page",us trucking rates,https://loadboot.com/market-rates.html,0,1,0,59
+28d 2026-08-26..2026-09-23,"query,page",us truckload rates,https://loadboot.com/market-rates.html,0,1,0,43
+28d 2026-08-26..2026-09-23,"query,page",what is the average charge per mile for a full truckload,https://loadboot.com/market-rates.html,0,1,0,73
+28d 2026-08-26..2026-09-23,"query,page",what is the average trucking rate per mile,https://loadboot.com/market-rates.html,0,1,0,48
+28d 2026-08-26..2026-09-23,"query,page",what is the going rate for freight per mile,https://loadboot.com/market-rates.html,0,1,0,54
+28d 2026-08-26..2026-09-23,"query,page",what is the going rate for hauling freight?,https://loadboot.com/market-rates.html,0,1,0,6
+28d 2026-08-26..2026-09-23,"query,page",what is the spot rate,https://loadboot.com/market-rates.html,0,1,0,8
+28d 2026-08-26..2026-09-23,"query,page",what trucking app provides rate-per-mile benchmarks by lane so i always know what to charge before i negotiate?,https://loadboot.com/market-rates.html,0,1,0,5
+28d 2026-08-26..2026-09-23,"query,page",كيف,https://loadboot.com/market-rates.html,0,1,0,8
+7d 2026-09-16..2026-09-23,"query,page",truckload rates,https://loadboot.com/market-rates.html,0,14,0,22.6
+7d 2026-09-16..2026-09-23,"query,page",freight rates for trucking,https://loadboot.com/market-rates.html,0,10,0,45
+7d 2026-09-16..2026-09-23,"query,page",average flatbed rate per mile,https://loadboot.com/market-rates.html,0,9,0,37.7
+7d 2026-09-16..2026-09-23,"query,page",average flatbed trucking rates,https://loadboot.com/market-rates.html,0,9,0,41.8
+7d 2026-09-16..2026-09-23,"query,page",dry van rates per mile,https://loadboot.com/market-rates.html,0,9,0,27.9
+7d 2026-09-16..2026-09-23,"query,page",flatbed cost per mile,https://loadboot.com/market-rates.html,0,9,0,33.3
+7d 2026-09-16..2026-09-23,"query,page",flatbed trucking rates,https://loadboot.com/market-rates.html,0,9,0,43.2
+7d 2026-09-16..2026-09-23,"query,page",reefer full truckload rate,https://loadboot.com/market-rates.html,0,9,0,37.6
+7d 2026-09-16..2026-09-23,"query,page",current flatbed rates per mile,https://loadboot.com/market-rates.html,0,8,0,26.6
+7d 2026-09-16..2026-09-23,"query,page",dry van load rates,https://loadboot.com/market-rates.html,0,8,0,34.9
+7d 2026-09-16..2026-09-23,"query,page",flatbed spot rates,https://loadboot.com/market-rates.html,0,8,0,33.5
+7d 2026-09-16..2026-09-23,"query,page",flatbed truck freight rates,https://loadboot.com/market-rates.html,0,8,0,43.6
+7d 2026-09-16..2026-09-23,"query,page",flatbed trucking rates per mile,https://loadboot.com/market-rates.html,0,8,0,32.8
+7d 2026-09-16..2026-09-23,"query,page",freight rates trucking today,https://loadboot.com/market-rates.html,0,8,0,36
+7d 2026-09-16..2026-09-23,"query,page",reefer rates,https://loadboot.com/market-rates.html,0,8,0,40.9
+7d 2026-09-16..2026-09-23,"query,page",spot market rates,https://loadboot.com/market-rates.html,0,8,0,38.2
+7d 2026-09-16..2026-09-23,"query,page",truckload freight rates,https://loadboot.com/market-rates.html,0,8,0,39.4
+7d 2026-09-16..2026-09-23,"query,page",truckload rate,https://loadboot.com/market-rates.html,0,8,0,34.5
+7d 2026-09-16..2026-09-23,"query,page",dry van market rates,https://loadboot.com/market-rates.html,0,7,0,28.1
+7d 2026-09-16..2026-09-23,"query,page",flatbed load rates,https://loadboot.com/market-rates.html,0,7,0,41.1
+7d 2026-09-16..2026-09-23,"query,page",full truckload rates,https://loadboot.com/market-rates.html,0,7,0,45.7
+7d 2026-09-16..2026-09-23,"query,page",trucking rates,https://loadboot.com/market-rates.html,0,7,0,41.3
+7d 2026-09-16..2026-09-23,"query,page",current freight rates,https://loadboot.com/market-rates.html,0,6,0,35.8
+7d 2026-09-16..2026-09-23,"query,page",dry van freight rates,https://loadboot.com/market-rates.html,0,6,0,27.8
+7d 2026-09-16..2026-09-23,"query,page",flatbed loads rates,https://loadboot.com/market-rates.html,0,6,0,42.5
+7d 2026-09-16..2026-09-23,"query,page",freight lane rates,https://loadboot.com/market-rates.html,0,6,0,52.5
+7d 2026-09-16..2026-09-23,"query,page",freight rates today,https://loadboot.com/market-rates.html,0,6,0,36.2
+7d 2026-09-16..2026-09-23,"query,page",flatbed freight rates,https://loadboot.com/market-rates.html,0,5,0,39.8
+7d 2026-09-16..2026-09-23,"query,page",flatbed rate per mile,https://loadboot.com/market-rates.html,0,5,0,33.2
+7d 2026-09-16..2026-09-23,"query,page",flatbed truck rates,https://loadboot.com/market-rates.html,0,5,0,44.4
+7d 2026-09-16..2026-09-23,"query,page",freight rate per mile,https://loadboot.com/market-rates.html,0,5,0,44
+7d 2026-09-16..2026-09-23,"query,page",freight rates trucking,https://loadboot.com/market-rates.html,0,5,0,49.8
+7d 2026-09-16..2026-09-23,"query,page",full load freight rates,https://loadboot.com/market-rates.html,0,5,0,38.6
+7d 2026-09-16..2026-09-23,"query,page",short haul trucking rates,https://loadboot.com/market-rates.html,0,5,0,47.4
+7d 2026-09-16..2026-09-23,"query,page",truck freight rates in,https://loadboot.com/market-rates.html,0,5,0,47.4
+7d 2026-09-16..2026-09-23,"query,page",truckload spot rates,https://loadboot.com/market-rates.html,0,5,0,20.8
+7d 2026-09-16..2026-09-23,"query,page",dry van spot rates,https://loadboot.com/market-rates.html,0,4,0,29.8
+7d 2026-09-16..2026-09-23,"query,page",flatbed rate,https://loadboot.com/market-rates.html,0,4,0,41.2
+7d 2026-09-16..2026-09-23,"query,page",flatbed shipping rates,https://loadboot.com/market-rates.html,0,4,0,74.8
+7d 2026-09-16..2026-09-23,"query,page",national average flatbed rates,https://loadboot.com/market-rates.html,0,4,0,35.5
+7d 2026-09-16..2026-09-23,"query,page",refrigerated freight rates,https://loadboot.com/market-rates.html,0,4,0,63.8
+7d 2026-09-16..2026-09-23,"query,page",average freight rate per mile,https://loadboot.com/market-rates.html,0,3,0,45
+7d 2026-09-16..2026-09-23,"query,page",average freight rates,https://loadboot.com/market-rates.html,0,3,0,37.3
+7d 2026-09-16..2026-09-23,"query,page",average reefer rates,https://loadboot.com/market-rates.html,0,3,0,42.3
+7d 2026-09-16..2026-09-23,"query,page",flatbed rates,https://loadboot.com/market-rates.html,0,3,0,59.3
+7d 2026-09-16..2026-09-23,"query,page",flatbed rates per mile,https://loadboot.com/market-rates.html,0,3,0,33.7
+7d 2026-09-16..2026-09-23,"query,page",flatbed truck rates per mile,https://loadboot.com/market-rates.html,0,3,0,24.3
+7d 2026-09-16..2026-09-23,"query,page",freight rates per mile,https://loadboot.com/market-rates.html,0,3,0,28.3
+7d 2026-09-16..2026-09-23,"query,page",freight rates this week,https://loadboot.com/market-rates.html,0,3,0,26
+7d 2026-09-16..2026-09-23,"query,page",truck freight rates,https://loadboot.com/market-rates.html,0,3,0,48.3
+7d 2026-09-16..2026-09-23,"query,page",truck load rates,https://loadboot.com/market-rates.html,0,3,0,38
+7d 2026-09-16..2026-09-23,"query,page",truck rates,https://loadboot.com/market-rates.html,0,3,0,35
+7d 2026-09-16..2026-09-23,"query,page",trucking freight rates,https://loadboot.com/market-rates.html,0,3,0,40
+7d 2026-09-16..2026-09-23,"query,page",trucking prices,https://loadboot.com/market-rates.html,0,3,0,36.7
+7d 2026-09-16..2026-09-23,"query,page",trucking prices per mile,https://loadboot.com/market-rates.html,0,3,0,55.3
+7d 2026-09-16..2026-09-23,"query,page",average dry van rate per mile,https://loadboot.com/market-rates.html,0,2,0,41.5
+7d 2026-09-16..2026-09-23,"query,page",average flatbed rates,https://loadboot.com/market-rates.html,0,2,0,41
+7d 2026-09-16..2026-09-23,"query,page",box truck freight rates,https://loadboot.com/market-rates.html,0,2,0,36
+7d 2026-09-16..2026-09-23,"query,page",current flatbed freight rates,https://loadboot.com/market-rates.html,0,2,0,30
+7d 2026-09-16..2026-09-23,"query,page",current freight rates for trucking,https://loadboot.com/market-rates.html,0,2,0,33.5
+7d 2026-09-16..2026-09-23,"query,page",current freight rates per mile,https://loadboot.com/market-rates.html,0,2,0,29.5
+7d 2026-09-16..2026-09-23,"query,page",current trucking rates,https://loadboot.com/market-rates.html,0,2,0,27.5
+7d 2026-09-16..2026-09-23,"query,page",dry van rate per mile,https://loadboot.com/market-rates.html,0,2,0,29.5
+7d 2026-09-16..2026-09-23,"query,page",freight market rates,https://loadboot.com/market-rates.html,0,2,0,34
+7d 2026-09-16..2026-09-23,"query,page",freight spot rates,https://loadboot.com/market-rates.html,0,2,0,66.5
+7d 2026-09-16..2026-09-23,"query,page",freight trucking rates,https://loadboot.com/market-rates.html,0,2,0,50.5
+7d 2026-09-16..2026-09-23,"query,page",full truck freight rates,https://loadboot.com/market-rates.html,0,2,0,42
+7d 2026-09-16..2026-09-23,"query,page",full truckload freight rates,https://loadboot.com/market-rates.html,0,2,0,51
+7d 2026-09-16..2026-09-23,"query,page",national flatbed rates,https://loadboot.com/market-rates.html,0,2,0,36.5
+7d 2026-09-16..2026-09-23,"query,page",national reefer rates,https://loadboot.com/market-rates.html,0,2,0,36
+7d 2026-09-16..2026-09-23,"query,page",rates for truck loads,https://loadboot.com/market-rates.html,0,2,0,42
+7d 2026-09-16..2026-09-23,"query,page",regional freight rates,https://loadboot.com/market-rates.html,0,2,0,42.5
+7d 2026-09-16..2026-09-23,"query,page",spot rate trucking,https://loadboot.com/market-rates.html,0,2,0,69
+7d 2026-09-16..2026-09-23,"query,page",spot rates trucking,https://loadboot.com/market-rates.html,0,2,0,70.5
+7d 2026-09-16..2026-09-23,"query,page",truck freight rates per mile,https://loadboot.com/market-rates.html,0,2,0,45.5
+7d 2026-09-16..2026-09-23,"query,page",truck load freight rates,https://loadboot.com/market-rates.html,0,2,0,38
+7d 2026-09-16..2026-09-23,"query,page",truck loads rates,https://loadboot.com/market-rates.html,0,2,0,34
+7d 2026-09-16..2026-09-23,"query,page",truckload freight rates per mile,https://loadboot.com/market-rates.html,0,2,0,36
+7d 2026-09-16..2026-09-23,"query,page",truckload pricing,https://loadboot.com/market-rates.html,0,2,0,33
+7d 2026-09-16..2026-09-23,"query,page",what are truckload rates right now?,https://loadboot.com/market-rates.html,0,2,0,11
+7d 2026-09-16..2026-09-23,"query,page",alfalfa pellets,https://loadboot.com/market-rates.html,0,1,0,2
+7d 2026-09-16..2026-09-23,"query,page",average rate per mile dry van,https://loadboot.com/market-rates.html,0,1,0,32
+7d 2026-09-16..2026-09-23,"query,page",average trucking rate per mile,https://loadboot.com/market-rates.html,0,1,0,83
+7d 2026-09-16..2026-09-23,"query,page",average trucking rates per mile,https://loadboot.com/market-rates.html,0,1,0,51
+7d 2026-09-16..2026-09-23,"query,page",average truckload rate per mile,https://loadboot.com/market-rates.html,0,1,0,45
+7d 2026-09-16..2026-09-23,"query,page",best trucking rates,https://loadboot.com/market-rates.html,0,1,0,23
+7d 2026-09-16..2026-09-23,"query,page",box truck rates per mile 2026,https://loadboot.com/market-rates.html,0,1,0,8
+7d 2026-09-16..2026-09-23,"query,page",bulk load board rates,https://loadboot.com/market-rates.html,0,1,0,3
+7d 2026-09-16..2026-09-23,"query,page",commercial truck business,https://loadboot.com/market-rates.html,0,1,0,1
+7d 2026-09-16..2026-09-23,"query,page",current dry van rates,https://loadboot.com/market-rates.html,0,1,0,27
+7d 2026-09-16..2026-09-23,"query,page",current flatbed rates,https://loadboot.com/market-rates.html,0,1,0,34
+7d 2026-09-16..2026-09-23,"query,page",current spot rates trucking,https://loadboot.com/market-rates.html,0,1,0,11
+7d 2026-09-16..2026-09-23,"query,page",current truckload rates,https://loadboot.com/market-rates.html,0,1,0,24
+7d 2026-09-16..2026-09-23,"query,page",dry van,https://loadboot.com/market-rates.html,0,1,0,2
+7d 2026-09-16..2026-09-23,"query,page",dry van average rate per mile,https://loadboot.com/market-rates.html,0,1,0,34
+7d 2026-09-16..2026-09-23,"query,page",dry van rates 2024,https://loadboot.com/market-rates.html,0,1,0,42
+7d 2026-09-16..2026-09-23,"query,page",flat bed rates,https://loadboot.com/market-rates.html,0,1,0,83
+7d 2026-09-16..2026-09-23,"query,page",flatbed freight rate,https://loadboot.com/market-rates.html,0,1,0,41
+7d 2026-09-16..2026-09-23,"query,page",flatbed national rates,https://loadboot.com/market-rates.html,0,1,0,32
+7d 2026-09-16..2026-09-23,"query,page",flatbed rates today,https://loadboot.com/market-rates.html,0,1,0,15
+7d 2026-09-16..2026-09-23,"query,page",flatbed truck shipping rates,https://loadboot.com/market-rates.html,0,1,0,67
+7d 2026-09-16..2026-09-23,"query,page",freight lanes and rates,https://loadboot.com/market-rates.html,0,1,0,53
+7d 2026-09-16..2026-09-23,"query,page",freight prices per mile,https://loadboot.com/market-rates.html,0,1,0,53
+7d 2026-09-16..2026-09-23,"query,page",freight rates by state,https://loadboot.com/market-rates.html,0,1,0,38
+7d 2026-09-16..2026-09-23,"query,page",freight rates per pallet,https://loadboot.com/market-rates.html,0,1,0,98
+7d 2026-09-16..2026-09-23,"query,page",freight rates truckload,https://loadboot.com/market-rates.html,0,1,0,27
+7d 2026-09-16..2026-09-23,"query,page",freight truck rates,https://loadboot.com/market-rates.html,0,1,0,42
+7d 2026-09-16..2026-09-23,"query,page",hopper bottom freight rates,https://loadboot.com/market-rates.html,0,1,0,41
+7d 2026-09-16..2026-09-23,"query,page",hot shot freight rates,https://loadboot.com/market-rates.html,0,1,0,56
+7d 2026-09-16..2026-09-23,"query,page",hot shot rate calculator,https://loadboot.com/market-rates.html,0,1,0,79
+7d 2026-09-16..2026-09-23,"query,page",hotshot freight rates,https://loadboot.com/market-rates.html,0,1,0,55
+7d 2026-09-16..2026-09-23,"query,page",intermodal trucking rates,https://loadboot.com/market-rates.html,0,1,0,62
+7d 2026-09-16..2026-09-23,"query,page",load board prices,https://loadboot.com/market-rates.html,0,1,0,50
+7d 2026-09-16..2026-09-23,"query,page",load rates,https://loadboot.com/market-rates.html,0,1,0,32
+7d 2026-09-16..2026-09-23,"query,page",national average freight rates,https://loadboot.com/market-rates.html,0,1,0,32
+7d 2026-09-16..2026-09-23,"query,page",national freight rates,https://loadboot.com/market-rates.html,0,1,0,34
+7d 2026-09-16..2026-09-23,"query,page",owner operator loads rates,https://loadboot.com/market-rates.html,0,1,0,56
+7d 2026-09-16..2026-09-23,"query,page",pallet trucking rates,https://loadboot.com/market-rates.html,0,1,0,97
+7d 2026-09-16..2026-09-23,"query,page",power only freight rates,https://loadboot.com/market-rates.html,0,1,0,54
+7d 2026-09-16..2026-09-23,"query,page",produce freight rates,https://loadboot.com/market-rates.html,0,1,0,52
+7d 2026-09-16..2026-09-23,"query,page",rate trucking,https://loadboot.com/market-rates.html,0,1,0,45
+7d 2026-09-16..2026-09-23,"query,page",reefer freight rates,https://loadboot.com/market-rates.html,0,1,0,45
+7d 2026-09-16..2026-09-23,"query,page",reefer freight rates per mile,https://loadboot.com/market-rates.html,0,1,0,74
+7d 2026-09-16..2026-09-23,"query,page",reefer load rates,https://loadboot.com/market-rates.html,0,1,0,36
+7d 2026-09-16..2026-09-23,"query,page",reefer rates today,https://loadboot.com/market-rates.html,0,1,0,11
+7d 2026-09-16..2026-09-23,"query,page",semi freight rates,https://loadboot.com/market-rates.html,0,1,0,39
+7d 2026-09-16..2026-09-23,"query,page",southeast region,https://loadboot.com/market-rates.html,0,1,0,2
+7d 2026-09-16..2026-09-23,"query,page",spot,https://loadboot.com/market-rates.html,0,1,0,13
+7d 2026-09-16..2026-09-23,"query,page",spot freight rate,https://loadboot.com/market-rates.html,0,1,0,88
+7d 2026-09-16..2026-09-23,"query,page",spot freight rates,https://loadboot.com/market-rates.html,0,1,0,59
+7d 2026-09-16..2026-09-23,"query,page",spot market freight rates,https://loadboot.com/market-rates.html,0,1,0,40
+7d 2026-09-16..2026-09-23,"query,page",spot truckload capacity broker,https://loadboot.com/market-rates.html,0,1,0,34
+7d 2026-09-16..2026-09-23,"query,page",step deck freight rates,https://loadboot.com/market-rates.html,0,1,0,80
+7d 2026-09-16..2026-09-23,"query,page",toll real-time freight rates,https://loadboot.com/market-rates.html,0,1,0,41
+7d 2026-09-16..2026-09-23,"query,page",truck freight rates from,https://loadboot.com/market-rates.html,0,1,0,52
+7d 2026-09-16..2026-09-23,"query,page",truck freight rates rates,https://loadboot.com/market-rates.html,0,1,0,44
+7d 2026-09-16..2026-09-23,"query,page",truck lines freight rates,https://loadboot.com/market-rates.html,0,1,0,46
+7d 2026-09-16..2026-09-23,"query,page",truck rates per mile,https://loadboot.com/market-rates.html,0,1,0,51
+7d 2026-09-16..2026-09-23,"query,page",truck spot rates,https://loadboot.com/market-rates.html,0,1,0,20
+7d 2026-09-16..2026-09-23,"query,page",trucking freight rates chart,https://loadboot.com/market-rates.html,0,1,0,34
+7d 2026-09-16..2026-09-23,"query,page",trucking rates per mile,https://loadboot.com/market-rates.html,0,1,0,58
+7d 2026-09-16..2026-09-23,"query,page",trucking rates per mile 2024,https://loadboot.com/market-rates.html,0,1,0,66
+7d 2026-09-16..2026-09-23,"query,page",trucking rates per mile 2025,https://loadboot.com/market-rates.html,0,1,0,81
+7d 2026-09-16..2026-09-23,"query,page",trucking spot rate,https://loadboot.com/market-rates.html,0,1,0,68
+7d 2026-09-16..2026-09-23,"query,page",truckload freight rate,https://loadboot.com/market-rates.html,0,1,0,41
+7d 2026-09-16..2026-09-23,"query,page",what trucking app provides rate-per-mile benchmarks by lane so i always know what to charge before i negotiate?,https://loadboot.com/market-rates.html,0,1,0,5
+7d 2026-09-16..2026-09-23,"query,page",where do you find spot rates for loads,https://loadboot.com/market-rates.html,0,1,0,28

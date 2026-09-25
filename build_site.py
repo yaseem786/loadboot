@@ -5712,6 +5712,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '<span class="mrx-badge"><i></i>LIVE \u00b7 NATIONAL BENCHMARKS</span>'
 '<h1>Truckload Freight Rates Per Mile \u2014 Live Spot Rates for Carriers, Brokers &amp; Shippers</h1>'
 '<p>Current trucking rates per mile across <a href="dry-van-freight-rates.html" style="color:#fff;text-decoration:underline">dry van</a>, reefer, flatbed, power only and hotshot \u2014 blended from <b style="color:#fff">real LoadBoot marketplace bookings</b> and published national benchmarks. See what the truck gets paid, what freight brokers buy and sell at, and what shippers pay \u2014 every side of the spot market on one page. <span id="mrAsOf">Every figure carries its own as-of date.</span></p>'
+'<p class="mrx-eq" style="font-size:.92rem;margin-top:14px"><b style="color:#fff">By equipment:</b> <a href="dry-van-freight-rates.html" style="color:#fff;text-decoration:underline">Dry van rates per mile</a> \u00b7 <a href="reefer-freight-rates.html" style="color:#fff;text-decoration:underline">Reefer rates per mile</a> \u00b7 <a href="step-deck-freight-rates.html" style="color:#fff;text-decoration:underline">Step deck rates per mile</a> \u00b7 <a href="conestoga-freight-rates.html" style="color:#fff;text-decoration:underline">Conestoga rates per mile</a> \u00b7 <a href="power-only-freight-rates.html" style="color:#fff;text-decoration:underline">Power only rates per mile</a> \u00b7 <a href="hotshot-freight-rates.html" style="color:#fff;text-decoration:underline">Hotshot rates per mile</a> \u00b7 <a href="box-truck-freight-rates.html" style="color:#fff;text-decoration:underline">Box truck rates per mile</a></p>'
 '<div class="mrx-stats"><div><b>8</b><span>Equipment types</span></div><div><b>3</b><span>Market sides</span></div><div><b>Dated</b><span>Every benchmark</span></div><div><b>Live</b><span>From real bookings</span></div></div>'
 '</div></section>'
 
@@ -5783,7 +5784,7 @@ _mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org",
   '<script>' + _MR_JS + '</script>')
 
 page('market-rates.html', 'Truckload Rates Per Mile 2026 — Carrier, Broker &amp; Shipper | LoadBoot',
-     'Truckload rates per mile for 2026, each benchmark shown with its as-of date: dry van, flatbed and hotshot averages, plus a free trucking rate calculator with no signup or login.',
+     'Current truckload freight rates per mile, September 2026: dry van $3.03, reefer $3.66, flatbed $3.62 to the carrier. Carrier, broker, shipper sides, dated.',
      'market-rates.html', _mr_body + _mr_faq)
 
 # _acc_faq_schema must be defined BEFORE the equipment rate pages below use it. It used
