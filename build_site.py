@@ -3105,7 +3105,7 @@ GL_FAQ=[
 
 rich_article('ghost-loads-load-board-problems.html',
  'Ghost Loads: Why Booking One Load Takes 20 Calls (2026)',
- 'Ghost loads, stale posts, bait rates and double brokering: why carriers burn 3\u20136 hours booking one load, what it costs per week, how to spot fakes \u2014 and how a truck operating system removes the problem entirely.',
+ 'Ghost loads are load board posts for freight already covered. Why booking one load takes 15\u201320 calls and 3\u20136 hours, and how to spot a fake in 60 seconds.',
  'The Carrier\u2019s #1 Time Thief','Ghost Loads &amp; Fake Freight: Why the Load Board Wastes Your Day \u2014 and the System That Fixes It',
  'The load you just called on was covered yesterday. The next three don\u2019t exist at the posted rate. Here is why the boards stay broken, what it costs you per week, and what a truck operating system does differently.',
  9,'truck-fleet.webp','Owner-operator on the phone next to his truck, searching for loads',

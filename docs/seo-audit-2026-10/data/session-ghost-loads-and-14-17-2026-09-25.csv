@@ -1,0 +1,31 @@
+window,dims,query,page,clicks,impressions,ctr,position
+28d 2026-08-26..2026-09-23,page,,https://loadboot.com/get-started.html,1,115,0.0087,2.5
+28d 2026-08-26..2026-09-23,page,,https://loadboot.com/brokers.html,0,34,0,5.7
+28d 2026-08-26..2026-09-23,page,,https://loadboot.com/carriers.html,0,42,0,7.4
+28d 2026-08-26..2026-09-23,page,,https://loadboot.com/ghost-loads-load-board-problems.html,0,140,0,6.0
+28d 2026-08-26..2026-09-23,page,,https://loadboot.com/pricing.html,0,20,0,5.4
+7d 2026-09-16..2026-09-23,page,,https://loadboot.com/brokers.html,0,18,0,5
+7d 2026-09-16..2026-09-23,page,,https://loadboot.com/carriers.html,0,23,0,2.7
+7d 2026-09-16..2026-09-23,page,,https://loadboot.com/get-started.html,0,47,0,2.3
+7d 2026-09-16..2026-09-23,page,,https://loadboot.com/ghost-loads-load-board-problems.html,0,47,0,5.5
+7d 2026-09-16..2026-09-23,page,,https://loadboot.com/pricing.html,0,6,0,4.2
+90d 2026-06-25..2026-09-23,page,,https://loadboot.com/get-started.html,2,153,0.0131,3.9
+90d 2026-06-25..2026-09-23,page,,https://loadboot.com/ghost-loads-load-board-problems.html,2,254,0.0079,8.0
+90d 2026-06-25..2026-09-23,page,,https://loadboot.com/brokers.html,0,61,0,23.2
+90d 2026-06-25..2026-09-23,page,,https://loadboot.com/carriers.html,0,70,0,7.2
+90d 2026-06-25..2026-09-23,page,,https://loadboot.com/pricing.html,0,83,0,29.0
+28d 2026-08-26..2026-09-23,"query,page",any reviews,https://loadboot.com/ghost-loads-load-board-problems.html,0,1,0,4
+28d 2026-08-26..2026-09-23,"query,page",any reviews for them,https://loadboot.com/brokers.html,0,1,0,6
+28d 2026-08-26..2026-09-23,"query,page",any reviews for them,https://loadboot.com/ghost-loads-load-board-problems.html,0,1,0,10
+28d 2026-08-26..2026-09-23,"query,page",ghost loads,https://loadboot.com/ghost-loads-load-board-problems.html,0,4,0,9
+28d 2026-08-26..2026-09-23,"query,page",loadboot,https://loadboot.com/brokers.html,0,2,0,1
+28d 2026-08-26..2026-09-23,"query,page",loadboot,https://loadboot.com/carriers.html,0,11,0,1
+28d 2026-08-26..2026-09-23,"query,page",loadboot,https://loadboot.com/get-started.html,0,74,0,1
+28d 2026-08-26..2026-09-23,"query,page",loadboot,https://loadboot.com/pricing.html,0,3,0,1.7
+7d 2026-09-16..2026-09-23,"query,page",any reviews,https://loadboot.com/ghost-loads-load-board-problems.html,0,1,0,4
+7d 2026-09-16..2026-09-23,"query,page",any reviews for them,https://loadboot.com/brokers.html,0,1,0,6
+7d 2026-09-16..2026-09-23,"query,page",any reviews for them,https://loadboot.com/ghost-loads-load-board-problems.html,0,1,0,10
+7d 2026-09-16..2026-09-23,"query,page",loadboot,https://loadboot.com/brokers.html,0,1,0,1
+7d 2026-09-16..2026-09-23,"query,page",loadboot,https://loadboot.com/carriers.html,0,10,0,1
+7d 2026-09-16..2026-09-23,"query,page",loadboot,https://loadboot.com/get-started.html,0,31,0,1
+7d 2026-09-16..2026-09-23,"query,page",loadboot,https://loadboot.com/pricing.html,0,2,0,2
