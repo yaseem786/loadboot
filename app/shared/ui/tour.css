@@ -132,7 +132,7 @@ html[data-lbtheme="dark"] {
   .lbt-card, .lbt-card.lbt-hero { left: 10px !important; right: 10px !important; width: auto; top: auto !important;
     bottom: calc(76px + env(safe-area-inset-bottom, 0px)); transform: translateY(14px); transition: opacity .28s var(--lbt-ease), transform .32s var(--lbt-ease); }
   .lbt-card.lbt-in { transform: none; }
-  .lbt-card.lbt-sheet-top { bottom: auto !important; top: calc(70px + env(safe-area-inset-top, 0px)) !important; }
+  .lbt-card.lbt-sheet-top { bottom: auto !important; top: var(--lbt-top, calc(70px + env(safe-area-inset-top, 0px))) !important; }
   .lbt-card.lbt-nobar { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   .lbt-arrow { display: none; }
   .lbt-hero .lbt-foot .lbt-btns { flex-direction: row-reverse; }
@@ -242,4 +242,34 @@ body.lbt-lock { overflow: hidden; }
 }
 @media (max-height: 480px) and (max-width: 900px) {
   .lbt-card, .lbt-card.lbt-hero { left: auto !important; right: 12px !important; width: min(440px, calc(100vw - 24px)); }
+}
+
+/* ---------- phones: compact coach card (owner, 25 Sep 2026) ----------
+   The step card took ~45% of the screen and hid the thing it pointed at. On phones a step is now a slim sheet:
+   the icon shrinks into the eyebrow row, no drag handle, no dots (the bar on top already shows progress), tighter
+   type and a one-row footer. Welcome / done cards (.lbt-hero) keep their full size. Desktop is unchanged. */
+@media (max-width: 640px) {
+  .lbt-card:not(.lbt-hero) { border-radius: 18px; left: 12px !important; right: 12px !important;
+    box-shadow: 0 18px 44px -12px rgba(2,8,23,.55), 0 2px 8px rgba(2,8,23,.18); }
+  .lbt-card:not(.lbt-hero) .lbt-bar { height: 3px; }
+  .lbt-card:not(.lbt-hero) .lbt-body { position: relative; padding: 12px 16px 4px; max-height: 38vh; }
+  .lbt-card:not(.lbt-hero) .lbt-body:before { display: none; }
+  .lbt-card:not(.lbt-hero) .lbt-eyebrow { min-height: 26px; margin-bottom: 6px; padding-left: 34px; padding-right: 30px; }
+  .lbt-card:not(.lbt-hero) .lbt-ico { position: absolute; left: 16px; top: 12px; width: 26px; height: 26px; border-radius: 8px; margin: 0; box-shadow: none; }
+  .lbt-card:not(.lbt-hero) .lbt-ico svg { width: 15px; height: 15px; }
+  .lbt-card:not(.lbt-hero) .lbt-chapter { font-size: .64rem; letter-spacing: .1em; }
+  .lbt-card:not(.lbt-hero) .lbt-count { font-size: .7rem; }
+  .lbt-card:not(.lbt-hero) .lbt-x { width: 32px; height: 32px; top: 11px; right: 8px; }
+  .lbt-card:not(.lbt-hero) .lbt-title { font-size: .98rem; margin: 0 0 3px; }
+  .lbt-card:not(.lbt-hero) .lbt-text { font-size: .84rem; line-height: 1.42; }
+  /* tip: a quiet one-liner under the text instead of a boxed callout */
+  .lbt-card:not(.lbt-hero) .lbt-tip { margin-top: 7px; padding: 0; gap: 6px; font-size: .76rem; line-height: 1.38; border: 0; border-radius: 0; background: none; color: var(--lbt-sub); }
+  .lbt-card:not(.lbt-hero) .lbt-tip b, .lbt-card:not(.lbt-hero) .lbt-tip strong { color: var(--lbt-ink); }
+  .lbt-card:not(.lbt-hero) .lbt-tip > svg { width: 13px; height: 13px; margin-top: 1px; }
+  .lbt-card:not(.lbt-hero) .lbt-try { margin-top: 8px; font-size: .78rem; }
+  .lbt-card:not(.lbt-hero) .lbt-foot { padding: 8px 14px 11px; }
+  .lbt-card:not(.lbt-hero) .lbt-dots { display: none; }
+  .lbt-card:not(.lbt-hero) .lbt-btns { flex: 1; justify-content: flex-end; }
+  .lbt-card:not(.lbt-hero) .lbt-btn { min-height: 38px; padding: 7px 16px; font-size: .86rem; border-radius: 11px; }
+  .lbt-card:not(.lbt-hero) .lbt-btn.ghost { padding-left: 10px; padding-right: 10px; }
 }

@@ -178,19 +178,34 @@ export function createTour(opts) {
     card.style.left = Math.round((innerWidth - cw) / 2) + 'px'; card.style.top = Math.round(Math.max(16, (innerHeight - ch) / 2 - 10)) + 'px';
   }
   const vwSmall = () => innerWidth <= 640;
+  // Bottom edge of the portal's own fixed/sticky header (phone status bar + app bar differ per portal and per device;
+  // a guessed 70px put the sheet over the header in the Android app). Tour nodes are skipped. Falls back to 70.
+  function topInset() {
+    try {
+      const xs = document.elementsFromPoint(innerWidth / 2, 4);
+      for (const n of xs) {
+        if (n.closest && n.closest('.lbt-veil, .lbt-card, .lbt-help, .lbt-panel, .lbt-nudge')) continue;
+        for (let e = n; e && e !== document.body && e !== document.documentElement; e = e.parentElement) {
+          const pos = getComputedStyle(e).position;
+          if (pos === 'fixed' || pos === 'sticky') { const b = e.getBoundingClientRect().bottom; if (b > 0 && b < innerHeight * 0.35) return Math.round(b); break; }
+        }
+      }
+    } catch (_) {}
+    return 70;
+  }
   function placeCard(R, step) {
     card.querySelectorAll('.lbt-arrow').forEach((a) => a.remove());
     if (vwSmall()) {
       // docked sheet: sits above the tab bar unless the target is down there, then it docks at the top
       card.classList.toggle('lbt-nobar', !hasTabbar());
-      const ch = card.offsetHeight, barH = hasTabbar() ? 76 : 14, topH = 70;
+      const ch = card.offsetHeight, barH = hasTabbar() ? 76 : 14, topH = topInset();
       const sheetTop = innerHeight - ch - barH, below = sheetTop - 8 - (R.y + R.h), above = R.y - (topH + ch + 8);
       let top = false;
       if (below >= 0) top = false; else if (above >= 0) top = true;
       else { // neither side fits: keep the sheet at the bottom and light only the part of the target it leaves visible
         top = false; const cut = sheetTop - 10 - R.y; if (cut > 40) hole.style.height = cut + 'px';
       }
-      card.classList.toggle('lbt-sheet-top', top);
+      card.classList.toggle('lbt-sheet-top', top); card.style.setProperty('--lbt-top', (topH + 8) + 'px');
       if (top) { const cut = (R.y + R.h) - (topH + ch + 10); if (cut > 40 && R.y < topH + ch + 10) { hole.style.top = (topH + ch + 10) + 'px'; hole.style.height = cut + 'px'; } }
       card.style.left = card.style.top = ''; return;
     }
@@ -286,7 +301,7 @@ export function createTour(opts) {
     }
     target = el9; mode = step.hero || !el9 ? 'hero' : 'spot';
     if (!step.hero && !el9 && (step.emptyTitle || step.emptyText)) step = Object.assign({}, step, { title: step.emptyTitle || step.title, text: step.emptyText || step.text, tip: step.emptyTip != null ? step.emptyTip : step.tip, advanceOn: null, empty: true });
-    if (el9) { try { const tall = vwSmall() && el9.getBoundingClientRect().height > innerHeight * 0.38; el9.style.scrollMarginTop = '78px'; el9.scrollIntoView({ block: tall ? 'start' : 'center', inline: 'nearest', behavior: prefersReduced() ? 'auto' : 'smooth' }); } catch (_) {} }   // scroll-margin keeps it clear of the sticky header
+    if (el9) { try { const tall = vwSmall(); el9.style.scrollMarginTop = (vwSmall() ? topInset() + 12 : 78) + 'px'; el9.scrollIntoView({ block: tall ? 'start' : 'center', inline: 'nearest', behavior: prefersReduced() ? 'auto' : 'smooth' }); } catch (_) {} }   // scroll-margin keeps it clear of the sticky header
     card.classList.remove('lbt-in'); render(step); veil.classList.add('lbt-on'); veil.classList.toggle('lbt-pass', !!(step.interact || step.advanceOn === 'click'));
     hole.querySelectorAll('.lbt-tapme').forEach((x) => x.remove()); if (step.advanceOn === 'click') hole.appendChild(h('i', { class: 'lbt-tapme' }));
     document.body.classList.add('lbt-lock');
