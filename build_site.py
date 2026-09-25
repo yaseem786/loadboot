@@ -498,7 +498,7 @@ def footer():
 '''
 
 GA_ID = 'G-C2ELQ7H8EM'  # GA4 Measurement ID — injected on every page.
-LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Loadboot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Truck dispatch for owner-operators, small fleets and new-authority carriers: a dedicated, LoadBoot-vetted dispatcher on your truck plus the platform that verifies, tracks and settles every load. Flat 5% of line-haul at delivery, no long-term contract.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
+LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"LoadBoot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Truck dispatch for owner-operators, small fleets and new-authority carriers: a dedicated, LoadBoot-vetted dispatcher on your truck plus the platform that verifies, tracks and settles every load. Flat 5% of line-haul at delivery, no long-term contract.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
 GA_SNIPPET = ('<script async src="https://www.googletagmanager.com/gtag/js?id=%s"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag(\'js\',new Date());gtag(\'config\',\'%s\');</script>' % (GA_ID, GA_ID)) if GA_ID else ''
 ORG_SCHEMA = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://loadboot.com/#org","name":"LoadBoot","legalName":"LoadBoot LLC","url":"https://loadboot.com/","logo":"https://loadboot.com/icon-512.png","slogan":"The Operating System for Trucking","description":"The Operating System for Trucking: a verified load board, carrier app, GPS proof, documents and settlements on one platform, with a LoadBoot-run network of dedicated, vetted truck dispatchers. Flat 5% of line-haul for carriers; free for brokers, shippers, broker agents and referral partners.","email":"hello@loadboot.com","telephone":"+1-469-253-7575","sameAs":["https://www.linkedin.com/company/135138228/","https://play.google.com/store/apps/details?id=com.loadboot.app"],"areaServed":{"@type":"Country","name":"United States"}}</script>'
 HEADX = LOCALBIZ + ORG_SCHEMA + GA_SNIPPET
@@ -670,7 +670,7 @@ def page(fname, title, desc, active, body, schema=''):
     doc = '''<!DOCTYPE html><html lang="en" class="no-js"><head><script>document.documentElement.classList.remove("no-js")</script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%s</title><meta name="description" content="%s"><link rel="canonical" href="https://loadboot.com/%s">
 <meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta property="og:type" content="website"><meta property="og:url" content="https://loadboot.com/%s"><meta property="og:image" content="https://loadboot.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="LoadBoot — the load board with zero ghost loads, plus dispatch, GPS proof and payments"><meta property="og:image" content="https://loadboot.com/og-image-square.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="1200"><meta property="og:site_name" content="LoadBoot"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="%s"><meta name="twitter:description" content="%s"><meta name="twitter:image" content="https://loadboot.com/og-image.png"><meta name="twitter:image:alt" content="LoadBoot — the load board with zero ghost loads"><meta name="theme-color" content="#10223B">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="LoadBoot">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css?v=7"><script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "xvcrda1da1");</script><script type="text/javascript" src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js" async></script>%s</head><body>
@@ -699,7 +699,7 @@ def faq_block(items):
 PWA_JS = r'''
 var lbUpdateApproved=false;
 if('serviceWorker' in navigator){var lbHadSW=!!navigator.serviceWorker.controller;addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').then(function(reg){function n(w){if(w&&navigator.serviceWorker.controller)lbUpdBanner(w);}if(reg.waiting)n(reg.waiting);reg.addEventListener('updatefound',function(){var w=reg.installing;if(w)w.addEventListener('statechange',function(){if(w.state==='installed')n(w);});});setInterval(function(){reg.update();},60000);}).catch(function(){});var r=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(r)return;if(!lbHadSW){lbHadSW=true;return;}if(!lbUpdateApproved){lbUpdBanner(null);return;}r=true;location.reload();});});}
-function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;width:max-content;max-width:min(92vw,520px)';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of Loadboot is available.</span><button id="lbUpdBtn" style="background:#FC5305;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){if(!confirm('Update and reload this tab? Save any unfinished work first.'))return;lbUpdateApproved=true;this.textContent='Updating…';if(!w||w.state==='activated')location.reload();else w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
+function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;width:max-content;max-width:min(92vw,520px)';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of LoadBoot is available.</span><button id="lbUpdBtn" style="background:#FC5305;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){if(!confirm('Update and reload this tab? Save any unfinished work first.'))return;lbUpdateApproved=true;this.textContent='Updating…';if(!w||w.state==='activated')location.reload();else w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
 (function(){function mk(){if(document.getElementById('pwaBtn'))return null;var b=document.createElement('button');b.id='pwaBtn';b.className='lb-float-ctl';b.setAttribute('aria-label','Get the LoadBoot app');b.innerHTML='&#11015; Get the app';b.style.cssText='position:fixed;bottom:20px;left:20px;z-index:90;background:#0883F7;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-weight:700;font-family:Manrope,sans-serif;font-size:.9rem;box-shadow:0 12px 30px -8px rgba(37,99,235,.6);cursor:pointer;transition:opacity .2s ease,visibility .2s ease';b.onclick=function(){location.href='/apps.html';};document.body.appendChild(b);try{if(window.lbFloatRegister)window.lbFloatRegister(b);}catch(e){}return b;}/* Chrome offers its own install prompt through beforeinstallprompt. We suppress the mini-infobar but never
    fire an install from this button: nothing should download straight off the floating button. Its whole job is
    to take the visitor to /apps.html, where the Google Play badge sits next to the iOS instructions and they can
@@ -1136,7 +1136,7 @@ ROUTE = '''<section><div class="wrap route-grid">
 # fix mpath: use inline path reference via id
 ROUTE = ROUTE.replace('<path d="M40 175 C 150 175 120 70 250 72 S 340 55 360 48" fill="none" stroke="#CBD5E1"','<path id="rtpath" d="M40 175 C 150 175 120 70 250 72 S 340 55 360 48" fill="none" stroke="#CBD5E1"').replace('<mpath href="#"/>','<mpath href="#rtpath"/>')
 
-WHYUS = '''<section id="why"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Why Loadboot</div><h2>Built for carriers who want to earn more and stress less</h2></div>
+WHYUS = '''<section id="why"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Why LoadBoot</div><h2>Built for carriers who want to earn more and stress less</h2></div>
 <div class="grid g4">
 <div class="card reveal"><div class="icon">&#128200;</div><h3>Higher-paying loads</h3><p>We negotiate hard on every rate and turn down cheap freight that wastes your time.</p></div>
 <div class="card reveal d1"><div class="icon">&#128739;</div><h3>Less deadhead</h3><p>Smart lane planning keeps your truck loaded and your miles paid.</p></div>
@@ -1470,7 +1470,7 @@ CONFIRM_JS = r"""
 """
 
 COMPARE = '''<section id="compare" class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The Difference</div><h2>Why carriers choose us over going it alone</h2></div>
-<div class="reveal"><table class="cmp"><thead><tr><th>What matters to you</th><th>Dispatching yourself</th><th>A typical dispatcher</th><th class="us">Loadboot</th></tr></thead><tbody>
+<div class="reveal"><table class="cmp"><thead><tr><th>What matters to you</th><th>Dispatching yourself</th><th>A typical dispatcher</th><th class="us">LoadBoot</th></tr></thead><tbody>
 <tr><td>Hours saved on broker calls</td><td class="no">None</td><td>Some</td><td class="us">Fully handled</td></tr>
 <tr><td>Expert rate negotiation</td><td class="no">On your own</td><td>Varies</td><td class="us">Every load</td></tr>
 <tr><td>No long-term contract</td><td>&mdash;</td><td class="no">Often locked in</td><td class="us">Cancel anytime</td></tr>
@@ -1645,7 +1645,7 @@ def svc_hero(h1,lead,tert_label='All Services',tert_href='services.html',
     # freight to a contact form was costing us the signup (audit, 25 Aug).
     cta_label = cta_label or ('Get Started ' + ARW)
     return '''<section class="hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div><div class="wrap" style="position:relative;z-index:1;max-width:820px">
-<span class="badge reveal"><span class="dot"></span> Loadboot Dispatch</span><h1 class="reveal d1">%s</h1>
+<span class="badge reveal"><span class="dot"></span> LoadBoot Dispatch</span><h1 class="reveal d1">%s</h1>
 <p class="lead reveal d2" style="margin:22px 0 28px">%s</p>
 <div class="hero-btns reveal d3"><a href="%s" class="btn btn-primary">%s</a><a href="%s" class="btn btn-secondary">%s</a><a href="%s" class="btn btn-ghost">%s &rarr;</a></div></div></section>''' % (h1,lead,cta_href,cta_label,cta2_href,cta2_label,tert_href,tert_label)
 
@@ -1798,8 +1798,8 @@ SVC_ALT = {
  'dry-van':'Dry van semi truck running freight on the highway',
  'hotshot':'Hotshot truck with gooseneck trailer ready for expedited loads',
  'power-only':'Power only semi truck tractor ready to pull a trailer',
- 'owner-operator':'Owner-operator truck driver managing loads with Loadboot dispatch',
- 'new-authority':'New authority truck driver getting set up with Loadboot dispatch'}
+ 'owner-operator':'Owner-operator truck driver managing loads with LoadBoot dispatch',
+ 'new-authority':'New authority truck driver getting set up with LoadBoot dispatch'}
 SVC_CAP = {
  'reefer':'Temperature-controlled freight &mdash; booked and protected.',
  'flatbed':'Steel, lumber and machinery &mdash; freight that pays.',
@@ -1834,7 +1834,7 @@ def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs,shots=None):
     inc_cards = ''.join('<div class="card reveal"><div class="icon">%s</div><p>%s</p></div>' % (CHK, x) for x in included)
     body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">What you get</div><h2>Everything in our %s dispatch service</h2></div><div class="grid g3">%s</div></div></section>' % (nl, inc_cards)
     # Why -> navy highlight panel
-    body += '<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Why Loadboot</div><h2>Why %s carriers choose us</h2><p>%s</p></div></div></section>' % (nl, why)
+    body += '<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Why LoadBoot</div><h2>Why %s carriers choose us</h2><p>%s</p></div></div></section>' % (nl, why)
     if shots: body += _real_screen(*shots)
     body += DOS_CSS + dos_steps('equipment', equipment=nl)
     # EXTRA unique sections (bullets -> cards, else prose)
@@ -1859,11 +1859,11 @@ def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs,shots=None):
     bc = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://loadboot.com/"},{"@type":"ListItem","position":2,"name":"Services","item":"https://loadboot.com/services.html"},{"@type":"ListItem","position":3,"name":"%s Dispatch","item":"https://loadboot.com/%s"}]}</script>' % (name, fname)
     ssch = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service",'
             '"serviceType":"%s truck dispatching","name":"%s",'
-            '"provider":{"@type":"Organization","name":"Loadboot","url":"https://loadboot.com/"},'
+            '"provider":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/"},'
             '"areaServed":{"@type":"Country","name":"United States"},"url":"https://loadboot.com/%s"}</script>') % (name, h1.replace('"', "'"), fname)
     page(fname,title,desc,'services.html',body,fsch+bc+ssch)
 
-svc_page('reefer-dispatch.html','Reefer','Reefer Dispatch Services for Owner-Operators | Loadboot',
+svc_page('reefer-dispatch.html','Reefer','Reefer Dispatch Services for Owner-Operators | LoadBoot',
  'Reefer truck dispatch for owner-operators &amp; fleets. We book high-paying temperature-controlled loads, negotiate rates, and handle the paperwork. Flat 5%.',
  'Reefer Dispatch Services Across the USA','Higher-paying temperature-controlled freight, booked and managed for you &mdash; so your reefer stays loaded and your margins stay protected.',
  ['Reefer freight pays well, but it comes with pressure &mdash; tight delivery windows, temperature requirements, and brokers who push for cheap rates. Our dispatchers know the reefer market and fight for what your run is actually worth.',
@@ -1901,7 +1901,7 @@ svc_page('dry-van-dispatch.html','Dry Van','Dry Van Dispatch Services 2026 — D
   ('Can I get dry van dispatch with a new authority?','Yes. LoadBoot has no minimum authority age. Some brokers ask for authority age or a safety history before they tender freight, so the list is narrower at first &mdash; your dispatcher tells you which ones will take your MC.'),
   ('Do you book live-load or drop-and-hook dry van freight?','Both. Your SOP says which you prefer. Before you accept, your dispatcher confirms the appointment times, whether it is live-load or drop-and-hook, and whether a lumper is expected, so dock time is priced in before the rate is agreed.')])
 
-svc_page('hotshot-dispatch.html','Hotshot','Hotshot Dispatch Services | Loadboot',
+svc_page('hotshot-dispatch.html','Hotshot','Hotshot Dispatch Services | LoadBoot',
  'Hotshot truck dispatch for owner-operators running class 3-5 trucks and goosenecks. Expedited loads, rate negotiation, broker handling. Flat 5%, no long-term contracts.',
  'Hotshot Dispatch Services Across the USA','Expedited, smaller, well-paying loads for hotshot operators &mdash; we work the boards and the brokers so you keep rolling.',
  ['Hotshot is fast-moving and competitive, and the good loads go quick. You need someone watching the boards and negotiating in real time. We do exactly that for hotshot operators.',
@@ -1990,7 +1990,7 @@ serv_body += '''<section><div class="wrap"><div class="sec-head reveal"><div cla
 </div></div></section>'''
 serv_hub_faq_html, serv_hub_faq_schema = faq_block(home_faqs)
 serv_body += COMPARE + HOW + serv_hub_faq_html + final_cta()
-page('services.html','Truck Dispatch Services (Full List) | Loadboot',
+page('services.html','Truck Dispatch Services (Full List) | LoadBoot',
      'Full-service truck dispatch: a dedicated, vetted dispatcher booking and negotiating your loads, plus authority setup, IFTA, factoring, compliance and claims on one platform. Flat 5% of line-haul, no long-term contracts.',
      'services.html', serv_body, serv_hub_faq_schema)
 
@@ -2090,7 +2090,7 @@ page('about.html','About LoadBoot — The Operating System for Trucking',
      'about.html', about_body, schema=_about_org_schema + _about_faq_schema)
 
 # ---------- CONTACT ----------
-contact_body = svc_hero('Get Started with Loadboot','Create your account in 2 minutes (carrier, broker, shipper or agent), request a rate quote, or just send us a message &mdash; flat 5%, no long-term contracts, cancel anytime.')
+contact_body = svc_hero('Get Started with LoadBoot','Create your account in 2 minutes (carrier, broker, shipper or agent), request a rate quote, or just send us a message &mdash; flat 5%, no long-term contracts, cancel anytime.')
 contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:820px">
 <form class="quote-wrap reveal" id="qfForm" name="quote" method="POST" data-netlify="true" data-netlify-honeypot="bot-field">
 <input type="hidden" name="form-name" value="quote"><p hidden><label>Skip: <input name="bot-field"></label></p>
@@ -2140,7 +2140,7 @@ if(ml){ml.innerHTML=(!isAcct&&!isQuote)?'Your message':((isQuote?'Load / lane de
 var b=document.getElementById('submitBtn');if(b){b.style.display=isAcct?'none':'';b.innerHTML=(isQuote?'Get My Rate Quote':'Send Message')+' &rarr;';}
 var t=document.getElementById('formIntro');if(t)t.textContent=isAcct?'Tell us about your operation and a dispatcher gets you set up.':(isQuote?'Tell us about a load or lane and we will send you a rate.':'Send us a message and we will get right back to you.');}
 (function(){var h=location.hash;var map={'#quote':'iQuote','#ask':'iAsk','#question':'iAsk','#create':'iAcct','#account':'iAcct','#form':null};if(h in map){var id=map[h];if(id){var r=document.getElementById(id);if(r)r.checked=true;}setTimeout(function(){var f=document.getElementById('qfForm');if(f)f.scrollIntoView({behavior:'smooth',block:'start'});},150);}qfIntent();
-var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();var fd=new FormData(f);var d=new URLSearchParams(fd).toString();try{if(window.lbSubmitLead){var o={};fd.forEach(function(v,k){if(k!=='bot-field'&&k!=='form-name'&&String(v).trim())o[k]=String(v);});o.form_key='quote';window.lbSubmitLead(o.intent==='Create carrier account'?'quote-account':(o.intent==='Get a rate quote'?'quote-rate':'quote-question'),o);}}catch(_){}fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:d}).then(function(){f.innerHTML='<div style=\\'text-align:center;padding:40px\\'><div style=\\'font-size:2.6rem;color:#16a34a\\'>&#10003;</div><h3 style=\\'margin:12px 0\\'>Got it &mdash; thanks!</h3><p>A Loadboot dispatcher will reach out within 15 minutes during business hours.</p></div>';}).catch(function(){f.innerHTML='<p style=\\'text-align:center\\'>Something went wrong &mdash; please email hello@loadboot.com and we will get right back to you.</p>';});});})();
+var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();var fd=new FormData(f);var d=new URLSearchParams(fd).toString();try{if(window.lbSubmitLead){var o={};fd.forEach(function(v,k){if(k!=='bot-field'&&k!=='form-name'&&String(v).trim())o[k]=String(v);});o.form_key='quote';window.lbSubmitLead(o.intent==='Create carrier account'?'quote-account':(o.intent==='Get a rate quote'?'quote-rate':'quote-question'),o);}}catch(_){}fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:d}).then(function(){f.innerHTML='<div style=\\'text-align:center;padding:40px\\'><div style=\\'font-size:2.6rem;color:#16a34a\\'>&#10003;</div><h3 style=\\'margin:12px 0\\'>Got it &mdash; thanks!</h3><p>A LoadBoot dispatcher will reach out within 15 minutes during business hours.</p></div>';}).catch(function(){f.innerHTML='<p style=\\'text-align:center\\'>Something went wrong &mdash; please email hello@loadboot.com and we will get right back to you.</p>';});});})();
 </script>"""
 
 # ---------- "Get a call" section (contact page): role-gated number + call-me-now/schedule ----------
@@ -2199,7 +2199,7 @@ btn.textContent='✅ Done!';msg.style.color='#16a34a';msg.textContent=d&&d.sched
 )
 
 
-page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no long-term contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + call_section + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap" style="max-width:820px"><div class="sec-head center reveal"><div class="eyebrow">Worked with us?</div><h2>Tell other carriers the truth</h2><p class="lead center" style="max-width:620px;margin:0 auto">If we have moved a load for you or posted your freight, a short honest review helps the next carrier decide. Good or bad &mdash; we would rather it was public.</p></div><div class="trustpilot-widget" data-locale="en-US" data-template-id="56278e9abfbbba0bdcd568bc" data-businessunit-id="6a6e9e88dbb320690ec81eaf" data-style-height="52px" data-style-width="100%" data-token="2a67aebb-e3a2-407d-9404-b0a62a1a069b" style="margin-top:18px"><a href="https://www.trustpilot.com/review/loadboot.com" target="_blank" rel="noopener">Trustpilot</a></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who you are dealing with</div><h2>There is a person behind this</h2><p style="max-width:66ch;margin:0 auto">LoadBoot is founded and run by <b style="color:var(--navy)">Muhammad Yaseen</b>. Not a call centre and not a faceless brand &mdash; if you email <a href="mailto:hello@loadboot.com" style="color:var(--blue);font-weight:700">hello@loadboot.com</a>, it reaches him.</p></div><div class="grid g3 reveal" style="margin-top:34px"><div class="card reveal"><div class="icon">&#127970;</div><h3>Legal entity</h3><p><b>LoadBoot LLC</b><br>A Wyoming limited liability company<br>Filing ID 2026-002044986</p></div><div class="card reveal"><div class="icon">&#128205;</div><h3>Registered office</h3><p>30 N Gould St, Ste N<br>Sheridan, WY 82801<br>United States</p></div><div class="card reveal"><div class="icon">&#128290;</div><h3>D-U-N-S&reg; Number</h3><p><b>14-988-0967</b><br>Verified with Dun &amp; Bradstreet<br>D-U-N-S&reg; is a registered trademark of D&amp;B</p></div></div></div></section>')
+page('contact.html','Get Started, Get a Quote or Contact Us | LoadBoot','Create your carrier profile, request a rate quote, or send LoadBoot a message. Flat 5%, no long-term contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + call_section + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap" style="max-width:820px"><div class="sec-head center reveal"><div class="eyebrow">Worked with us?</div><h2>Tell other carriers the truth</h2><p class="lead center" style="max-width:620px;margin:0 auto">If we have moved a load for you or posted your freight, a short honest review helps the next carrier decide. Good or bad &mdash; we would rather it was public.</p></div><div class="trustpilot-widget" data-locale="en-US" data-template-id="56278e9abfbbba0bdcd568bc" data-businessunit-id="6a6e9e88dbb320690ec81eaf" data-style-height="52px" data-style-width="100%" data-token="2a67aebb-e3a2-407d-9404-b0a62a1a069b" style="margin-top:18px"><a href="https://www.trustpilot.com/review/loadboot.com" target="_blank" rel="noopener">Trustpilot</a></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who you are dealing with</div><h2>There is a person behind this</h2><p style="max-width:66ch;margin:0 auto">LoadBoot is founded and run by <b style="color:var(--navy)">Muhammad Yaseen</b>. Not a call centre and not a faceless brand &mdash; if you email <a href="mailto:hello@loadboot.com" style="color:var(--blue);font-weight:700">hello@loadboot.com</a>, it reaches him.</p></div><div class="grid g3 reveal" style="margin-top:34px"><div class="card reveal"><div class="icon">&#127970;</div><h3>Legal entity</h3><p><b>LoadBoot LLC</b><br>A Wyoming limited liability company<br>Filing ID 2026-002044986</p></div><div class="card reveal"><div class="icon">&#128205;</div><h3>Registered office</h3><p>30 N Gould St, Ste N<br>Sheridan, WY 82801<br>United States</p></div><div class="card reveal"><div class="icon">&#128290;</div><h3>D-U-N-S&reg; Number</h3><p><b>14-988-0967</b><br>Verified with Dun &amp; Bradstreet<br>D-U-N-S&reg; is a registered trademark of D&amp;B</p></div></div></div></section>')
 
 # ---------- PRICING ----------
 pr_body = svc_hero('Simple, Honest Dispatch Pricing','One flat rate, no long-term contracts, no hidden fees. You only pay when we actually book you a load &mdash; so our goals and yours are always the same.')
@@ -2263,8 +2263,8 @@ def blog_post(fname,title,desc,excerpt,blocks):
     art = {"@context":"https://schema.org","@type":"Article","headline":title.replace('"',"'"),"description":desc,
            "image":["https://loadboot.com/og-image.png","https://loadboot.com/og-image-square.png"],
            "mainEntityOfPage":{"@type":"WebPage","@id":"https://loadboot.com/"+fname},
-           "author":{"@type":"Organization","name":"Loadboot","url":"https://loadboot.com/"},
-           "publisher":{"@type":"Organization","name":"Loadboot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}}}
+           "author":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/"},
+           "publisher":{"@type":"Organization","name":"LoadBoot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}}}
     if pub:
         art["datePublished"] = art["dateModified"] = pub
     sch = '<script type="application/ld+json">%s</script>' % json.dumps(art, ensure_ascii=False, separators=(',',':'))
@@ -2343,7 +2343,7 @@ BLOGPOSTS = [
    'When you work with a dispatcher, you keep your own authority and stay in control. You approve every load and rate. The dispatcher simply does the legwork &mdash; searching, negotiating, and handling brokers &mdash; so you can focus on driving.',
    'A broker is who your dispatcher negotiates with to get you a load. A dispatcher is who works for you to get the best deal from that broker.',
    'H:Which one do you need?',
-   'If you are a carrier with your own authority who wants help finding and negotiating loads without giving up control, you need a dispatcher. Loadboot is a dispatch service &mdash; we represent you, the carrier, and we work to keep your truck loaded at the best possible rate.']),
+   'If you are a carrier with your own authority who wants help finding and negotiating loads without giving up control, you need a dispatcher. LoadBoot is a dispatch service &mdash; we represent you, the carrier, and we work to keep your truck loaded at the best possible rate.']),
  ('how-to-get-loads-with-new-authority.html',
   'How to Get Loads With a New Authority: A Carrier\'s Guide',
   'Just got your MC number? Here is how to get set up with brokers, find your first loads, and avoid the mistakes that sink new carriers.',
@@ -2448,20 +2448,20 @@ def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,bod
     e=lambda s:s.replace('"',"'")
     crumb='<div class="wrap"><nav class="crumbs"><a href="index.html">Home</a> &rsaquo; <a href="blog.html">Blog</a> &rsaquo; '+h1+'</nav></div>'
     herob=('<header class="art-hero"><div class="wrap"><div class="art-eyebrow">'+eyebrow+'</div><h1>'+h1
-           +'</h1><p class="art-sub">'+deck+'</p><div class="art-meta"><span>By Loadboot Dispatch Team</span>'
+           +'</h1><p class="art-sub">'+deck+'</p><div class="art-meta"><span>By LoadBoot Dispatch Team</span>'
            '<span>&middot; Published '+pub_h+'</span><span>&middot; '+str(read_min)+' min read</span></div></div></header>')
     # Only reference the hero photo if the file is actually present (else keep the gradient SVG).
     hero_img=('<img src="'+hero+'" alt="'+hero_alt+'" width="1200" height="630" decoding="async">') if asset_exists(hero) else ''
     feat='<div class="wrap"><figure class="art-feat">'+feat_svg+hero_img+'</figure></div>'
     toch='<aside class="art-toc"><div class="tt">In this guide</div>'+''.join('<a href="#'+i+'">'+l+'</a>' for i,l in toc)+'</aside>'
-    author=('<div class="wrap"><div class="art-author"><div class="av">LB</div><div><b>Loadboot Dispatch Team</b>'
+    author=('<div class="wrap"><div class="art-author"><div class="av">LB</div><div><b>LoadBoot Dispatch Team</b>'
             '<div style="color:var(--muted);font-size:.92rem;margin-top:3px">Truck dispatchers who book, negotiate, and '
             'manage freight for owner-operators and fleets across the U.S. &mdash; flat 5%, no long-term contracts.</div></div></div></div>')
     fhtml,fsch=faq_block(faqs)
     body=crumb+herob+feat+'<div class="wrap art-grid">'+toch+'<div class="art-body">'+body_html+'</div></div>'+author+fhtml+final_cta()
     art=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"'+e(headline or h1)
-         +'","description":"'+e(desc)+'","image":"https://loadboot.com/'+(hero if asset_exists(hero) else 'icon-512.png')+'","author":{"@type":"Organization","name":"Loadboot"},'
-         '"publisher":{"@type":"Organization","name":"Loadboot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}},'
+         +'","description":"'+e(desc)+'","image":"https://loadboot.com/'+(hero if asset_exists(hero) else 'icon-512.png')+'","author":{"@type":"Organization","name":"LoadBoot"},'
+         '"publisher":{"@type":"Organization","name":"LoadBoot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}},'
          '"datePublished":"'+pub+'","dateModified":"'+pub+'"}</script>')
     bcr=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":'
          '[{"@type":"ListItem","position":1,"name":"Home","item":"https://loadboot.com/"},'
@@ -2476,7 +2476,7 @@ A1_SVG=('<figure class="art-fig"><svg viewBox="0 0 600 248" width="100%" role="i
  '<rect x="0" y="80" width="560" height="30" rx="6" fill="#eef2f7"/>'
  '<rect x="0" y="80" width="407" height="30" rx="6" fill="#94a3b8"/>'
  '<text x="418" y="100" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">$2,600</text>'
- '<text x="0" y="148" font-family="Inter,Arial" font-size="13" fill="#64748B">With Loadboot (after the 5% fee)</text>'
+ '<text x="0" y="148" font-family="Inter,Arial" font-size="13" fill="#64748B">With LoadBoot (after the 5% fee)</text>'
  '<rect x="0" y="158" width="560" height="30" rx="6" fill="#eff6ff"/>'
  '<rect x="0" y="158" width="446" height="30" rx="6" fill="#0883F7"/>'
  '<text x="457" y="178" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">$2,850</text>'
@@ -2488,7 +2488,7 @@ A1_SVG=('<figure class="art-fig"><svg viewBox="0 0 600 248" width="100%" role="i
 A1_BODY=(
 '<h2 id="quick-answer">Quick answer: what does a truck dispatcher cost?</h2>'
 '<p>Most truck dispatchers in the U.S. charge <b>3% to 10% of your gross revenue</b>, and <b>5% is the industry standard</b>. '
-'The other common model is a <b>flat weekly fee</b>, usually <b>$150&ndash;$250 per truck, per week</b>. At Loadboot it&rsquo;s a '
+'The other common model is a <b>flat weekly fee</b>, usually <b>$150&ndash;$250 per truck, per week</b>. At LoadBoot it&rsquo;s a '
 '<a href="pricing.html">flat 5% of line-haul, earned at delivery</a> &mdash; fuel surcharge and accessorials are yours, there is no setup or monthly fee, '
 'and no long-term contract. You only pay on loads your dispatcher books and you deliver.</p>'
 '<div class="callout cl-info"><span class="ic">&#128161;</span><div>On a $3,000 load, a 5% dispatch fee is <b>$150</b>. '
@@ -2573,7 +2573,7 @@ A1_BODY=(
 '<h2 id="bottom-line">The bottom line</h2>'
 '<p>Expect to pay around <b>5% of line-haul</b> for quality truck dispatch, with no long-term contract and no hidden fees. The right dispatcher should '
 'make you more than they cost &mdash; in better rates, fewer empty miles, and the hours you get back. If they don&rsquo;t, you should be '
-'able to leave without a penalty. At Loadboot the agreement is month-to-month with 30 days&rsquo; notice, and you can pause or ask for a '
+'able to leave without a penalty. At LoadBoot the agreement is month-to-month with 30 days&rsquo; notice, and you can pause or ask for a '
 'different dispatcher in the app at any time.</p>')
 
 A1_TOC=[('quick-answer','Quick answer'),('models','The two pricing models'),('included','What your fee covers'),
@@ -2581,13 +2581,13 @@ A1_TOC=[('quick-answer','Quick answer'),('models','The two pricing models'),('in
         ('how-works','How dispatch works'),('bottom-line','The bottom line')]
 A1_FAQ=[
  ('Is 5% a lot for a truck dispatcher?','No &mdash; 5% is the industry standard, and for most owner-operators it is the fairest model because you only pay when the dispatcher actually books and runs a load for you. The fee is usually small next to the higher rates and reduced deadhead a good dispatcher delivers.'),
- ('How much does a dispatch service cost?','Most truck dispatch services charge 3&ndash;10% of the load&rsquo;s gross, with 5% the most common, or a flat $150&ndash;$250 per truck per week. At Loadboot it is a flat 5% of line-haul, earned at delivery: on a $2,000 line-haul load the fee is $100. Fuel surcharge, detention, TONU, layover and lumper stay 100% yours. What that covers on a single truck: <a href="owner-operator-dispatch.html">owner operator dispatch services</a>.'),
- ('What is a dispatch fee?','A dispatch fee is what a carrier pays a truck dispatcher for finding, negotiating and booking loads. It is charged as a percentage of each load&rsquo;s rate or as a flat weekly fee per truck. Check what the percentage is taken on: gross including accessorials, or line-haul only. Loadboot takes 5% of line-haul and nothing from accessorials.'),
- ('How much do truck dispatchers make per load?','On a percentage deal the dispatcher earns the fee on each load: 5% is $100 on a $2,000 load and $150 on a $3,000 load. A flat-fee dispatcher earns the same weekly amount however many loads you run. At Loadboot you pay the 5% to Loadboot, never to the dispatcher; dispatchers are Loadboot contractors paid by us. Want to do the job yourself? See <a href="careers.html">becoming a dispatcher</a>.'),
- ('Do dispatchers charge an upfront fee?','A reputable dispatcher should not charge upfront or setup fees. At Loadboot you pay a flat 5% of line-haul only on loads your dispatcher books and you deliver &mdash; nothing upfront, no monthly fee, and no long-term contract.'),
+ ('How much does a dispatch service cost?','Most truck dispatch services charge 3&ndash;10% of the load&rsquo;s gross, with 5% the most common, or a flat $150&ndash;$250 per truck per week. At LoadBoot it is a flat 5% of line-haul, earned at delivery: on a $2,000 line-haul load the fee is $100. Fuel surcharge, detention, TONU, layover and lumper stay 100% yours. What that covers on a single truck: <a href="owner-operator-dispatch.html">owner operator dispatch services</a>.'),
+ ('What is a dispatch fee?','A dispatch fee is what a carrier pays a truck dispatcher for finding, negotiating and booking loads. It is charged as a percentage of each load&rsquo;s rate or as a flat weekly fee per truck. Check what the percentage is taken on: gross including accessorials, or line-haul only. LoadBoot takes 5% of line-haul and nothing from accessorials.'),
+ ('How much do truck dispatchers make per load?','On a percentage deal the dispatcher earns the fee on each load: 5% is $100 on a $2,000 load and $150 on a $3,000 load. A flat-fee dispatcher earns the same weekly amount however many loads you run. At LoadBoot you pay the 5% to LoadBoot, never to the dispatcher; dispatchers are LoadBoot contractors paid by us. Want to do the job yourself? See <a href="careers.html">becoming a dispatcher</a>.'),
+ ('Do dispatchers charge an upfront fee?','A reputable dispatcher should not charge upfront or setup fees. At LoadBoot you pay a flat 5% of line-haul only on loads your dispatcher books and you deliver &mdash; nothing upfront, no monthly fee, and no long-term contract.'),
  ('Is a flat weekly fee cheaper than a percentage?','It depends on your revenue. A flat fee ($150&ndash;$250/truck/week) can be cheaper only if you run high gross every week. If your weeks vary, the percentage model usually costs less and keeps your dispatcher&rsquo;s incentives aligned with yours.'),
  ('Do I still control which loads I take?','Yes. A dispatcher works for you &mdash; they find and negotiate loads, but you approve every load and rate before anything is booked.'),
- ('Can I cancel anytime?','There is no long-term contract. The Loadboot dispatch agreement is month-to-month with 30 days&rsquo; written notice, and loads already booked finish under it. You can pause, or ask for a different dispatcher, from the app at any time.')]
+ ('Can I cancel anytime?','There is no long-term contract. The LoadBoot dispatch agreement is month-to-month with 30 days&rsquo; written notice, and loads already booked finish under it. You can pause, or ask for a different dispatcher, from the app at any time.')]
 A1_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
  '<defs><linearGradient id="fa1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10223B"/>'
  '<stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0883F7"/></linearGradient></defs>'
@@ -2697,7 +2697,7 @@ A2_BODY=(
 'you&rsquo;re a one-truck operation going up against someone who books hundreds of loads a week and knows every lane&rsquo;s real number. '
 'A dispatcher levels that table, because they sit on <em>your</em> side and negotiate dozens of loads a week too.</p>'
 +svc_banner('A dispatcher who works for you, not the load',
-  'Loadboot represents the carrier &mdash; we negotiate with brokers on your behalf, you approve every rate, and you keep your own authority.',
+  'LoadBoot represents the carrier &mdash; we negotiate with brokers on your behalf, you approve every rate, and you keep your own authority.',
   'See how our dispatch works &rarr;','services.html')+
 
 '<h2 id="legal">What each can legally do</h2>'
@@ -2925,7 +2925,7 @@ A4_BODY=(
 '<p>An owner-operator dispatch service exists to do one thing: keep your truck loaded at the best possible rate so you can focus on driving. '
 'The right one is transparent, contract-free, vets your brokers, and makes you more than it costs &mdash; in higher rates, fewer empty miles, '
 'and the hours you get back. If a service can&rsquo;t promise all of that, keep looking. That&rsquo;s exactly the standard '
-'<a href="pricing.html">Loadboot</a> holds itself to: flat 5%, no long-term contracts, you approve every load. How that runs on one truck: '
+'<a href="pricing.html">LoadBoot</a> holds itself to: flat 5%, no long-term contracts, you approve every load. How that runs on one truck: '
 '<a href="owner-operator-dispatch.html">owner operator dispatch services</a>.</p>')
 
 A4_TOC=[('what-is','What it is'),('what-it-does','What it does for you'),('how-it-works','How it works day to day'),
@@ -2933,11 +2933,11 @@ A4_TOC=[('what-is','What it is'),('what-it-does','What it does for you'),('how-i
         ('how-to-choose','How to choose one'),('bottom-line','The bottom line')]
 A4_FAQ=[
  ('What is an owner-operator dispatch service?','It&rsquo;s a company that finds, negotiates and books freight on your behalf so you can focus on driving. A dispatcher represents you, the carrier &mdash; searching loads, negotiating rates, vetting brokers and handling paperwork &mdash; while you keep your authority and approve every load.'),
- ('How much does dispatch cost for one truck?','Most services charge 3%&ndash;10% of gross, with 5% the standard, or a flat $150&ndash;$250 per week. For a solo owner-operator with variable weeks, the percentage model is usually fairer because you only pay when a load is actually booked. Loadboot is a flat 5% with no long-term contract.'),
+ ('How much does dispatch cost for one truck?','Most services charge 3%&ndash;10% of gross, with 5% the standard, or a flat $150&ndash;$250 per week. For a solo owner-operator with variable weeks, the percentage model is usually fairer because you only pay when a load is actually booked. LoadBoot is a flat 5% with no long-term contract.'),
  ('Do I keep control of which loads I run?','Yes. A dispatch service does the legwork, but you approve every load and rate before anything books. You keep your own authority and stay the decision-maker.'),
  ('Do new-authority owner-operators need a dispatcher?','It&rsquo;s optional, but it&rsquo;s one of the fastest ways to get loaded when your authority is new. An experienced dispatcher already has broker relationships and the setup process handled, which helps get around the common &ldquo;90 days in business&rdquo; hurdle new carriers face.'),
  ('Is a dispatcher the same as a freight broker?','No. A broker represents the shipper and must hold broker authority and a bond. A dispatcher represents you, the carrier, and generally does not need broker authority. A dispatcher should never deal directly with shippers as if brokering.'),
- ('Can I cancel a dispatch service anytime?','With a fair service, yes. Loadboot has no long-term contracts &mdash; we earn your business load by load, and you can stop anytime with no penalty.')]
+ ('Can I cancel a dispatch service anytime?','With a fair service, yes. LoadBoot has no long-term contracts &mdash; we earn your business load by load, and you can stop anytime with no penalty.')]
 rich_article('owner-operator-dispatch-service-guide.html',
  'Owner-Operator Dispatch Service: The Complete Guide (2026)',
  'What an owner-operator dispatch service does, what it costs, how it works day to day, and how to choose one &mdash; a complete guide for single-truck operators.',
@@ -3022,7 +3022,7 @@ NA_FAQ=[
  ('What does LoadBoot charge a new authority?','The same flat 5% of the linehaul as every carrier — no setup fee, no monthly minimum, no long-term contract. You approve every load and can leave any time.'),
 ]
 rich_article('do-new-authority-carriers-need-a-dispatcher.html',
- 'Do New-Authority Carriers Need a Dispatcher? (2026) | Loadboot',
+ 'Do New-Authority Carriers Need a Dispatcher? (2026) | LoadBoot',
  'Fresh MC and no broker callbacks? What actually blocks new authorities, what a dispatcher fixes (and cannot fix), when to skip one, and the math of the first 90 days.',
  'New-Authority Guide','Do New-Authority Carriers Need a Dispatcher?',
  'The first 90 days under a fresh MC decide whether the truck earns or the authority lapses. Here is what actually blocks new carriers, what a dispatcher changes &mdash; and the honest cases where you should skip one.',
@@ -3061,7 +3061,7 @@ RC_FAQ=[
  ('Who should sign the rate con — me or my dispatcher?','Your dispatcher may sign only if your dispatch agreement gives them that written authority (a limited power of attorney). Either way the terms bind the CARRIER — so the reading rules in this guide apply to whoever holds the pen.'),
 ]
 rich_article('how-to-read-a-rate-confirmation.html',
- 'How to Read a Rate Confirmation Before You Sign | Loadboot',
+ 'How to Read a Rate Confirmation Before You Sign | LoadBoot',
  'Rate confirmation explained for carriers: the 10 lines to verify, fine-print traps, fraud tells, when to refuse to sign, and what to do after.',
  'Carrier Paperwork Guide','How to Read a Rate Confirmation (Before You Sign It)',
  'The rate con is the contract that decides whether you get paid. The ten lines to check every time, the traps under the money line, the fraud tells &mdash; and when the right answer is to walk.',
@@ -3378,7 +3378,7 @@ PD_SHOT1 = ('<figure class="art-shot"><svg viewBox="0 0 880 520" role="img" aria
  '<text x="28" y="480" fill="#dbe6f5">tolls &#183; scales &#183; parking</text><text x="800" y="480" fill="#dbe6f5" font-weight="800" text-anchor="end">$2,905</text>'
  '<text x="28" y="504" fill="#4ade80" font-weight="800">TOTAL LOGGED</text><text x="800" y="504" fill="#4ade80" font-weight="800" text-anchor="end">$47,599</text>'
  '</g></svg>'
- '<figcaption>Loadboot Tax centre &mdash; nights away are counted from your GPS trip records, so the per diem number (and its proof) builds itself.</figcaption></figure>')
+ '<figcaption>LoadBoot Tax centre &mdash; nights away are counted from your GPS trip records, so the per diem number (and its proof) builds itself.</figcaption></figure>')
 
 # --- HD product visual 2: per-trip P&L ---
 PD_SHOT2 = ('<figure class="art-shot"><svg viewBox="0 0 880 520" role="img" aria-label="LoadBoot per-trip profit and loss statement showing linehaul, detention, fuel, driver pay, factoring and net profit per load">'
@@ -3423,7 +3423,7 @@ PD_CALC = ('<div class="pdcalc">'
  '<div class="pdc-tile"><span>YOUR DEDUCTION</span><b id="pdDed">' + _pd_i(220 * _PD_NET) + '</b><i>nights &#215; ' + _PD_RATE_S + ' &#215; ' + _PD_PCT_S + '</i></div>'
  '<div class="pdc-tile pdc-hi"><span>CASH BACK IN YOUR POCKET</span><b id="pdSave">' + _pd_i(220 * _PD_NET * 0.37) + '</b><i>estimated, ~37% marginal rate</i></div>'
  '</div>'
- '<div class="pdc-note">Most drivers claim <b>none of this</b> &mdash; not because they are not owed it, but because they cannot prove the nights. Loadboot GPS-stamps every trip, so the proof writes itself.</div>'
+ '<div class="pdc-note">Most drivers claim <b>none of this</b> &mdash; not because they are not owed it, but because they cannot prove the nights. LoadBoot GPS-stamps every trip, so the proof writes itself.</div>'
  '<a class="pdc-cta" href="get-started.html">Get my nights counted automatically &rarr;</a>'
  '<script>(function(){var r=document.getElementById("pdNights"),o=document.getElementById("pdOut"),'
  'd=document.getElementById("pdDed"),s=document.getElementById("pdSave");if(!r)return;'
@@ -3434,14 +3434,14 @@ PD_CALC = ('<div class="pdcalc">'
 
 PD_TOC = [('the-money','The money you are losing'),('what-is-per-diem','What per diem actually is (2026)'),
  ('the-math','The math: what it is really worth'),('who-can-claim','Who can claim it &mdash; and who cannot'),
- ('why-missed','Why most drivers lose it: the proof problem'),('loadboot','How Loadboot proves it for you'),
+ ('why-missed','Why most drivers lose it: the proof problem'),('loadboot','How LoadBoot proves it for you'),
  ('by-year','Per diem rates by year (2018–2026)'),('beyond','Beyond per diem: the rest of the money'),('mistakes','Five mistakes that cost you'),('bottom-line','The bottom line')]
 
 PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<p>If you are an owner-operator who sleeps in the truck, there is a deduction sitting in front of you that costs nothing to earn, requires no purchase, and needs <b>not one meal receipt</b>. It is the transportation-industry <b>per diem</b>. And a large share of drivers either never claim it, or claim a fraction of what they are owed.</p>'
  '<p>The scale is not small. Industry tax specialists put it plainly: a driver who spends around <b>200 days on the road and does not claim per diem is leaving over $11,000 in deductions on the table &mdash; every single year</b>. For drivers running 250+ nights, the loss is bigger still.</p>'
  '<p>That is not a rounding error. That is a truck payment. And the reason it goes unclaimed is almost never greed or laziness &mdash; it is <b>proof</b>. Keep reading; the fix is more boring, and more automatic, than you think.</p>'
- + svc_banner('Your trips already ARE the proof','Loadboot GPS-stamps every pickup and delivery, then counts your nights away and computes the deduction for you &mdash; flat 5%, no long-term contract.','See carrier services','carriers.html') +
+ + svc_banner('Your trips already ARE the proof','LoadBoot GPS-stamps every pickup and delivery, then counts your nights away and computes the deduction for you &mdash; flat 5%, no long-term contract.','See carrier services','carriers.html') +
 
  '<h2 id="what-is-per-diem">What per diem actually is (2026 rates)</h2>'
  '<p>Per diem is a <b>flat daily allowance</b> the IRS lets you deduct for <b>meals and incidental expenses</b> while you are away from your tax home overnight &mdash; instead of saving and adding up every receipt.</p>'
@@ -3482,16 +3482,16 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '</ul>'
  '<p>So one of two things happens. Either the driver <b>does not claim it at all</b> (&ldquo;I can&rsquo;t prove it, skip it&rdquo;), or the CPA <b>lowballs the number</b> to stay safe. Both cost real money, quietly, every year. The deduction was never the hard part. <b>The record was.</b></p>'
 
- '<h2 id="loadboot">How Loadboot proves it for you &mdash; automatically</h2>'
- '<p>This is precisely the problem Loadboot was built to remove, and the fix comes free with how the platform already works.</p>'
- '<p>Every load you run on Loadboot is <b>GPS-stamped end to end</b>. When you roll out, the trip starts. When you enter the pickup geofence, arrival is recorded. When you clear the delivery, the drop is stamped. You do not tap anything &mdash; the truck&rsquo;s position writes the record.</p>'
+ '<h2 id="loadboot">How LoadBoot proves it for you &mdash; automatically</h2>'
+ '<p>This is precisely the problem LoadBoot was built to remove, and the fix comes free with how the platform already works.</p>'
+ '<p>Every load you run on LoadBoot is <b>GPS-stamped end to end</b>. When you roll out, the trip starts. When you enter the pickup geofence, arrival is recorded. When you clear the delivery, the drop is stamped. You do not tap anything &mdash; the truck&rsquo;s position writes the record.</p>'
  '<p>Those stamps are not just for detention claims and on-time scores. They are <b>exactly the substantiation the IRS asks for</b>: a dated, objective record of which nights you were away from home. So the Tax centre simply counts them:</p>'
  + PD_SHOT1 +
  '<p>Nights away, the deduction, the deadlines, and your Schedule C categories &mdash; assembled from work you already did. Nothing to remember in January. Nothing to reconstruct in April.</p>'
  '<p>And because the same trip record drives your money, the rest of the picture lines up with it:</p>'
  + PD_SHOT2 +
  '<p>Every load carries its own profit statement. Detention and accessorials land on it <b>automatically</b> from the same GPS stamps, so the income side is as complete as the deduction side. At tax time you are not hunting &mdash; you are exporting.</p>'
- + svc_banner('Stop reconstructing your year in April','Run your loads on Loadboot and the tax record writes itself &mdash; nights away, per-load profit, detention, Schedule C. Flat 5%, no long-term contract, cancel anytime.','Get started','get-started.html') +
+ + svc_banner('Stop reconstructing your year in April','Run your loads on LoadBoot and the tax record writes itself &mdash; nights away, per-load profit, detention, Schedule C. Flat 5%, no long-term contract, cancel anytime.','Get started','get-started.html') +
 
  '<h2 id="by-year">Per diem rates by year (2018&ndash;2026)</h2>'
  '<p>Searching for an older year because you are amending a return or catching up on back taxes? Here is the IRS special transportation-industry M&amp;IE rate for every year, and how much of it was deductible. Amended returns can generally be filed up to three years back &mdash; if you never claimed per diem, those years may still be worth real money.</p>'
@@ -3506,7 +3506,7 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<tr><td>2025</td><td>$80</td><td>80%</td><td>$12,800</td></tr>'
  '<tr><td><b>2026</b></td><td><b>' + _PD_RATE_S + '</b></td><td><b>' + _PD_PCT_S + '</b></td><td><b>' + _pd_i(200 * _PD_NET) + '</b></td></tr>'
  '</tbody></table></div>'
- '<p>Rates change each October 1 with the federal fiscal year, so a calendar tax year can straddle two rates &mdash; the IRS lets you use the rate in effect for each night, or apply a consistent method. Partial travel days count as &frac34; of a day. When in doubt, your nights-away log decides everything, which is exactly the record most drivers never kept &mdash; and the one Loadboot builds automatically.</p>'
+ '<p>Rates change each October 1 with the federal fiscal year, so a calendar tax year can straddle two rates &mdash; the IRS lets you use the rate in effect for each night, or apply a consistent method. Partial travel days count as &frac34; of a day. When in doubt, your nights-away log decides everything, which is exactly the record most drivers never kept &mdash; and the one LoadBoot builds automatically.</p>'
  '<h2 id="beyond">Beyond per diem: the rest of the money</h2>'
  '<p>Per diem is the biggest one drivers miss, but it is not the only one. The same records feed the rest of your return:</p>'
  '<ul>'
@@ -3531,8 +3531,8 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<h2 id="bottom-line">The bottom line</h2>'
  '<p>Per diem is the rare deduction that is large, legal, and free &mdash; you have already earned it by sleeping in the truck. The only thing standing between you and roughly <b>' + _PD_NET_S + ' for every night you were out</b> is a record of the nights.</p>'
  '<p>You can build that record by hand, in a notebook, hoping you remember. Or you can run your freight on a system that <b>stamps every trip with GPS by default</b>, counts the nights for you, files the detention you earned, and hands you a Schedule C rollup and a per-load profit statement at the end of it.</p>'
- '<p>The deduction was always yours. Loadboot just makes it provable.</p>'
- '<p class="small">Loadboot is a dispatch and carrier-operations platform, not a tax preparer or CPA firm. The figures here are estimates to help you plan; per diem rates, deductibility and eligibility change and depend on your circumstances. Confirm your numbers with a qualified tax professional before filing.</p>')
+ '<p>The deduction was always yours. LoadBoot just makes it provable.</p>'
+ '<p class="small">LoadBoot is a dispatch and carrier-operations platform, not a tax preparer or CPA firm. The figures here are estimates to help you plan; per diem rates, deductibility and eligibility change and depend on your circumstances. Confirm your numbers with a qualified tax professional before filing.</p>')
 
 PD_FAQ = [
  ('What is the truck driver per diem rate for 2026?',
@@ -3542,11 +3542,11 @@ PD_FAQ = [
  ('Can a company driver on a W-2 claim per diem?',
   'No. After the Tax Cuts and Jobs Act removed unreimbursed employee expenses, W-2 company drivers cannot deduct per diem on their tax return. Only self-employed owner-operators filing Schedule C can claim it. Some carriers instead run a per diem PAY program through payroll, which is a different thing entirely.'),
  ('Do I need meal receipts to claim per diem?',
-  'No. That is the whole advantage of a flat per diem &mdash; you do not save individual meal receipts. But you DO need records proving which nights you were away from your tax home overnight. Trip records, ELD logs or GPS-stamped load records all work. Loadboot produces this automatically from your trips.'),
+  'No. That is the whole advantage of a flat per diem &mdash; you do not save individual meal receipts. But you DO need records proving which nights you were away from your tax home overnight. Trip records, ELD logs or GPS-stamped load records all work. LoadBoot produces this automatically from your trips.'),
  ('How much is per diem worth to an owner-operator?',
   'At ' + _PD_NET_S + ' per night, 200 nights away is ' + _pd_i(200 * _PD_NET) + ' in deductions and 250 nights is ' + _pd_i(250 * _PD_NET) + '. Depending on your bracket and self-employment tax, that typically keeps roughly ' + _pd_i(round(200 * _PD_NET * 0.37, -2)) + '&ndash;' + _pd_i(round(250 * _PD_NET * 0.37, -2)) + ' of real cash in your pocket. Specialists note that drivers who skip it lose over $11,000 in deductions a year.'),
  ('What proof does the IRS want for per diem?',
-  'Evidence of the days you were travelling away from your tax home overnight &mdash; not meal receipts. A dated, objective record is what matters. GPS-stamped pickup and delivery times, like the ones Loadboot writes on every trip, are exactly that kind of record.'),
+  'Evidence of the days you were travelling away from your tax home overnight &mdash; not meal receipts. A dated, objective record is what matters. GPS-stamped pickup and delivery times, like the ones LoadBoot writes on every trip, are exactly that kind of record.'),
 ]
 
 rich_article('truck-driver-per-diem-2026.html',
@@ -4356,7 +4356,7 @@ EP27_BODY=(
 '<p>What is realistically available to a one-to-five truck operation right now is a unit already sitting on a lot, a fleet-spec order someone else released, or a used truck. Two of those three are the used market.</p>'
 
 +svc_banner('Make the truck you already have earn its keep',
-  'Loadboot books, negotiates and manages freight for owner-operators and small fleets at a flat 5% &mdash; no long-term contracts, no monthly fee, and every load priced against your cost per mile.',
+  'LoadBoot books, negotiates and manages freight for owner-operators and small fleets at a flat 5% &mdash; no long-term contracts, no monthly fee, and every load priced against your cost per mile.',
   'Apply as a carrier','carrier-application.html')+
 
 '<h2 id="used">The used market is where this lands</h2>'
@@ -4401,7 +4401,7 @@ EP27_BODY=(
 '<p>Nobody knows the final cost of a 2027 truck, because EPA is still writing it. Nobody knows where used prices go, because that depends on how much of the pre-buy actually gets built and how freight rates behave while it does. Nobody knows whether the post-pre-buy slump arrives on schedule or gets overwritten by the economy the way 2009 overwrote it.</p>'
 '<p>What is knowable is your side of it: what your truck is worth, what it is going to cost you to keep, what a payment does to your break-even rate, and how many bad weeks you can absorb before a payment becomes a problem. Those are the numbers that decide this, and they are the only ones in the whole discussion that you control.</p>'
 '<p>The pre-buy is a fleet event. Your decision is not. Price it off your own books.</p>'
-'<p class="small">Loadboot is a dispatch and carrier-operations platform, not a financial advisor or lender, and nothing here is a recommendation to buy, sell or finance equipment. Figures are attributed to the sources named; regulations, prices and market conditions change.</p>')
+'<p class="small">LoadBoot is a dispatch and carrier-operations platform, not a financial advisor or lender, and nothing here is a recommendation to buy, sell or finance equipment. Figures are attributed to the sources named; regulations, prices and market conditions change.</p>')
 EP27_FAQ=[
  ('Will a 2027 truck really cost more?','Almost certainly something, but the published estimates are far apart and the rule is still moving. EPA&rsquo;s own rulemaking put the technology cost at $4,827 per truck in 2017 dollars, about $6,243 in 2024 dollars. Joel Morrow of Alpha Drivers Transportation ballparked emission-reduction technology on current trucks at $20,000 to $40,000, per Overdrive. And in July 2026 EPA proposed rolling back the extended warranty and useful-life requirements, which it estimated could save up to $6,000 per diesel vehicle. Anyone quoting you one firm number today is quoting a number the rulemaking has not finished setting.'),
  ('Was the 2027 EPA rule delayed?','No. ATA, the Truckload Carriers Association, National Tank Truck Carriers and 49 state trucking associations asked EPA to push the standard to 2031, and EPA declined, keeping the model-year 2027 start. What EPA did propose in July 2026 was a set of amendments &mdash; dropping the extended emissions warranty back to 100,000 miles or five years, removing DEF derates in favor of visible or audible warnings, and delaying the extended useful-life requirement to model year 2030. The comment period closes 29 August 2026.'),
@@ -4427,10 +4427,10 @@ THUMBS['should-i-buy-a-truck-before-2027-epa-rule.html']=EP27_FEAT
 READTIME['should-i-buy-a-truck-before-2027-epa-rule.html']=9
 
 bcards = ''.join(blog_card(fn,t,ex,READTIME.get(fn,5)) for fn,t,d,ex,bl in BLOGPOSTS)
-blog_body = svc_hero('The Loadboot Blog','Practical guides for owner-operators and carriers &mdash; pricing, authority, finding loads, and running a more profitable truck.')
-blog_body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Guides &amp; resources</div><h2>Latest from Loadboot</h2></div><div class="bloggrid">%s</div></div></section>' % bcards
+blog_body = svc_hero('The LoadBoot Blog','Practical guides for owner-operators and carriers &mdash; pricing, authority, finding loads, and running a more profitable truck.')
+blog_body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Guides &amp; resources</div><h2>Latest from LoadBoot</h2></div><div class="bloggrid">%s</div></div></section>' % bcards
 blog_body += final_cta()
-page('blog.html','Loadboot Blog: Dispatch Tips &amp; Guides | Carriers','Practical truck dispatch guides for owner-operators and new-authority carriers: pricing, finding loads, dispatcher vs broker, and more.','blog.html', blog_body)
+page('blog.html','LoadBoot Blog: Dispatch Tips &amp; Guides | Carriers','Practical truck dispatch guides for owner-operators and new-authority carriers: pricing, finding loads, dispatcher vs broker, and more.','blog.html', blog_body)
 
 # ---------- LEGAL PAGES ----------
 # Privacy is a flagship page now, not a wall of text: built by privacy_module.py from what
@@ -4471,7 +4471,7 @@ ls_faqs = [
  ('How do I decide if a load is worth taking?','Start with your true cost per mile, then subtract every mile you will drive &mdash; loaded and empty &mdash; plus the time it ties up your truck. If the load does not clear your costs with a healthy margin, you either negotiate or pass. The tool does this math for you in seconds.'),
  ('Does deadhead really matter that much?','Yes. Empty miles to the pickup burn fuel and hours but earn nothing, so they quietly drag down your real rate per mile. A load that looks like $2.40 a mile can fall under $2.00 once deadhead is counted &mdash; which is exactly what the Load Score reveals.'),
  ('What is a good profit margin on a freight load?','Most healthy owner-operators aim for at least a 20&ndash;30% margin over their all-in cost. Set your target in the tool and it will tell you the lowest rate you should accept and suggest a counter-offer to get there.'),
- ('Can Loadboot just find good loads for me?','Yes &mdash; that is the whole point of a dispatcher. We screen loads against numbers like these, negotiate the rate, and keep your truck on profitable freight. Flat 5%, no long-term contracts.'),
+ ('Can LoadBoot just find good loads for me?','Yes &mdash; that is the whole point of a dispatcher. We screen loads against numbers like these, negotiate the rate, and keep your truck on profitable freight. Flat 5%, no long-term contracts.'),
 ]
 ls_faq_html, ls_faq_schema = faq_block(ls_faqs)
 ls_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px">
@@ -4479,18 +4479,18 @@ ls_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px">
 <p style="margin-top:14px">Every owner-operator faces the same question a dozen times a day: <em>should I take this load?</em> A broker throws a rate at you, the clock is ticking, and you have about thirty seconds to decide. Most drivers fall back on rate per mile &mdash; but that single number hides more than it shows. The Load Score tool above turns the offer into an honest answer by weighing everything that actually decides whether a load makes you money.</p>
 <h3 style="margin-top:26px">Why rate per mile alone will trick you</h3>
 <p>A load that reads $2.40 per mile sounds great until you count the 150 empty miles you will run just to reach the pickup. Those deadhead miles burn fuel and hours but pay nothing, so your real rate per mile drops fast. The same load can also strand you in a weak freight market where your next load runs cheap or empty. Time matters too: a load that ties up your truck for three days at a so-so rate can be worth less than a tighter one you can turn in a day. None of that shows up in the rate per mile &mdash; but all of it shows up in your bank account.</p>
-<h3 style="margin-top:22px">What the Loadboot Load Score measures</h3>
+<h3 style="margin-top:22px">What the LoadBoot Load Score measures</h3>
 <p>Instead of a single number, the Load Score blends five things real dispatchers weigh on every load: your profit margin after all-in costs, your true rate per mile across loaded <strong>and</strong> deadhead miles, how badly empty miles are dragging the rate, your profit per day, and the strength of the freight market where the load drops you. It rolls those into a score from 0 to 100 and a plain verdict &mdash; <strong>take it, negotiate, or pass</strong> &mdash; so you are not doing trucking math in your head at a truck stop.</p>
 <h3 style="margin-top:22px">Counter the offer &mdash; do not just accept or walk</h3>
 <p>The most profitable owner-operators rarely accept the first number, and they rarely hang up either. They counter. That is why the tool also gives you a suggested counter-offer: the exact total and rate per mile you should ask for to hit your target margin. Knowing that number before you call the broker back is the difference between hoping a load pays and knowing it does. If you want to sharpen the inputs first, run your numbers through our free <a href="tools.html">cost-per-mile and profit calculators</a>.</p>
 <h3 style="margin-top:22px">Let a dispatcher take this off your plate</h3>
-<p>This tool is free to use as often as you like &mdash; no signup, no catch. But if you would rather drive than screen loads all day, that is exactly what we do. A dedicated Loadboot dispatcher scores loads like this, negotiates the rate, and keeps your truck on freight that actually pays &mdash; flat 5%, no long-term contracts. <a href="contact.html">Get started in two minutes</a> or <a href="services.html">see everything we handle</a>.</p>
+<p>This tool is free to use as often as you like &mdash; no signup, no catch. But if you would rather drive than screen loads all day, that is exactly what we do. A dedicated LoadBoot dispatcher scores loads like this, negotiates the rate, and keeps your truck on freight that actually pays &mdash; flat 5%, no long-term contracts. <a href="contact.html">Get started in two minutes</a> or <a href="services.html">see everything we handle</a>.</p>
 </div></section>'''
 ls_body = svc_hero('Should You Take This Load?','Paste in any load offer and get an instant score, a clear take / negotiate / pass verdict, and a smart counter-offer &mdash; built on your real cost per mile. Free, no signup.')
 ls_body += '<section style="padding-top:10px"><div class="wrap">' + LS_HTML.replace('value="3.85"', 'value="%.2f"' % _DIESEL) + '<p class="center" style="margin-top:22px;color:var(--muted);font-size:.9rem">Nothing you type is saved or sent anywhere &mdash; it all runs right in your browser.</p></div></section>'
 ls_body += ls_seo + ls_faq_html + final_cta() + '<script>' + LS_JS + '</script>'
 ls_howto = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to decide whether to take a freight load","step":[{"@type":"HowToStep","name":"Enter the offer","text":"Enter what the load pays, the loaded miles, and the deadhead miles to the pickup."},{"@type":"HowToStep","name":"Add your costs","text":"Enter your all-in cost per mile and how many days the load will take."},{"@type":"HowToStep","name":"Read the score and verdict","text":"The Load Score returns a 0-100 score and a take, negotiate, or pass verdict based on profit, deadhead, time, and market."},{"@type":"HowToStep","name":"Counter the rate","text":"Use the suggested counter-offer to negotiate a rate that hits your target margin before you accept."}]}</script>'
-ls_app = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Load Score","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free tool that tells truckers and owner-operators whether a freight load is worth taking, with a take-negotiate-pass verdict and a suggested counter-offer."}</script>'
+ls_app = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"LoadBoot Load Score","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free tool that tells truckers and owner-operators whether a freight load is worth taking, with a take-negotiate-pass verdict and a suggested counter-offer."}</script>'
 page('load-score.html','Should You Take This Load? Free Load Score Tool for Truckers','Free tool that scores any freight load and tells you to take, negotiate, or pass — with a counter-offer based on your cost per mile.','load-score.html', ls_body, ls_app  + ls_faq_schema)
 
 # ---------- FREE TOOLS ----------
@@ -4500,10 +4500,10 @@ tools_faqs = [
  ('How do I calculate profit on a load?','Enter what the load pays, the total miles, your fuel price and MPG, plus any tolls or expenses. The Load Profit Calculator instantly shows your net profit and your rate per mile.'),
  ('What is a good rate per mile for owner-operators?','It depends on your costs, but most owner-operators need at least $1.80 to $2.00 per mile just to break even. Use the Cost-Per-Mile and Break-Even tools above to find your own number.'),
  ('Why does my cost per mile matter so much?','Your cost per mile is the foundation of every load decision. Any rate below it loses money. The calculator above turns your monthly fixed and variable costs into one number you can judge any rate against.'),
- ('Can Loadboot just handle all of this for me?','Yes &mdash; that is exactly what we do. We negotiate rates, plan lanes, and keep your truck loaded so you are not crunching these numbers on every load. Flat 5%, no long-term contracts.'),
+ ('Can LoadBoot just handle all of this for me?','Yes &mdash; that is exactly what we do. We negotiate rates, plan lanes, and keep your truck loaded so you are not crunching these numbers on every load. Flat 5%, no long-term contracts.'),
 ]
 tools_faq_html, tools_faq_schema = faq_block(tools_faqs)
-tools_intro = '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free trucker tools</div><h2>Free dispatch &amp; profit calculators for truckers</h2><p class="lead center" style="margin:0 auto">No login. No signup. Just fast, accurate calculators that owner-operators and fleets actually use to price loads, cut costs, and protect every mile &mdash; built by the dispatch team at Loadboot.</p></div></div></section>'
+tools_intro = '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free trucker tools</div><h2>Free dispatch &amp; profit calculators for truckers</h2><p class="lead center" style="margin:0 auto">No login. No signup. Just fast, accurate calculators that owner-operators and fleets actually use to price loads, cut costs, and protect every mile &mdash; built by the dispatch team at LoadBoot.</p></div></div></section>'
 tools_section = '<section style="padding-top:0"><div class="wrap">' + TOOLS_HTML.replace('value="3.85"', 'value="%.2f"' % _DIESEL) + '</div></section>'
 tools_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px">
 <h2>Know your numbers before you take the load</h2>
@@ -4515,11 +4515,11 @@ tools_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px
 <h3 style="margin-top:22px">Fuel, take-home, detention &amp; deadhead</h3>
 <p>Diesel is the biggest variable cost on the road, so the <a href="tools.html#fuel">fuel cost calculator</a> helps you price any lane in seconds. The <a href="tools.html#takehome">owner-operator take-home calculator</a> shows what really lands in your pocket after fuel and fees, the <a href="tools.html#detention">detention pay calculator</a> tells you what a shipper owes for wasting your day, and the <a href="tools.html#deadhead">deadhead calculator</a> reveals how empty miles quietly shrink your real rate.</p>
 <h3 style="margin-top:22px">Want a dispatcher to handle the numbers for you?</h3>
-<p>These tools are free to use forever. But if you would rather spend your time driving than crunching rates, that is exactly what we do. <a href="contact.html">Get started with Loadboot</a> and a dedicated dispatcher will find the loads, run these numbers, and negotiate the rate for you &mdash; flat 5%, no long-term contracts. <a href="services.html">See all of our services</a>.</p>
+<p>These tools are free to use forever. But if you would rather spend your time driving than crunching rates, that is exactly what we do. <a href="contact.html">Get started with LoadBoot</a> and a dedicated dispatcher will find the loads, run these numbers, and negotiate the rate for you &mdash; flat 5%, no long-term contracts. <a href="services.html">See all of our services</a>.</p>
 </div></section>'''
 tools_body = svc_hero('Free Tools for Truckers &amp; Owner-Operators','Price loads, know your true cost per mile, and stop leaving money on the table &mdash; with the same calculators our dispatchers use every day. Free, no signup, instant results.')
 tools_body += LSP + tools_intro + tools_section + tools_seo + tools_faq_html + final_cta() + '<script>' + TOOLS_JS + '</script>'
-tools_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Free Trucker Tools","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home, detention and deadhead calculators for truck drivers and owner-operators."}</script>' + tools_faq_schema
+tools_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"LoadBoot Free Trucker Tools","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home, detention and deadhead calculators for truck drivers and owner-operators."}</script>' + tools_faq_schema
 page('tools.html','Trucking Calculators — Free Cost Per Mile & Rate Tools | LoadBoot','Free trucking calculators with no signup: cost per mile, profit per load, rate per mile, fuel, break-even and detention pay. Instant answers, no login.','tools.html', tools_body, tools_schema)
 
 
@@ -4596,14 +4596,14 @@ _cpmc_faq_html, _cpmc_faq_sch = faq_block([
  ('Does this calculator include driver pay?',
   'Driver pay is an optional field. If you drive your own truck, leave it at zero and treat profit as your pay. If you put a company driver in the seat, enter their per-mile wage so the cost per mile reflects it.'),
  ('Is this trucking calculator really free?',
-  'Yes - free, no signup, no login, and it runs entirely in your browser. It is the same math our dispatch team uses when pricing loads for Loadboot carriers. We also have seven more free calculators covering profit per load, fuel, break-even, take-home pay and detention.'),
+  'Yes - free, no signup, no login, and it runs entirely in your browser. It is the same math our dispatch team uses when pricing loads for LoadBoot carriers. We also have seven more free calculators covering profit per load, fuel, break-even, take-home pay and detention.'),
 ])
 
 cpmc_body = svc_hero('Trucking Cost Per Mile Calculator','Enter your real costs &mdash; truck payment, insurance, fuel, maintenance &mdash; and see your true cost per mile, your break-even rate, and what any load actually pays you. Free, instant, no signup.')
 cpmc_body += CPMC_CALC + CPMC_BODY_TOP
-cpmc_body += '<section style="padding-top:0"><div class="wrap">' + svc_banner('Know your number. Then let us beat it.','Loadboot dispatchers price every load against YOUR cost per mile &mdash; flat 5%, no long-term contracts, no forced dispatch.','See how dispatch works','how-it-works.html') + '</div></section>'
+cpmc_body += '<section style="padding-top:0"><div class="wrap">' + svc_banner('Know your number. Then let us beat it.','LoadBoot dispatchers price every load against YOUR cost per mile &mdash; flat 5%, no long-term contracts, no forced dispatch.','See how dispatch works','how-it-works.html') + '</div></section>'
 cpmc_body += CPMC_BODY_MID + _cpmc_faq_html + final_cta()
-cpmc_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Trucking Cost Per Mile Calculator","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free cost per mile calculator for truckers: itemize fixed and variable costs to get true cost per mile, break-even rate and profit per mile."}</script>' + _cpmc_faq_sch
+cpmc_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"LoadBoot Trucking Cost Per Mile Calculator","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free cost per mile calculator for truckers: itemize fixed and variable costs to get true cost per mile, break-even rate and profit per mile."}</script>' + _cpmc_faq_sch
 page('cost-per-mile-calculator.html','Trucking Cost Per Mile Calculator (2026) &mdash; Free CPM &amp; Rates Per Mile | LoadBoot'.replace('&mdash;','—').replace('&amp;','&'),'Free trucking cost per mile calculator: itemize your fixed and variable costs and get your true cost per mile, break-even rate and profit per mile instantly. See how your CPM compares against published industry benchmarks. No signup, no login.','tools.html', cpmc_body, cpmc_schema)
 
 # ======================================================================
@@ -4666,8 +4666,8 @@ _faq_items = [
  ('Does LoadBoot handle maintenance, payroll, fuel cards and IFTA?', 'The fleet back office includes service logs with next-due dates, payroll entries built from delivered trips, EFS/Comdata/WEX fuel-card CSV import, per-trip P&amp;L with cost per mile, IFTA state miles from the GPS trail and per-diem tracking. See <a href="fleet-management.html">fleet management</a>.'),
  ('Is there an API for TMS integration?', 'Yes &mdash; the <a href="/app/developer/">developer portal</a> issues API keys and lets you register your own https webhook endpoints &mdash; load, trip, document and delivery events are then delivered automatically, with retries. Details on <a href="integrations.html">integrations</a>. Details on <a href="integrations.html">integrations</a>.'),
  ('Who runs LoadBoot&rsquo;s operations behind the scenes?', 'A staffed operations desk we document publicly: verifications approved same-day, claims checked against server-side GPS evidence, payment receipts verified by humans &mdash; maker and checker never the same account. See the <a href="command-center.html">Command Center page</a>.'),
- ('How much does Loadboot dispatch cost?', 'A flat 5% of the linehaul on loads we book for you &mdash; no sign-up fee, no monthly minimum, and no long-term contract. You only pay when we actually put money on your truck.'),
- ('Do I keep my own authority?', 'Yes. You keep your MC/DOT authority, your insurance and your broker relationships. Loadboot works on your behalf; we never take over your authority.'),
+ ('How much does LoadBoot dispatch cost?', 'A flat 5% of the linehaul on loads we book for you &mdash; no sign-up fee, no monthly minimum, and no long-term contract. You only pay when we actually put money on your truck.'),
+ ('Do I keep my own authority?', 'Yes. You keep your MC/DOT authority, your insurance and your broker relationships. LoadBoot works on your behalf; we never take over your authority.'),
  ('Is there a contract or cancellation fee?', 'No long-term contract and no cancellation fee. You can pause or stop any time. We keep your business by earning it, not by locking you in.'),
  ('What equipment types do you dispatch?', 'Dry van, reefer, flatbed, step deck, hotshot, power only and box truck / expedited. If you run mixed equipment, we handle that too.'),
  ('How fast can I get started?', 'Most carriers are set up the same day. Create your profile, send us your authority and insurance, and a dispatcher gets to work on your lanes.'),
@@ -4940,8 +4940,8 @@ bt += _sec('How it works', 'From sign-up to your first expedited run', _cards([
 ]))
 bt += _btfaq_html
 bt += final_cta()
-page('box-truck-dispatch.html', 'Box Truck &amp; Expedited Dispatch Service | Loadboot',
-     'Box truck, cargo van and expedited freight dispatch. Loadboot keeps your smaller equipment loaded with LTL, final-mile and hot loads. Flat 5%, no long-term contracts.',
+page('box-truck-dispatch.html', 'Box Truck &amp; Expedited Dispatch Service | LoadBoot',
+     'Box truck, cargo van and expedited freight dispatch. LoadBoot keeps your smaller equipment loaded with LTL, final-mile and hot loads. Flat 5%, no long-term contracts.',
      'services.html', bt, _btfaq_sch)
 
 
@@ -5102,8 +5102,8 @@ page('ifta-fuel-tax.html','IFTA Fuel Tax Guide — Quarterly Returns & Audits | 
 _ag_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"Independent Agent — Trucking Marketplace (Commission, Remote)","description":"Refer brokers, carriers and shippers to LoadBoot and earn 1% of every delivered load your referred clients move — recurring, uncapped, paid monthly. The software does the dispatch: live load board, GPS tracking, automatic invoicing and payments. You own the relationships.","datePosted":"2026-07-12","validThrough":"2027-07-12T23:59:59-05:00","employmentType":"CONTRACTOR","hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":0,"maxValue":10000}},"directApply":true}</script>'
 
 # ---- Careers ----
-car = svc_hero('Careers at Loadboot', 'We are building an honest dispatch company for the people who keep America moving. If that sounds like you, we would love to talk.')
-car += '<section><div class="wrap prose reveal"><h2>Why work here</h2><p>Loadboot exists to give carriers a dispatcher who actually has their back. We hire people who take that seriously &mdash; dispatchers, carrier-success reps, and builders who care about doing right by the driver on the other end of the phone.</p></div></section>'
+car = svc_hero('Careers at LoadBoot', 'We are building an honest dispatch company for the people who keep America moving. If that sounds like you, we would love to talk.')
+car += '<section><div class="wrap prose reveal"><h2>Why work here</h2><p>LoadBoot exists to give carriers a dispatcher who actually has their back. We hire people who take that seriously &mdash; dispatchers, carrier-success reps, and builders who care about doing right by the driver on the other end of the phone.</p></div></section>'
 # ---- OPEN ROLES — the Agent role is live and featured ----
 car += ('<section class="bg-soft" id="roles"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Open roles</div><h2>Two ways to join &mdash; we&rsquo;re hiring right now</h2></div>'
  '<div class="grid g2 reveal" style="max-width:980px;margin:0 auto">'
@@ -5162,7 +5162,7 @@ car += ('<section id="dispatcher-job"><div class="wrap prose reveal" style="max-
  '<p><a href="/app/agent/?join=dispatcher" class="btn btn-primary">Create your account &amp; apply as a dispatcher &rarr;</a></p>'
  '</div></section>')
 car += '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Life at LoadBoot</div><h2>What the work is actually like</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#127919;</div><h3>Real stakes, real people</h3><p>Every shift you keep a driver earning and a shipper informed. The feedback loop is measured in hours, not quarters.</p></div><div class="card reveal"><div class="icon">&#128200;</div><h3>Modern tooling</h3><p>Our Command Center automates the busywork — matching, documents, reminders — so your judgment goes where software cannot.</p></div><div class="card reveal"><div class="icon">&#127758;</div><h3>Remote-friendly</h3><p>Dispatch runs on outcomes, not seat time. Reliable coverage matters; your zip code does not.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Teams we hire for</div><h2>Where you could fit</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128222;</div><h3>Dispatch &amp; operations</h3><p>Load hunting, rate negotiation, trip babysitting, exception handling. Trucking experience wins; hustle and honesty are non-negotiable.</p></div><div class="card reveal"><div class="icon">&#129309;</div><h3>Carrier &amp; partner success</h3><p>Onboarding carriers, verifying brokers, keeping accounts healthy and honest.</p></div><div class="card reveal"><div class="icon">&#128187;</div><h3>Product &amp; engineering</h3><p>The platform behind it all — dispatch tooling, portals, automation and analytics.</p></div></div></div></section>'
-car += lead_form('careers', 'Apply to Loadboot', 'Tell us about yourself and what you would want to own here.',
+car += lead_form('careers', 'Apply to LoadBoot', 'Tell us about yourself and what you would want to own here.',
     [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True), ('phone', 'Phone', 'tel', False),
      ('company', 'Current / most recent role', 'text', False),
      ('message', 'What are you great at? Share a link to your CV or LinkedIn.', 'textarea', True)],
@@ -5283,8 +5283,8 @@ page('sms.html', 'Text Messages from LoadBoot \u2014 SMS Opt-In, Keywords and Di
  'contact.html', _sms, _sms_schema)
 
 # ---- Partner Program ----
-pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.', tert_label='How it works', tert_href='how-it-works.html', cta_href='/app/partner/', cta_label='Open the Partner Portal &rarr;', cta2_href='create-broker-account.html', cta2_label='Create a broker account')
-pp += m_zigzag('Partner with Loadboot', 'A network you can rely on', [
+pp = svc_hero('LoadBoot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.', tert_label='How it works', tert_href='how-it-works.html', cta_href='/app/partner/', cta_label='Open the Partner Portal &rarr;', cta2_href='create-broker-account.html', cta2_label='Create a broker account')
+pp += m_zigzag('Partner with LoadBoot', 'A network you can rely on', [
  ('shieldcheck', 'Vetted carriers', 'Work with carriers whose authority, insurance and compliance are actively tracked &mdash; fewer surprises, cleaner loads.'),
  ('doccheck', 'Clean documentation', 'Rate confirmations, BOLs and PODs handled properly and delivered on time, so billing and claims stay simple.'),
  ('headset', 'One point of contact', 'A professional dispatch team that answers the phone and communicates proactively on every load.'),
@@ -5301,16 +5301,16 @@ pp += lead_form('partner_inquiry', 'Become a partner', 'Tell us about your freig
      ('message', 'Lanes, freight type, and volume', 'textarea', False)],
     'Request partnership', 'Thanks — our partner team will reach out.')
 pp += m_gradcta('Already a partner?', 'Your loads, documents and live shipment status are waiting in the Partner Portal.', 'Open Partner Portal &rarr;', '/app/partner/', grad='linear-gradient(135deg,#111827 0%,#1f2937 55%,#312e81 100%)', btncolor='#818cf8', btntext='#fff')
-page('partners.html', 'Partner Program for Brokers, Shippers &amp; Facilities | Loadboot',
-     'Partner with Loadboot for a reliable, vetted carrier network and clean, on-time documentation. Built for brokers, shippers and facilities.',
+page('partners.html', 'Partner Program for Brokers, Shippers &amp; Facilities | LoadBoot',
+     'Partner with LoadBoot for a reliable, vetted carrier network and clean, on-time documentation. Built for brokers, shippers and facilities.',
      'partners.html', pp)
 
 # ---- Dedicated Carrier page (premium, ~14 sections) ----
 def _prose(h2, *paras):
     return '<section><div class="wrap prose reveal"><h2>%s</h2>%s</div></section>' % (h2, ''.join('<p>%s</p>' % p for p in paras))
 cp = svc_hero('Truck Dispatch Built Around Your Truck',
-    'Loadboot is a dispatcher in your corner &mdash; we find the loads, negotiate the rate, handle the paperwork and keep you moving, so you can focus on driving. Flat 5%, no long-term contracts, you keep your authority.')
-cp += _sec('Why carriers choose Loadboot', 'A dispatcher that actually has your back', _cards([
+    'LoadBoot is a dispatcher in your corner &mdash; we find the loads, negotiate the rate, handle the paperwork and keep you moving, so you can focus on driving. Flat 5%, no long-term contracts, you keep your authority.')
+cp += _sec('Why carriers choose LoadBoot', 'A dispatcher that actually has your back', _cards([
     ('&#128666;', 'We keep your truck loaded', 'Dedicated dispatchers work your lanes and preferences so you spend less time hunting boards and more time earning.'),
     ('&#128176;', 'Better rates, negotiated for you', 'We know the lanes and we counter &mdash; you get a rate that reflects what the freight is really worth.'),
     ('&#129309;', 'You keep your authority', 'Your MC/DOT, your insurance, your broker relationships. We work on your behalf; we never take over your authority.'),
@@ -5369,7 +5369,7 @@ cp += m_rail('Getting started', 'On your lanes the same day', '', [
  ('bolt', 'Start getting loads', 'A dispatcher goes to work on your lanes right away. No long-term contract, cancel anytime.'),
 ], accent='#ea580c')
 _cfaq_html, _cfaq_sch = faq_block([
-    ('What does Loadboot cost carriers?', 'A flat 5% of the linehaul on loads we book &mdash; no sign-up fee, no monthly minimum, no long-term contract. You only pay when we put money on your truck.'),
+    ('What does LoadBoot cost carriers?', 'A flat 5% of the linehaul on loads we book &mdash; no sign-up fee, no monthly minimum, no long-term contract. You only pay when we put money on your truck.'),
     ('Do I keep my own authority and insurance?', 'Yes. You keep your MC/DOT, your insurance and your broker relationships. We work on your behalf and never take over your authority.'),
     ('Do you work with new-authority carriers?', 'Absolutely &mdash; new-authority carriers are a core part of who we serve. We help you land early loads and build credibility.'),
     ('What equipment do you dispatch?', 'Dry van, reefer, flatbed, step deck, hotshot, power-only and box truck / expedited.'),
@@ -5384,7 +5384,7 @@ page('carriers.html', 'Truck Dispatch Service for Carriers — Flat 5% | LoadBoo
 # ---- Dedicated Broker page (~15 sections; brokers only) ----
 bp = svc_hero(cta_href='/app/partner/', cta_label='Post a load &rarr;', cta2_href='create-broker-account.html', cta2_label='How verification works', tert_label='How it works', tert_href='how-it-works.html', h1='A Reliable Carrier Network for Brokers', lead=
     'Post a load and reach vetted carriers whose authority, insurance and compliance are actively tracked &mdash; with clean, on-time documentation and one professional point of contact on every load.')
-bp += _sec('Why brokers work with Loadboot', 'Fewer surprises, cleaner loads', _cards([
+bp += _sec('Why brokers work with LoadBoot', 'Fewer surprises, cleaner loads', _cards([
     ('&#129309;', 'Vetted carriers', 'Carrier authority, insurance and compliance are actively monitored &mdash; you cover freight with less risk.'),
     ('&#128203;', 'Clean documentation', 'Rate confirmations, BOLs and PODs handled properly and returned on time, so billing and claims stay simple.'),
     ('&#128222;', 'One point of contact', 'A dispatch team that answers the phone and communicates proactively from tender to POD.'),
@@ -5436,7 +5436,7 @@ bp += lead_form('partner_inquiry', 'Become a broker partner', 'Tell us about you
      ('message', 'Lanes, freight type and typical volume', 'textarea', False)],
     'Request partnership', 'Thanks — our partner team will reach out.')
 _bfaq_html, _bfaq_sch = faq_block([
-    ('Who can post loads on Loadboot?', 'Approved broker partners. Because moving freight from shippers requires a broker license in the US, load posting is for licensed brokers &mdash; carrier and driver accounts are separate.'),
+    ('Who can post loads on LoadBoot?', 'Approved broker partners. Because moving freight from shippers requires a broker license in the US, load posting is for licensed brokers &mdash; carrier and driver accounts are separate.'),
     ('How are carriers vetted?', 'We actively track carrier authority, insurance and compliance, and only carriers who pass hard eligibility checks are offered your loads.'),
     ('Can I integrate with my TMS?', 'Yes &mdash; subscribe to load, trip, document and delivery events via webhooks and our API on approved endpoints.'),
     ('What visibility do I get?', 'Permitted live load and trip status, pickup and delivery progress, ETAs, document status and open exceptions &mdash; without exposing private carrier data.'),
@@ -5497,8 +5497,8 @@ REF_HERO = ('<section style="padding:104px 0 96px;background:linear-gradient(135
  '</div></section>')
 ref = REF_HERO
 ref += _sec('Who it is for', 'Pick the path that fits you', _cards([
-    ('&#128667;', 'Carriers &amp; drivers', 'Already rolling with Loadboot? Introduce another owner-operator or fleet. There is no limit on how many you can refer, and no cost to you or to them.'),
-    ('&#127970;', 'Dispatch shops &amp; agencies', 'Run a book of carriers you cannot fully cover? Refer the overflow to Loadboot and earn on the freight they haul &mdash; while they keep their own authority.'),
+    ('&#128667;', 'Carriers &amp; drivers', 'Already rolling with LoadBoot? Introduce another owner-operator or fleet. There is no limit on how many you can refer, and no cost to you or to them.'),
+    ('&#127970;', 'Dispatch shops &amp; agencies', 'Run a book of carriers you cannot fully cover? Refer the overflow to LoadBoot and earn on the freight they haul &mdash; while they keep their own authority.'),
     ('&#127908;', 'Creators &amp; influencers', 'Trucking audience on YouTube, TikTok or a newsletter? Become an affiliate partner &mdash; no client roster required, just a genuine recommendation.'),
 ], 'g3'))
 ref += '<section class="section"><div class="wrap"><div class="reveal" style="background:linear-gradient(120deg,#10223B,#0d2f56);border-radius:18px;padding:26px 30px;color:#fff">'
@@ -5511,12 +5511,12 @@ ref += m_rail('How it works', 'Four honest steps',
  'From your first share to your first payout &mdash; each step recorded, nothing owed until it is confirmed in writing.', [
  ('badge', 'Join the program', 'Create your account at loadboot.com/app/agent/ &mdash; your personal code and share link are live the moment verification clears. One link works for carriers, brokers and shippers.'),
  ('megaphone', 'Share it', 'Send your link, or introduce a carrier directly. Each carrier is credited to the first partner who referred them &mdash; recorded once, no double-claims.'),
- ('truck', 'They get rolling', 'Your referral runs their own freight with Loadboot at a flat 5% &mdash; no long-term contract. You earn only when they actually haul and we actually get paid.'),
- ('wallet', 'You get paid', 'Your reward is calculated from Loadboot&rsquo;s fee on that freight, held briefly to clear cancellations, then released for payout. A human approves every payment.'),
+ ('truck', 'They get rolling', 'Your referral runs their own freight with LoadBoot at a flat 5% &mdash; no long-term contract. You earn only when they actually haul and we actually get paid.'),
+ ('wallet', 'You get paid', 'Your reward is calculated from LoadBoot&rsquo;s fee on that freight, held briefly to clear cancellations, then released for payout. A human approves every payment.'),
 ], accent='#059669')
 ref += m_dark('Multi-level, minus the games', 'A share of our fee &mdash; not a pyramid',
- 'Nothing to buy, nothing marked up, and Loadboot always keeps the majority of its own fee.', [
- ('handshake', 'Paid from our cut', 'Rewards come out of the 5% dispatch fee Loadboot already earns. The carrier never pays more, and the load rate is never marked up to fund a referral.'),
+ 'Nothing to buy, nothing marked up, and LoadBoot always keeps the majority of its own fee.', [
+ ('handshake', 'Paid from our cut', 'Rewards come out of the 5% dispatch fee LoadBoot already earns. The carrier never pays more, and the load rate is never marked up to fund a referral.'),
  ('layers', 'Up to five levels', 'If a partner you brought in later refers someone themselves, you can earn a smaller share down the chain &mdash; up to five levels deep, with each level thinner than the last.'),
  ('scale', 'Terms being finalized', 'Exact percentages and payout rules are being finalized with legal before the program opens publicly. Apply now to join the early list &mdash; we confirm your terms in writing before anything is owed or paid.'),
 ], accent='#34d399', numbered=False)
@@ -5535,8 +5535,8 @@ ref += lead_form('referral', 'Apply as a referral partner', 'For agencies, dispa
      ('message', 'How would you like to work with us?', 'textarea', False)],
     'Apply to partner', 'Thanks — we&rsquo;ll review and reach out with your partner terms.')
 _rfaq_html, _rfaq_sch = faq_block([
-    ('Does it cost the carrier anything?', 'No. Referral rewards are paid entirely out of Loadboot&rsquo;s own 5% dispatch fee. The carrier pays the same flat 5% whether they were referred or not, and the load rate is never inflated to cover a referral.'),
-    ('When do I actually get paid?', 'You earn when a carrier you referred hauls freight through Loadboot and we collect our fee on it. Each reward is held for a short period to clear cancellations and adjustments, then released as payable. A person approves every payout &mdash; money never moves automatically.'),
+    ('Does it cost the carrier anything?', 'No. Referral rewards are paid entirely out of LoadBoot&rsquo;s own 5% dispatch fee. The carrier pays the same flat 5% whether they were referred or not, and the load rate is never inflated to cover a referral.'),
+    ('When do I actually get paid?', 'You earn when a carrier you referred hauls freight through LoadBoot and we collect our fee on it. Each reward is held for a short period to clear cancellations and adjustments, then released as payable. A person approves every payout &mdash; money never moves automatically.'),
     ('What is "multi-level"?', 'If someone you refer becomes a partner and refers others, you can earn a smaller share further down that chain &mdash; up to five levels, each thinner than the one above it. It is a thank-you funded by our fee, not a recruitment scheme, and there is nothing to buy to participate.'),
     ('Do I need my own carriers to be an affiliate?', 'No. Creators and influencers can join as affiliates with no client roster &mdash; you simply share your link with a trucking audience. Agencies and dispatch shops with their own carriers can refer overflow instead.'),
     ('Can I refer more than one carrier?', 'Yes &mdash; there is no cap. Each carrier is credited to the first partner who referred them, so introduce as many as you like.'),
@@ -5702,20 +5702,20 @@ resr += _sec('Accessorial policies — the LoadBoot standard', 'What every load 
  ('&#128170;', 'Driver Assist', '$75 typical when the driver does the dock&rsquo;s work &mdash; agreed in writing first. <a href="driver-assist-policy.html">Full guide &rarr;</a>'),
  ('&#128337;', 'FCFS', 'First come, first served &mdash; and the detention clock still starts at check-in. <a href="fcfs-policy.html">Full guide &rarr;</a>'),
 ], 'g3'))
-page('resources.html', 'Free Trucking &amp; Dispatch Resources for Carriers | Loadboot',
-     'Free carrier resources from Loadboot: the Load Score tool, trucking calculators, dispatch guides, FAQ and pricing &mdash; all in one place.',
+page('resources.html', 'Free Trucking &amp; Dispatch Resources for Carriers | LoadBoot',
+     'Free carrier resources from LoadBoot: the Load Score tool, trucking calculators, dispatch guides, FAQ and pricing &mdash; all in one place.',
      'resources.html', resr)
 
 # ---- Case Studies (clearly-labelled illustrative scenarios) ----
-cs = svc_hero('Example Dispatch Scenarios', 'Illustrative examples of how Loadboot dispatch works in practice. These are worked examples for education &mdash; not testimonials or guarantees of specific results.')
+cs = svc_hero('Example Dispatch Scenarios', 'Illustrative examples of how LoadBoot dispatch works in practice. These are worked examples for education &mdash; not testimonials or guarantees of specific results.')
 cs += _sec('Worked examples', 'How the math tends to work', _cards([
     ('&#128666;', 'New-authority owner-operator', 'A carrier fresh off getting their authority struggles to get broker callbacks. A dispatcher works established relationships to land steady lanes, and coaches them through their first rate cons and PODs. <em>Illustrative example.</em>'),
     ('&#10052;', 'Reefer running empty backhauls', 'A reefer operator deadheading home half the week. The dispatcher targets round-trip lanes to cut empty miles and lift effective rate-per-mile. <em>Illustrative example.</em>'),
     ('&#128230;', 'Box truck chasing hot loads', 'An expedited box truck wasting hours self-searching. Dispatch surfaces time-critical runs so the truck stays loaded on the routes that pay. <em>Illustrative example.</em>'),
 ]))
-cs += '<section class="bg-soft"><div class="wrap prose reveal center" style="text-align:center"><p style="color:var(--muted)">These scenarios are illustrative and for education only. Loadboot does not publish fabricated testimonials or promise specific earnings.</p><p><a href="contact.html" class="btn btn-primary">Talk to a dispatcher &rarr;</a></p></div></section>'
-page('case-studies.html', 'Example Truck Dispatch Scenarios | Loadboot',
-     'Illustrative, educational examples of how Loadboot dispatch works for owner-operators, reefer and box-truck carriers. Worked examples, not guarantees.',
+cs += '<section class="bg-soft"><div class="wrap prose reveal center" style="text-align:center"><p style="color:var(--muted)">These scenarios are illustrative and for education only. LoadBoot does not publish fabricated testimonials or promise specific earnings.</p><p><a href="contact.html" class="btn btn-primary">Talk to a dispatcher &rarr;</a></p></div></section>'
+page('case-studies.html', 'Example Truck Dispatch Scenarios | LoadBoot',
+     'Illustrative, educational examples of how LoadBoot dispatch works for owner-operators, reefer and box-truck carriers. Worked examples, not guarantees.',
      'case-studies.html', cs)
 
 # ---- Security / Trust ----
@@ -5728,7 +5728,7 @@ page('security.html','Is LoadBoot Safe? Security, Fraud &amp; Phishing Protectio
      'security.html', sec, sec_schema)
 
 # ---- System Status ----
-st = svc_hero('System Status', 'Live status for the Loadboot website, carrier portal, driver app and API. We publish issues here honestly.')
+st = svc_hero('System Status', 'Live status for the LoadBoot website, carrier portal, driver app and API. We publish issues here honestly.')
 _status_row = lambda name, sid, last: '<div style="display:flex;justify-content:space-between;padding:12px 0;%s"><span>%s</span><b id="%s" style="color:#64748b">Checking&hellip;</b></div>' % ('' if last else 'border-bottom:1px solid var(--border)', name, sid)
 st += ('<section><div class="wrap" style="max-width:820px"><div class="card reveal" style="text-align:left">'
        '<h3 style="margin-bottom:6px">Current status</h3><p id="lbStatusOverall" style="color:#64748b;margin-bottom:14px;font-size:.92rem">Running a live check&hellip;</p>'
@@ -5747,8 +5747,8 @@ st += ('<section><div class="wrap" style="max-width:820px"><div class="card reve
        'var t=setTimeout(function(){done(false);},7000);'
        'fetch(api,{method:"GET",headers:{"apikey":apikey}}).then(function(r){clearTimeout(t);done(r.status>0&&r.status<500);}).catch(function(){clearTimeout(t);done(false);});'
        '})();</script>')
-page('status.html', 'Loadboot System Status',
-     'Live operational status for the Loadboot website, carrier portal, driver app and API.',
+page('status.html', 'LoadBoot System Status',
+     'Live operational status for the LoadBoot website, carrier portal, driver app and API.',
      'status.html', st)
 
 # ---- Developer API (public docs; the page every syndication partner asks for) ----
@@ -6720,14 +6720,14 @@ page('cookies.html','Cookie Policy — Every Tag We Load, Named | LoadBoot',
      'cookies.html', ck, ck_schema)
 
 # ---- Accessibility ----
-acc = svc_hero('Accessibility', 'We want every carrier to be able to use Loadboot. Here is our commitment and how to reach us if something is not working for you.')
-acc += '<section><div class="wrap prose reveal"><h2>Our commitment</h2><p>We aim to meet widely-recognized accessibility guidelines (WCAG 2.1 AA) across our website and apps: readable contrast, keyboard navigation, descriptive labels, responsive layouts and support for screen readers. Accessibility is an ongoing effort and we fix issues as we find them.</p><h2>Need help or found a barrier?</h2><p>If any part of Loadboot is hard to use with assistive technology, please tell us &mdash; we take it seriously and will work with you directly. Email <a href="mailto:hello@loadboot.com">hello@loadboot.com</a> with the page and what you ran into.</p></div></section>'
-page('accessibility.html', 'Accessibility Statement | Loadboot',
-     'Loadboot is committed to an accessible website and apps (WCAG 2.1 AA). Learn about our commitment and how to report a barrier.',
+acc = svc_hero('Accessibility', 'We want every carrier to be able to use LoadBoot. Here is our commitment and how to reach us if something is not working for you.')
+acc += '<section><div class="wrap prose reveal"><h2>Our commitment</h2><p>We aim to meet widely-recognized accessibility guidelines (WCAG 2.1 AA) across our website and apps: readable contrast, keyboard navigation, descriptive labels, responsive layouts and support for screen readers. Accessibility is an ongoing effort and we fix issues as we find them.</p><h2>Need help or found a barrier?</h2><p>If any part of LoadBoot is hard to use with assistive technology, please tell us &mdash; we take it seriously and will work with you directly. Email <a href="mailto:hello@loadboot.com">hello@loadboot.com</a> with the page and what you ran into.</p></div></section>'
+page('accessibility.html', 'Accessibility Statement | LoadBoot',
+     'LoadBoot is committed to an accessible website and apps (WCAG 2.1 AA). Learn about our commitment and how to report a barrier.',
      'accessibility.html', acc)
 
 # ---- Carrier Application (dedicated apply page) ----
-capp = svc_hero('Apply to Loadboot', 'Get your truck loaded with a dispatcher in your corner. Apply in two minutes &mdash; flat 5%, no long-term contracts, cancel anytime.')
+capp = svc_hero('Apply to LoadBoot', 'Get your truck loaded with a dispatcher in your corner. Apply in two minutes &mdash; flat 5%, no long-term contracts, cancel anytime.')
 capp += lead_form('carrier_application', 'Carrier application', 'Tell us about your operation and a dispatcher gets you set up. A real person follows up fast.',
     [('company', 'Company / business name', 'text', True), ('name', 'Your name', 'text', True),
      ('email', 'Email', 'email', True), ('phone', 'Phone', 'tel', True),
@@ -6739,8 +6739,8 @@ capp += lead_form('carrier_application', 'Carrier application', 'Tell us about y
      ('message', 'Anything else we should know?', 'textarea', False)],
     'Submit application', 'Got it — a dispatcher will reach out shortly.')
 capp += REF_CAPTURE_JS
-page('carrier-application.html', 'Carrier Application &mdash; Apply for Truck Dispatch | Loadboot',
-     'Apply for Loadboot truck dispatch in two minutes. Owner-operators, fleets and new-authority carriers welcome. Flat 5%, no long-term contracts.',
+page('carrier-application.html', 'Carrier Application &mdash; Apply for Truck Dispatch | LoadBoot',
+     'Apply for LoadBoot truck dispatch in two minutes. Owner-operators, fleets and new-authority carriers welcome. Flat 5%, no long-term contracts.',
      'contact.html', capp)
 
 # ---- Unified account-creation hub (#44): carrier / broker / shipper / referral, tabbed ----
@@ -6859,9 +6859,9 @@ _HUB_ROLES = [
    'Send shipper inquiry', 'Thanks — our team will reach out to scope your freight.'),
 
   ('referral', '&#128200;', 'Referral', 'Referral &amp; influencer partners',
-   'Earn a share of Loadboot&rsquo;s dispatch fee for every carrier or broker you refer &mdash; they never pay extra.',
+   'Earn a share of LoadBoot&rsquo;s dispatch fee for every carrier or broker you refer &mdash; they never pay extra.',
    ['Earn ongoing commission on the dispatch fee of everyone you refer',
-    'They never pay more &mdash; your reward comes from Loadboot&rsquo;s own fee',
+    'They never pay more &mdash; your reward comes from LoadBoot&rsquo;s own fee',
     'Track your referrals, earnings and payouts right in your account',
     'Get a personal referral link and ready-to-share materials',
     'Commissions unlock after a short hold; payouts reviewed by a person',
@@ -6876,7 +6876,7 @@ _HUB_ROLES = [
     ('message', 'Who you reach &amp; how you&rsquo;d promote', 'textarea', False)],
    'Join the referral program', 'Thanks — we&rsquo;ll set up your referral link and reach out.'),
   ('agent', '&#129297;', 'Agent', 'Referral partners &amp; dispatchers',
-   'Refer carriers, brokers and shippers and earn 1% of the gross on every GPS-verified delivered load your referred clients move &mdash; paid from Loadboot&rsquo;s own fee.',
+   'Refer carriers, brokers and shippers and earn 1% of the gross on every GPS-verified delivered load your referred clients move &mdash; paid from LoadBoot&rsquo;s own fee.',
    ['1% of gross on every delivered load where any side of the deal is yours',
     'One referral link for everyone &mdash; the system detects carrier, broker or shipper automatically',
     'Recruit other agents and earn level 2&ndash;5 overrides on their referrals',
@@ -6892,7 +6892,7 @@ _HUB_ROLES = [
    'Apply &mdash; then open the Agent Portal', 'Thanks! Now create your login at loadboot.com/app/agent/ — your application links up automatically.'),
 ]
 
-hub = svc_hero('Create your Loadboot account',
+hub = svc_hero('Create your LoadBoot account',
     'One front door for everyone in the freight chain. Pick your role &mdash; carrier, broker, shipper, or referral partner &mdash; and get set up in minutes. Flat, transparent, no long-term contracts.', 'See all features', 'features.html')
 hub += _HUB_STYLE
 _tabbar = '<section style="padding-top:6px"><div class="wrap"><div class="hub-tabs reveal">'
@@ -6926,15 +6926,15 @@ page('get-started.html', 'Create Your LoadBoot Account — Carrier, Broker, Ship
      'get-started.html', hub)
 
 # ---- Login portal chooser ----
-lg = svc_hero('Log in to Loadboot', 'Choose your portal. Carrier owners use the Carrier Portal; drivers invited by their carrier use the Driver App.')
+lg = svc_hero('Log in to LoadBoot', 'Choose your portal. Carrier owners use the Carrier Portal; drivers invited by their carrier use the Driver App.')
 lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
     ('&#128667;', 'Carrier Portal', 'Manage loads, trips, documents, finance and your team. <a href="/app/carrier/">Open Carrier Portal &rarr;</a>'),
     ('&#128241;', 'Driver App', 'Invited by your carrier? Sign in with the email and password from your invite &mdash; your loads, GPS check-in, POD. <a href="/app/carrier/?role=driver">Driver sign-in &rarr;</a> &middot; <a href="apps.html">Get the app</a>'),
     ('&#129309;', 'Partner Portal', 'Brokers, shippers and facilities. <a href="/app/partner/">Open Partner Portal &rarr;</a>'),
     ('&#129297;', 'Agent Portal', 'Referral partners &amp; dispatchers &mdash; your referrals, earnings and payouts. <a href="/app/agent/">Open Agent Portal &rarr;</a>'),
     ('&#128104;&#8205;&#128187;', 'Developers &amp; API', 'API keys, docs and integrations. <a href="/app/developer/">Open Developer Portal &rarr;</a>'),
-    ('&#127970;', 'Command Center (Staff)', 'Loadboot team operations console. <a href="/app/command-center/">Open Command Center &rarr;</a>'),
-    ('&#10067;', 'Need an account?', 'New to Loadboot? Create an account for your role in minutes. <a href="get-started.html">Create an account &rarr;</a>'),
+    ('&#127970;', 'Command Center (Staff)', 'LoadBoot team operations console. <a href="/app/command-center/">Open Command Center &rarr;</a>'),
+    ('&#10067;', 'Need an account?', 'New to LoadBoot? Create an account for your role in minutes. <a href="get-started.html">Create an account &rarr;</a>'),
 ], 'g3'))
 page('login.html', 'Log in to LoadBoot — Carrier, Driver, Partner & Developer Portals',
      'Log in to your LoadBoot portal: Carrier, Driver App, Partner, Agent, Developer API or Command Center. New here? Create a carrier account with flat 5% dispatch.',
@@ -9142,13 +9142,13 @@ _SITEMAP_GROUPS = [
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
   ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('delete-account.html', 'Delete your account'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]
-_sm_body = svc_hero('Sitemap', 'Every page on Loadboot, in one place.')
+_sm_body = svc_hero('Sitemap', 'Every page on LoadBoot, in one place.')
 _sm_cols = ''
 for _g, _links in _SITEMAP_GROUPS:
     _items = ''.join('<li><a href="%s">%s</a></li>' % (u, t) for u, t in _links)
     _sm_cols += '<div class="card reveal"><h3>%s</h3><ul style="line-height:2.1;margin-top:8px">%s</ul></div>' % (_g, _items)
 _sm_body += '<section><div class="wrap"><div class="grid g3 reveal">%s</div></div></section>' % _sm_cols
-page('sitemap.html', 'Sitemap | Loadboot', 'Every page on the Loadboot website — services, resources, company and legal — in one place.', '', _sm_body)
+page('sitemap.html', 'Sitemap | LoadBoot', 'Every page on the LoadBoot website — services, resources, company and legal — in one place.', '', _sm_body)
 
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'
@@ -9237,7 +9237,7 @@ REDIRECTS += "/text-us.html /sms.html 301!\n"
 # It must follow APP_REF, not a hard-coded ref: a Deploy Preview that names the
 # production project in _redirects trips the PRODUCTION-ISOLATION gate below.
 REDIRECTS += "/o.gif https://%s.supabase.co/functions/v1/mail-open 200\n" % APP_REF
-REDIRECTS += "# Loadboot — canonical-URL consolidation: Google was indexing BOTH /page and\n"
+REDIRECTS += "# LoadBoot — canonical-URL consolidation: Google was indexing BOTH /page and\n"
 REDIRECTS += "# /page.html (impressions split across 29 duplicates in GSC). 301 the extensionless\n"
 REDIRECTS += "# form to the canonical .html form so link equity consolidates. Generated per build.\n"
 _rd_exclude = {'index.html', '404.html', 'dashboard.html'}
@@ -9251,7 +9251,7 @@ NOTFOUND = (
 '<!doctype html><html lang="en" class="no-js"><head><script>document.documentElement.classList.remove("no-js")</script><meta charset="utf-8">'
 '<meta name="viewport" content="width=device-width,initial-scale=1">'
 '<meta name="robots" content="noindex,follow">'
-'<title>Page not found &mdash; Loadboot</title>'
+'<title>Page not found &mdash; LoadBoot</title>'
 '<link rel="stylesheet" href="/styles.css?v=7">'
 '<link rel="icon" href="/favicon.ico?v=2">'
 '<style>.nf{min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px}'
