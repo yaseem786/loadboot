@@ -1,14 +1,19 @@
-// carrier-fill.js — bl_disp_0459: the dispatcher's guided carrier work sheet (Trucks tab of the dispatcher workspace).
+// carrier-fill.js — bl_disp_0459 (v2, 26 Sep 2026): the dispatcher fills the carrier file IN PLACE.
 //
-// The moment a carrier is assigned, its profile / preferences / unit facts become a work sheet:
-//   • anything already on file (carrier or LoadBoot) is READ-ONLY here, with a source pill;
-//   • every EMPTY field that matters is an open task at the top, with a progress count;
-//   • a guided call script sits above the tasks (click-to-call through the LoadBoot dialer — the tel: links
-//     carry class dw-tel so shared/dialer.js intercepts them);
-//   • every value the dispatcher types is stamped dispatcher / user / time on the server (dispatcher_carrier_fill);
-//     the dispatcher may correct his OWN earlier entry, never a carrier / LoadBoot value.
-// Server: public.dispatcher_carrier_gaps(p_assignment) → the sheet; public.dispatcher_carrier_fill(...) → one field.
-// Mounted by dispatcher-workspace.js with a single call; everything else lives here.
+// Yaseen's rule: no separate "guide" block. The three sections the Trucks tab already shows — Carrier profile,
+// Carrier preferences (set by the owner), Unit/Truck — plus Availability each get a short guide line on top,
+// and inside each section every EMPTY field becomes editable right where it sits ("ask this, type it, Save").
+// A value already on file (carrier / LoadBoot) stays read-only with a source pill; a value the dispatcher adds
+// is saved live to the real table (so Carrier 360 / dispatcher 360 pick it up with no extra step) and shows
+// "You · date" — CC sees "Dispatcher · <name> · date" on the same field.
+//
+// How it hooks in (dispatcher-workspace.js changes are 5 attributes + 1 call):
+//   [data-carrier=<org>]                       the carrier card
+//   [data-fill=profile] / [data-fill=prefs]    the dw-grid inside the carrier card / preferences block
+//   [data-truck=<id>] [data-fill=truck]        the spec grid of each unit card
+//   [data-truck=<id>] [data-fill=avail]        the availability box (guide only — availability itself is unchanged)
+//   mountCarrierFill(root, assignments, { reload, toast })   after the tab is built
+// Server: public.dispatcher_carrier_gaps(p_assignment) → fields + provenance; public.dispatcher_carrier_fill(...) → one field.
 
 import { dispatcherCarrierGaps, dispatcherCarrierFill } from '../shared/api.js';
 import { el, mount } from '../shared/ui/dom.js';
@@ -17,42 +22,34 @@ import { icon as sharedIcon } from '../shared/ui/icons.js';
 const h = el;
 const ic = (n, s) => { try { return sharedIcon(n, s || 14); } catch (_) { return ''; } };
 const CSS = `
-.cf-wrap{margin-top:12px;border:1px solid rgba(124,192,255,.28);border-radius:14px;background:linear-gradient(180deg,rgba(8,131,247,.10),rgba(16,34,59,.35));padding:12px 14px}
-.cf-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.cf-head b{color:#7cc0ff;display:inline-flex;align-items:center;gap:6px;font-size:.98rem}
-.cf-prog{flex:1;min-width:160px;max-width:320px;display:flex;align-items:center;gap:8px;font-size:.8rem;color:#9fb3c8}
-.cf-prog i{flex:1;height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;display:block}
-.cf-prog i b{display:block;height:100%;background:linear-gradient(90deg,#0883F7,#4ade80);border-radius:99px;transition:width .3s}
+.cf-guide{margin:8px 0 6px;padding:8px 11px;border-radius:10px;border:1px solid rgba(124,192,255,.28);background:rgba(8,131,247,.08);font-size:.83rem;line-height:1.55;color:#c9d6e5}
+.cf-guide b{color:#fff}.cf-guide .s{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#0883F7;color:#fff;font-weight:800;font-size:.72rem;margin-right:6px;vertical-align:-4px}
+.cf-guide ol{margin:4px 0 0 18px;padding:0}.cf-guide li{margin:1px 0}
+.cf-strip{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 2px;font-size:.82rem;color:#9fb3c8}
+.cf-strip i{flex:1;min-width:120px;max-width:260px;height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;display:block}
+.cf-strip i b{display:block;height:100%;background:linear-gradient(90deg,#0883F7,#4ade80);border-radius:99px}
+.cf-strip a.dw-tel{border:1px solid rgba(159,195,255,.5);border-radius:99px;padding:4px 10px;font-weight:700}
 .cf-done{color:#4ade80;font-weight:800}
-.cf-script{margin-top:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.18)}
-.cf-script summary{cursor:pointer;padding:9px 12px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;list-style:none}
-.cf-script summary::-webkit-details-marker{display:none}
-.cf-step{display:grid;grid-template-columns:26px 1fr;gap:8px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.06);font-size:.86rem;line-height:1.55}
-.cf-step .n{width:22px;height:22px;border-radius:50%;background:#0883F7;color:#fff;font-weight:800;font-size:.75rem;display:grid;place-items:center;margin-top:2px}
-.cf-step .t{color:#fff;font-weight:800}.cf-step .d{color:#c9d6e5}
-.cf-call{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-.cf-call a.dw-tel{border:1px solid rgba(159,195,255,.5);border-radius:99px;padding:5px 11px;font-weight:700}
-.cf-tasks{margin-top:10px}
-.cf-task{display:grid;grid-template-columns:minmax(150px,1fr) minmax(180px,1.4fr) auto;gap:10px;align-items:start;padding:9px 0;border-top:1px solid rgba(255,255,255,.07)}
-.cf-task .lbl{color:#fff;font-weight:700;font-size:.88rem}.cf-task .lbl small{display:block;color:#9fb3c8;font-weight:500;font-size:.76rem;margin-top:2px;line-height:1.45}
-.cf-task .unit{display:inline-block;margin-left:6px;font-size:.7rem;padding:1px 6px;border-radius:99px;border:1px solid rgba(255,255,255,.25);color:#cbd5e1;vertical-align:middle}
-.cf-task .dw-in,.cf-task textarea,.cf-task select{width:100%;box-sizing:border-box}
-.cf-task textarea{min-height:56px;resize:vertical}
-.cf-sec{margin-top:14px}.cf-sec>b{color:#7cc0ff;display:inline-flex;align-items:center;gap:6px}
-.cf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 12px;margin-top:6px}
-.cf-f{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);min-width:0}
-.cf-f .k{font-size:.72rem;color:#9fb3c8;text-transform:uppercase;letter-spacing:.03em}
-.cf-f .v{color:#fff;font-weight:600;font-size:.88rem;display:flex;justify-content:space-between;gap:6px;align-items:center;word-break:break-word}
-.cf-f.empty .v{color:#fbbf24;font-weight:500}
-.cf-pill{font-size:.66rem;padding:1px 7px;border-radius:99px;border:1px solid currentColor;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;font-weight:700}
+.cf-pill{font-size:.64rem;padding:1px 6px;border-radius:99px;border:1px solid currentColor;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;font-weight:700;margin-left:6px;vertical-align:middle}
 .cf-pill.carrier{color:#93c5fd}.cf-pill.staff,.cf-pill.system{color:#fbbf24}.cf-pill.dispatcher{color:#4ade80}.cf-pill.open{color:#fbbf24;border-style:dashed}
-.cf-pen{background:none;border:0;color:#7cc0ff;cursor:pointer;padding:0 2px;display:inline-flex}
-.cf-more summary{cursor:pointer;color:#9fb3c8;font-size:.82rem;padding:6px 0}
-@media (max-width:640px){.cf-task{grid-template-columns:1fr}.cf-task .dw-btn{width:100%}}
+.cf-pen{background:none;border:0;color:#7cc0ff;cursor:pointer;padding:0 2px;display:inline-flex;vertical-align:middle;margin-left:4px}
+.dw-f.cf-edit{border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.05)}
+.dw-f.cf-edit .k{color:#fbbf24}
+.cf-ask{font-size:.74rem;color:#9fb3c8;line-height:1.4;margin:2px 0 4px;font-weight:500}
+.cf-row{display:flex;gap:6px;align-items:center}.cf-row .dw-in{flex:1;min-width:0;padding:6px 8px;font-size:.86rem}.cf-row textarea.dw-in{min-height:48px}
+.cf-row .dw-btn.sm{padding:6px 10px}
 `;
-
 let cssDone = false;
 function ensureCss() { if (cssDone) return; cssDone = true; document.head.appendChild(h('style', { id: 'cf-css' }, CSS)); }
+
+// grid label (as dispatcher-workspace.js prints it) → catalog field
+const MAP = {
+  profile: { 'MC': 'mc', 'USDOT': 'dot', 'Contact': 'contact_name', 'Phone': 'phone', 'WhatsApp': 'whatsapp' },
+  prefs: { 'Rate floor': 'min_rpm', 'Target rate': 'target_rpm', 'Home base': 'home_base', 'Home time': 'home_time', 'Preferred lanes': 'preferred_lanes', 'Avoid states': 'avoid_states',
+    'Equipment': 'preferred_equipment', 'Haul type': 'haul_types', 'Load size': 'load_size', 'Operating radius': 'operating_radius_miles', 'Max deadhead': 'max_deadhead_miles', 'Max weight': 'max_weight_lbs',
+    'Hazmat': 'hazmat', 'Team drivers': 'team_drivers', 'Weekends': 'weekend_ok', 'Round trips': 'round_trip_pref', 'Notice needed': 'min_notice_hours', 'Services': 'services', 'Likes': 'facility_likes', 'Avoids': 'facility_dislikes' },
+  truck: { 'Payload': 'payload_lbs', 'Pallet positions': 'pallet_positions', 'Trailer': 'trailer_type', 'Domicile': 'domicile_city', 'Max radius': 'max_radius_miles', 'Home time': 'home_time', 'Temp control': 'temp_control' },
+};
 
 const fmtDay = (d) => { try { return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (_) { return ''; } };
 function show(f) {
@@ -65,127 +62,122 @@ function show(f) {
   return String(v);
 }
 function pill(f) {
-  if (f.empty) return h('span', { class: 'cf-pill open' }, 'open');
-  const s = f.source || {}; const role = s.role || 'carrier';
-  const who = role === 'dispatcher' ? (s.by_name ? s.by_name : 'You') : role === 'carrier' ? 'Carrier' : 'LoadBoot';
-  return h('span', { class: 'cf-pill ' + role, title: role === 'carrier' ? 'Entered by the carrier in their portal — read-only for you' : role === 'dispatcher' ? 'Added by a dispatcher' + (s.at ? ' on ' + fmtDay(s.at) : '') : 'Set by the LoadBoot team — read-only for you' },
-    [f.locked ? ic('lock', 10) : null, who + (role === 'dispatcher' && s.at ? ' · ' + fmtDay(s.at) : '')]);
+  const s = f.source || {}; const role = f.empty ? 'open' : (s.role || 'carrier');
+  if (role === 'open') return h('span', { class: 'cf-pill open' }, 'ask');
+  const who = role === 'dispatcher' ? (s.by_name || 'You') + (s.at ? ' · ' + fmtDay(s.at) : '') : role === 'carrier' ? 'Carrier' : 'LoadBoot';
+  return h('span', { class: 'cf-pill ' + role, title: role === 'carrier' ? 'Entered by the carrier in their portal — read-only for you' : role === 'dispatcher' ? 'Added by a dispatcher' : 'Set by the LoadBoot team — read-only for you' }, [f.locked ? ic('lock', 9) : null, who]);
 }
 
-export function mountCarrierFill(host, assignment, opts) {
-  opts = opts || {};
-  ensureCss();
+const GUIDE = {
+  profile: (d) => h('div', { class: 'cf-guide' }, [h('span', { class: 's' }, '1'), h('b', null, 'Introduce yourself, then confirm the file. '),
+    '“Hi ' + (d.contact_name || 'there') + ', this is ' + (d.dispatcher_name || 'your dispatcher') + ' with LoadBoot Dispatch — LoadBoot has appointed me your dedicated dispatcher effective today. Do you have five minutes so I can confirm what I have on file and start finding you loads?” ',
+    'Read the MC and USDOT back digit by digit. Anything marked ', h('span', { class: 'cf-pill open', style: 'margin:0 2px' }, 'ask'), ' below: ask it and type the answer while you are on the call. Locked values were set by the carrier or LoadBoot — if the owner says one is wrong, tell LoadBoot in the Messages thread, do not argue it on the call.']),
+  prefs: () => h('div', { class: 'cf-guide' }, [h('span', { class: 's' }, '2'), h('b', null, 'How the owner wants to run. '),
+    'Floor first (“the lowest all-in rate per mile you will run?”), then the target, home base and home-time rule, lanes he likes, states he avoids, notice the driver needs, radius / deadhead, weekends. Every blank is a question; every answer goes straight into the field and is saved with your name.']),
+  truck: (unit) => h('div', { class: 'cf-guide' }, [h('span', { class: 's' }, '3'), h('b', null, 'Confirm ' + (unit ? 'unit ' + unit : 'this unit') + '. '),
+    'Trailer type and length, payload, what is on board (straps, load bars, chains, tarps, pallet jack, liftgate), where it parks when empty. One unit at a time — brokers ask exactly these.']),
+  avail: (d) => h('div', { class: 'cf-guide' }, [h('span', { class: 's' }, '4'), h('b', null, 'Where is the truck now, and when is it empty? '),
+    'Ask on every call and set it below — this is your daily line (status, empty at / from, must be home by, HOS, driver). ',
+    h('b', null, 'The carrier can post it themselves too — tell the owner exactly this: '),
+    h('ol', null, [
+      h('li', null, 'Open the LoadBoot app (carrier portal) → tap the blue “Post” button at the bottom of any screen (also: Dashboard → Availability card, or Fleet → “+ Post availability”).'),
+      h('li', null, 'Pick the truck (if more than one) → “Where the truck is / frees up”: state, then city.'),
+      h('li', null, '“Available from → until”. Every post expires 24 h after it starts — confirm it every morning, or post the backhaul the moment you are booked.'),
+      h('li', null, '“Where I want to end up”: a state / city, or Anywhere → Post. Your dispatcher and brokers see it immediately.'),
+    ]),
+    h('div', { style: 'margin-top:4px' }, d.track === 'B'
+      ? 'Track B — nothing posted in the last 7 days: call first (steps 1–3), present today’s loads, post the same day, first booking by day 4.'
+      : 'Track A — this carrier is active: day 1 post 2–3 genuine offers in the group, daily for 3 days regardless of reply; call on day 3 or sooner if the owner engages.'),
+  ]),
+};
+
+export function mountCarrierFill(root, assignments, opts) {
+  opts = opts || {}; ensureCss();
   const toast = opts.toast || ((m) => console.log(m));
-  let data = null; let reloadTimer = null;
+  let reloadTimer = null;
   const scheduleReload = () => { if (!opts.reload) return; clearTimeout(reloadTimer); reloadTimer = setTimeout(() => { try { opts.reload(); } catch (_) {} }, 4000); };
+  (assignments || []).forEach((a) => decorateAssignment(a));
 
-  mount(host, h('div', { class: 'cf-wrap' }, [h('div', { class: 'dw-muted' }, [ic('refresh', 14), ' Loading the carrier work sheet…'])]));
-  refresh();
-
-  async function refresh() {
-    try {
-      const r = await dispatcherCarrierGaps(assignment.id);
-      if (!r || r.error) throw new Error((r && r.error) || 'no data');
-      data = r; render();
-    } catch (e) {
-      // server not deployed yet / offline → the plain preferences block the tab showed before bl_disp_0459
-      mount(host, [h('div', { class: 'dw-muted', style: 'margin-top:10px;font-size:.8rem' }, [ic('alert', 13), ' Carrier work sheet unavailable right now (' + (e.message || e) + ').']), opts.fallback ? opts.fallback() : null]);
-    }
-  }
-
-  async function save(f, value, btn) {
-    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
-    try {
-      const r = await dispatcherCarrierFill(assignment.id, f.tbl, f.field, value, f.truck_id || null);
-      if (!r || r.error) throw new Error((r && (r.message || r.error)) || 'save failed');
-      toast(f.label + (f.unit_no ? ' (unit ' + f.unit_no + ')' : '') + ' saved');
-      await refresh(); scheduleReload();
-    } catch (e) {
-      toast(e.message || String(e), true);
-      if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
-    }
-  }
-
-  function input(f, current) {
-    const cur = current == null ? '' : Array.isArray(current) ? current.join(', ') : String(current);
-    const listId = f.options && f.options.length ? 'cf-dl-' + f.tbl + '-' + f.field : null;
-    const dl = listId ? h('datalist', { id: listId }, f.options.map((o) => h('option', { value: o }))) : null;
-    let node;
-    if (f.kind === 'bool') node = h('select', { class: 'dw-in' }, [h('option', { value: '' }, 'Choose…'), h('option', { value: 'true', selected: current === true ? '' : undefined }, 'Yes'), h('option', { value: 'false', selected: current === false ? '' : undefined }, 'No')]);
-    else if (f.kind === 'textarea') node = h('textarea', { class: 'dw-in', placeholder: 'Type what the owner said…' }, cur);
-    else if (f.kind === 'number' || f.kind === 'money') node = h('input', { class: 'dw-in', type: 'number', inputmode: 'decimal', step: f.kind === 'money' ? '0.01' : '1', min: '0', placeholder: f.kind === 'money' ? '0.00' : '0', value: cur });
-    else node = h('input', { class: 'dw-in', type: 'text', value: cur, list: listId || null, placeholder: f.kind === 'list' ? 'Comma-separated' + (f.options ? ' — e.g. ' + f.options.slice(0, 3).join(', ') : '') : f.options ? 'e.g. ' + f.options.slice(0, 2).join(' / ') : '' });
-    const read = () => {
-      const v = node.value;
-      if (v == null || String(v).trim() === '') return null;
-      if (f.kind === 'bool') return v === 'true';
-      if (f.kind === 'number' || f.kind === 'money') return Number(v);
-      if (f.kind === 'list') return String(v).split(',').map((x) => x.trim()).filter(Boolean);
-      return String(v).trim();
+  async function decorateAssignment(a) {
+    const card = root.querySelector('[data-carrier="' + a.carrier_org_id + '"]'); if (!card) return;
+    let d;
+    try { d = await dispatcherCarrierGaps(a.id); if (!d || d.error) throw new Error((d && d.error) || 'no data'); }
+    catch (e) { const g = h('div', { class: 'dw-muted', style: 'font-size:.78rem;margin-top:4px' }, [ic('alert', 12), ' Carrier work sheet unavailable right now (' + (e.message || e) + ').']); const t = card.querySelector('h3'); if (t) t.after(g); return; }
+    if (!card.isConnected) return;   // the tab re-rendered while we were loading
+    const fields = d.fields || [];
+    // progress + click-to-call strip under the carrier title
+    const strip = h('div', { class: 'cf-strip' });
+    const title = card.querySelector('h3'); if (title) title.after(strip);
+    const paintStrip = () => {
+      const open = fields.filter((f) => f.core && f.empty).length, total = fields.filter((f) => f.core).length;
+      const pct = total ? Math.round(100 * (total - open) / total) : 100;
+      mount(strip, [h('span', null, [ic('clipboard', 13), ' Carrier file']), h('i', null, h('b', { style: 'width:' + pct + '%' })),
+        open ? h('span', null, open + ' of ' + total + ' still to ask') : h('span', { class: 'cf-done' }, [ic('check', 12), ' all ' + total + ' answered']),
+        d.phone ? h('a', { href: 'tel:' + d.phone, class: 'dw-tel', 'data-name': d.contact_name || d.carrier_name || 'Carrier', title: 'Call with your LoadBoot phone' }, [ic('phone', 12), ' Call owner']) : null,
+        d.driver && d.driver.phone ? h('a', { href: 'tel:' + d.driver.phone, class: 'dw-tel', 'data-name': (d.driver.name || 'Driver') + ' (driver)', title: 'No answer from the owner? Call the driver' }, [ic('phone', 12), ' Call driver']) : null,
+        !d.phone ? h('span', { class: 'dw-muted' }, 'No owner phone on file — ask in the WhatsApp group') : null]);
     };
-    return { node: dl ? h('div', null, [node, dl]) : node, read, focus: () => node.focus() };
-  }
+    paintStrip();
 
-  function taskRow(f, editing) {
-    const inp = input(f, editing ? f.value : null);
-    const btn = h('button', { class: 'dw-btn sm', onClick: () => { const v = inp.read(); if (v == null && !editing) { toast('Type the answer first', true); inp.focus(); return; } save(f, v, btn); } }, editing ? 'Update' : 'Save');
-    if (!editing) inp.node.addEventListener('keydown', (e) => { if (e.key === 'Enter' && f.kind !== 'textarea') { e.preventDefault(); btn.click(); } });
-    return h('div', { class: 'cf-task', 'data-field': f.tbl + '.' + f.field + (f.truck_id ? '.' + f.truck_id : '') }, [
-      h('div', { class: 'lbl' }, [f.label, f.unit_no ? h('span', { class: 'unit' }, 'Unit ' + f.unit_no) : null, f.why ? h('small', null, f.why) : null]),
-      inp.node, btn,
-    ]);
-  }
+    // profile + preferences grids in the carrier card
+    decorateGrid(card.querySelector('[data-fill="profile"]'), 'profile', null, fields.filter((f) => f.tbl === 'profile'), GUIDE.profile(d));
+    decorateGrid(card.querySelector('[data-fill="prefs"]'), 'prefs', null, fields.filter((f) => f.tbl === 'prefs'), GUIDE.prefs());
+    // each unit card
+    root.querySelectorAll('[data-truck]').forEach((tc) => {
+      const tid = tc.getAttribute('data-truck'); const tf = fields.filter((f) => f.tbl === 'truck' && f.truck_id === tid); if (!tf.length) return;
+      decorateGrid(tc.querySelector('[data-fill="truck"]'), 'truck', tid, tf, GUIDE.truck(tf[0].unit_no));
+      const av = tc.querySelector('[data-fill="avail"]'); if (av && !(av.previousElementSibling && av.previousElementSibling.classList.contains('cf-guide'))) av.before(GUIDE.avail(d));
+    });
 
-  function field(f) {
-    const v = show(f);
-    const own = !f.empty && !f.locked;
-    const box = h('div', { class: 'cf-f' + (f.empty ? ' empty' : '') }, [
-      h('div', { class: 'k' }, [f.label, f.unit_no ? ' · unit ' + f.unit_no : '']),
-      h('div', { class: 'v' }, [h('span', null, v == null ? 'not on file' : v), h('span', { style: 'display:inline-flex;gap:4px;align-items:center' }, [pill(f),
-        own ? h('button', { class: 'cf-pen', title: 'Correct your own entry', onClick: () => mount(box, [h('div', { class: 'k' }, f.label), taskRow(f, true)]) }, ic('pen', 12)) : null])]),
-    ]);
-    return box;
-  }
+    function decorateGrid(grid, tbl, truckId, tf, guide) {
+      if (!grid) return;
+      if (!grid.previousElementSibling || !grid.previousElementSibling.classList.contains('cf-guide')) grid.before(guide);
+      const map = MAP[tbl] || {}; const done = new Set();
+      grid.querySelectorAll('.dw-f').forEach((cell) => {
+        const k = cell.querySelector('.k'); if (!k) return;
+        const field = map[k.textContent.trim()]; if (!field) return;
+        const f = tf.find((x) => x.field === field); if (!f) return;
+        done.add(field); paintCell(cell, f);
+      });
+      // open fields the grid never printed (straps, trailer length, domicile state, haul type…) → new cells, core first
+      tf.filter((f) => !done.has(f.field) && f.empty).sort((x, y) => (y.core - x.core)).forEach((f) => {
+        const cell = h('div', { class: 'dw-f' }, [h('div', { class: 'k' }, f.label), h('div', { class: 'v' }, '—')]); grid.appendChild(cell); paintCell(cell, f);
+      });
+    }
 
-  function render() {
-    const d = data; const fields = d.fields || [];
-    const open = fields.filter((f) => f.empty && f.core);
-    const more = fields.filter((f) => f.empty && !f.core);
-    const pct = d.total_core ? Math.round(100 * (d.total_core - d.open_core) / d.total_core) : 100;
-    const groups = [['profile', 'Carrier profile', 'building'], ['prefs', 'Carrier preferences', 'filter'], ['truck', 'Unit / truck', 'truck']];
-    const units = [...new Map(fields.filter((f) => f.tbl === 'truck').map((f) => [f.truck_id, f.unit_no])).entries()];
+    function paintCell(cell, f) {
+      const k = cell.querySelector('.k'); const v = cell.querySelector('.v'); if (!k || !v) return;
+      k.querySelectorAll('.cf-pill, .cf-pen').forEach((x) => x.remove());
+      if (f.empty) { cell.classList.add('cf-edit'); cell.classList.remove('empty'); k.appendChild(pill(f)); mount(v, editor(f, cell, false)); return; }
+      cell.classList.remove('cf-edit'); k.appendChild(pill(f));
+      if (!f.locked) k.appendChild(h('button', { class: 'cf-pen', title: 'Correct your own entry', onClick: () => { cell.classList.add('cf-edit'); mount(v, editor(f, cell, true)); } }, ic('pen', 11)));
+      if (f.source && f.source.role === 'dispatcher') { const s = show(f); if (s != null && v.textContent.trim() === '—') v.textContent = s; }
+    }
 
-    mount(host, h('div', { class: 'cf-wrap' }, [
-      h('div', { class: 'cf-head' }, [
-        h('b', null, [ic('clipboard', 16), ' Carrier work sheet']),
-        h('div', { class: 'cf-prog' }, [h('i', null, h('b', { style: 'width:' + pct + '%' })), d.open_core ? h('span', null, d.open_core + ' of ' + d.total_core + ' still open') : h('span', { class: 'cf-done' }, [ic('check', 12), ' All ' + d.total_core + ' answered'])]),
-      ]),
-      h('div', { class: 'dw-muted', style: 'font-size:.8rem;margin-top:4px;line-height:1.5' }, 'Values already on file were entered by the carrier or LoadBoot and are locked for you. Fill the blanks on the call; every answer you add is stamped with your name and the date, and LoadBoot sees it.'),
+    function editor(f, cell, editing) {
+      const cur = editing ? f.value : null;
+      const curS = cur == null ? '' : Array.isArray(cur) ? cur.join(', ') : String(cur);
+      const listId = f.options && f.options.length ? 'cf-dl-' + f.tbl + '-' + f.field : null;
+      let node;
+      if (f.kind === 'bool') node = h('select', { class: 'dw-in' }, [h('option', { value: '' }, 'Yes / No?'), h('option', { value: 'true', selected: cur === true ? '' : undefined }, 'Yes'), h('option', { value: 'false', selected: cur === false ? '' : undefined }, 'No')]);
+      else if (f.kind === 'textarea') node = h('textarea', { class: 'dw-in', placeholder: 'What the owner said…' }, curS);
+      else if (f.kind === 'number' || f.kind === 'money') node = h('input', { class: 'dw-in', type: 'number', inputmode: 'decimal', step: f.kind === 'money' ? '0.01' : '1', min: '0', placeholder: f.kind === 'money' ? '$ per mile' : f.label, value: curS });
+      else node = h('input', { class: 'dw-in', type: 'text', value: curS, list: listId, placeholder: f.kind === 'list' ? 'comma-separated' + (f.options ? ' · e.g. ' + f.options.slice(0, 2).join(', ') : '') : (f.options ? 'e.g. ' + f.options.slice(0, 2).join(' / ') : f.label) });
+      const read = () => { const x = node.value; if (x == null || String(x).trim() === '') return null; if (f.kind === 'bool') return x === 'true'; if (f.kind === 'number' || f.kind === 'money') return Number(x); if (f.kind === 'list') return String(x).split(',').map((s) => s.trim()).filter(Boolean); return String(x).trim(); };
+      const btn = h('button', { class: 'dw-btn sm', onClick: () => { const val = read(); if (val == null && !editing) { toast('Type the answer first', true); node.focus(); return; } save(f, val, cell, btn); } }, editing ? 'Update' : 'Save');
+      node.addEventListener('keydown', (e) => { if (e.key === 'Enter' && f.kind !== 'textarea') { e.preventDefault(); btn.click(); } });
+      return [h('div', { class: 'cf-ask' }, 'Ask: ' + (f.why || f.label)), h('div', { class: 'cf-row' }, [node, listId ? h('datalist', { id: listId }, f.options.map((o) => h('option', { value: o }))) : null, btn])];
+    }
 
-      // guided call script
-      h('details', { class: 'cf-script', open: d.open_core ? '' : undefined }, [
-        h('summary', null, [ic('phone', 15), ' Guided call — introduce yourself, then walk the open tasks', h('span', { class: 'cf-pill ' + (d.track === 'B' ? 'staff' : 'dispatcher'), style: 'margin-left:auto' }, 'Track ' + d.track)]),
-        ...(d.script || []).map((s) => h('div', { class: 'cf-step' }, [h('div', { class: 'n' }, String(s.step)), h('div', null, [h('div', { class: 't' }, s.title), h('div', { class: 'd' }, s.text),
-          s.step === 1 ? h('div', { class: 'cf-call' }, [
-            d.phone ? h('a', { href: 'tel:' + d.phone, class: 'dw-tel', 'data-name': (d.contact_name || d.carrier_name || 'Carrier'), title: 'Call with your LoadBoot phone' }, [ic('phone', 13), ' Call owner ' + d.phone]) : h('span', { class: 'cf-pill open' }, 'No owner phone on file — ask in the WhatsApp group; it is an open task below'),
-            d.driver && d.driver.phone ? h('a', { href: 'tel:' + d.driver.phone, class: 'dw-tel', 'data-name': (d.driver.name || 'Driver') + ' (driver)', title: 'Call the driver with your LoadBoot phone' }, [ic('phone', 13), ' Call driver ' + (d.driver.name || '') + ' ' + d.driver.phone]) : null,
-          ]) : null])])),
-      ]),
-
-      // open tasks
-      h('div', { class: 'cf-tasks' }, [
-        h('b', { style: 'color:#fff;display:inline-flex;align-items:center;gap:6px' }, [ic('alert', 15), open.length ? ' Open tasks — ask these on the call (' + open.length + ')' : ' No open tasks — the core profile is complete']),
-        !d.has_trucks ? h('div', { class: 'dw-muted', style: 'margin-top:4px' }, 'No active truck on file — unit questions appear once LoadBoot adds the truck.') : null,
-        ...open.map((f) => taskRow(f, false)),
-        more.length ? h('details', { class: 'cf-more' }, [h('summary', null, more.length + ' more to ask if there is time (optional fields)'), ...more.map((f) => taskRow(f, false))]) : null,
-      ]),
-
-      // everything on file, with provenance
-      ...groups.map(([tbl, title, icn]) => {
-        if (tbl === 'truck') return units.length ? h('div', null, units.map(([tid, unit]) => h('div', { class: 'cf-sec' }, [h('b', null, [ic(icn, 15), ' Unit ' + (unit || '?')]), h('div', { class: 'cf-grid' }, fields.filter((f) => f.tbl === 'truck' && f.truck_id === tid).map(field))]))) : null;
-        const fs = fields.filter((f) => f.tbl === tbl); if (!fs.length) return null;
-        return h('div', { class: 'cf-sec' }, [h('b', null, [ic(icn, 15), ' ' + title]), h('div', { class: 'cf-grid' }, fs.map(field))]);
-      }),
-    ]));
+    async function save(f, val, cell, btn) {
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const r = await dispatcherCarrierFill(a.id, f.tbl, f.field, val, f.truck_id || null);
+        if (!r || r.error) throw new Error((r && (r.message || r.error)) || 'save failed');
+        f.value = r.value; f.empty = r.value == null; f.locked = false; f.source = r.source;
+        const v = cell.querySelector('.v'); mount(v, show(f) == null ? '—' : show(f)); paintCell(cell, f); paintStrip();
+        toast(f.label + (f.unit_no ? ' (unit ' + f.unit_no + ')' : '') + ' saved — LoadBoot sees it as added by you'); scheduleReload();
+      } catch (e) { toast(e.message || String(e), true); btn.disabled = false; btn.textContent = 'Save'; }
+    }
   }
 }
