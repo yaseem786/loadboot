@@ -13,7 +13,7 @@ import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collaps
 import { createTour, mountHelp } from '../shared/ui/tour.js';   // guided tour + floating "?" help (25 Sep 2026)
 import { PARTNER_TOUR } from './tour-content.js';
 import { printExecutedW9 } from '../carrier/w9-form.js';
-import { attachAddressSuggest } from '../shared/addr-suggest.js';
+import { attachAddressSuggest, geocodeExact } from '../shared/addr-suggest.js';
 import { docTrustBadge } from '../shared/ui/docTrust.js';
 import { lookupCommodity, suggestCommodities } from './commodities.js';
 import { renderFmcsaOnly } from '../carrier/profile-view.js';
@@ -911,6 +911,30 @@ const kpiCard = (label, value, sub, accent) => h('div', { class: 'cp-kpi ' + (ac
 ]);
 const field = (label, input) => h('label', { class: 'cp-field2' }, [h('span', null, label), input]);
 const inp = (ph, type) => h('input', { class: 'cp-in', type: type || 'text', placeholder: ph || '' });
+// bl_board_0457d (board audit #7): posting sizes. Trailer lengths a load can need, per equipment
+// (the first is the full size; the rest read "N ft or longer"). Deck height is used only for the
+// over-height estimate: 13'6" is the usual legal height, so freight above 13.5 - deck is flagged.
+const LEN9 = { 'Dry Van': [53, 48], 'Reefer': [53, 48], 'Flatbed': [53, 48], 'Step Deck': [53, 48], 'Conestoga': [53, 48], 'Hotshot': [40, 35, 30], 'Box Truck': [26, 24, 20, 16] };
+const DECK9 = { 'Flatbed': 5, 'Conestoga': 5, 'Step Deck': 3.5, 'Hotshot': 3.5 };
+// "8'6\"", "8 ft 6 in", "8.5", "102 in" -> feet (2 dp); null when blank or unreadable
+const parseFt9 = (t) => {
+  const s = String(t == null ? '' : t).trim().toLowerCase().replace(/\s+/g, ' '); if (!s) return null;
+  let m = s.match(/^(\d+(?:\.\d+)?) ?(?:"|''|in|inch|inches)$/);
+  if (m) { const v = Number(m[1]) / 12; return v > 0 && v < 200 ? +v.toFixed(2) : null; }
+  m = s.match(/^(\d+(?:\.\d+)?) ?(?:'|ft|feet|foot)? ?(?:(\d+(?:\.\d+)?) ?(?:"|''|in|inch|inches)?)?$/);
+  if (!m) return null; const v = Number(m[1]) + (m[2] ? Number(m[2]) / 12 : 0); return v > 0 && v < 200 ? +v.toFixed(2) : null;
+};
+const ftInTxt9 = (ft) => { const n = Number(ft); if (!isFinite(n) || n <= 0) return ''; let f = Math.floor(n), i = Math.round((n - f) * 12); if (i === 12) { f += 1; i = 0; } return i ? f + '\'' + i + '"' : f + '\''; };
+const dimsTxt9 = (d) => (d && typeof d === 'object') ? [['L', d.l], ['W', d.w], ['H', d.h]].filter(([, v]) => Number(v) > 0).map(([k, v]) => k + ' ' + ftInTxt9(v)).join(' × ') : '';
+// dimensions only apply to open-deck equipment; switching to a van drops them from the post
+const dimsFt9 = (w0) => (DECK9[w0.equipment] ? { l: parseFt9(w0.dim_l), w: parseFt9(w0.dim_w), h: parseFt9(w0.dim_h) } : { l: null, w: null, h: null });
+const odList9 = (w0) => {
+  const d = dimsFt9(w0), out = [], deck = DECK9[w0.equipment] || 5;
+  if (d.w && d.w > 8.5) out.push('wider than 8\'6"');
+  if (d.l && d.l > 53) out.push('longer than 53\'');
+  if (d.h && d.h + deck > 13.5) out.push('taller than about ' + ftInTxt9(13.5 - deck) + ' on a ' + w0.equipment);
+  return out;
+};
 
 /* invoices — shown on every partner dashboard (read-only; staff issue + mark paid) */
 // 🚛 CARRIER INVOICES — what the broker actually owes per trip, routing-aware:
@@ -1869,7 +1893,7 @@ async function brokerDash(user, ov) {
   // In-flight fetch flags and cached rate tables never go in the draft: a flag saved mid-fetch
   // (__laneP / __stds_p) blocked the lane rate + rate standards forever after a refresh, and a
   // cached table would keep yesterday's CC rate standards alive in the estimate.
-  const _plVolatile = ['__laneP', '__stds_p', '__stds_p3', '__stds', '__mkt', '__lane', '__lane_key'];
+  const _plVolatile = ['__laneP', '__stds_p', '__stds_p3', '__stds', '__mkt', '__lane', '__lane_key', '__rc_try'];
   try { const _pd9 = JSON.parse(localStorage.getItem('lb_pl_draft') || 'null'); if (_pd9 && typeof _pd9 === 'object') { _plVolatile.forEach((k9) => { delete _pd9[k9]; }); Object.assign(w, _pd9); } } catch (_) {}
   let _plT9 = null;
   const _plSave = () => { clearTimeout(_plT9); _plT9 = setTimeout(() => { try { const d9 = Object.assign({}, w); _plVolatile.forEach((k9) => { delete d9[k9]; }); localStorage.setItem('lb_pl_draft', JSON.stringify(d9)); } catch (_) {} }, 400); };
@@ -1880,6 +1904,9 @@ async function brokerDash(user, ov) {
   // stay wired even after the value is cleared and retyped, with focus + caret preserved.
   function renderStepFocus(fkey, caret) { renderStep(); try { const el = stepHost.querySelector('[data-fkey="' + fkey + '"]'); if (el) { el.focus(); if (el.type !== 'number' && caret != null) { try { el.setSelectionRange(caret, caret); } catch (_) {} } } } catch (_) {} }
   const wi = (label, key, type, reactive) => { const i = inp(label, type || 'text'); i.value = w[key] || ''; i.setAttribute('data-fkey', key); i.oninput = () => { w[key] = i.value; _plSave(); if (reactive) { let c = null; try { c = i.selectionStart; } catch (_) {} renderStepFocus(key, c); } }; return field(label, i); };
+  // audit #7 (bl_board_0457d): read the wizard's alternate equipment / trailer length, dropping stale values
+  const altEq9 = () => (Array.isArray(w.alt_equipment) ? w.alt_equipment : []).filter((e9) => e9 && e9 !== w.equipment && e9 !== 'Power Only');
+  const trailerFt9 = () => { const n9 = Number(w.trailer_length); return (LEN9[w.equipment] || []).indexOf(n9) >= 0 ? n9 : null; };
   const toggle = (label, key) => { const b = h('button', { class: 'cp-btn ghost' + (w[key] ? ' on' : ''), onClick: () => { w[key] = !w[key]; _plSave(); b.className = 'cp-btn ghost' + (w[key] ? ' on' : ''); b.textContent = label + ': ' + (w[key] ? 'Yes' : 'No'); } }, label + ': ' + (w[key] ? 'Yes' : 'No')); return b; };
   function renderStep() {
     let body;
@@ -2082,6 +2109,9 @@ async function brokerDash(user, ov) {
         };
         paintStops();
         body.appendChild(stopsHost);
+        // pins that arrived without a pick (Post similar / restored draft) still get the real driving
+        // miles + drive hours the Schedule step's HOS checks need — once per pin pair.
+        if (geo.o && geo.d && !w.__drive_hours) { const rk9 = [geo.o.lat, geo.o.lng, geo.d.lat, geo.d.lng].join(','); if (w.__rc_try !== rk9) { w.__rc_try = rk9; recalc(); } }
         // ---- AGENT-POSTED LOAD: the SOURCE of this freight is mandatory (who really pays) ----
         if (window.__lbAgentOrg) {
           const srcF = (lbl9, key9, ph9) => { const i9 = h('input', { class: 'cp-in', type: 'text', placeholder: ph9 || '', style: 'margin:0;flex:1;min-width:180px' }); i9.value = w[key9] || ''; i9.oninput = () => { w[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
@@ -2225,9 +2255,27 @@ async function brokerDash(user, ov) {
       const sl = (label, key, opts2, onch) => { const sel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, label)].concat(opts2.map(o => h('option', { value: o }, o)))); sel.value = w[key] || ''; sel.onchange = () => { w[key] = sel.value; if (onch) onch(); }; return field(label, sel); };
       const isReefer = (w.equipment || '') === 'Reefer';
       const isFlat = ['Flatbed', 'Step Deck', 'Conestoga', 'Hotshot'].indexOf(w.equipment || '') >= 0;
+      const EQ9 = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Conestoga', 'Power Only', 'Box Truck', 'Cargo Van', 'Sprinter Van', 'Hotshot'];
       body = h('div', null, [
         h('div', { class: 'cp-formgrid' }, [
-          sl('Equipment *', 'equipment', ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Conestoga', 'Power Only', 'Box Truck', 'Cargo Van', 'Sprinter Van', 'Hotshot'], () => renderStep()),
+          sl('Equipment *', 'equipment', EQ9, () => renderStep()),
+          // Board audit #7 (bl_board_0457d): alternate equipment ("Van OR Reefer") and the trailer length
+          // the freight needs. Both ride in details (stored whole by cc_partner_submit_load, copied whole
+          // by cc_decide_partner_load, returned by cc_pocket_available_loads), so no migration.
+          w.equipment ? (() => {
+            const cur9 = altEq9();
+            return h('div', { style: 'grid-column:1/-1' }, [
+              h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, 'Also OK with (optional) \u2014 carriers who run these can see and request this load too'),
+              h('div', { style: 'display:flex;flex-wrap:wrap;gap:6px' }, EQ9.filter((e9) => e9 !== w.equipment && e9 !== 'Power Only').map((e9) => h('button', { type: 'button', class: 'cp-btn ghost cp-btn-sm' + (cur9.indexOf(e9) >= 0 ? ' on' : ''),
+                onClick: () => { const s9 = new Set(cur9); if (s9.has(e9)) s9.delete(e9); else s9.add(e9); w.alt_equipment = EQ9.filter((x9) => s9.has(x9)); _plSave(); renderStep(); } }, (cur9.indexOf(e9) >= 0 ? '\u2713 ' : '+ ') + e9))),
+            ]);
+          })() : null,
+          (LEN9[w.equipment] || null) ? (() => {
+            const ls9 = LEN9[w.equipment];
+            const sel9 = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'Any length')].concat(ls9.map((n9, k9) => h('option', { value: String(n9) }, n9 + ' ft' + (k9 ? ' or longer' : '')))));
+            sel9.value = ls9.indexOf(Number(w.trailer_length)) >= 0 ? String(w.trailer_length) : ''; sel9.onchange = () => { w.trailer_length = sel9.value; _plSave(); };
+            return field('Trailer length needed (carriers filter on this)', sel9);
+          })() : null,
           (directCarrier && w.equipment) ? (() => {
             const hint9 = h('div', { class: 'cp-sub', style: 'grid-column:1/-1' }, '\ud83c\udfaf Checking ' + directCarrier.name + '\u2019s equipment\u2026');
             (async () => {
@@ -2235,7 +2283,8 @@ async function brokerDash(user, ov) {
               if (!hint9.isConnected) return;
               if (eqs9 === null) { hint9.textContent = ''; return; }
               if (!eqs9.length) { hint9.style.color = '#b45309'; hint9.textContent = '\u26a0 ' + directCarrier.name + ' has not published any equipment yet \u2014 the direct offer may not match. Consider picking a carrier from the Carriers page.'; return; }
-              if (eqs9.some(e => e.toLowerCase() === w.equipment.toLowerCase())) { hint9.style.color = '#0f766e'; hint9.textContent = '\u2713 ' + directCarrier.name + ' runs ' + w.equipment + ' \u2014 good match.'; }
+              const ok9 = [w.equipment].concat(altEq9()).find(q9 => eqs9.some(e => e.toLowerCase() === q9.toLowerCase()));
+              if (ok9) { hint9.style.color = '#0f766e'; hint9.textContent = '\u2713 ' + directCarrier.name + ' runs ' + ok9 + ' \u2014 good match.'; }
               else { hint9.style.color = '#b91c1c'; hint9.textContent = '\u2715 ' + directCarrier.name + ' does NOT run ' + w.equipment + ' \u2014 their fleet: ' + eqs9.join(', ') + '. Change the equipment or remove the direct target.'; }
             })();
             return hint9;
@@ -2349,6 +2398,22 @@ async function brokerDash(user, ov) {
           wi('Cargo value ($ \u2014 carrier checks cargo insurance)', 'cargo_value', 'number'),
           isReefer ? wi('Temperature (\u00b0F) \u2014 required for reefer *', 'temperature') : null,
           isFlat ? sl('Tarps', 'tarps', ['No tarps needed', '4 ft tarps', '6 ft tarps', '8 ft tarps']) : null,
+          isFlat ? (() => {
+            // Freight dimensions for open-deck loads (audit #7). Typed as 8'6", 8.5 or 102 in; stored in feet.
+            const hint9 = h('div', { class: 'cp-sub', style: 'grid-column:1/-1' });
+            const paint9 = () => {
+              const od9 = odList9(w);
+              const d9 = dimsFt9(w);
+              hint9.style.color = od9.length ? '#b45309' : '#64748b';
+              hint9.textContent = od9.length ? '\u26a0 Likely OVERSIZE: ' + od9.join(', ') + ' \u2014 state permits (and possibly escorts) are needed; carriers see an OVERSIZE tag.'
+                : (d9.l || d9.w || d9.h) ? '\u2713 Within the usual legal size for ' + w.equipment + ' (most states).' : 'Optional \u2014 flatbed and step-deck carriers check the size before they call.';
+            };
+            const dimIn9 = (label9, key9) => { const i9 = inp('e.g. ' + (key9 === 'dim_w' ? '8\'6"' : key9 === 'dim_h' ? '9\'' : '40\''), 'text'); i9.value = w[key9] || ''; i9.setAttribute('data-fkey', key9);
+              i9.oninput = () => { w[key9] = i9.value; _plSave(); paint9(); }; return field(label9, i9); };
+            paint9();
+            return h('div', { style: 'grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px 12px' }, [
+              dimIn9('Freight length', 'dim_l'), dimIn9('Freight width', 'dim_w'), dimIn9('Freight height', 'dim_h'), hint9]);
+          })() : null,
           sl('Pickup loading *', 'load_method_pickup', ['Live load', 'Drop & hook', 'Preloaded trailer'], () => renderStep()),
           sl('Delivery unloading *', 'load_method_delivery', ['Live unload', 'Drop trailer'], () => renderStep()),
         ].filter(Boolean)),
@@ -2573,6 +2638,9 @@ async function brokerDash(user, ov) {
             w.pallets ? ['Pallets / pieces', w.pallets] : null,
             w.temperature ? ['Reefer temp', w.temperature + '\u00b0F'] : null,
             w.tarps ? ['Tarps', w.tarps] : null,
+            altEq9().length ? ['Also OK with', altEq9().join(', ')] : null,
+            trailerFt9() ? ['Trailer length', trailerFt9() + ' ft or longer'] : null,
+            dimsTxt9(dimsFt9(w)) ? ['Dimensions', dimsTxt9(dimsFt9(w)) + (odList9(w).length ? ' \u00b7 \u26a0 OVERSIZE' : '')] : null,
             w.cargo_value ? ['Cargo value', '$' + Number(w.cargo_value).toLocaleString()] : null,
             ['Hazmat', w.hazmat_sel === 'yes' ? '\u26a0 YES \u2014 certified carriers only' : 'No'],
           ]),
@@ -2845,6 +2913,13 @@ async function brokerDash(user, ov) {
           driver_assist_required: !!w.driver_assist_required, team_required: !!w.team_required, cargo_value: w.cargo_value || null,
           dock_hours_pickup: w.dock_hours_pickup || null, dock_hours_delivery: w.dock_hours_delivery || null,
           facility_contact_pickup: (w.fac_pu || '').trim() || null, facility_contact_delivery: (w.fac_del || '').trim() || null };
+        { // bl_board_0457d (audit #7) — only set when given, so older readers see nothing new
+          const alt9 = altEq9(), tl9 = trailerFt9(), dm9 = dimsFt9(w);
+          if (alt9.length) payload.details.alt_equipment = alt9;
+          if (tl9) payload.details.trailer_length_ft = tl9;
+          if (dm9.l || dm9.w || dm9.h) { payload.details.dims_ft = { l: dm9.l, w: dm9.w, h: dm9.h }; if (odList9(w).length) payload.details.oversize = true; }
+          ['alt_equipment', 'trailer_length', 'dim_l', 'dim_w', 'dim_h'].forEach((k9) => delete payload[k9]);
+        }
         const docs9 = {};
         const xsPu9 = (Array.isArray(w.stops) ? w.stops : []).filter((sp9) => sp9.kind === 'pickup' && (sp9.doc_number || '').trim()).map((sp9, k9) => 'Extra pickup S' + (sp9.seq || k9 + 1) + ': ' + sp9.doc_number.trim());
         const xsDn9 = (Array.isArray(w.stops) ? w.stops : []).filter((sp9) => sp9.kind !== 'pickup' && (sp9.doc_number || '').trim()).map((sp9, k9) => 'Extra delivery S' + (sp9.seq || k9 + 1) + ': ' + sp9.doc_number.trim());
@@ -2933,6 +3008,81 @@ async function brokerDash(user, ov) {
     h('div', { class: 'cp-cardhead' }, [icon('plus', 18), h('h3', null, 'Post a load')]),
     stepHost,
   ]);
+  // Board audit 0457 #5 — "Post similar": brokers repost the same lanes daily (DAT/TMS copy/templates).
+  // Copies lane, stops, equipment, freight, services, rate and rate card from one of the broker's own
+  // loads into the wizard. Never copies dates, schedule, reference or document numbers — those are
+  // per-shipment. Main pickup/delivery pins are re-geocoded strictly (house number + same ZIP) since
+  // cc_partner_load_full does not return them; no match = no pin, same as manual typing today.
+  async function postSimilar(l, btn) {
+    const draftBusy9 = ['o_street', 'd_street', 'equipment', 'rate', 'commodity'].some((k9) => String(w[k9] || '').trim());
+    if (draftBusy9 && !confirm('Replace the load you are drafting with a copy of ' + (l.origin || '') + ' → ' + (l.destination || '') + '?')) return;
+    const idle9 = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Copying…'; }
+    let f = null;
+    try { f = await partnerLoadFull(l.id); } catch (_) {}
+    if (btn) { btn.disabled = false; btn.textContent = idle9; }
+    if (!f || f.error || !f.id) { pToast('Could not open this load to copy it. Try again.', { kind: 'error' }); return; }
+    const D = f.details || {}, A = f.accessorials || {};
+    const s9 = (v9) => (v9 == null ? '' : String(v9));
+    // "123 Main St, Suite 5, Dallas, TX 75201" → parts; falls back to the short "City, ST"
+    const addr9 = (full9, short9) => {
+      const p9 = s9(full9).split(',').map((x9) => x9.trim()).filter(Boolean);
+      const m9 = p9.length >= 3 && p9[p9.length - 1].match(/^([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+      if (m9) return { street: p9.slice(0, -2).join(', '), city: p9[p9.length - 2], state: m9[1].toUpperCase(), zip: m9[2] };
+      const q9 = s9(short9).split(',').map((x9) => x9.trim());
+      return { street: '', city: q9[0] || '', state: /^[A-Za-z]{2}$/.test(q9[1] || '') ? q9[1].toUpperCase() : '', zip: '' };
+    };
+    const o9 = addr9(f.origin_full, f.origin), d9 = addr9(f.destination_full, f.destination);
+    const hz9 = s9(f.hazmat_info).match(/^UN(\d{4}) · Class ([^·]+?)(?: · PG ([^·]+?))? · (.+)$/);
+    const at9 = (k9, side9) => s9(A[k9]).split(',').includes(side9);
+    const src9 = D.load_source || null;
+    const accN9 = (k9) => (A[k9] != null && A[k9] !== '' ? String(A[k9]) : undefined);
+    const next9 = {
+      appointment_required: !!f.appointment_required, tracking_required: !!f.tracking_required,
+      o_street: o9.street, o_city: o9.city, o_state: o9.state, o_zip: o9.zip,
+      d_street: d9.street, d_city: d9.city, d_state: d9.state, d_zip: d9.zip,
+      miles: f.miles ? s9(Math.round(Number(f.miles))) : '',
+      stops: (Array.isArray(D.stops) ? D.stops : []).filter((sp9) => sp9 && sp9.lat && sp9.lng).slice(0, 3).map((sp9, k9) => ({
+        seq: k9 + 1, kind: sp9.kind === 'pickup' ? 'pickup' : 'delivery', street: s9(sp9.street), city: s9(sp9.city), state: s9(sp9.state), zip: s9(sp9.zip),
+        address: s9(sp9.address), lat: sp9.lat, lng: sp9.lng, purpose: s9(sp9.purpose) })),
+      equipment: s9(f.equipment), commodity: s9(f.commodity), weight: f.weight != null ? s9(f.weight) : '',
+      load_size: s9(D.load_size), pallets: s9(D.pallets), temperature: s9(D.temperature), tarps: s9(D.tarps),
+      alt_equipment: Array.isArray(D.alt_equipment) ? D.alt_equipment.map(s9).filter(Boolean) : [],
+      trailer_length: D.trailer_length_ft ? s9(D.trailer_length_ft) : '',
+      dim_l: D.dims_ft && D.dims_ft.l ? ftInTxt9(D.dims_ft.l) : '', dim_w: D.dims_ft && D.dims_ft.w ? ftInTxt9(D.dims_ft.w) : '', dim_h: D.dims_ft && D.dims_ft.h ? ftInTxt9(D.dims_ft.h) : '',
+      load_method_pickup: s9(D.load_method_pickup), load_method_delivery: s9(D.load_method_delivery),
+      team_required: !!D.team_required, cargo_value: s9(D.cargo_value),
+      dock_hours_pickup: s9(D.dock_hours_pickup), dock_hours_delivery: s9(D.dock_hours_delivery),
+      fac_pu: s9(D.facility_contact_pickup), fac_del: s9(D.facility_contact_delivery),
+      lumper_pickup: at9('lumper_at', 'pickup'), lumper_delivery: at9('lumper_at', 'delivery'),
+      assist_pickup: at9('driver_assist_at', 'pickup'), assist_delivery: at9('driver_assist_at', 'delivery'),
+      hazmat_sel: f.hazmat === true ? 'yes' : f.hazmat === false ? 'no' : '',
+      rate: f.rate != null ? s9(f.rate) : '',
+      acc_detention_per_hr: accN9('detention_per_hr'), acc_detention_free_hours: accN9('detention_free_hours'), acc_layover_per_day: accN9('layover_per_day'),
+      acc_tonu: accN9('tonu'), acc_driver_assist: accN9('driver_assist'), acc_extra_stop: accN9('extra_stop'), acc_lumper_policy: accN9('lumper_policy'),
+    };
+    next9.lumper_any = next9.lumper_pickup || next9.lumper_delivery;
+    next9.driver_assist_required = next9.assist_pickup || next9.assist_delivery || !!D.driver_assist_required;
+    next9.svc_extra_stop = next9.stops.length > 0;
+    if (hz9) { next9.hz_un = hz9[1]; next9.hz_class = hz9[2]; next9.hz_pg = hz9[3] || ''; next9.hz_name = hz9[4]; }
+    if (src9 && window.__lbAgentOrg) Object.assign(next9, { src_type: s9(src9.type), src_company: s9(src9.company), src_mc: s9(src9.mc), src_contact: s9(src9.contact), src_email: s9(src9.email), src_phone: s9(src9.phone) });
+    if (D.agent_parent_id) next9.agent_parent_id = s9(D.agent_parent_id);
+    Object.keys(next9).forEach((k9) => { if (next9[k9] === undefined) delete next9[k9]; });
+    for (const k in w) delete w[k];
+    Object.assign(w, next9);
+    step = 0; prevStep = 0; confirmDup = false;
+    _plSave(); renderStep();
+    if (window.__lbOpenPost) window.__lbOpenPost();
+    pToast('Lane, freight and rate card copied. Check the addresses, then set the new pickup & delivery dates.', { kind: 'ok', title: '⧉ Copied from ' + (l.origin || '') + ' → ' + (l.destination || '') });
+    // pins: only if the draft is still this copy when the geocoder answers
+    const [po9, pd9] = await Promise.all([geocodeExact(o9), geocodeExact(d9)]);
+    if (w.o_street !== o9.street || w.d_street !== d9.street || w.o_zip !== o9.zip || w.d_zip !== d9.zip) return;
+    let any9 = false;
+    if (po9 && w.pickup_lat == null) { w.pickup_lat = po9.lat; w.pickup_lng = po9.lng; any9 = true; }
+    if (pd9 && w.delivery_lat == null) { w.delivery_lat = pd9.lat; w.delivery_lng = pd9.lng; any9 = true; }
+    if (any9) { _plSave(); if (step === 0) renderStep(); }
+  }
+
   async function loadList() {
     try {
       const rows = await partnerMyLoads(50);
@@ -3017,6 +3167,7 @@ async function brokerDash(user, ov) {
                 ]);
               } }, '✎ Request change');
             })(),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Start a new load with this lane, freight and rate card — you only set the new dates', onClick: (e9) => postSimilar(l, e9.currentTarget) }, '⧉ Post similar'),
             (() => {
               const rqs9 = __bq9[[l.origin, l.destination, l.equipment].join('|')] || [];
               if (!rqs9.length || /book|deliver|cancel/.test(String(l.status || '') + String(l.board_status || ''))) return null;
@@ -3859,6 +4010,8 @@ async function brokerDash(user, ov) {
       + kv('Equipment', d.equipment) + kv('Load size', det.load_size) + kv('Commodity', d.commodity)
       + kv('Weight', d.weight ? Number(d.weight).toLocaleString() + ' lb' : '') + kv('Pallets / pieces', det.pallets)
       + kv('Reefer temperature', det.temperature ? det.temperature + '\u00b0F' : '') + kv('Tarps', det.tarps)
+      + kv('Also OK with', Array.isArray(det.alt_equipment) ? det.alt_equipment.join(', ') : '') + kv('Trailer length', det.trailer_length_ft ? det.trailer_length_ft + ' ft or longer' : '')
+      + kv('Dimensions', det.dims_ft ? dimsTxt9(det.dims_ft) + (det.oversize ? ' \u00b7 OVERSIZE' : '') : '')
       + kv('Cargo value', det.cargo_value ? '$' + Number(det.cargo_value).toLocaleString() : '')
       + kv('Hazmat', d.hazmat ? 'YES' + (d.hazmat_info ? ' \u2014 ' + d.hazmat_info : '') : 'No')
       + '</div><div><h2>\ud83d\udcc5 Scheduling & handling</h2>'

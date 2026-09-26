@@ -37,7 +37,7 @@ protected from back-solicitation.
    whether it notifies anyone when a matching load is posted. Check this before building anything.
 
 ### Broker wizard
-5. **No "Post similar" / copy from a past load.** Brokers repost the same lanes every day, and DAT
+5. ✅ **SHIPPED (0457b) — see "Post similar" below.** ~~No "Post similar" / copy from a past load.~~ Brokers repost the same lanes every day, and DAT
    and every TMS have templates or copy. Today every repost means re-typing 5 steps. Proposal: a
    "⧉ Post similar" button on each My Loads row. It would call `partnerLoadFull(id)`, map the
    fields into the wizard state `w` (addresses, equipment, commodity, weight, service flags and
@@ -47,7 +47,7 @@ protected from back-solicitation.
    city and state. Many brokers do not have the dock address, or do not want to give it, until the
    load is booked. LoadBoot needs the exact pin for the geofence and the automatic miles, so this is
    **your decision**: keep it strict, or allow city-only posting with the address due before dispatch.
-7. **Missing standard posting fields:** trailer length (48/53 ft), dimensions (L×W×H) for
+7. ✅ **SHIPPED (0457d) — see below.** **Missing standard posting fields:** trailer length (48/53 ft), dimensions (L×W×H) for
    flatbed/step-deck/over-dimension loads, and alternate equipment ("Van OR Reefer"). DAT postings
    carry all three, and carriers filter on length.
 8. **A 5-step wizard compared with DAT's one-screen post.** The wizard is thorough (HOS checks,
@@ -62,3 +62,97 @@ protected from back-solicitation.
 #5 Post similar (client only, biggest time saver for brokers) → #1 post age (small migration, needs
 approval) → #3 radius search → #7 length/dims/alt equipment (the posting side, then a board filter)
 → #2 paging. #6 needs your decision first.
+
+## 0457b — "Post similar" (shipped)
+
+- **Button:** "⧉ Post similar" on every My Loads row (`postSimilar()` in `brokerDash`, `app/partner/app.js`).
+- **Source:** `partnerLoadFull(id)`. On 26 Sep, `cc_partner_load_full` was identical on prod and staging
+  (md5 of the definition matched). It only returns the broker's own load (`broker_org = v_org`).
+- **Copied:** lane (street, city, ST, ZIP), extra stops with their exact pins, miles, equipment,
+  commodity, weight, load size, pallets, temp, tarps, loading methods, lumper and assist per stop,
+  team, cargo value, dock hours, facility contacts, hazmat (UN, class, PG, name parsed back), rate,
+  rate card (detention, layover, TONU, assist, extra stop, lumper policy), and for agents the load
+  source and posting brokerage.
+- **Not copied:** dates, schedule and appointments, reference, PU/delivery/appointment numbers,
+  notes (not returned by the RPC).
+- **Draft protection:** if a draft is in progress, the broker is asked before it is replaced.
+- **Main pickup/delivery pins:** the RPC does not return them, so `geocodeExact()` (new, in
+  `app/shared/addr-suggest.js`) re-geocodes with Photon, the same service the suggestions use. A pin
+  is set only for a house-number hit with the same ZIP and state. Anything vaguer leaves no pin,
+  which is exactly what happens today when a broker types the address instead of picking it. The
+  filter logic was tested against mocked Photon responses. **It could not be tested live:** this
+  cloud container's network policy blocks photon.komoot.io (HTTP 403).
+- **Miles and drive hours:** once both pins exist, step 0 now fetches the real driving miles and
+  drive hours automatically, once per pin pair. The HOS and ETA checks in the Schedule step need them.
+  This also fixes restored drafts whose OSRM call had failed.
+- **Optional follow-up (needs a DB write, so your call):** add `pickup_lat`, `pickup_lng`,
+  `delivery_lat` and `delivery_lng` to the `jsonb_build_object` in `cc_partner_load_full`. Then the
+  copy reuses the exact original pins and no re-geocoding is needed. It is a jsonb-returning
+  function, so `create or replace` keeps its ACL. Still, re-check the anon SECDEF names afterwards.
+
+## 0457c — radius search on the carrier board (audit #3, shipped client-side)
+
+- **UI:** there is a radius select after both Origin and Destination in the board's Filters:
+  `Exact text` (the default, which is the old substring match) or within 25/50/100/150/250 mi.
+  The setting is saved in `lb_lb_filters` (`or`/`dr`), and Clear resets it. A hint line under the
+  filters shows what is applied. Examples: "Pickup within 100 mi of Dallas, TX", "Finding
+  “Ennis, TX”…", "“xyz” not found — matching the text instead", and "N loads with no known
+  location hidden".
+- **Distance:** straight-line (haversine), the same way DAT counts DH-O/DH-D. It is not road miles.
+- **Typed place:** the offline `usGeo` city table (~145 cities) is tried first. For anything else,
+  the new `geocodePlace()` in `app/shared/addr-suggest.js` asks Photon. It accepts city, town and
+  ZIP hits. A state or country hit is rejected, and if the text ends in a state code, the hit must
+  be in that state. Results are cached per text.
+- **Load side:** the pickup uses the board pin (`pickup_lat`/`pickup_lng`, rounded to 0.1° ≈ 7 mi by
+  `bl_stops_0090`). If a load has no pin, its origin city is used. The drop uses the destination city,
+  because **`cc_pocket_available_loads` returns no delivery pin**. So the destination radius is
+  city-level, and it costs one Photon call per unknown destination city (cached).
+- **Tested:** the `geocodePlace` parsing was tested against mocked Photon responses (state filter,
+  state-only reject, ZIP, cache). **Not tested live:** Photon is blocked in this container (403),
+  and the board needs a signed-in carrier. Please check it once on staging: Filters → Origin
+  "Dallas, TX" → Within 100 mi.
+- **Optional follow-up (a DB change, so it's your call, like question #2):** add
+  `delivery_lat`/`delivery_lng` (rounded the same way) to `cc_pocket_available_loads`. The
+  destination radius would then use real pins and make no Photon calls. It changes RETURNS TABLE, so
+  it needs a drop/create, the execute re-grant, and an anon SECDEF name check. It could go in the
+  same migration as `posted_at`.
+
+## 0457d — trailer length, dimensions, alternate equipment (audit #7, shipped client-side)
+
+- **No migration needed (checked read-only on prod and staging, 26 Sep).** The new values ride in
+  `details`. `cc_partner_submit_load` stores `p->'details'` whole. `cc_decide_partner_load` copies
+  `coalesce(l.details,'{}')` into `public.loads` (prod line 29). `cc_pocket_available_loads` returns
+  `details - 'load_source'`, and `cc_load_detail` returns `details`. The pocket and decide function
+  bodies differ between prod and staging (md5), but the `details` lines are the same on both.
+- **New keys in `details`, set only when given:** `alt_equipment` (text[]), `trailer_length_ft` (number),
+  `dims_ft` `{l,w,h}` (feet), and `oversize` (true only when flagged). Older loads have none of them,
+  so every reader treats them as optional.
+- **Wizard, step 2 (`app/partner/app.js`):**
+  - "Also OK with" chips under Equipment. Power Only and the primary equipment are not offered.
+  - "Trailer length needed". The list depends on the equipment: 53/48 for van, reefer and open deck,
+    40/35/30 for hotshot, and 26/24/20/16 for box truck. The first option reads "53 ft" and the rest
+    "N ft or longer". Power Only and the vans without a trailer get no length field.
+  - Freight L×W×H for open deck (Flatbed, Step Deck, Conestoga, Hotshot). It accepts `8'6"`, `8.5` or
+    `102 in` and stores feet. The **OVERSIZE** flag is an estimate: width over 8'6", length over 53',
+    or height over 13'6" minus an assumed deck height (5' for flatbed and conestoga, 3'6" for step
+    deck and hotshot). Legal limits differ by state, and the hint says "most states".
+  - The new fields also appear in the review step and the broker's load detail page, and "Post
+    similar" copies them. The direct-carrier equipment hint now accepts a match on an alternate.
+- **Board (`app/carrier/app.js`):**
+  - The Equipment filter also matches alternates.
+  - New **Trailer** filter ("My trailer 48 ft"). It hides loads that need a longer trailer. Loads
+    with no posted length always show. The setting is saved in `lb_lb_filters.tl`.
+  - Cards show "Dry Van or Reefer", a 📏 length chip, and a 📐 dimensions chip (⚠ OVERSIZE in amber).
+    The detail sheet lists all three.
+  - **Book gate:** a carrier whose fleet has any listed equipment (primary or alternate) can now
+    request the load. Before this, the client blocked everything except the primary.
+- **Limit (server, not changed):** `app_private.match_eligibility` and `equip_serves` still match on
+  `loads.equipment` only. So the broker's eligible-carrier list, direct offers and the CC matching do
+  not yet count alternates. Only the board and the carrier's book request do. `cc_request_book_load`
+  has no equipment check, so a request from a carrier that runs only the alternate goes through.
+  Dispatch may still see an equipment mismatch in CC. Teaching `match_eligibility` about
+  `details->'alt_equipment'` is a DB change, so it's your call.
+- **Tested:** the size parser, the OVERSIZE rules, and the board filter and book-gate logic were run
+  in node against sample loads. `npm run check` passes. **Not tested in a signed-in browser.** On
+  staging, please post one flatbed load with W 9' and "Also OK: Step Deck", then check the board card
+  and the Trailer filter.
