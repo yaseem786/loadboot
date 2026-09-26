@@ -1543,6 +1543,13 @@ export const newsletterPerson = (email) => rpc('cc_newsletter_person', { p_email
 export const newsletterSendConfirm = (email) => rpc('cc_newsletter_send_confirm', { p_email: email });
 export const newsletterPreview = () => rpc('cc_newsletter_preview', {});
 export const newsletterSet = (p) => rpc('cc_newsletter_set', { p });
+// bl_comm_0448 — LoadBoot Weekly: one engine, three versions (carrier / dispatcher / public newsletter). CC "Newsletter".
+export const weeklyOverview = () => rpc('cc_weekly_overview', {});
+export const weeklyPreview = (audience, sample) => rpc('cc_weekly_preview', { p_audience: audience, p_sample: sample || null });
+export const weeklyIssueSet = (p) => rpc('cc_weekly_issue_set', { p });
+export const weeklyContentList = (kind, status) => rpc('cc_weekly_content_list', { p_kind: kind || null, p_status: status || null });
+export const weeklyContentSet = (p) => rpc('cc_weekly_content_set', { p });
+export const weeklySettingsSet = (p) => rpc('cc_weekly_settings_set', { p });
 
 // ---- investor capital module (bl_inv_0401) ----
 // Investor side (portal). Read-only except declaring a payment / confirming a payout.

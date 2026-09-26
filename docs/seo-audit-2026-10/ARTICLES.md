@@ -61,6 +61,24 @@ broker > shipper > agent) × no overlap. Pick one. Never two articles on one clu
 - how owner-operators find their first loads after the new-authority waiting period (check overlap with
   `how-to-get-loads-with-new-authority` first)
 
+## 6. Feed LoadBoot Weekly (set 26 Sep 2026, `bl_comm_0448`)
+
+After the article is published, add it to the weekly email's content pool as DRAFTS — the owner approves them in
+CC → Newsletter → Content pool before the engine may pick them. Never insert as `approved`. One SQL statement on
+prod (`rwscphuhpjoudvljvmdk`):
+
+```sql
+insert into app_private.weekly_content (kind, title, body, url, status, source, note) values
+  ('article',      '<article title>', '<one-paragraph blurb, ≤ 220 chars, what the reader gets>', '/<slug>.html', 'draft', 'routine', 'Routine <date>'),
+  ('tip_carrier',  null, '<one actionable tip drawn from the article, 1–2 sentences>',            null,           'draft', 'routine', 'Routine <date>'),
+  ('tip_carrier',  null, '<a second tip>',                                                        null,           'draft', 'routine', 'Routine <date>'),
+  ('compliance',   null, '<one compliance reminder with the real date/rule, only if the article has one>', null,  'draft', 'routine', 'Routine <date>');
+```
+
+Rules: tips are one idea the reader can act on this week, no marketing voice, no numbers you did not verify in
+§1; `url` is site-relative; skip the compliance row when the article is not about a rule or a date. Log the
+inserted count in the §5 row. Docs: `claude/WEEKLY-0448.md`.
+
 ## 5. Log (append one row per run; fill re-check results on later runs)
 
 Every run also re-pulls each earlier article at +28 d and +56 d and fills its result column. An article with
