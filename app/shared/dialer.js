@@ -94,9 +94,10 @@ function ringStop() { if (ringTimer) { clearInterval(ringTimer); ringTimer = nul
 
 // ---------------------------------------------------------------- styles
 const CSS = `
+body.lb-sw-bar{--lb-lift:72px}   /* bl_ui_0460 — the SW 'new version' bar is 60px tall at the bottom: dock + tour ? move up while it shows */
 .lbd,.lbd *{box-sizing:border-box}
 .lbd{--nv:#10223B;--nv2:#0b1830;--bl:#0883F7;--or:#FC5305;--ok:#22c55e;--bad:#ef4444;--tx:#e8eefc;--mu:#93a4c3;--ln:rgba(255,255,255,.09);
- position:fixed;right:104px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:2147483000;font:14px/1.4 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--tx)}
+ position:fixed;right:104px;bottom:calc(18px + var(--lb-lift,0px) + env(safe-area-inset-bottom));z-index:2147483000;font:14px/1.4 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--tx)}
 .lbd-ic{display:inline-flex;vertical-align:middle}
 .lbd.lbd-solo{right:18px}
 .lbd-fab{display:flex;align-items:center;gap:10px;height:52px;padding:0 18px 0 14px;border-radius:999px;border:1px solid var(--ln);cursor:pointer;color:#fff;
@@ -195,7 +196,7 @@ const CSS = `
 .lbd-toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2147483001;background:#0b1830;border:1px solid var(--ln);color:#fff;padding:10px 16px;border-radius:12px;font:600 13px Inter,system-ui,sans-serif;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 .lbd-audio{position:fixed;width:0;height:0;opacity:0;pointer-events:none}
 @media (max-width:560px){
- .lbd{right:88px;bottom:calc(84px + env(safe-area-inset-bottom))}
+ .lbd{right:88px;bottom:calc(84px + var(--lb-lift,0px) + env(safe-area-inset-bottom))}
  .lbd.lbd-solo{right:14px}
  .lbd.open{left:0;right:0;bottom:0}
  .lbd-panel{width:100%;max-height:92vh;border-radius:22px 22px 0 0;padding-bottom:env(safe-area-inset-bottom)}
@@ -828,8 +829,9 @@ function createDialer() {
 
   function paintDock() {
     const b = S.boot;
-    if (!b || b.reason === 'off' || b.reason === 'not_active') { mount(root, null); root.className = 'lbd' + (S.solo ? ' lbd-solo' : ''); return; }
+    if (!b || b.reason === 'off' || b.reason === 'not_active') { mount(root, null); root.className = 'lbd' + (S.solo ? ' lbd-solo' : ''); try { document.body.classList.remove('lbd-on'); } catch (_) {} return; }
     root.className = 'lbd' + (S.open ? ' open' : '') + (S.solo ? ' lbd-solo' : '');
+    try { document.body.classList.add('lbd-on'); } catch (_) {}   // bl_ui_0460 — tour.css lifts the ? button above the dock
     const justOpened = S.open && !wasOpen; wasOpen = !!S.open;
     const cbN = (b.callbacks || []).length;
     const smsN = ((S.sms && S.sms.unread) || 0) + waPanel.unread();

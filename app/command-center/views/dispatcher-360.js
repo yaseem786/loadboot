@@ -20,6 +20,7 @@ import { ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSo
          ccDispatcherKpis, ccDispatcherActivity } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { ccDispatcherSetRejectReasons, ccDispatcherChoices, ccDispatcherChoiceDecide } from '../../shared/api.js';   // bl_disp_0442 — carrier choices
+import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
 import { ccDispatcherReports, ccDispatcherReportDecide } from '../../shared/api.js';   // bl_disp_0443 — carrier reports → permanent block
 import { REASONS } from '../../agent/dispatcher-gaps.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
@@ -520,6 +521,7 @@ export async function renderDispatcher360(host, query) {
         btn(a.carrier_notified_at ? 'Re-send intro' : 'Send intro', async () => { if (!(await askConfirm('Send the intro e-mail to ' + (a.carrier || 'the carrier') + '?', { body: 'Branded e-mail to the owner: what the dispatcher can and cannot see, how a load moves, the one-channel rule, the SOP rules, and a one-tap "Got it" link.' }))) return; const r = await ccDispatcherResendIntro(a.id).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ intro sent to ' + r.to); rerender('dd'); }, 'sm g', 'send'),
         a.status === 'active' ? btn('Pause', async () => { const reason = await askReason('Pause this assignment — why? (dispatcher + carrier see it)'); if (reason === null) return; const r = await ccDispatcherUnassign(a.id, reason, true).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ paused'); rerender('dd'); }, 'sm g', 'pause') : '',
         btn('End', async () => { if (!(await askConfirm('End this assignment?', { body: 'The carrier frees up for reassignment and is told LoadBoot dispatch covers the truck. Blocked while loads are moving unless you add "force".', danger: true }))) return; const reason = await askReason('Reason (dispatcher + carrier see it)'); if (reason === null) return; const r = await ccDispatcherUnassign(a.id, reason, false).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ ended'); rerender('dd'); }, 'sm danger', 'x')]),
+      fieldSourcesPanel(a.carrier_org_id, true),   // bl_disp_0459
       el('div', { class: 'd3-spec' }, [
         el('div', null, [el('b', null, [icon('truck', 11), 'Trucks']), String(a.trucks || 0) + ' active']),
         el('div', null, [el('b', null, [icon('user', 11), 'Contact']), a.carrier_contact || '—']),

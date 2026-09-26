@@ -486,6 +486,10 @@ export const ccCarrierPrefs = (carrier) => rpc('cc_carrier_prefs', { p_carrier: 
 // ---- Dispatcher Workspace (bl_disp_0288) — assignment-scoped server-side ----
 export const dispatcherWorkspaceFeed = () => rpc('dispatcher_workspace_feed', {});
 export const dispatcherSetAvailability = (truck, p) => rpc('dispatcher_set_availability', { p_truck: truck, p: p ?? {} });
+// bl_disp_0459 — dispatcher fills the carrier profile (blanks only; provenance stamped server-side)
+export const dispatcherCarrierGaps = (assignment) => rpc('dispatcher_carrier_gaps', { p_assignment: assignment });
+export const dispatcherCarrierFill = (assignment, tbl, field, value, truck) => rpc('dispatcher_carrier_fill', { p_assignment: assignment, p_tbl: tbl, p_field: field, p_value: value, p_truck: truck || null });
+export const ccCarrierFieldSources = (orgId) => rpc('cc_carrier_field_sources', { p_org: orgId });
 export const dispatcherLogBooking = (p) => rpc('dispatcher_log_booking', { p: p ?? {} });
 export const dispatcherBookingUpdate = (id, p) => rpc('dispatcher_booking_update', { p_id: id, p: p ?? {} });
 export const dispatcherBookingEvent = (booking, kind, note, location, eta) => rpc('dispatcher_booking_event', { p_booking: booking, p_kind: kind, p_note: note ?? null, p_location: location ?? null, p_eta: eta ?? null });

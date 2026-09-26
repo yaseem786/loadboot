@@ -282,3 +282,15 @@ body.lbt-lock { overflow: hidden; }
 .lbt-loading > i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(8,131,247,.25); border-top-color: var(--lbt-blue); animation: lbtSpin .8s linear infinite; }
 @keyframes lbtSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .lbt-loading > i { animation: none; } }
+/* bl_ui_0460 (26 Sep 2026) — the dialer dock (shared/dialer.js, body.lbd-on) sits in the same corner as the ? button, and the
+   service-worker 'new version' bar (body.lb-sw-bar) covers both. Lift the ? above the dock, and everything above the bar. */
+body.lb-sw-bar { --lb-lift: 72px; }
+body.lb-sw-bar .lbt-help { bottom: calc(18px + var(--lb-lift, 0px) + env(safe-area-inset-bottom, 0px)); }
+body.lbd-on .lbt-help { bottom: calc(80px + var(--lb-lift, 0px) + env(safe-area-inset-bottom, 0px)); }
+@media (max-width: 900px) {
+  body.lb-sw-bar .lbt-help { bottom: calc(78px + var(--lb-lift, 0px) + env(safe-area-inset-bottom, 0px)); }
+  body.lb-sw-bar .lbt-help.lbt-nobar { bottom: calc(16px + var(--lb-lift, 0px) + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 560px) {
+  body.lbd-on .lbt-help, body.lbd-on .lbt-help.lbt-nobar { bottom: calc(146px + var(--lb-lift, 0px) + env(safe-area-inset-bottom, 0px)); }
+}

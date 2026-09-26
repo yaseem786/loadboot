@@ -26,7 +26,8 @@ import { roadMiles } from '../shared/usGeo.js';
 import { icon as sharedIcon } from '../shared/ui/icons.js';
 import { dispatchLiveJoin } from '../shared/dispatch-live.js';
 import { mountDispatcherMail } from '../shared/dmail.js';   // bl_dmail_0356 — company mailbox assigned from the Command Center; no login here
-import { mountDialer } from '../shared/dialer.js';   // bl_dial_0351 — softphone dock; also turns every tel: link into click-to-call
+import { mountDialer } from '../shared/dialer.js';
+import { mountCarrierFill } from './carrier-fill.js';   // bl_disp_0459 — guided carrier work sheet (locked vs open fields, call script, provenance)   // bl_dial_0351 — softphone dock; also turns every tel: link into click-to-call
 
 // Line icons (Lucide-style, stroke=currentColor) — shared set + a few extras this module needs.
 const XP = {
@@ -745,7 +746,8 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         s.min_rate ? h('div', null, ['Min rate/mile: ', h('b', { style: 'color:#fff' }, '$' + Number(s.min_rate).toFixed(2)), s.min_rate_note ? ' — ' + s.min_rate_note : '']) : null,
         s.equipment ? h('div', null, 'Equipment: ' + s.equipment) : null, s.home_time ? h('div', null, 'Home time: ' + s.home_time) : null, s.rules ? h('div', null, 'Rules: ' + s.rules) : null,
       ])]) : null,
-      prefsBlock(a.prefs),
+      // bl_disp_0459 — the carrier work sheet replaces the read-only prefs block; falls back to it if the RPC is unavailable
+      (() => { const host = h('div'); try { mountCarrierFill(host, a, { reload: load, toast, fallback: () => prefsBlock(a.prefs) }); } catch (_) { mount(host, prefsBlock(a.prefs)); } return host; })(),
       driversBlock(a.drivers || []),
     ]);
   }

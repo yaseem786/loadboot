@@ -42,6 +42,7 @@ export function registerAppSW() {
         };
         bar.appendChild(msg); bar.appendChild(btn);
         document.body.appendChild(bar);
+        try { document.body.classList.add('lb-sw-bar'); } catch (_) {}   // bl_ui_0460 — dialer dock + tour ? lift above the bar
       }
       if (reg.waiting && navigator.serviceWorker.controller) promptReload(reg.waiting);
       reg.addEventListener('updatefound', () => {
