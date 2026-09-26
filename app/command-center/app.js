@@ -18,7 +18,8 @@ import { renderTabbed } from './views/_tabbed.js';
 import { renderDispatch } from './views/dispatch.js';
 import { renderDialerLive } from './views/dialerLive.js';
 import { renderWhatsappLive } from './views/whatsappLive.js';
-import { renderDispatcherMail } from './views/dispatcherMail.js';   // bl_dmail_0356 — Dispatcher email (company mailbox, no login)           // bl_dial_0351 — Phones & live calls
+import { renderDispatcherMail } from './views/dispatcherMail.js';
+import { renderCarrierRequests } from './views/carrierRequests.js';   // bl_disp_0457 — Carrier requests (pause / change-dispatcher)   // bl_dmail_0356 — Dispatcher email (company mailbox, no login)           // bl_dial_0351 — Phones & live calls
 import { renderDispatcher360 } from './views/dispatcher-360.js';   // bl_disp_0317 — Dispatcher 360 page
 import { renderCarriers } from './views/carriers.js';
 import { renderLoads } from './views/loads.js';
@@ -280,6 +281,7 @@ async function boot() {
       { id: 'phones', label: 'Phones & live calls', path: '/phones', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDialerLive(h) },
       { id: 'whatsapp', label: 'WhatsApp', path: '/whatsapp', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderWhatsappLive(h) },
       { id: 'dmail', label: 'Dispatcher email', path: '/dispatcher-email', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDispatcherMail(h) },
+      { id: 'creq', label: 'Carrier requests', path: '/carrier-requests', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderCarrierRequests(h) },
       { id: 'agents', label: 'Referral partners & payouts', path: '/agents', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderAgents(h) },
       { id: 'referrals', label: 'Referral program', path: '/referrals', allowed: () => referralProgramEnabled && can('finance.view'), render: (h) => renderReferrals(h) },
     ] },
@@ -345,6 +347,7 @@ async function boot() {
     '/dispatchers': tabbed('team', 'dispatchers'),
     '/phones': tabbed('team', 'phones'),
     '/dispatcher-email': tabbed('team', 'dmail'),
+    '/carrier-requests': tabbed('team', 'creq'),
     '/dispatcher': ({ query }) => { setActive('/dispatchers'); guard(['carriers.approve', 'dispatch.manage'], () => renderDispatcher360(content, query))(); },   // bl_disp_0317
     '/fleet': tabbed('carriers', 'fleet'),
     '/fleet-expiry': tabbed('compliance', 'expiry'),

@@ -1488,6 +1488,9 @@ export const ccDialerLineRelease = (lineId) => rpc('cc_dialer_line_release', { p
 export const ccDialerNumbers = () => rpc('cc_dialer_numbers', {});
 export const ccDialerNumberAdd = (p) => rpc('cc_dialer_number_add', { p: p ?? {} });
 export const ccDialerNumberRemove = (id) => rpc('cc_dialer_number_remove', { p_id: id });
+// bl_disp_0457 — carrier requests queue (pause / change-dispatcher requests from carriers)
+export const ccDispatcherRequests = () => rpc('cc_dispatcher_requests', {});
+export const ccDispatcherRequestResolve = (id, action, note) => rpc('cc_dispatcher_request_resolve', { p_id: id, p_action: action, p_note: note || null });
 export const ccDialerConfigSet = (p) => rpc('cc_dialer_config_set', { p: p ?? {} });
 
 // ---- Dispatcher Mailbox (bl_dmail_0356) — a real IMAP/SMTP mailbox inside the portal. The password lives in Vault; IMAP/SMTP work happens in the `dmail` edge function.
