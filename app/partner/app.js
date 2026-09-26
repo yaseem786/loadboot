@@ -13,7 +13,7 @@ import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collaps
 import { createTour, mountHelp } from '../shared/ui/tour.js';   // guided tour + floating "?" help (25 Sep 2026)
 import { PARTNER_TOUR } from './tour-content.js';
 import { printExecutedW9 } from '../carrier/w9-form.js';
-import { attachAddressSuggest } from '../shared/addr-suggest.js';
+import { attachAddressSuggest, geocodeExact } from '../shared/addr-suggest.js';
 import { docTrustBadge } from '../shared/ui/docTrust.js';
 import { lookupCommodity, suggestCommodities } from './commodities.js';
 import { renderFmcsaOnly } from '../carrier/profile-view.js';
@@ -1869,7 +1869,7 @@ async function brokerDash(user, ov) {
   // In-flight fetch flags and cached rate tables never go in the draft: a flag saved mid-fetch
   // (__laneP / __stds_p) blocked the lane rate + rate standards forever after a refresh, and a
   // cached table would keep yesterday's CC rate standards alive in the estimate.
-  const _plVolatile = ['__laneP', '__stds_p', '__stds_p3', '__stds', '__mkt', '__lane', '__lane_key'];
+  const _plVolatile = ['__laneP', '__stds_p', '__stds_p3', '__stds', '__mkt', '__lane', '__lane_key', '__rc_try'];
   try { const _pd9 = JSON.parse(localStorage.getItem('lb_pl_draft') || 'null'); if (_pd9 && typeof _pd9 === 'object') { _plVolatile.forEach((k9) => { delete _pd9[k9]; }); Object.assign(w, _pd9); } } catch (_) {}
   let _plT9 = null;
   const _plSave = () => { clearTimeout(_plT9); _plT9 = setTimeout(() => { try { const d9 = Object.assign({}, w); _plVolatile.forEach((k9) => { delete d9[k9]; }); localStorage.setItem('lb_pl_draft', JSON.stringify(d9)); } catch (_) {} }, 400); };
@@ -2082,6 +2082,9 @@ async function brokerDash(user, ov) {
         };
         paintStops();
         body.appendChild(stopsHost);
+        // pins that arrived without a pick (Post similar / restored draft) still get the real driving
+        // miles + drive hours the Schedule step's HOS checks need — once per pin pair.
+        if (geo.o && geo.d && !w.__drive_hours) { const rk9 = [geo.o.lat, geo.o.lng, geo.d.lat, geo.d.lng].join(','); if (w.__rc_try !== rk9) { w.__rc_try = rk9; recalc(); } }
         // ---- AGENT-POSTED LOAD: the SOURCE of this freight is mandatory (who really pays) ----
         if (window.__lbAgentOrg) {
           const srcF = (lbl9, key9, ph9) => { const i9 = h('input', { class: 'cp-in', type: 'text', placeholder: ph9 || '', style: 'margin:0;flex:1;min-width:180px' }); i9.value = w[key9] || ''; i9.oninput = () => { w[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
@@ -2933,6 +2936,78 @@ async function brokerDash(user, ov) {
     h('div', { class: 'cp-cardhead' }, [icon('plus', 18), h('h3', null, 'Post a load')]),
     stepHost,
   ]);
+  // Board audit 0457 #5 — "Post similar": brokers repost the same lanes daily (DAT/TMS copy/templates).
+  // Copies lane, stops, equipment, freight, services, rate and rate card from one of the broker's own
+  // loads into the wizard. Never copies dates, schedule, reference or document numbers — those are
+  // per-shipment. Main pickup/delivery pins are re-geocoded strictly (house number + same ZIP) since
+  // cc_partner_load_full does not return them; no match = no pin, same as manual typing today.
+  async function postSimilar(l, btn) {
+    const draftBusy9 = ['o_street', 'd_street', 'equipment', 'rate', 'commodity'].some((k9) => String(w[k9] || '').trim());
+    if (draftBusy9 && !confirm('Replace the load you are drafting with a copy of ' + (l.origin || '') + ' → ' + (l.destination || '') + '?')) return;
+    const idle9 = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Copying…'; }
+    let f = null;
+    try { f = await partnerLoadFull(l.id); } catch (_) {}
+    if (btn) { btn.disabled = false; btn.textContent = idle9; }
+    if (!f || f.error || !f.id) { pToast('Could not open this load to copy it. Try again.', { kind: 'error' }); return; }
+    const D = f.details || {}, A = f.accessorials || {};
+    const s9 = (v9) => (v9 == null ? '' : String(v9));
+    // "123 Main St, Suite 5, Dallas, TX 75201" → parts; falls back to the short "City, ST"
+    const addr9 = (full9, short9) => {
+      const p9 = s9(full9).split(',').map((x9) => x9.trim()).filter(Boolean);
+      const m9 = p9.length >= 3 && p9[p9.length - 1].match(/^([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+      if (m9) return { street: p9.slice(0, -2).join(', '), city: p9[p9.length - 2], state: m9[1].toUpperCase(), zip: m9[2] };
+      const q9 = s9(short9).split(',').map((x9) => x9.trim());
+      return { street: '', city: q9[0] || '', state: /^[A-Za-z]{2}$/.test(q9[1] || '') ? q9[1].toUpperCase() : '', zip: '' };
+    };
+    const o9 = addr9(f.origin_full, f.origin), d9 = addr9(f.destination_full, f.destination);
+    const hz9 = s9(f.hazmat_info).match(/^UN(\d{4}) · Class ([^·]+?)(?: · PG ([^·]+?))? · (.+)$/);
+    const at9 = (k9, side9) => s9(A[k9]).split(',').includes(side9);
+    const src9 = D.load_source || null;
+    const accN9 = (k9) => (A[k9] != null && A[k9] !== '' ? String(A[k9]) : undefined);
+    const next9 = {
+      appointment_required: !!f.appointment_required, tracking_required: !!f.tracking_required,
+      o_street: o9.street, o_city: o9.city, o_state: o9.state, o_zip: o9.zip,
+      d_street: d9.street, d_city: d9.city, d_state: d9.state, d_zip: d9.zip,
+      miles: f.miles ? s9(Math.round(Number(f.miles))) : '',
+      stops: (Array.isArray(D.stops) ? D.stops : []).filter((sp9) => sp9 && sp9.lat && sp9.lng).slice(0, 3).map((sp9, k9) => ({
+        seq: k9 + 1, kind: sp9.kind === 'pickup' ? 'pickup' : 'delivery', street: s9(sp9.street), city: s9(sp9.city), state: s9(sp9.state), zip: s9(sp9.zip),
+        address: s9(sp9.address), lat: sp9.lat, lng: sp9.lng, purpose: s9(sp9.purpose) })),
+      equipment: s9(f.equipment), commodity: s9(f.commodity), weight: f.weight != null ? s9(f.weight) : '',
+      load_size: s9(D.load_size), pallets: s9(D.pallets), temperature: s9(D.temperature), tarps: s9(D.tarps),
+      load_method_pickup: s9(D.load_method_pickup), load_method_delivery: s9(D.load_method_delivery),
+      team_required: !!D.team_required, cargo_value: s9(D.cargo_value),
+      dock_hours_pickup: s9(D.dock_hours_pickup), dock_hours_delivery: s9(D.dock_hours_delivery),
+      fac_pu: s9(D.facility_contact_pickup), fac_del: s9(D.facility_contact_delivery),
+      lumper_pickup: at9('lumper_at', 'pickup'), lumper_delivery: at9('lumper_at', 'delivery'),
+      assist_pickup: at9('driver_assist_at', 'pickup'), assist_delivery: at9('driver_assist_at', 'delivery'),
+      hazmat_sel: f.hazmat === true ? 'yes' : f.hazmat === false ? 'no' : '',
+      rate: f.rate != null ? s9(f.rate) : '',
+      acc_detention_per_hr: accN9('detention_per_hr'), acc_detention_free_hours: accN9('detention_free_hours'), acc_layover_per_day: accN9('layover_per_day'),
+      acc_tonu: accN9('tonu'), acc_driver_assist: accN9('driver_assist'), acc_extra_stop: accN9('extra_stop'), acc_lumper_policy: accN9('lumper_policy'),
+    };
+    next9.lumper_any = next9.lumper_pickup || next9.lumper_delivery;
+    next9.driver_assist_required = next9.assist_pickup || next9.assist_delivery || !!D.driver_assist_required;
+    next9.svc_extra_stop = next9.stops.length > 0;
+    if (hz9) { next9.hz_un = hz9[1]; next9.hz_class = hz9[2]; next9.hz_pg = hz9[3] || ''; next9.hz_name = hz9[4]; }
+    if (src9 && window.__lbAgentOrg) Object.assign(next9, { src_type: s9(src9.type), src_company: s9(src9.company), src_mc: s9(src9.mc), src_contact: s9(src9.contact), src_email: s9(src9.email), src_phone: s9(src9.phone) });
+    if (D.agent_parent_id) next9.agent_parent_id = s9(D.agent_parent_id);
+    Object.keys(next9).forEach((k9) => { if (next9[k9] === undefined) delete next9[k9]; });
+    for (const k in w) delete w[k];
+    Object.assign(w, next9);
+    step = 0; prevStep = 0; confirmDup = false;
+    _plSave(); renderStep();
+    if (window.__lbOpenPost) window.__lbOpenPost();
+    pToast('Lane, freight and rate card copied. Check the addresses, then set the new pickup & delivery dates.', { kind: 'ok', title: '⧉ Copied from ' + (l.origin || '') + ' → ' + (l.destination || '') });
+    // pins: only if the draft is still this copy when the geocoder answers
+    const [po9, pd9] = await Promise.all([geocodeExact(o9), geocodeExact(d9)]);
+    if (w.o_street !== o9.street || w.d_street !== d9.street || w.o_zip !== o9.zip || w.d_zip !== d9.zip) return;
+    let any9 = false;
+    if (po9 && w.pickup_lat == null) { w.pickup_lat = po9.lat; w.pickup_lng = po9.lng; any9 = true; }
+    if (pd9 && w.delivery_lat == null) { w.delivery_lat = pd9.lat; w.delivery_lng = pd9.lng; any9 = true; }
+    if (any9) { _plSave(); if (step === 0) renderStep(); }
+  }
+
   async function loadList() {
     try {
       const rows = await partnerMyLoads(50);
@@ -3017,6 +3092,7 @@ async function brokerDash(user, ov) {
                 ]);
               } }, '✎ Request change');
             })(),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Start a new load with this lane, freight and rate card — you only set the new dates', onClick: (e9) => postSimilar(l, e9.currentTarget) }, '⧉ Post similar'),
             (() => {
               const rqs9 = __bq9[[l.origin, l.destination, l.equipment].join('|')] || [];
               if (!rqs9.length || /book|deliver|cancel/.test(String(l.status || '') + String(l.board_status || ''))) return null;

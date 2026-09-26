@@ -95,6 +95,7 @@ function fpWatch(formKey, target) {
 import { brandLogo } from '../shared/ui/components.js';
 import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collapsible sidebar
 import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.js';
+import { geocodePlace } from '../shared/addr-suggest.js';
 import { printDispatchSheet, openPrintable, openInvoicePdf } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
@@ -4385,8 +4386,46 @@ async function appView(user) {
     };
     enrichDh9();
     // Advanced filters (client-side, instant — DAT-style)
-    const fOrigin = h('input', { class: 'cp-in', placeholder: 'Origin (city/ST)', style: 'margin:0' });
+    const fOrigin = h('input', { class: 'cp-in', placeholder: 'Origin (city, ST or ZIP)', style: 'margin:0' });
     const fDest = h('input', { class: 'cp-in', placeholder: 'Destination', style: 'margin:0' });
+    // Board audit #3 (DAT parity): "within N mi of <place>" for origin and destination; 'Exact text'
+    // keeps the old substring match. Straight-line miles, like DAT's DH-O/DH-D. The typed place
+    // resolves offline (usGeo city table) first, then Photon. A load's pickup uses its board pin
+    // (rounded to ~7 mi by bl_stops_0090) or else its origin city; the drop uses its destination
+    // city, since cc_pocket_available_loads returns no delivery pin. Unknown locations are hidden
+    // while a radius is on, and the hint line says how many.
+    const radSel9 = (t9) => h('select', { class: 'cp-in', title: t9, style: 'margin:0;max-width:125px' }, [['', 'Exact text'], ['25', 'Within 25 mi'], ['50', 'Within 50 mi'], ['100', 'Within 100 mi'], ['150', 'Within 150 mi'], ['250', 'Within 250 mi']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+    const fORad = radSel9('Search around the origin'), fDRad = radSel9('Search around the destination');
+    const fRadHint = h('div', { class: 'cp-muted', style: 'flex-basis:100%;font-size:.8rem;display:none' });
+    const _pt9 = {}; let _ptT9 = 0; // place text -> [lat,lng] | null | 'wait'
+    const placePt9 = (raw9) => {
+      const t9 = String(raw9 || '').trim(); const k9 = t9.toLowerCase().replace(/\s+/g, ' ');
+      if (!k9) return null;
+      if (k9 in _pt9) return _pt9[k9];
+      const c9 = t9.replace(/\s+\d{5}(-\d{4})?$/, '').trim(); // "Dallas, TX 75201" -> "Dallas, TX"
+      const g9 = !isStateFallback(c9) && geo(c9);
+      if (g9) return (_pt9[k9] = g9);
+      _pt9[k9] = 'wait';
+      geocodePlace(t9).then((p9) => { _pt9[k9] = p9 ? [p9.lat, p9.lng] : null; clearTimeout(_ptT9); _ptT9 = setTimeout(() => renderList(), 120); });
+      return 'wait';
+    };
+    const radCtr9 = (inp9, sel9) => { const r9 = Number(sel9.value) || 0, t9 = inp9.value.trim(); return (r9 && t9) ? { t: t9, r: r9, c: placePt9(t9) } : null; };
+    const pinPt9 = (la9, ln9) => (la9 != null && ln9 != null && isFinite(la9) && isFinite(ln9)) ? [Number(la9), Number(ln9)] : null;
+    let _radMiss9 = new Set(), _radWait9 = new Set();
+    const inRad9 = (C9, p9, id9) => {
+      if (p9 === 'wait') { _radWait9.add(id9); return false; }
+      if (!p9) { _radMiss9.add(id9); return false; }
+      return havMi(C9.c[0], C9.c[1], p9[0], p9[1]) <= C9.r;
+    };
+    const radHint9 = (oC9, dC9) => {
+      const bits9 = [[oC9, 'Pickup'], [dC9, 'Drop']].filter(([c9]) => c9).map(([c9, n9]) => c9.c === 'wait' ? 'Finding \u201c' + c9.t + '\u201d\u2026'
+        : !c9.c ? '\u201c' + c9.t + '\u201d not found \u2014 matching the text instead'
+        : n9 + ' within ' + c9.r + ' mi of ' + c9.t);
+      if (_radWait9.size) bits9.push('locating ' + _radWait9.size + ' load' + (_radWait9.size === 1 ? '' : 's') + '\u2026');
+      if (_radMiss9.size) bits9.push(_radMiss9.size + ' load' + (_radMiss9.size === 1 ? '' : 's') + ' with no known location hidden');
+      fRadHint.textContent = bits9.length ? '\ud83d\udccd ' + bits9.join(' \u00b7 ') + ' (straight-line)' : '';
+      fRadHint.style.display = bits9.length ? 'block' : 'none';
+    };
     const fEq = h('input', { class: 'cp-in', placeholder: 'Equipment', style: 'margin:0' });
     const fRpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi', style: 'margin:0;max-width:110px' });
     const fRate = h('input', { class: 'cp-in', type: 'number', placeholder: 'Min $', style: 'margin:0;max-width:110px' });
@@ -4456,9 +4495,11 @@ async function appView(user) {
     const tbBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Chain two loads into one revenue-ranked tour', onClick: () => lbTripBuilder9(rows || []) }, '🔗 Trip Builder');
     let _favOnly = false;
     const favBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Show only loads you saved with the star', onClick: (e9) => { _favOnly = !_favOnly; e9.currentTarget.style.color = _favOnly ? '#f59e0b' : ''; e9.currentTarget.style.borderColor = _favOnly ? '#f59e0b' : ''; renderList(); } }, '★ Saved');
-    const applyFilters = (list) => (list || []).filter(l => {
-      const okO = !fOrigin.value.trim() || String(l.origin || '').toLowerCase().includes(fOrigin.value.trim().toLowerCase());
-      const okD = !fDest.value.trim() || String(l.destination || '').toLowerCase().includes(fDest.value.trim().toLowerCase());
+    const applyFilters = (list) => { const oC9 = radCtr9(fOrigin, fORad), dC9 = radCtr9(fDest, fDRad); _radMiss9 = new Set(); _radWait9 = new Set();
+      const oR9 = oC9 && Array.isArray(oC9.c) ? oC9 : null, dR9 = dC9 && Array.isArray(dC9.c) ? dC9 : null; // 'wait' / not found -> text match
+      const out9 = (list || []).filter(l => {
+      const okO = oR9 ? inRad9(oR9, pinPt9(l.pickup_lat, l.pickup_lng) || placePt9(l.origin), l.id) : (!fOrigin.value.trim() || String(l.origin || '').toLowerCase().includes(fOrigin.value.trim().toLowerCase()));
+      const okD = dR9 ? inRad9(dR9, pinPt9(l.delivery_lat, l.delivery_lng) || placePt9(l.destination), l.id) : (!fDest.value.trim() || String(l.destination || '').toLowerCase().includes(fDest.value.trim().toLowerCase()));
       const okE = !fEq.value.trim() || String(l.equipment || '').toLowerCase().includes(fEq.value.trim().toLowerCase());
       const okR = !fRpm.value || (l.rate && Number(l.miles) > 0 && (Number(l.rate) / Number(l.miles)) >= Number(fRpm.value));
       const okM = !fRate.value || Number(l.rate || 0) >= Number(fRate.value);
@@ -4466,11 +4507,11 @@ async function appView(user) {
       const okS = !fSize.value || (fSize.value === 'partial' ? /partial|ltl/.test(sz) : (!!sz && !/partial|ltl/.test(sz)));
       const okF = !_favOnly || _lbFavs().has(String(l.id));
       return okF && okO && okD && okE && okR && okM && okS;
-    });
+    }); radHint9(oC9, dC9); return out9; };
     // Collapsed by default — tap "Filters" to open (inDrive pattern)
     const fBody = h('div', { style: 'display:none;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px' },
-      [fOrigin, fDest, fEq, fSize, fRpm, fRate, h('button', { class: 'cp-btn cp-btn-sm', onClick: () => renderList() }, 'Apply'),
-       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; fSize.value = ''; try { localStorage.removeItem('lb_lb_filters'); } catch (_) {} renderList(); fCount(); } }, 'Clear')]);
+      [fOrigin, fORad, fDest, fDRad, fEq, fSize, fRpm, fRate, h('button', { class: 'cp-btn cp-btn-sm', onClick: () => renderList() }, 'Apply'),
+       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; fSize.value = fORad.value = fDRad.value = ''; try { localStorage.removeItem('lb_lb_filters'); } catch (_) {} renderList(); fCount(); } }, 'Clear'), fRadHint]);
     const fChip = h('span', { class: 'cpx-chip', style: 'display:none' }, '');
     const fCount = () => { const n = [fOrigin, fDest, fEq, fRpm, fRate, fSize].filter(x => (x.value || '').trim()).length; fChip.style.display = n ? 'inline-block' : 'none'; fChip.textContent = n + ' active'; };
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount)); fSize.addEventListener('change', () => { fCount(); renderList(); });
@@ -4481,9 +4522,10 @@ async function appView(user) {
     ]);
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(inp => { inp.onkeydown = (e) => { if (e.key === 'Enter') renderList(); }; });
     // Smart defaults (2026-08 audit): filters remember themselves across visits.
-    const _fSave = () => { try { localStorage.setItem('lb_lb_filters', JSON.stringify({ o: fOrigin.value, d: fDest.value, e: fEq.value, r: fRpm.value, m: fRate.value, s: fSize.value })); } catch (_) {} };
-    [fOrigin, fDest, fEq, fRpm, fRate].forEach(x9 => x9.addEventListener('input', _fSave)); fSize.addEventListener('change', _fSave);
-    try { const _fs9 = JSON.parse(localStorage.getItem('lb_lb_filters') || 'null'); if (_fs9 && [_fs9.o, _fs9.d, _fs9.e, _fs9.r, _fs9.m, _fs9.s].some(x9 => x9)) { fOrigin.value = _fs9.o || ''; fDest.value = _fs9.d || ''; fEq.value = _fs9.e || ''; fRpm.value = _fs9.r || ''; fRate.value = _fs9.m || ''; fSize.value = _fs9.s || ''; fCount(); fBody.style.display = 'flex'; fToggle.firstChild.textContent = '⚙ Filters ▴'; } } catch (_) {}
+    const _fSave = () => { try { localStorage.setItem('lb_lb_filters', JSON.stringify({ o: fOrigin.value, d: fDest.value, e: fEq.value, r: fRpm.value, m: fRate.value, s: fSize.value, or: fORad.value, dr: fDRad.value })); } catch (_) {} };
+    [fOrigin, fDest, fEq, fRpm, fRate].forEach(x9 => x9.addEventListener('input', _fSave)); [fSize, fORad, fDRad].forEach(x9 => x9.addEventListener('change', _fSave));
+    [fORad, fDRad].forEach(x9 => x9.addEventListener('change', () => renderList()));
+    try { const _fs9 = JSON.parse(localStorage.getItem('lb_lb_filters') || 'null'); if (_fs9 && [_fs9.o, _fs9.d, _fs9.e, _fs9.r, _fs9.m, _fs9.s].some(x9 => x9)) { fOrigin.value = _fs9.o || ''; fDest.value = _fs9.d || ''; fEq.value = _fs9.e || ''; fRpm.value = _fs9.r || ''; fRate.value = _fs9.m || ''; fSize.value = _fs9.s || ''; fORad.value = _fs9.or || ''; fDRad.value = _fs9.dr || ''; fCount(); fBody.style.display = 'flex'; fToggle.firstChild.textContent = '⚙ Filters ▴'; } } catch (_) {}
     let renderList = () => {};
     const bestCard = null; // AI Pilot removed — its deadhead/score estimates were unreliable
 

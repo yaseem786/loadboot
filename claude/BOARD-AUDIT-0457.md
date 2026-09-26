@@ -37,7 +37,7 @@ protected from back-solicitation.
    whether it notifies anyone when a matching load is posted. Check this before building anything.
 
 ### Broker wizard
-5. **No "Post similar" / copy from a past load.** Brokers repost the same lanes every day, and DAT
+5. ✅ **SHIPPED (0457b) — see "Post similar" below.** ~~No "Post similar" / copy from a past load.~~ Brokers repost the same lanes every day, and DAT
    and every TMS have templates or copy. Today every repost means re-typing 5 steps. Proposal: a
    "⧉ Post similar" button on each My Loads row. It would call `partnerLoadFull(id)`, map the
    fields into the wizard state `w` (addresses, equipment, commodity, weight, service flags and
@@ -62,3 +62,57 @@ protected from back-solicitation.
 #5 Post similar (client only, biggest time saver for brokers) → #1 post age (small migration, needs
 approval) → #3 radius search → #7 length/dims/alt equipment (the posting side, then a board filter)
 → #2 paging. #6 needs your decision first.
+
+## 0457b — "Post similar" (shipped)
+
+- **Button:** "⧉ Post similar" on every My Loads row (`postSimilar()` in `brokerDash`, `app/partner/app.js`).
+- **Source:** `partnerLoadFull(id)`. On 26 Sep, `cc_partner_load_full` was identical on prod and staging
+  (md5 of the definition matched). It only returns the broker's own load (`broker_org = v_org`).
+- **Copied:** lane (street, city, ST, ZIP), extra stops with their exact pins, miles, equipment,
+  commodity, weight, load size, pallets, temp, tarps, loading methods, lumper and assist per stop,
+  team, cargo value, dock hours, facility contacts, hazmat (UN, class, PG, name parsed back), rate,
+  rate card (detention, layover, TONU, assist, extra stop, lumper policy), and for agents the load
+  source and posting brokerage.
+- **Not copied:** dates, schedule and appointments, reference, PU/delivery/appointment numbers,
+  notes (not returned by the RPC).
+- **Draft protection:** if a draft is in progress, the broker is asked before it is replaced.
+- **Main pickup/delivery pins:** the RPC does not return them, so `geocodeExact()` (new, in
+  `app/shared/addr-suggest.js`) re-geocodes with Photon, the same service the suggestions use. A pin
+  is set only for a house-number hit with the same ZIP and state. Anything vaguer leaves no pin,
+  which is exactly what happens today when a broker types the address instead of picking it. The
+  filter logic was tested against mocked Photon responses. **It could not be tested live:** this
+  cloud container's network policy blocks photon.komoot.io (HTTP 403).
+- **Miles and drive hours:** once both pins exist, step 0 now fetches the real driving miles and
+  drive hours automatically, once per pin pair. The HOS and ETA checks in the Schedule step need them.
+  This also fixes restored drafts whose OSRM call had failed.
+- **Optional follow-up (needs a DB write, so your call):** add `pickup_lat`, `pickup_lng`,
+  `delivery_lat` and `delivery_lng` to the `jsonb_build_object` in `cc_partner_load_full`. Then the
+  copy reuses the exact original pins and no re-geocoding is needed. It is a jsonb-returning
+  function, so `create or replace` keeps its ACL. Still, re-check the anon SECDEF names afterwards.
+
+## 0457c — radius search on the carrier board (audit #3, shipped client-side)
+
+- **UI:** there is a radius select after both Origin and Destination in the board's Filters:
+  `Exact text` (the default, which is the old substring match) or within 25/50/100/150/250 mi.
+  The setting is saved in `lb_lb_filters` (`or`/`dr`), and Clear resets it. A hint line under the
+  filters shows what is applied. Examples: "Pickup within 100 mi of Dallas, TX", "Finding
+  “Ennis, TX”…", "“xyz” not found — matching the text instead", and "N loads with no known
+  location hidden".
+- **Distance:** straight-line (haversine), the same way DAT counts DH-O/DH-D. It is not road miles.
+- **Typed place:** the offline `usGeo` city table (~145 cities) is tried first. For anything else,
+  the new `geocodePlace()` in `app/shared/addr-suggest.js` asks Photon. It accepts city, town and
+  ZIP hits. A state or country hit is rejected, and if the text ends in a state code, the hit must
+  be in that state. Results are cached per text.
+- **Load side:** the pickup uses the board pin (`pickup_lat`/`pickup_lng`, rounded to 0.1° ≈ 7 mi by
+  `bl_stops_0090`). If a load has no pin, its origin city is used. The drop uses the destination city,
+  because **`cc_pocket_available_loads` returns no delivery pin**. So the destination radius is
+  city-level, and it costs one Photon call per unknown destination city (cached).
+- **Tested:** the `geocodePlace` parsing was tested against mocked Photon responses (state filter,
+  state-only reject, ZIP, cache). **Not tested live:** Photon is blocked in this container (403),
+  and the board needs a signed-in carrier. Please check it once on staging: Filters → Origin
+  "Dallas, TX" → Within 100 mi.
+- **Optional follow-up (a DB change, so it's your call, like question #2):** add
+  `delivery_lat`/`delivery_lng` (rounded the same way) to `cc_pocket_available_loads`. The
+  destination radius would then use real pins and make no Photon calls. It changes RETURNS TABLE, so
+  it needs a drop/create, the execute re-grant, and an anon SECDEF name check. It could go in the
+  same migration as `posted_at`.
