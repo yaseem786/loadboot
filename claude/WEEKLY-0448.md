@@ -115,4 +115,4 @@ Unchanged: 35 staging / 36 prod. Every new `public.cc_weekly_*` function is `rev
   valid until 3 Oct, `email_blocked_log` empty. Whoever clicks becomes a `public` recipient for Tuesday.
 - **Riley call forwarding:** still parked by owner decision (26 Sep, WhatsApp only for now). Not a repo item.
 - Watch on Tuesday: CC → Newsletter cards should show `sent` with counts; CC → Unsubscribes → Blocked sends
-  for any gate refusals. Staging still needs `bl_comm_0448c` (same file).
+  for any gate refusals. `bl_comm_0448c` applied on staging too (anon 35, names unchanged).
