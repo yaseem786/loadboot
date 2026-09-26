@@ -105,3 +105,8 @@ Amazon/Uber. It is built on top of the unsubscribe engine (`claude/UNSUBSCRIBE-E
   FAQ "Call" card stays `data-lb-callonly` (hidden under whatsapp); schema.org keeps the phone field by design.
   The FAQ WhatsApp card (`data-lb-waonly`) ships statically since the same day (build_site `_contact_header`, commit 79e4451):
   visible on first paint / no-JS with the wa.me link and number filled; the runtime switch re-applies the same values.
+
+
+## Superseded for the weekly send — 26 Sep 2026 (`bl_comm_0448`)
+
+The Tuesday digest is now the public version of **LoadBoot Weekly** (carrier / dispatcher / newsletter versions, approval flow, content pool). `newsletter_weekly_run()` and `cc_newsletter_preview()` delegate to the new engine; the double opt-in, consent record and the subscriber list above are unchanged. See `claude/WEEKLY-0448.md`.
