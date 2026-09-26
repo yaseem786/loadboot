@@ -68,6 +68,8 @@ const CSS = `
 .ry-kv div{padding:8px 10px;border:1px solid var(--line,#eef1f6);border-radius:10px}.ry-kv small{display:block;color:var(--mut,#64748b);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
 .ry-tr{white-space:pre-wrap;font-size:13px;line-height:1.55;max-height:50vh;overflow:auto;padding:12px;border-radius:12px;background:rgba(100,116,139,.07)}
 .ry-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ry-audio{height:32px;width:230px;max-width:100%;vertical-align:middle;margin-right:8px}
+@media (max-width:640px){.ry-audio{width:170px}}
 .ry-sw{display:inline-flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}.ry-sw input{width:18px;height:18px}
 @media (max-width:640px){.ry-board{padding:14px;border-radius:14px}.ry-kpi b{font-size:20px}.ry-ta{min-height:300px}}
 @media (prefers-reduced-motion:reduce){.ry-pulse{animation:none}}
@@ -184,7 +186,9 @@ export async function renderRiley(host, query) {
             el('td', null, [el('span', { class: 'ry-pill ' + st[1] }, st[0]), c.sentiment ? el('div', { style: 'font-size:11.5px;opacity:.7' }, c.sentiment) : null]),
             el('td', { style: 'white-space:nowrap;font-variant-numeric:tabular-nums' }, c.duration_sec ? mmss(c.duration_sec) : '—'),
             el('td', null, [il ? el('span', { class: 'ry-pill ' + il[1] }, il[0]) : null, an.needs_human === true ? el('div', { style: 'font-size:11.5px;color:#b91c1c;font-weight:700' }, 'needs a human') : null]),
-            el('td', { style: 'white-space:nowrap' }, [c.recording_url ? el('span', { title: 'Recording available' }, '🎧 ') : '', el('button', { class: 'ry-btn sm', onClick: (e) => { e.stopPropagation(); openCall(c); } }, 'Open')]),
+            el('td', { style: 'white-space:nowrap' }, [
+              c.recording_url ? el('audio', { class: 'ry-audio', controls: true, preload: 'none', src: c.recording_url, title: 'Play the recording', onClick: (e) => e.stopPropagation() }) : null,
+              el('button', { class: 'ry-btn sm', onClick: (e) => { e.stopPropagation(); openCall(c); } }, 'Open')]),
           ]);
         })),
       ])) : el('div', { style: 'opacity:.7;padding:8px 0' }, 'No calls match.'),
@@ -334,9 +338,20 @@ export async function renderRiley(host, query) {
             el('td', null, el('button', { class: 'ry-btn sm', disabled: !can(), onClick: async () => { try { const r = await ccRileyCallbackDone(k.id, null); if (r && r.error) throw new Error(r.error); toast('Marked done.'); loadAll(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Done'))])))]) : el('div', { style: 'opacity:.7' }, 'Nothing open.'),
       ]),
       el('div', { class: 'ry-card' }, [
-        el('h3', null, 'Telnyx legs on the line'), el('p', { class: 'hint' }, 'What Telnyx saw for each call to the WhatsApp number. The conversation itself (recording, transcript) is under Calls, because Riley records it.'),
-        legs.length ? el('table', { class: 'ry-t' }, [el('thead', null, el('tr', null, ['When', 'Caller', 'Outcome', 'Length', 'Cause'].map((x) => el('th', null, x)))),
-          el('tbody', null, legs.map((d) => { const s = LS[d.status] || [d.status, 'm']; return el('tr', null, [el('td', { style: 'white-space:nowrap' }, et(d.started_at)), el('td', null, pretty(d.from_number)), el('td', null, el('span', { class: 'ry-pill ' + s[1] }, s[0])), el('td', null, d.duration_sec ? mmss(d.duration_sec) : '—'), el('td', { style: 'font-size:12px;opacity:.7' }, d.hangup_cause || '')]); }))]) : el('div', { style: 'opacity:.7' }, 'No calls on the line yet.'),
+        el('h3', null, 'Telnyx legs on the line'), el('p', { class: 'hint' }, 'Every call to the WhatsApp number as Telnyx saw it, matched to Riley\u2019s recording of the same call. Play here, or open the transcript and analysis.'),
+        legs.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ry-t' }, [el('thead', null, el('tr', null, ['When', 'Caller', 'Outcome', 'Length', 'Recording', ''].map((x) => el('th', null, x)))),
+          el('tbody', null, legs.map((d) => {
+            const s = LS[d.status] || [d.status, 'm']; const an = d.analysis || {}; const il = INTEREST[an.interest_level];
+            const full = d.lc_call_id ? (data.calls || []).find((c) => c.id === d.lc_call_id) : null;
+            return el('tr', { class: full ? 'click' : '', onClick: () => { if (full) openCall(full); } }, [
+              el('td', { style: 'white-space:nowrap' }, [et(d.started_at), el('div', { style: 'font-size:11.5px;opacity:.65' }, ago(d.started_at))]),
+              el('td', null, [el('b', null, d.riley_name && d.riley_name !== 'there' ? d.riley_name : (d.contact_name || pretty(d.from_number))), el('div', { style: 'font-size:12px;opacity:.7' }, [(d.riley_name && d.riley_name !== 'there') || d.contact_name ? pretty(d.from_number) : '', ROLE[an.caller_type] ? ' · ' + ROLE[an.caller_type] : ''].join(''))]),
+              el('td', null, [el('span', { class: 'ry-pill ' + s[1] }, s[0]), il ? el('div', { style: 'margin-top:4px' }, el('span', { class: 'ry-pill ' + il[1] }, il[0])) : null, el('div', { style: 'font-size:11.5px;opacity:.65' }, d.hangup_cause || '')]),
+              el('td', { style: 'white-space:nowrap;font-variant-numeric:tabular-nums' }, d.duration_sec ? mmss(d.duration_sec) : '—'),
+              el('td', null, d.recording_url ? el('audio', { class: 'ry-audio', controls: true, preload: 'none', src: d.recording_url, onClick: (e) => e.stopPropagation() }) : el('span', { style: 'font-size:12px;opacity:.6' }, d.status === 'ringing' ? 'call in progress' : d.status === 'forwarded' ? 'recording arrives when Retell finishes analysing' : 'no Riley recording (call never reached her)')),
+              el('td', { style: 'white-space:nowrap' }, full ? el('button', { class: 'ry-btn sm', onClick: (e) => { e.stopPropagation(); openCall(full); } }, 'Transcript') : null),
+            ]);
+          }))])) : el('div', { style: 'opacity:.7' }, 'No calls on the line yet.'),
       ]),
     ]));
   }
