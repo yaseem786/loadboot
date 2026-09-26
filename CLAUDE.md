@@ -156,6 +156,18 @@ hard-coded `sys_email` call with a brand-new key nobody registered.** In practic
 Docs: `claude/EMAIL-AUDIT-0391.md` (the audit) and `claude/EMAIL-CATALOG-PROD-0395.md`
 (what is live, and what is left).
 
+5. **Unsubscribes are law (set 25 Sep 2026, `bl_comm_0446`).** Before ANY email is sent by hand —
+   the owner asks you to email someone, a one-off `sys_email`, a test send, an outreach draft — run
+   `select public.cc_email_can_send('<address>', '<catalog key>')` (or open CC → Unsubscribes → "Can I
+   send this?"). If `allowed` is false, do not send and do not look for another route: tell the owner
+   the `reason` sentence verbatim (it names the category, the date, the route they used and what they
+   said). `app_private.sys_email` refuses the same way at send time and files it in `email_blocked_log`,
+   so a send that "went through" but never arrived is visible in CC → Unsubscribes → Blocked sends.
+   Essential mail (account & security, billing notices, staff alerts) is the only thing that passes.
+   Every unsubscribe/resubscribe, by any route, is written ONLY through `app_private.unsub_apply` —
+   never insert into `suppressions`, `email_pref_optouts` or `comm_preferences` by hand. Doc:
+   `claude/UNSUBSCRIBE-ENGINE-0446.md`.
+
 ---
 
 ## 7. Contact line — WhatsApp through the ONE switch, never the Riley phone (set 24 Sep 2026)

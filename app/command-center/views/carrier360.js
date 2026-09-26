@@ -1701,6 +1701,8 @@ export function renderCarrier360(host, orgId) {
                     : r.suppressed ? 'on the suppression list \u2014 they bounced or complained'
                     : !r.opted_in  ? 'opted out of marketing email'
                     : null;
+      // bl_comm_0446: the full picture (which categories are off, why, every refused send) is one click away.
+      const prefsLink = r.email ? el('a', { href: '#/unsubscribes?email=' + encodeURIComponent(r.email), class: 'cc-sub', style: 'display:inline-block;margin-top:6px;color:#0883F7;font-weight:600' }, 'Email preferences \u2192') : null;
       const canSend = r.can_send && !blocked;
 
       const doSend = async (ev, ignoreCadence) => {
@@ -1738,8 +1740,8 @@ export function renderCarrier360(host, orgId) {
         ]),
 
         funnelList(r && r.checklist),
-        blocked ? el('div', { class: 'cc-sub', style: 'margin-top:10px' },
-          'No email can be sent to this carrier while that is true \u2014 reach them another way.') : null,
+        blocked ? el('div', { class: 'cc-sub', style: 'margin-top:10px' }, [
+          'No email can be sent to this carrier while that is true \u2014 reach them another way. ', prefsLink]) : prefsLink,
 
         canSend ? el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [
           r.due ? el('button', { class: 'lb-btn lb-btn-primary', onClick: (ev) => doSend(ev, false) },

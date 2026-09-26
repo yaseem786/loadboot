@@ -467,6 +467,9 @@ REF_GLOBAL_JS = '<script>(function(){try{var m=location.search.match(/[?&]ref=([
 AI_RESEARCH_JS = '<script>(function(){var host=document.getElementById(\'aiBtns\');if(!host)return;\nvar TOPICS={\'/carriers.html\':\'truck dispatch services and carrier operating software for owner-operators and fleets\',\'/brokers.html\':\'load posting, carrier matching, shipment visibility, documents and broker operations\',\'/shipper-solutions.html\':\'shipper freight coordination, visibility and compliant capacity through licensed broker partners\',\'/pricing.html\':\'LoadBoot pricing, service structure, included dispatch services and software capabilities\',\'/how-it-works.html\':\'how LoadBoot dispatch works for carriers and broker partners end to end\',\'/owner-operator-dispatch.html\':\'dispatch services for owner-operators\',\'/new-authority-dispatch.html\':\'dispatch and compliance support for new-authority carriers\',\'/reefer-dispatch.html\':\'refrigerated freight dispatch\',\'/flatbed-dispatch.html\':\'flatbed and step-deck dispatch\',\'/box-truck-dispatch.html\':\'box truck and expedited dispatch\',\'/services.html\':\'the full range of LoadBoot truck dispatch services\',\'/resources.html\':\'how to evaluate truck dispatch services and carrier software\'};\nvar PV=\'v1\';var path=location.pathname===\'/\'?\'/index.html\':location.pathname;var topic=TOPICS[path]||null;\nfunction prompt(){if(topic){return \'I’m researching \'+topic+\' for a U.S. trucking business.\\n\\nPlease review LoadBoot’s official website at https://loadboot.com and this specific page:\\n\'+location.origin+path+\'\\n\\nExplain what LoadBoot provides for this use case, how the workflow works, which features are currently available, who it is best suited for, and how it compares with traditional dispatch services, load boards, and standalone trucking software.\\n\\nUse official LoadBoot pages as primary sources, cite the pages used, distinguish verified capabilities from marketing claims, and provide a neutral assessment including relevant limitations.\';}\nreturn \'I’m researching truck dispatch services and carrier operating software for U.S. owner-operators, carrier fleets, and freight brokers.\\n\\nPlease review LoadBoot’s official website at https://loadboot.com and explain:\\n1. What LoadBoot is, which customers it serves, and what problems it solves.\\n2. How its workflow operates from carrier or broker onboarding, verification, load posting and sourcing, carrier matching, load offers and booking through driver assignment, real-time trip tracking, appointments, document collection, detention, lumper, layover and TONU workflows, POD, invoicing, settlements, reporting, and support.\\n3. How LoadBoot differs from a traditional truck dispatch company, load boards such as DAT or Truckstop, and standalone TMS, fleet-management, or carrier software.\\n4. What LoadBoot provides to owner-operators, small and large carrier fleets, and freight brokers through its Carrier Portal, Partner Portal, and operations Command Center.\\n5. Its strongest use cases, important limitations, eligibility or onboarding requirements, available pricing information, and the types of businesses it is best suited for.\\n\\nUse LoadBoot’s official website as the primary source. Distinguish verified current capabilities from planned features or general marketing claims. Cite the specific pages used, compare the options neutrally, and explain both when LoadBoot may be a strong fit and when another solution may be more suitable.\';}\nvar PROV=[{id:\'chatgpt\',name:\'ChatGPT\',g:\'<polygon points="12 3 19.8 7.5 19.8 16.5 12 21 4.2 16.5 4.2 7.5"/><circle cx="12" cy="12" r="3.2"/>\',u:function(q){return \'https://chatgpt.com/?q=\'+encodeURIComponent(q);}},{id:\'claude\',name:\'Claude\',g:\'<line x1="12" y1="4" x2="12" y2="20"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="6.3" y1="6.3" x2="17.7" y2="17.7"/><line x1="17.7" y1="6.3" x2="6.3" y2="17.7"/>\',u:function(q){return \'https://claude.ai/new?q=\'+encodeURIComponent(q);}},{id:\'gemini\',name:\'Gemini\',g:\'<path d="M12 3c.8 4.5 3.7 7.4 8.2 8.2-4.5.8-7.4 3.7-8.2 8.2-.8-4.5-3.7-7.4-8.2-8.2 4.5-.8 7.4-3.7 8.2-8.2z"/>\',u:function(q){return \'https://gemini.google.com/app\';},fb:true},{id:\'perplexity\',name:\'Perplexity\',g:\'<path d="M6 4v7l6 4 6-4V4"/><path d="M6 20v-5l6-4 6 4v5"/>\',u:function(q){return \'https://www.perplexity.ai/search?q=\'+encodeURIComponent(q);}},{id:\'grok\',name:\'Grok\',g:\'<circle cx="12" cy="12" r="8"/><line x1="6.5" y1="17.5" x2="17.5" y2="6.5"/>\',u:function(q){return \'https://grok.com/?q=\'+encodeURIComponent(q);}}];\nfunction track(t,x){try{if(window.lbTrack)window.lbTrack(t,Object.assign({prompt_version:PV,prompt_type:topic?\'page_specific\':\'default\',placement:\'footer\'},x||{}));}catch(e){}}\nfunction copy(q,cb){function done(ok){cb&&cb(ok);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(q).then(function(){done(true);},function(){done(false);});}else{done(false);}}\nvar live=document.getElementById(\'aiCopyLive\');\nPROV.forEach(function(pv){var b=document.createElement(\'a\');b.href=\'#\';b.setAttribute(\'rel\',\'noopener noreferrer\');b.setAttribute(\'title\',\'Open \'+pv.name+\' (external)\');b.innerHTML=\'<span class="ai-chip" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">\'+pv.g+\'</svg></span>\'+pv.name;b.addEventListener(\'click\',function(e){e.preventDefault();var q=prompt();track(\'ai_research_link_clicked\',{ai_provider:pv.id,page_topic:topic||\'default\'});copy(q,function(ok){if(ok&&live){live.textContent=\'Research prompt copied — paste it if the assistant did not prefill it.\';}if(!ok){track(\'ai_research_fallback_used\',{ai_provider:pv.id});}var w=window.open(pv.u(q),\'_blank\',\'noopener,noreferrer\');if(w){track(\'ai_research_provider_opened\',{ai_provider:pv.id});}});});host.appendChild(b);});\nvar pt=document.getElementById(\'aiPromptText\');if(pt){pt.textContent=prompt();var det=pt.closest(\'details\');if(det){det.addEventListener(\'toggle\',function(){if(det.open)track(\'ai_research_prompt_viewed\',{});});}}\nvar cbtn=document.getElementById(\'aiCopyBtn\');if(cbtn){cbtn.addEventListener(\'click\',function(){copy(prompt(),function(ok){if(live)live.textContent=ok?\'Prompt copied to clipboard.\':\'Copy failed — select and copy the text above.\';track(\'ai_research_prompt_copied\',{ok:ok});});});}\n})();</script>'
 
 def footer():
+    return _contact_header(_footer_raw())
+
+def _footer_raw():
     return '''<footer><div class="wrap">
 <div class="foot-top">
 <div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" width="146" height="32" decoding="async" style="display:block;height:32px;width:auto"></div>
@@ -579,7 +582,7 @@ HEADX = HEADX + _CONTACT_SWITCH
 # rewrites after the fetch lands, so the phone number sat in the static header (crawlers, no-JS, first paint).
 # The build now reads the same public.lb_contact_channel() and, when the channel is whatsapp, renders every
 # data-lb-contact link in the header exactly as the switch would (same labels, so no flash), and hides the
-# data-lb-callonly bits. On phone/both the header is left as it was. Body, footer and schema.org keep the phone
+# data-lb-callonly bits. On phone/both the header is left as it was. Since 26 Sep the footer (strict) and body data-lb-contact links get it too; schema.org keeps the phone
 # version and stay on the runtime switch. A flip in CC applies at runtime at once and to the static header on
 # the next build (every market-data Publish rebuilds).
 _CONTACT_FALLBACK = {'channel': 'whatsapp',
@@ -607,7 +610,7 @@ print('contact channel: %s (%s), header ships %s' % (_CONTACT.get('channel'), _C
       'WhatsApp ' + _CONTACT_WA.get('display', '') if _CONTACT_HDR_WA else 'the phone line'))
 _CONTACT_HDR_LABEL = {'topbar': '&#128172; WhatsApp&nbsp; %s', 'nav': '&#128172; WhatsApp us &mdash; %s',
                       'footer': '&#128172; %s &middot; WhatsApp', 'inline': '%s on WhatsApp'}
-def _contact_header(h):
+def _contact_header(h, strict=True):
     if not _CONTACT_HDR_WA:
         return h
     import html as _html
@@ -620,8 +623,8 @@ def _contact_header(h):
     h = re.sub(r'<a((?:\s[^>]*?)?)\sdata-lb-contact="(\w+)"([^>]*)>.*?</a>', _a, h, flags=re.S)
     h = re.sub(r'(<[a-z]+\b[^>]*?)\sdata-lb-callonly(?=[\s>])', r'\1 style="display:none" data-lb-callonly', h)
     h = h.replace('Riley answers 24/7', 'WhatsApp any hour')
-    if re.search(r'253-?7575|2537575', h):
-        sys.exit('BUILD REFUSED - the header still carries the Riley line while the contact channel is whatsapp (CLAUDE.md §7).')
+    if strict and re.search(r'253-?7575|2537575', h):
+        sys.exit('BUILD REFUSED - the header/footer still carries the Riley line while the contact channel is whatsapp (CLAUDE.md §7).')
     return h
 
 
@@ -715,7 +718,10 @@ def page(fname, title, desc, active, body, schema=''):
     schema = schema or ''
     if 'BreadcrumbList' not in schema:  # don't double up when a caller supplies its own breadcrumb
         schema = schema + _breadcrumb(fname, title)
-    body = body + photo_band(fname) + related_block(fname)
+    # 26 Sep 2026 (owner): the footer and every data-lb-contact link in the body get the same static
+    # WhatsApp rewrite as the header. The footer is strict (build refuses if the Riley line survives);
+    # the body is not, because sms.html must name the SMS number (CLAUDE.md §7 exception).
+    body = _contact_header(body + photo_band(fname) + related_block(fname), strict=False)
     doc = '''<!DOCTYPE html><html lang="en" class="no-js"><head><script>document.documentElement.classList.remove("no-js")</script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%s</title><meta name="description" content="%s"><link rel="canonical" href="https://loadboot.com/%s">
 <meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta property="og:type" content="website"><meta property="og:url" content="https://loadboot.com/%s"><meta property="og:image" content="https://loadboot.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="LoadBoot — the load board with zero ghost loads, plus dispatch, GPS proof and payments"><meta property="og:image" content="https://loadboot.com/og-image-square.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="1200"><meta property="og:site_name" content="LoadBoot"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="%s"><meta name="twitter:description" content="%s"><meta name="twitter:image" content="https://loadboot.com/og-image.png"><meta name="twitter:image:alt" content="LoadBoot — the load board with zero ghost loads"><meta name="theme-color" content="#10223B">
@@ -1418,7 +1424,7 @@ def _mr_prev_load():
         _cur = str(_MR_LIVE[_e]['as_of'])
         _old = sorted(_x for _x in _h.get(_e, []) if _x[0] < _cur)
         if _old:
-            _out[_e] = {'r': _old[-1][1], 'c': _cur, 'l': _dtm.date.fromisoformat(_old[-1][0]).strftime('%b %-d')}
+            _out[_e] = {'r': _old[-1][1], 'c': _cur, 'l': (lambda _d: _d.strftime('%b ') + str(_d.day))(_dtm.date.fromisoformat(_old[-1][0]))}
     return _out
 _MR_PREV = _mr_prev_load()
 _MR_TREND_JS = ("<script>(function(){var P=" + json.dumps(_MR_PREV) + ";"
@@ -1461,7 +1467,7 @@ _DIESEL, _DIESEL_ASOF, _DIESEL_FROM = _diesel_pick()
 _DIESEL_S = '$%.2f' % _DIESEL
 def _ymd_long(d):                                           # '2026-09-21' -> 'Sep 21, 2026'; anything else unchanged
     import datetime as _dtm
-    try: return _dtm.date.fromisoformat(str(d)).strftime('%b %-d, %Y')
+    try: _d = _dtm.date.fromisoformat(str(d)); return _d.strftime('%b ') + str(_d.day) + _d.strftime(', %Y')   # no '%-d': Linux-only, crashes Windows builds
     except (TypeError, ValueError): return str(d)
 def _fsc(peg, mpg): return (_DIESEL - peg) / mpg          # fuel surcharge per mile, the industry formula
 def _fsc_s(peg, mpg): return '$%.2f' % _fsc(peg, mpg)
@@ -5344,14 +5350,101 @@ page('full-truckload-vs-ltl.html', 'FTL vs LTL vs Partial Truckload — Key Diff
  'FTL vs LTL vs partial truckload explained: what each mode is, when partials pay better, and how LoadBoot matches full and partial loads by truck size.',
  'resources.html', ftl, _ftl_faq_sch)
 
-# ---- Unsubscribe (outreach emails one-click) ----
-_unsub_js = ('<script>(function(){var q=new URLSearchParams(location.search);var e=q.get("e"),t=q.get("t");var el=document.getElementById("unsubMsg");'
- 'if(!e||!t){el.textContent="Invalid unsubscribe link.";return;}'
- 'fetch("https://%s.supabase.co/rest/v1/rpc/outreach_unsubscribe",{method:"POST",headers:{"apikey":"%s","Authorization":"Bearer %s","Content-Type":"application/json"},body:JSON.stringify({p_email:e,p_token:t})})'
- '.then(function(r){return r.json()}).then(function(d){el.textContent=(d&&d.ok)?("You are unsubscribed. "+e+" will not receive outreach emails from us again."):"Invalid or expired link.";})'
- '.catch(function(){el.textContent="Something went wrong - email hello@loadboot.com and we will remove you manually.";});})();</script>') % (APP_REF, APP_ANON or '', APP_ANON or '')
-page('unsub.html', 'Unsubscribe | LoadBoot', 'Unsubscribe from LoadBoot outreach emails - one click, no questions asked.',
- 'contact.html', '<section><div class="wrap" style="max-width:640px;text-align:center;padding:90px 24px"><h1>Unsubscribe</h1><p class="lead center" id="unsubMsg" style="margin-top:16px">Working&hellip;</p><p style="margin-top:26px;color:#64748B;font-size:.9rem">Changed your mind? You can always find our free tools at <a href="market-rates.html" style="color:#0883F7">loadboot.com/market-rates</a>.</p></div></section>' + _unsub_js, '')
+# ---- Email preference centre (bl_comm_0446, 26 Sep 2026) ----
+# Every unsubscribe link lands here: loadboot.com/unsub.html?token=<delivery uuid>&ref=<project ref>
+# (the unsubscribe edge function 302s here — Supabase serves HTML from functions as text/plain, so the
+# page cannot live there; the page ignores &ref and talks only to its own build's project)
+# page cannot live there), or the older outreach link ?e=<email>&t=<md5>. The page's script calls the
+# edge function's JSON API: {action:'open'} honours the unsubscribe for the email's category and returns
+# the person's per-category state; switches, "stop every optional email", reason chips and undo follow.
+# Nothing happens on a bare GET, so link scanners cannot unsubscribe anyone. If the API is the old v1
+# (prod before bl_comm_0446), a legacy e+t link falls back to outreach_unsubscribe exactly as before.
+_UNSUB_CSS = """<style>
+.uc{max-width:640px;margin:0 auto;padding:56px 18px 30px}.uc-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:26px 22px;margin-bottom:14px;text-align:left}
+.uc h1{font-size:1.5rem;margin:0 0 6px;color:#10223B}.uc h2{font-size:1.1rem;margin:0 0 4px;color:#10223B}.uc-sub{color:#64748b;font-size:.95rem;line-height:1.6;margin:0 0 14px}.uc-sub b{color:#1e293b}
+.uc-ok{background:#ecfdf3;border:1px solid #bbf7d0;color:#15803d;border-radius:12px;padding:11px 14px;font-size:.92rem;line-height:1.55;margin-bottom:14px}
+.uc-warn{background:#fffbeb;border:1px solid #fde68a;color:#b45309;border-radius:12px;padding:11px 14px;font-size:.92rem;line-height:1.55;margin-bottom:14px}
+.uc-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-top:1px solid #e2e8f0}.uc-row:first-child{border-top:0}
+.uc-t{font-weight:700;font-size:.95rem;color:#1e293b}.uc-d{color:#64748b;font-size:.84rem;line-height:1.5;margin-top:2px}.uc-lock{color:#64748b;font-size:.78rem;font-weight:700;white-space:nowrap;padding-top:3px}
+.uc-tg{position:relative;width:44px;height:26px;border-radius:13px;background:#cbd5e1;flex:0 0 auto;cursor:pointer;border:0;padding:0;transition:background .15s}
+.uc-tg:after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}.uc-tg.on{background:#0883F7}.uc-tg.on:after{left:21px}.uc-tg[disabled]{opacity:.5}
+.uc-btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;font-size:.93rem;cursor:pointer;font-family:inherit}.uc-p{background:#10223B;color:#fff}.uc-s{background:#f1f5f9;color:#10223B}
+.uc-l{background:none;color:#0883F7;padding:8px 0;text-decoration:underline}.uc-btn[disabled]{opacity:.5;cursor:default}.uc-act{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.uc-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.uc-chip{border:1px solid #e2e8f0;border-radius:999px;padding:7px 12px;font-size:.84rem;cursor:pointer;background:#fff;font-family:inherit}.uc-chip.on{background:#10223B;color:#fff;border-color:#10223B}
+.uc-freq{margin-top:7px;border:1px solid #e2e8f0;border-radius:8px;padding:5px 8px;font:inherit;font-size:.82rem;color:#1e293b;background:#fff}
+.uc-fewer{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;margin:0 0 14px;font-size:.9rem;line-height:1.55;color:#1e293b}
+.uc textarea{width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:10px;padding:10px;font:inherit;font-size:.92rem;min-height:70px;resize:vertical}.uc-small{font-size:.84rem;color:#64748b;line-height:1.6}.uc-hide{display:none}
+</style>"""
+_UNSUB_JS = r"""<script>(function(){
+var q=new URLSearchParams(location.search),tok=q.get('token'),e=q.get('e'),t=q.get('t'),ref=q.get('ref');
+var APPREF='__APPREF__',ANON='__ANON__';ref=APPREF; // a build only ever talks to its own project (isolation gate)
+var API='https://'+ref+'.supabase.co/functions/v1/unsubscribe?'+(tok?'token='+encodeURIComponent(tok):'e='+encodeURIComponent(e||'')+'&t='+encodeURIComponent(t||''));
+var root=document.getElementById('uc');
+function h(tag,a,kids){var n=document.createElement(tag);if(a)for(var k in a){if(k==='text')n.textContent=a[k];else if(k.slice(0,2)==='on')n.addEventListener(k.slice(2),a[k]);else n.setAttribute(k,a[k]);}(kids||[]).forEach(function(c){if(c)n.appendChild(typeof c==='string'?document.createTextNode(c):c);});return n;}
+function card(kids){return h('div',{'class':'uc-card'},kids);}
+function msg(title,text){root.innerHTML='';root.appendChild(card([h('h1',{text:title}),h('p',{'class':'uc-sub',text:text})]));}
+var BAD='This link looks incomplete or has expired. Use the link exactly as it appears in the email, or just reply to that email with the word "unsubscribe" and we will take care of it.';
+if(!tok&&!(e&&t)){msg("This link isn't valid",BAD);return;}
+function post(p){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).then(function(r){return r.text().then(function(x){try{return JSON.parse(x);}catch(_){return {legacy:true,status:r.status};}});});}
+function legacy(){ // prod before bl_comm_0446: the old outreach RPC still works for e+t links
+  if(!(e&&t)){msg('Something went wrong','Please try the link again in a minute, or reply to the email with the word "unsubscribe".');return;}
+  fetch('https://'+APPREF+'.supabase.co/rest/v1/rpc/outreach_unsubscribe',{method:'POST',headers:{apikey:ANON,Authorization:'Bearer '+ANON,'Content-Type':'application/json'},body:JSON.stringify({p_email:e,p_token:t})})
+   .then(function(r){return r.json();}).then(function(d){if(d&&d.ok)msg("You're unsubscribed",e+' will not receive outreach emails from LoadBoot again.');else msg("This link isn't valid",BAD);})
+   .catch(function(){msg('Something went wrong','Please try again in a minute.');});}
+post({action:'open'}).then(function(d){
+  if(!d||d.legacy||(d.ok===true&&!d.state)){legacy();return;}
+  if(d.ok!==true){msg("This link isn't valid",d.error&&d.error!=='unknown token'&&d.error!=='invalid link'?d.error:BAD);return;}
+  render(d);
+}).catch(function(){legacy();});
+function render(d){
+  var st=d.state||{},groups=st.groups||[],set=d.settings||{},done=(d.done&&d.done.groups)||[];
+  function lab(c){if(c==='*')return 'every optional email';for(var i=0;i<groups.length;i++)if(groups[i].code===c)return groups[i].label;return c;}
+  var doneLabel=done.map(lab).join(', ')||'these emails';
+  var status=h('div',{'class':'uc-ok',text:'Done. Emails about your account, security and billing are essential and still reach you.'});
+  function flash(t,ok){status.textContent=t;status.className=ok?'uc-ok':'uc-warn';}
+  var who=d.name?[h('b',{text:d.name}),' ('+d.email+')']:[h('b',{text:d.email})];
+  root.innerHTML='';
+  var fewerG=null;if(done.length===1){groups.forEach(function(g){if(g.code===done[0]&&g.frequency_allowed===true)fewerG=g;});}
+  var first=card([h('h1',{text:"You're unsubscribed"}),h('p',{'class':'uc-sub'},who.concat([' will no longer receive ',h('b',{text:doneLabel}),' from LoadBoot. This took effect immediately.'])),status]);
+  if(fewerG){ // "rather get fewer?" — keeps the person without pushing
+    var fb=h('div',{'class':'uc-fewer'},[h('b',{text:'Rather get fewer instead?'}),' Keep '+fewerG.label+' at most ']);
+    [[7,'once a week'],[30,'once a month']].forEach(function(o,i){fb.appendChild(h('button',{type:'button','class':'uc-btn uc-s',style:'padding:7px 12px;margin:6px 6px 0 0',text:o[1],onclick:function(){
+      post({action:'frequency',groups:[fewerG.code],days:o[0]}).then(function(x){if(x&&x.ok){sync(x.state);fb.innerHTML='';fb.appendChild(document.createTextNode(fewerG.label+' is back on, at most '+o[1]+'. You can change this below any time.'));flash('Saved: '+fewerG.label+' at most '+o[1]+'.',true);}else flash((x&&x.error)||'Could not save that.',false);}).catch(function(){flash('Could not save that. Please try again.',false);});}}));});
+    first.appendChild(fb);}
+  if(set.ask_reason!==false&&(d.reasons||[]).length){
+    var rc=null,ta=h('textarea',{placeholder:'Anything else? (optional)'}),chips=h('div',{'class':'uc-chips'});
+    d.reasons.forEach(function(r){var c=h('button',{type:'button','class':'uc-chip',text:r.label,onclick:function(){var on=c.classList.contains('on');[].forEach.call(chips.children,function(x){x.classList.remove('on');});if(!on){c.classList.add('on');rc=r.code;}else rc=null;}});chips.appendChild(c);});
+    var why=h('div',null,[h('div',{'class':'uc-small'},[h('b',{text:'Mind telling us why?'}),' Optional. It helps us send less, and better.']),chips,ta]);
+    var sb=h('button',{type:'button','class':'uc-btn uc-s',text:'Send feedback',onclick:function(){var x=ta.value.trim();if(!rc&&!x)return;sb.disabled=true;post({action:'reason',reason_code:rc,reason_text:x}).then(function(){why.innerHTML='';why.appendChild(h('div',{'class':'uc-small',text:'Thank you. Noted.'}));}).catch(function(){sb.disabled=false;});}});
+    why.appendChild(h('div',{'class':'uc-act'},[sb]));first.appendChild(why);}
+  root.appendChild(first);
+  var rows=h('div'),tgs={},sels={};
+  groups.forEach(function(g){
+    var right;
+    if(g.opt_out_allowed!==true)right=h('div',{'class':'uc-lock',text:'Always on'});
+    else{right=h('button',{type:'button','class':'uc-tg'+(g.opted_out?'':' on'),role:'switch','aria-checked':g.opted_out?'false':'true','aria-label':g.label});
+      right.addEventListener('click',function(){var on=!right.classList.contains('on');right.disabled=true;
+        post({action:on?'resubscribe':'unsubscribe',scope:'group',groups:[g.code]}).then(function(x){right.disabled=false;if(x&&x.ok){sync(x.state);flash((on?'Turned on: ':'Turned off: ')+g.label+'.',true);}else flash((x&&x.error)||'Could not save that. Please try again.',false);}).catch(function(){right.disabled=false;flash('Could not save that. Please try again.',false);});});
+      tgs[g.code]=right;}
+    var left=h('div',{style:'flex:1'},[h('div',{'class':'uc-t',text:g.label}),h('div',{'class':'uc-d',text:g.description||''})]);
+    if(g.frequency_allowed===true){var sel=h('select',{'class':'uc-freq','aria-label':g.label+' how often'});
+      [['','Every email'],['7','At most one a week'],['30','At most one a month']].forEach(function(o){var op=h('option',{value:o[0],text:o[1]});if(String(g.max_per_days||'')===o[0])op.selected=true;sel.appendChild(op);});
+      sel.addEventListener('change',function(){sel.disabled=true;post({action:'frequency',groups:[g.code],days:sel.value?Number(sel.value):null}).then(function(x){sel.disabled=false;if(x&&x.ok){sync(x.state);flash(g.label+': '+sel.options[sel.selectedIndex].text.toLowerCase()+'.',true);}else flash((x&&x.error)||'Could not save that.',false);}).catch(function(){sel.disabled=false;flash('Could not save that. Please try again.',false);});});
+      sels[g.code]=sel;left.appendChild(sel);}
+    rows.appendChild(h('div',{'class':'uc-row'},[left,right]));
+  });
+  var act=h('div',{'class':'uc-act'}),all=null,undo=null;
+  if(set.offer_all!==false){all=h('button',{type:'button','class':'uc-btn uc-p',onclick:function(){all.disabled=true;post({action:'unsubscribe',scope:'all'}).then(function(x){if(x&&x.ok){sync(x.state);flash('Every optional email is now off. Account, security and billing notices still reach you.',true);}else{all.disabled=false;flash((x&&x.error)||'Could not save that.',false);}}).catch(function(){all.disabled=false;flash('Could not save that. Please try again.',false);});}});act.appendChild(all);}
+  if(set.resubscribe!==false&&done.length){undo=h('button',{type:'button','class':'uc-btn uc-l',text:'Undo: turn '+doneLabel+' back on',onclick:function(){undo.disabled=true;var isAll=done.indexOf('*')>=0;post({action:'resubscribe',scope:isAll?'all':'group',groups:done.filter(function(x){return x!=='*';})}).then(function(x){if(x&&x.ok){sync(x.state);flash('Undone. '+doneLabel+' is back on.',true);undo.classList.add('uc-hide');}else{undo.disabled=false;flash((x&&x.error)||'Could not undo that.',false);}}).catch(function(){undo.disabled=false;flash('Could not undo that. Please try again.',false);});}});act.appendChild(undo);}
+  function sync(s){if(!s)return;(s.groups||[]).forEach(function(x){var b=tgs[x.code];if(b){b.classList.toggle('on',x.opted_out!==true);b.setAttribute('aria-checked',x.opted_out!==true?'true':'false');}var se=sels[x.code];if(se){se.value=x.opted_out===true?'':String(x.max_per_days||'');se.style.display=x.opted_out===true?'none':'';}});if(all){all.disabled=s.all_off===true;all.textContent=s.all_off===true?'Every optional email is off':'Stop every optional email';}}
+  root.appendChild(card([h('h2',{text:'Manage what you receive'}),h('p',{'class':'uc-sub',text:'Switch a category off or back on. Changes save instantly for '+d.email+'.'}),rows,act,
+    h('p',{'class':'uc-small',style:'margin-top:14px',text:'Changed your mind later? The link in any LoadBoot email brings you back here, and signed-in users can also do this under Account, Notifications.'})]));
+  sync(st);
+}
+})();</script>"""
+_UNSUB_JS = _UNSUB_JS.replace('__APPREF__', APP_REF).replace('__ANON__', APP_ANON or '')
+page('unsub.html', 'Email preferences | LoadBoot', 'Manage which LoadBoot emails you receive.',
+ 'contact.html', _UNSUB_CSS + '<section><div class="uc" id="uc"><div class="uc-card"><h1>Email preferences</h1><p class="uc-sub">Opening your preferences&hellip;</p></div></div></section>' + _UNSUB_JS, '')
 
 # ---- SMS program page (10DLC CTA verification) ----
 # Replaces text-us.html (24 Sep 2026). Campaign CS3VIAJ declares ONE opt-in method — the
