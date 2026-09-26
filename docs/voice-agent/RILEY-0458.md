@@ -49,6 +49,29 @@ Verified on staging with synthetic Telnyx events: answered path (forwarded, dura
 ## Costs (estimates, not checked against today's price pages — the container could not reach them)
 Retell ≈ $0.13/min all-in + $2/mo per number (from `LAUNCH-PLAN.md`). Telnyx inbound + transferred outbound leg ≈ $0.01–0.02/min. At 30 calls × 3 min a month: ≈ $14 Retell + ≈ $3 Telnyx. Auto-recharge on Retell is the important part — voice OTP (`retell_dial_verify`) uses the same balance.
 
+## 0458b — known carrier → their dispatcher first (26 Sep, later the same day)
+
+Owner ask: the WhatsApp number is the only number carriers see; when a carrier calls it for their dedicated
+dispatcher the call must reach that dispatcher, and Riley must know who the dispatcher is.
+
+- `app_private.riley_caller_dispatcher(from)`: caller phone → `profiles` → `organization_memberships` →
+  active `dispatcher_assignments` → `dispatcher_profiles.full_name` + the dispatcher's active `dialer_lines` row.
+- `dialer_hook_event`: on the WhatsApp line, a carrier whose dispatcher contact is **released**
+  (`contact_released_at`) and whose dispatcher has a line rings that line as if they had dialled it:
+  browser → dispatcher mobile → fallback → voicemail. Switch: `dialer_config.riley_route_to_dispatcher`
+  (CC → Riley → WhatsApp line, default ON). Not released / no assignment / unknown → straight to Riley.
+- `dialer_config.fallback_number` was NULL on prod and staging; it is now the Riley number, so every unanswered
+  dispatcher-line call ends with Riley, then voicemail. Internal routing only — never shown anywhere.
+- `retell_inbound_verified`: Riley's `{{context}}` now names the dedicated dispatcher (or says none is
+  assigned yet) and tells her what to say when the caller asks for that person. Inbound prompt draft got the
+  matching rule (re-publish from CC).
+- Verified: prod read-only dry run resolves the one released carrier → dispatcher with a name and an active
+  line; staging synthetic unknown caller still transfers to Riley; test rows deleted. The dispatcher-first
+  path itself could not be exercised on staging (no active assignment there) — first real carrier call
+  from a released account is the test; watch CC → Phones & live calls for the dispatcher's browser ring.
+- Retell dashboard: **Allowed Inbound Countries → United States only** (owner). Riley's callers are US
+  carriers, brokers and shippers; dispatchers abroad are staff and never call the public line.
+
 ## Known gaps / next
 - **Outbound caller id is the Riley number.** Retell can only dial from a number it owns. To call out as the 815 line, import 815 into Retell over a Telnyx SIP trunk (Retell "Import number"). That also removes the forwarding hop. Separate task; needs portal work on both sides.
 - Site copy still says "Riley on the phone 24/7" in `build_site.py` (pricing list ~2311, dispatch-OS card ~2070, callback microcopy ~2300). Not a number, so the §7 build guard does not catch it. Fine once the WhatsApp line is Riley — she *is* on the phone — but the "Riley is calling you right now" microcopy should say the AI assistant is calling.

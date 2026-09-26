@@ -296,6 +296,12 @@ export async function renderRiley(host) {
           try { const r = await ccRileySettingsSet({ riley_wa_enabled: on }); if (r && r.error) throw new Error(r.error); settings = r; toast(on ? 'Riley now answers the WhatsApp line.' : 'Riley is off the WhatsApp line. Calls fall to the dialer chain / voicemail.'); paintBoard(); paintWarn(); paintWa(); }
           catch (err) { toast(humanizeError(err), 'error'); e.target.checked = !on; }
         } }), 'Riley answers the WhatsApp line']),
+        el('label', { class: 'ry-sw', style: 'margin-left:18px' }, [el('input', { type: 'checkbox', checked: settings.riley_route_to_dispatcher !== false, disabled: !can(), onChange: async (e) => {
+          const on = e.target.checked;
+          try { const r = await ccRileySettingsSet({ riley_route_to_dispatcher: on }); if (r && r.error) throw new Error(r.error); settings = r; toast(on ? 'Known carriers ring their own dispatcher first; Riley if unanswered.' : 'Everyone goes straight to Riley.'); paintWa(); }
+          catch (err) { toast(humanizeError(err), 'error'); e.target.checked = !on; }
+        } }), 'Known carrier → their dispatcher first']),
+        el('div', { style: 'font-size:12.5px;color:var(--mut,#64748b);margin-top:8px' }, 'A carrier we recognise by phone number, whose dispatcher contact has been released (' + (settings.released_carriers ?? 0) + ' today), rings that dispatcher\u2019s LoadBoot line: browser \u2192 their mobile \u2192 Riley \u2192 voicemail. Riley\u2019s briefing names the dispatcher either way.' + (settings.fallback_is_riley ? '' : ' Note: the dialer fallback number is not the Riley line, so unanswered dispatcher calls do not reach Riley.')),
         el('div', { style: 'font-size:12.5px;color:var(--mut,#64748b);margin-top:10px' }, 'One-time Telnyx step (owner): Numbers → ' + pretty(settings.wa_number) + ' → Voice → connection = the “LoadBoot Inbound” Voice API application (the same one the dispatcher lines use). Without it Telnyx never tells us the call exists.'),
       ]),
       el('div', { class: 'ry-card' }, [
