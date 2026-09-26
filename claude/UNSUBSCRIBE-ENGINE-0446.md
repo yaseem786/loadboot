@@ -63,7 +63,7 @@ Before any hand send: `select public.cc_email_can_send('<address>', '<catalog ke
 1. Apply `migrations/bl_comm_0446_unsubscribe_engine.sql` on prod. Run the anon-surface check: expect
    **34 → 34, identical names**. Check `select count(*) from app_private.unsub_events where source='backfill'`
    is roughly the old suppression + opt-out count.
-2. Deploy `supabase/functions/unsubscribe` (verify_jwt **off**, as before) and `delivery-worker`.
+2. Deploy `supabase/functions/unsubscribe` (verify_jwt **off**, as before) and `delivery-worker` (**v20**, verify_jwt on).
 3. Push the site (`unsub.html` becomes the redirect).
 4. Smoke, on a throwaway address only: queue a digest to it, open the link, confirm the page, confirm
    CC → Unsubscribes shows the event, then `cc_unsub_set(... 'resubscribe' ...)` with a note and delete
@@ -115,3 +115,26 @@ until …"). `sys_email` files it in `email_blocked_log`; the worker's marketing
 - Staging: applied as `bl_comm_0446b_fewer_emails` (same SQL as §12 of the migration file), function v3
   redeployed, tested in SQL (cap blocks, operational group refused, reset works) and in Chromium; anon
   surface 33, the new staff RPC is not anon-executable. Test rows deleted.
+
+## 8. Every send path + CC polish — 26 Sep 2026 (owner's CC review)
+
+- **Leak found and closed (worker v20 + §13 = staging `bl_comm_0446c`).** v19 only ran `email_gate` when a queued
+  row's meta carried `preference_group`. `cc_enqueue_transactional`, `fire_comm_trigger`, `reminder_dispatch` and
+  `lb_email_notify` never set it, so on prod in the last 60 days **93 catalog-`marketing` emails** (agent.invite,
+  chat.lead.followup/nudge, call.lead.followup, dispatcher.waitlist/reapply_invite, welcome.founder_broker) went out
+  as "transactional" with no unsubscribe check. v20 gates every non-marketing row; `email_gate` resolves the group
+  from `email_catalog` by `template_key`, so essential keys still pass. Catalog-marketing rows get the "Unsubscribe"
+  label + one-click headers. The "fewer emails" cap now also counts a sent row by its catalog group.
+  Tested on staging in a rolled-back transaction: marketing-off → `chat.lead.followup` blocked; `welcome.account`
+  essential; `compliance.reminder` allowed; cap counted an `agent.invite` row with no meta group. Anon surface 33, same names.
+- **Complaints (spam reports) backfilled** into the ledger as "every optional email" (§13b). Prod has 4.
+- **Old records on prod** come in with §9 of the migration at rollout: ~53 soft-unsubscribe suppressions, 52
+  unsubscribed outreach contacts (mostly the same people), 1 app toggle, + 4 complaints. Bounces (293) stay hard
+  suppressions only — they are not a choice the person made.
+- **Not covered by the engine:** `send-email` (CC Support ticket reply, staff-only, straight to Resend). It is a
+  one-to-one reply to someone who wrote in, so it is left as is.
+- **CC:** Route column is a one-line chip with an icon and the short label; the long sentence is the tooltip.
+- **Site:** the footer (strict: build refuses if the Riley line survives) and body `data-lb-contact` links now get
+  the same static WhatsApp rewrite as the header. Plain-text Riley mentions remain in contact, faq, privacy, terms,
+  security and delete-account pages (sms.html is the allowed exception) — owner to decide.
+- **Staging test rows for muhammadyaseenjanjua786@gmail.com deleted** (7 events, 7 prefs, 1 suppression, 1 delivery).

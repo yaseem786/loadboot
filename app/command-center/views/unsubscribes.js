@@ -27,9 +27,37 @@ const ACTION = (a, m) => a === 'unsubscribe' ? pill('Unsubscribed', 'amber') : a
   : pill('Fewer emails' + (m && m.max_per_days ? ': ' + PACE[m.max_per_days] : ': every email'), 'violet');
 
 const pill = (label, tone) => el('span', { class: 'cc-pill cc-pill-' + (tone || 'gray') }, String(label || '—'));
+// "Route" chip (26 Sep 2026, owner): the server's source_label is sentence text ("the email preferences page"),
+// which .cc-pill title-cased and wrapped into a three-line blob. The chip shows the short label from SOURCES
+// with an icon, on one line; the full sentence stays in the tooltip.
+const ROUTE_ICON = {
+  one_click: 'M4 6h16v12H4z M4 7l8 6 8-6', preference_page: 'M4 7h10 M18 7h2 M4 17h4 M12 17h8 M16 5v4 M10 15v4',
+  legacy_link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1 M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+  reply: 'M9 10 4 14l5 4 M4 14h11a5 5 0 0 0 5-5V6', app_prefs: 'M7 3h10v18H7z M11 18h2',
+  cc_manual: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21a8 8 0 0 1 16 0', sms_stop: 'M4 5h16v11H9l-5 4z M9 10h6',
+  backfill: 'M4 12a8 8 0 1 0 2.3-5.7 M4 4v4h4',
+};
+if (!document.getElementById('ux-route-css')) {
+  document.head.appendChild(el('style', { id: 'ux-route-css' }, `
+.ux-route{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;text-transform:none;font-size:.76rem;font-weight:700;
+  letter-spacing:.01em;padding:5px 11px 5px 8px;border-radius:999px;border:1px solid color-mix(in srgb,currentColor 24%,transparent);
+  box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.ux-route svg{flex:none;opacity:.9}
+.ux-unsub td .cc-pill,.ux-unsub td .ux-when{white-space:nowrap}`));
+}
+const routeChip = (source, fullLabel) => {
+  const label = SOURCES.find(s => s[0] === source)?.[1] || fullLabel || source || '—';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '13'); svg.setAttribute('height', '13'); svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '2.2');
+  svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', ROUTE_ICON[source] || 'M12 12h.01'); svg.appendChild(path);
+  return el('span', { class: 'cc-pill cc-pill-' + (SOURCE_TONE[source] || 'gray') + ' ux-route', title: fullLabel ? 'Via ' + fullLabel : label }, [svg, label]);
+};
 const num = (n) => Number(n || 0).toLocaleString();
 const sub = (t, style) => el('div', { class: 'cc-sub', style: style || '' }, t);
-const when = (ts) => ts ? el('span', { title: fmtDateTime(ts) }, ago(ts)) : '—';
+const when = (ts) => ts ? el('span', { class: 'ux-when', title: fmtDateTime(ts) }, ago(ts)) : '—';
 const groupsText = (labels, codes) => (labels && labels.length ? labels : (codes || [])).map(x => x === '*' ? 'every optional email' : x).join(', ') || '—';
 const reasonText = (r) => [r.reason_label, r.reason_text].filter(Boolean).join(' — ') || (r.reason_code || '');
 const qs = () => { try { return new URLSearchParams((location.hash.split('?')[1] || '')); } catch (_) { return new URLSearchParams(); } };
@@ -48,7 +76,7 @@ function bars(items, keyLabel, total) {
 }
 
 function table(cols, rows, onRow) {
-  return el('div', { class: 'cc-table-wrap' }, el('table', { class: 'cc-table' }, [
+  return el('div', { class: 'cc-table-wrap ux-unsub' }, el('table', { class: 'cc-table' }, [
     el('thead', null, el('tr', null, cols.map(c => el('th', null, c)))),
     el('tbody', null, rows.map(r => el('tr', { class: onRow ? 'clickable' : '', onClick: onRow ? () => onRow(r.row) : null }, r.cells.map(c => el('td', null, c))))),
   ]));
@@ -154,7 +182,7 @@ export async function renderUnsubscribes(host) {
             el('div', null, [el('div', { style: 'font-weight:600' }, r.email), sub([r.name, r.org_name].filter(Boolean).join(' · ') || (r.is_user ? 'signed-in user' : 'not a user'))]),
             ACTION(r.action, r.meta),
             groupsText(r.group_labels, r.groups),
-            el('div', null, [pill(r.source_label, SOURCE_TONE[r.source]), r.actor_name ? sub('by ' + r.actor_name) : null]),
+            el('div', null, [routeChip(r.source, r.source_label), r.actor_name ? sub('by ' + r.actor_name) : null]),
             reasonText(r) || sub('—'),
             r.origin_name || r.origin_template || '—',
           ] })), (r) => personDrawer(r.email)),
@@ -249,7 +277,7 @@ export async function renderUnsubscribes(host) {
           el('td', null, [el('div', { style: 'font-weight:600' }, g.label), sub(g.description)]),
           el('td', null, [toggle(g), paceCell(g)]),
           el('td', null, g.opted_out && g.since ? when(g.since) : '—'),
-          el('td', null, g.opted_out && g.source ? pill(SOURCES.find(s => s[0] === g.source)?.[1] || g.source, SOURCE_TONE[g.source]) : '—'),
+          el('td', null, g.opted_out && g.source ? routeChip(g.source) : '—'),
           el('td', null, g.opted_out ? ([g.reason_code, g.reason_text].filter(Boolean).join(' — ') || (g.origin_template ? 'from ' + g.origin_template : '—')) : '—'),
         ]))),
       ])),
@@ -264,7 +292,7 @@ export async function renderUnsubscribes(host) {
       el('div', { style: 'font-weight:700;margin:16px 0 6px' }, 'Timeline'),
       (p.events || []).length ? table(['When', 'What', 'Categories', 'Route', 'Why', 'From email', 'Detail'], p.events.map(e => ({ row: e, cells: [
         when(e.at), ACTION(e.action, e.meta),
-        groupsText(e.group_labels, e.groups), el('div', null, [pill(e.source_label, SOURCE_TONE[e.source]), e.actor_name ? sub('by ' + e.actor_name) : null]),
+        groupsText(e.group_labels, e.groups), el('div', null, [routeChip(e.source, e.source_label), e.actor_name ? sub('by ' + e.actor_name) : null]),
         reasonText(e) || '—', e.origin_name || e.origin_template || '—',
         sub([e.meta && e.meta.note ? 'note: ' + e.meta.note : null, e.ip ? 'ip ' + e.ip : null].filter(Boolean).join(' · ')),
       ] }))) : sub('No events recorded for this address.'),
