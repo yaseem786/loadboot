@@ -56,6 +56,7 @@ const CSS = `
 .ry-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
 .ry-pill.g{background:rgba(34,197,94,.14);color:#15803d}.ry-pill.r{background:rgba(239,68,68,.13);color:#b91c1c}.ry-pill.a{background:rgba(245,158,11,.16);color:#b45309}.ry-pill.b{background:rgba(8,131,247,.13);color:#0369a1}.ry-pill.m{background:rgba(100,116,139,.15);color:#475569}
 .ry-btn{border:1px solid var(--line,#d8dee9);background:var(--card,#fff);color:inherit;border-radius:10px;padding:8px 13px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.ry-btn.done{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#15803d}.ry-btn.done[disabled]{opacity:1;cursor:default}
 .ry-btn:hover{filter:brightness(.97)}.ry-btn.p{background:var(--b,#0883F7);border-color:var(--b,#0883F7);color:#fff}.ry-btn.o{background:var(--o,#FC5305);border-color:var(--o,#FC5305);color:#fff}.ry-btn.sm{padding:5px 10px;font-size:12.5px}.ry-btn[disabled]{opacity:.5;cursor:not-allowed}
 .ry-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
 .ry-in{border:1px solid var(--line,#d8dee9);background:var(--card,#fff);color:inherit;border-radius:10px;padding:8px 11px;font:inherit;min-width:0}
@@ -67,6 +68,8 @@ const CSS = `
 .ry-kv div{padding:8px 10px;border:1px solid var(--line,#eef1f6);border-radius:10px}.ry-kv small{display:block;color:var(--mut,#64748b);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
 .ry-tr{white-space:pre-wrap;font-size:13px;line-height:1.55;max-height:50vh;overflow:auto;padding:12px;border-radius:12px;background:rgba(100,116,139,.07)}
 .ry-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ry-audio{height:32px;width:230px;max-width:100%;vertical-align:middle;margin-right:8px}
+@media (max-width:640px){.ry-audio{width:170px}}
 .ry-sw{display:inline-flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}.ry-sw input{width:18px;height:18px}
 @media (max-width:640px){.ry-board{padding:14px;border-radius:14px}.ry-kpi b{font-size:20px}.ry-ta{min-height:300px}}
 @media (prefers-reduced-motion:reduce){.ry-pulse{animation:none}}
@@ -183,7 +186,9 @@ export async function renderRiley(host, query) {
             el('td', null, [el('span', { class: 'ry-pill ' + st[1] }, st[0]), c.sentiment ? el('div', { style: 'font-size:11.5px;opacity:.7' }, c.sentiment) : null]),
             el('td', { style: 'white-space:nowrap;font-variant-numeric:tabular-nums' }, c.duration_sec ? mmss(c.duration_sec) : '—'),
             el('td', null, [il ? el('span', { class: 'ry-pill ' + il[1] }, il[0]) : null, an.needs_human === true ? el('div', { style: 'font-size:11.5px;color:#b91c1c;font-weight:700' }, 'needs a human') : null]),
-            el('td', { style: 'white-space:nowrap' }, [c.recording_url ? el('span', { title: 'Recording available' }, '🎧 ') : '', el('button', { class: 'ry-btn sm', onClick: (e) => { e.stopPropagation(); openCall(c); } }, 'Open')]),
+            el('td', { style: 'white-space:nowrap' }, [
+              c.recording_url ? el('audio', { class: 'ry-audio', controls: true, preload: 'none', src: c.recording_url, title: 'Play the recording', onClick: (e) => e.stopPropagation() }) : null,
+              el('button', { class: 'ry-btn sm', onClick: (e) => { e.stopPropagation(); openCall(c); } }, 'Open')]),
           ]);
         })),
       ])) : el('div', { style: 'opacity:.7;padding:8px 0' }, 'No calls match.'),
@@ -232,10 +237,30 @@ export async function renderRiley(host, query) {
       const bm = el('input', { class: 'ry-in', style: 'width:100%;box-sizing:border-box', placeholder: p.agent_key === 'inbound' ? 'Empty = Riley opens from the prompt (known vs unknown caller)' : 'First line Riley says', value: p.begin_message || '' });
       const stEl = el('div', { style: 'font-size:12.5px;color:var(--mut,#64748b)' }, [
         p.published_at ? 'Published ' + et(p.published_at) + ' (Retell llm v' + (p.published_llm_version ?? '?') + ', agent v' + (p.published_agent_version ?? '?') + ')' : 'Never published from CC — Riley is still on whatever the Retell dashboard holds.',
-        p.dirty ? el('span', { class: 'ry-pill a', style: 'margin-left:8px' }, 'unpublished changes') : el('span', { class: 'ry-pill g', style: 'margin-left:8px' }, 'live'),
+        p.dirty ? el('span', { class: 'ry-pill a', style: 'margin-left:8px' }, 'saved, not published yet') : el('span', { class: 'ry-pill g', style: 'margin-left:8px' }, 'published · live'),
       ]);
       const count = el('span', { style: 'font-size:12px;opacity:.7' }, (p.general_prompt || '').length.toLocaleString() + ' chars');
-      ta.addEventListener('input', () => { count.textContent = ta.value.length.toLocaleString() + ' chars'; });
+      // Button state machine (owner ask, 26 Sep): the buttons must SAY where the prompt stands.
+      //   editing  → "Save draft" live, Publish locked (save first), "Discard changes" shown
+      //   saved, unpublished changes → "Saved ✓" locked, "Publish to Retell" live
+      //   saved and live → "Saved ✓" locked, "Published · live" locked
+      const saveBtn = el('button', { class: 'ry-btn p', onClick: () => save() }, [icon('check', 16), 'Save draft']);
+      const pubBtn = el('button', { class: 'ry-btn o', onClick: () => publish() }, [icon('upload', 16), 'Publish to Retell']);
+      const discardBtn = el('button', { class: 'ry-btn', onClick: () => { ta.value = p.general_prompt || ''; bm.value = p.begin_message || ''; count.textContent = ta.value.length.toLocaleString() + ' chars'; syncButtons(); } }, 'Discard changes');
+      const edited = () => ta.value !== (p.general_prompt || '') || (bm.value || '') !== (p.begin_message || '');
+      function syncButtons() {
+        const e = edited(), m = can();
+        saveBtn.disabled = !m || !e;
+        saveBtn.textContent = ''; saveBtn.append(icon('check', 16), e ? 'Save draft' : 'Saved ✓');
+        saveBtn.classList.toggle('p', e); saveBtn.classList.toggle('done', !e);
+        pubBtn.disabled = !m || e || !p.dirty;
+        pubBtn.textContent = ''; pubBtn.append(icon('upload', 16), e ? 'Save first, then publish' : (p.dirty ? 'Publish to Retell' : 'Published · live'));
+        pubBtn.classList.toggle('o', !e && p.dirty); pubBtn.classList.toggle('done', !e && !p.dirty);
+        pubBtn.title = e ? 'Save the draft before publishing' : (p.dirty ? 'Make this draft live for the very next call' : 'Retell is running exactly this text');
+        discardBtn.hidden = !e;
+      }
+      ta.addEventListener('input', () => { count.textContent = ta.value.length.toLocaleString() + ' chars'; syncButtons(); });
+      bm.addEventListener('input', syncButtons);
       const save = async () => {
         try { const r = await ccRileyPromptSave(p.agent_key, bm.value, ta.value); if (r && r.error) throw new Error(r.error); toast('Saved. Not live yet — press Publish when you are ready.'); await loadPrompts(); paintPrompts(); paintWarn(); }
         catch (e) { toast(humanizeError(e), 'error'); }
@@ -258,7 +283,7 @@ export async function renderRiley(host, query) {
           ]), { size: 'lg' });
         } catch (e) { toast(humanizeError(e), 'error'); }
       };
-      return el('div', { class: 'ry-card' }, [
+      const card = el('div', { class: 'ry-card' }, [
         el('h3', null, [KEYS[p.agent_key] || p.agent_key, count]),
         el('p', { class: 'hint' }, p.agent_key === 'inbound'
           ? 'Every inbound caller — carrier, broker, shipper, dispatcher — is handled by this ONE prompt through its role playbooks. Riley receives {{name}}, {{role}}, {{topic}} and {{context}} from the inbound webhook before she speaks.'
@@ -267,12 +292,13 @@ export async function renderRiley(host, query) {
         el('label', { style: 'display:grid;gap:5px;font-size:12.5px;font-weight:600;margin-top:10px' }, ['Opening line', bm]),
         el('label', { style: 'display:grid;gap:5px;font-size:12.5px;font-weight:600;margin-top:10px' }, ['System prompt', ta]),
         el('div', { class: 'ry-row', style: 'margin-top:10px' }, [
-          el('button', { class: 'ry-btn p', disabled: !can(), onClick: save }, [icon('check', 16), 'Save draft']),
-          el('button', { class: 'ry-btn o', disabled: !can(), onClick: publish }, [icon('upload', 16), 'Publish to Retell']),
+          saveBtn, pubBtn, discardBtn,
           el('button', { class: 'ry-btn', onClick: compare }, 'Show what Retell has now'),
           el('span', { style: 'font-size:12px;opacity:.7' }, 'Canonical copies: docs/voice-agent/prompts/. Never type the Riley phone number into a prompt.'),
         ]),
       ]);
+      syncButtons();
+      return card;
     });
     const hist = (prompts.history || []);
     cards.push(el('div', { class: 'ry-card' }, [
@@ -312,9 +338,20 @@ export async function renderRiley(host, query) {
             el('td', null, el('button', { class: 'ry-btn sm', disabled: !can(), onClick: async () => { try { const r = await ccRileyCallbackDone(k.id, null); if (r && r.error) throw new Error(r.error); toast('Marked done.'); loadAll(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Done'))])))]) : el('div', { style: 'opacity:.7' }, 'Nothing open.'),
       ]),
       el('div', { class: 'ry-card' }, [
-        el('h3', null, 'Telnyx legs on the line'), el('p', { class: 'hint' }, 'What Telnyx saw for each call to the WhatsApp number. The conversation itself (recording, transcript) is under Calls, because Riley records it.'),
-        legs.length ? el('table', { class: 'ry-t' }, [el('thead', null, el('tr', null, ['When', 'Caller', 'Outcome', 'Length', 'Cause'].map((x) => el('th', null, x)))),
-          el('tbody', null, legs.map((d) => { const s = LS[d.status] || [d.status, 'm']; return el('tr', null, [el('td', { style: 'white-space:nowrap' }, et(d.started_at)), el('td', null, pretty(d.from_number)), el('td', null, el('span', { class: 'ry-pill ' + s[1] }, s[0])), el('td', null, d.duration_sec ? mmss(d.duration_sec) : '—'), el('td', { style: 'font-size:12px;opacity:.7' }, d.hangup_cause || '')]); }))]) : el('div', { style: 'opacity:.7' }, 'No calls on the line yet.'),
+        el('h3', null, 'Telnyx legs on the line'), el('p', { class: 'hint' }, 'Every call to the WhatsApp number as Telnyx saw it, matched to Riley\u2019s recording of the same call. Play here, or open the transcript and analysis.'),
+        legs.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ry-t' }, [el('thead', null, el('tr', null, ['When', 'Caller', 'Outcome', 'Length', 'Recording', ''].map((x) => el('th', null, x)))),
+          el('tbody', null, legs.map((d) => {
+            const s = LS[d.status] || [d.status, 'm']; const an = d.analysis || {}; const il = INTEREST[an.interest_level];
+            const full = d.lc_call_id ? (data.calls || []).find((c) => c.id === d.lc_call_id) : null;
+            return el('tr', { class: full ? 'click' : '', onClick: () => { if (full) openCall(full); } }, [
+              el('td', { style: 'white-space:nowrap' }, [et(d.started_at), el('div', { style: 'font-size:11.5px;opacity:.65' }, ago(d.started_at))]),
+              el('td', null, [el('b', null, d.riley_name && d.riley_name !== 'there' ? d.riley_name : (d.contact_name || pretty(d.from_number))), el('div', { style: 'font-size:12px;opacity:.7' }, [(d.riley_name && d.riley_name !== 'there') || d.contact_name ? pretty(d.from_number) : '', ROLE[an.caller_type] ? ' · ' + ROLE[an.caller_type] : ''].join(''))]),
+              el('td', null, [el('span', { class: 'ry-pill ' + s[1] }, s[0]), il ? el('div', { style: 'margin-top:4px' }, el('span', { class: 'ry-pill ' + il[1] }, il[0])) : null, el('div', { style: 'font-size:11.5px;opacity:.65' }, d.hangup_cause || '')]),
+              el('td', { style: 'white-space:nowrap;font-variant-numeric:tabular-nums' }, d.duration_sec ? mmss(d.duration_sec) : '—'),
+              el('td', null, d.recording_url ? el('audio', { class: 'ry-audio', controls: true, preload: 'none', src: d.recording_url, onClick: (e) => e.stopPropagation() }) : el('span', { style: 'font-size:12px;opacity:.6' }, d.status === 'ringing' ? 'call in progress' : d.status === 'forwarded' ? 'recording arrives when Retell finishes analysing' : 'no Riley recording (call never reached her)')),
+              el('td', { style: 'white-space:nowrap' }, full ? el('button', { class: 'ry-btn sm', onClick: (e) => { e.stopPropagation(); openCall(full); } }, 'Transcript') : null),
+            ]);
+          }))])) : el('div', { style: 'opacity:.7' }, 'No calls on the line yet.'),
       ]),
     ]));
   }
