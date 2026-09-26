@@ -171,5 +171,6 @@ until …"). `sys_email` files it in `email_blocked_log`; the worker's marketing
   suppression row (group scope); `sys_email` for the same key refused, filed in `email_blocked_log` with the
   sentence + code, queued nothing; resubscribe via `unsub_apply(... 'cc_manual', note)` → event 63, gate `ok`
   (checked in a separate statement — `email_gate` is STABLE, so inside the same statement it does not see the
-  resubscribe). All test rows deleted: 2 events, 1 pref, 1 blocked-log row, 1 delivery row, audit rows.
+  resubscribe). All test rows deleted: 2 events, 1 pref, 1 blocked-log row, 1 delivery row. The two `audit_logs` rows stay:
+  the table is append-only by design (LB017), and they name only the throwaway address.
   Anon surface after everything: 34, same names. Rollout complete.
