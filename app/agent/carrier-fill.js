@@ -30,6 +30,12 @@ const CSS = `
 .cf-strip i b{display:block;height:100%;background:linear-gradient(90deg,#0883F7,#4ade80);border-radius:99px}
 .cf-strip a.dw-tel{border:1px solid rgba(159,195,255,.5);border-radius:99px;padding:4px 10px;font-weight:700}
 .cf-done{color:#4ade80;font-weight:800}
+.cf-num{display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(159,195,255,.35);border-radius:99px;padding:3px 6px 3px 10px;color:#e8eefc;font-weight:700;white-space:nowrap}
+.cf-num .who{color:#9fb3c8;font-weight:600;margin-right:2px}.cf-num a.dw-tel{border:0;padding:2px 6px;background:rgba(8,131,247,.25);border-radius:99px}
+.cf-num button{background:none;border:0;color:#7cc0ff;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center}
+.cf-post{margin:8px 0 6px;padding:9px 12px;border-radius:10px;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.07);font-size:.84rem;line-height:1.55;color:#c9d6e5}
+.cf-post b{color:#fff}.cf-post .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px;margin-top:4px}.cf-post .g span{color:#9fb3c8;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;display:block}.cf-post .g div{color:#fff;font-weight:700}
+.cf-post.stale{border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.06)}
 .cf-pill{font-size:.64rem;padding:1px 6px;border-radius:99px;border:1px solid currentColor;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;font-weight:700;margin-left:6px;vertical-align:middle}
 .cf-pill.carrier{color:#93c5fd}.cf-pill.staff,.cf-pill.system{color:#fbbf24}.cf-pill.dispatcher{color:#4ade80}.cf-pill.open{color:#fbbf24;border-style:dashed}
 .cf-pen{background:none;border:0;color:#7cc0ff;cursor:pointer;padding:0 2px;display:inline-flex;vertical-align:middle;margin-left:4px}
@@ -51,6 +57,8 @@ const MAP = {
   truck: { 'Payload': 'payload_lbs', 'Pallet positions': 'pallet_positions', 'Trailer': 'trailer_type', 'Domicile': 'domicile_city', 'Max radius': 'max_radius_miles', 'Home time': 'home_time', 'Temp control': 'temp_control' },
 };
 
+const cell = (k, v) => v == null || v === '' ? null : h('div', null, [h('span', null, k), h('div', null, v)]);
+const ago = (d) => { try { const m = Math.round((Date.now() - new Date(d).getTime()) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; } catch (_) { return ''; } };
 const fmtDay = (d) => { try { return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (_) { return ''; } };
 function show(f) {
   const v = f.value;
@@ -71,14 +79,14 @@ function pill(f) {
 const GUIDE = {
   profile: (d) => h('div', { class: 'cf-guide' }, [h('span', { class: 's' }, '1'), h('b', null, 'Introduce yourself, then confirm the file. '),
     '“Hi ' + (d.contact_name || 'there') + ', this is ' + (d.dispatcher_name || 'your dispatcher') + ' with LoadBoot Dispatch — LoadBoot has appointed me your dedicated dispatcher effective today. Do you have five minutes so I can confirm what I have on file and start finding you loads?” ',
-    'Read the MC and USDOT back digit by digit. Anything marked ', h('span', { class: 'cf-pill open', style: 'margin:0 2px' }, 'ask'), ' below: ask it and type the answer while you are on the call. Locked values were set by the carrier or LoadBoot — if the owner says one is wrong, tell LoadBoot in the Messages thread, do not argue it on the call.']),
+    'Read the MC and USDOT back digit by digit. Anything marked ', h('span', { class: 'cf-pill open', style: 'margin:0 2px' }, 'ask'), ' below: ask it and type the answer while you are on the call. Locked values were set by the carrier or LoadBoot — if the owner says one is wrong, tell LoadBoot in the Messages thread, do not argue it on the call. No answer? Try the driver, then message the owner from Texts → WhatsApp in your dock (the LoadBoot line).']),
   prefs: () => h('div', { class: 'cf-guide' }, [h('span', { class: 's' }, '2'), h('b', null, 'How the owner wants to run. '),
     'Floor first (“the lowest all-in rate per mile you will run?”), then the target, home base and home-time rule, lanes he likes, states he avoids, notice the driver needs, radius / deadhead, weekends. Every blank is a question; every answer goes straight into the field and is saved with your name.']),
   truck: (unit) => h('div', { class: 'cf-guide' }, [h('span', { class: 's' }, '3'), h('b', null, 'Confirm ' + (unit ? 'unit ' + unit : 'this unit') + '. '),
     'Trailer type and length, payload, what is on board (straps, load bars, chains, tarps, pallet jack, liftgate), where it parks when empty. One unit at a time — brokers ask exactly these.']),
   avail: (d) => h('div', { class: 'cf-guide' }, [h('span', { class: 's' }, '4'), h('b', null, 'Where is the truck now, and when is it empty? '),
-    'Ask on every call and set it below — this is your daily line (status, empty at / from, must be home by, HOS, driver). ',
-    h('b', null, 'The carrier can post it themselves too — tell the owner exactly this: '),
+    'Nothing posted by the carrier or the driver yet. Ask on the call and set it below — this is your daily line (status, empty at / from, must be home by, HOS, driver). ',
+    h('b', null, 'Better: the carrier posts it themselves, then it lands here automatically and you never have to ask. Tell the owner exactly this: '),
     h('ol', null, [
       h('li', null, 'Open the LoadBoot app (carrier portal) → tap the blue “Post” button at the bottom of any screen (also: Dashboard → Availability card, or Fleet → “+ Post availability”).'),
       h('li', null, 'Pick the truck (if more than one) → “Where the truck is / frees up”: state, then city.'),
@@ -87,7 +95,20 @@ const GUIDE = {
     ]),
     h('div', { style: 'margin-top:4px' }, d.track === 'B'
       ? 'Track B — nothing posted in the last 7 days: call first (steps 1–3), present today’s loads, post the same day, first booking by day 4.'
-      : 'Track A — this carrier is active: day 1 post 2–3 genuine offers in the group, daily for 3 days regardless of reply; call on day 3 or sooner if the owner engages.'),
+      : 'Track A — this carrier is active: day 1 send 2–3 genuine offers (Texts → WhatsApp on the LoadBoot line, or the Messages thread), daily for 3 days regardless of reply; call on day 3 or sooner if the owner engages.'),
+  ]),
+  // the carrier / driver already posted → nothing to ask; show the post, lock the section
+  posted: (p, d) => h('div', { class: 'cf-post' + (p.live ? '' : ' stale') }, [
+    h('div', null, [ic(p.live ? 'check' : 'alert', 14), ' ', h('b', null, (p.posted_by_role === 'driver' ? 'The driver' : p.posted_by_role === 'carrier' ? 'The carrier' : (p.posted_by_name || 'LoadBoot')) + ' posted this availability' + (p.posted_by_name && p.posted_by_role !== 'dispatcher' ? ' (' + p.posted_by_name + ')' : '') + ' — do not ask for it again. '),
+      p.live ? 'Confirmed ' + ago(p.last_confirmed_at || p.created_at) + ' · live to brokers. Work from it; your daily line below only needs touching if something changes on a call.'
+             : 'Last confirmed ' + ago(p.last_confirmed_at || p.created_at) + ' — the post is older than 24 h, so it is not live to brokers. Ask the owner to confirm it (the “Still available” tap in the app) or confirm what changed on your call.',
+      h('span', { class: 'cf-pill ' + (p.posted_by_role === 'driver' ? 'carrier' : p.posted_by_role), style: 'margin-left:8px' }, [ic('lock', 9), p.posted_by_role === 'driver' ? 'Driver' : p.posted_by_role === 'carrier' ? 'Carrier' : 'LoadBoot'])]),
+    h('div', { class: 'g' }, [
+      cell('Truck is / frees up', [p.origin, p.origin_zip].filter(Boolean).join(' ')), cell('Available', fmtDay(p.available_from) + (p.available_to ? ' → ' + fmtDay(p.available_to) : '')),
+      cell('Wants to end up', p.dest_pref || 'Anywhere'), cell('Equipment', Array.isArray(p.equipment) && p.equipment.length ? p.equipment.join(', ') : null),
+      cell('Min $/mi', p.min_rpm != null ? '$' + Number(p.min_rpm).toFixed(2) : null), cell('Radius', p.radius_miles != null ? p.radius_miles + ' mi' : null),
+      cell('HOS left', p.hos_drive_left_h != null ? p.hos_drive_left_h + ' h' : null), p.notes ? cell('Note', p.notes) : null,
+    ]),
   ]),
 };
 
@@ -111,11 +132,15 @@ export function mountCarrierFill(root, assignments, opts) {
     const paintStrip = () => {
       const open = fields.filter((f) => f.core && f.empty).length, total = fields.filter((f) => f.core).length;
       const pct = total ? Math.round(100 * (total - open) / total) : 100;
+      const num = (who, n, name, title) => h('span', { class: 'cf-num' }, [h('span', { class: 'who' }, who), n, ' ',
+        h('a', { href: 'tel:' + n, class: 'dw-tel', 'data-name': name, title: title }, [ic('phone', 11), ' Call']),
+        h('button', { type: 'button', title: 'Copy number', 'aria-label': 'Copy ' + n, onClick: () => { try { navigator.clipboard.writeText(n).then(() => toast('Copied ' + n)); } catch (_) { toast('Could not copy', true); } } }, ic('copy', 12))]);
       mount(strip, [h('span', null, [ic('clipboard', 13), ' Carrier file']), h('i', null, h('b', { style: 'width:' + pct + '%' })),
         open ? h('span', null, open + ' of ' + total + ' still to ask') : h('span', { class: 'cf-done' }, [ic('check', 12), ' all ' + total + ' answered']),
-        d.phone ? h('a', { href: 'tel:' + d.phone, class: 'dw-tel', 'data-name': d.contact_name || d.carrier_name || 'Carrier', title: 'Call with your LoadBoot phone' }, [ic('phone', 12), ' Call owner']) : null,
-        d.driver && d.driver.phone ? h('a', { href: 'tel:' + d.driver.phone, class: 'dw-tel', 'data-name': (d.driver.name || 'Driver') + ' (driver)', title: 'No answer from the owner? Call the driver' }, [ic('phone', 12), ' Call driver']) : null,
-        !d.phone ? h('span', { class: 'dw-muted' }, 'No owner phone on file — ask in the WhatsApp group') : null]);
+        d.phone ? num('Owner' + (d.contact_name ? ' · ' + d.contact_name : ''), d.phone, d.contact_name || d.carrier_name || 'Carrier', 'Call the owner from your LoadBoot line') : null,
+        !d.phone && d.whatsapp ? num('Owner WhatsApp', d.whatsapp, d.contact_name || d.carrier_name || 'Carrier', 'Call the owner’s WhatsApp number from your LoadBoot line') : null,
+        ...(d.drivers || []).map((dr) => num('Driver · ' + (dr.name || '?'), dr.phone, (dr.name || 'Driver') + ' (driver)', 'No answer from the owner? Call the driver')),
+        !d.phone && !d.whatsapp ? h('span', { class: 'cf-pill open' }, 'No owner phone on file — it is the first open task below; until then message the owner from Texts → WhatsApp') : null]);
     };
     paintStrip();
 
@@ -126,15 +151,25 @@ export function mountCarrierFill(root, assignments, opts) {
     root.querySelectorAll('[data-truck]').forEach((tc) => {
       const tid = tc.getAttribute('data-truck'); const tf = fields.filter((f) => f.tbl === 'truck' && f.truck_id === tid); if (!tf.length) return;
       decorateGrid(tc.querySelector('[data-fill="truck"]'), 'truck', tid, tf, GUIDE.truck(tf[0].unit_no));
-      const av = tc.querySelector('[data-fill="avail"]'); if (av && !(av.previousElementSibling && av.previousElementSibling.classList.contains('cf-guide'))) av.before(GUIDE.avail(d));
+      const av = tc.querySelector('[data-fill="avail"]');
+      if (av && !(av.previousElementSibling && (av.previousElementSibling.classList.contains('cf-guide') || av.previousElementSibling.classList.contains('cf-post')))) {
+        const post = (d.postings || []).find((p) => p.truck_id === tid) || ((d.postings || []).filter((p) => !p.truck_id)[0] || null);
+        av.before(post ? GUIDE.posted(post, d) : GUIDE.avail(d));
+      }
     });
 
     function decorateGrid(grid, tbl, truckId, tf, guide) {
       if (!grid) return;
       if (!grid.previousElementSibling || !grid.previousElementSibling.classList.contains('cf-guide')) grid.before(guide);
       const map = MAP[tbl] || {}; const done = new Set();
+      const LEGACY = tbl === 'profile' ? ['Home base', 'Carrier min $/mi', 'Max deadhead', 'Avoid states', 'Weekends', 'Factoring'] : [];
       grid.querySelectorAll('.dw-f').forEach((cell) => {
         const k = cell.querySelector('.k'); if (!k) return;
+        if (LEGACY.includes(k.textContent.trim())) {
+          if (cell.classList.contains('empty')) { cell.remove(); return; }   // asked in Preferences, not here
+          if (!k.querySelector('.cf-pill')) k.appendChild(h('span', { class: 'cf-pill carrier', title: 'From the carrier’s signup — the Preferences section below is what you work from' }, [ic('lock', 9), 'Carrier · signup']));
+          return;
+        }
         const field = map[k.textContent.trim()]; if (!field) return;
         const f = tf.find((x) => x.field === field); if (!f) return;
         done.add(field); paintCell(cell, f);
