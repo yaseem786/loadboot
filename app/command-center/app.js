@@ -17,6 +17,7 @@ import { renderShell } from './views/shell.js';
 import { renderTabbed } from './views/_tabbed.js';
 import { renderDispatch } from './views/dispatch.js';
 import { renderDialerLive } from './views/dialerLive.js';
+import { renderRiley } from './views/riley.js';   // bl_voice_0458
 import { renderWhatsappLive } from './views/whatsappLive.js';
 import { renderDispatcherMail } from './views/dispatcherMail.js';
 import { renderCarrierRequests } from './views/carrierRequests.js';   // bl_disp_0457 — Carrier requests (pause / change-dispatcher)   // bl_dmail_0356 — Dispatcher email (company mailbox, no login)           // bl_dial_0351 — Phones & live calls
@@ -279,6 +280,7 @@ async function boot() {
     team: { nav: '/dispatchers', tabs: [
       { id: 'dispatchers', label: 'Dispatchers', path: '/dispatchers', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDispatchers(h) },
       { id: 'phones', label: 'Phones & live calls', path: '/phones', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDialerLive(h) },
+      { id: 'riley', label: 'Riley (AI phone)', path: '/riley', allowed: () => anyOf('comm.view', 'comm.manage', 'support.view', 'dispatch.manage', 'settings.manage'), render: (h) => renderRiley(h) },   // bl_voice_0458
       { id: 'whatsapp', label: 'WhatsApp', path: '/whatsapp', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderWhatsappLive(h) },
       { id: 'dmail', label: 'Dispatcher email', path: '/dispatcher-email', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDispatcherMail(h) },
       { id: 'creq', label: 'Carrier requests', path: '/carrier-requests', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderCarrierRequests(h) },
@@ -346,6 +348,7 @@ async function boot() {
     '/agents': tabbed('team', 'agents'),
     '/dispatchers': tabbed('team', 'dispatchers'),
     '/phones': tabbed('team', 'phones'),
+    '/riley': tabbed('team', 'riley'),
     '/dispatcher-email': tabbed('team', 'dmail'),
     '/carrier-requests': tabbed('team', 'creq'),
     '/dispatcher': ({ query }) => { setActive('/dispatchers'); guard(['carriers.approve', 'dispatch.manage'], () => renderDispatcher360(content, query))(); },   // bl_disp_0317

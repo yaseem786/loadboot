@@ -577,6 +577,28 @@ export const ccLcCannedSave = (title, body) => rpc('cc_lc_canned_save', { p_titl
 export const ccLcCannedDelete = (id) => rpc('cc_lc_canned_delete', { p_id: id });
 export const ccRetellCallback = (o) => rpc('cc_retell_callback', { p_to: o.to, p_name: o.name ?? null, p_topic: o.topic ?? null, p_role: o.role ?? null, p_context: o.context ?? null, p_when: o.when ?? null });
 export const ccLcCalls = () => rpc('cc_lc_calls', {});
+// Riley control plane (bl_voice_0458): CC → Riley. Reads are RPCs; anything that touches Retell goes through the
+// staff-gated retell-admin edge function (pg_net cannot PATCH, and the Retell key must never reach the browser).
+export const ccRileyCalls = (limit) => rpc('cc_riley_calls', { p_limit: limit ?? 120 });
+export const ccRileySettingsGet = () => rpc('cc_riley_settings_get', {});
+export const ccRileySettingsSet = (p) => rpc('cc_riley_settings_set', { p });
+export const ccRileyPromptsGet = () => rpc('cc_riley_prompts_get', {});
+export const ccRileyPromptSave = (key, beginMessage, generalPrompt) => rpc('cc_riley_prompt_save', { p_key: key, p_begin_message: beginMessage ?? null, p_general_prompt: generalPrompt });
+export const ccRileyPromptRestore = (historyId) => rpc('cc_riley_prompt_restore', { p_history_id: historyId });
+export const ccRileyCallbackDone = (id, note) => rpc('cc_riley_callback_done', { p_id: id, p_note: note ?? null });
+export const rileyAdmin = async (op, body = {}) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('retell-admin', { body: { op, ...body } });
+  if (error) {
+    // supabase-js hides the JSON body of a non-2xx response behind error.context
+    let msg = (error && error.message) || 'Riley request failed';
+    try { const j = error.context && (await error.context.json()); if (j && j.error) msg = j.error + (j.detail ? ' — ' + (typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail)).slice(0, 300) : ''); } catch (_) {}
+    throw new Error(msg);
+  }
+  if (data && data.error) throw new Error(data.error);
+  return data;
+};
 export const ccLcPresenceGet = () => rpc('cc_lc_presence_get', {});
 export const ccLcPresenceSet = (available, name, designation, alertEmail) => rpc('cc_lc_presence_set', { p_available: available, p_name: name ?? null, p_designation: designation ?? null, p_alert_email: alertEmail ?? null });
 // Live chat v2 (bl_lc_0312): presence heartbeat (45 s while the CC view is open), staff typing
