@@ -380,6 +380,7 @@ async function boot() {
     '/delivery': tabbed('crm', 'delivery'),
     '/email-catalog': tabbed('crm', 'emailCatalog'),   // bl_comm_0391: the tab existed, the route did not
     '/unsubscribes': tabbed('crm', 'unsubscribes'),    // bl_comm_0446: the unsubscribe engine
+    '/newsletter': tabbed('crm', 'newsletter'),        // bl_comm_0447: the tab existed, the route did not (same slip as 0391)
     '/account-health': tabbed('compliance', 'health'),
     '/marketing-intel': tabbed('web', 'intel'),
     '/outreach': () => { setActive('/crm'); if (can('marketing.view') || can('carriers.approve') || can('dispatch.manage')) renderOutreach(content); else denied(); },
