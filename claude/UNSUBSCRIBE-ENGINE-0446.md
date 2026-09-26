@@ -161,3 +161,15 @@ until …"). `sys_email` files it in `email_blocked_log`; the worker's marketing
   `cc_delivery_worker_unsubscribe` (group-aware) — it just shows the old plain page.
 - **Site push** = merge to `main` + Netlify build (`python3 build_site.py`, publish `site/`). The rollout branch
   is merged on `claude/stoic-brahmagupta-nrhrx3`; the owner fast-forwards `main` from GitHub Desktop.
+- **Site pushed** (`main` 8cff4be, Netlify build OK; live `unsub.html` targets the prod ref and keeps the
+  `outreach_unsubscribe` fallback). **`unsubscribe` v3 deployed** (platform version 9, verify_jwt off).
+- **Prod smoke test, throwaway only** (`unsub-test-0446@example.com`, a hand-inserted `sent` delivery row for
+  `carrier_weekly_summary`, token `0446dead-…0446`; nothing was emailed): GET → 302 to
+  `loadboot.com/unsub.html?token=…&ref=rwsc…`; `{action:'open'}` → Summaries off, event 62, ip recorded;
+  `{action:'reason', too_many}` attached to 62; a second `open` and an RFC 8058 form POST wrote NO second event;
+  `email_gate` → `unsubscribed_group` with the full sentence, `account.closed` → `essential`, outreach → `ok`, no
+  suppression row (group scope); `sys_email` for the same key refused, filed in `email_blocked_log` with the
+  sentence + code, queued nothing; resubscribe via `unsub_apply(... 'cc_manual', note)` → event 63, gate `ok`
+  (checked in a separate statement — `email_gate` is STABLE, so inside the same statement it does not see the
+  resubscribe). All test rows deleted: 2 events, 1 pref, 1 blocked-log row, 1 delivery row, audit rows.
+  Anon surface after everything: 34, same names. Rollout complete.
