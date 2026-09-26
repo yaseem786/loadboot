@@ -4391,6 +4391,26 @@ async function appView(user) {
     const fRpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi', style: 'margin:0;max-width:110px' });
     const fRate = h('input', { class: 'cp-in', type: 'number', placeholder: 'Min $', style: 'margin:0;max-width:110px' });
     const fSize = h('select', { class: 'cp-in', style: 'margin:0;max-width:150px' }, [['', 'Size: all'], ['full', 'Full (FTL)'], ['partial', 'Partial (LTL)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+    // DAT/Relay parity (board audit 2026-09-26): the board had no sort at all. Direct offers to this
+    // carrier stay pinned on top in every sort (they are time-limited); 'Newest' is the server order.
+    const fSort = h('select', { class: 'cp-in', title: 'Sort the board', style: 'margin:0;max-width:170px' }, [['newest', 'Sort: newest'], ['rate', 'Highest pay'], ['rpm', 'Highest $/mi'], ['deadhead', 'Shortest deadhead'], ['pickup', 'Earliest pickup']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+    try { const s9 = localStorage.getItem('lb_lb_sort'); if (s9) fSort.value = s9; if (!fSort.value) fSort.value = 'newest'; } catch (_) {}
+    fSort.addEventListener('change', () => { try { localStorage.setItem('lb_lb_sort', fSort.value); } catch (_) {} renderList(); });
+    const sortRows = (list) => {
+      const k9 = fSort.value || 'newest';
+      const num9 = (v9) => (v9 == null || v9 === '' || !isFinite(Number(v9))) ? null : Number(v9);
+      const dh9 = (l) => num9(window.__lbDh && window.__lbDh[l.id] != null ? window.__lbDh[l.id] : l.deadhead);
+      const rpm9 = (l) => num9(l.rpm) != null ? num9(l.rpm) : (num9(l.rate) && num9(l.miles) ? Number(l.rate) / Number(l.miles) : null);
+      const key9 = k9 === 'rate' ? (l) => num9(l.rate) : k9 === 'rpm' ? rpm9 : k9 === 'deadhead' ? dh9 : k9 === 'pickup' ? (l) => (l.pickup_date ? Date.parse(l.pickup_date) : null) : null;
+      const asc9 = k9 === 'deadhead' || k9 === 'pickup';
+      return list.map((l, i) => ({ l, i })).sort((x, y) => {
+        const d9 = (y.l.direct_to_you ? 1 : 0) - (x.l.direct_to_you ? 1 : 0);
+        if (d9 || !key9) return d9 || x.i - y.i;
+        const a9 = key9(x.l), b9 = key9(y.l);
+        if (a9 == null || b9 == null) return (a9 == null) - (b9 == null) || x.i - y.i; // unknowns sink
+        return (asc9 ? a9 - b9 : b9 - a9) || x.i - y.i;
+      }).map((z) => z.l);
+    };
     // 2026-08 audit + owner request: multi-leg TRIP BUILDER — chain 2 loads into one tour.
     function lbTripBuilder9(list9) {
       const L9 = (list9 || []).filter(l9 => l9 && l9.rate && l9.origin && l9.destination && !lbExpired(l9));
@@ -4456,7 +4476,7 @@ async function appView(user) {
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount)); fSize.addEventListener('change', () => { fCount(); renderList(); });
     const fToggle = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { const open = fBody.style.display !== 'none'; fBody.style.display = open ? 'none' : 'flex'; fToggle.firstChild.textContent = open ? '⚙ Filters ▾' : '⚙ Filters ▴'; } }, [h('span', null, '⚙ Filters ▾'), fChip]);
     const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px', 'data-tour': 'loads-filters' }, [
-      h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [fToggle, favBtn, tbBtn]),
+      h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [fToggle, favBtn, tbBtn, fSort]),
       fBody,
     ]);
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(inp => { inp.onkeydown = (e) => { if (e.key === 'Enter') renderList(); }; });
@@ -4505,7 +4525,7 @@ async function appView(user) {
       ]);
     })()].filter(Boolean))); mount(content, h('div', null, [gpsBanner, capNudge, tabsBar, reqHost, availWrap].filter(Boolean))); return; }
     renderList = () => {
-      const shown = applyFilters(rows);
+      const shown = sortRows(applyFilters(rows));
       const grid = document.getElementById('cp-loadgrid-host');
       if (grid) { grid.innerHTML = ''; shown.forEach(l => grid.appendChild(loadCard(l))); if (!shown.length) grid.appendChild(h('div', { class: 'cp-muted' }, 'No loads match your filters.')); }
     };

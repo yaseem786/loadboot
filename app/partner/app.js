@@ -1866,9 +1866,13 @@ async function brokerDash(user, ov) {
   // ----- Load Wizard (Inc 44): multi-step broker submission with duplicate detection + doc checklist -----
   const w = { appointment_required: false, tracking_required: false };
   // 2026-08 audit: draft auto-save — a refresh used to wipe the whole 5-step wizard.
-  try { const _pd9 = JSON.parse(localStorage.getItem('lb_pl_draft') || 'null'); if (_pd9 && typeof _pd9 === 'object') Object.assign(w, _pd9); } catch (_) {}
+  // In-flight fetch flags and cached rate tables never go in the draft: a flag saved mid-fetch
+  // (__laneP / __stds_p) blocked the lane rate + rate standards forever after a refresh, and a
+  // cached table would keep yesterday's CC rate standards alive in the estimate.
+  const _plVolatile = ['__laneP', '__stds_p', '__stds_p3', '__stds', '__mkt', '__lane', '__lane_key'];
+  try { const _pd9 = JSON.parse(localStorage.getItem('lb_pl_draft') || 'null'); if (_pd9 && typeof _pd9 === 'object') { _plVolatile.forEach((k9) => { delete _pd9[k9]; }); Object.assign(w, _pd9); } } catch (_) {}
   let _plT9 = null;
-  const _plSave = () => { clearTimeout(_plT9); _plT9 = setTimeout(() => { try { localStorage.setItem('lb_pl_draft', JSON.stringify(w)); } catch (_) {} }, 400); };
+  const _plSave = () => { clearTimeout(_plT9); _plT9 = setTimeout(() => { try { const d9 = Object.assign({}, w); _plVolatile.forEach((k9) => { delete d9[k9]; }); localStorage.setItem('lb_pl_draft', JSON.stringify(d9)); } catch (_) {} }, 400); };
   const stepHost = h('div');
   const STEPS = ['Lane', 'Schedule', 'Equipment & commodity', 'Requirements', 'Review'];
   let step = 0, confirmDup = false, prevStep = 0;
@@ -2118,7 +2122,8 @@ async function brokerDash(user, ov) {
           const hos9 = w.__drive_hours + Math.floor(w.__drive_hours / 11) * 10; // 11h driving max, then 10h rest (federal HOS)
           const dock9 = 2 + ((Array.isArray(w.stops) ? w.stops.filter((sp) => sp && sp.lat).length : 0) * 2); // 2h dock buffer per extra stop
           const eta = new Date(base.getTime() + (hos9 + dock9) * 3600 * 1000);
-          w.delivery_date = eta.toISOString().slice(0, 10);
+          // local calendar date — toISOString() is UTC and rolled evening ETAs to the next day
+          w.delivery_date = eta.getFullYear() + '-' + String(eta.getMonth() + 1).padStart(2, '0') + '-' + String(eta.getDate()).padStart(2, '0');
           w.__eta_suggested = true;
         } catch (_) {}
       }
