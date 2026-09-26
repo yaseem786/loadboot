@@ -10,8 +10,8 @@ language sql stable security definer set search_path = app_private, public as $$
               'status', dp.status,
               'label', case when dp.status = 'trial' then 'Trial dispatcher' when dp.status in ('active','verified') then 'Hired dispatcher'
                             when dp.status in ('rejected','offboarded','ended') then 'Former dispatcher' else 'Dispatcher applicant' end)
-       from app_private.dispatcher_profiles dp join public.profiles pr on pr.id = dp.user_id, n
-      where n.d <> '' and length(n.d) >= 7 and (right(regexp_replace(coalesce(pr.phone,''), '\D', '', 'g'), 10) = n.d or right(regexp_replace(coalesce(pr.whatsapp,''), '\D', '', 'g'), 10) = n.d)
+       from app_private.dispatcher_profiles dp left join public.profiles pr on pr.id = dp.user_id, n
+      where n.d <> '' and length(n.d) >= 7 and (right(regexp_replace(coalesce(dp.phone,''), '\D', '', 'g'), 10) = n.d or right(regexp_replace(coalesce(pr.phone,''), '\D', '', 'g'), 10) = n.d or right(regexp_replace(coalesce(pr.whatsapp,''), '\D', '', 'g'), 10) = n.d)
       order by dp.created_at desc limit 1),
     (select jsonb_build_object('kind', 'carrier', 'org_id', o.id, 'name', o.name, 'contact', nullif(pr.contact_name,''), 'label', 'Carrier owner',
               'dispatcher', (select d2.full_name from app_private.dispatcher_assignments a join app_private.dispatcher_profiles d2 on d2.user_id = a.dispatcher_user_id where a.carrier_org_id = o.id and a.status = 'active' limit 1))
