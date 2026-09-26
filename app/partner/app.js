@@ -1855,6 +1855,8 @@ async function brokerDash(user, ov) {
   // bl_bp_0312: FMCSA-screened brokers post before the packet is verified.
   let __trustCanPost = false; let __trustSt = null;  // bl_bp_0318: status kept for the brokerage picker on the post form
   if (ov.kind === 'broker') { try { const t9 = await partnerTrustStatus(); __trustSt = t9; if (!ov.onboarded) __trustCanPost = !!(t9 && t9.can_post); } catch (_) {} }
+  // bl_bp_0456 (G1): shippers land here too (appView) — quotes open on the business check (bl_bp_0319), not on the packet.
+  if (ov.kind === 'shipper' && !ov.onboarded) __trustCanPost = !!ov.can_post;
   try { window.__lbKindLabel = (ov.kind === 'shipper') ? 'Shipper' : 'Broker'; } catch (_) {}
   const kpis = h('div', { class: 'cp-kpis' }, [
     kpiCard('Loads submitted', ov.loads_submitted, 'all time', 'blue'),
@@ -4319,7 +4321,7 @@ function packetDocRow(it, onAction) {
   if (it.auto && (st === 'pending' || st === 'rejected')) {
     V.di = '⟳'; V.dibg = '#eff6ff'; V.dic = '#1d4ed8'; V.pill = ['Auto', '#dbeafe', '#1d4ed8'];
     V.rs = 'Filled in automatically from your live FMCSA screen — no upload. Run the screen on your dashboard (step 1).';
-    return h('div', { style: 'display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap' }, [
+    return h('div', { 'data-ob-key': it.key || null, style: 'display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap' }, [
       h('div', { style: 'width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;background:' + V.dibg + ';color:' + V.dic }, V.di),
       h('div', { style: 'flex:1;min-width:200px' }, [h('div', { style: 'font-weight:800;font-size:.93rem' }, it.label), h('div', { class: 'cp-sub' }, V.rs)]),
       h('div', { style: 'display:flex;gap:8px;align-items:center;flex:none;flex-wrap:wrap' }, [
@@ -4328,7 +4330,7 @@ function packetDocRow(it, onAction) {
       ]),
     ]);
   }
-  return h('div', { style: 'display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap' }, [
+  return h('div', { 'data-ob-key': it.key || null, style: 'display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap' }, [
     h('div', { style: 'width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;background:' + V.dibg + ';color:' + V.dic }, V.di),
     h('div', { style: 'flex:1;min-width:200px' }, [h('div', { style: 'font-weight:800;font-size:.93rem' }, it.label), h('div', { class: 'cp-sub' }, V.rs)]),
     h('div', { style: 'display:flex;gap:8px;align-items:center;flex:none;flex-wrap:wrap' }, [
@@ -4533,8 +4535,10 @@ function packetAgreementCards(skipPacket) {
     else if (ov.kind === 'broker' && __trustSt && __trustSt.tier === 'authority_fail') mount(obHero, mk('#dc2626', '⛔', '#fdecec', '#c62828', 'New posting is paused — FMCSA authority', '#c62828', (__trustSt.reason || 'FMCSA no longer shows active broker authority for this MC.') + ' Nothing already booked was cancelled.', 'See details →'));
     else if (ov.kind === 'broker' && __trustSt && __trustSt.tier === 'authority_stale') mount(obHero, mk('#d97706', '🕐', '#fef3c7', '#b45309', 'We could not re-confirm your authority', '#b45309', (__trustSt.reason || 'Our FMCSA lookup has not succeeded recently.') + ' This is usually our side, not yours — ask us to verify it by hand.', 'See details →'));
     else if (ov.kind === 'broker' && __trustCanPost) mount(obHero, mk('#0883F7', '🛡', '#eff6ff', '#1d4ed8', 'Cleared to post — verification lifts your limits', '#1d4ed8', 'Your broker authority is verified live on FMCSA. Post now (limited open postings); the verification packet unlocks unlimited postings and instant booking for carriers.', 'Verification packet →'));
+    else if (ov.kind === 'shipper' && __trustCanPost) mount(obHero, mk('#0883F7', '🛡', '#eff6ff', '#1d4ed8', 'Quotes are open — the short packet comes before your first booking', '#1d4ed8', 'Your company was confirmed from its e-mail domain. Post a shipment now — brokers quote it within the hour. The Shipper Agreement, payment terms, a claims contact and billing instructions are asked once, when you accept your first quote.', 'Open the packet →'));  // bl_bp_0456 (G1)
     else if (sub.length) mount(obHero, mk('#0883F7', '⏳', '#eff6ff', '#1d4ed8', 'Onboarding under review', '#1d4ed8', sub.length + ' item(s) with our team — you\u2019ll be notified as each is verified (usually within 1 business day).', 'Track status →'));
     else if (ov.kind === 'broker') mount(obHero, mk('#0883F7', '⚡', '#eff6ff', '#1d4ed8', 'Post your first load in minutes', '#1d4ed8', 'Screen your broker authority live on FMCSA — no documents to start. The verification packet comes later, only where it matters.', 'Start →')); /* 'Finish onboarding to start posting' — bl_bp_0312 wording */
+    else if (ov.kind === 'shipper') mount(obHero, mk('#d97706', '✉️', '#fef3c7', '#b45309', 'Confirm your company e-mail to request quotes', '#b45309', 'No documents to start — we confirm your business from your company e-mail domain. Signed up with a personal inbox? Enter your company address in the card below and we send it a 6-digit code.', 'How it works →'));  // bl_bp_0456 (G1)
     else mount(obHero, mk('#d97706', '📋', '#fef3c7', '#b45309', 'Finish onboarding to start posting', '#b45309', 'A few required items are still missing — the guided steps take about 10 minutes.', 'Start →'));
   })();
   // ---- 💰 Payables: every dollar this broker owes right now (freight + approved claims),
@@ -4686,9 +4690,14 @@ function packetAgreementCards(skipPacket) {
     invoices: [carrierInvoicesCard(), payablesCard(), invoicesCard()],
     account: [accountCard(), securityCard(), pnotifCard(), phelpCard(), plegalCard(), pdeleteCard()],
   };
-  let btab = (location.hash || '').replace('#', '') || 'dashboard';
+  // bl_bp_0456: deep links, carrier-style — `#tab/target?k=v`. CC and e-mails can land on `#onboarding/w9`,
+  // `#loads/<id>`, `#dashboard?post=1`; the legacy `#post` still opens the form. The target is applied once,
+  // after the tab renders (see applyDeep), then dropped so a re-render never re-opens it.
+  const parseDeep = () => { const raw = (location.hash || '').replace(/^#/, ''); const qi = raw.indexOf('?'); const pathQ = qi >= 0 ? raw.slice(0, qi) : raw; const q = qi >= 0 ? raw.slice(qi + 1) : ''; const parts = pathQ.split('/'); return { tab: parts[0] || 'dashboard', target: parts.slice(1).join('/') || null, query: new URLSearchParams(q) }; };
+  let __deep = parseDeep();
+  let btab = __deep.tab || 'dashboard';
   let __openPostOnBoot = false;
-  if (btab === 'post') { btab = 'dashboard'; __openPostOnBoot = true; try { history.replaceState(null, '', '#dashboard'); } catch (_) {} }
+  if (btab === 'post' || __deep.query.get('post') === '1' || (btab === 'dashboard' && __deep.target === 'post')) { btab = 'dashboard'; __openPostOnBoot = true; __deep.target = null; try { history.replaceState(null, '', '#dashboard'); } catch (_) {} }
   if (!BNAV.some((n) => n[0] === btab)) btab = 'dashboard';
   const bLinks = {};
   const bNavEl = h('nav', { class: 'cp-nav' }, BNAV.map(([id, label, ic9]) => {
@@ -5062,23 +5071,36 @@ function packetAgreementCards(skipPacket) {
           h('div', { style: 'margin-top:6px' }, btns9), cm9, send9);
         bdRate9.appendChild(card9);
       })();
-      const trustGate = () => { const trustGateHost = h('div'); mountBrokerTrust(trustGateHost, { goPacket: () => bgo('onboarding'), goPost: () => { __trustCanPost = true; postFoldOpen = true; brender(); }, onStatus: (s9) => { if (s9) __trustSt = s9; if (s9 && s9.can_post && !__trustCanPost) { __trustCanPost = true; brender(); } } }); return trustGateHost; };
-      if (__postFocus && postFoldOpen && (ov.onboarded || (ov.kind === 'broker' && __trustCanPost))) {
+      const trustGate = () => { const trustGateHost = h('div'); if (ov.kind === 'shipper') { mountShipperTrust(trustGateHost, { goPacket: () => bgo('onboarding'), onStatus: (s9) => { if (s9 && s9.can_post && !__trustCanPost) { __trustCanPost = true; ov.can_post = true; brender(); } } }); return trustGateHost; } mountBrokerTrust(trustGateHost, { goPacket: () => bgo('onboarding'), goPost: () => { __trustCanPost = true; postFoldOpen = true; brender(); }, onStatus: (s9) => { if (s9) __trustSt = s9; if (s9 && s9.can_post && !__trustCanPost) { __trustCanPost = true; brender(); } } }); return trustGateHost; };
+      if (__postFocus && postFoldOpen && (ov.onboarded || __trustCanPost)) {
         mount(bContent, h('div', { id: 'bd-postload' }, [
           h('div', { style: 'display:flex;justify-content:flex-end;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { __postFocus = false; postFoldOpen = false; brender(); } }, '\u2715 Close')),
           form]));
         try { window.scrollTo(0, 0); } catch (_) {}
         return;
       }
-      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(true), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { __postFocus = false; postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : verifyGateCard(ov))]), h('div', { class: 'bd-peek' }, [myLoadsCard, h('button', { class: 'cp-btn cp-btn-sm ghost bd-peek-all', onClick: () => bgo('loads') }, 'View all loads \u2192')]), bdNetwork(), bdActivity()]));
+      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(true), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || __trustCanPost) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { __postFocus = false; postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : ((ov.kind === 'broker' || ov.kind === 'shipper') ? trustGate() : verifyGateCard(ov))]), h('div', { class: 'bd-peek' }, [myLoadsCard, h('button', { class: 'cp-btn cp-btn-sm ghost bd-peek-all', onClick: () => bgo('loads') }, 'View all loads \u2192')]), bdNetwork(), bdActivity()]));
       return;
     }
     mount(bContent, h('div', null, PAGES[btab] || []));
     if (btab === 'agents' && ov.kind === 'broker') { const ah = PAGES.agents[0]; if (ah && !ah.__mounted) { ah.__mounted = true; mountBrokerAgents(ah); } }
   }
   let pTour = null, pHelp = null;   // guided tour handles (set in tourBoot below)
+  // bl_bp_0456: act on the deep-link target for the current tab, once. Elements render async, so poll briefly.
+  function applyDeep() {
+    const d9 = __deep; if (!d9 || !d9.target || d9.tab !== btab) return;
+    const target = d9.target; __deep.target = null;
+    const flash = (n9) => { try { n9.scrollIntoView({ behavior: 'smooth', block: 'center' }); const o9 = n9.style.boxShadow; n9.style.transition = 'box-shadow .3s'; n9.style.boxShadow = '0 0 0 3px rgba(8,131,247,.55)'; setTimeout(() => { n9.style.boxShadow = o9; }, 2600); } catch (_) {} };
+    const waitFor = (sel9, cb9, tries9) => { const n9 = bContent.querySelector(sel9); if (n9) { cb9(n9); return; } if ((tries9 || 0) < 25) setTimeout(() => waitFor(sel9, cb9, (tries9 || 0) + 1), 200); };
+    if (btab === 'onboarding') { waitFor('[data-ob-key="' + target.replace(/[^a-z0-9_.-]/gi, '') + '"]', flash); return; }
+    if (btab === 'loads') {
+      (async () => { try { const rows9 = (await partnerMyLoads(200)) || []; const l9 = rows9.find((r9) => String(r9.id) === target || String(r9.load_id || '') === target); if (l9) openLoadTracker(l9); else pToast('That load is not in your list any more.', { kind: 'warn' }); } catch (_) {} })();
+      return;
+    }
+    waitFor('#' + target.replace(/[^a-z0-9_-]/gi, ''), flash);   // any other tab: an element id (e.g. #account/security → #security)
+  }
   function bgo(id) {
-    btab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+    btab = id; if (!(location.hash === '#' + id || location.hash.indexOf('#' + id + '/') === 0 || location.hash.indexOf('#' + id + '?') === 0)) history.replaceState(null, '', '#' + id);
     Object.keys(bLinks).forEach((k) => bLinks[k].forEach((a) => {
       const on9 = (k === btab); a.classList.toggle('active', on9);
       if (on9) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');   // bl_ui_0393
@@ -5086,8 +5108,13 @@ function packetAgreementCards(skipPacket) {
     const it = BNAV.find((n) => n[0] === btab); bTitle.textContent = it ? it[1] : 'Dashboard';
     brender();
     if (pHelp) { try { pHelp.onRoute(btab); } catch (_) {} }
+    applyDeep();  // bl_bp_0456
   }
-  window.addEventListener('hashchange', () => { const t9 = (location.hash || '').replace('#', ''); if (t9 && t9 !== btab && BNAV.some((n) => n[0] === t9)) bgo(t9); });
+  window.addEventListener('hashchange', () => {
+    const d9 = parseDeep(); if (!d9.tab || !BNAV.some((n) => n[0] === d9.tab)) return;
+    __deep = d9;
+    if (d9.tab !== btab) bgo(d9.tab); else applyDeep();   // same tab, new target (e.g. a notice click)
+  });
   // Big-brand Android back: back → Dashboard first, exit only from Dashboard.
   initBackNav({ goHome: () => { if (btab !== 'dashboard') { bgo('dashboard'); return true; } return false; } });
   try { attachPullToRefresh(bContent, async () => { brender(); }); } catch (_) {}

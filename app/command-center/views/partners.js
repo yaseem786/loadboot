@@ -14,6 +14,7 @@ import { partnersOverview, listPartners, getPartner, upsertPartner, setPartnerSt
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 import { partnerHref, ROLE_LABEL } from '../../shared/ui/entityLink.js';
+import { partnersLiveJoin, coalesceEvents } from '../../shared/partners-live.js';  // bl_bp_0457
 
 const COLS = [
   { key: 'kind', label: 'Type' }, { key: 'name', label: 'Name' }, { key: 'mc', label: 'MC' },
@@ -55,6 +56,11 @@ export function renderPartners(host) {
   ]);
 
   load();
+
+  // bl_bp_0457: `partners:live` — a stage / trust / packet / notice change on any account repaints the table
+  // (silently, no spinner). Torn down when the router swaps the view out.
+  const liveBump = coalesceEvents(async () => { if (!document.body.contains(body)) { try { live.leave(); } catch (_) {} return; } try { accs = (await partnersAccounts()) || []; accs.forEach((a) => { a.role = a.role || (a.is_agent ? 'agent' : a.kind); }); drawKpis(); draw(); } catch (_) {} }, 1500);
+  const live = partnersLiveJoin(() => liveBump());
 
   async function load() {
     mount(body, el('div', { class: 'lb-state lb-loading' }, 'Loading…'));

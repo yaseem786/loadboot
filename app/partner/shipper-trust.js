@@ -4,7 +4,7 @@
 // Quotes are non-binding, so a business-verified shipper posts requests right away; payment terms / credit
 // application come before the FIRST BOOKING; the packet is three items (agreement · claims contact · billing).
 // Self-contained (own h/mount); reuses the .bt-* styles from broker-trust.js.
-import { partnerShipperStatus, partnerShipperVerify, partnerShipperCompanyEmail, partnerVerifyCode } from '../shared/api.js';
+import { partnerShipperStatus, partnerShipperVerify, partnerShipperCompanyEmail, partnerVerifyCode, currentAgreement, acceptAgreement } from '../shared/api.js';  // bl_bp_0456 (G4): agreement click
 import { ensureCss as ensureTrustCss, decorateCards, progressRing } from './broker-trust.js';
 
 const h = (tag, attrs, kids) => {
@@ -34,6 +34,32 @@ export function shipperBadge(t) {
 }
 
 let notice = null;
+
+// bl_bp_0456 (G4): the "one click when published" promise. Renders nothing until legal publishes broker_shipper
+// (cc_current_agreement → available:false); once published, one click records the acceptance and
+// trg_agreement_fills_packet verifies the signed_agreement packet item.
+function agreementRow(onDone) {
+  const host = h('div');
+  (async () => {
+    let a = null; try { a = await currentAgreement('broker_shipper'); } catch (_) {}
+    if (!a || !a.available) return;
+    if (a.accepted) { mount(host, h('div', { class: 'bt-note', style: 'margin-top:12px;color:#12a150;font-weight:800' }, '✓ Shipper Agreement v' + a.version + ' accepted online')); return; }
+    const err = h('div', { class: 'bt-err' });
+    const btn = h('button', { class: 'bt-btn orange' }, 'I agree — accept Shipper Agreement v' + a.version);
+    btn.onclick = async () => {
+      btn.disabled = true; btn.textContent = 'Recording…';
+      try { await acceptAgreement('broker_shipper'); mount(host, h('div', { class: 'bt-note', style: 'margin-top:12px;color:#12a150;font-weight:800' }, '✓ Shipper Agreement v' + a.version + ' accepted online')); onDone && onDone(); }
+      catch (e) { err.textContent = (e && e.message) || 'Could not record.'; btn.disabled = false; btn.textContent = 'I agree — accept Shipper Agreement v' + a.version; }
+    };
+    mount(host, h('div', { style: 'margin-top:12px' }, [
+      h('div', { class: 'bt-note', style: 'font-weight:800;color:#334155' }, (a.title || 'Shipper Agreement') + ' — one click, no PDF to upload'),
+      h('div', { class: 'bt-row', style: 'margin-top:6px' }, [btn, a.url ? h('a', { class: 'bt-btn ghost sm', href: a.url, target: '_blank', rel: 'noopener' }, 'Read it first') : null]),
+      err,
+    ]));
+  })();
+  return host;
+}
+
 export function mountShipperTrust(host, opts = {}) {
   ensureTrustCss();
   let st = null; let timer = null; let alive = true;
@@ -114,6 +140,7 @@ export function mountShipperTrust(host, opts = {}) {
           h('div', { class: 'bt-note', style: 'margin-top:14px;font-weight:800;color:#334155;letter-spacing:.06em;text-transform:uppercase;font-size:.68rem' }, 'Before your first booking · asked once'),
           h('div', { class: 'bt-chips' }, pend.map((t) => h('span', { class: 'bt-chip' }, t))),
           h('div', { class: 'bt-row', style: 'margin-top:12px' }, [h('button', { class: 'bt-btn ghost', onClick: () => opts.goPacket && opts.goPacket() }, 'Open the packet (' + (st.packet_required_done || 0) + '/' + (st.packet_required_total || 0) + ') →')]),
+          agreementRow(() => refresh()),  // bl_bp_0456 (G4)
         ]) : null,
       ]);
     } else if (chk.pending || chk.outcome === 'pending' || !chk.outcome) {
