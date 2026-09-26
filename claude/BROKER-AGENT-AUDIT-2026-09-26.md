@@ -140,6 +140,12 @@ Agent)"). The app does not:
 3. **Auto-nudge on non-brokerage MC** — in `agent_parent_screened`, when the screen returns `entity_type='CARRIER'` / `broker_authority=false` / `not_found`, notify the agent with the legal name FMCSA returned and ask for the right MC. *(small.)* **Done 26 Sep — `bl_bp_0449`**: `agent_parent_mc_nudge`, e-mail `broker.agent_parent_mc_check` (catalogued). Fires on `not_found`, `broker_authority=false`, or unknown authority + FMCSA power units; NOT on `entity_type='CARRIER'` alone (LinkLane and M&M read CARRIER too). Once per declared MC. No backfill — SALAYIM gets it on its next screen.
 4. **Directory purity** — `cc_partners_accounts` label agents "Agent of X" instead of `x/8`. *(small.)* **Done 26 Sep — `bl_bp_0450`**: three new keys (`is_agent`, `agent_tier`, `agent_parents[{name,mc,status}]`), Packet cell in `partners.js` reads them for agents only; everyone else unchanged. Full create-or-replace (staging never had bl_ops_0205, bodies now identical on both). Anon SECDEF surface unchanged, 34/33 by name.
 5. **One "mandatory" definition** shared by 360 and `partner_trust_status`. **Done 26 Sep — `bl_bp_0451`** (see §3). Also puts `app_private.org_onboarding_complete` into a migration file (half of item 7).
-6. **Broker pay-behaviour signal to carriers** — medium; design first.
+6. **Broker pay-behaviour signal to carriers** — medium; design first. **Done 26 Sep — `bl_bp_0452` live on staging + prod; app change ships with the next site push** —
+   `claude/BROKER-PAY-SIGNAL-2026-09-26.md`. Findings that changed the plan: prod `pay_transfers` has 0 rows
+   and no broker-partner trip has ever been delivered, so the chip is blank for every load today; the existing
+   poster-panel number (`cc_carrier_view_poster`, 0192) measures receipt-upload→carrier-confirm, not delivery→paid,
+   and its "insufficient data" line prints unconditionally. `bl_bp_0452`: one `app_private.broker_pay_stats`
+   (median days delivered→received, n≥3 and ≥2 carriers to show), surfaced as `details.broker_pay` on the board and
+   in the poster panel; cold start shows nothing on the card and "no history yet · bond on file" in the panel.
 7. Dump `onboarding_packet_templates` seed + `org_onboarding_complete` into a migration file. *(`org_onboarding_complete` done in 0451; the templates seed is still live-only.)*
 8. Handle the four July "(Agent)" orgs: archive, or convert to real agents once a brokerage confirms them (BROKER-SUPPLY §"YASEEN" item 6 is still open).
