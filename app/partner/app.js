@@ -3074,8 +3074,11 @@ async function brokerDash(user, ov) {
     _plSave(); renderStep();
     if (window.__lbOpenPost) window.__lbOpenPost();
     pToast('Lane, freight and rate card copied. Check the addresses, then set the new pickup & delivery dates.', { kind: 'ok', title: '⧉ Copied from ' + (l.origin || '') + ' → ' + (l.destination || '') });
-    // pins: only if the draft is still this copy when the geocoder answers
-    const [po9, pd9] = await Promise.all([geocodeExact(o9), geocodeExact(d9)]);
+    // pins: bl_board_0458 returns the original ones (exact, no network); older rows fall back to the
+    // geocoder, and only if the draft is still this copy when it answers
+    const pin9 = (la9, ln9) => (la9 != null && ln9 != null && isFinite(la9) && isFinite(ln9)) ? { lat: Number(la9), lng: Number(ln9) } : null;
+    const fo9 = pin9(f.pickup_lat, f.pickup_lng), fd9 = pin9(f.delivery_lat, f.delivery_lng);
+    const [po9, pd9] = await Promise.all([fo9 || geocodeExact(o9), fd9 || geocodeExact(d9)]);
     if (w.o_street !== o9.street || w.d_street !== d9.street || w.o_zip !== o9.zip || w.d_zip !== d9.zip) return;
     let any9 = false;
     if (po9 && w.pickup_lat == null) { w.pickup_lat = po9.lat; w.pickup_lng = po9.lng; any9 = true; }

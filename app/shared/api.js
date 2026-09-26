@@ -866,7 +866,8 @@ export const pocketMyIssues = (limit) => rpc('cc_pocket_my_issues', { p_limit: l
 // Available loads for carriers to browse (public opportunities feed).
 export const publicLoadOpportunities = (limit) => rpc('get_public_load_opportunities', { p_limit: limit ?? 18 });
 // Phase 2B — carrier self-book a load (full detail + race-safe claim → trip).
-export const pocketAvailableLoads = (limit) => rpc('cc_pocket_available_loads', { p_limit: limit ?? 24 });
+// bl_board_0458: p_offset pages the board (server caps a page at 50); rows carry posted_at + delivery pin.
+export const pocketAvailableLoads = (limit, offset) => rpc('cc_pocket_available_loads', { p_limit: limit ?? 24, p_offset: offset ?? 0 });
 export const pocketBookLoad = (loadId) => rpc('cc_pocket_book_load', { p_load: loadId });
 export const requestBookLoad = (load, note) => rpc('cc_request_book_load', { p_load: load, p_note: note ?? null });
 // ---- Per-trip P&L engine (Uber-style earnings) ----

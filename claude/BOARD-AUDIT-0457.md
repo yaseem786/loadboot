@@ -146,7 +146,7 @@ approval) → #3 radius search → #7 length/dims/alt equipment (the posting sid
     The detail sheet lists all three.
   - **Book gate:** a carrier whose fleet has any listed equipment (primary or alternate) can now
     request the load. Before this, the client blocked everything except the primary.
-- **Limit (server, not changed):** `app_private.match_eligibility` and `equip_serves` still match on
+- **Limit (server) — fixed in 0458 below.** `app_private.match_eligibility` and `equip_serves` still match on
   `loads.equipment` only. So the broker's eligible-carrier list, direct offers and the CC matching do
   not yet count alternates. Only the board and the carrier's book request do. `cc_request_book_load`
   has no equipment check, so a request from a carrier that runs only the alternate goes through.
@@ -156,3 +156,64 @@ approval) → #3 radius search → #7 length/dims/alt equipment (the posting sid
   in node against sample loads. `npm run check` passes. **Not tested in a signed-in browser.** On
   staging, please post one flatbed load with W 9' and "Also OK: Step Deck", then check the board card
   and the Trailer filter.
+
+## 0458 — paging, post age, delivery pin, alternates in matching (owner go-ahead 26 Sep)
+
+The owner said "implement what you suggest" on the open decisions. Migration
+`bl_board_0458_board_paging_age_alt_equipment` (`migrations/bl_board_0458_board_paging_age_alt_equipment.sql`)
+went to **staging, then prod**, on 26 Sep 2026.
+
+| Decision | What I chose | Where |
+|---|---|---|
+| #1 post age | Yes. The board now returns `posted_at` (= `loads.created_at`, the time the load reached the board). | pocket RPC + card chip |
+| #2 paging | Yes. Offset paging: `cc_pocket_available_loads(p_limit, p_offset)`, still at most 50 a page, with `l.id` as a tie-breaker so page order is stable. | pocket RPC + "Load more" |
+| 0457c delivery pin | Yes. `delivery_lat/lng` are rounded to 0.1°, the same as the pickup pin, so it shows no more than the pickup already does. | pocket RPC |
+| 0457b exact pins for "Post similar" | Yes. `cc_partner_load_full` returns the four pins (the broker's own load only). | partner RPC |
+| `match_eligibility` + alternates | **Yes, count them.** The broker said "Van OR Reefer" is fine, so a Reefer carrier is a real match and not a mismatch in CC or in direct offers. | `app_private.match_eligibility` |
+| #6 street address before posting | **Keep strict (no change).** The geofence, auto-miles, HOS/ETA checks and the "Post similar" pins all need the exact address, and city-only posting would need a new "address due before dispatch" gate across booking and dispatch. That is a bigger change than it is worth at today's volume. Revisit if brokers push back. This is my judgement, not measured. | — |
+
+**DB (done by anchor-replace from the live body):**
+- The pocket function was patched from each env's own current definition. Prod keeps its demo-isolation
+  line (`session_is_demo`), which staging does not have; that difference was there before. The
+  signature changed, so it was drop + create, then `revoke … from public, anon` and
+  `grant … to authenticated, service_role`. `dispatcher_board` calls it positionally with one arg, and
+  that still resolves (checked on staging).
+- `match_eligibility`: `exact_trucks` now counts the primary equipment OR any alternate. `equip_trucks`
+  now counts `equip_serves(primary)` OR `equip_serves(any alternate)`. The hard-fail text still starts
+  with `no compatible equipment for <primary>` and adds ` or <alt> / <alt>` when alternates exist.
+  Same signature, so the ACL is kept (postgres only). Its callers (`cc_offer_send`, `cc_match_*`,
+  `cc_partner_eligible_*`, `cc_decide_partner_load`, `book_accepted_offer`, `cron_packet_revalidation`)
+  get the new behaviour with no change.
+- **Anon SECDEF names are unchanged:** prod 36 (`names md5 afb632351749605b206b88509971000c`) and staging
+  35 (`5b70d5bc42d3138958097931ad4c35ef`), the same before and after.
+
+**Tests:**
+- Staging, inside a rollback: a Van load against a carrier with a Reefer truck gave `no_match`. With
+  `alt_equipment:["Reefer"]` it gave `match` and the equipment hard-fail disappeared. With
+  `["Hopper Bottom"]` it gave `no_match` / "no compatible equipment for Van or Hopper Bottom".
+- Staging paging as a staff session: 4 loads came back as page 1 = 3 and page 2 = 1, with no overlap,
+  and `posted_at` was filled.
+- Prod, read-only: all three functions run. The prod board is empty right now (10 `available` loads,
+  all with a past pickup date), so paging was only checked on staging.
+
+**Client:**
+- `api.js`: `pocketAvailableLoads(limit, offset)`.
+- `app/carrier/app.js`:
+  - The first page is 50 loads. When a full page came back, a **Load more loads** button appears
+    under the grid. New rows are de-duplicated by id (a load posted between pages shifts the offset
+    by one), and deadhead is fetched only for the new rows.
+  - Each card has a **Posted 12m ago** chip, green with 🆕 when it is under an hour old.
+  - "Sort: newest" now sorts on `posted_at`.
+  - The destination radius uses the real delivery pin; the existing `pinPt9(l.delivery_lat, …)`
+    already read it.
+- `app/partner/app.js`: "Post similar" uses the original pins when the RPC returns them, and falls back
+  to `geocodeExact` only for rows without pins.
+- `npm run check` passes. **Not tested in a signed-in browser.** On staging, please check the board
+  card chip, and the Load more button (it needs 50+ loads, so it may not show).
+
+**Known limit:** offset paging can skip one load if a load is booked or removed between two "Load
+more" clicks. The next refresh shows it again. A cursor (`created_at, id`) would fix this; it is not
+worth it at today's volume.
+
+**Still open from the audit:** #4 (check whether `preferred_lanes` alerts anyone before building saved
+searches), #8 quick post, #9 OSRM/Photon behind our own edge function.
