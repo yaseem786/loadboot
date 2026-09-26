@@ -115,6 +115,7 @@ import { renderFaq, CARRIER_FAQ } from '../shared/faq.js';
 import { myDriverContext } from '../shared/api.js';   // bl_drv_0344 driver mode
 import { createTour, mountHelp } from '../shared/ui/tour.js';   // guided tour + floating "?" help (24 Sep 2026)
 import { CARRIER_TOUR } from './tour-content.js';
+import { geoFetch } from '../shared/geo-api.js';   // board audit #9: OSRM/Photon via our geo edge function
 initTelemetry();  // real-user error + Core Web Vitals capture
 
 // Agent portal runs the SAME bundle as the carrier app, told apart only by URL path.
@@ -3884,7 +3885,11 @@ async function appView(user) {
   // in the shell, so the bar's centre button, the Dashboard card and the board all call the same
   // function and it opens over whatever screen is on the phone. Nothing navigates.
   function afterPostRefresh() { try { if (tab === 'loads') loadLoads(); else render(); } catch (_) {} }
-  async function openPostingForm(existing, kindPreset) {
+  // bl_board_0459: preset = the board's filters ({ origin, radius, dest, equipment, min_rpm }) from
+  // "🔔 Alert me". Load alerts ARE truck postings (tp_match_new_load emails + notifies on every new
+  // matching load), so the button opens this form pre-filled instead of a second saved-search engine.
+  async function openPostingForm(existing, kindPreset, preset) {
+    preset = existing ? null : (preset || null);
     // v2 (5 Sep 2026): availability is posted per TRUCK. Hard fleet gate (truck + driver on file,
     // checked client-side from the fleet itself so it works even before the status RPC exists),
     // State→City dropdowns + optional ZIP (ZIP = exact deadhead point for the matcher),
@@ -3914,9 +3919,9 @@ async function appView(user) {
         else if (fleet9.length === 1) pick.value = fleet9[0].id;
 
         const place = buildPlacePicker({ h, cities: US_CITIES, withZip: true,
-          value: existing ? { city: existing.origin_city, state: existing.origin_state, zip: existing.origin_zip, text: existing.origin } : {} });
-        const rad = h('input', { class: 'cp-in', type: 'number', min: '25', step: '25', placeholder: 'Miles I will drive to pick up', value: (existing && existing.radius) || '150' });
-        const destPick = buildDestPicker({ h, cities: US_CITIES, value: (existing && existing.dest_pref) || '', allowAnywhere: true });
+          value: existing ? { city: existing.origin_city, state: existing.origin_state, zip: existing.origin_zip, text: existing.origin } : (preset && preset.origin ? { text: preset.origin } : {}) });
+        const rad = h('input', { class: 'cp-in', type: 'number', min: '25', step: '25', placeholder: 'Miles I will drive to pick up', value: (existing && existing.radius) || (preset && preset.radius) || '150' });
+        const destPick = buildDestPicker({ h, cities: US_CITIES, value: (existing && existing.dest_pref) || (preset && preset.dest) || '', allowAnywhere: true });
         // Owner rule (5 Sep 2026): reopening an existing post NEVER shows the dates it was saved
         // with — a stale window is how a truck stays "posted" for a day it is already gone. Every
         // other field is prefilled so the carrier only restates what actually changed.
@@ -3925,8 +3930,8 @@ async function appView(user) {
         const to = h('input', { class: 'cp-in', type: 'date', min: todayISO, value: existing ? '' : new Date(Date.now() + 1 * 864e5).toISOString().slice(0, 10) });
         const dateHint = existing ? h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:#fbbf24;font-size:.8rem;line-height:1.5' },
           'Dates start blank on purpose — tell us today’s window, not the one you saved last time.') : null;
-        const eq = h('input', { class: 'cp-in', placeholder: 'Equipment (e.g. Van, Reefer)', value: ((existing && existing.equipment) || (_dp && _dp.preferred_equipment) || []).join(', ') });
-        const rpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi (optional)', value: (existing && existing.min_rpm) || (_dp && _dp.min_rpm) || '' });
+        const eq = h('input', { class: 'cp-in', placeholder: 'Equipment (e.g. Van, Reefer)', value: ((existing && existing.equipment) || (preset && preset.equipment ? [preset.equipment] : null) || (_dp && _dp.preferred_equipment) || []).join(', ') });
+        const rpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi (optional)', value: (existing && existing.min_rpm) || (preset && preset.min_rpm) || (_dp && _dp.min_rpm) || '' });
         const notes = h('textarea', { class: 'cp-in', rows: '2', placeholder: 'Anything else a dispatcher should know (optional)' }); notes.value = (existing && existing.notes) || '';
         // Drive hours left. This is the number a dispatcher plans the NEXT load from — a truck
         // in Dallas with 9 hours and one with 1 hour are not the same truck. FMCSA 395.3(a)(3)
@@ -4067,6 +4072,8 @@ async function appView(user) {
         fpWatch('availability', { kind: kind, truck: pick, radius: rad, from: from, to: to, eq: eq, rpm: rpm, hos: hos, notes: notes, auto: auto });
         const _closePT = openModal(existing ? (existing.status === 'paused' ? 'Available again — check and post' : 'Edit availability') : 'Post your availability', [
           reqNoteP9, draftHost9,
+          preset ? h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;padding:9px 11px;border-radius:10px;background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.35);font-size:.84rem;line-height:1.5' },
+            '🔔 Filled in from your board filters. Pick the truck and the dates, then post. Every new load that fits this post reaches you in the app and by email.') : null,
           lbl('Situation'), kind,
           lbl('Which truck *'), pick, specHost,
           lblOrg, place.el,
@@ -4085,7 +4092,7 @@ async function appView(user) {
         setTimeout(() => {
           const m9 = draft9.restore();
           if (m9) { paintKind(); draftHost9.appendChild(draftBanner(m9, () => {
-            draft9.clear(); try { _closePT(); } catch (_) {} openPostingForm(existing, kindPreset);
+            draft9.clear(); try { _closePT(); } catch (_) {} openPostingForm(existing, kindPreset, preset);
           })); }
         }, 60);
   }
@@ -4387,7 +4394,7 @@ async function appView(user) {
       let ds9 = null;
       try {
         const coords9 = p9.coords.longitude + ',' + p9.coords.latitude + ';' + pts9.map(r9 => r9.pickup_lng + ',' + r9.pickup_lat).join(';');
-        const j9 = await (await fetch('https://router.project-osrm.org/table/v1/driving/' + coords9 + '?sources=0&annotations=distance')).json();
+        const j9 = await (await geoFetch('https://router.project-osrm.org/table/v1/driving/' + coords9 + '?sources=0&annotations=distance')).json();
         ds9 = j9 && j9.distances && j9.distances[0];
       } catch (_) {}
       let any9 = false;
@@ -4509,6 +4516,18 @@ async function appView(user) {
       ].filter(Boolean));
     }
     const tbBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Chain two loads into one revenue-ranked tour', onClick: () => lbTripBuilder9(rows || []) }, '🔗 Trip Builder');
+    // bl_board_0459: the filters become a truck posting, and truck postings are what alert carriers
+    // (app + email) on each new matching load. Only 'City, ST' / 'ST' text carries over as a place.
+    const alertBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Get an app + email alert when a new load like this is posted', onClick: () => {
+      const cityRe9 = /^[^,]+,\s*[A-Za-z]{2}$/, o9 = fOrigin.value.trim(), d9 = fDest.value.trim();
+      openPostingForm(null, 'empty', {
+        origin: cityRe9.test(o9) ? o9 : '',
+        radius: fORad.value || '',
+        dest: cityRe9.test(d9) || /^[A-Za-z]{2}$/.test(d9) ? d9 : '',
+        equipment: fEq.value.trim(),
+        min_rpm: fRpm.value || '',
+      });
+    } }, '🔔 Alert me');
     let _favOnly = false;
     const favBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Show only loads you saved with the star', onClick: (e9) => { _favOnly = !_favOnly; e9.currentTarget.style.color = _favOnly ? '#f59e0b' : ''; e9.currentTarget.style.borderColor = _favOnly ? '#f59e0b' : ''; renderList(); } }, '★ Saved');
     const applyFilters = (list) => { const oC9 = radCtr9(fOrigin, fORad), dC9 = radCtr9(fDest, fDRad); _radMiss9 = new Set(); _radWait9 = new Set();
@@ -4536,7 +4555,7 @@ async function appView(user) {
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount)); [fSize, fLen].forEach((x9) => x9.addEventListener('change', () => { fCount(); renderList(); }));
     const fToggle = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { const open = fBody.style.display !== 'none'; fBody.style.display = open ? 'none' : 'flex'; fToggle.firstChild.textContent = open ? '⚙ Filters ▾' : '⚙ Filters ▴'; } }, [h('span', null, '⚙ Filters ▾'), fChip]);
     const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px', 'data-tour': 'loads-filters' }, [
-      h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [fToggle, favBtn, tbBtn, fSort]),
+      h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [fToggle, favBtn, tbBtn, alertBtn, fSort]),
       fBody,
     ]);
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(inp => { inp.onkeydown = (e) => { if (e.key === 'Enter') renderList(); }; });
