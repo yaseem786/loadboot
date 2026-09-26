@@ -174,7 +174,7 @@ export function renderOutreach(host) {
         sub: N(st.sent_today) + ' today · last run ' + (st.last_run ? fmtDateTime(st.last_run) : 'never'), accent: 'violet' }),
       statCard({ icon: 'alert', label: 'List health', value: N(totalBounced) + ' bounced',
         sub: N(totalUnsub) + ' unsubscribed · ' + N(failN) + ' failed sends',
-        accent: (sentN > 50 && failN / Math.max(1, sentN + failN) > 0.05) ? 'red' : 'green' }),
+        accent: (sentN > 50 && failN / Math.max(1, sentN + failN) > 0.05) ? 'red' : 'green', to: '/unsubscribes?source=legacy_link' }),
       statCard({ icon: 'check', label: 'Results', value: N(tot.converted) + ' signup' + ((tot.converted || 0) === 1 ? '' : 's'),
         sub: N(tot.replied) + ' replies · ' + N(tot.clicked_contacts) + ' contacts clicked'
              + ((opens.opened || 0) ? ' · ' + N(opens.opened) + ' opens' : ''),

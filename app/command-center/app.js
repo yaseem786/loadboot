@@ -48,6 +48,7 @@ import { renderCampaignManager } from './views/campaignManager.js';
 import { renderCarrierReminders } from './views/carrierReminders.js';
 import { renderDeliveryHealth } from './views/deliveryHealth.js';
 import { renderEmailCatalog } from './views/emailCatalog.js';
+import { renderUnsubscribes } from './views/unsubscribes.js';   // bl_comm_0446
 import { renderMarketingIntel } from './views/marketingIntel.js';
 import { renderOutreach } from './views/outreach.js';
 import { renderLiveChat } from './views/liveChat.js';
@@ -291,6 +292,7 @@ async function boot() {
       { id: 'crm', label: 'CRM & outreach', path: '/crm', allowed: () => crmEnabled && can('crm.view'), render: (h) => renderCRM(h) },
       { id: 'emailCatalog', label: 'Email catalog', path: '/email-catalog', allowed: () => can('comm.view') || can('comm.manage') || can('content.view') || can('settings.manage'), render: (h) => renderEmailCatalog(h) },
       { id: 'delivery', label: 'Deliverability', path: '/delivery', allowed: () => can('content.view') || can('content.manage') || can('settings.manage'), render: (h) => renderDeliveryHealth(h) },
+      { id: 'unsubscribes', label: 'Unsubscribes', path: '/unsubscribes', allowed: () => can('comm.view') || can('comm.manage') || can('content.view') || can('settings.manage'), render: (h) => renderUnsubscribes(h) },   // bl_comm_0446
     ] },
     forms: { nav: '/forms', tabs: [
       { id: 'inbox', label: 'Inbox', path: '/forms', allowed: () => formsEnabled && can('forms.view'), render: (h, q) => renderForms(h, q.get('id')) },
@@ -375,6 +377,7 @@ async function boot() {
     '/carrier-reminders': () => { setActive('/carrier-reminders'); guard(['content.view', 'comm.view', 'comm.send'], () => renderCarrierReminders(content))(); },
     '/delivery': tabbed('crm', 'delivery'),
     '/email-catalog': tabbed('crm', 'emailCatalog'),   // bl_comm_0391: the tab existed, the route did not
+    '/unsubscribes': tabbed('crm', 'unsubscribes'),    // bl_comm_0446: the unsubscribe engine
     '/account-health': tabbed('compliance', 'health'),
     '/marketing-intel': tabbed('web', 'intel'),
     '/outreach': () => { setActive('/crm'); if (can('marketing.view') || can('carriers.approve') || can('dispatch.manage')) renderOutreach(content); else denied(); },

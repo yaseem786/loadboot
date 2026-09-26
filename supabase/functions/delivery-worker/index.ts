@@ -32,6 +32,13 @@
 // v17 (2026-09-01): unsubscribe is marketing-only. Transactional/operational mail no longer
 // carries unsubscribe UI or RFC 8058 headers. A final service-role guard runs immediately
 // before Resend so a contact who unsubscribed after claim is not sent the next outreach email.
+// v19 (2026-09-25, bl_comm_0446): OPTIONAL operational mail (digests, product news, load offers,
+// compliance nudges, billing reminders — any catalog group a person may switch off) now carries a
+// "Manage email preferences" footer link + RFC 8058 one-click headers, pointing at the preference
+// centre (functions/v1/unsubscribe). Essential mail (account & security, billing notices, staff
+// alerts) still carries nothing and cannot be switched off. The same service-role gate the engine
+// uses (cc_delivery_worker_optional_allowed → app_private.email_gate) runs right before Resend, so a
+// one-click that landed after the row was queued still wins. Marketing keeps its "Unsubscribe" label.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // v16: normalize a full HTML document into a shell-safe fragment.
@@ -120,7 +127,7 @@ Deno.serve(async (_req) => {
     </div>
   </td></tr>`;
 
-  const shell = (bodyHtml: string, unsubUrl: string | null, subject = "", callBand = "") =>
+  const shell = (bodyHtml: string, unsubUrl: string | null, subject = "", callBand = "", unsubLabel = "Unsubscribe") =>
     `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
   body{margin:0;padding:0}
@@ -192,7 +199,7 @@ Deno.serve(async (_req) => {
       <a href="${SITE}/privacy.html" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Privacy</span></a> &nbsp;&middot;&nbsp;
       <a href="${SITE}/terms.html" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Terms</span></a> &nbsp;&middot;&nbsp;
       <a href="${SITE}/contact.html" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Support</span></a>
-      ${unsubUrl ? ` &nbsp;&middot;&nbsp; <a href="${unsubUrl}" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Unsubscribe</span></a>` : ""}
+      ${unsubUrl ? ` &nbsp;&middot;&nbsp; <a href="${unsubUrl}" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">${unsubLabel}</span></a>` : ""}
     </div>
     <div style="color:#5c6f8f;font-size:11px;line-height:1.8;margin-top:8px">
       LoadBoot &middot; Truck dispatch &amp; logistics technology &middot; United States<br>
@@ -237,10 +244,29 @@ Deno.serve(async (_req) => {
   let sent = 0, failed = 0, suppressed = 0;
   for (const d of claimed ?? []) {
     const subject = (d.meta && d.meta.subject) ? String(d.meta.subject) : "LoadBoot";
-    // Only marketing mail gets unsubscribe controls. Operational mail must remain deliverable.
+    // Marketing gets "Unsubscribe"; optional operational mail gets "Manage email preferences" (v19);
+    // essential mail gets nothing and must remain deliverable.
     const selfContained = /^outreach[._-]/i.test(String(d.template_key ?? ""));
     const marketing = selfContained || d.source === "campaign";
-    const unsubUrl = marketing ? `${UNSUB_BASE}?token=${d.correlation_id}` : null;
+    let unsubUrl = marketing ? `${UNSUB_BASE}?token=${d.correlation_id}` : null;
+    let unsubLabel = "Unsubscribe";
+    const prefGroup = String((d.meta && d.meta.preference_group) || "");
+    if (!marketing && prefGroup && prefGroup !== "account_critical" && prefGroup !== "staff_internal") {
+      // v19: ask the engine. Blocked → mark and skip; allowed + optional → carry the preferences link.
+      const { data: gate, error: gateError } = await sb.rpc("cc_delivery_worker_optional_allowed", { p_id: d.id });
+      if (gateError) {
+        await sb.rpc("cc_delivery_worker_mark", { p_id: d.id, p_status: "failed", p_reason: `preference gate failed: ${gateError.message}`, p_provider: "resend", p_dedupe: null });
+        failed++;
+        continue;
+      }
+      const g = (gate && typeof gate === "object") ? gate as Record<string, unknown> : {};
+      if (g.allowed === false) {
+        await sb.rpc("cc_delivery_worker_mark", { p_id: d.id, p_status: "unsubscribed", p_reason: String(g.reason || "recipient unsubscribed from this kind of email"), p_provider: "resend", p_dedupe: null });
+        suppressed++;
+        continue;
+      }
+      if (g.essential !== true) { unsubUrl = `${UNSUB_BASE}?token=${d.correlation_id}`; unsubLabel = "Manage email preferences"; }
+    }
 
     // Fail closed immediately before Resend. This closes the claim→send race: if the
     // recipient unsubscribed after this row was claimed, no next outreach email leaves.
@@ -276,13 +302,13 @@ Deno.serve(async (_req) => {
       else {
         // v16: the shell is the only branding layer — full documents get normalized first.
         const fragment = looksFullDoc(raw) ? normalizeFragment(raw) : raw;
-        html = shell(fragment || raw, unsubUrl, subject, withCall ? callBandHtml() : "");
+        html = shell(fragment || raw, unsubUrl, subject, withCall ? callBandHtml() : "", unsubLabel);
       }
     }
     const callLine = !withCall ? "" :
       (useWa ? `\n\nPrefer to chat? WhatsApp us 24/7 on ${WA_DISPLAY}: ${WA_URL}` : "") +
       (usePhone ? `\n\nPrefer to talk? Call us 24/7 on ${PHONE_DISPLAY}, or book a time and we call you: ${SITE}/contact.html#call` : "");
-    const unsubscribeLine = unsubUrl ? `\n\n— LoadBoot · Support: ${SITE}/contact.html · Unsubscribe: ${unsubUrl}` : `\n\n— LoadBoot · Support: ${SITE}/contact.html`;
+    const unsubscribeLine = unsubUrl ? `\n\n— LoadBoot · Support: ${SITE}/contact.html · ${unsubLabel}: ${unsubUrl}` : `\n\n— LoadBoot · Support: ${SITE}/contact.html`;
     const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + callLine + unsubscribeLine;
     try {
       const ident = senderFor(d);
