@@ -389,6 +389,9 @@ function lbSourceBlocked(l) { const n = lbSourceNotice(l); return !!(n && n.book
 // needs, and open-deck freight dimensions, as posted in the broker wizard. They live in details
 // (copied whole by cc_decide_partner_load) and are absent on older loads, so all of them are optional.
 function lbAltEq(l) { const a = l && l.details && l.details.alt_equipment; const p = String((l && l.equipment) || '').trim().toLowerCase(); return Array.isArray(a) ? a.map((x) => String(x || '').trim()).filter((x) => x && x.toLowerCase() !== p) : []; }
+// bl_board_0458 (audit #1): when the load reached the board (DAT's Age column). null on old API rows.
+function lbAgeMin(l) { const t = Date.parse((l && l.posted_at) || ''); return isFinite(t) ? Math.max(0, Math.floor((Date.now() - t) / 60000)) : null; }
+function lbAgeTxt(m) { return m == null ? '' : m < 1 ? 'just now' : m < 60 ? m + 'm ago' : m < 48 * 60 ? Math.floor(m / 60) + 'h ago' : Math.floor(m / 1440) + 'd ago'; }
 function lbTrailerFt(l) { const n = Number(l && l.details && l.details.trailer_length_ft); return isFinite(n) && n > 0 ? n : null; }
 function lbFtIn(ft) { const n = Number(ft); if (!isFinite(n) || n <= 0) return ''; let f = Math.floor(n), i = Math.round((n - f) * 12); if (i === 12) { f += 1; i = 0; } return i ? f + '\'' + i + '"' : f + '\''; }
 function lbDimsTxt(l) { const d = l && l.details && l.details.dims_ft; return (d && typeof d === 'object') ? [['L', d.l], ['W', d.w], ['H', d.h]].filter(([, v]) => Number(v) > 0).map(([k, v]) => k + ' ' + lbFtIn(v)).join(' × ') : ''; }
@@ -4368,12 +4371,16 @@ async function appView(user) {
         ]), mWrap]);
       })) : null,
     ].filter(Boolean));
-    let rows; try { rows = await pocketAvailableLoads(60); } catch (e) { rows = []; }
+    // Board audit #2 (bl_board_0458): the server pages 50 at a time; "Load more" asks for the next page.
+    const LB_PAGE9 = 50;
+    let rows; try { rows = await pocketAvailableLoads(LB_PAGE9, 0); } catch (e) { rows = []; }
+    rows = rows || [];
+    let _lbOff9 = rows.length, _lbMore9 = rows.length >= LB_PAGE9;
     // \ud83d\udccd REAL deadhead: one OSRM table call (live GPS \u2192 every pickup pin, road miles)
     window.__lbDh = window.__lbDh || {};
-    enrichDh9 = async () => {
+    enrichDh9 = async (onlyNew9) => {
       const p9 = window.__lbPos; if (!p9 || !rows.length) return;
-      const pts9 = rows.filter(r9 => r9.pickup_lat != null && r9.pickup_lng != null).slice(0, 45);
+      const pts9 = rows.filter(r9 => r9.pickup_lat != null && r9.pickup_lng != null && !(onlyNew9 && window.__lbDh[r9.id] != null)).slice(0, 45);
       if (!pts9.length) return;
       // Road miles via OSRM; if OSRM has no route (e.g. testing from another continent) or is
       // unreachable, fall back to straight-line x1.2 so the deadhead badge always shows something.
@@ -4398,9 +4405,9 @@ async function appView(user) {
     // Board audit #3 (DAT parity): "within N mi of <place>" for origin and destination; 'Exact text'
     // keeps the old substring match. Straight-line miles, like DAT's DH-O/DH-D. The typed place
     // resolves offline (usGeo city table) first, then Photon. A load's pickup uses its board pin
-    // (rounded to ~7 mi by bl_stops_0090) or else its origin city; the drop uses its destination
-    // city, since cc_pocket_available_loads returns no delivery pin. Unknown locations are hidden
-    // while a radius is on, and the hint line says how many.
+    // (rounded to ~7 mi by bl_stops_0090) or else its origin city; the drop uses its delivery
+    // pin (bl_board_0458, rounded like the pickup) or else its destination city. Unknown locations
+    // are hidden while a radius is on, and the hint line says how many.
     const radSel9 = (t9) => h('select', { class: 'cp-in', title: t9, style: 'margin:0;max-width:125px' }, [['', 'Exact text'], ['25', 'Within 25 mi'], ['50', 'Within 50 mi'], ['100', 'Within 100 mi'], ['150', 'Within 150 mi'], ['250', 'Within 250 mi']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
     const fORad = radSel9('Search around the origin'), fDRad = radSel9('Search around the destination');
     const fRadHint = h('div', { class: 'cp-muted', style: 'flex-basis:100%;font-size:.8rem;display:none' });
@@ -4449,7 +4456,7 @@ async function appView(user) {
       const num9 = (v9) => (v9 == null || v9 === '' || !isFinite(Number(v9))) ? null : Number(v9);
       const dh9 = (l) => num9(window.__lbDh && window.__lbDh[l.id] != null ? window.__lbDh[l.id] : l.deadhead);
       const rpm9 = (l) => num9(l.rpm) != null ? num9(l.rpm) : (num9(l.rate) && num9(l.miles) ? Number(l.rate) / Number(l.miles) : null);
-      const key9 = k9 === 'rate' ? (l) => num9(l.rate) : k9 === 'rpm' ? rpm9 : k9 === 'deadhead' ? dh9 : k9 === 'pickup' ? (l) => (l.pickup_date ? Date.parse(l.pickup_date) : null) : null;
+      const key9 = k9 === 'newest' ? (l) => { const t9 = Date.parse(l.posted_at || ''); return isFinite(t9) ? t9 : null; } : k9 === 'rate' ? (l) => num9(l.rate) : k9 === 'rpm' ? rpm9 : k9 === 'deadhead' ? dh9 : k9 === 'pickup' ? (l) => (l.pickup_date ? Date.parse(l.pickup_date) : null) : null;
       const asc9 = k9 === 'deadhead' || k9 === 'pickup';
       return list.map((l, i) => ({ l, i })).sort((x, y) => {
         const d9 = (y.l.direct_to_you ? 1 : 0) - (x.l.direct_to_you ? 1 : 0);
@@ -5004,6 +5011,7 @@ async function appView(user) {
           lbDimsTxt(l) ? h('span', { class: 'cpx-chip', style: (l.details && l.details.oversize) ? 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)' : '', title: 'Freight dimensions (L \u00d7 W \u00d7 H)' }, ((l.details && l.details.oversize) ? '\u26a0 OVERSIZE \u00b7 ' : '\ud83d\udcd0 ') + lbDimsTxt(l)) : null,
           l.hazmat ? h('span', { class: 'cpx-chip', style: 'background:rgba(220,38,38,.14);color:#b91c1c;font-weight:800' }, '☣ HAZMAT') : null,
           l.pickup_date ? h('span', { class: 'cpx-chip' }, '🕐 Pickup: ' + l.pickup_date) : null,
+          lbAgeMin(l) != null ? h('span', { class: 'cpx-chip', style: lbAgeMin(l) < 60 ? 'background:rgba(34,197,94,.16);color:#4ade80;font-weight:800' : '', title: 'Posted ' + new Date(l.posted_at).toLocaleString() }, (lbAgeMin(l) < 60 ? '\ud83c\udd95 Posted ' : 'Posted ') + lbAgeTxt(lbAgeMin(l))) : null,
           l.direct_to_you ? (l.direct_offer_expired
             ? h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.18);color:#94a3b8;font-weight:800', title: 'The broker\u2019s direct request window ran out unanswered \u2014 the load is still yours to book from the board at the posted rate.' }, '\ud83c\udfaf DIRECT REQUEST \u2014 expired \u00b7 still bookable')
             : h('span', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.2);color:#c4b5fd;font-weight:800' }, '\ud83c\udfaf DIRECT REQUEST \u2014 reserved for you')) : null,
@@ -5069,7 +5077,21 @@ async function appView(user) {
       ].filter(Boolean));
     })();
     const gridHost = h('div', { class: 'cp-loadgrid', id: 'cp-loadgrid-host', 'data-tour': 'loads-list' });
-    mount(availWrap, h('div', null, [availHostL, truckCard, filterBar, setupBanner, bestCard, gridHost].filter(Boolean)));
+    // Offset paging: a load posted between pages shifts the next page by one, so rows are de-duplicated by id.
+    const moreBtn9 = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'display:' + (_lbMore9 ? 'block' : 'none') + ';margin:14px auto 0' }, 'Load more loads');
+    moreBtn9.addEventListener('click', async () => {
+      moreBtn9.disabled = true; moreBtn9.textContent = 'Loading\u2026';
+      let nx9 = null; try { nx9 = await pocketAvailableLoads(LB_PAGE9, _lbOff9); } catch (_) {}
+      moreBtn9.disabled = false;
+      if (!Array.isArray(nx9)) { moreBtn9.textContent = 'Could not load more \u2014 tap to retry'; return; }
+      moreBtn9.textContent = 'Load more loads';
+      _lbOff9 += nx9.length; _lbMore9 = nx9.length >= LB_PAGE9;
+      const seen9 = new Set(rows.map((r9) => String(r9.id)));
+      nx9.forEach((r9) => { if (!seen9.has(String(r9.id))) { seen9.add(String(r9.id)); rows.push(r9); } });
+      moreBtn9.style.display = _lbMore9 ? 'block' : 'none';
+      renderList(); enrichDh9(true);
+    });
+    mount(availWrap, h('div', null, [availHostL, truckCard, filterBar, setupBanner, bestCard, gridHost, moreBtn9].filter(Boolean)));
     mount(content, h('div', null, [gpsBanner, capNudge, tabsBar, reqHost, availWrap].filter(Boolean)));
     renderList();
     try { const de9 = window.__lbDeepEnt; if (de9 && de9.tab === 'loads' && de9.id) { window.__lbDeepEnt = null; showLoadDetail(de9.id); } } catch (_) {}
