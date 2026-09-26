@@ -9570,7 +9570,16 @@ if os.path.isdir(APP_SRC):
             print('BUNDLE: skipped (LOADBOOT_NO_BUNDLE=1) —', portal); return False
         src = os.path.join(APP_SRC, portal, entry); out = os.path.join(APP_OUT, portal)
         local = os.path.join(SRC, 'node_modules', '.bin', 'esbuild' + ('.cmd' if os.name == 'nt' else ''))
+        if not os.path.exists(local) and _sh.which('npm'):
+            # Netlify runs a plain python build command — no npm install happens by itself. Pull esbuild in here.
+            try:
+                ri = subprocess.run(['npm', 'install', '--no-save', '--no-audit', '--no-fund', '--loglevel=error', 'esbuild@0.28.2'],
+                                    capture_output=True, text=True, timeout=240, cwd=SRC, shell=(os.name == 'nt'))
+                print('BUNDLE: npm install esbuild ->', 'ok' if ri.returncode == 0 else ('rc=' + str(ri.returncode) + ' ' + (ri.stderr or '')[-300:]))
+            except Exception as ex:
+                print('BUNDLE: npm install esbuild failed —', ex)
         cmd = [local] if os.path.exists(local) else (['npx', '-y', 'esbuild'] if _sh.which('npx') else None)
+        print('BUNDLE: esbuild via', cmd[0] if cmd else 'NOTHING', '| node:', _sh.which('node'), '| npm:', _sh.which('npm'))
         if not cmd:
             print('BUNDLE: esbuild not found — keeping the unbundled', portal); return False
         args = cmd + [src, '--bundle', '--splitting', '--format=esm', '--minify', '--outdir=' + out,

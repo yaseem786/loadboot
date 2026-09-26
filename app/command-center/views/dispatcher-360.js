@@ -946,6 +946,10 @@ export async function renderDispatcher360(host, query) {
     ]);
   }
   function paint() {
+    // bl_perf_0458: a render error used to leave the page on "Loading dispatcher…" for ever — show it instead
+    try { paintInner(); } catch (e) { console.error('dispatcher-360 render failed', e); mount(root, el('div', { class: 'd3-empty' }, ['This dispatcher page hit an error while drawing: ', el('code', null, String((e && e.message) || e)), ' — tell LoadBoot dev (tab: ' + tab + ').'])); }
+  }
+  function paintInner() {
     mount(root, [top(), hero(), tabs(), body(), el('div', { class: 'd3-mnav' }, [btn('Message', () => go('messages'), '', 'chat'), btn('Test', () => go('test'), '', 'clipboard'), primaryAction() || btn('Overview', () => go('overview'), 'o', 'grid')])]);
   }
   paint();
