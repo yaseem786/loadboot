@@ -13,7 +13,7 @@ import { isFlagEnabled, claimStaffInvite } from '../shared/api.js';
 import { loadStaffContext, isStaff, can, clearStaffContext } from '../shared/permissions.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
 import { createRouter } from '../shared/router.js';
-import { renderShell } from './views/shell.js';
+import { renderShell, registerSearchIndex } from './views/shell.js';
 import { renderTabbed } from './views/_tabbed.js';
 import { renderDispatch } from './views/dispatch.js';
 import { renderDialerLive } from './views/dialerLive.js';
@@ -280,7 +280,14 @@ async function boot() {
     team: { nav: '/dispatchers', tabs: [
       { id: 'dispatchers', label: 'Dispatchers', path: '/dispatchers', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDispatchers(h) },
       { id: 'phones', label: 'Phones & live calls', path: '/phones', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDialerLive(h) },
-      { id: 'riley', label: 'Riley (AI phone)', path: '/riley', allowed: () => anyOf('comm.view', 'comm.manage', 'support.view', 'dispatch.manage', 'settings.manage'), render: (h) => renderRiley(h) },   // bl_voice_0458
+      { id: 'riley', label: 'Riley (AI phone)', path: '/riley', allowed: () => anyOf('comm.view', 'comm.manage', 'support.view', 'dispatch.manage', 'settings.manage'), render: (h, q) => renderRiley(h, q),   // bl_voice_0458
+        keywords: 'riley ai phone voice agent retell calls recording transcript prompt whatsapp line 815 live calls',
+        sections: [
+          { id: 'calls', label: 'Riley calls — live, recordings, transcripts', keywords: 'riley calls recording transcript live analysis lead hot' },
+          { id: 'prompts', label: 'Riley prompts — edit & publish', keywords: 'riley prompt publish retell script inbound outbound history' },
+          { id: 'wa', label: 'WhatsApp line → Riley', keywords: 'whatsapp line riley forward 815 dispatcher first callbacks voicemail' },
+          { id: 'settings', label: 'Riley settings & Retell wiring', keywords: 'riley settings wiring retell agent escalation security' },
+        ] },
       { id: 'whatsapp', label: 'WhatsApp', path: '/whatsapp', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderWhatsappLive(h) },
       { id: 'dmail', label: 'Dispatcher email', path: '/dispatcher-email', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDispatcherMail(h) },
       { id: 'creq', label: 'Carrier requests', path: '/carrier-requests', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderCarrierRequests(h) },
@@ -337,6 +344,16 @@ async function boot() {
       { id: 'plugins', label: 'Plugins', path: '/plugins', allowed: () => can('settings.manage'), render: (h) => renderPluginMarketplace(h) },
     ] },
   };
+  // bl_ui_0459 — hand the topbar search the whole map: every tab of every tabbed group (and any
+  // sections a tab declares) with its allowed() guard, so "riley" or "prompts" lands on the exact screen.
+  registerSearchIndex(Object.values(TABBED).flatMap((def) => {
+    const navItem = shell.nav.find((n) => n.path === def.nav);
+    const crumb = navItem ? navItem.label : def.nav;
+    return def.tabs.flatMap((tb) => [
+      { path: tb.path, label: tb.label, crumb, keywords: tb.keywords || '', depth: 1, allowed: tb.allowed },
+      ...((tb.sections || []).map((sec) => ({ path: tb.path + '?tab=' + sec.id, label: sec.label, crumb: crumb + ' › ' + tb.label, keywords: sec.keywords || '', depth: 2, allowed: tb.allowed }))),
+    ]);
+  }));
   const tabbed = (key, tabId) => ({ query }) => {
     const def = TABBED[key]; setActive(def.nav);
     renderTabbed(content, { key, tabs: def.tabs, initial: tabId, query });

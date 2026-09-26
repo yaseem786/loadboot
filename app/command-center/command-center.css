@@ -498,6 +498,9 @@
 .cc-search-row:hover{background:#f3f6fb}
 .cc-search-row b{flex:1;font-weight:600;font-size:14px}
 .cc-search-empty{padding:14px;color:var(--lb-muted,#64748b);font-size:13px}
+.cc-search-head{padding:8px 12px 4px;font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--lb-muted,#64748b)}
+.cc-search-row.on{background:#eaf2ff;outline:1px solid rgba(8,131,247,.35)}
+.cc-search-row .cc-sub{font-size:12px;color:var(--lb-muted,#64748b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46%}
 @media (max-width:900px){.cc-search-wrap{display:none}}
 
 /* ===== Control Tower Wave A: web analytics, forms, SEO ===== */
