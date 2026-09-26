@@ -1,5 +1,6 @@
 // dialerLive.js — CC "Phones & live calls" (bl_dial_0351): the control-room view of the dispatcher dialer.
 //   · LIVE wallboard — who is on the phone right now, with whom, about what, for how long (polls 4 s while visible)
+//   · NUMBERS — the pool of Telnyx numbers LoadBoot owns (bl_dial_0456): add every bought number once, then assign from the pool
 //   · LINES — one dedicated US number per dispatcher: assign / change / release, online state, today's scorecard
 //   · CALL LOG — every call LoadBoot owns: filter by dispatcher / direction / result / text, play the recording
 //   · SETTINGS — master switch, Telnyx connection id, recording + beep notice, ring timeout, missed-call fallback
@@ -8,7 +9,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm } from '../../shared/ui/components.js';
-import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerConfigSet, dialerRecordingBlob, ccDialerSms } from '../../shared/api.js';
+import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerNumbers, ccDialerNumberAdd, ccDialerNumberRemove, ccDialerConfigSet, dialerRecordingBlob, ccDialerSms } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { getClient } from '../../shared/supabaseClient.js';
 
@@ -62,15 +63,15 @@ const CSS = `
 export async function renderDialerLive(host) {
   if (!document.getElementById('dl-css')) { const s = document.createElement('style'); s.id = 'dl-css'; s.textContent = CSS; document.head.appendChild(s); }
   const root = el('div', { class: 'dl' });
-  const boardEl = el('div'), warnEl = el('div'), linesEl = el('div'), logEl = el('div'), smsEl = el('div');
+  const boardEl = el('div'), warnEl = el('div'), numsEl = el('div'), linesEl = el('div'), logEl = el('div'), smsEl = el('div');
   mount(host, root);
-  let ov = null, rows = [], timer = null, tick = null, busy = false;
+  let ov = null, nums = [], rows = [], timer = null, tick = null, busy = false;
   const F = { dispatcher: '', direction: '', status: '', q: '', days: '7' };
 
   root.append(
     sectionHead('Phones & live calls', 'Every dispatcher has one dedicated US number. Every call they make or receive is recorded here — live.',
       [el('button', { class: 'dl-btn', onClick: () => settings() }, [icon('cog', 16), 'Phone settings'])]),
-    warnEl, boardEl, linesEl, logEl, smsEl);
+    warnEl, boardEl, numsEl, linesEl, logEl, smsEl);
 
   let terms = null;
   async function setTermsGate(on) {
@@ -84,7 +85,9 @@ export async function renderDialerLive(host) {
       ov = r;
       // bl_dial_0362: Phone Terms acceptance per dispatcher (current version) + whether the gate is enforced
       try { const sb = await getClient(); const t = await sb.rpc('cc_dialer_terms_status'); if (t.data && t.data.ok) terms = t.data; } catch (_) {}
-      paintWarn(); paintBoard(); paintLines();
+      // bl_dial_0456: the number pool
+      try { const n = await ccDialerNumbers(); nums = (n && n.rows) || []; } catch (_) { nums = []; }
+      paintWarn(); paintBoard(); paintNumbers(); paintLines();
     } catch (e) { if (!quiet) mount(boardEl, el('div', { class: 'dl-card' }, humanizeError(e))); }
     busy = false;
   }
@@ -126,7 +129,7 @@ export async function renderDialerLive(host) {
     const c = ov.config || {}; const msgs = [];
     if (!c.telnyx_connection_id) msgs.push('The Telnyx WebRTC connection id is not set — dispatchers cannot get a phone token yet. Open Phone settings.');
     if (!c.enabled) msgs.push('The dialer is switched OFF. Dispatchers do not see the phone until you switch it on in Phone settings.');
-    if (c.enabled && !(ov.dispatchers || []).some((d) => d.number)) msgs.push('No dispatcher has a number yet. Buy a number in Telnyx, then use “Assign number” below.');
+    if (c.enabled && !(ov.dispatchers || []).some((d) => d.number)) msgs.push(nums.length ? 'No dispatcher has a number yet. Use “Assign” next to a free number below.' : 'No numbers yet. Buy a number in Telnyx, then click “Add number” below.');
     mount(warnEl, msgs.length ? el('div', { class: 'dl-warn' }, [el('b', null, 'Setup is not finished'), msgs.map((m) => el('div', null, '• ' + m))]) : null);
   }
   function paintBoard() {
@@ -145,6 +148,77 @@ export async function renderDialerLive(host) {
           el('div', { class: 't', 'data-since': since }, mmss((Date.now() - new Date(since).getTime()) / 1000)),
         ]);
       })) : el('div', { class: 'dl-none' }, 'No one is on the phone right now.'),
+    ]));
+  }
+  // bl_dial_0456 — every Telnyx number LoadBoot owns. Free numbers first; a held number shows its dispatcher.
+  function paintNumbers() {
+    const free = nums.filter((n) => !n.line_id);
+    mount(numsEl, el('div', { class: 'dl-card' }, [
+      el('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+        el('h3', null, 'LoadBoot numbers'),
+        el('button', { class: 'dl-btn p sm', onClick: () => addNumber(null) }, [icon('plus', 14), 'Add number']),
+      ]),
+      el('p', { class: 'hint' }, 'Every number bought in Telnyx goes in here once. Each dispatcher gets one dedicated number from this pool — assign it from the row, or from “Assign number” in the lines table. ' + (nums.length ? free.length + ' free of ' + nums.length + '.' : '')),
+      nums.length ? el('div', { class: 'dl-tw' }, el('table', { class: 'dl-t' }, [
+        el('thead', null, el('tr', null, ['Number', 'Label', 'Telnyx id', 'SMS', 'Held by', 'Calls', ''].map((x) => el('th', null, x)))),
+        el('tbody', null, nums.map((n) => el('tr', null, [
+          el('td', null, [el('b', null, pretty(n.number)), n.note ? el('div', { style: 'font-size:12px;opacity:.7' }, n.note) : null]),
+          el('td', null, n.label || '—'),
+          el('td', null, el('span', { style: 'font-size:12px;opacity:.75;font-family:monospace' }, n.telnyx_number_id || '—')),
+          el('td', null, n.sms_ready ? el('span', { class: 'dl-pill g' }, 'ready') : el('span', { class: 'dl-pill m', title: 'Attach the number to the 10DLC campaign + messaging profile in Telnyx, then tick “SMS ready” in Edit' }, 'not yet')),
+          el('td', null, n.line_id ? [el('i', { class: 'dl-dot' + (n.online ? ' on' : '') }), el('b', null, n.assigned_to || '—'), el('div', { style: 'font-size:12px;opacity:.7' }, n.assigned_status || '')]
+            : [el('span', { class: 'dl-pill b' }, 'free'), n.last_holder ? el('div', { style: 'font-size:12px;opacity:.7' }, 'was ' + n.last_holder) : null]),
+          el('td', null, String(n.calls_total || 0)),
+          el('td', { style: 'text-align:right;white-space:nowrap' }, [
+            el('button', { class: 'dl-btn sm', onClick: () => addNumber(n) }, 'Edit'), ' ',
+            n.line_id ? el('button', { class: 'dl-btn sm', onClick: () => { const d = (ov.dispatchers || []).find((x) => x.user_id === n.assigned_user_id); if (d) release(d); } }, 'Release')
+              : [el('button', { class: 'dl-btn sm p', onClick: () => assignFromPool(n) }, 'Assign'), ' ', el('button', { class: 'dl-btn sm', 'aria-label': 'Remove ' + pretty(n.number) + ' from the pool', onClick: () => removeNumber(n) }, 'Remove')],
+          ]),
+        ]))),
+      ])) : el('div', { style: 'opacity:.7' }, 'No numbers yet. Buy one in Telnyx (Numbers → Buy numbers), attach it to the LoadBoot Voice-API application, then add it here.'),
+    ]));
+  }
+  // add a bought number to the pool, or edit one (n = existing row)
+  function addNumber(n) {
+    const num = el('input', { class: 'dl-in', type: 'tel', placeholder: '+1 469 457 9556', value: (n && n.number) || '' });
+    const label = el('input', { class: 'dl-in', placeholder: 'e.g. Dallas 469', value: (n && n.label) || '' });
+    const tid = el('input', { class: 'dl-in', placeholder: 'optional — Telnyx number id', value: (n && n.telnyx_number_id) || '' });
+    const note = el('input', { class: 'dl-in', placeholder: 'optional — e.g. bought 26 Sep for Aziz', value: (n && n.note) || '' });
+    const sms = el('input', { type: 'checkbox', checked: !!(n && n.sms_ready) });
+    const err = el('div', { style: 'color:#b91c1c;font-size:13px' });
+    const save = el('button', { class: 'dl-btn p', onClick: async () => {
+      save.disabled = true; err.textContent = '';
+      try { const r = await ccDialerNumberAdd({ id: n ? n.id : '', number: num.value, label: label.value, telnyx_number_id: tid.value, note: note.value, sms_ready: sms.checked }); if (r && r.error) throw new Error(r.error); dr.close(); toast(pretty(r.number) + (r.new ? ' added to the pool' : ' updated')); await load(); }
+      catch (e) { err.textContent = humanizeError(e); save.disabled = false; }
+    } }, n ? 'Save' : 'Add number');
+    const dr = openDrawer(n ? 'Edit number — ' + pretty(n.number) : 'Add a LoadBoot number', el('div', { class: 'dl-form' }, [
+      el('div', { class: 'dl-warn' }, [el('b', null, 'Before you save'), 'The number must already be bought in your Telnyx account and attached to the LoadBoot Voice-API application (inbound calls) — see docs/DIALER-SETUP.md. For texts it must also be on the 10DLC campaign and the messaging profile. Adding it here only registers it in LoadBoot — it does not assign it to anyone yet.']),
+      el('label', null, ['US number', num]), el('label', null, ['Label', label]), el('label', null, ['Telnyx number id', tid]), el('label', null, ['Note', note]),
+      el('label', { class: 'row' }, [sms, el('span', null, ['SMS ready ', el('small', null, '— tick once the number is attached to the 10DLC campaign and the messaging profile in Telnyx')])]),
+      err, save,
+    ]));
+  }
+  async function removeNumber(n) {
+    const ok = await askConfirm('Remove ' + pretty(n.number) + ' from the pool?', { body: 'Only the LoadBoot list changes — the number stays in your Telnyx account until you release it there. Call history stays.', confirmLabel: 'Remove', danger: true });
+    if (!ok) return;
+    try { const r = await ccDialerNumberRemove(n.id); if (r && r.error) throw new Error(r.error); toast('Removed from the pool'); await load(); } catch (e) { toast(humanizeError(e), 'error'); }
+  }
+  // give a free pool number to a dispatcher (forward-to-mobile is left as it is)
+  function assignFromPool(n) {
+    const ds = (ov.dispatchers || []);
+    if (!ds.length) { toast('No dispatchers in trial, verified or active yet.', 'error'); return; }
+    const who = el('select', { class: 'dl-in' }, ds.map((d) => el('option', { value: d.user_id }, (d.name || '—') + ' · ' + d.status + (d.number ? ' · now ' + pretty(d.number) : ' · no line'))));
+    const firstFree = ds.find((d) => !d.number); if (firstFree) who.value = firstFree.user_id;
+    const err = el('div', { style: 'color:#b91c1c;font-size:13px' });
+    const save = el('button', { class: 'dl-btn p', onClick: async () => {
+      save.disabled = true; err.textContent = '';
+      const d = ds.find((x) => x.user_id === who.value);
+      try { const r = await ccDialerLineUpsert({ dispatcher_user_id: who.value, number: n.number, label: n.label || '', telnyx_number_id: n.telnyx_number_id || '' }); if (r && r.error) throw new Error(r.error); dr.close(); toast('Line ' + pretty(r.number) + ' assigned to ' + (d ? d.name : 'dispatcher')); await load(); }
+      catch (e) { err.textContent = humanizeError(e); save.disabled = false; }
+    } }, 'Assign line');
+    const dr = openDrawer('Assign ' + pretty(n.number), el('div', { class: 'dl-form' }, [
+      el('label', null, ['Dispatcher', who, el('small', null, 'A dispatcher who already has a line gets this one instead — the old number is released back to the pool and the dispatcher is e-mailed the change.')]),
+      err, save,
     ]));
   }
   function paintLines() {
@@ -219,6 +293,12 @@ export async function renderDialerLive(host) {
     const num = el('input', { class: 'dl-in', type: 'tel', placeholder: '+1 469 555 0100', value: d.number || '' });
     const label = el('input', { class: 'dl-in', placeholder: 'e.g. Dallas 469', value: d.label || '' });
     const tid = el('input', { class: 'dl-in', placeholder: 'optional — Telnyx number id' });
+    // bl_dial_0456: pick a free number from the pool (or keep typing a new one — it is added to the pool on save)
+    const free = nums.filter((n) => !n.line_id || n.assigned_user_id === d.user_id);
+    const pick = free.length ? el('select', { class: 'dl-in', onChange: () => { const n = free.find((x) => x.id === pick.value); if (n) { num.value = n.number; label.value = n.label || ''; tid.value = n.telnyx_number_id || ''; } } }, [
+      el('option', { value: '' }, '— type a number below —'),
+      free.map((n) => el('option', { value: n.id, selected: n.number === d.number }, pretty(n.number) + (n.label ? ' · ' + n.label : '') + (n.line_id ? ' · current' : ' · free'))),
+    ]) : null;
     const fwd = el('input', { class: 'dl-in', type: 'tel', placeholder: 'optional — e.g. +92 300 1234567', value: d.forward_number || '' });
     const err = el('div', { style: 'color:#b91c1c;font-size:13px' });
     const save = el('button', { class: 'dl-btn p', onClick: async () => {
@@ -228,6 +308,7 @@ export async function renderDialerLive(host) {
     } }, 'Save line');
     const dr = openDrawer((d.number ? 'Change number — ' : 'Assign number — ') + (d.name || ''), el('div', { class: 'dl-form' }, [
       el('div', { class: 'dl-warn' }, [el('b', null, 'Before you save'), 'The number must already be bought in your Telnyx account and attached to the LoadBoot Voice-API application (inbound calls) — see docs/DIALER-SETUP.md. Saving here only tells LoadBoot which dispatcher owns it.']),
+      pick ? el('label', null, ['From the number pool', pick]) : null,
       el('label', null, ['US number', num]), el('label', null, ['Label', label]), el('label', null, ['Telnyx number id', tid]),
       el('label', null, ['Forward unanswered calls to the dispatcher’s mobile', fwd, el('small', null, 'If the portal is closed or nobody answers in the browser, the call rings this phone next (works with the screen locked), then goes to Riley / voicemail. Full number with country code. A non-US number is billed at Telnyx’s international per-minute rate and its country must be allowed on the Telnyx outbound voice profile. Leave empty to skip.')]), err, save,
     ]));

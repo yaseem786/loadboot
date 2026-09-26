@@ -1484,6 +1484,10 @@ export async function waMediaBlob(messageId) {
 }
 export const ccDialerLineUpsert = (p) => rpc('cc_dialer_line_upsert', { p: p ?? {} });
 export const ccDialerLineRelease = (lineId) => rpc('cc_dialer_line_release', { p_line: lineId });
+// bl_dial_0456 — number pool (every Telnyx number LoadBoot owns; assign to a dispatcher from here)
+export const ccDialerNumbers = () => rpc('cc_dialer_numbers', {});
+export const ccDialerNumberAdd = (p) => rpc('cc_dialer_number_add', { p: p ?? {} });
+export const ccDialerNumberRemove = (id) => rpc('cc_dialer_number_remove', { p_id: id });
 export const ccDialerConfigSet = (p) => rpc('cc_dialer_config_set', { p: p ?? {} });
 
 // ---- Dispatcher Mailbox (bl_dmail_0356) — a real IMAP/SMTP mailbox inside the portal. The password lives in Vault; IMAP/SMTP work happens in the `dmail` edge function.
