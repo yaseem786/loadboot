@@ -84,9 +84,14 @@ Unchanged: 35 staging / 36 prod. Every new `public.cc_weekly_*` function is `rev
 - **CC:** `app/command-center/views/newsletter.js` rewritten (this week's cards, preview drawer with recipient
   picker and swap, content pool with add/approve/retire/delete, the 0447 subscriber list below); six wrappers in
   `app/shared/api.js`. `node --check` clean. Not yet clicked through in a browser — do that on staging first.
-- **Prod:** NOT applied. Needs the owner's go: apply `migrations/bl_comm_0448_loadboot_weekly.sql` on
-  `rwscphuhpjoudvljvmdk`, check the anon names (must still be the 36), push `main` (CC), then in CC → Newsletter:
-  "Build this week now", preview all three, approve, "Weekly send: ON". `comm.weekly_approval` stays `manual`;
-  flip to automatic after ~4 clean weeks.
+- **Prod:** APPLIED 26 Sep 2026 as `bl_comm_0448_loadboot_weekly` (one file, includes the 0448b recount) on
+  `rwscphuhpjoudvljvmdk`, after 0455. Checked: anon SECDEF 36, same names as before; cron `carrier_weekly_digest`
+  gone, `lb-weekly-build` (Mon 12:00 UTC) + `lb-newsletter-weekly` (Tue 14:00 UTC) scheduled; 6 `cc_weekly_*`
+  RPCs authenticated-only; pool 8/8/8/6 seeded; 5 templates + catalog rows live, `carrier_weekly_summary` retired;
+  `comm.newsletter_enabled=false`, `comm.weekly_approval=manual`; recipients carrier 67 / dispatcher 1 / public 0
+  (no confirmed subscriber yet). Public render sanity: subject carries live rate, no `253-7575`, no unfilled token,
+  `{{contact_inline}}` present. Nothing sent, no issue built. Owner next: merge + Publish CC, then CC → Newsletter:
+  "Build this week now", preview all three (dispatcher = the one real dispatcher), approve, "Weekly send: ON".
+  `comm.weekly_approval` stays `manual`; flip to automatic after ~4 clean weeks.
 - **Open:** the tip/reminder pools repeat after 8 weeks unless the Routine keeps adding; the dispatcher version has
   never rendered against a real dispatcher (none on staging) — preview it on prod before approving the first one.
