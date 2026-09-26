@@ -625,6 +625,19 @@ def _contact_header(h, strict=True):
             attrs, _u, kind, m.group(3), _CONTACT_HDR_LABEL.get(kind, _CONTACT_HDR_LABEL['inline']) % _d)
     h = re.sub(r'<a((?:\s[^>]*?)?)\sdata-lb-contact="(\w+)"([^>]*)>.*?</a>', _a, h, flags=re.S)
     h = re.sub(r'(<[a-z]+\b[^>]*?)\sdata-lb-callonly(?=[\s>])', r'\1 style="display:none" data-lb-callonly', h)
+    # 26 Sep 2026: data-lb-waonly elements (the FAQ WhatsApp card) used to appear only after the runtime
+    # fetch landed, so first paint / no-JS / crawlers saw no WhatsApp card at all. Reveal them statically,
+    # exactly as the switch does: drop display:none (or use the attribute's own display value), point an
+    # <a> at the wa.me link, and fill data-lb-wa-num with the display number.
+    def _wa(m):
+        tag, disp, attrs = m.group(1), m.group(3) or '', m.group(2) + m.group(4)
+        attrs = re.sub(r'\sstyle="display:\s*none[^"]*"', (' style="display:%s"' % disp) if disp else '', attrs)
+        if tag == 'a':
+            attrs = re.sub(r'\s(?:href|rel|target)="[^"]*"', '', attrs)
+            attrs += ' href="%s" rel="noopener" target="_blank"' % _u
+        return '<%s%s data-lb-waonly%s>' % (tag, attrs, ('="%s"' % disp) if disp else '')
+    h = re.sub(r'<([a-z]+)\b([^>]*?)\sdata-lb-waonly(?:="([^"]*)")?([^>]*)>', _wa, h)
+    h = re.sub(r'(<[a-z]+\b[^>]*?\sdata-lb-wa-num(?:="[^"]*")?[^>]*>)(?=</)', r'\g<1>' + _d, h)
     h = h.replace('Riley answers 24/7', 'WhatsApp any hour')
     if strict and re.search(r'253-?7575|2537575', h):
         sys.exit('BUILD REFUSED - the header/footer still carries the Riley line while the contact channel is whatsapp (CLAUDE.md §7).')
