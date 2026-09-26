@@ -1425,6 +1425,14 @@ export async function dialerRecordingBlob(callId) {
   if (!(data instanceof Blob)) throw new Error((data && data.error) || 'Recording not available');
   return new Blob([data], { type: 'audio/mpeg' });
 }
+// 0458d — Riley (Retell) recording bytes through retell-admin; the CloudFront link itself does not play on iOS.
+export async function rileyRecordingBlob(callId) {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('retell-admin', { body: { op: 'recording', call_id: callId } });
+  if (error) throw await _fnError(error, 'Recording not available');
+  if (!(data instanceof Blob)) throw new Error((data && data.error) || 'Recording not available');
+  return new Blob([data], { type: 'audio/wav' });
+}
 export const ccDialerOverview = () => rpc('cc_dialer_overview', {});
 export const ccDialerCalls = (p) => rpc('cc_dialer_calls', { p: p ?? {} });
 // bl_dial_0352 — dispatcher text messages (same line as their calls). Sending goes through the telnyx-sms edge function.

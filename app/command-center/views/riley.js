@@ -10,7 +10,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm } from '../../shared/ui/components.js';
-import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, rileyAdmin } from '../../shared/api.js';
+import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, rileyAdmin, rileyRecordingBlob } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ET = 'America/New_York';
@@ -68,8 +68,8 @@ const CSS = `
 .ry-kv div{padding:8px 10px;border:1px solid var(--line,#eef1f6);border-radius:10px}.ry-kv small{display:block;color:var(--mut,#64748b);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
 .ry-tr{white-space:pre-wrap;font-size:13px;line-height:1.55;max-height:50vh;overflow:auto;padding:12px;border-radius:12px;background:rgba(100,116,139,.07)}
 .ry-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.ry-audio{height:32px;width:230px;max-width:100%;vertical-align:middle;margin-right:8px}
-@media (max-width:640px){.ry-audio{width:170px}}
+.ry-play{min-width:96px;justify-content:center;font-variant-numeric:tabular-nums}.ry-play.ld{opacity:.75}.ry-play.on{background:var(--b,#0883F7);border-color:var(--b,#0883F7);color:#fff}.ry-play.ps{border-color:var(--b,#0883F7);color:var(--b,#0883F7)}
+.ry-play.ld .cc-ico{animation:ry-spin 1s linear infinite}@keyframes ry-spin{to{transform:rotate(360deg)}}
 .ry-sw{display:inline-flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}.ry-sw input{width:18px;height:18px}
 @media (max-width:640px){.ry-board{padding:14px;border-radius:14px}.ry-kpi b{font-size:20px}.ry-ta{min-height:300px}}
 @media (prefers-reduced-motion:reduce){.ry-pulse{animation:none}}
@@ -156,6 +156,43 @@ export async function renderRiley(host, query) {
     if (tab === 'calls') paintCalls(); else if (tab === 'prompts') paintPrompts(); else if (tab === 'wa') paintWa(); else paintSettings();
   }
 
+  // ---------- one recording at a time (0458d). State lives HERE, not in the DOM: loadAll repaints the calls table
+  // every 5 s, which destroyed the old inline <audio> mid-play (the "no sound" report). The bytes come through
+  // retell-admin `recording` (CloudFront serves octet-stream with no CORS, which iOS will not play from a src).
+  const P = { id: null, phase: '', a: null, u: null };   // phase: loading | playing | paused
+  function pStop() { if (P.a) { try { P.a.pause(); } catch (_) {} } if (P.u) { try { URL.revokeObjectURL(P.u); } catch (_) {} } P.id = null; P.phase = ''; P.a = null; P.u = null; }
+  function pLabel(id) {
+    if (P.id !== id) return ['play', 'Play', '', 'Play the recording'];
+    if (P.phase === 'loading') return ['refresh', 'Loading…', ' ld', 'Fetching the recording from Retell'];
+    const dur = P.a && isFinite(P.a.duration) && P.a.duration > 0 ? ' / ' + mmss(P.a.duration) : '';
+    const t = P.a ? mmss(P.a.currentTime) + dur : '';
+    return P.phase === 'playing' ? ['pause', t || 'Playing', ' on', 'Playing — tap to pause'] : ['play', 'Resume ' + t, ' ps', 'Paused — tap to resume'];
+  }
+  function pFill(b, id) { const [ic, txt, cls, title] = pLabel(id); b.className = 'ry-btn sm ry-play' + cls; b.disabled = P.id === id && P.phase === 'loading'; b.title = title; b.setAttribute('aria-label', title); b.replaceChildren(icon(ic, 14), document.createTextNode(txt)); }
+  function pPaintAll() { document.querySelectorAll('.ry-play[data-id]').forEach((b) => pFill(b, b.getAttribute('data-id'))); }
+  async function pToggle(id) {
+    if (P.id === id && P.a) {                                      // same row: pause / resume
+      try { if (P.a.paused) { await P.a.play(); P.phase = 'playing'; } else { P.a.pause(); P.phase = 'paused'; } } catch (_) {}
+      pPaintAll(); return;
+    }
+    pStop(); P.id = id; P.phase = 'loading'; pPaintAll();
+    try {
+      const blob = await rileyRecordingBlob(id);
+      if (P.id !== id) return;                                     // another row was tapped while this one loaded
+      const u = URL.createObjectURL(blob); const a = new Audio(u); P.a = a; P.u = u;
+      a.onended = () => { if (P.a === a) { pStop(); pPaintAll(); } };
+      a.onpause = () => { if (P.a === a && !a.ended && P.phase === 'playing') { P.phase = 'paused'; pPaintAll(); } };
+      a.onplay = () => { if (P.a === a) { P.phase = 'playing'; pPaintAll(); } };
+      await a.play(); P.phase = 'playing';
+    } catch (e) {
+      if (P.id === id) pStop();
+      toast('Recording could not be loaded — ' + humanizeError(e), 'error');
+    }
+    pPaintAll();
+  }
+  // c needs the Retell call_id (Calls rows have it; a WhatsApp leg uses its matched Calls row)
+  const playBtn = (c) => { if (!c || !c.call_id || !c.recording_url) return null; const b = el('button', { class: 'ry-btn sm ry-play', 'data-id': c.call_id, onClick: (e) => { e.stopPropagation(); pToggle(c.call_id); } }); pFill(b, c.call_id); return b; };
+
   // ---------- calls
   function paintCalls() {
     const keep = document.activeElement && document.activeElement.id === 'ry-q';
@@ -187,7 +224,7 @@ export async function renderRiley(host, query) {
             el('td', { style: 'white-space:nowrap;font-variant-numeric:tabular-nums' }, c.duration_sec ? mmss(c.duration_sec) : '—'),
             el('td', null, [il ? el('span', { class: 'ry-pill ' + il[1] }, il[0]) : null, an.needs_human === true ? el('div', { style: 'font-size:11.5px;color:#b91c1c;font-weight:700' }, 'needs a human') : null]),
             el('td', { style: 'white-space:nowrap' }, [
-              c.recording_url ? el('audio', { class: 'ry-audio', controls: true, preload: 'none', src: c.recording_url, title: 'Play the recording', onClick: (e) => e.stopPropagation() }) : null,
+              playBtn(c),
               el('button', { class: 'ry-btn sm', onClick: (e) => { e.stopPropagation(); openCall(c); } }, 'Open')]),
           ]);
         })),
@@ -201,7 +238,7 @@ export async function renderRiley(host, query) {
     const num = c.direction === 'inbound' ? c.from_number : c.to_number;
     const body = el('div', { style: 'display:grid;gap:14px' });
     const audioEl = el('div');
-    const paintAudio = (url) => mount(audioEl, url ? el('audio', { controls: true, preload: 'none', src: url, style: 'width:100%' }) : el('div', { style: 'opacity:.7;font-size:13px' }, c.status === 'in-progress' ? 'Recording appears here after the call ends.' : 'No recording on file for this call.'));
+    const paintAudio = (url) => mount(audioEl, url ? el('div', { class: 'ry-row' }, [playBtn({ call_id: c.call_id, recording_url: url }), el('span', { style: 'font-size:12.5px;opacity:.7' }, c.duration_sec ? 'Recording · ' + mmss(c.duration_sec) : 'Recording')]) : el('div', { style: 'opacity:.7;font-size:13px' }, c.status === 'in-progress' ? 'Recording appears here after the call ends.' : 'No recording on file for this call.'));
     paintAudio(c.recording_url);
     const kv = (k, v) => el('div', null, [el('small', null, k), el('span', null, v == null || v === '' ? '—' : String(v))]);
     body.append(
@@ -348,7 +385,7 @@ export async function renderRiley(host, query) {
               el('td', null, [el('b', null, d.riley_name && d.riley_name !== 'there' ? d.riley_name : (d.contact_name || pretty(d.from_number))), el('div', { style: 'font-size:12px;opacity:.7' }, [(d.riley_name && d.riley_name !== 'there') || d.contact_name ? pretty(d.from_number) : '', ROLE[an.caller_type] ? ' · ' + ROLE[an.caller_type] : ''].join(''))]),
               el('td', null, [el('span', { class: 'ry-pill ' + s[1] }, s[0]), il ? el('div', { style: 'margin-top:4px' }, el('span', { class: 'ry-pill ' + il[1] }, il[0])) : null, el('div', { style: 'font-size:11.5px;opacity:.65' }, d.hangup_cause || '')]),
               el('td', { style: 'white-space:nowrap;font-variant-numeric:tabular-nums' }, d.duration_sec ? mmss(d.duration_sec) : '—'),
-              el('td', null, d.recording_url ? el('audio', { class: 'ry-audio', controls: true, preload: 'none', src: d.recording_url, onClick: (e) => e.stopPropagation() }) : el('span', { style: 'font-size:12px;opacity:.6' }, d.status === 'ringing' ? 'call in progress' : d.status === 'forwarded' ? 'recording arrives when Retell finishes analysing' : 'no Riley recording (call never reached her)')),
+              el('td', null, d.recording_url && full ? playBtn(full) : d.recording_url ? el('span', { style: 'font-size:12px;opacity:.6' }, 'recording is under Calls') : el('span', { style: 'font-size:12px;opacity:.6' }, d.status === 'ringing' ? 'call in progress' : d.status === 'forwarded' ? 'recording arrives when Retell finishes analysing' : 'no Riley recording (call never reached her)')),
               el('td', { style: 'white-space:nowrap' }, full ? el('button', { class: 'ry-btn sm', onClick: (e) => { e.stopPropagation(); openCall(full); } }, 'Transcript') : null),
             ]);
           }))])) : el('div', { style: 'opacity:.7' }, 'No calls on the line yet.'),
@@ -402,10 +439,10 @@ export async function renderRiley(host, query) {
   }
 
   // ---------- timers
-  function tickTimers() { bodyEl.querySelectorAll && boardEl.querySelectorAll('.ry-lc .t').forEach((n) => { const s = n.getAttribute('data-since'); if (s) n.textContent = mmss((Date.now() - new Date(s).getTime()) / 1000); }); }
+  function tickTimers() { if (P.phase === 'playing') pPaintAll(); bodyEl.querySelectorAll && boardEl.querySelectorAll('.ry-lc .t').forEach((n) => { const s = n.getAttribute('data-since'); if (s) n.textContent = mmss((Date.now() - new Date(s).getTime()) / 1000); }); }
   const start = () => { stop(); timer = setInterval(() => { if (document.hidden) return; loadAll(); }, 5000); tick = setInterval(tickTimers, 1000); };
   const stop = () => { clearInterval(timer); clearInterval(tick); };
-  const mo = new MutationObserver(() => { if (!document.body.contains(root)) { stop(); mo.disconnect(); } });
+  const mo = new MutationObserver(() => { if (!document.body.contains(root)) { stop(); pStop(); mo.disconnect(); } });
   mo.observe(document.body, { childList: true, subtree: true });
 
   paintTabs();
