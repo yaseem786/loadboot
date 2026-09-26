@@ -255,7 +255,7 @@ def terms_page(ctx=None):
         'Questions about these Terms: <a href="mailto:hello@loadboot.com">hello@loadboot.com</a><br>'
         'Privacy: <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a><br>'
         'Security: <a href="mailto:security@loadboot.com">security@loadboot.com</a><br>'
-        '24/7: +1 (469) 253-7575</p></div>'
+        '24/7: <a href="tel:+14692537575" data-lb-contact="inline">+1 (469) 253-7575</a></p></div>'
         '<div class="pv-promise"><div class="ic">&#128220;</div><h3>The rest of the paperwork</h3>'
         '<p>These Terms sit alongside a small set of other documents, all of which we keep current:</p>'
         '<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">'

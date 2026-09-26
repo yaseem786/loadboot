@@ -430,7 +430,7 @@ PHONE_DISP = '+1 (469) 253-7575'
 PHONE_TEL = '+14692537575'
 # One consistent "call us / we call you" strip for decision-point pages (mobile-wraps).
 PHONE_STRIP = ('<section style="padding:14px 0 0"><div class="wrap"><div class="call-strip">'
- '&#128222; Questions? Call us 24/7: <a href="tel:' + PHONE_TEL + '" data-lb-contact="inline">' + PHONE_DISP + '</a>'
+ 'Questions? Reach us 24/7: <a href="tel:' + PHONE_TEL + '" data-lb-contact="inline">' + PHONE_DISP + '</a>'
  '<span style="color:#94a3b8" data-lb-callonly>&middot;</span>'
  '<a href="contact.html#call" data-lb-callonly>or we call you &mdash; right now or scheduled &rarr;</a>'
  '</div></div></section>')
@@ -479,8 +479,8 @@ def _footer_raw():
 <div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
 <a href="https://www.linkedin.com/company/135138228/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M6 9H3v9h3V9zM4.5 3a1.8 1.8 0 100 3.6 1.8 1.8 0 000-3.6zM18 9c-1.6 0-2.5.8-3 1.5V9H12v9h3v-5c0-1 .7-1.7 1.6-1.7s1.4.7 1.4 1.7v5h3v-5.4C21 10 19.7 9 18 9z"/></svg></a></div></div>
-<div><div class="foot-h">Get carrier tips &amp; better loads</div><p style="font-size:.92rem">Rate trends, compliance reminders, and dispatch tips.</p>
-<form class="news" onsubmit="event.preventDefault();var f=this,em=f.querySelector('input').value;var done=function(){f.innerHTML='<span style=\\'color:#86efac;font-weight:600\\'>Subscribed &mdash; thanks!</span>';};if(window.lbSubmitLead){window.lbSubmitLead('newsletter',{email:em}).then(done).catch(done);}else{done();}"><input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Subscribe</button></form></div>
+<div><div class="foot-h">Get carrier tips &amp; better loads</div><p style="font-size:.92rem">One short email every Tuesday: this week&rsquo;s rates by equipment, one dispatch tip, one compliance reminder.</p>
+<form class="news" style="display:block" data-consent="I agree to receive the weekly LoadBoot newsletter (market rates, dispatch tips, compliance reminders). I can unsubscribe any time." onsubmit="event.preventDefault();var f=this,em=f.querySelector('input[type=email]').value,hp=(f.querySelector('input[name=_hp]')||{}).value||'',bt=f.querySelector('button'),st=f.querySelector('.news-st'),row=f.querySelector('.news-row');bt.disabled=true;bt.textContent='Sending\\u2026';var ERR='That didn\\u2019t go through. Email hello@loadboot.com and we\\u2019ll add you.';function say(t,ok){st.textContent=t;st.style.color=ok?'#86efac':'#fca5a5';st.style.display='block';}function reset(){bt.disabled=false;bt.textContent='Subscribe';}function legacy(){if(!window.lbSubmitLead){reset();say(ERR,false);return;}window.lbSubmitLead('newsletter',{email:em}).then(function(r){if(r&&r.ok){row.style.display='none';say('You\\u2019re on the list \\u2014 we\\u2019ll email you when the newsletter starts.',true);}else{reset();say(ERR,false);}}).catch(function(){reset();say(ERR,false);});}if(!window.lbNewsletter){legacy();return;}window.lbNewsletter(em,{_hp:hp,consent_text:f.getAttribute('data-consent')}).then(function(d){if(d&&d.legacy){legacy();return;}if(d&&d.ok){row.style.display='none';say('Check your inbox \\u2014 we sent a confirmation link to '+em+'. Click it and you\\u2019re in.',true);}else{reset();say(d&&d.error==='invalid_email'?'That email address doesn\\u2019t look right.':ERR,false);}}).catch(function(){reset();say(ERR,false);});"><div class="news-row" style="display:flex;gap:8px"><input type="email" placeholder="Your email" required autocomplete="email"><input type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><button class="btn btn-primary" type="submit">Subscribe</button></div><div class="news-st" style="display:none;font-size:.88rem;line-height:1.5;margin-top:8px;font-weight:600"></div><p style="font-size:.8rem;color:#94a3b8;line-height:1.55;margin-top:8px">We&rsquo;ll send one email to confirm it&rsquo;s you. Then one a week, and you can unsubscribe with one click. <a href="privacy.html" style="display:inline;color:#94a3b8;text-decoration:underline">Privacy</a>.</p></form></div>
 </div>
 <div class="links5">
 <div><div class="foot-h">Dispatch</div><a href="how-loadboot-dispatch-works.html">How Dispatch Works (A to Z)</a><a href="dedicated-truck-dispatcher.html">Dedicated Dispatcher</a><a href="services.html">All Dispatch Services</a><a href="us-truck-dispatcher.html">US Truck Dispatcher</a><a href="ai-dispatch-for-owner-operators.html">AI Dispatch, Honestly</a><a href="truck-dispatcher-vs-dispatch-software.html">Dispatcher vs Software</a></div>
@@ -524,6 +524,9 @@ _BEACON = ("<script>(function(){try{"
   "send({anon_id:aid,type:'pageview',page:location.pathname,referrer:ref,referrer_host:rh,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign'),oc:oc,device:dev,browser:br,os:os,language:navigator.language,timezone:(Intl.DateTimeFormat().resolvedOptions().timeZone||''),ua:ua,internal:internal});"
   "window.lbTrack=function(t,x){var b=Object.assign({anon_id:aid,type:t,page:location.pathname},x||{});send(b);};"
   "window.lbSubmitLead=function(fk,d){var b=Object.assign({form_key:fk,anon_id:aid,page:location.pathname,referrer:ref,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign'),oc:oc},d||{});return fetch(EP.replace('track_web_event','submit_web_form'),{method:'POST',headers:{'apikey':AK,'Content-Type':'application/json'},body:JSON.stringify({p:b})});};"
+  # bl_comm_0447: the newsletter form asks for a double opt-in (public.newsletter_request). A 404 means the project
+  # does not have the RPC yet (prod before the 0447 rollout) - the caller falls back to the old lead form.
+  "window.lbNewsletter=function(em,x){var b=Object.assign({email:em,anon_id:aid,page:location.pathname,referrer:ref,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign')},x||{});return fetch(EP.replace('track_web_event','newsletter_request'),{method:'POST',headers:{'apikey':AK,'Content-Type':'application/json'},body:JSON.stringify({p:b})}).then(function(r){if(r.status===404)return {legacy:true};return r.json();});};"
   "}catch(e){}})();</script>") % (APP_REF, APP_ANON)
 HEADX = HEADX + _BEACON
 
@@ -2236,7 +2239,7 @@ VOICE_NUMBER_DISPLAY = '+1 (469) 253-7575'
 VOICE_NUMBER_TEL = '+14692537575'
 call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="max-width:820px">
 <div class="sec-head center reveal"><div class="eyebrow">Prefer to talk?</div><h2>Get a call from LoadBoot</h2>
-<p class="lead center" style="max-width:600px;margin:0 auto">Riley, our 24/7 front desk, answers instantly &mdash; or calls you the moment you ask, or at a time you pick.</p></div>
+<p class="lead center" style="max-width:600px;margin:0 auto">""" + ('Message us on WhatsApp any hour' if _CONTACT_HDR_WA else 'Riley, our 24/7 front desk, answers instantly') + """ &mdash; or we call you the moment you ask, or at a time you pick.</p></div>
 <div class="quote-wrap reveal" id="lbCallCard">
 <h3 style="margin-bottom:6px">Who are you?</h3>
 <p style="color:var(--muted);margin-bottom:14px">So we point you to the right person.</p>
@@ -2251,8 +2254,8 @@ call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="m
 <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="careers.html">Dispatcher jobs &rarr;</a>
 <a class="btn btn-secondary" href="create-agent-account.html">Referral / agent account &rarr;</a></div></div>
 <div id="cwMain" hidden style="margin-top:14px">
-<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:16px" data-lb-callonly>
-&#128222; Call us anytime, 24/7 &mdash; answered on the first ring:&nbsp;<a href="tel:""" + VOICE_NUMBER_TEL + """" style="font-weight:800;font-size:1.15rem;color:#0883F7;text-decoration:none">""" + VOICE_NUMBER_DISPLAY + """</a></div>
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+&#128172; Reach a human any hour:&nbsp;<a href="tel:""" + VOICE_NUMBER_TEL + """" data-lb-contact="inline" style="font-weight:800;font-size:1.15rem;color:#0883F7;text-decoration:none">""" + VOICE_NUMBER_DISPLAY + """</a></div>
 <h3 style="margin:0 0 12px">&hellip;or we call you</h3>
 <div class="form-grid">
 <div class="field"><label for="cwName">Your name</label><input type="text" id="cwName" placeholder="Full name"></div>
@@ -5445,6 +5448,32 @@ function render(d){
 _UNSUB_JS = _UNSUB_JS.replace('__APPREF__', APP_REF).replace('__ANON__', APP_ANON or '')
 page('unsub.html', 'Email preferences | LoadBoot', 'Manage which LoadBoot emails you receive.',
  'contact.html', _UNSUB_CSS + '<section><div class="uc" id="uc"><div class="uc-card"><h1>Email preferences</h1><p class="uc-sub">Opening your preferences&hellip;</p></div></div></section>' + _UNSUB_JS, '')
+
+# ---- Newsletter double opt-in confirm page (bl_comm_0447) ----
+# The confirm email links here: loadboot.com/newsletter-confirm.html?t=<token>. The page calls public.newsletter_confirm
+# on its own build's project (isolation gate, like unsub.html). An expired link offers a fresh one (newsletter_request,
+# which itself sends at most one confirm email per address per 24 h). Nothing is confirmed by a bare GET without a script.
+_NLC_JS = r"""<script>(function(){
+var q=new URLSearchParams(location.search),t=q.get('t')||'';var APPREF='__APPREF__',ANON='__ANON__';
+var root=document.getElementById('nlc');
+function h(tag,a,kids){var n=document.createElement(tag);if(a)for(var k in a){if(k==='text')n.textContent=a[k];else if(k.slice(0,2)==='on')n.addEventListener(k.slice(2),a[k]);else n.setAttribute(k,a[k]);}(kids||[]).forEach(function(c){if(c)n.appendChild(typeof c==='string'?document.createTextNode(c):c);});return n;}
+function show(title,text,extra){root.innerHTML='';root.appendChild(h('div',{'class':'uc-card'},[h('h1',{text:title}),h('p',{'class':'uc-sub',text:text})].concat(extra||[])));}
+function rpc(name,body){return fetch('https://'+APPREF+'.supabase.co/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:ANON,Authorization:'Bearer '+ANON,'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json();});}
+function links(){return [h('p',{'class':'uc-small',style:'margin-top:12px'},['Meanwhile: ',h('a',{href:'market-rates.html',style:'color:#0883F7;font-weight:700',text:'this week’s market rates'}),' · ',h('a',{href:'cost-per-mile-calculator.html',style:'color:#0883F7;font-weight:700',text:'cost-per-mile calculator'}),'. Changed your mind later? The link in any newsletter opens your email preferences.'])];}
+if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)){show("This link isn't valid",'Use the link exactly as it appears in the email. If you copied it by hand, open it from the email itself.');return;}
+rpc('newsletter_confirm',{p_token:t}).then(function(d){
+  if(d&&d.ok&&d.already){show("You're already subscribed",(d.email||'This address')+' is confirmed. The next Tips & market update goes out on Tuesday.',links());return;}
+  if(d&&d.ok){show("You're in",'Thanks for confirming '+(d.email||'your email')+'. A welcome note is on its way, and your first Tips & market update arrives on Tuesday.',links());return;}
+  if(d&&d.error==='expired'){
+    var b=h('button',{type:'button','class':'uc-btn uc-p',text:'Send me a new link',onclick:function(){b.disabled=true;
+      rpc('newsletter_request',{p:{email:d.email,page:location.pathname}}).then(function(x){if(x&&x.ok)show('Check your inbox','We sent a fresh confirmation link to '+d.email+'. It works for 7 days.');else show('Something went wrong','Please try again in a minute, or email hello@loadboot.com and we will add you by hand.');}).catch(function(){b.disabled=false;});}});
+    show('This link has expired','Confirmation links work for 7 days. Want a new one for '+(d.email||'your address')+'?',[h('div',{'class':'uc-act'},[b])]);return;}
+  show("This link isn't valid",'Use the link exactly as it appears in the email, or subscribe again from any page on loadboot.com.');
+}).catch(function(){show('Something went wrong','Please try the link again in a minute.');});
+})();</script>"""
+_NLC_JS = _NLC_JS.replace('__APPREF__', APP_REF).replace('__ANON__', APP_ANON or '')
+page('newsletter-confirm.html', 'Confirm your subscription | LoadBoot', 'Confirm your LoadBoot newsletter subscription.',
+ 'contact.html', _UNSUB_CSS + '<section><div class="uc" id="nlc"><div class="uc-card"><h1>One moment&hellip;</h1><p class="uc-sub">Confirming your subscription.</p></div></div></section>' + _NLC_JS, '')
 
 # ---- SMS program page (10DLC CTA verification) ----
 # Replaces text-us.html (24 Sep 2026). Campaign CS3VIAJ declares ONE opt-in method — the
@@ -9329,7 +9358,7 @@ page('sitemap.html', 'Sitemap | LoadBoot', 'Every page on the LoadBoot website �
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'
 # PROD_REF/STAGING_REF/context targets are defined once near the top of this file.
-_SITEMAP_EXCLUDE = {'dashboard.html', '404.html', 'broker-claim.html', 'agent-confirm.html', 'claim-confirm.html', 'unsub.html',
+_SITEMAP_EXCLUDE = {'dashboard.html', '404.html', 'broker-claim.html', 'agent-confirm.html', 'claim-confirm.html', 'unsub.html', 'newsletter-confirm.html',
                     'referral.html'}  # SEO-0: referral.html 301s to agents.html on Netlify — a sitemap URL must not redirect
 pages = [f for f in sorted(os.listdir(OUT)) if f.endswith('.html') and f not in _SITEMAP_EXCLUDE]
 # S9 (seo-audit-2026-10): <lastmod> only where the page itself carries a real date — its own JSON-LD
@@ -9393,6 +9422,7 @@ APP_HEADERS = (
 # SEO-0 (24 Sep 2026): unsub.html is a one-click outreach unsubscribe — excluded from the sitemap but Bing was
 # still indexing it (32 organic landings / 90 d). Header-level noindex is honoured by every engine.
 APP_HEADERS += "\n/unsub.html\n  X-Robots-Tag: noindex, nofollow\n"
+APP_HEADERS += "\n/newsletter-confirm.html\n  X-Robots-Tag: noindex, nofollow\n"
 # The service worker script and env identity MUST always be revalidated against the
 # network — never served from the browser's HTTP cache. Otherwise an installed PWA can
 # keep running an old build (stale sw.js means new deploys are never detected). These

@@ -1,5 +1,8 @@
 # Newsletter — double opt-in, consent, category, welcome + weekly digest (bl_comm_0447)
 
+**Status 26 Sep 2026: built and tested on STAGING; waiting for the owner's go for prod.** Decision taken: option (a),
+new group `newsletter` ("Tips & market updates"). See "Where it stands" at the end of this file.
+
 Owner decision, 26 Sep 2026: the footer form "Get carrier tips & better loads" must work like
 Amazon/Uber. It is built on top of the unsubscribe engine (`claude/UNSUBSCRIBE-ENGINE-0446.md`).
 **Precondition: 0446 (incl. §13) is live on prod first.** Build and test on staging only.
@@ -59,3 +62,44 @@ Amazon/Uber. It is built on top of the unsubscribe engine (`claude/UNSUBSCRIBE-E
 
 - Digest writer. SQL template filled from rates (cheap, deterministic) or a sonnet-drafted article
   the owner approves each week. Recommendation: SQL template first.
+
+## Where it stands — 26 Sep 2026 (staging done)
+
+- **Migration** `migrations/bl_comm_0447_newsletter_double_optin.sql` applied on staging (as `bl_comm_0447` + the
+  `0447b` token tweak). Anon surface 33 → 35 (`newsletter_request`, `newsletter_confirm`), baseline doc updated.
+  Group `newsletter` added (sort 65, opt-out allowed, in the "fewer emails" list). Catalog: `newsletter.confirm`
+  (T, account_critical, unsub_allowed=false), `newsletter.welcome`, `newsletter.weekly` (M, newsletter). Bodies in
+  `comm_templates` (CC → Templates can edit them; `{{confirm_url}}`, `{{email}}`, `{{site}}`, `{{week_label}}`,
+  `{{as_of}}`, `{{rates_table}}`, `{{tip}}`, `{{compliance}}`; `{{contact_inline}}` is filled by sys_email).
+- **Weekly send** = `app_private.newsletter_weekly_run()` on cron `lb-newsletter-weekly` (Tue 14:00 UTC), behind
+  `system_settings.comm.newsletter_enabled` (**false** until the owner switches it on in CC → Newsletter). Content:
+  rates table from `get_public_market_rates()`, one of 8 dispatch tips and one of 8 compliance reminders rotating by ISO
+  week. Every send is `sys_email` → `email_gate`. Idempotent per address per ISO week.
+- **Staging test (throwaway `nl-test-0447@example.com`, everything inside one rolled-back-at-the-end transaction so
+  the worker never saw a row):** request → pending + confirm email queued (token URL filled, WhatsApp contact line
+  present); second request in 24 h → no second email; bad token → invalid; expired → expired; confirm → confirmed +
+  welcome queued; second click → "already"; weekly run → digest queued (9-row rates table), second run same week →
+  nothing; one-click unsubscribe from the weekly email → status `unsubscribed`, gate `unsubscribed_group` with the full
+  sentence, `sys_email` refused and filed; resubscribe (staff) → `confirmed`; "stop everything" → `unsubscribed`;
+  re-request after that → `pending`, no new confirm inside 24 h; confirm while "*" was on → `resubscribe` event via
+  `unsub_apply`. All rows deleted.
+- **Site** (`build_site.py`): footer form calls `newsletter_request` with an honest result ("Check your inbox — we sent
+  a confirmation link to …" / a real error), honeypot, consent line under the button; falls back to the old lead form
+  when the RPC 404s (prod before rollout) with "You're on the list — we'll email you when the newsletter starts".
+  New page `newsletter-confirm.html?t=<token>` (confirmed / already / expired → "Send me a new link" / invalid),
+  noindex, out of the sitemap. Built locally: BUILD OK.
+- **CC → Newsletter** (`#/newsletter`, `app/command-center/views/newsletter.js`): KPIs, status filter, search, table
+  (address, status, source page, asked, confirm email + link validity, confirmed, digests, gate verdict), person drawer
+  (consent record, newsletter emails, refused sends, timeline, **"Send confirmation email (approve)"** for pending
+  rows — once an hour at most), "Preview this week's email" (iframe), "Weekly send: on/off", "Send this week now"
+  (confirm dialog, only when on).
+- **Prod rollout (needs the owner's go):** 1) apply the migration on prod → anon 34 → 36, names checked; it backfills
+  the old `newsletter` form submissions as PENDING with **no email**; 2) push `main` (site + CC); 3) in CC → Newsletter
+  press "Send confirmation email" on each backfilled address you approve; 4) switch "Weekly send" on when the first
+  Tuesday should go out (preview first). Until step 2 the live footer form keeps working through the fallback.
+- **Riley line on pages (same commit, owner decision 26 Sep: the WhatsApp number takes calls but Riley forwarding
+  comes later — for now WhatsApp only):** contact.html's "Call us anytime" box and lead, the FAQ/pricing strip
+  ("Questions? Reach us 24/7"), security (2×), delete-account, privacy and terms now carry the number as a
+  `data-lb-contact="inline"` link, which the build rewrites to "+1 (815) 365-1168 on WhatsApp" while the switch says
+  whatsapp — and back to the phone line if it is ever flipped. sms.html keeps the SMS line (allowed exception); the
+  FAQ "Call" card stays `data-lb-callonly` (hidden under whatsapp); schema.org keeps the phone field by design.

@@ -495,7 +495,7 @@ def privacy_page(ctx=None):
         '<p><b>LoadBoot LLC</b><br>30 N Gould St Ste N, Sheridan, WY 82801, USA<br><br>'
         'Privacy requests: <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a><br>'
         'Security reports: <a href="mailto:security@loadboot.com">security@loadboot.com</a><br>'
-        'Anything else: <a href="contact.html">our contact page</a> or +1 (469) 253-7575</p></div>'
+        'Anything else: <a href="contact.html">our contact page</a> or <a href="tel:+14692537575" data-lb-contact="inline">+1 (469) 253-7575</a></p></div>'
         '<div class="pv-promise"><div class="ic">&#128220;</div><h3>Scope, children and changes</h3>'
         '<p>This policy covers loadboot.com, the Carrier, Partner, Agent, Developer and Command Center portals, and the LoadBoot Android app on Google Play (<code>com.loadboot.app</code>) &mdash; the app is the same portal packaged for your phone, so everything here applies to it identically.<br><br>'
         'The Platform is for businesses and is not directed to anyone under 18; we do not knowingly collect information from children.<br><br>'
