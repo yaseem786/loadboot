@@ -1535,6 +1535,7 @@ export const unsubSet = (o) => rpc('cc_unsub_set', { p_email: o.email, p_action:
 export const unsubSettingsSet = (p) => rpc('cc_unsub_settings_set', { p });
 export const unsubReasonSet = (code, label, sort, active) => rpc('cc_unsub_reason_set', { p_code: code, p_label: label, p_sort: sort ?? null, p_active: active ?? null });
 export const unsubBlocked = (o = {}) => rpc('cc_unsub_blocked', { p_q: o.q || null, p_limit: o.limit || 100, p_offset: o.offset || 0 });
+export const unsubFrequencySet = (email, group, days, note) => rpc('cc_unsub_frequency_set', { p_email: email, p_group: group, p_days: days || null, p_note: note || null });
 export const emailCanSend = (to, key) => rpc('cc_email_can_send', { p_to: to, p_key: key || null });
 
 // ---- investor capital module (bl_inv_0401) ----

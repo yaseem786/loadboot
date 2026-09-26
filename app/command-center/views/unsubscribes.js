@@ -12,7 +12,7 @@ import { showLoading, showError } from '../../shared/loading.js';
 import { can } from '../../shared/permissions.js';
 import {
   unsubOverview, unsubEvents, unsubAddresses, unsubPerson, unsubSet, unsubSettingsSet, unsubReasonSet,
-  unsubBlocked, emailCanSend, emailCatalog,
+  unsubBlocked, emailCanSend, emailCatalog, unsubFrequencySet,
 } from '../../shared/api.js';
 
 const SOURCES = [
@@ -21,7 +21,10 @@ const SOURCES = [
   ['sms_stop', 'SMS STOP'], ['backfill', 'Backfilled'],
 ];
 const SOURCE_TONE = { one_click: 'amber', preference_page: 'blue', legacy_link: 'gray', reply: 'violet', app_prefs: 'blue', cc_manual: 'gray', sms_stop: 'amber', backfill: 'gray' };
-const CODE_TONE = { suppressed: 'red', unsubscribed_all: 'red', unsubscribed_group: 'amber', unsubscribed_marketing: 'amber', preference_opted_out: 'amber', essential: 'green', ok: 'green' };
+const CODE_TONE = { suppressed: 'red', unsubscribed_all: 'red', unsubscribed_group: 'amber', unsubscribed_marketing: 'amber', preference_opted_out: 'amber', frequency_cap: 'violet', essential: 'green', ok: 'green' };
+const PACE = { 7: 'at most 1 a week', 30: 'at most 1 a month' };
+const ACTION = (a, m) => a === 'unsubscribe' ? pill('Unsubscribed', 'amber') : a === 'resubscribe' ? pill('Resubscribed', 'green')
+  : pill('Fewer emails' + (m && m.max_per_days ? ': ' + PACE[m.max_per_days] : ': every email'), 'violet');
 
 const pill = (label, tone) => el('span', { class: 'cc-pill cc-pill-' + (tone || 'gray') }, String(label || '—'));
 const num = (n) => Number(n || 0).toLocaleString();
@@ -107,7 +110,7 @@ export async function renderUnsubscribes(host) {
       searchBox(tab === 'blocked' ? 'Search address or email key…' : 'Search address, name or company…', (v) => { q = v; loadList(); }),
       tab !== 'blocked' ? select(groups.map(g => [g.code, g.label]), group, (v) => { group = v; loadList(); }, 'Any category') : null,
       tab === 'activity' ? select(SOURCES, source, (v) => { source = v; loadList(); }, 'Any route') : null,
-      tab === 'activity' ? select([['unsubscribe', 'Unsubscribed'], ['resubscribe', 'Resubscribed']], action, (v) => { action = v; loadList(); }, 'Both directions') : null,
+      tab === 'activity' ? select([['unsubscribe', 'Unsubscribed'], ['resubscribe', 'Resubscribed'], ['frequency', 'Chose fewer emails']], action, (v) => { action = v; loadList(); }, 'Every change') : null,
     ]);
   }
 
@@ -122,7 +125,7 @@ export async function renderUnsubscribes(host) {
     ].map(([code, label]) => ({ code, label }));
     mount(kpis, [
       statCard({ icon: 'shield', label: 'Unsubscribed', value: num(k.unsubs_period), sub: 'last ' + days + ' days · ' + num(k.unsubs_7d) + ' in 7d', accent: k.unsubs_7d ? 'amber' : 'green', onClick: () => { tab = 'activity'; action = 'unsubscribe'; renderFilters(); loadList(); } }),
-      statCard({ icon: 'refresh', label: 'Came back', value: num(k.resubs_period), sub: 'resubscribed in period', accent: 'green', onClick: () => { tab = 'activity'; action = 'resubscribe'; renderFilters(); loadList(); } }),
+      statCard({ icon: 'refresh', label: 'Came back', value: num(k.resubs_period), sub: 'resubscribed · ' + num(k.fewer) + ' kept on fewer emails', accent: 'green', onClick: () => { tab = 'activity'; action = 'resubscribe'; renderFilters(); loadList(); } }),
       statCard({ icon: 'users', label: 'Addresses off', value: num(k.addresses_out), sub: num(k.all_off) + ' stopped everything · ' + num(k.marketing_off) + ' no marketing', accent: 'blue', onClick: () => { tab = 'people'; renderFilters(); loadList(); } }),
       statCard({ icon: 'alert', label: 'Blocked sends', value: num(k.blocked_period), sub: num(k.blocked_unsub_period) + ' because they unsubscribed · ' + num(k.sent_period) + ' sent', accent: k.blocked_period ? 'amber' : 'green', onClick: () => { tab = 'blocked'; renderFilters(); loadList(); } }),
       statCard({ icon: 'x', label: 'Hard suppressed', value: num(k.hard_suppressed), sub: 'bounced, complained or blocked by staff', accent: k.hard_suppressed ? 'red' : 'green', to: '/delivery' }),
@@ -149,7 +152,7 @@ export async function renderUnsubscribes(host) {
           table(['When', 'Who', 'What', 'Categories', 'Route', 'Why', 'From email'], rows.map(r => ({ row: r, cells: [
             when(r.at),
             el('div', null, [el('div', { style: 'font-weight:600' }, r.email), sub([r.name, r.org_name].filter(Boolean).join(' · ') || (r.is_user ? 'signed-in user' : 'not a user'))]),
-            pill(r.action === 'unsubscribe' ? 'Unsubscribed' : 'Resubscribed', r.action === 'unsubscribe' ? 'amber' : 'green'),
+            ACTION(r.action, r.meta),
             groupsText(r.group_labels, r.groups),
             el('div', null, [pill(r.source_label, SOURCE_TONE[r.source]), r.actor_name ? sub('by ' + r.actor_name) : null]),
             reasonText(r) || sub('—'),
@@ -211,6 +214,16 @@ export async function renderUnsubscribes(host) {
     const st = p.state || {}; const id = p.identity || {};
     const groups = st.groups || [];
 
+    const paceCell = (g) => {
+      if (!g.frequency_allowed || g.opted_out) return null;
+      if (!manage) return g.max_per_days ? pill(PACE[g.max_per_days], 'violet') : null;
+      const s = el('select', { class: 'cc-input', style: 'width:auto;margin-top:6px;padding:4px 8px;font-size:.8rem', onChange: async () => {
+        try { const r = await unsubFrequencySet(email, g.code, s.value ? Number(s.value) : null, 'set in CC');
+          if (r && r.ok === false) { toast(r.error || 'Could not save', 'error'); return; }
+          toast('Saved', 'success'); personDrawer(email); loadOverview(); loadList(); } catch (e) { toast(humanizeError(e), 'error'); } } },
+        [['', 'Every email'], ['7', 'At most 1 a week'], ['30', 'At most 1 a month']].map(([v, l]) => el('option', { value: v, selected: String(g.max_per_days || '') === v ? 'selected' : null }, l)));
+      return el('div', null, s);
+    };
     const toggle = (g) => {
       if (!g.opt_out_allowed) return pill('Always on', 'green');
       const on = !g.opted_out;
@@ -234,7 +247,7 @@ export async function renderUnsubscribes(host) {
         el('thead', null, el('tr', null, ['Category', 'State', 'Since', 'How', 'Why'].map(c => el('th', null, c)))),
         el('tbody', null, groups.map(g => el('tr', null, [
           el('td', null, [el('div', { style: 'font-weight:600' }, g.label), sub(g.description)]),
-          el('td', null, toggle(g)),
+          el('td', null, [toggle(g), paceCell(g)]),
           el('td', null, g.opted_out && g.since ? when(g.since) : '—'),
           el('td', null, g.opted_out && g.source ? pill(SOURCES.find(s => s[0] === g.source)?.[1] || g.source, SOURCE_TONE[g.source]) : '—'),
           el('td', null, g.opted_out ? ([g.reason_code, g.reason_text].filter(Boolean).join(' — ') || (g.origin_template ? 'from ' + g.origin_template : '—')) : '—'),
@@ -250,7 +263,7 @@ export async function renderUnsubscribes(host) {
 
       el('div', { style: 'font-weight:700;margin:16px 0 6px' }, 'Timeline'),
       (p.events || []).length ? table(['When', 'What', 'Categories', 'Route', 'Why', 'From email', 'Detail'], p.events.map(e => ({ row: e, cells: [
-        when(e.at), pill(e.action === 'unsubscribe' ? 'Unsubscribed' : 'Resubscribed', e.action === 'unsubscribe' ? 'amber' : 'green'),
+        when(e.at), ACTION(e.action, e.meta),
         groupsText(e.group_labels, e.groups), el('div', null, [pill(e.source_label, SOURCE_TONE[e.source]), e.actor_name ? sub('by ' + e.actor_name) : null]),
         reasonText(e) || '—', e.origin_name || e.origin_template || '—',
         sub([e.meta && e.meta.note ? 'note: ' + e.meta.note : null, e.ip ? 'ip ' + e.ip : null].filter(Boolean).join(' · ')),

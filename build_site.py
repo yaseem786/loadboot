@@ -5336,6 +5336,8 @@ _UNSUB_CSS = """<style>
 .uc-btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;font-size:.93rem;cursor:pointer;font-family:inherit}.uc-p{background:#10223B;color:#fff}.uc-s{background:#f1f5f9;color:#10223B}
 .uc-l{background:none;color:#0883F7;padding:8px 0;text-decoration:underline}.uc-btn[disabled]{opacity:.5;cursor:default}.uc-act{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
 .uc-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.uc-chip{border:1px solid #e2e8f0;border-radius:999px;padding:7px 12px;font-size:.84rem;cursor:pointer;background:#fff;font-family:inherit}.uc-chip.on{background:#10223B;color:#fff;border-color:#10223B}
+.uc-freq{margin-top:7px;border:1px solid #e2e8f0;border-radius:8px;padding:5px 8px;font:inherit;font-size:.82rem;color:#1e293b;background:#fff}
+.uc-fewer{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;margin:0 0 14px;font-size:.9rem;line-height:1.55;color:#1e293b}
 .uc textarea{width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:10px;padding:10px;font:inherit;font-size:.92rem;min-height:70px;resize:vertical}.uc-small{font-size:.84rem;color:#64748b;line-height:1.6}.uc-hide{display:none}
 </style>"""
 _UNSUB_JS = r"""<script>(function(){
@@ -5367,7 +5369,13 @@ function render(d){
   function flash(t,ok){status.textContent=t;status.className=ok?'uc-ok':'uc-warn';}
   var who=d.name?[h('b',{text:d.name}),' ('+d.email+')']:[h('b',{text:d.email})];
   root.innerHTML='';
+  var fewerG=null;if(done.length===1){groups.forEach(function(g){if(g.code===done[0]&&g.frequency_allowed===true)fewerG=g;});}
   var first=card([h('h1',{text:"You're unsubscribed"}),h('p',{'class':'uc-sub'},who.concat([' will no longer receive ',h('b',{text:doneLabel}),' from LoadBoot. This took effect immediately.'])),status]);
+  if(fewerG){ // "rather get fewer?" — keeps the person without pushing
+    var fb=h('div',{'class':'uc-fewer'},[h('b',{text:'Rather get fewer instead?'}),' Keep '+fewerG.label+' at most ']);
+    [[7,'once a week'],[30,'once a month']].forEach(function(o,i){fb.appendChild(h('button',{type:'button','class':'uc-btn uc-s',style:'padding:7px 12px;margin:6px 6px 0 0',text:o[1],onclick:function(){
+      post({action:'frequency',groups:[fewerG.code],days:o[0]}).then(function(x){if(x&&x.ok){sync(x.state);fb.innerHTML='';fb.appendChild(document.createTextNode(fewerG.label+' is back on, at most '+o[1]+'. You can change this below any time.'));flash('Saved: '+fewerG.label+' at most '+o[1]+'.',true);}else flash((x&&x.error)||'Could not save that.',false);}).catch(function(){flash('Could not save that. Please try again.',false);});}}));});
+    first.appendChild(fb);}
   if(set.ask_reason!==false&&(d.reasons||[]).length){
     var rc=null,ta=h('textarea',{placeholder:'Anything else? (optional)'}),chips=h('div',{'class':'uc-chips'});
     d.reasons.forEach(function(r){var c=h('button',{type:'button','class':'uc-chip',text:r.label,onclick:function(){var on=c.classList.contains('on');[].forEach.call(chips.children,function(x){x.classList.remove('on');});if(!on){c.classList.add('on');rc=r.code;}else rc=null;}});chips.appendChild(c);});
@@ -5375,7 +5383,7 @@ function render(d){
     var sb=h('button',{type:'button','class':'uc-btn uc-s',text:'Send feedback',onclick:function(){var x=ta.value.trim();if(!rc&&!x)return;sb.disabled=true;post({action:'reason',reason_code:rc,reason_text:x}).then(function(){why.innerHTML='';why.appendChild(h('div',{'class':'uc-small',text:'Thank you. Noted.'}));}).catch(function(){sb.disabled=false;});}});
     why.appendChild(h('div',{'class':'uc-act'},[sb]));first.appendChild(why);}
   root.appendChild(first);
-  var rows=h('div'),tgs={};
+  var rows=h('div'),tgs={},sels={};
   groups.forEach(function(g){
     var right;
     if(g.opt_out_allowed!==true)right=h('div',{'class':'uc-lock',text:'Always on'});
@@ -5383,12 +5391,17 @@ function render(d){
       right.addEventListener('click',function(){var on=!right.classList.contains('on');right.disabled=true;
         post({action:on?'resubscribe':'unsubscribe',scope:'group',groups:[g.code]}).then(function(x){right.disabled=false;if(x&&x.ok){sync(x.state);flash((on?'Turned on: ':'Turned off: ')+g.label+'.',true);}else flash((x&&x.error)||'Could not save that. Please try again.',false);}).catch(function(){right.disabled=false;flash('Could not save that. Please try again.',false);});});
       tgs[g.code]=right;}
-    rows.appendChild(h('div',{'class':'uc-row'},[h('div',{style:'flex:1'},[h('div',{'class':'uc-t',text:g.label}),h('div',{'class':'uc-d',text:g.description||''})]),right]));
+    var left=h('div',{style:'flex:1'},[h('div',{'class':'uc-t',text:g.label}),h('div',{'class':'uc-d',text:g.description||''})]);
+    if(g.frequency_allowed===true){var sel=h('select',{'class':'uc-freq','aria-label':g.label+' how often'});
+      [['','Every email'],['7','At most one a week'],['30','At most one a month']].forEach(function(o){var op=h('option',{value:o[0],text:o[1]});if(String(g.max_per_days||'')===o[0])op.selected=true;sel.appendChild(op);});
+      sel.addEventListener('change',function(){sel.disabled=true;post({action:'frequency',groups:[g.code],days:sel.value?Number(sel.value):null}).then(function(x){sel.disabled=false;if(x&&x.ok){sync(x.state);flash(g.label+': '+sel.options[sel.selectedIndex].text.toLowerCase()+'.',true);}else flash((x&&x.error)||'Could not save that.',false);}).catch(function(){sel.disabled=false;flash('Could not save that. Please try again.',false);});});
+      sels[g.code]=sel;left.appendChild(sel);}
+    rows.appendChild(h('div',{'class':'uc-row'},[left,right]));
   });
   var act=h('div',{'class':'uc-act'}),all=null,undo=null;
   if(set.offer_all!==false){all=h('button',{type:'button','class':'uc-btn uc-p',onclick:function(){all.disabled=true;post({action:'unsubscribe',scope:'all'}).then(function(x){if(x&&x.ok){sync(x.state);flash('Every optional email is now off. Account, security and billing notices still reach you.',true);}else{all.disabled=false;flash((x&&x.error)||'Could not save that.',false);}}).catch(function(){all.disabled=false;flash('Could not save that. Please try again.',false);});}});act.appendChild(all);}
   if(set.resubscribe!==false&&done.length){undo=h('button',{type:'button','class':'uc-btn uc-l',text:'Undo: turn '+doneLabel+' back on',onclick:function(){undo.disabled=true;var isAll=done.indexOf('*')>=0;post({action:'resubscribe',scope:isAll?'all':'group',groups:done.filter(function(x){return x!=='*';})}).then(function(x){if(x&&x.ok){sync(x.state);flash('Undone. '+doneLabel+' is back on.',true);undo.classList.add('uc-hide');}else{undo.disabled=false;flash((x&&x.error)||'Could not undo that.',false);}}).catch(function(){undo.disabled=false;flash('Could not undo that. Please try again.',false);});}});act.appendChild(undo);}
-  function sync(s){if(!s)return;(s.groups||[]).forEach(function(x){var b=tgs[x.code];if(b){b.classList.toggle('on',x.opted_out!==true);b.setAttribute('aria-checked',x.opted_out!==true?'true':'false');}});if(all){all.disabled=s.all_off===true;all.textContent=s.all_off===true?'Every optional email is off':'Stop every optional email';}}
+  function sync(s){if(!s)return;(s.groups||[]).forEach(function(x){var b=tgs[x.code];if(b){b.classList.toggle('on',x.opted_out!==true);b.setAttribute('aria-checked',x.opted_out!==true?'true':'false');}var se=sels[x.code];if(se){se.value=x.opted_out===true?'':String(x.max_per_days||'');se.style.display=x.opted_out===true?'none':'';}});if(all){all.disabled=s.all_off===true;all.textContent=s.all_off===true?'Every optional email is off':'Stop every optional email';}}
   root.appendChild(card([h('h2',{text:'Manage what you receive'}),h('p',{'class':'uc-sub',text:'Switch a category off or back on. Changes save instantly for '+d.email+'.'}),rows,act,
     h('p',{'class':'uc-small',style:'margin-top:14px',text:'Changed your mind later? The link in any LoadBoot email brings you back here, and signed-in users can also do this under Account, Notifications.'})]));
   sync(st);

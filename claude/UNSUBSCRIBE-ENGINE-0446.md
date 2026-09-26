@@ -96,3 +96,22 @@ The old v1 prod page had the same problem. Now:
   switch, "stop every optional email", undo — all five events landed in `unsub_events` correctly; rows deleted.
 - Staging-bound page for hand testing = a local preview build (`CONTEXT=deploy-preview` +
   `LOADBOOT_STAGING_ANON_KEY`) served from `site/`, or a Netlify deploy preview.
+
+## 7. "Fewer emails" — 26 Sep 2026 (owner chose option 3 of 3)
+
+Instead of losing a subscriber, a person can keep a category at **at most one a week / one a month**.
+Offered for `unsub_settings.frequency_groups` (default digests, product news, marketing); loads,
+compliance and billing never get a cap. No sender changed: `email_gate` counts what the address
+actually received in that category and holds the next one back (`code = frequency_cap`, sentence
+"… chose at most one Summaries email every 30 days. The last one went on …, so this one is held back
+until …"). `sys_email` files it in `email_blocked_log`; the worker's marketing guard honours it too.
+
+- Page: under "You're unsubscribed" a "Rather get fewer instead? once a week / once a month" box for the
+  category just left (it turns the category back on at that pace); every capped-allowed row has a
+  "how often" selector.
+- Ledger: `unsub_events.action = 'frequency'`, `meta.max_per_days` (7 / 30 / null = every email).
+- CC: Activity shows "Fewer emails: at most 1 a month"; the person drawer shows and (comm.manage) sets the
+  pace via `cc_unsub_frequency_set`; the "Came back" KPI counts people kept on fewer emails.
+- Staging: applied as `bl_comm_0446b_fewer_emails` (same SQL as §12 of the migration file), function v3
+  redeployed, tested in SQL (cap blocks, operational group refused, reset works) and in Chromium; anon
+  surface 33, the new staff RPC is not anon-executable. Test rows deleted.
