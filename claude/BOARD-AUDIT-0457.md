@@ -89,3 +89,30 @@ approval) → #3 radius search → #7 length/dims/alt equipment (the posting sid
   `delivery_lat` and `delivery_lng` to the `jsonb_build_object` in `cc_partner_load_full`. Then the
   copy reuses the exact original pins and no re-geocoding is needed. It is a jsonb-returning
   function, so `create or replace` keeps its ACL. Still, re-check the anon SECDEF names afterwards.
+
+## 0457c — radius search on the carrier board (audit #3, shipped client-side)
+
+- **UI:** there is a radius select after both Origin and Destination in the board's Filters:
+  `Exact text` (the default, which is the old substring match) or within 25/50/100/150/250 mi.
+  The setting is saved in `lb_lb_filters` (`or`/`dr`), and Clear resets it. A hint line under the
+  filters shows what is applied. Examples: "Pickup within 100 mi of Dallas, TX", "Finding
+  “Ennis, TX”…", "“xyz” not found — matching the text instead", and "N loads with no known
+  location hidden".
+- **Distance:** straight-line (haversine), the same way DAT counts DH-O/DH-D. It is not road miles.
+- **Typed place:** the offline `usGeo` city table (~145 cities) is tried first. For anything else,
+  the new `geocodePlace()` in `app/shared/addr-suggest.js` asks Photon. It accepts city, town and
+  ZIP hits. A state or country hit is rejected, and if the text ends in a state code, the hit must
+  be in that state. Results are cached per text.
+- **Load side:** the pickup uses the board pin (`pickup_lat`/`pickup_lng`, rounded to 0.1° ≈ 7 mi by
+  `bl_stops_0090`). If a load has no pin, its origin city is used. The drop uses the destination city,
+  because **`cc_pocket_available_loads` returns no delivery pin**. So the destination radius is
+  city-level, and it costs one Photon call per unknown destination city (cached).
+- **Tested:** the `geocodePlace` parsing was tested against mocked Photon responses (state filter,
+  state-only reject, ZIP, cache). **Not tested live:** Photon is blocked in this container (403),
+  and the board needs a signed-in carrier. Please check it once on staging: Filters → Origin
+  "Dallas, TX" → Within 100 mi.
+- **Optional follow-up (a DB change, so it's your call, like question #2):** add
+  `delivery_lat`/`delivery_lng` (rounded the same way) to `cc_pocket_available_loads`. The
+  destination radius would then use real pins and make no Photon calls. It changes RETURNS TABLE, so
+  it needs a drop/create, the execute re-grant, and an anon SECDEF name check. It could go in the
+  same migration as `posted_at`.

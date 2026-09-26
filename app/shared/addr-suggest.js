@@ -82,4 +82,31 @@ export async function geocodeExact(a = {}) {
   } catch (_) { return null; }
 }
 
+// geocodePlace('Dallas, TX' | 'Dallas TX 75201' | '75201') → { lat, lng } or null. A city/town/ZIP-level
+// pin for the carrier board's radius search (board audit #3). Never use it for a geofence: a city
+// centroid is miles from any dock. A state or country hit returns null (a "radius around Texas" is
+// meaningless), and when the text ends in a state code the hit must be in that state. Cached per text.
+const _placeCache = new Map();
+export function geocodePlace(q) {
+  const raw = String(q || '').trim().replace(/\s+/g, ' ');
+  const k = raw.toLowerCase();
+  if (k.length < 2) return Promise.resolve(null);
+  if (_placeCache.has(k)) return _placeCache.get(k);
+  const m = raw.match(/[ ,]([A-Za-z]{2})(?:\s+\d{5}(?:-\d{4})?)?$/);
+  const st = m ? m[1].toUpperCase() : '';
+  const p = fetch(API + '?q=' + encodeURIComponent(raw) + '&limit=6&lang=en&bbox=' + US_BBOX)
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error('geocode ' + r.status))))
+    .then((d) => {
+      const f = ((d && d.features) || []).find((x) => {
+        const pr = x.properties || {};
+        return String(pr.countrycode || '').toUpperCase() === 'US' && x.geometry && Array.isArray(x.geometry.coordinates)
+          && !/^(state|country)$/.test(String(pr.type || '')) && (!st || abbr(pr.state) === st);
+      });
+      return f ? { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] } : null;
+    })
+    .catch(() => { _placeCache.delete(k); return null; }); // offline: try again next time
+  _placeCache.set(k, p);
+  return p;
+}
+
 export default attachAddressSuggest;
