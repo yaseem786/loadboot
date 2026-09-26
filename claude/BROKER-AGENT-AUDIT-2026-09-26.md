@@ -60,6 +60,15 @@ all — they sell a seat under the brokerage's account. Highway's "identity ≠ 
 
 Two "mandatory" counts disagree: CC 360 counts `tag <> 'optional'` (includes `conditional`) → 8;
 `partner_trust_status.packet_required_*` counts `legal|required` only → 7. Pick one.
+**Picked 26 Sep — `bl_bp_0451`: mandatory = `legal|required`.** One function, `app_private.packet_tag_mandatory(tag)`,
+and all 17 consumers call it (posting gate, both trust queues, CC approve, reject-parks-account, directory, boards,
+prebook, chat status, `partner_trust_status`, `partner_shipper_status`). `conditional` (broker `coi`; shipper
+`credit_application`/`payment_terms`/`special_commodity`) is asked for and reviewed but never gates verification,
+approval or posting. `cc_partner_360` and `cc_my_onboarding_packet` now emit `mandatory` per item; Broker 360's KPI
+and the partner packet summary read that instead of the tag. Why not `<> 'optional'`: the posting gate has read
+`legal|required` since 0312/0315 and the partner portal already files `conditional` under "Before your first
+booking"; a CC approval stricter than the posting gate only produced hand-waives. No prod org differed between the
+two readings on 26 Sep and no `conditional` item was `rejected`, so nothing changed on live data.
 
 Also: `onboarding_packet_templates` seed and `app_private.org_onboarding_complete` exist only on the live
 DB, not in `migrations/`. Worth dumping into a migration file once so staging/prod parity is checkable.
@@ -130,7 +139,7 @@ Agent)"). The app does not:
 2. **Signup picker** — `signup.html` card text; agent card at partner step A; referral card rename; `handle_new_user` list. *(small, mechanical.)*
 3. **Auto-nudge on non-brokerage MC** — in `agent_parent_screened`, when the screen returns `entity_type='CARRIER'` / `broker_authority=false` / `not_found`, notify the agent with the legal name FMCSA returned and ask for the right MC. *(small.)* **Done 26 Sep — `bl_bp_0449`**: `agent_parent_mc_nudge`, e-mail `broker.agent_parent_mc_check` (catalogued). Fires on `not_found`, `broker_authority=false`, or unknown authority + FMCSA power units; NOT on `entity_type='CARRIER'` alone (LinkLane and M&M read CARRIER too). Once per declared MC. No backfill — SALAYIM gets it on its next screen.
 4. **Directory purity** — `cc_partners_accounts` label agents "Agent of X" instead of `x/8`. *(small.)* **Done 26 Sep — `bl_bp_0450`**: three new keys (`is_agent`, `agent_tier`, `agent_parents[{name,mc,status}]`), Packet cell in `partners.js` reads them for agents only; everyone else unchanged. Full create-or-replace (staging never had bl_ops_0205, bodies now identical on both). Anon SECDEF surface unchanged, 34/33 by name.
-5. **One "mandatory" definition** shared by 360 and `partner_trust_status`.
+5. **One "mandatory" definition** shared by 360 and `partner_trust_status`. **Done 26 Sep — `bl_bp_0451`** (see §3). Also puts `app_private.org_onboarding_complete` into a migration file (half of item 7).
 6. **Broker pay-behaviour signal to carriers** — medium; design first.
-7. Dump `onboarding_packet_templates` seed + `org_onboarding_complete` into a migration file.
+7. Dump `onboarding_packet_templates` seed + `org_onboarding_complete` into a migration file. *(`org_onboarding_complete` done in 0451; the templates seed is still live-only.)*
 8. Handle the four July "(Agent)" orgs: archive, or convert to real agents once a brokerage confirms them (BROKER-SUPPLY §"YASEEN" item 6 is still open).

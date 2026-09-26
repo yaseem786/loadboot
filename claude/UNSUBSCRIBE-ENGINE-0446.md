@@ -63,7 +63,7 @@ Before any hand send: `select public.cc_email_can_send('<address>', '<catalog ke
 1. Apply `migrations/bl_comm_0446_unsubscribe_engine.sql` on prod. Run the anon-surface check: expect
    **34 → 34, identical names**. Check `select count(*) from app_private.unsub_events where source='backfill'`
    is roughly the old suppression + opt-out count.
-2. Deploy `supabase/functions/unsubscribe` (verify_jwt **off**, as before) and `delivery-worker`.
+2. Deploy `supabase/functions/unsubscribe` (verify_jwt **off**, as before) and `delivery-worker` (**v20**, verify_jwt on).
 3. Push the site (`unsub.html` becomes the redirect).
 4. Smoke, on a throwaway address only: queue a digest to it, open the link, confirm the page, confirm
    CC → Unsubscribes shows the event, then `cc_unsub_set(... 'resubscribe' ...)` with a note and delete
@@ -115,3 +115,62 @@ until …"). `sys_email` files it in `email_blocked_log`; the worker's marketing
 - Staging: applied as `bl_comm_0446b_fewer_emails` (same SQL as §12 of the migration file), function v3
   redeployed, tested in SQL (cap blocks, operational group refused, reset works) and in Chromium; anon
   surface 33, the new staff RPC is not anon-executable. Test rows deleted.
+
+## 8. Every send path + CC polish — 26 Sep 2026 (owner's CC review)
+
+- **Leak found and closed (worker v20 + §13 = staging `bl_comm_0446c`).** v19 only ran `email_gate` when a queued
+  row's meta carried `preference_group`. `cc_enqueue_transactional`, `fire_comm_trigger`, `reminder_dispatch` and
+  `lb_email_notify` never set it, so on prod in the last 60 days **93 catalog-`marketing` emails** (agent.invite,
+  chat.lead.followup/nudge, call.lead.followup, dispatcher.waitlist/reapply_invite, welcome.founder_broker) went out
+  as "transactional" with no unsubscribe check. v20 gates every non-marketing row; `email_gate` resolves the group
+  from `email_catalog` by `template_key`, so essential keys still pass. Catalog-marketing rows get the "Unsubscribe"
+  label + one-click headers. The "fewer emails" cap now also counts a sent row by its catalog group.
+  Tested on staging in a rolled-back transaction: marketing-off → `chat.lead.followup` blocked; `welcome.account`
+  essential; `compliance.reminder` allowed; cap counted an `agent.invite` row with no meta group. Anon surface 33, same names.
+- **Complaints (spam reports) backfilled** into the ledger as "every optional email" (§13b). Prod has 4.
+- **Old records on prod** come in with §9 of the migration at rollout: ~53 soft-unsubscribe suppressions, 52
+  unsubscribed outreach contacts (mostly the same people), 1 app toggle, + 4 complaints. Bounces (293) stay hard
+  suppressions only — they are not a choice the person made.
+- **Not covered by the engine:** `send-email` (CC Support ticket reply, staff-only, straight to Resend). It is a
+  one-to-one reply to someone who wrote in, so it is left as is.
+- **CC:** Route column is a one-line chip with an icon and the short label; the long sentence is the tooltip.
+- **Site:** the footer (strict: build refuses if the Riley line survives) and body `data-lb-contact` links now get
+  the same static WhatsApp rewrite as the header. Plain-text Riley mentions remain in contact, faq, privacy, terms,
+  security and delete-account pages (sms.html is the allowed exception) — owner to decide.
+- **Staging test rows for muhammadyaseenjanjua786@gmail.com deleted** (7 events, 7 prefs, 1 suppression, 1 delivery).
+
+## 9. Prod rollout record — 26 Sep 2026
+
+- **Migration applied** as `bl_comm_0446_unsubscribe_engine` (the whole file, §12 + §13 included). Anon
+  surface **34 → 34, identical name set** (md5 of the sorted names unchanged); `app_private` usage for anon still
+  false. Function bodies compared with staging by md5: 24 identical, 6 differ only by `--` comment lines that
+  staging's apply had stripped (`email_gate`, `unsub_apply`, `unsub_set_frequency`, `cc_delivery_worker_unsubscribe`,
+  `cc_pocket_save_preferences`, `unsub_link_reason`) — logic identical.
+- **Backfill bug found and repaired (`bl_comm_0446d`).** `app_private.email_identify(email)` returns ZERO rows for
+  an address nobody signed up with, so §9a / §13b's `insert … select … from email_identify(r.email)` inserted no
+  event for 52 outreach suppressions and 4 complaint addresses: 61 prefs, 5 events, 56 prefs with
+  `last_event_id null`. The gate was never at risk (it reads prefs); only CC → Unsubscribes history was short.
+  `migrations/bl_comm_0446d_backfill_events_unknown_addresses.sql` writes the missing events dated from the pref
+  and links them; applied prod + staging (no-op there). After: **61 events = 53 suppressions + 1 outreach contact +
+  3 app toggles + 4 complaints**, 0 prefs without an event, 0 mislinks.
+- **`delivery-worker` v20 deployed** (platform version 24, verify_jwt on).
+- **`unsubscribe` v3 NOT yet deployed — deliberately.** v3's GET 302s to `loadboot.com/unsub.html?token=…`, and the
+  unsub.html live on prod today is the OLD page (`e`+`t` only → "Invalid unsubscribe link"). Order is therefore:
+  site push first (new unsub.html), THEN deploy v3 (verify_jwt off), THEN the throwaway smoke test (§4 step 4).
+  Until then v20's links land on the v1 function, which still honours the click through the new
+  `cc_delivery_worker_unsubscribe` (group-aware) — it just shows the old plain page.
+- **Site push** = merge to `main` + Netlify build (`python3 build_site.py`, publish `site/`). The rollout branch
+  is merged on `claude/stoic-brahmagupta-nrhrx3`; the owner fast-forwards `main` from GitHub Desktop.
+- **Site pushed** (`main` 8cff4be, Netlify build OK; live `unsub.html` targets the prod ref and keeps the
+  `outreach_unsubscribe` fallback). **`unsubscribe` v3 deployed** (platform version 9, verify_jwt off).
+- **Prod smoke test, throwaway only** (`unsub-test-0446@example.com`, a hand-inserted `sent` delivery row for
+  `carrier_weekly_summary`, token `0446dead-…0446`; nothing was emailed): GET → 302 to
+  `loadboot.com/unsub.html?token=…&ref=rwsc…`; `{action:'open'}` → Summaries off, event 62, ip recorded;
+  `{action:'reason', too_many}` attached to 62; a second `open` and an RFC 8058 form POST wrote NO second event;
+  `email_gate` → `unsubscribed_group` with the full sentence, `account.closed` → `essential`, outreach → `ok`, no
+  suppression row (group scope); `sys_email` for the same key refused, filed in `email_blocked_log` with the
+  sentence + code, queued nothing; resubscribe via `unsub_apply(... 'cc_manual', note)` → event 63, gate `ok`
+  (checked in a separate statement — `email_gate` is STABLE, so inside the same statement it does not see the
+  resubscribe). All test rows deleted: 2 events, 1 pref, 1 blocked-log row, 1 delivery row. The two `audit_logs` rows stay:
+  the table is append-only by design (LB017), and they name only the throwaway address.
+  Anon surface after everything: 34, same names. Rollout complete.

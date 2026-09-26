@@ -39,6 +39,7 @@
 // alerts) still carries nothing and cannot be switched off. The same service-role gate the engine
 // uses (cc_delivery_worker_optional_allowed → app_private.email_gate) runs right before Resend, so a
 // one-click that landed after the row was queued still wins. Marketing keeps its "Unsubscribe" label.
+// v20 (2026-09-26, bl_comm_0446c): the gate no longer needs meta.preference_group; see the loop.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // v16: normalize a full HTML document into a shell-safe fragment.
@@ -251,7 +252,12 @@ Deno.serve(async (_req) => {
     let unsubUrl = marketing ? `${UNSUB_BASE}?token=${d.correlation_id}` : null;
     let unsubLabel = "Unsubscribe";
     const prefGroup = String((d.meta && d.meta.preference_group) || "");
-    if (!marketing && prefGroup && prefGroup !== "account_critical" && prefGroup !== "staff_internal") {
+    // v20: the gate runs for EVERY non-marketing row, not only rows whose meta names a preference_group.
+    // Rows enqueued without meta.preference_group (cc_enqueue_transactional, fire_comm_trigger,
+    // reminder_dispatch, lb_email_notify) skipped it, so catalog-marketing keys sent as "transactional"
+    // (chat.lead.followup, agent.invite, dispatcher.waitlist …) reached people who had unsubscribed.
+    // email_gate resolves the group from email_catalog by template_key; essential keys still pass.
+    if (!marketing && prefGroup !== "account_critical" && prefGroup !== "staff_internal") {
       // v19: ask the engine. Blocked → mark and skip; allowed + optional → carry the preferences link.
       const { data: gate, error: gateError } = await sb.rpc("cc_delivery_worker_optional_allowed", { p_id: d.id });
       if (gateError) {
@@ -265,7 +271,10 @@ Deno.serve(async (_req) => {
         suppressed++;
         continue;
       }
-      if (g.essential !== true) { unsubUrl = `${UNSUB_BASE}?token=${d.correlation_id}`; unsubLabel = "Manage email preferences"; }
+      if (g.essential !== true && g.group) {
+        unsubUrl = `${UNSUB_BASE}?token=${d.correlation_id}`;
+        unsubLabel = g.group === "marketing" ? "Unsubscribe" : "Manage email preferences";
+      }
     }
 
     // Fail closed immediately before Resend. This closes the claim→send race: if the

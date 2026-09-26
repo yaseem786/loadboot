@@ -1204,3 +1204,42 @@ begin
 end $$;
 revoke all on function public.cc_unsub_frequency_set(text,text,integer,text) from public, anon;
 grant execute on function public.cc_unsub_frequency_set(text,text,integer,text) to authenticated;
+
+-- ---------------------------------------------------------------- 13. every send path, and the old complaints — 26 Sep 2026
+-- Applied on staging as bl_comm_0446c. Two gaps the owner's CC review surfaced:
+--  a. delivery-worker v20 now runs email_gate on EVERY non-marketing row (v19 only did it when the row's meta
+--     carried preference_group; cc_enqueue_transactional / fire_comm_trigger / reminder_dispatch / lb_email_notify
+--     never set it, so catalog-marketing keys queued as "transactional" skipped the unsubscribe check). Those rows
+--     still carry no meta.preference_group, so the "fewer emails" cap now also counts a sent row by its catalog group.
+--  b. Spam complaints are the strongest "stop" there is. They were only a hard suppression, invisible in CC →
+--     Unsubscribes. Backfill them into the ledger as "every optional email" (idempotent; the hard suppression stays).
+do $s13$
+declare src text; out_src text;
+begin
+  src := pg_get_functiondef('app_private.email_gate(text,text,uuid)'::regprocedure);
+  out_src := replace(src,
+    $a$         and (d.meta->>'preference_group' = v_group
+$a$,
+    $b$         and (d.meta->>'preference_group' = v_group
+              or exists (select 1 from app_private.email_catalog c where c.key = d.template_key and c.preference_group = v_group)
+$b$);
+  if out_src = src then raise exception 'bl_comm_0446 §13: email_gate cap anchor not found'; end if;
+  execute out_src;
+end
+$s13$;
+
+do $s13b$
+declare r record; v_ev bigint;
+begin
+  for r in select lower(btrim(address)) email, min(created_at) created_at from app_private.suppressions
+            where channel = 'email' and reason = 'complained' group by 1 loop
+    if exists (select 1 from app_private.unsub_prefs where email = r.email and group_code = '*') then continue; end if;
+    insert into app_private.unsub_events(at, email, user_id, org_id, action, scope, groups, source, meta)
+    select r.created_at, r.email, e.user_id, e.org_id, 'unsubscribe', 'all', array['*'], 'backfill', jsonb_build_object('from', 'suppressions', 'reason', 'complained')
+      from app_private.email_identify(r.email) e returning id into v_ev;
+    insert into app_private.unsub_prefs(email, group_code, opted_out, source, last_event_id, updated_at, user_id)
+    values (r.email, '*', true, 'backfill', v_ev, r.created_at, (select user_id from app_private.email_identify(r.email)))
+    on conflict do nothing;
+  end loop;
+end
+$s13b$;

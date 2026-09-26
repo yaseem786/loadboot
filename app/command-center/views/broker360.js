@@ -103,7 +103,9 @@ export function renderBroker360(host, orgId) {
     ]);
 
     // ---- KPIs ----
-    const mand = packet.filter((x) => x.tag !== 'optional');
+    // bl_bp_0451: the server decides what is mandatory (app_private.packet_tag_mandatory = legal|required);
+    // the tag is display only. Same rule as cc_partner_set_status('approve') and the posting gate.
+    const mand = packet.filter((x) => x.mandatory);
     const mandOk = mand.filter((x) => x.status === 'verified' || x.status === 'waived').length;
     const awaiting = packet.filter((x) => x.status === 'submitted').length;
     const openClaims = claims.filter((x) => x.status === 'requested' || x.support_status === 'open').length;
@@ -228,7 +230,7 @@ export function renderBroker360(host, orgId) {
               const REASONS = ['Illegible / wrong document uploaded', 'Expired or inactive — needs a current one', 'Details do not match the FMCSA record', 'Wrong format — official PDF required (screenshots rejected)', 'Incomplete information / fields missing', 'Suspected altered or fraudulent document', 'Other (describe below)'];
               const cat = el('select', { class: 'cc-input' }, REASONS.map((x) => el('option', { value: x }, x)));
               const why = el('textarea', { class: 'cc-input', rows: '4', placeholder: 'Description (required) — the partner reads these exact words in-app and by branded email.' });
-              const required = String(it.tag || '').toLowerCase() !== 'optional';
+              const required = !!it.mandatory;   // bl_bp_0451: legal|required park the account on reject; conditional|optional do not
               const dr = openDrawer('✕ Reject — ' + it.label, [
                 el('div', { class: 'cc-sub' }, '[' + String(it.tag || '').toUpperCase() + ']' + (it.submitted_at ? ' · submitted ' + fmtDateTime(it.submitted_at) : '') + (it.ref ? ' · ' + String(it.ref).slice(0, 80) : '')),
                 el('label', { class: 'cc-sub', style: 'font-weight:700;margin-top:12px;display:block' }, 'Reason category'), cat,
@@ -236,7 +238,7 @@ export function renderBroker360(host, orgId) {
                 el('div', { style: 'background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px 14px;font-size:.83rem;color:#7f1d1d;margin-top:12px;line-height:1.55' }, [
                   el('div', { style: 'font-weight:800;margin-bottom:3px' }, 'What happens:'),
                   'Partner gets an urgent notification + branded email with your reason · the item goes back to them for fix & resubmit'
-                  + (required ? ' · their packet turns INCOMPLETE, the account goes PENDING and load posting STOPS until this is verified again.' : ' · optional item — posting is not affected.'),
+                  + (required ? ' · their packet turns INCOMPLETE, the account goes PENDING and load posting STOPS until this is verified again.' : ' · ' + String(it.tag || 'optional').toLowerCase() + ' item — account status and posting are not affected.'),
                 ]),
                 el('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [
                   el('button', { class: 'lb-btn lb-btn-primary', style: 'background:#b91c1c;border-color:#b91c1c', onClick: async (ev) => {
