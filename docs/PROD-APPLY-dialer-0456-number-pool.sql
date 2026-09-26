@@ -15,6 +15,7 @@ create table if not exists app_private.dialer_numbers (
   updated_at timestamptz not null default now(),
   created_by uuid
 );
+alter table app_private.dialer_numbers enable row level security;  -- same as every other dialer table; only the SECURITY DEFINER RPCs read it
 
 -- backfill: every number that ever had a line is in the pool
 insert into app_private.dialer_numbers (phone_e164, label, telnyx_number_id, created_by)
