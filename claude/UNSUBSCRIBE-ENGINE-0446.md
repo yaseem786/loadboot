@@ -138,3 +138,26 @@ until …"). `sys_email` files it in `email_blocked_log`; the worker's marketing
   the same static WhatsApp rewrite as the header. Plain-text Riley mentions remain in contact, faq, privacy, terms,
   security and delete-account pages (sms.html is the allowed exception) — owner to decide.
 - **Staging test rows for muhammadyaseenjanjua786@gmail.com deleted** (7 events, 7 prefs, 1 suppression, 1 delivery).
+
+## 9. Prod rollout record — 26 Sep 2026
+
+- **Migration applied** as `bl_comm_0446_unsubscribe_engine` (the whole file, §12 + §13 included). Anon
+  surface **34 → 34, identical name set** (md5 of the sorted names unchanged); `app_private` usage for anon still
+  false. Function bodies compared with staging by md5: 24 identical, 6 differ only by `--` comment lines that
+  staging's apply had stripped (`email_gate`, `unsub_apply`, `unsub_set_frequency`, `cc_delivery_worker_unsubscribe`,
+  `cc_pocket_save_preferences`, `unsub_link_reason`) — logic identical.
+- **Backfill bug found and repaired (`bl_comm_0446d`).** `app_private.email_identify(email)` returns ZERO rows for
+  an address nobody signed up with, so §9a / §13b's `insert … select … from email_identify(r.email)` inserted no
+  event for 52 outreach suppressions and 4 complaint addresses: 61 prefs, 5 events, 56 prefs with
+  `last_event_id null`. The gate was never at risk (it reads prefs); only CC → Unsubscribes history was short.
+  `migrations/bl_comm_0446d_backfill_events_unknown_addresses.sql` writes the missing events dated from the pref
+  and links them; applied prod + staging (no-op there). After: **61 events = 53 suppressions + 1 outreach contact +
+  3 app toggles + 4 complaints**, 0 prefs without an event, 0 mislinks.
+- **`delivery-worker` v20 deployed** (platform version 24, verify_jwt on).
+- **`unsubscribe` v3 NOT yet deployed — deliberately.** v3's GET 302s to `loadboot.com/unsub.html?token=…`, and the
+  unsub.html live on prod today is the OLD page (`e`+`t` only → "Invalid unsubscribe link"). Order is therefore:
+  site push first (new unsub.html), THEN deploy v3 (verify_jwt off), THEN the throwaway smoke test (§4 step 4).
+  Until then v20's links land on the v1 function, which still honours the click through the new
+  `cc_delivery_worker_unsubscribe` (group-aware) — it just shows the old plain page.
+- **Site push** = merge to `main` + Netlify build (`python3 build_site.py`, publish `site/`). The rollout branch
+  is merged on `claude/stoic-brahmagupta-nrhrx3`; the owner fast-forwards `main` from GitHub Desktop.

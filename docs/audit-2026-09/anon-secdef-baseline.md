@@ -184,3 +184,7 @@ in inboxes) with a body that now routes through `app_private.unsub_apply`. The e
 `cc_email_can_send`) and the two worker guards (`cc_delivery_worker_unsubscribe`, `cc_delivery_worker_optional_allowed`,
 `cc_mail_unsubscribe_from`) are revoked from public + anon in the migration. Staging name-level check after apply:
 **33 → 33, identical name set.** Prod expectation: 34 → 34, identical.
+
+**Prod applied 26 Sep 2026** (`bl_comm_0446_unsubscribe_engine` + `bl_comm_0446d_backfill_events_unknown_addresses`):
+**34 → 34**, name-set md5 `d98c0b18…` before and after (identical names; `get_public_site_facts` list above),
+`has_schema_privilege('anon','app_private','usage')` still false. `0446d` adds no function.
