@@ -78,7 +78,7 @@ export function guideView(ctx) {
   const root = h('div', { class: 'lbg', role: 'region', 'aria-label': 'How to use the phone' });
   const paint = () => {
     const c = CH[i]; seen.add(c.id);
-    root.replaceChildren(
+    root.replaceChildren(...[
       h('div', { class: 'lbg-rail', role: 'tablist' }, CH.map((x, k) => h('button', { type: 'button', role: 'tab', 'aria-selected': String(k === i), class: (k === i ? 'on' : '') + (seen.has(x.id) && k !== i ? ' done' : ''), onClick: () => { i = k; paint(); } }, [ic(x.icon, 13), x.label]))),
       h('div', { class: 'lbg-hero' }, [h('div', { class: 'orb' }, ic(c.icon, 22)), h('div', null, [h('b', null, c.title), h('span', null, c.lead)])]),
       h('div', { class: 'lbg-sec' }, [h('b', null, [ic('check', 13), c.id === 'rules' ? 'The terms' : c.id === 'day' ? 'The rhythm' : 'How it works']), h('ol', { class: 'lbg-steps' }, c.how.map((s, n) => h('li', null, [h('i', null, String(n + 1)), h('span', null, s)])))]),
@@ -92,7 +92,7 @@ export function guideView(ctx) {
                           : h('button', { class: 'lbd-btn', type: 'button', onClick: () => { guideMarkSeen(); ctx.onClose && ctx.onClose(); } }, 'Got it — open the keypad'),
       ]),
       h('button', { class: 'lbd-btn ghost', type: 'button', style: 'width:100%', onClick: () => { guideMarkSeen(); ctx.onClose && ctx.onClose(); } }, 'Close guide — I can reopen it from the ? in the header'),
-    );
+    ].filter(Boolean));   // replaceChildren(null) would print the word "null"
   };
   paint();
   return root;
