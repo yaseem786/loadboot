@@ -1537,6 +1537,12 @@ export const unsubReasonSet = (code, label, sort, active) => rpc('cc_unsub_reaso
 export const unsubBlocked = (o = {}) => rpc('cc_unsub_blocked', { p_q: o.q || null, p_limit: o.limit || 100, p_offset: o.offset || 0 });
 export const unsubFrequencySet = (email, group, days, note) => rpc('cc_unsub_frequency_set', { p_email: email, p_group: group, p_days: days || null, p_note: note || null });
 export const emailCanSend = (to, key) => rpc('cc_email_can_send', { p_to: to, p_key: key || null });
+// bl_comm_0447 — newsletter double opt-in (CC "Newsletter", #/newsletter). sendConfirm is the owner's approval step.
+export const newsletterOverview = (o = {}) => rpc('cc_newsletter_overview', { p_q: o.q || null, p_status: o.status || null, p_limit: o.limit || 200, p_offset: o.offset || 0 });
+export const newsletterPerson = (email) => rpc('cc_newsletter_person', { p_email: email });
+export const newsletterSendConfirm = (email) => rpc('cc_newsletter_send_confirm', { p_email: email });
+export const newsletterPreview = () => rpc('cc_newsletter_preview', {});
+export const newsletterSet = (p) => rpc('cc_newsletter_set', { p });
 
 // ---- investor capital module (bl_inv_0401) ----
 // Investor side (portal). Read-only except declaring a payment / confirming a payout.

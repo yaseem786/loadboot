@@ -49,6 +49,7 @@ import { renderCarrierReminders } from './views/carrierReminders.js';
 import { renderDeliveryHealth } from './views/deliveryHealth.js';
 import { renderEmailCatalog } from './views/emailCatalog.js';
 import { renderUnsubscribes } from './views/unsubscribes.js';   // bl_comm_0446
+import { renderNewsletter } from './views/newsletter.js';       // bl_comm_0447
 import { renderMarketingIntel } from './views/marketingIntel.js';
 import { renderOutreach } from './views/outreach.js';
 import { renderLiveChat } from './views/liveChat.js';
@@ -293,6 +294,7 @@ async function boot() {
       { id: 'emailCatalog', label: 'Email catalog', path: '/email-catalog', allowed: () => can('comm.view') || can('comm.manage') || can('content.view') || can('settings.manage'), render: (h) => renderEmailCatalog(h) },
       { id: 'delivery', label: 'Deliverability', path: '/delivery', allowed: () => can('content.view') || can('content.manage') || can('settings.manage'), render: (h) => renderDeliveryHealth(h) },
       { id: 'unsubscribes', label: 'Unsubscribes', path: '/unsubscribes', allowed: () => can('comm.view') || can('comm.manage') || can('content.view') || can('settings.manage'), render: (h) => renderUnsubscribes(h) },   // bl_comm_0446
+      { id: 'newsletter', label: 'Newsletter', path: '/newsletter', allowed: () => can('comm.view') || can('comm.manage') || can('content.view') || can('settings.manage'), render: (h) => renderNewsletter(h) },   // bl_comm_0447
     ] },
     forms: { nav: '/forms', tabs: [
       { id: 'inbox', label: 'Inbox', path: '/forms', allowed: () => formsEnabled && can('forms.view'), render: (h, q) => renderForms(h, q.get('id')) },

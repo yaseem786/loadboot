@@ -115,7 +115,7 @@ def security_page(ctx=None):
             ('2', 'Give logins carefully',
              'Everything done under your account is your responsibility. Anyone who leaves the company should lose access the same day.'),
             ('3', 'Check the payout account after any change',
-             'Payouts only go to the account you verified with a bank document. If you ever see one you do not recognise, stop and call us on +1 (469) 253-7575.'),
+             'Payouts only go to the account you verified with a bank document. If you ever see one you do not recognise, stop and reach us straight away on <a href="tel:+14692537575" data-lb-contact="inline">+1 (469) 253-7575</a>.'),
         ]) + '</div>')
 
     b += _sec('report', 'Report something', 'Found a bug, or an email that looks wrong?', '',
@@ -123,7 +123,7 @@ def security_page(ctx=None):
         '<div class="pv-promise"><div class="ic">&#128027;</div><h3>Security researchers</h3>'
         '<p>Email <a href="mailto:security@loadboot.com">security@loadboot.com</a> with what you found and how to reproduce it. We read every report, we will confirm receipt, and we do not threaten people who report problems in good faith.<br><br>Please do not test against real carrier accounts or real freight &mdash; tell us instead and we will work it through with you.</p></div>'
         '<div class="pv-promise"><div class="ic">&#128231;</div><h3>Carriers, brokers and shippers</h3>'
-        '<p>Forward the suspicious message to <a href="mailto:security@loadboot.com">security@loadboot.com</a> &mdash; forward it, do not screenshot it, so we can see the real sending address.<br><br>If you already clicked something or entered a password, call <b>+1 (469) 253-7575</b> straight away. Speed matters far more than embarrassment; we have seen it all and nobody gets a lecture.</p></div>'
+        '<p>Forward the suspicious message to <a href="mailto:security@loadboot.com">security@loadboot.com</a> &mdash; forward it, do not screenshot it, so we can see the real sending address.<br><br>If you already clicked something or entered a password, reach us straight away on <a href="tel:+14692537575" data-lb-contact="inline"><b>+1 (469) 253-7575</b></a>. Speed matters far more than embarrassment; we have seen it all and nobody gets a lecture.</p></div>'
         '</div>' + _legal_footer_links('security.html'), 'soft')
 
     faq_html, schema = _faq_block([
@@ -138,7 +138,7 @@ def security_page(ctx=None):
         ('I got an email saying my LoadBoot account will be closed. Is it real?',
          'Almost certainly not. We do not send deadline threats, password-expiry notices or mailbox-full warnings. Forward it to security@loadboot.com and do not click anything in it.'),
         ('Someone emailed asking me to update the bank details on my account. What do I do?',
-         'Treat it as fraud. We never change payment details by email under any circumstance. Forward the message to security@loadboot.com and, if you acted on it, call +1 (469) 253-7575 immediately.'),
+         'Treat it as fraud. We never change payment details by email under any circumstance. Forward the message to security@loadboot.com and, if you acted on it, reach us immediately on <a href="tel:+14692537575" data-lb-contact="inline">+1 (469) 253-7575</a>.'),
         ('Does LoadBoot sell my data?',
          'No. There is no advertising business and no data-sales business, so there is nothing to sell it for — and no ad tracking runs inside the signed-in portals or the app.'),
         ('What happens to my data if I close my account?',
@@ -358,7 +358,7 @@ def delete_account_page(ctx=None):
     b += faq_html
     b += ('<section class="pv-sec"><div class="wrap"><div class="pv-cta">'
           '<h2>Ready, or just have a question first?</h2>'
-          '<p>Either is fine. Write to privacy@loadboot.com, or call +1 (469) 253-7575 — a person answers, any hour.</p>'
+          '<p>Either is fine. Write to privacy@loadboot.com, or reach us on <a href="tel:+14692537575" data-lb-contact="inline">+1 (469) 253-7575</a> — a person answers, any hour.</p>'
           '<div class="row"><a class="btn btn-primary" href="mailto:privacy@loadboot.com?subject=Delete%20my%20account">Request deletion by email</a>'
           '<a class="btn btn-secondary" href="privacy.html">Read the Privacy Policy</a></div>'
           '</div></div></section>')

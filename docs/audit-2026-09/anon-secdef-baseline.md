@@ -188,3 +188,15 @@ in inboxes) with a body that now routes through `app_private.unsub_apply`. The e
 **Prod applied 26 Sep 2026** (`bl_comm_0446_unsubscribe_engine` + `bl_comm_0446d_backfill_events_unknown_addresses`):
 **34 → 34**, name-set md5 `d98c0b18…` before and after (identical names; `get_public_site_facts` list above),
 `has_schema_privilege('anon','app_private','usage')` still false. `0446d` adds no function.
+
+### 26 Sep 2026 — newsletter double opt-in (bl_comm_0447), staging
+
+`bl_comm_0447_newsletter_double_optin` adds **two anon names**, on purpose: `newsletter_request(jsonb)` (the footer
+form: stores a pending subscriber, queues one confirm email, never says whether the address is on the list, honeypot,
+5 new addresses per IP per hour, one confirm email per address per 24 h) and `newsletter_confirm(uuid)` (the link in
+that email; the token is an unguessable uuid, 7-day expiry). Both are `revoke … from public, anon, authenticated` then
+`grant … to anon, authenticated, service_role` explicitly. The five staff RPCs (`cc_newsletter_overview / _person /
+_send_confirm / _preview / _set`) are revoked from public + anon and the migration asserts none of them is
+anon-executable. Staging name-level check after apply: **33 → 35**, the only added names are the two above.
+**Prod applied 26 Sep 2026** (`bl_comm_0447_newsletter_double_optin`): **34 → 36**, the only added names are the two
+above; the other 34 names hash identically to before (`d98c0b18…`); `app_private` usage for anon still false. CLAUDE.md §4 reads 36/35.
