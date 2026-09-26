@@ -1418,7 +1418,7 @@ def _mr_prev_load():
         _cur = str(_MR_LIVE[_e]['as_of'])
         _old = sorted(_x for _x in _h.get(_e, []) if _x[0] < _cur)
         if _old:
-            _out[_e] = {'r': _old[-1][1], 'c': _cur, 'l': _dtm.date.fromisoformat(_old[-1][0]).strftime('%b %-d')}
+            _out[_e] = {'r': _old[-1][1], 'c': _cur, 'l': (lambda _d: _d.strftime('%b ') + str(_d.day))(_dtm.date.fromisoformat(_old[-1][0]))}
     return _out
 _MR_PREV = _mr_prev_load()
 _MR_TREND_JS = ("<script>(function(){var P=" + json.dumps(_MR_PREV) + ";"
@@ -1461,7 +1461,7 @@ _DIESEL, _DIESEL_ASOF, _DIESEL_FROM = _diesel_pick()
 _DIESEL_S = '$%.2f' % _DIESEL
 def _ymd_long(d):                                           # '2026-09-21' -> 'Sep 21, 2026'; anything else unchanged
     import datetime as _dtm
-    try: return _dtm.date.fromisoformat(str(d)).strftime('%b %-d, %Y')
+    try: _d = _dtm.date.fromisoformat(str(d)); return _d.strftime('%b ') + str(_d.day) + _d.strftime(', %Y')   # no '%-d': Linux-only, crashes Windows builds
     except (TypeError, ValueError): return str(d)
 def _fsc(peg, mpg): return (_DIESEL - peg) / mpg          # fuel surcharge per mile, the industry formula
 def _fsc_s(peg, mpg): return '$%.2f' % _fsc(peg, mpg)
