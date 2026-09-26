@@ -4761,10 +4761,10 @@ async function appView(user) {
               ps.broker_trust_score != null ? 'Trust ' + ps.broker_trust_score + '/100' : null,
               ps.loads_delivered != null ? ps.loads_delivered + ' delivered on LoadBoot' : null,
               ps.on_time_pct != null ? ps.on_time_pct + '% on-time' : null,
-              ps.avg_days_to_pay != null ? '\ud83d\udcb0 pays in ~' + ps.avg_days_to_pay + ' days (' + (ps.paid_transfers || 0) + ' paid transfers on LoadBoot)' : null,
+              (ps.pay && ps.pay.eligible === true) ? '\ud83d\udcb0 pays in ~' + ps.pay.median_days + ' days (median of ' + ps.pay.paid_n + ' carrier-confirmed payments from ' + ps.pay.carriers_n + ' carriers, last 12 months' + (ps.pay.within_30_pct != null ? ' \u00b7 ' + ps.pay.within_30_pct + '% within 30 days' : '') + ')' : null,
             ].filter(Boolean).join(' · ') || (ps.signal || '')),
-            h('div', { class: 'cp-row-s', style: 'color:#94a3b8' }, 'Payment history (days-to-pay): insufficient verified data yet — builds automatically as invoices settle on LoadBoot. Ratings are trip-verified only.'),
-          ]));
+            (ps.pay && ps.pay.eligible === true) ? null : h('div', { class: 'cp-row-s', style: 'color:#94a3b8' }, 'No payment history on LoadBoot yet' + (ps.broker_verified ? ' \u2014 bond on file, authority FMCSA-verified' : '') + '. Builds automatically as carriers confirm payments here. Ratings are trip-verified only.'),
+          ].filter(Boolean)));
         })();
         const render = () => {
           const rate = Number(l.rate) || 0;
@@ -4933,6 +4933,12 @@ async function appView(user) {
           (l.details && l.details.driver_assist_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.16);color:#fbbf24;font-weight:800' }, '\u26a0 DRIVER ASSIST REQUIRED') : null,
           lbExpired(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(239,68,68,.2);color:#fca5a5;font-weight:800;border:1px solid rgba(239,68,68,.45)' }, '\u23f0 EXPIRED \u2014 pickup date passed, waiting on broker') : null,
           lbSourceBlocked(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.45)' }, '\u26a0 VIA ' + lbSourceProvider(l).toUpperCase() + ' \u2014 broker not LoadBoot-verified yet, not bookable') : ((lbSourceNotice(l) && lbSourceNotice(l).request_only) ? h('span', { class: 'cpx-chip', title: String(lbSourceNotice(l).label || ''), style: 'background:rgba(8,131,247,.16);color:#7cc0ff;font-weight:800;border:1px solid rgba(8,131,247,.4)' }, '\ud83d\udee1 ' + (lbSourceNotice(l).tier === 'agent_confirmed' ? 'Agent-posted \u00b7 brokerage confirmed' : 'New brokerage \u00b7 FMCSA-verified') + ' \u00b7 broker approves your request') : (lbSourceNotice(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:#94a3b8;font-weight:700' }, '\u21aa Posted via ' + lbSourceProvider(l)) : null)),
+          // bl_bp_0450: broker pay-behaviour from LoadBoot's own settlement records (details.broker_pay).
+          // Shown only when eligible (>=3 carrier-confirmed payments to >=2 carriers, 12 months); a new brokerage shows nothing, not a warning.
+          (function () { const bp = l.details && l.details.broker_pay; if (!bp || bp.eligible !== true) return null;
+            return h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:#4ade80;font-weight:800;border:1px solid rgba(34,197,94,.35)',
+              title: 'Median days from delivery to carrier-confirmed payment on LoadBoot \u2014 ' + bp.paid_n + ' payments to ' + bp.carriers_n + ' carriers in the last 12 months' + (bp.within_30_pct != null ? ', ' + bp.within_30_pct + '% within 30 days' : '') },
+              '\ud83d\udcb0 Pays ~' + Math.round(Number(bp.median_days)) + 'd \u00b7 ' + bp.paid_n + ' paid'); })(),
           (window.__lbDh && window.__lbDh[l.id] != null) ? h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:#4ade80;font-weight:800' }, '\ud83d\udccd ' + window.__lbDh[l.id].toLocaleString() + ' mi deadhead \u2014 live from your GPS') : null,
           (function () {
             const dh = (window.__lbDh && window.__lbDh[l.id] != null) ? Number(window.__lbDh[l.id]) : null;
