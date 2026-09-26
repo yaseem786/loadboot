@@ -77,3 +77,22 @@ sentence, `account.closed` still allowed (essential), marketing still allowed; `
 filed the sentence, no delivery row; `all` via one_click → marketing blocked, suppression row added;
 resubscribe marketing while `*` was on → `*` cleared, other groups kept off with their reasons,
 suppression row removed. Staff RPC shapes checked under a staff JWT.
+
+## 6. Fix 26 Sep 2026 — the page moved to loadboot.com
+
+Supabase serves every HTML response from `*.supabase.co/functions/v1/*` as `text/plain` with
+`Content-Security-Policy: sandbox`, so the v2 page showed raw markup (the owner's first staging test).
+The old v1 prod page had the same problem. Now:
+
+- `supabase/functions/unsubscribe` **v3 is an API only**. GET 302s to `loadboot.com/unsub.html` (or
+  `UNSUB_PAGE_URL`) with the same `token` / `e`+`t` params and changes nothing, so link scanners cannot
+  unsubscribe anyone. POST form = RFC 8058 one-click. POST json `{action:'open'|'state'|'unsubscribe'|'resubscribe'|'reason'}`.
+  CORS `*` (the token is the credential).
+- `loadboot.com/unsub.html` (built by `build_site.py`) **is the preference centre**. It calls its own
+  build's project only (the isolation gate forbids the other ref). If the API is still v1 (prod before
+  rollout), an old outreach `e`+`t` link falls back to `outreach_unsubscribe` exactly as before, so
+  merging the site first does not break prod unsubscribes.
+- Tested 26 Sep in Chromium against staging with a throwaway row: open, reason chip + text, a category
+  switch, "stop every optional email", undo — all five events landed in `unsub_events` correctly; rows deleted.
+- Staging-bound page for hand testing = a local preview build (`CONTEXT=deploy-preview` +
+  `LOADBOOT_STAGING_ANON_KEY`) served from `site/`, or a Netlify deploy preview.
