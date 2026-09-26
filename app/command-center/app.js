@@ -70,7 +70,7 @@ import { renderAnalyticsWeb } from './views/analyticsWeb.js';
 import { renderForms } from './views/forms.js';
 import { renderSeo } from './views/seo.js';
 import { renderCarrier360 } from './views/carrier360.js';
-import { renderBroker360 } from './views/broker360.js';
+import { renderPartner360 } from './views/broker360.js';
 import { renderPartners } from './views/partners.js';
 import { renderPartnerIntake } from './views/partnerIntake.js';
 import { renderMarketRatesCC } from './views/marketRates.js';
@@ -392,7 +392,10 @@ async function boot() {
     '/forms': tabbed('forms', 'inbox'),
     '/seo': tabbed('web', 'seo'),
     '/carrier': ({ query }) => { setActive('/carriers'); if (entity360Enabled && can('carriers.view')) renderCarrier360(content, query.get('id')); else denied(); },
-    '/broker': ({ query }) => { setActive('/partners'); if (can('partners.view') || can('dispatch.manage')) renderBroker360(content, query.get('id')); else denied(); },
+    // bl_bp_0455: one dispatcher, three screens — the server says whether the org is a broker, a broker agent or a shipper
+    '/broker': ({ query }) => { setActive('/partners'); if (can('partners.view') || can('dispatch.manage')) renderPartner360(content, query.get('id')); else denied(); },
+    '/broker-agent': ({ query }) => { setActive('/partners'); if (can('partners.view') || can('dispatch.manage')) renderPartner360(content, query.get('id')); else denied(); },
+    '/shipper': ({ query }) => { setActive('/partners'); if (can('partners.view') || can('dispatch.manage')) renderPartner360(content, query.get('id')); else denied(); },
     '/partners': tabbed('partners', 'directory'),
     '/partner-intake': ({ query }) => { setActive('/partner-intake'); if (partnersEnabled && can('partners.view')) renderPartnerIntake(content, query.get('id')); else denied(); },
     '/market-rates': () => { setActive('/market-rates'); renderMarketRatesCC(content); },

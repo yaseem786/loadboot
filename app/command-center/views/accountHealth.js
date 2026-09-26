@@ -7,6 +7,7 @@ import { sectionHead, statCard } from '../../shared/ui/components.js';
 import { accountHealthBoard, issueViolation, resolveViolation, onboardingBoard, onboardingReviewItem } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
+import { orgHrefFor } from '../../shared/ui/entityLink.js';
 
 const TIER = { healthy: ['#16a34a', '#f0fdf4'], at_risk: ['#d97706', '#fffbeb'], critical: ['#dc2626', '#fef2f2'] };
 const M = '−';
@@ -36,7 +37,7 @@ export function renderAccountHealth(host) {
   load();
   loadOnb();
 
-  const orgLink = (kind, org) => (kind === 'carrier') ? ('#/carrier?id=' + org) : ('#/broker?id=' + org);
+  const orgLink = (kind, org) => orgHrefFor(kind, org);   // bl_bp_0455: brokers / agents / shippers each open their own 360
 
   async function loadOnb() {
     mount(onbCard, el('div', null, [el('h3', { style: 'margin:0 0 6px' }, 'Onboarding packets (SOP D2)'), el('div', { class: 'cc-sub' }, 'Loading...')]));

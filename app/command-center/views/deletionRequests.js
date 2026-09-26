@@ -17,6 +17,7 @@ import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, openDrawer, fmtDate, fmtDateTime, ago, askReason, segmented } from '../../shared/ui/components.js';
 import { ccAccountDeletions, ccAccountDeletionProcess, ccErasureItems, ccErasureDecide, ccErasurePurge } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
+import { orgHrefFor } from '../../shared/ui/entityLink.js';
 
 const CSS = `
 .dd-list{display:grid;gap:10px}
@@ -179,7 +180,7 @@ export function renderDeletionRequests(host) {
   function paintOne(r, body, drawer, reviewNode) {
     const c = clock(r);
     const open = r.status === 'requested';
-    const orgHref = r.org_id ? (r.org_kind === 'carrier' ? '#/carrier?id=' + r.org_id : '#/broker?id=' + r.org_id) : null;
+    const orgHref = r.org_id ? orgHrefFor(r.org_kind, r.org_id) : null;
     const banner = !open
       ? el('div', { class: 'dd-banner ' + (r.status === 'completed' ? 'green' : 'blue') },
           (r.status === 'completed' ? 'Erased ' : 'Closed ') + (r.processed_at ? fmtDateTime(r.processed_at) : '') + (r.processed_by ? ' by ' + r.processed_by : '') + '.')

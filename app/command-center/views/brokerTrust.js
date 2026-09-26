@@ -7,6 +7,7 @@ import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard } from '../../shared/ui/components.js';
 import { ccBrokerTrustQueue, ccBrokerTrustSet, ccShipperTrustQueue, ccShipperTrustSet } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
+import { partnerHref } from '../../shared/ui/entityLink.js';
 
 const TIER = {
   verified:        ['green', 'Verified'],
@@ -71,7 +72,7 @@ export function renderBrokerTrust(host) {
               r.hold_reason ? el('div', { style: 'color:#b91c1c;margin-top:2px' }, 'HOLD: ' + r.hold_reason) : '',
             ]),
           ]),
-          el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:360px' }, acts),
+          el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:360px' }, [...acts, el('a', { class: 'cc-btn-sm', href: partnerHref({ id: r.org_id, kind: 'shipper' }) }, '360 →')]),
         ]),
       ]);
     }
@@ -110,7 +111,7 @@ export function renderBrokerTrust(host) {
       actions.push(el('button', { class: 'cc-btn-sm', style: 'color:#b91c1c', onClick: () => { const n = prompt('Why can identity NOT be confirmed? (the broker sees this; account goes on hold)'); if (n) act(r.org_id, 'reject_identity', n); } }, 'Reject identity'));
     }
     if (r.tier !== 'verified') actions.push(el('button', { class: 'cc-btn-sm', onClick: () => { const n = prompt('Open-posting limit for this broker (blank = default 3 / 10):', r.posting_limit || ''); if (n !== null) act(r.org_id, 'set_limit', n); } }, 'Limit ' + (r.posting_limit == null ? '∞' : r.posting_limit)));
-    actions.push(el('a', { class: 'cc-btn-sm', href: '#/broker?id=' + r.org_id }, '360 →'));
+    actions.push(el('a', { class: 'cc-btn-sm', href: partnerHref({ id: r.org_id, kind: 'broker', is_agent: !!r.is_agent }) }, '360 →'));
 
     return el('div', { class: 'cc-card', style: 'padding:14px 16px;margin-bottom:10px;border-left:4px solid ' + ({ green: '#16a34a', blue: '#0883F7', amber: '#d97706', red: '#dc2626', gray: '#94a3b8' }[tone]) }, [
       el('div', { style: 'display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap' }, [
@@ -146,7 +147,7 @@ export function renderBrokerTrust(host) {
             ])),
           ]) : r.is_agent ? el('div', { style: 'color:#334155;font-size:.84rem;margin-top:6px' }, [
             el('b', null, 'Parent: '),
-            r.parent_org_id ? el('span', null, ['on LoadBoot as ', el('a', { href: '#/broker?id=' + r.parent_org_id }, r.parent_org_name || 'parent org'), ' · ']) : '',
+            r.parent_org_id ? el('span', null, ['on LoadBoot as ', el('a', { href: partnerHref({ id: r.parent_org_id, kind: 'broker' }) }, r.parent_org_name || 'parent org'), ' · ']) : '',
             r.parent_confirmed_at ? '✓ confirmed ' + ago(r.parent_confirmed_at) + ' by ' + (r.parent_confirmed_by || '?')
               : r.parent_declined_at ? '✕ DECLINED ' + ago(r.parent_declined_at) + (r.parent_note ? ' — "' + r.parent_note + '"' : '')
               : r.parent_confirm_sent_at ? '⏳ email sent ' + ago(r.parent_confirm_sent_at) + ' to ' + (r.parent_contact_email || '?') + ' (' + (r.parent_contact_source || '?') + ')'

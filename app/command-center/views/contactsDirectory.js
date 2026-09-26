@@ -7,6 +7,7 @@ import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, segmented, searchBox, toolbar } from '../../shared/ui/components.js';
 import { contactsDirectory } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
+import { orgHrefFor } from '../../shared/ui/entityLink.js';
 
 const KINDS = [{ value: '', label: 'All' }, { value: 'carrier', label: 'Carriers' }, { value: 'broker', label: 'Brokers' }, { value: 'shipper', label: 'Shippers' }];
 
@@ -28,7 +29,7 @@ export function renderContactsDirectory(host) {
       statCard({ icon: 'alert', label: 'Unverified', value: String(rows.length - verified), sub: 'in progress', accent: (rows.length - verified) ? 'amber' : 'green' }),
     ]));
     if (!rows.length) { showEmpty(listHost, 'No accounts match.'); return; }
-    const link = (r) => (r.kind === 'carrier') ? ('#/carrier?id=' + r.org) : '#/partners';
+    const link = (r) => r.org ? orgHrefFor(r.kind, r.org) : '#/partners';   // bl_bp_0455: partners keep their id (was: dropped to the directory)
     mount(listHost, el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, ['Name', 'Type', 'Contact', 'MC / DOT', 'Status', ''].map(t => el('th', null, t)))),
       el('tbody', null, rows.map(r => el('tr', { class: 'cc-row', onClick: () => { location.hash = link(r); } }, [

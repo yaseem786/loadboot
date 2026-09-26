@@ -16,6 +16,7 @@ import { sectionHead, statCard, segmented } from '../../shared/ui/components.js'
 import { partnerComplianceBoard, packetSetDates, authorityBoard, orgSetDocket } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
+import { orgHrefFor } from '../../shared/ui/entityLink.js';
 
 const STATE_STYLE = {
   lapsed:   { colour: '#dc2626', pill: 'LAPSED',   note: 'posting paused' },
@@ -84,7 +85,7 @@ export function renderPartnerCompliance(host) {
           r.owner_email ? el('div', { class: 'cc-sub' }, r.owner_email) : null,
         ].filter(Boolean)),
         el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
-          el('a', { href: '#/broker?id=' + r.org_id, style: 'color:var(--lb-blue,#0883F7);font-weight:600' }, 'Open packet →'),
+          el('a', { href: orgHrefFor(r.kind, r.org_id), style: 'color:var(--lb-blue,#0883F7);font-weight:600' }, 'Open packet →'),
           dateBtn,
         ].filter(Boolean)),
       ]);
