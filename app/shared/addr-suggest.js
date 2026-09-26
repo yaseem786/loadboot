@@ -4,6 +4,8 @@
 // Usage: attachAddressSuggest(input) — picks fill the input with "123 Main St, Dallas, TX 75201".
 //        attachAddressSuggest(input, { onPick: (r) => {...} }) — r = { street, tail, full }.
 
+import { geoFetch } from './geo-api.js';   // board audit #9: Photon via our geo edge function
+
 const API = 'https://photon.komoot.io/api/';
 const US_BBOX = '-125,24,-66.5,49.6'; // continental US bias
 
@@ -46,7 +48,7 @@ export function attachAddressSuggest(input, opts = {}) {
     timer = setTimeout(async () => {
       try {
         if (ctrl) ctrl.abort(); ctrl = new AbortController();
-        const r = await fetch(API + '?q=' + encodeURIComponent(q) + '&limit=6&lang=en&bbox=' + US_BBOX, { signal: ctrl.signal });
+        const r = await geoFetch(API + '?q=' + encodeURIComponent(q) + '&limit=6&lang=en&bbox=' + US_BBOX, { signal: ctrl.signal });
         if (!r.ok) return;
         const d = await r.json();
         const items = ((d && d.features) || [])
@@ -70,7 +72,7 @@ export async function geocodeExact(a = {}) {
   if (!String(a.street || '').trim() || !/^\d{5}$/.test(zip5) || !/^[A-Z]{2}$/.test(st)) return null;
   try {
     const q = [a.street, a.city, st + ' ' + zip5].filter(Boolean).join(', ');
-    const r = await fetch(API + '?q=' + encodeURIComponent(q) + '&limit=3&lang=en&bbox=' + US_BBOX);
+    const r = await geoFetch(API + '?q=' + encodeURIComponent(q) + '&limit=3&lang=en&bbox=' + US_BBOX);
     if (!r.ok) return null;
     const d = await r.json();
     const f = ((d && d.features) || []).find((x) => {
@@ -94,7 +96,7 @@ export function geocodePlace(q) {
   if (_placeCache.has(k)) return _placeCache.get(k);
   const m = raw.match(/[ ,]([A-Za-z]{2})(?:\s+\d{5}(?:-\d{4})?)?$/);
   const st = m ? m[1].toUpperCase() : '';
-  const p = fetch(API + '?q=' + encodeURIComponent(raw) + '&limit=6&lang=en&bbox=' + US_BBOX)
+  const p = geoFetch(API + '?q=' + encodeURIComponent(raw) + '&limit=6&lang=en&bbox=' + US_BBOX)
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error('geocode ' + r.status))))
     .then((d) => {
       const f = ((d && d.features) || []).find((x) => {

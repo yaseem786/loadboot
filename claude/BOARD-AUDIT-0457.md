@@ -215,7 +215,7 @@ went to **staging, then prod**, on 26 Sep 2026.
 more" clicks. The next refresh shows it again. A cursor (`created_at, id`) would fix this; it is not
 worth it at today's volume.
 
-**Still open from the audit:** #4 (check whether `preferred_lanes` alerts anyone before building saved
+**Still open from the audit (as of 0458):** #4 (check whether `preferred_lanes` alerts anyone before building saved
 searches), #8 quick post, #9 OSRM/Photon behind our own edge function.
 
 ## 0459 — audit #4 checked: does `preferred_lanes` alert anyone? (26 Sep, read-only)
@@ -258,3 +258,55 @@ so it needs the owner's go-ahead.
    one posting is a lane rather than just an origin.
 3. On the carrier board, add "🔔 Alert me for loads like this", which creates a truck posting from the
    current filters (the 0457c radius search already has the origin pin, radius and equipment).
+
+## 0459 — built after the audit #4 finding (owner: "sab kuch karo", 26 Sep)
+
+**Migration `bl_board_0459_truck_match_catalog_dest` — applied to staging and prod.**
+- `load.match.posted_truck` is in `email_catalog` (class O, `load_ops`, carriers can opt out,
+  CC link `#/carriers`). `tp_match_new_load` now sends under that key, so it is no longer the
+  unregistered `truck_match`. In-app notifications keep `template_key='truck_match'`.
+- `tp_load_matches` now uses `dest_pref`, which the post form has always saved. `'TX'` means the
+  load's destination state must be TX. `'Dallas, TX'` means the delivery pin must be within 150 mi
+  of the city pin, or the same state if either side has no pin. Any other text is ignored, so prod's
+  two junk values (`500`, `Devor`) keep matching as before. A load whose destination state cannot be
+  read is not filtered out.
+- `geo_enqueue_trg` also queues a city-style `dest_pref` for geocoding. The trigger now fires on
+  `dest_pref` changes too.
+- **Bug fixed:** `tp_run_matcher` (runs on post, edit and "scan") skipped the weekend hold. A
+  no-weekends carrier with auto-request on could get a weekend load requested for them. It now
+  matches the load but does not request it, the same as `tp_match_new_load`.
+- **Tested on staging** in rolled-back transactions (pg_net only, nothing left behind): 9
+  destination cases; Saturday pickup → matched, `requested=false`, 0 requests; Monday → requested,
+  1 request; the trigger path queued the email as `load.match.posted_truck`, class O.
+  Prod: the pure destination cases were re-run. Anon SECDEF prod 36 with the same names md5,
+  staging 35.
+
+**Carrier board: "🔔 Alert me"** (`app/carrier/app.js`). It opens the Post-a-Truck form filled in
+from the board filters: origin (only `City, ST`), radius, destination (`City, ST` or `ST`),
+equipment and min $/mi. The carrier picks the truck and the dates. It uses one engine: an alert is
+a truck posting. **Not tested in a signed-in browser.**
+
+**Broker: "⚡ Quick repost"** (audit #8, `app/partner/app.js`). It copies the load like Post similar,
+then the wizard presses Next by itself on Lane, Equipment and Requirements. It uses the same
+handler and the same checks, once per step. If a check fails, the wizard stops there and shows the
+error. Schedule always waits for the new dates, and Review waits for the broker to submit.
+**Not tested in a signed-in browser.**
+
+**`geo` edge function** (audit #9, `supabase/functions/geo`, `app/shared/geo-api.js`).
+- Every browser OSRM/Photon call now goes through `geoFetch()`. That covers the wizard's miles and
+  stop geocoding, the tracking map, the carrier deadhead table, trip-map and address suggestions.
+- The function accepts only the OSRM route/table and Photon search/reverse URL shapes, each with
+  its known parameters. The upstreams come from `GEO_OSRM_URL` and `GEO_PHOTON_URL` (defaults: the
+  same public servers). It has an 8 s timeout, a limit of 240 calls/min per IP, and
+  `verify_jwt=true`.
+- **Fallback:** if the function is missing, down, or refuses the call (401/403/404/422/429/5xx),
+  the browser calls the public server directly, as it did before, and skips the function for 60 s.
+  The client code is therefore safe to ship before the function is on prod.
+- **Tested:** 16 handler cases plus 11 client-fallback cases with mocks. **Deployed to staging (v1)
+  and tested live:** OSRM route, Photon search and reverse all return 200, a bad host returns 422,
+  and a call with no auth returns 401.
+- **Limit found:** the in-memory cache almost never hits, because staging served every repeat from
+  a fresh isolate. The browser's `Cache-Control: private, max-age=3600` is the cache that works. A
+  shared cache (a table, or `geo_places`) would be next if call volume matters.
+- **Not deployed to prod** (needs the owner's go-ahead). Server-side callers were not changed:
+  `load-mail` and the `bl_gaps_0259` SQL geocoder still call Photon/OSRM directly.
