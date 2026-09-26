@@ -14,6 +14,7 @@
 //              {action:'state'}                       page data only
 //              {action:'unsubscribe'|'resubscribe', scope, groups, reason_code, reason_text}
 //              {action:'reason', reason_code, reason_text}   attach a reason to what just happened
+//              {action:'frequency', groups:[code], days: 7|30|null}  "fewer emails" (null = every email)
 //   CORS open (*): the token is the credential, no cookies are involved.
 //
 // verify_jwt is OFF on purpose: recipients carry no Supabase session. Only service-role RPCs are used
@@ -93,6 +94,11 @@ Deno.serve(async (req) => {
     }
     if (action === "state") return json(await rpc("unsub_link_get", linkArgs));
     if (action === "reason") return json(await rpc("unsub_link_reason", { ...linkArgs, p_reason_code: rc, p_reason_text: rt }));
+    if (action === "frequency") {
+      const days = [7, 30].includes(Number(b.days)) ? Number(b.days) : null;
+      const groups = Array.isArray(b.groups) ? (b.groups as unknown[]).map(String).slice(0, 1) : null;
+      return json(await rpc("unsub_link_apply", { ...linkArgs, p_action: "frequency", p_scope: "group", p_groups: groups, p_reason_code: null, p_reason_text: null, p_source: "preference_page", p_meta: { ...meta, max_per_days: days } }));
+    }
     if (action === "unsubscribe" || action === "resubscribe") {
       const scope = ["group", "marketing", "all"].includes(String(b.scope)) ? String(b.scope) : "group";
       const groups = Array.isArray(b.groups) ? (b.groups as unknown[]).map(String).slice(0, 12) : null;

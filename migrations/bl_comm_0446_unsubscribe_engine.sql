@@ -200,6 +200,18 @@ begin
   v_all := '*' = any(v_groups);
   v_touch_marketing := v_all or 'marketing' = any(v_groups);
 
+  -- Already off → no second event. Opening the preferences page again (or a second one-click) must not
+  -- count the same person twice; the caller gets the existing event back. (26 Sep 2026, owner's test:
+  -- three page opens had written three "unsubscribed from Summaries" rows.)
+  if p_action = 'unsubscribe'
+     and not exists (select 1 from unnest(v_groups) g
+                      where not exists (select 1 from app_private.unsub_prefs p
+                                         where p.email = v_email and p.group_code = g and p.opted_out)) then
+    return jsonb_build_object('ok', true, 'noop', true, 'email', v_email, 'user_id', v_user, 'action', p_action, 'groups', v_groups,
+      'event_id', (select max(p.last_event_id) from app_private.unsub_prefs p where p.email = v_email and p.group_code = any(v_groups)),
+      'state', app_private.unsub_state(v_email));
+  end if;
+
   v_reason := nullif(btrim(p_reason_text), '');
   if p_reason_code is not null and not exists (select 1 from app_private.unsub_reasons where code = p_reason_code) then
     -- keep the text, drop the unknown code
@@ -1040,8 +1052,7 @@ begin
   if v_code is null and v_text is null then return jsonb_build_object('ok', false, 'error', 'nothing to record'); end if;
   select id into v_ev from app_private.unsub_events
    where email = r.o_email and action = 'unsubscribe' and source in ('preference_page','one_click','legacy_link')
-     and at >= now() - interval '2 hours'
-   order by at desc limit 1;
+   order by at desc limit 1;   -- the latest unsubscribe from a link, whatever its age (a re-open no longer writes a new one)
   if v_ev is null then return jsonb_build_object('ok', false, 'error', 'no recent unsubscribe to attach this to'); end if;
   update app_private.unsub_events set reason_code = v_code, reason_text = v_text where id = v_ev;
   update app_private.unsub_prefs set reason_code = v_code, reason_text = v_text where email = r.o_email and last_event_id = v_ev;
@@ -1049,3 +1060,147 @@ begin
 end $$;
 revoke all on function public.unsub_link_reason(text,text,text,text,text) from public, anon, authenticated;
 grant execute on function public.unsub_link_reason(text,text,text,text,text) to service_role;
+
+-- ---------------------------------------------------------------- 12. "Fewer emails" (frequency caps) — 26 Sep 2026
+-- Owner's choice after the staging test: instead of losing a subscriber, let the person say "at most
+-- one a week / one a month" for a category. Sender code is untouched: the gate counts what this
+-- address actually received in that category and holds the next one back until the window passes,
+-- with the sentence ("… chose at most one Summaries email every 30 days; the last went on …").
+-- Offered for the groups in unsub_settings.frequency_groups (default: digests, product news, marketing).
+-- Operational groups (loads, compliance, billing) never get a cap: capping a POD notice breaks work.
+alter table app_private.unsub_prefs add column if not exists max_per_days integer;
+do $c$ begin
+  alter table app_private.unsub_prefs drop constraint if exists unsub_prefs_max_per_days_check;
+  alter table app_private.unsub_prefs add constraint unsub_prefs_max_per_days_check check (max_per_days is null or max_per_days in (7, 30));
+  alter table app_private.unsub_events drop constraint if exists unsub_events_action_check;
+  alter table app_private.unsub_events add constraint unsub_events_action_check check (action in ('unsubscribe','resubscribe','frequency'));
+end $c$;
+alter table app_private.unsub_settings add column if not exists frequency_groups text[] not null default '{digests,product_announcements,marketing}';
+
+create or replace function app_private.unsub_set_frequency(p_email text, p_group text, p_days integer, p_source text,
+  p_actor uuid default null, p_meta jsonb default '{}'::jsonb)
+returns jsonb language plpgsql security definer set search_path to 'app_private, public' as $$
+declare v_email text := lower(btrim(p_email)); v_user uuid; v_org uuid; v_ev bigint; v_off boolean; v_label text;
+begin
+  if v_email is null or v_email !~ '^[^@]+@[^@]+\.[^@]+$' then return jsonb_build_object('ok', false, 'error', 'invalid email'); end if;
+  if p_days is not null and p_days not in (7, 30) then return jsonb_build_object('ok', false, 'error', 'choose every email, one a week, or one a month'); end if;
+  if not exists (select 1 from app_private.unsub_settings s where s.id = 1 and p_group = any(s.frequency_groups))
+     or not exists (select 1 from app_private.email_pref_groups g where g.code = p_group and g.opt_out_allowed) then
+    return jsonb_build_object('ok', false, 'error', 'this category cannot be set to fewer emails');
+  end if;
+  select label into v_label from app_private.email_pref_groups where code = p_group;
+  select e.user_id, e.org_id into v_user, v_org from app_private.email_identify(v_email) e;
+
+  -- choosing "fewer" for a category that is off means: turn it back on, at that pace
+  select coalesce((g->>'opted_out')::boolean, false) into v_off
+    from jsonb_array_elements(app_private.unsub_state(v_email)->'groups') g where g->>'code' = p_group;
+  if coalesce(v_off, false) and p_days is not null then
+    perform app_private.unsub_apply(v_email, 'resubscribe', 'group', array[p_group], null, null, p_source, null, null, p_actor, coalesce(p_meta,'{}'::jsonb) || jsonb_build_object('via', 'fewer_emails'));
+  end if;
+
+  insert into app_private.unsub_events(email, user_id, org_id, channel, action, scope, groups, source, ip, user_agent, actor, meta)
+  values (v_email, v_user, v_org, 'email', 'frequency', 'group', array[p_group], p_source,
+          nullif(p_meta->>'ip',''), left(nullif(p_meta->>'user_agent',''), 300), p_actor,
+          (coalesce(p_meta,'{}'::jsonb) - 'ip' - 'user_agent') || jsonb_build_object('max_per_days', p_days))
+  returning id into v_ev;
+
+  insert into app_private.unsub_prefs(email, group_code, opted_out, source, user_id, last_event_id, max_per_days, updated_at)
+  values (v_email, p_group, false, p_source, v_user, v_ev, p_days, now())
+  on conflict (email, group_code) do update set max_per_days = excluded.max_per_days, source = excluded.source,
+      user_id = coalesce(excluded.user_id, app_private.unsub_prefs.user_id), last_event_id = excluded.last_event_id, updated_at = now();
+
+  perform app_private.log_audit('comm.frequency', 'email', v_email, v_org,
+    v_email || ' set ' || coalesce(v_label, p_group) || ' to ' || case p_days when 7 then 'at most one a week' when 30 then 'at most one a month' else 'every email' end
+      || ' via ' || app_private.unsub_source_label(p_source),
+    jsonb_build_object('event_id', v_ev, 'group', p_group, 'max_per_days', p_days, 'actor', p_actor));
+  return jsonb_build_object('ok', true, 'event_id', v_ev, 'email', v_email, 'group', p_group, 'max_per_days', p_days, 'state', app_private.unsub_state(v_email));
+end $$;
+revoke all on function app_private.unsub_set_frequency(text,text,integer,text,uuid,jsonb) from public, anon, authenticated;
+
+-- state: carry the cap and whether the category offers one
+do $m$
+declare src text; out_src text;
+begin
+  src := pg_get_functiondef('app_private.unsub_state(text)'::regprocedure);
+  out_src := replace(src,
+    $a$'origin_template', p.origin_template, 'since', p.updated_at) order by g.sort), '[]'::jsonb)$a$,
+    $b$'origin_template', p.origin_template, 'since', p.updated_at,
+               'max_per_days', case when coalesce(p.opted_out, false) then null else p.max_per_days end,
+               'frequency_allowed', g.opt_out_allowed and g.code = any(coalesce((select s.frequency_groups from app_private.unsub_settings s where s.id = 1), '{}'))) order by g.sort), '[]'::jsonb)$b$);
+  if out_src = src then raise exception 'bl_comm_0446 §12: unsub_state anchor not found'; end if;
+  execute out_src;
+
+  -- gate: the cap is checked after every opt-out rule, right before "allowed"
+  src := pg_get_functiondef('app_private.email_gate(text,text,uuid)'::regprocedure);
+  out_src := replace(src,
+    $a$  return jsonb_build_object('allowed', true, 'code', 'ok', 'group', v_group,$a$,
+    $b$  if v_group is not null then
+    select p.max_per_days into r from app_private.unsub_prefs p
+     where p.email = v_email and p.group_code = v_group and not p.opted_out and p.max_per_days is not null;
+    if found and r.max_per_days is not null then
+      select max(coalesce(d.sent_at, d.created_at)) as last_at into v_ev
+        from app_private.message_deliveries d
+       where d.channel = 'email' and lower(btrim(d.recipient_email)) = v_email
+         and d.status in ('sent','delivered','opened','clicked')
+         and (d.meta->>'preference_group' = v_group
+              or (v_group = 'marketing' and (coalesce(d.template_key ~* '^outreach[._-]', false) or d.source = 'campaign')))
+         and coalesce(d.sent_at, d.created_at) > now() - make_interval(days => r.max_per_days);
+      if v_ev.last_at is not null then
+        return jsonb_build_object('allowed', false, 'code', 'frequency_cap', 'group', v_group, 'group_label', v_label,
+          'reason', v_email || ' chose at most one ' || coalesce(v_label, v_group) || ' email every ' || r.max_per_days || ' days. The last one went on '
+            || to_char(v_ev.last_at, 'DD Mon YYYY') || ', so this one is held back until ' || to_char(v_ev.last_at + make_interval(days => r.max_per_days), 'DD Mon YYYY') || '.');
+      end if;
+    end if;
+  end if;
+
+  return jsonb_build_object('allowed', true, 'code', 'ok', 'group', v_group,$b$);
+  if out_src = src then raise exception 'bl_comm_0446 §12: email_gate anchor not found'; end if;
+  execute out_src;
+
+  -- overview: how many chose "fewer"
+  src := pg_get_functiondef('public.cc_unsub_overview(integer)'::regprocedure);
+  out_src := replace(src,
+    $a$'all_off', (select count(*) from app_private.unsub_prefs where opted_out and group_code='*'),$a$,
+    $b$'all_off', (select count(*) from app_private.unsub_prefs where opted_out and group_code='*'),
+      'fewer', (select count(distinct email) from app_private.unsub_prefs where not opted_out and max_per_days is not null),
+      'fewer_period', (select count(*) from app_private.unsub_events where action='frequency' and at >= v_from),$b$);
+  if out_src = src then raise exception 'bl_comm_0446 §12: cc_unsub_overview anchor not found'; end if;
+  execute out_src;
+
+  -- the preference page: action 'frequency', days in p_meta.max_per_days
+  src := pg_get_functiondef('public.unsub_link_apply(text,text,text,text,text,text[],text,text,text,jsonb)'::regprocedure);
+  out_src := replace(src,
+    $a$  if p_action = 'resubscribe' and not coalesce(s.resubscribe_via_link, true) then$a$,
+    $b$  if p_action = 'frequency' then
+    return app_private.unsub_set_frequency(r.o_email, p_groups[1], nullif(p_meta->>'max_per_days','')::integer, 'preference_page', null,
+             (coalesce(p_meta, '{}'::jsonb) - 'max_per_days') || jsonb_build_object('origin_template', r.o_template));
+  end if;
+  if p_action = 'resubscribe' and not coalesce(s.resubscribe_via_link, true) then$b$);
+  if out_src = src then raise exception 'bl_comm_0446 §12: unsub_link_apply anchor not found'; end if;
+  execute out_src;
+end $m$;
+
+-- the worker's marketing guard honours the cap too (campaign rows do not pass through sys_email)
+do $w$
+declare src text; out_src text;
+begin
+  src := pg_get_functiondef('public.cc_delivery_worker_marketing_allowed(uuid)'::regprocedure);
+  out_src := replace(src,
+    $a$    from app_private.message_deliveries d
+    where d.id = p_id and d.channel = 'email'$a$,
+    $b$      and coalesce(app_private.email_gate(d.template_key, d.recipient_email, d.recipient_user)->>'code', '') <> 'frequency_cap'
+    from app_private.message_deliveries d
+    where d.id = p_id and d.channel = 'email'$b$);
+  if out_src = src then raise exception 'bl_comm_0446 §12: marketing guard anchor not found'; end if;
+  execute out_src;
+end $w$;
+
+-- staff: set the pace on someone's behalf (recorded with who and why)
+create or replace function public.cc_unsub_frequency_set(p_email text, p_group text, p_days integer, p_note text default null)
+returns jsonb language plpgsql security definer set search_path to 'app_private, public' as $$
+begin
+  if not app_private.can_manage_comms() then raise exception 'not authorized' using errcode = '42501'; end if;
+  return app_private.unsub_set_frequency(p_email, p_group, p_days, 'cc_manual', auth.uid(), jsonb_build_object('note', nullif(btrim(p_note),'')));
+end $$;
+revoke all on function public.cc_unsub_frequency_set(text,text,integer,text) from public, anon;
+grant execute on function public.cc_unsub_frequency_set(text,text,integer,text) to authenticated;
