@@ -589,6 +589,7 @@ function authScreen() {
       typeOpt('broker', 'Freight Broker', 'Post loads to our carrier network and track them.'),
       typeOpt('shipper', 'Shipper', 'Request freight, get it moved, and track shipments.'),
       typeOpt('facility', 'Facility / Warehouse', 'Schedule dock appointments and manage check-ins.'),
+      typeOpt('agent', 'Broker Agent', 'Post under the brokerage you work for — they confirm you with one click.'),
     ]),
   ]);
   const err = h('div', { class: 'cp-err' });
@@ -622,12 +623,16 @@ function authScreen() {
     const em = email.value.trim(), pw = pass.value;
     if (!em || !pw) { err.textContent = 'Enter your email and password.'; return; }
     if (signup && !name.value.trim()) { err.textContent = 'Enter your name.'; return; }
-    if (signup && !chosenKind) { err.textContent = 'Pick whether you are a broker, shipper or facility.'; return; }
+    if (signup && !chosenKind) { err.textContent = 'Pick whether you are a broker, broker agent, shipper or facility.'; return; }
     if (signup && pw.length < 8) { err.textContent = 'Use at least 8 characters for your password.'; return; }
     btn.disabled = true; btn.textContent = signup ? 'Creating…' : 'Signing in…';
     try {
       if (signup) {
-        const { data, error } = await signUp(em, pw, { name: name.value.trim(), partner_kind: chosenKind });
+        // Broker Agent is stored as partner_kind 'broker' + agent_intent: handle_new_user skips the phantom
+        // carrier org only for broker|shipper|facility, so a raw 'agent' would get one (audit 2026-09-26 §5).
+        const { data, error } = await signUp(em, pw, chosenKind === 'agent'
+          ? { name: name.value.trim(), partner_kind: 'broker', agent_intent: true }
+          : { name: name.value.trim(), partner_kind: chosenKind });
         if (error) throw error;
         // Supabase returns success with an empty identities array when the address is
         // already registered — it will not error, and no email is sent. Without this the
@@ -803,8 +808,9 @@ function choosePartnerType(user) {
       mcWrap, agentWrap,
       (function preselectFromSignup9() {
         try {
-          var k9 = user && user.user_metadata && user.user_metadata.partner_kind;
-          if (k9 && cards[k9]) { chosen = k9; cards[k9].classList.add('sel'); }
+          var m9 = (user && user.user_metadata) || {};
+          var k9 = m9.agent_intent ? 'agent' : m9.partner_kind;
+          if (k9 && cards[k9]) { chosen = k9; cards[k9].classList.add('sel'); showMc(k9); }
         } catch (_) {}
       })(),
       h('label', { class: 'cp-lbl' }, 'Company name'), company, err, btn,

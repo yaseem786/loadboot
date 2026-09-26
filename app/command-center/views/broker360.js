@@ -63,6 +63,12 @@ export function renderBroker360(host, orgId) {
     const o = d.org || {}; const prof = d.profile || {}; const packet = d.packet || [];
     const loads = d.loads || []; const claims = d.claims || []; const ah = d.health; const tl = d.timeline || [];
     const manage = can('partners.manage') || can('dispatch.manage');
+    // bl_bp_0448: broker agent — posts under a confirmed brokerage's MC; bond/BOC-3/MC are the brokerage's,
+    // so the approval gate is brokerage confirmation, not the packet. null for every other partner.
+    const ag = d.agent || null;
+    const agParents = ag ? (ag.parents || []) : [];
+    const agConfirmed = agParents.filter((p) => p.status === 'confirmed').length;
+    const agApprovable = ag ? (ag.tier === 'agent_confirmed' || ag.tier === 'verified') : true;
 
     // ---- header ----
     const tierCol = ah ? (ah.tier === 'healthy' ? '#16a34a' : ah.tier === 'building' ? '#0883F7' : ah.tier === 'at_risk' ? '#f59e0b' : '#dc2626') : '#94a3b8';
@@ -102,17 +108,49 @@ export function renderBroker360(host, orgId) {
     const awaiting = packet.filter((x) => x.status === 'submitted').length;
     const openClaims = claims.filter((x) => x.status === 'requested' || x.support_status === 'open').length;
     const kpis = el('div', { class: 'cc-kpi-grid', style: 'margin-top:14px' }, [
-      statCard({ icon: 'doc', label: 'Packet', value: mandOk + '/' + mand.length, sub: awaiting ? awaiting + ' awaiting review' : 'mandatory verified', accent: mandOk === mand.length ? 'green' : 'amber' }),
+      ag
+        ? statCard({ icon: 'shield', label: 'Brokerages', value: agConfirmed + '/' + agParents.length, sub: 'confirmed this agent', accent: agConfirmed ? 'green' : 'amber' })
+        : statCard({ icon: 'doc', label: 'Packet', value: mandOk + '/' + mand.length, sub: awaiting ? awaiting + ' awaiting review' : 'mandatory verified', accent: mandOk === mand.length ? 'green' : 'amber' }),
       statCard({ icon: 'loads', label: 'Loads', value: String(loads.length), sub: 'most recent', accent: 'blue' }),
       statCard({ icon: 'flag', label: 'Open claims', value: String(openClaims), sub: claims.length + ' total on their loads', accent: openClaims ? 'amber' : 'green' }),
       statCard({ icon: 'shield', label: 'Health', value: ah ? String(ah.score) : '—', sub: ah ? (ah.tier || '') : 'not scored', accent: 'violet' }),
     ]);
 
+    // ---- bl_bp_0448: agent under a brokerage — who they post for, and whether the brokerage confirmed ----
+    const tierLabel = { agent_confirmed: 'confirmed by a brokerage', agent_pending: 'waiting for brokerage', verified: 'verified', hold: 'on hold', new: 'needs a human' };
+    const parentPill = { confirmed: ['#e7f9ee', '#12a150'], pending: ['#fef3c7', '#b45309'], needs_human: ['#fee2e2', '#b91c1c'], failed: ['#fee2e2', '#b91c1c'], declined: ['#fee2e2', '#b91c1c'], revoked: ['#f1f5f9', '#64748b'], screening: ['#e0f2fe', '#0369a1'] };
+    const agentCard = ag ? card([
+      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Broker agent — brokerages'),
+        el('span', { class: 'cc-pill' }, tierLabel[ag.tier] || ag.tier)]),
+      ag.hold_reason ? el('div', { class: 'lb-state lb-error', style: 'margin:6px 0' }, 'On hold: ' + ag.hold_reason) : null,
+      el('div', { class: 'cc-sub', style: 'margin:4px 0 8px' }, (ag.agreement_ok ? '✓ Master Broker Agreement accepted' : '✕ Master Broker Agreement not accepted yet — posting stays blocked until they accept it in the portal')),
+      agParents.length ? el('div', null, agParents.map((p) => {
+        const c = parentPill[p.status] || ['#f1f5f9', '#64748b'];
+        return el('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #eef2f6;flex-wrap:wrap' }, [
+          el('div', null, [
+            el('b', null, (p.name || 'Unknown brokerage') + ' · MC ' + (p.mc || '—')),
+            el('div', { class: 'cc-sub' }, [
+              p.declared_name && p.declared_name !== p.name ? 'they typed "' + p.declared_name + '"' : null,
+              p.screen_reason || null,
+              p.sent_to ? 'code emailed to ' + p.sent_to + (p.sent_at ? ' · ' + fmtDateTime(p.sent_at) : '') : null,
+              p.confirmed_at ? 'confirmed ' + fmtDateTime(p.confirmed_at) + (p.confirmed_by ? ' by ' + p.confirmed_by : '') : null,
+              p.on_loadboot ? 'brokerage is on LoadBoot' : null,
+            ].filter(Boolean).join(' · ')),
+          ]),
+          el('span', { class: 'cc-pill', style: 'background:' + c[0] + ';color:' + c[1] }, String(p.status).replace('_', ' ')),
+        ]);
+      })) : el('div', { class: 'cc-sub' }, 'No brokerage declared yet.'),
+      el('div', { style: 'margin-top:8px' }, el('a', { href: '#/broker-trust', class: 'lb-btn lb-btn-sm lb-btn-ghost' }, 'Confirm / hold / re-screen in Broker trust →')),
+    ]) : null;
+
     // ---- packet review (files + verify/reject) ----
     const packetCard = card([el('h4', { class: 'cc-card-title' }, 'Onboarding packet — review & decide')]);
     const filePathOf = (ref) => { const m = /file:([^\s·]+)/.exec(ref || ''); return m ? m[1] : null; };
     const drawPacket = () => mount(packetCard, el('div', null, [
-      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Onboarding packet — review & decide'), el('span', { class: 'cc-pill cc-pill-' + (mandOk === mand.length ? 'green' : 'amber') }, mandOk === mand.length ? 'complete' : 'action needed')]),
+      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Onboarding packet — review & decide'), ag
+        ? el('span', { class: 'cc-pill' }, 'not required · broker agent')
+        : el('span', { class: 'cc-pill cc-pill-' + (mandOk === mand.length ? 'green' : 'amber') }, mandOk === mand.length ? 'complete' : 'action needed')]),
+      ag ? el('div', { class: 'cc-sub', style: 'margin:4px 0 8px;line-height:1.6' }, 'Broker agent: bond, BOC-3 and MC authority belong to the brokerage they post under, so this packet does not gate approval — brokerage confirmation does (card above). Review anything they upload as usual.') : null,
       ...packet.map((it) => {
         const st = it.status;
         const tone = st === 'verified' ? 'green' : st === 'rejected' ? 'red' : st === 'submitted' ? 'blue' : 'amber';
@@ -219,9 +257,11 @@ export function renderBroker360(host, orgId) {
     const gateRow = manage ? el('div', { style: 'display:flex;gap:9px;margin-top:6px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid #e8edf3;border-radius:12px;padding:12px 14px' }, [
       o.status === 'active'
         ? el('button', { class: 'lb-btn lb-btn-primary', disabled: 'disabled', style: 'opacity:.75', title: 'Account is active — posting live' }, '✓ Account approved')
+        : !agApprovable
+        ? el('button', { class: 'lb-btn lb-btn-primary', disabled: 'disabled', style: 'opacity:.6', title: 'A brokerage must confirm this agent first — Broker trust' }, '✓ Approve account (needs brokerage confirmation)')
         : el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
             const _btn9 = ev.currentTarget;
-            if (!await askConfirm('Please confirm', { body: 'Approve this partner account? Posting goes live and they are notified.', danger: true })) return;
+            if (!await askConfirm('Please confirm', { body: ag ? 'Approve this broker agent? A brokerage has confirmed them; they post under that brokerage\'s MC and are notified.' : 'Approve this partner account? Posting goes live and they are notified.', danger: true })) return;
             _btn9.disabled = true;
             try { await partnerSetStatus(orgId, 'approve', null); toast('Approved — partner notified 🎉', 'success'); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '✓ Approve account'),
@@ -351,6 +391,7 @@ export function renderBroker360(host, orgId) {
 
     mount(host, el('div', { class: 'cc-view' }, el('div', null, [
       head, signupCard, kpis,
+      agentCard ? el('div', { style: 'margin-top:16px' }, agentCard) : null,
       el('div', { style: 'margin-top:16px' }, packetCard),
       gateRow,
       bankCard ? el('div', { style: 'margin-top:16px' }, bankCard) : null,
