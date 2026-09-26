@@ -84,7 +84,7 @@ dispatcher the call must reach that dispatcher, and Riley must know who the disp
 
 ## Known gaps / next
 - **Outbound caller id is the Riley number.** Retell can only dial from a number it owns. To call out as the 815 line, import 815 into Retell over a Telnyx SIP trunk (Retell "Import number"). That also removes the forwarding hop. Separate task; needs portal work on both sides.
-- Site copy still says "Riley on the phone 24/7" in `build_site.py` (pricing list ~2311, dispatch-OS card ~2070, callback microcopy ~2300). Not a number, so the §7 build guard does not catch it. Fine once the WhatsApp line is Riley — she *is* on the phone — but the "Riley is calling you right now" microcopy should say the AI assistant is calling.
+- ~~Site copy still says "Riley on the phone 24/7" in `build_site.py`~~ Done 26 Sep 2026: the pricing list (~2311), the dispatch-OS card (~2070) and the callback microcopy (~2300) now read "Riley, our AI assistant" — the AI disclosure matches the prompt opener. Not a number, so the §7 build guard never covered it; grep `build_site.py` for `Riley` before adding new copy.
 - Prompts say Riley is the AI assistant in the opener (Retell handbook `ai_disclosure` is also on). Owner decision to keep or soften; several states require it for AI voice calls.
 - Compliance note (not legal advice): outbound calls are only placed to people who asked (website/chat form) or whom the team is already talking to (`cc` source). Keep it that way; TCPA.
 - `lc_calls` has no per-call cost. `retell-admin get_call` returns Retell's `call_cost` if the owner wants a spend column later.
