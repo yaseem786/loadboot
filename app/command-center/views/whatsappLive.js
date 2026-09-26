@@ -10,7 +10,9 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead } from '../../shared/ui/components.js';
-import { waVoiceFile } from '../../shared/wa-opus.js';   // bl_wa_0378 - Chrome records webm; WhatsApp needs ogg
+import { waVoiceFile } from '../../shared/wa-opus.js';
+// bl_wa_0462 — composer grows with its text like WhatsApp Web, capped at ~7 lines then scrolls
+function growTa(ta) { try { ta.style.height = 'auto'; ta.style.height = Math.min(170, Math.max(38, ta.scrollHeight)) + 'px'; } catch (_) {} }   // bl_wa_0378 - Chrome records webm; WhatsApp needs ogg
 import { ccWaOverview, ccWaAssign, ccWaThreadSet, ccWaTemplateSet, ccWaTemplatesSync, ccWaTemplateSubmit, ccWaNotifyAssigned, ccDialerConfigSet, waThread, waSend, waMediaBlob, waStart, waUploadMedia } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -38,6 +40,7 @@ const CSS = `
 .wl-btn.pri{background:var(--b);border-color:var(--b);color:#fff}
 .wl-in,.wl-sel{border:1px solid var(--line,#e5e9f2);border-radius:10px;padding:7px 10px;font:500 13px Inter,system-ui,sans-serif;background:var(--card,#fff);color:inherit;max-width:100%}
 .wl-msgs{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:auto;padding:10px;border:1px solid var(--line,#e5e9f2);border-radius:12px;background:var(--bg2,#f8fafc)}
+.wl-ta{flex:1;min-width:240px;resize:none;min-height:38px;max-height:170px;overflow-y:auto;line-height:1.45;white-space:pre-wrap;font-family:inherit}
 .wl-bub{max-width:80%;padding:8px 11px;border-radius:14px;font-size:13px;line-height:1.45;white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid var(--line,#e5e9f2);align-self:flex-start}
 .wl-bub.out{align-self:flex-end;background:var(--b);border-color:var(--b);color:#fff}
 .wl-bub.fail{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:#b91c1c}
@@ -367,11 +370,35 @@ export async function renderWhatsappLive(host) {
         el('button', { class: 'wl-btn pri', onClick: () => startNew() }, 'Open conversation'),
         el('span', { class: 'hint' }, 'Opening one sends nothing. Outside the 24-hour window only an approved template can go out.'),
       ]) : null,
-      rows.length ? el('div', { class: 'wl-tw' }, el('table', { class: 'wl-t' }, [
-        el('thead', null, el('tr', null, ['Contact', 'Owner', '24 h window', 'Last message', 'When', ''].map((k) => el('th', null, k)))),
-        el('tbody', null, rows.map((t) => el('tr', null, [
-          el('td', null, [el('b', null, t.contact_name || pretty(t.number)), t.contact_name ? el('div', { class: 'wl-mono' }, t.number) : null,
-            t.unread ? el('span', { class: 'wl-pill a' }, t.unread + ' unread') : null]),
+      // bl_wa_0463 — who is on the other end (dispatcher trial/hired/applicant · carrier owner · driver) and what is waiting on us:
+      // "Needs a reply" first (longest wait on top, red past 60 min), then dispatchers, carriers & drivers, everyone else, closed.
+      ...(function () {
+        const who = (t) => t.who || null;
+        const name = (t) => (who(t) && who(t).name) || t.contact_name || pretty(t.number);
+        const PILL = { dispatcher: { trial: '#0883F7', active: '#15803d', verified: '#15803d' }, carrier: '#10223B', driver: '#0f766e' };
+        const whoPill = (t) => { const w = who(t); if (!w) return null; const c = w.kind === 'dispatcher' ? (PILL.dispatcher[w.status] || '#64748b') : (PILL[w.kind] || '#64748b');
+          return el('span', { class: 'wl-pill', style: 'background:' + c + ';color:#fff;border-color:' + c }, w.label || w.kind); };
+        const wait = (m) => m == null ? '' : m < 60 ? m + ' min' : m < 1440 ? Math.round(m / 60) + ' h' : Math.round(m / 1440) + ' d';
+        const openRows = rows.filter((t) => t.status === 'open');
+        const needs = openRows.filter((t) => t.needs_reply).sort((a, b) => (b.waiting_min || 0) - (a.waiting_min || 0));
+        const rest = openRows.filter((t) => !t.needs_reply);
+        const groups = [
+          ['Needs a reply', needs, 'Oldest wait first. Red = waiting over an hour. A dispatcher on trial waiting on us is your dispatcher losing his day.'],
+          ['Dispatchers', rest.filter((t) => who(t) && who(t).kind === 'dispatcher'), null],
+          ['Carriers & drivers', rest.filter((t) => who(t) && (who(t).kind === 'carrier' || who(t).kind === 'driver')), null],
+          ['Everyone else', rest.filter((t) => !who(t)), 'Brokers, shippers and numbers LoadBoot does not hold — Command Center answers these.'],
+          ['Closed', rows.filter((t) => t.status !== 'open'), null],
+        ].filter(([, list]) => list.length);
+        return groups.map(([title, list, hint]) => el('div', { style: 'margin-top:14px' }, [
+          el('div', { style: 'display:flex;align-items:baseline;gap:8px;margin-bottom:4px' }, [el('b', { style: 'font-size:.95rem' }, title), el('span', { class: 'wl-pill' + (title === 'Needs a reply' ? ' a' : '') }, String(list.length))]),
+          hint ? el('p', { class: 'hint', style: 'margin:0 0 6px' }, hint) : null,
+          el('div', { class: 'wl-tw' }, el('table', { class: 'wl-t' }, [
+            el('thead', null, el('tr', null, ['Contact', 'Owner', '24 h window', 'Last message', 'When', ''].map((k) => el('th', null, k)))),
+            el('tbody', null, list.map((t) => el('tr', { style: t.needs_reply && (t.waiting_min || 0) >= 60 ? 'background:#fef2f2' : '' }, [
+              el('td', null, [el('b', null, name(t)), ' ', whoPill(t), who(t) && who(t).kind === 'carrier' && who(t).dispatcher ? el('span', { class: 'wl-pill' }, 'dispatcher: ' + who(t).dispatcher) : null,
+                el('div', { class: 'wl-mono' }, t.number),
+                t.needs_reply ? el('span', { class: 'wl-pill', style: (t.waiting_min || 0) >= 60 ? 'background:#dc2626;color:#fff;border-color:#dc2626' : 'background:#f59e0b;color:#fff;border-color:#f59e0b' }, 'waiting ' + wait(t.waiting_min)) : null,
+                t.unread ? el('span', { class: 'wl-pill a' }, t.unread + ' unread') : null]),
           el('td', null, ownerSelect(t)),
           el('td', null, t.window_open ? el('span', { class: 'wl-pill g' }, 'open · ' + (left(t.window_ends) || 'briefly')) : el('span', { class: 'wl-pill' }, 'closed · template only')),
           el('td', null, (t.last_direction === 'outbound' ? 'Us: ' : '') + (t.last_body || '—')),
@@ -383,8 +410,11 @@ export async function renderWhatsappLive(host) {
               catch (e) { toast(humanizeError(e)); }
             } }, t.status === 'open' ? 'Close' : 'Reopen'),
           ])),
-        ]))),
-      ])) : el('p', { class: 'hint' }, 'No conversations yet. The first one appears when someone messages LoadBoot’s WhatsApp number, or when a dispatcher starts one.'),
+            ]))),
+          ])),
+        ]));
+      })(),
+      rows.length ? null : el('p', { class: 'hint' }, 'No conversations yet. The first one appears when someone messages LoadBoot’s WhatsApp number, or when a dispatcher starts one.'),
     ]));
   }
 
@@ -424,13 +454,17 @@ export async function renderWhatsappLive(host) {
     const approved = ((ov && ov.templates) || []).filter((x) => x.status === 'approved');
     const chosen = approved.find((x) => x.name === tplName) || null;
     mount(threadEl, el('div', { class: 'wl-card' }, [
-      el('h3', null, (t.contact_name || pretty(t.number)) + ' · ' + t.number),
+      el('h3', null, [((t.who && t.who.name) || t.contact_name || pretty(t.number)) + ' · ' + t.number, t.who ? el('span', { class: 'wl-pill', style: 'margin-left:8px;font-weight:600' }, t.who.label || t.who.kind) : null]),   // bl_wa_0463
       el('p', { class: 'hint' }, [t.owner ? 'Owner: ' + t.owner : 'Unassigned', ' · ', t.window_open ? 'replies open for ' + (left(t.window_ends) || 'a moment') : 'window closed — approved template only'].join('')),
       el('div', { class: 'wl-msgs' }, msgRows(thr.messages)),
       t.window_open ? el('div', null, [
         pendStrip(),
         el('div', { class: 'wl-row' }, [
-          el('input', { class: 'wl-in', style: 'flex:1;min-width:240px', placeholder: pend ? 'Add a caption… (optional)' : 'Reply as LoadBoot staff…', value: draft, onInput: (e) => { draft = e.target.value; } }),
+          // bl_wa_0462 — WhatsApp-style composer: multi-line textarea that grows with the text (Enter sends, Shift+Enter = new line);
+          // an <input> flattened every pasted line break into a space, so long replies arrived as one paragraph.
+          el('textarea', { class: 'wl-in wl-ta', rows: '1', maxlength: '3000', placeholder: pend ? 'Add a caption… (optional)' : 'Reply as LoadBoot staff… (Enter sends · Shift+Enter = new line)', 'aria-label': 'Message',
+            onInput: (e) => { draft = e.target.value; growTa(e.target); },
+            onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (sending) return; if (pend) sendFile(t.id, pend.file, false); else if (draft.trim()) send({ thread_id: t.id, body: draft }); } } }, draft),
           el('button', { class: 'wl-btn', disabled: sending, onClick: () => pickFile(t.id) }, [icon('upload', 15), pend ? 'Replace' : 'Attach']),
           pend ? null : el('button', { class: 'wl-btn', disabled: sending, onClick: () => toggleRec(t.id) }, rec ? 'Stop & send' : 'Record voice'),
           el('button', { class: 'wl-btn pri', disabled: sending, onClick: () => { if (pend) sendFile(t.id, pend.file, false); else if (draft.trim()) send({ thread_id: t.id, body: draft }); } }, sending ? 'Sending…' : (pend ? 'Send file' : 'Send')),

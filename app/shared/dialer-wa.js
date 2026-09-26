@@ -15,6 +15,8 @@
 //     shows the state honestly (countdown, or the template picker).
 //   * Templates are approved by Meta, not by us. Until Meta approves them the picker is empty and says so.
 import { waVoiceFile } from './wa-opus.js';   // bl_wa_0378 - Chrome records webm; WhatsApp needs ogg
+// bl_wa_0462 — composer grows with its text like WhatsApp, capped at ~7 lines then scrolls
+function growTa(ta) { try { ta.style.height = 'auto'; ta.style.height = Math.min(170, Math.max(40, ta.scrollHeight)) + 'px'; } catch (_) {} }
 
 export function createWaPanel(ctx) {
   const { h, mount, ic, ago, pretty, digits, toast, paint, rootOf, S, api, onCall } = ctx;
@@ -49,6 +51,7 @@ export function createWaPanel(ctx) {
 .lbdwa-tpls{display:flex;flex-direction:column;gap:6px}
 .lbdwa-tpl{display:block;width:100%;text-align:left;border:1px solid var(--ln);background:rgba(255,255,255,.04);color:#dbe6fb;border-radius:12px;padding:8px 10px;cursor:pointer;font:inherit}
 .lbdwa-tpl b{display:block;font-size:12px;text-transform:capitalize;color:#fff;margin-bottom:2px}
+.lbdwa-ta{resize:none;min-height:40px;max-height:170px;overflow-y:auto;line-height:1.45;white-space:pre-wrap}
 .lbdwa-tpl span{display:block;font-size:11.5px;line-height:1.45;color:#9fb3d6;white-space:pre-wrap}
 .lbdwa-tpl.on{border-color:var(--bl);background:rgba(8,131,247,.18)}
 .lbdwa-tpl.on span{color:#cfe1fb}
@@ -536,9 +539,10 @@ export function createWaPanel(ctx) {
           S.waPend ? null : h('button', { class: 'lbd-send', type: 'button', 'data-warec': '1', 'aria-label': rec ? 'Stop and send' : 'Record a voice note',
             title: rec ? 'Stop and send' : 'Record a voice note', style: rec ? 'background:var(--or)' : 'background:rgba(255,255,255,.10)',
             onClick: () => toggleRec(t.thread.id), html: rec ? STOP : MIC }),
-          h('textarea', { class: 'lbd-in', id: 'lbd-wa', rows: '2', maxlength: '3000',
-            placeholder: S.waPend ? 'Add a caption… (optional)' : 'Write a WhatsApp message…', 'aria-label': S.waPend ? 'Caption' : 'Message',
-            onInput: (e) => { S.waDraft = e.target.value; const b = rootOf().querySelector('[data-wasend]'); if (b) b.disabled = S.waBusy || (!S.waPend && !e.target.value.trim()); },
+          // bl_wa_0462 — WhatsApp-style composer: starts one line high and grows with the text (Enter sends, Shift+Enter = new line)
+          h('textarea', { class: 'lbd-in lbdwa-ta', id: 'lbd-wa', rows: '1', maxlength: '3000',
+            placeholder: S.waPend ? 'Add a caption… (optional)' : 'Write a WhatsApp message… (Shift+Enter = new line)', 'aria-label': S.waPend ? 'Caption' : 'Message',
+            onInput: (e) => { S.waDraft = e.target.value; growTa(e.target); const b = rootOf().querySelector('[data-wasend]'); if (b) b.disabled = S.waBusy || (!S.waPend && !e.target.value.trim()); },
             onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); goSend(); } } }, S.waDraft),
           h('button', { class: 'lbd-send', 'data-wasend': '1', 'aria-label': S.waPend ? 'Send attachment' : 'Send WhatsApp message',
             disabled: S.waBusy || (!S.waPend && !(S.waDraft || '').trim()), onClick: goSend }, ic('send', 17)),
