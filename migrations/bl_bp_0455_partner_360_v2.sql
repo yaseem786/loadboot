@@ -22,6 +22,12 @@
 --                                          next_action, owner_email, last_sign_in_at, email_confirmed,
 --                                          loads_30d, unread_notices.
 --
+-- Applied 26 Sep 2026: staging (35 by name) and prod (36 by name, same list as docs/audit-2026-09/anon-secdef-baseline.md
+-- incl. retell_inbound). Tested on staging with one org per role (L & L Brokerage / Marcus Reed agent / Acme shipper)
+-- and the three CC screens rendered headless from that exact output (no runtime errors). Prod read-only spot check of
+-- partner_journey on all 15 non-demo partner orgs matched expectations (LinkLane -> "Confirmed agent - Approve account
+-- now"; khannawab -> needs a human (FMCSA not_found); both shippers blocked on the unpublished broker_shipper agreement).
+--
 -- Anon SECURITY DEFINER surface: unchanged. Both public functions are create-or-replace (ACL kept: they were
 -- never anon-executable); the two new helpers live in app_private and get an explicit revoke anyway.
 -- Verify after apply: docs/audit-2026-09/anon-secdef-baseline.md query → 36 prod / 35 staging, same names.
