@@ -134,7 +134,7 @@ Agent)"). The app does not:
 | Fraud pattern in §4 (junk MC, own email as contact) | Highway blocks free-mail + name mismatch automatically | Lands in "Needs a human" with the truth visible; no automatic nudge to the person that their MC is not a brokerage | ⚠ small: on `entity_type='CARRIER'` or `broker_authority=false` auto-notify the agent "that MC is not a brokerage" (no staff needed) |
 | Docs / SEO for agents | — | `broker-agents.html`, `freight-agent-vs-freight-broker.html` (0 clicks / 111 impressions / pos 12.7), create-broker-account copy | ⚠ pages exist; no product doc for the workflow except `docs/BROKER-SUPPLY-2026-09-02.md`; naming collision "Agent Program" (referral) vs "Broker agent" on the same nav |
 
-## 7. Recommended order (owner decides; status per item below — 26 Sep: 1–7 done, 8 waits on the owner)
+## 7. Recommended order (owner decides; status per item below — 26 Sep: all 8 done)
 
 1. **Broker 360 agent-aware** — when `broker_trust.is_agent`: hide the 8-item packet, show the brokerages block from the trust queue, and let "Approve account" pass when `agent_confirmed` (or make `cc_partner_set_status` treat a confirmed agent as packet-complete). Fixes LinkLane sitting `pending` too. *(main-loop work — touches approval logic.)*
 2. **Signup picker** — `signup.html` card text; agent card at partner step A; referral card rename; `handle_new_user` list. *(small, mechanical.)* **Done 26 Sep — shipped inside `bl_bp_0448`'s commit** (`signup.html` card reads "Broker · Broker agent · Shipper" with the one-line "Freight agent posting under a brokerage? Choose Broker agent"; referral card says "Not for freight agents posting loads"; Broker Agent card at step A stored as `partner_kind='broker'` + `agent_intent=true`, so `handle_new_user`'s list did not need to change; step B pre-selects it). 26 Sep session 2 added the §5 label-only item: the broker card now reads "Freight Broker / 3PL — brokers, 3PLs and freight forwarders" (kind stays `broker`). Ships with the next site push.
@@ -150,6 +150,10 @@ Agent)"). The app does not:
    in the poster panel; cold start shows nothing on the card and "no history yet · bond on file" in the panel.
 7. Dump `onboarding_packet_templates` seed + `org_onboarding_complete` into a migration file. **Done 26 Sep — `org_onboarding_complete` in `bl_bp_0451`, the seed in `bl_bp_0453` (applied staging + prod).** Dumping it found staging was NOT at parity: 30 rows vs prod's 32 (no `broker.boc3`, no `broker.ucr`) and no `needs_expiry` column, so staging's broker packet had 6 mandatory items where prod has 7 and 0315's autofill was writing a `boc3` item no template described. 0453 is an idempotent upsert of the 32 prod rows with a row-count + content-hash check (`41241fb6…`); prod unchanged, staging now 32/7 mandatory, hash identical. Anon SECDEF 36/35 by name, unchanged.
 8. Handle the four July "(Agent)" orgs: archive, or convert to real agents once a brokerage confirms them (BROKER-SUPPLY §"YASEEN" item 6 is still open).
+   **Done 26 Sep — owner chose path (a); `bl_bp_0454` applied staging (no-op) + prod.** All four now have a `broker_trust` row with
+   `is_agent=true` and no parent: Ali Raza and Asim Latif read tier `new` and land on the portal's agent card to declare a brokerage MC
+   (flows through 0449's nudge as normal); Usman and Charanpreet carry `hold_reason` (tier `hold`; a brokerage confirming them clears it).
+   `organizations.status` untouched (nothing on the broker side reads `paused`). Audit row `broker.agent_converted` per org. Anon SECDEF 36/35 by name, unchanged.
    **Facts pulled 26 Sep (prod, read-only), owner decides:** all four are `kind=broker`, `mc_number`/`dot_number` NULL, no
    `broker_trust` row at all (so `is_agent` NULL, not false), no `broker_screenings`, 0 loads as `broker_org`, 0 packet items.
 

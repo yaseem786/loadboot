@@ -1,8 +1,9 @@
 -- bl_bp_0454 — the four July "(Agent)" broker orgs become real agents (audit claude/BROKER-AGENT-AUDIT-2026-09-26.md §7 item 8,
 -- path (a): LoadBoot holds no broker authority, so they post under a partner brokerage or not at all).
 --
--- DRAFT — NOT APPLIED. Waits on the owner's path (a)/(b) decision (BROKER-SUPPLY §"YASEEN" item 6). Do not run
--- until that is made; then test on a throwaway broker org first (see the block at the end), then staging, then prod.
+-- Owner chose path (a) on 26 Sep 2026 (BROKER-SUPPLY §"YASEEN" item 6 closed). Tested on a throwaway broker org on staging
+-- (rolled back: hold → tier 'hold', is_agent=t, re-run matched 0, audit row 1, hold cleared → 'new'), then APPLIED to
+-- staging (no-op, none of the orgs exist there) and prod (4 converted). Post-check on prod matched the expectation below.
 --
 -- Before (prod, 26 Sep 2026, read-only): four orgs created 18–22 Jul with kind='broker', mc_number/dot_number NULL,
 -- NO app_private.broker_trust row (so is_agent reads NULL, not false), no screenings, 0 loads, 0 packet items.
@@ -17,7 +18,7 @@
 -- the agent card (broker-trust.js agentCard) where they declare a brokerage MC themselves via public.partner_agent_declare,
 -- which upserts the same row and runs bl_bp_0449's FMCSA screen + nudge as for any agent. CC directory reads "Agent of ?"
 -- (bl_bp_0450) and 360 hides the packet (item 1). The two dormant orgs (Usman, Charanpreet) additionally get
--- hold_reason set, so app_private.broker_trust_tier returns 'hold' and any attempt to post shows them the reason;
+-- hold_reason set, so app_private.broker_tier returns 'hold' and any attempt to post shows them the reason;
 -- clearing hold_reason (or a brokerage confirming them, which nulls it in parent_decision) lifts it. organizations.status
 -- is left alone: nothing on the broker side reads 'paused', and the trust tier already blocks posting.
 --
@@ -65,7 +66,7 @@ begin
 end $$;
 
 -- Post-check (run by hand after apply):
---   select o.name, t.is_agent, t.hold_reason, app_private.broker_trust_tier(o.id) as tier
+--   select o.name, t.is_agent, t.hold_reason, app_private.broker_tier(o.id) as tier
 --     from public.organizations o join app_private.broker_trust t on t.org_id = o.id
 --    where o.name like '%(Agent)' order by o.name;
 --   expect: Ali Raza / Asim Latif → tier 'new' (screen not run yet), Usman / Charanpreet → tier 'hold'.
