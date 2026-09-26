@@ -72,6 +72,16 @@ dispatcher the call must reach that dispatcher, and Riley must know who the disp
 - Retell dashboard: **Allowed Inbound Countries → United States only** (owner). Riley's callers are US
   carriers, brokers and shippers; dispatchers abroad are staff and never call the public line.
 
+## Live proof + enforce mode — 26 Sep 21:40–21:55 UTC
+
+- 21:40 first real call on the WhatsApp line: Telnyx → Riley, caller id passed through (from = the caller),
+  61 s, recording + transcript + analysis in lc_calls. Signatures `digest_mismatch` (signing key not set yet).
+- Owner set `retell_config.webhook_signing_key` (Retell "Secret Key Webhook", 32 chars, `key_…215d`); the first
+  paste carried the placeholder's `<…">` wrapper, stripped in SQL without reading the key.
+- 21:52 second call: `inbound:signature_ok` + `signature_ok` on call_started / call_ended / call_analyzed.
+- 21:55 `allow_unsigned_webhook = false` on prod → **enforce mode**. Observe mode had been open since 7 Sep.
+  Staging stays in observe mode (no real traffic, different from_number).
+
 ## Known gaps / next
 - **Outbound caller id is the Riley number.** Retell can only dial from a number it owns. To call out as the 815 line, import 815 into Retell over a Telnyx SIP trunk (Retell "Import number"). That also removes the forwarding hop. Separate task; needs portal work on both sides.
 - Site copy still says "Riley on the phone 24/7" in `build_site.py` (pricing list ~2311, dispatch-OS card ~2070, callback microcopy ~2300). Not a number, so the §7 build guard does not catch it. Fine once the WhatsApp line is Riley — she *is* on the phone — but the "Riley is calling you right now" microcopy should say the AI assistant is calling.
