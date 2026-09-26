@@ -217,3 +217,44 @@ worth it at today's volume.
 
 **Still open from the audit:** #4 (check whether `preferred_lanes` alerts anyone before building saved
 searches), #8 quick post, #9 OSRM/Photon behind our own edge function.
+
+## 0459 — audit #4 checked: does `preferred_lanes` alert anyone? (26 Sep, read-only)
+
+**No.** It was checked against the live function bodies on prod and staging, not the repo, because the
+repo migrations are not the full history. 16 functions read `preferred_lanes`. They use it for display
+(directories, carrier 360, dispatcher briefs), for ranking (`cc_match_rank`, `cc_carrier_best_loads`),
+and for the prefs-completeness check. Three of those functions do send something, but not because of the
+lanes: `cc_request_book_load` only checks that the carrier has entered at least one lane, and
+`retell_webhook` / `lc_call_followup` copy the lanes the caller mentioned on the call into CRM text. No
+trigger or cron job matches a new load against `preferred_lanes`. It is also free text ("TX, Atlanta,
+Midwest", "GA → FL"), so it could not be matched reliably anyway.
+
+**Load alerts already exist, in Post-a-Truck:**
+`public.loads` → trigger `trg_load_posted_match` (after insert, or when status becomes `available`) →
+`app_private.tp_match_new_load(load_id)` → for each `truck_postings` row that is `active` and not past
+`available_to`: `tp_load_matches(posting, load)` checks equipment, the pickup date window, min RPM, the
+haul band from `carrier_dispatch_prefs.haul_types`, and the radius from the posting's origin pin (or the
+same origin state if there is no pin). It does **not** check the destination. On a match it records a
+`truck_posting_matches` row, creates an in-app notification (`truck_match`), sends an email through
+`sys_email('truck_match', …)`, and, if `auto_request` is on and the pickup is not on a weekend for a
+carrier who keeps weekends off, creates a pending `load_book_requests` row. Demo loads are skipped.
+
+**It has never fired on prod.** There are 35 truck postings (2 live now) and 0 matches. That does not
+point to a bug: prod has only 5 real loads, and none was posted while a truck posting was active. It has
+fired on staging (17 in-app `truck_match` notifications, the last on 18 Sep). The function body hashes
+differ between staging and prod. A line-by-line read found the same logic, so the difference looks like
+whitespace only. That was checked by reading, not by a diff tool.
+
+**Gap (breaks CLAUDE.md §6):** `truck_match` is not in `app_private.email_catalog` on either
+database, and it does not follow the `area.thing` key convention. The first real match on prod will be
+filed as `undocumented`, and the email has no preference group, so it is not clear that a carrier can opt
+out. It needs a catalog row (and probably a renamed key) before prod volume arrives. This is a prod write,
+so it needs the owner's go-ahead.
+
+**Recommendation for "saved searches / lane alerts":** do not build a second alert engine next to
+`preferred_lanes`. Extend Post-a-Truck:
+1. Register the email in the catalog (above).
+2. Add an optional destination (city/state + radius) to `truck_postings` and to `tp_load_matches`, so
+   one posting is a lane rather than just an origin.
+3. On the carrier board, add "🔔 Alert me for loads like this", which creates a truck posting from the
+   current filters (the 0457c radius search already has the origin pin, radius and equipment).
