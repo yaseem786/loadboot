@@ -116,7 +116,7 @@ Agent)"). The app does not:
 
 1. **Broker 360 agent-aware** — when `broker_trust.is_agent`: hide the 8-item packet, show the brokerages block from the trust queue, and let "Approve account" pass when `agent_confirmed` (or make `cc_partner_set_status` treat a confirmed agent as packet-complete). Fixes LinkLane sitting `pending` too. *(main-loop work — touches approval logic.)*
 2. **Signup picker** — `signup.html` card text; agent card at partner step A; referral card rename; `handle_new_user` list. *(small, mechanical.)*
-3. **Auto-nudge on non-brokerage MC** — in `agent_parent_screened`, when the screen returns `entity_type='CARRIER'` / `broker_authority=false` / `not_found`, notify the agent with the legal name FMCSA returned and ask for the right MC. *(small.)*
+3. **Auto-nudge on non-brokerage MC** — in `agent_parent_screened`, when the screen returns `entity_type='CARRIER'` / `broker_authority=false` / `not_found`, notify the agent with the legal name FMCSA returned and ask for the right MC. *(small.)* **Done 26 Sep — `bl_bp_0449`**: `agent_parent_mc_nudge`, e-mail `broker.agent_parent_mc_check` (catalogued). Fires on `not_found`, `broker_authority=false`, or unknown authority + FMCSA power units; NOT on `entity_type='CARRIER'` alone (LinkLane and M&M read CARRIER too). Once per declared MC. No backfill — SALAYIM gets it on its next screen.
 4. **Directory purity** — `cc_partners_accounts` label agents "Agent of X" instead of `x/8`. *(small.)*
 5. **One "mandatory" definition** shared by 360 and `partner_trust_status`.
 6. **Broker pay-behaviour signal to carriers** — medium; design first.
