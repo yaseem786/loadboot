@@ -308,5 +308,7 @@ error. Schedule always waits for the new dates, and Review waits for the broker 
 - **Limit found:** the in-memory cache almost never hits, because staging served every repeat from
   a fresh isolate. The browser's `Cache-Control: private, max-age=3600` is the cache that works. A
   shared cache (a table, or `geo_places`) would be next if call volume matters.
-- **Not deployed to prod** (needs the owner's go-ahead). Server-side callers were not changed:
+- **Deployed to prod (v1, verify_jwt=true) on 26 Sep with the owner's go-ahead**, from the committed
+  `supabase/functions/geo/index.ts`. Tested live: OSRM route 200, Photon search 200, bad host 422,
+  no auth 401. Merged to `main` in `e9bb51b`. Server-side callers were not changed:
   `load-mail` and the `bl_gaps_0259` SQL geocoder still call Photon/OSRM directly.
