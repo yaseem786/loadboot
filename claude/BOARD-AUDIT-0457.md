@@ -37,7 +37,7 @@ protected from back-solicitation.
    whether it notifies anyone when a matching load is posted. Check this before building anything.
 
 ### Broker wizard
-5. **No "Post similar" / copy from a past load.** Brokers repost the same lanes every day, and DAT
+5. ✅ **SHIPPED (0457b) — see "Post similar" below.** ~~No "Post similar" / copy from a past load.~~ Brokers repost the same lanes every day, and DAT
    and every TMS have templates or copy. Today every repost means re-typing 5 steps. Proposal: a
    "⧉ Post similar" button on each My Loads row. It would call `partnerLoadFull(id)`, map the
    fields into the wizard state `w` (addresses, equipment, commodity, weight, service flags and
@@ -62,3 +62,30 @@ protected from back-solicitation.
 #5 Post similar (client only, biggest time saver for brokers) → #1 post age (small migration, needs
 approval) → #3 radius search → #7 length/dims/alt equipment (the posting side, then a board filter)
 → #2 paging. #6 needs your decision first.
+
+## 0457b — "Post similar" (shipped)
+
+- **Button:** "⧉ Post similar" on every My Loads row (`postSimilar()` in `brokerDash`, `app/partner/app.js`).
+- **Source:** `partnerLoadFull(id)`. On 26 Sep, `cc_partner_load_full` was identical on prod and staging
+  (md5 of the definition matched). It only returns the broker's own load (`broker_org = v_org`).
+- **Copied:** lane (street, city, ST, ZIP), extra stops with their exact pins, miles, equipment,
+  commodity, weight, load size, pallets, temp, tarps, loading methods, lumper and assist per stop,
+  team, cargo value, dock hours, facility contacts, hazmat (UN, class, PG, name parsed back), rate,
+  rate card (detention, layover, TONU, assist, extra stop, lumper policy), and for agents the load
+  source and posting brokerage.
+- **Not copied:** dates, schedule and appointments, reference, PU/delivery/appointment numbers,
+  notes (not returned by the RPC).
+- **Draft protection:** if a draft is in progress, the broker is asked before it is replaced.
+- **Main pickup/delivery pins:** the RPC does not return them, so `geocodeExact()` (new, in
+  `app/shared/addr-suggest.js`) re-geocodes with Photon, the same service the suggestions use. A pin
+  is set only for a house-number hit with the same ZIP and state. Anything vaguer leaves no pin,
+  which is exactly what happens today when a broker types the address instead of picking it. The
+  filter logic was tested against mocked Photon responses. **It could not be tested live:** this
+  cloud container's network policy blocks photon.komoot.io (HTTP 403).
+- **Miles and drive hours:** once both pins exist, step 0 now fetches the real driving miles and
+  drive hours automatically, once per pin pair. The HOS and ETA checks in the Schedule step need them.
+  This also fixes restored drafts whose OSRM call had failed.
+- **Optional follow-up (needs a DB write, so your call):** add `pickup_lat`, `pickup_lng`,
+  `delivery_lat` and `delivery_lng` to the `jsonb_build_object` in `cc_partner_load_full`. Then the
+  copy reuses the exact original pins and no re-geocoding is needed. It is a jsonb-returning
+  function, so `create or replace` keeps its ACL. Still, re-check the anon SECDEF names afterwards.

@@ -61,4 +61,25 @@ export function attachAddressSuggest(input, opts = {}) {
   input.addEventListener('blur', () => setTimeout(close, 150));
 }
 
+// geocodeExact({ street, city, state, zip }) → { lat, lng } or null. Used when an address is
+// filled programmatically (e.g. "Post similar") instead of picked from the list. It only returns
+// a pin for a house-number hit in the same ZIP and state; anything vaguer returns null, because a
+// ZIP-centroid pin would put the geofence miles from the dock. null = same as manual typing today.
+export async function geocodeExact(a = {}) {
+  const zip5 = String(a.zip || '').trim().slice(0, 5), st = String(a.state || '').trim().toUpperCase();
+  if (!String(a.street || '').trim() || !/^\d{5}$/.test(zip5) || !/^[A-Z]{2}$/.test(st)) return null;
+  try {
+    const q = [a.street, a.city, st + ' ' + zip5].filter(Boolean).join(', ');
+    const r = await fetch(API + '?q=' + encodeURIComponent(q) + '&limit=3&lang=en&bbox=' + US_BBOX);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const f = ((d && d.features) || []).find((x) => {
+      const p = x.properties || {};
+      return String(p.countrycode || '').toUpperCase() === 'US' && p.housenumber && String(p.postcode || '').slice(0, 5) === zip5
+        && abbr(p.state) === st && x.geometry && Array.isArray(x.geometry.coordinates);
+    });
+    return f ? { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] } : null;
+  } catch (_) { return null; }
+}
+
 export default attachAddressSuggest;
