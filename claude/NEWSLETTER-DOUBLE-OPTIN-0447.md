@@ -103,3 +103,5 @@ Amazon/Uber. It is built on top of the unsubscribe engine (`claude/UNSUBSCRIBE-E
   `data-lb-contact="inline"` link, which the build rewrites to "+1 (815) 365-1168 on WhatsApp" while the switch says
   whatsapp — and back to the phone line if it is ever flipped. sms.html keeps the SMS line (allowed exception); the
   FAQ "Call" card stays `data-lb-callonly` (hidden under whatsapp); schema.org keeps the phone field by design.
+  The FAQ WhatsApp card (`data-lb-waonly`) ships statically since the same day (build_site `_contact_header`, commit 79e4451):
+  visible on first paint / no-JS with the wa.me link and number filled; the runtime switch re-applies the same values.
