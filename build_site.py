@@ -9560,6 +9560,37 @@ if os.path.isdir(APP_SRC):
     with open(os.path.join(APP_OUT, 'env-config.js'), 'w', encoding='utf-8') as f:
         f.write(_env_cfg)
 
+    # 3b) bl_perf_0458 — bundle the Command Center into ONE minified file (+ chunks for its dynamic
+    #     imports). Unbundled, the CC was 135 separate module requests, each through the service worker,
+    #     and took ~5 s to reach DOM-ready even from cache. Fail-safe: no esbuild / any error -> the
+    #     unbundled copy already in /site stays exactly as before. LOADBOOT_NO_BUNDLE=1 skips it.
+    def _bundle_portal(portal, entry='app.js'):
+        import subprocess, shutil as _sh
+        if os.environ.get('LOADBOOT_NO_BUNDLE') == '1':
+            print('BUNDLE: skipped (LOADBOOT_NO_BUNDLE=1) —', portal); return False
+        src = os.path.join(APP_SRC, portal, entry); out = os.path.join(APP_OUT, portal)
+        local = os.path.join(SRC, 'node_modules', '.bin', 'esbuild' + ('.cmd' if os.name == 'nt' else ''))
+        cmd = [local] if os.path.exists(local) else (['npx', '-y', 'esbuild'] if _sh.which('npx') else None)
+        if not cmd:
+            print('BUNDLE: esbuild not found — keeping the unbundled', portal); return False
+        args = cmd + [src, '--bundle', '--splitting', '--format=esm', '--minify', '--outdir=' + out,
+                      '--entry-names=[name]', '--chunk-names=chunks/[name]-[hash]', '--external:https://*',
+                      '--legal-comments=none', '--log-level=warning', '--target=es2020']
+        try:
+            r = subprocess.run(args, capture_output=True, text=True, timeout=180, shell=(os.name == 'nt'))
+        except Exception as ex:
+            print('BUNDLE: failed to run esbuild —', ex, '— keeping the unbundled', portal); return False
+        if r.returncode != 0 or not os.path.exists(os.path.join(out, entry)):
+            print('BUNDLE: esbuild error — keeping the unbundled', portal, '\n', (r.stderr or '')[-800:]); return False
+        # the views are now inside the bundle; drop the loose copies so the app SW does not precache 2 MB twice
+        views_out = os.path.join(out, 'views')
+        if os.path.isdir(views_out):
+            _sh.rmtree(views_out, ignore_errors=True)
+        kb = os.path.getsize(os.path.join(out, entry)) // 1024
+        print('BUNDLE:', portal, '->', entry, str(kb) + ' KB', '+', len(os.listdir(os.path.join(out, 'chunks'))) if os.path.isdir(os.path.join(out, 'chunks')) else 0, 'chunks')
+        return True
+    _bundle_portal('command-center')
+
     # 4) generate the app service worker. Precache = the ACTUAL emitted static files
     #    only (NO synthetic '/app/' directory URL that would 404). Each app's index
     #    is precached so each app has its OWN offline shell. env-config.js + sw.js are

@@ -31,7 +31,7 @@ import { humanizeError, toast } from '../../shared/errors.js';
 import { richText, parseDirectives } from '../../shared/ui/chatText.js';
 import { ico, icoHtml, ensureIcons } from '../../shared/ui/lucide.js';
 
-const CSS_HREF = new URL('../livechat-v3.css', import.meta.url).href + '?v=20260919b';
+const CSS_HREF = '/app/command-center/livechat-v3.css?v=20260919b';   // bl_perf_0458: absolute — import.meta.url moves once the CC is bundled
 const LIST_MS = 5000, CONV_MS = 2500, BEAT_MS = 45000, TYPE_MS = 3000;
 const PORTAL = 'https://loadboot.com/app/';
 
