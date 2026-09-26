@@ -1,6 +1,6 @@
 # Newsletter — double opt-in, consent, category, welcome + weekly digest (bl_comm_0447)
 
-**Status 26 Sep 2026: built and tested on STAGING; waiting for the owner's go for prod.** Decision taken: option (a),
+**Status 26 Sep 2026: LIVE on prod** (migration applied, anon 34 → 36 name-checked, 4 old addresses backfilled as PENDING with no email, weekly send OFF, `main` pushed). Owner's next moves are in CC → Newsletter: "Send confirmation email" per backfilled address, then "Weekly send: on" after previewing. Decision taken: option (a),
 new group `newsletter` ("Tips & market updates"). See "Where it stands" at the end of this file.
 
 Owner decision, 26 Sep 2026: the footer form "Get carrier tips & better loads" must work like

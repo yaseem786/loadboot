@@ -198,4 +198,5 @@ that email; the token is an unguessable uuid, 7-day expiry). Both are `revoke �
 `grant … to anon, authenticated, service_role` explicitly. The five staff RPCs (`cc_newsletter_overview / _person /
 _send_confirm / _preview / _set`) are revoked from public + anon and the migration asserts none of them is
 anon-executable. Staging name-level check after apply: **33 → 35**, the only added names are the two above.
-Prod expectation at rollout: **34 → 36**, same two names. CLAUDE.md §4 to read 36/35 after the prod apply.
+**Prod applied 26 Sep 2026** (`bl_comm_0447_newsletter_double_optin`): **34 → 36**, the only added names are the two
+above; the other 34 names hash identically to before (`d98c0b18…`); `app_private` usage for anon still false. CLAUDE.md §4 reads 36/35.

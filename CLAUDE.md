@@ -94,9 +94,9 @@ pastes that into the new session. Never make him reconstruct context from memory
 
 ## 4. Non-negotiables
 
-- **The anon-executable SECURITY DEFINER surface in `public` is 34 on prod** (35 on staging since 26 Sep 2026:
-  `bl_comm_0447` added `newsletter_request` + `newsletter_confirm` there; prod becomes 36 when 0447 rolls out. The
-  two otherwise differ only by `retell_inbound`). It was 33/32 until 25 Sep 2026, when `bl_mkt_0442` added
+- **The anon-executable SECURITY DEFINER surface in `public` is 36 on prod** (35 on staging; the two differ only
+  by `retell_inbound`). It was 34/33 until 26 Sep 2026, when `bl_comm_0447` added `newsletter_request` +
+  `newsletter_confirm` (the newsletter double opt-in form and its confirm link). It was 33/32 until 25 Sep 2026, when `bl_mkt_0442` added
   `get_public_site_facts` (the public-site build's registry read, same reason as `get_public_market_rates`). Check it after every migration and **compare the NAMES, not just the
   count** - two changes that cancel out leave the count unmoved. The full list, what each name
   is for, and the query are in `docs/audit-2026-09/anon-secdef-baseline.md`. If a name appears
