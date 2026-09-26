@@ -1185,8 +1185,19 @@ async function agentPortal(user) {
         const inp9 = h('input', { type: 'file', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png', class: 'cp-in', onChange: async (e9) => {
           const file9 = e9.target.files && e9.target.files[0]; if (!file9) return;
           st9.style.color = '#94a3b8'; st9.textContent = 'Uploading…';
-          try { const m9 = await uploadDocument(file9, type9); docState[key9] = m9.path; docState[nameKey9] = m9.fileName; st9.style.color = '#4ade80'; st9.textContent = '✓ ' + m9.fileName; }
-          catch (e10) { st9.style.color = '#f87171'; st9.textContent = 'Upload failed — try again'; }
+          try {
+            const m9 = await uploadDocument(file9, type9); docState[key9] = m9.path; docState[nameKey9] = m9.fileName;
+            // bl_disp_0460 — the ID used to live only in docState until Submit; a submit blocked by validation
+            // threw it away while the green tick said "saved". Persist it on select when a profile exists
+            // (dispatcher_submit_id merges into skills server-side), and never show green before a write succeeded.
+            if (type9 === 'dispatcher_id' && prof) {
+              const r9 = await dispatcherSubmitId(m9.path, m9.fileName);
+              if (r9 && r9.error) throw new Error(r9.error);
+              prof.skills = Object.assign({}, prof.skills || {}, { id_doc: m9.path, id_name: m9.fileName });
+              st9.style.color = '#4ade80'; st9.textContent = '✓ ' + m9.fileName + ' — saved to your profile.';
+            } else { st9.style.color = '#fbbf24'; st9.textContent = '✓ ' + m9.fileName + ' — attached, not yet saved. Submit the form to store it.'; }
+          }
+          catch (e10) { st9.style.color = '#f87171'; st9.textContent = 'Upload failed — ' + ((e10 && e10.message) || 'try again'); }
         } });
         return h('div', null, [inp9, st9]);
       };
@@ -1234,11 +1245,17 @@ async function agentPortal(user) {
         h('div', { style: 'padding:2px 15px 15px' }, kids)]);
       const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
         const b9 = ev.currentTarget;
-        if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim() || !f.hours.value || !f.payout.value || !f.can_source.value) { msg.textContent = 'Please fill the required (*) fields: name, country, hours, English, load-sourcing ability, payout.'; return; }
+        // bl_disp_0460 — name the one missing field, open its (collapsed) section and scroll to it; the old
+        // single line listed six fields and returned without scrolling, so a hidden Section-2 field looked like a dead button.
+        const focus9 = (el9, text9) => { msg.textContent = text9; try { const d9 = el9 && el9.closest ? el9.closest('details') : null; if (d9) d9.open = true; if (el9 && el9.scrollIntoView) el9.scrollIntoView({ block: 'center' }); if (el9 && el9.focus) el9.focus({ preventScroll: true }); } catch (_) {} };
+        const req9 = [[f.full_name, !f.full_name.value.trim(), 'your full name'], [f.country, !f.country.value.trim(), 'your country'], [f.hours, !f.hours.value, 'hours available per week'],
+          [f.english, !f.english.value, 'your English level'], [f.can_source, !f.can_source.value, 'how you get load-board access today'], [f.payout, !f.payout.value, 'how you want to be paid']];
+        const miss9 = req9.find((x9) => x9[1]);
+        if (miss9) { focus9(miss9[0], 'Required (*): ' + miss9[2] + '.'); return; }
         if (gate9) { const g9 = gate9.check(); if (g9) { msg.textContent = g9.msg; return; } }
-        if (boardOk9(f.can_source.value) && !ownBoards.values().length) { msg.textContent = 'Please tick which load board(s) you can log into.'; ownWrap.scrollIntoView({ block: 'center' }); return; }
-        if (!sources.values().length) { msg.textContent = 'Section 2: tick how you find loads yourself.'; sources.box.scrollIntoView({ block: 'center' }); return; }
-        if (!boardWarn.hidden && !boardAck.checked) { msg.textContent = 'Please confirm the load-board notice (section 2) before submitting.'; boardWarn.scrollIntoView({ block: 'center' }); return; }
+        if (boardOk9(f.can_source.value) && !ownBoards.values().length) { focus9(ownWrap, 'Please tick which load board(s) you can log into.'); return; }
+        if (!sources.values().length) { focus9(sources.box, 'Section 2: tick how you find loads yourself.'); return; }
+        if (!boardWarn.hidden && !boardAck.checked) { focus9(boardWarn, 'Please confirm the load-board notice (section 2) before submitting.'); return; }
         if (!docState.cv) { msg.textContent = 'Please upload your CV / résumé before submitting.'; return; }
         b9.disabled = true; b9.textContent = 'Submitting…';
         const skills = { availability_hours: f.hours.value, timezone: f.timezone.value.trim(), us_hours_overlap: f.us_overlap.checked, trucks_handled: f.trucks.value || null, equipment: equip.values(), negotiation: f.negotiation.value, fmcsa_hos: f.fmcsa.value, us_geography: f.geography.value, tools: f.tools.value.trim(), can_source_loads: boardLegacy().can, own_board_access: boardLegacy().own, board_status: f.can_source.value, board_ack: boardAck.checked, sourcing_channels: sources.values(), network_desc: f.network.value.trim(), payout_pref: f.payout.value, note: f.note.value.trim(), linkedin: f.linkedin.value.trim(), cv_doc: docState.cv, cv_name: docState.cvName, id_doc: docState.idd, id_name: docState.iddName };
@@ -1316,8 +1333,15 @@ async function agentPortal(user) {
     // simply re-apply from a fresh account. Writes through dispatcher_submit_id(), which merges
     // into skills server-side — nothing else on the profile is touched.
     const idOnFile = !!((prof.skills || {}).id_doc);
-    const idVerifyCard = idOnFile ? null : (function () {
-      const st = h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8;line-height:1.6' }, 'Passport, national ID or driver\u2019s licence \u00b7 PDF or photo \u00b7 up to 25 MB. Stored privately \u2014 only LoadBoot staff can open it.');
+    // bl_disp_0460 — the card used to vanish the moment ANY id_doc existed, so a candidate with a stale, wrong or
+    // rejected file had nothing to click on any screen. Now it always renders: orange "action needed" when no ID is on
+    // file (bl_disp_0304 unchanged), a calm "on file — upload a different file" variant when one is.
+    const idVerifyCard = (function () {
+      const sk0 = prof.skills || {};
+      const when0 = (function () { try { return sk0.id_uploaded_at ? new Date(sk0.id_uploaded_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; } catch (_) { return ''; } })();
+      const st = h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8;line-height:1.6' }, idOnFile
+        ? 'On file: ' + (sk0.id_name || 'your ID') + (when0 ? ', uploaded ' + when0 : '') + '. Choosing a new file replaces it \u00b7 PDF or photo \u00b7 up to 25 MB \u00b7 stored privately.'
+        : 'Passport, national ID or driver\u2019s licence \u00b7 PDF or photo \u00b7 up to 25 MB. Stored privately \u2014 only LoadBoot staff can open it.');
       const file = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png', class: 'cp-in', style: 'margin-top:10px', onChange: async (e9) => {
         const f9 = e9.target.files && e9.target.files[0]; if (!f9) return;
         file.disabled = true; st.style.color = '#94a3b8'; st.textContent = 'Uploading\u2026';
@@ -1325,9 +1349,9 @@ async function agentPortal(user) {
           const up = await uploadDocument(f9, 'dispatcher_id');
           const r9 = await dispatcherSubmitId(up.path, up.fileName);
           if (r9 && r9.error) throw new Error(r9.error);
-          prof.skills = Object.assign({}, prof.skills || {}, { id_doc: up.path, id_name: up.fileName });
+          prof.skills = Object.assign({}, prof.skills || {}, { id_doc: up.path, id_name: up.fileName, id_uploaded_at: new Date().toISOString() });
           st.style.color = '#4ade80';
-          st.textContent = '\u2713 ' + up.fileName + ' received. Verification usually completes within one business day.';
+          st.textContent = '\u2713 ' + up.fileName + (idOnFile ? ' received \u2014 it replaces the previous file.' : ' received.') + ' Verification usually completes within one business day.';
         } catch (e10) {
           file.disabled = false; st.style.color = '#f87171';
           st.textContent = 'Upload failed \u2014 ' + ((e10 && e10.message) || 'please try again') + '.';
@@ -1337,12 +1361,14 @@ async function agentPortal(user) {
       // card says what the ID still gates (the carrier hand-over); on phone it folds to one line so the
       // workspace tabs are not 560px down on every screen.
       const past9 = ['trial', 'verified', 'active'].includes(prof.status);
-      const card9 = h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5)' }, [
-        h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#fdba74' }, 'ACTION NEEDED \u2014 IDENTITY VERIFICATION'),
-        h('div', { style: 'font-size:1.1rem;font-weight:900;color:#fff;margin:6px 0 4px' }, past9 ? 'Upload a government ID before your first carrier hand-over' : 'Upload a government ID to continue'),
-        h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'Every LoadBoot dispatcher is verified before a carrier account is handed over \u2014 you will hold that carrier\u2019s authority documents and speak to brokers in their name. We check that the name and country on your application match your ID.' + (past9 ? '' : ' Applications without a verified ID are not moved to the skills test.')),
+      const card9 = h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;' + (idOnFile ? 'background:rgba(255,255,255,.03);border:1.5px solid rgba(130,165,225,.22)' : 'background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5)') }, [
+        h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:' + (idOnFile ? '#94a3b8' : '#fdba74') }, idOnFile ? 'IDENTITY DOCUMENT \u2014 ON FILE' : 'ACTION NEEDED \u2014 IDENTITY VERIFICATION'),
+        h('div', { style: 'font-size:1.1rem;font-weight:900;color:#fff;margin:6px 0 4px' }, idOnFile ? 'Your government ID is on file' : past9 ? 'Upload a government ID before your first carrier hand-over' : 'Upload a government ID to continue'),
+        h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, idOnFile ? 'Wrong file, unreadable, expired, or LoadBoot asked for a new one? Upload a different file below \u2014 the new upload replaces the current one.' : 'Every LoadBoot dispatcher is verified before a carrier account is handed over \u2014 you will hold that carrier\u2019s authority documents and speak to brokers in their name. We check that the name and country on your application match your ID.' + (past9 ? '' : ' Applications without a verified ID are not moved to the skills test.')),
+        idOnFile ? h('div', { style: 'margin-top:10px;font-size:.84rem;font-weight:800;color:#cbd5e1' }, 'Upload a different file') : null,
         file, st,
       ]);
+      if (idOnFile) return card9;   // calm state never folds into the orange summary
       let phone9 = false; try { phone9 = window.matchMedia('(max-width: 900px)').matches; } catch (_) {}
       if (!(past9 && phone9)) return card9;
       card9.style.marginBottom = '0'; card9.style.borderTopLeftRadius = '0'; card9.style.borderTopRightRadius = '0'; card9.style.borderTop = '0';
