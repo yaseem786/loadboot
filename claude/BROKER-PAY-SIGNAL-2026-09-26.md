@@ -1,7 +1,10 @@
 # Broker pay-behaviour signal to carriers — design (item 6 of BROKER-AGENT-AUDIT §7)
 
-Status: **designed, not built.** Owner decides. Facts below are from prod (`quickfreights-portal`,
-selects only) and the repo at `683a1f5`, 26 Sep 2026. Proposed migration id: `bl_bp_0450`.
+Status: **built and live on staging + prod, 26 Sep 2026** — `migrations/bl_bp_0452_broker_pay_signal.sql`
+(applied under the history name `bl_bp_0450_broker_pay_signal`, renamed to 0452 the same session because the
+parallel sessions took 0450/0451). Carrier app change in `app/carrier/app.js` ships with the next site push.
+Staging test (§5) ran on throwaway rows and matched every expected value; rows cleaned up. Facts below are
+from prod (`quickfreights-portal`, selects only) and the repo at `683a1f5`.
 
 ## 1. What exists today (and why it is not the signal)
 
@@ -65,7 +68,7 @@ If `trips.invoiced_at` is ever added, switch the anchor there and say so in the 
    it a metric with n=0 on prod changes nothing today and needs its own design when it does.
 4. **Not into `source_notice`.** That is stamped at post time by `trust_label_load()` and would go stale.
 
-## 4. Migration shape (`bl_bp_0450`, ~120 lines, main-loop work)
+## 4. Migration shape (`bl_bp_0452`, as shipped)
 
 ```sql
 create or replace function app_private.broker_pay_stats(p_org uuid) returns jsonb
