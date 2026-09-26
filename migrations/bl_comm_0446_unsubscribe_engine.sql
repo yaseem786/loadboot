@@ -200,6 +200,18 @@ begin
   v_all := '*' = any(v_groups);
   v_touch_marketing := v_all or 'marketing' = any(v_groups);
 
+  -- Already off → no second event. Opening the preferences page again (or a second one-click) must not
+  -- count the same person twice; the caller gets the existing event back. (26 Sep 2026, owner's test:
+  -- three page opens had written three "unsubscribed from Summaries" rows.)
+  if p_action = 'unsubscribe'
+     and not exists (select 1 from unnest(v_groups) g
+                      where not exists (select 1 from app_private.unsub_prefs p
+                                         where p.email = v_email and p.group_code = g and p.opted_out)) then
+    return jsonb_build_object('ok', true, 'noop', true, 'email', v_email, 'user_id', v_user, 'action', p_action, 'groups', v_groups,
+      'event_id', (select max(p.last_event_id) from app_private.unsub_prefs p where p.email = v_email and p.group_code = any(v_groups)),
+      'state', app_private.unsub_state(v_email));
+  end if;
+
   v_reason := nullif(btrim(p_reason_text), '');
   if p_reason_code is not null and not exists (select 1 from app_private.unsub_reasons where code = p_reason_code) then
     -- keep the text, drop the unknown code
@@ -1040,8 +1052,7 @@ begin
   if v_code is null and v_text is null then return jsonb_build_object('ok', false, 'error', 'nothing to record'); end if;
   select id into v_ev from app_private.unsub_events
    where email = r.o_email and action = 'unsubscribe' and source in ('preference_page','one_click','legacy_link')
-     and at >= now() - interval '2 hours'
-   order by at desc limit 1;
+   order by at desc limit 1;   -- the latest unsubscribe from a link, whatever its age (a re-open no longer writes a new one)
   if v_ev is null then return jsonb_build_object('ok', false, 'error', 'no recent unsubscribe to attach this to'); end if;
   update app_private.unsub_events set reason_code = v_code, reason_text = v_text where id = v_ev;
   update app_private.unsub_prefs set reason_code = v_code, reason_text = v_text where email = r.o_email and last_event_id = v_ev;
