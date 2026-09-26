@@ -72,7 +72,7 @@ const CSS = `
 @media (prefers-reduced-motion:reduce){.ry-pulse{animation:none}}
 `;
 
-export async function renderRiley(host) {
+export async function renderRiley(host, query) {
   if (!document.getElementById('ry-css')) { const s = document.createElement('style'); s.id = 'ry-css'; s.textContent = CSS; document.head.appendChild(s); }
   const root = el('div', { class: 'ry' });
   const warnEl = el('div'), boardEl = el('div'), tabsEl = el('div'), bodyEl = el('div');
@@ -83,7 +83,8 @@ export async function renderRiley(host) {
     warnEl, boardEl, tabsEl, bodyEl);
 
   let data = { calls: [], wa_legs: [], wa_callbacks: [], stats: {} }, settings = {}, prompts = null, status = null;
-  let tab = 'calls', timer = null, tick = null, busy = false, statusBusy = false;
+  const wanted = (() => { try { return query && query.get ? query.get('tab') : null; } catch (_) { return null; } })();
+  let tab = ['calls', 'prompts', 'wa', 'settings'].includes(wanted) ? wanted : 'calls', timer = null, tick = null, busy = false, statusBusy = false;
   const F = { q: '', dir: '', days: '30' };
   const can = () => !!settings.can_manage;
 

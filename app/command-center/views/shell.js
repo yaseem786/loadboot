@@ -82,40 +82,111 @@ function flattenNav(arr, out, grp) {
 }
 const NAV_PAGES = flattenNav(NAV, []);
 
+// ---- Deep screen index (bl_ui_0459). The sidebar only knows 21 destinations; the real map is the
+// tabbed groups in app.js (Dispatchers & agents → Phones / WhatsApp / Riley …) and the sections inside
+// them. app.js registers those here at boot, with their allowed() guards, so the search box can find
+// "Riley", "prompts", "WhatsApp line" and land on the exact tab (and sub-tab via ?tab=).
+let DEEP = [];
+export function registerSearchIndex(entries) {
+  DEEP = (entries || []).filter(e => e && e.path && e.label);
+}
+const navLabelFor = (path) => { const it = FLAT.find(i => i.path === path); return it ? it.label : ''; };
+
+// Score a screen against the typed words. Every word must hit somewhere (label, crumb, keywords, path);
+// whole-word prefix hits on the label beat substring hits, and a subsequence match ("wtsp" → WhatsApp)
+// is the last resort so a typo still finds the screen. 0 = no match.
+const norm = (s) => String(s || '').toLowerCase().replace(/[’']/g, '');
+function subseq(w, s) { let i = 0; for (const ch of s) { if (ch === w[i]) i++; if (i === w.length) return true; } return false; }
+function scoreScreen(words, e) {
+  const label = norm(e.label), crumb = norm(e.crumb), kw = norm(e.keywords), path = norm(e.path);
+  let total = 0;
+  for (const w of words) {
+    let s = 0;
+    if (label === w) s = 100;
+    else if (label.startsWith(w)) s = 80;
+    else if (label.split(/[^a-z0-9]+/).some(t => t.startsWith(w))) s = 60;
+    else if (label.includes(w)) s = 40;
+    else if (kw.split(/[^a-z0-9]+/).some(t => t.startsWith(w))) s = 35;
+    else if (crumb.includes(w) || path.includes(w)) s = 25;
+    else if (kw.includes(w)) s = 20;
+    else if (w.length >= 3 && subseq(w, label.replace(/[^a-z0-9]/g, ''))) s = 8;
+    if (!s) return 0;
+    total += s;
+  }
+  return total + (e.depth === 0 ? 3 : 0);
+}
+function screenMatches(q, limit) {
+  const words = norm(q).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const seen = new Set();
+  const all = [
+    ...DEEP,
+    ...NAV_PAGES.map(p => ({ path: p.path, label: p.label, crumb: p.group || '', keywords: '', depth: 0, allowed: null })),
+  ].filter(e => { const k = e.path + '|' + e.label; if (seen.has(k)) return false; seen.add(k); return true; });
+  return all
+    .filter(e => !e.allowed || safeAllowed(e))
+    .map(e => ({ e, s: scoreScreen(words, e) }))
+    .filter(x => x.s > 0)
+    .sort((a, b) => b.s - a.s || a.e.label.localeCompare(b.e.label))
+    .slice(0, limit)
+    .map(x => x.e);
+}
+function safeAllowed(e) { try { return !!e.allowed(); } catch (_) { return false; } }
+
 function globalSearchBox() {
-  const input = el('input', { class: 'cc-input cc-search', placeholder: 'Search carriers, loads, leads, invoices…' });
-  const panel = el('div', { class: 'cc-search-panel', hidden: true });
+  const input = el('input', { class: 'cc-input cc-search', placeholder: 'Search screens, carriers, loads, leads, invoices…  (Ctrl+K)', 'aria-label': 'Search Command Center', autocomplete: 'off' });
+  const panel = el('div', { class: 'cc-search-panel', hidden: true, role: 'listbox' });
   const wrap = el('div', { class: 'cc-search-wrap' }, [input, panel]);
-  let t = null;
-  const close = () => { panel.hidden = true; };
-  input.addEventListener('input', () => {
-    clearTimeout(t);
+  let t = null, rowsEl = [], active = -1;
+  const close = () => { panel.hidden = true; active = -1; };
+  const setActive = (i) => {
+    if (!rowsEl.length) return;
+    active = (i + rowsEl.length) % rowsEl.length;
+    rowsEl.forEach((r, k) => r.classList.toggle('on', k === active));
+    try { rowsEl[active].scrollIntoView({ block: 'nearest' }); } catch (_) {}
+  };
+  const go = (href) => { close(); input.value = ''; input.blur(); if (href) location.hash = href.replace(/^#/, ''); };
+  const row = (href, pill, pillCls, label, sub) => {
+    const a = el('a', { class: 'cc-search-row', href, role: 'option', onClick: (ev) => { ev.preventDefault(); go(href); } }, [
+      el('span', { class: 'cc-pill ' + pillCls }, pill), el('b', null, label), el('span', { class: 'cc-sub' }, sub || ''),
+    ]);
+    rowsEl.push(a); return a;
+  };
+  async function run() {
     const q = input.value.trim();
-    if (q.length < 2) { close(); return; }
-    t = setTimeout(async () => {
-      const ql = q.toLowerCase();
-      const words = ql.split(/\s+/).filter(Boolean);
-      const pages = NAV_PAGES.filter(p => { const hay = (p.label + ' ' + (p.group || '')).toLowerCase(); return words.every(w => hay.includes(w)); }).slice(0, 8);
-      let rows = [];
-      try { rows = await globalSearch(q, 12); } catch (_) { rows = []; }
-      const nodes = [];
-      pages.forEach(p => nodes.push(el('a', { class: 'cc-search-row', href: '#' + p.path, onClick: close }, [
-        el('span', { class: 'cc-pill cc-pill-blue' }, 'Page'),
-        el('b', null, p.label),
-        el('span', { class: 'cc-sub' }, p.group || 'Go to page'),
-      ])));
+    rowsEl = []; active = -1;
+    if (!q) { close(); return; }
+    const screens = screenMatches(q, q.length < 2 ? 6 : 10);
+    const nodes = [];
+    if (screens.length) {
+      nodes.push(el('div', { class: 'cc-search-head' }, 'Screens'));
+      screens.forEach(e => nodes.push(row('#' + e.path, e.depth >= 2 ? 'Section' : e.depth === 1 ? 'Tab' : 'Page', e.depth >= 1 ? 'cc-pill-blue' : 'cc-pill-gray', e.label, e.crumb)));
+    }
+    let rows = [];
+    if (q.length >= 2) { try { rows = await globalSearch(q, 12); } catch (_) { rows = []; } }
+    if (input.value.trim() !== q) return;   // a newer keystroke owns the panel
+    if (rows && rows.length) {
+      nodes.push(el('div', { class: 'cc-search-head' }, 'Records'));
       const hashFor = (r) => r.kind === 'carrier' ? ('/carrier?id=' + r.id)
         : r.kind === 'partner' ? ('/broker?id=' + r.id)
         : (SEARCH_HASH[r.kind] || '/');
-      (rows || []).forEach(r => nodes.push(el('a', { class: 'cc-search-row', href: '#' + hashFor(r), onClick: close }, [
-        el('span', { class: 'cc-pill cc-pill-gray' }, r.sublabel),
-        el('b', null, r.label),
-        el('span', { class: 'cc-sub' }, r.status || ''),
-      ])));
-      if (!nodes.length) { mount(panel, el('div', { class: 'cc-search-empty' }, 'No matches')); panel.hidden = false; return; }
-      mount(panel, nodes);
-      panel.hidden = false;
-    }, 220);
+      rows.forEach(r => nodes.push(row('#' + hashFor(r), r.sublabel, 'cc-pill-gray', r.label, r.status || '')));
+    }
+    if (!rowsEl.length) { mount(panel, el('div', { class: 'cc-search-empty' }, 'No screen or record matches “' + q + '”.')); panel.hidden = false; return; }
+    mount(panel, nodes);
+    panel.hidden = false;
+    setActive(0);
+  }
+  input.addEventListener('input', () => { clearTimeout(t); const q = input.value.trim(); if (!q) { close(); return; } t = setTimeout(run, q.length < 3 ? 60 : 160); });
+  input.addEventListener('focus', () => { if (input.value.trim()) run(); });
+  input.addEventListener('keydown', (ev) => {
+    if (ev.key === 'ArrowDown') { ev.preventDefault(); if (panel.hidden) run(); else setActive(active + 1); }
+    else if (ev.key === 'ArrowUp') { ev.preventDefault(); setActive(active - 1); }
+    else if (ev.key === 'Enter') { ev.preventDefault(); const r = rowsEl[active >= 0 ? active : 0]; if (r) go(r.getAttribute('href')); }
+    else if (ev.key === 'Escape') { close(); input.blur(); }
+  });
+  document.addEventListener('keydown', (ev) => {
+    if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'k' || ev.key === 'K')) { ev.preventDefault(); input.focus(); input.select(); }
   });
   document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
   return wrap;
