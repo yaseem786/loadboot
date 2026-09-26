@@ -95,3 +95,24 @@ Unchanged: 35 staging / 36 prod. Every new `public.cc_weekly_*` function is `rev
   `comm.weekly_approval` stays `manual`; flip to automatic after ~4 clean weeks.
 - **Open:** the tip/reminder pools repeat after 8 weeks unless the Routine keeps adding; the dispatcher version has
   never rendered against a real dispatcher (none on staging) — preview it on prod before approving the first one.
+
+## 26 Sep 2026, evening — first issue live in prod, confirmations sent, copy patch 0448c
+
+- **Owner did the CC steps himself at 17:21 UTC:** "Build this week now" → `2026-W39` carrier / dispatcher / public
+  built, all three approved, "Weekly send: ON" (`comm.newsletter_enabled=true`, approval stays `manual`). First
+  send is the cron on **Tuesday 29 Sep 14:00 UTC**; recipients carrier 67 / dispatcher 2 / public 0 (nobody
+  confirmed yet). `weekly_sends` is empty — nothing has gone out.
+- **Previews checked on prod against real data** (carrier "Carrier Account", dispatcher David Thompson, public):
+  subject carries the live rate, no `253-7575`, no unfilled token, WhatsApp contact line present, rates table
+  renders. The dispatcher version rendered against a real dispatcher for the first time.
+- **Copy fixes seen in those previews → `bl_comm_0448c_weekly_copy` (applied prod 17:3x UTC):** carrier hero with no
+  equipment on file said "what your lanes is paying" → "are paying"; dispatcher subject said "1 carriers" → new
+  token `{{carriers_word}}` in `weekly_render`'s subject vars and in the `weekly.dispatcher` subject template.
+  Patched by anchor inside the existing function (ACL untouched); `migrations/bl_comm_0448_loadboot_weekly.sql`
+  carries the same text so a fresh apply matches. Anon SECDEF after: 36, same names md5 `06f779f7…`.
+- **4 backfilled newsletter addresses:** gate `cc_email_can_send(…, 'newsletter.confirm')` allowed all four
+  (essential / account_critical); `cc_newsletter_send_confirm` queued one confirm email each at 17:24 UTC, links
+  valid until 3 Oct, `email_blocked_log` empty. Whoever clicks becomes a `public` recipient for Tuesday.
+- **Riley call forwarding:** still parked by owner decision (26 Sep, WhatsApp only for now). Not a repo item.
+- Watch on Tuesday: CC → Newsletter cards should show `sent` with counts; CC → Unsubscribes → Blocked sends
+  for any gate refusals. `bl_comm_0448c` applied on staging too (anon 35, names unchanged).

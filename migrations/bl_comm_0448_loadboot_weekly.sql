@@ -419,7 +419,7 @@ begin
            and coalesce((p_ctx->>'in_progress')::int, 0) = 0 and coalesce((p_ctx->>'invoiced')::numeric, 0) = 0;
     hero := app_private.wk_hero(v_eyebrow,
               coalesce('Your week, ' || app_private.wk_esc(v_first), 'Your week on LoadBoot'),
-              v_range || ' &middot; what moved on your account, what ' || case when array_length(v_eq, 1) > 0 then app_private.wk_esc(v_eq[1]) else 'your lanes' end || ' is paying, and one thing to do before Friday.');
+              v_range || ' &middot; what moved on your account, what ' || case when array_length(v_eq, 1) > 0 then app_private.wk_esc(v_eq[1]) || ' is' else 'your lanes are' end || ' paying, and one thing to do before Friday.');
     if not v_quiet then
       tiles := jsonb_build_array(
         jsonb_build_object('label', 'Loads offered', 'value', coalesce(p_ctx->>'offers', '0'),
@@ -516,7 +516,7 @@ begin
     'article', art, 'cta', cta, 'note', note, 'site', v_site,
     'first_name', coalesce(v_first, 'there'), 'week_label', coalesce(p_content->>'week_label', ''), 'as_of', coalesce(p_content->>'as_of', ''),
     'lead_rate', app_private.wk_lead(v_rates, v_eq),
-    'n_carriers', coalesce(p_ctx->>'n_carriers', '0'), 'n_bookings', coalesce(p_ctx->>'bookings', '0'),
+    'n_carriers', coalesce(p_ctx->>'n_carriers', '0'), 'carriers_word', case when coalesce((p_ctx->>'n_carriers')::int, 0) = 1 then 'carrier' else 'carriers' end, 'n_bookings', coalesce(p_ctx->>'bookings', '0'),
     'n_offers', coalesce(p_ctx->>'offers', '0'), 'n_delivered', coalesce(p_ctx->>'delivered', '0'));
   select f.o_subject, f.o_html into t from app_private.newsletter_fill(v_key, v_vars) f;
   o_subject := t.o_subject; o_html := t.o_html;
@@ -532,7 +532,7 @@ with t(key,name,subject,body,class,grp,audience,purpose,cadence) as (values
    'The carrier version of LoadBoot Weekly: their account week (offers, deliveries, invoices, expiries), rates for their equipment with week-over-week, one tip, one compliance reminder, one article. Replaces carrier_weekly_summary. Fired by app_private.weekly_send_run (cron lb-newsletter-weekly, Tuesdays 14:00 UTC) for the approved issue of the week.',
    'Tuesdays 14:00 UTC, one per week'),
   ('weekly.dispatcher', 'LoadBoot Weekly — dispatcher',
-   'Your fleet this week · {{n_carriers}} carriers · {{lead_rate}}',
+   'Your fleet this week · {{n_carriers}} {{carriers_word}} · {{lead_rate}}',
    '{{hero}}{{your_week}}{{alerts}}{{rates}}{{tip}}{{compliance}}{{article}}{{cta}}{{note}}',
    'O', 'digests', 'dispatcher',
    'The dispatcher version of LoadBoot Weekly: their carriers'' week, bookings, trucks not posted, expiring documents, rates for the fleet''s equipment, one dispatcher tip, one compliance reminder, one article. Fired by app_private.weekly_send_run (Tuesdays 14:00 UTC).',
