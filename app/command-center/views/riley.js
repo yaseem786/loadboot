@@ -56,6 +56,7 @@ const CSS = `
 .ry-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
 .ry-pill.g{background:rgba(34,197,94,.14);color:#15803d}.ry-pill.r{background:rgba(239,68,68,.13);color:#b91c1c}.ry-pill.a{background:rgba(245,158,11,.16);color:#b45309}.ry-pill.b{background:rgba(8,131,247,.13);color:#0369a1}.ry-pill.m{background:rgba(100,116,139,.15);color:#475569}
 .ry-btn{border:1px solid var(--line,#d8dee9);background:var(--card,#fff);color:inherit;border-radius:10px;padding:8px 13px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.ry-btn.done{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#15803d}.ry-btn.done[disabled]{opacity:1;cursor:default}
 .ry-btn:hover{filter:brightness(.97)}.ry-btn.p{background:var(--b,#0883F7);border-color:var(--b,#0883F7);color:#fff}.ry-btn.o{background:var(--o,#FC5305);border-color:var(--o,#FC5305);color:#fff}.ry-btn.sm{padding:5px 10px;font-size:12.5px}.ry-btn[disabled]{opacity:.5;cursor:not-allowed}
 .ry-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
 .ry-in{border:1px solid var(--line,#d8dee9);background:var(--card,#fff);color:inherit;border-radius:10px;padding:8px 11px;font:inherit;min-width:0}
@@ -232,10 +233,30 @@ export async function renderRiley(host, query) {
       const bm = el('input', { class: 'ry-in', style: 'width:100%;box-sizing:border-box', placeholder: p.agent_key === 'inbound' ? 'Empty = Riley opens from the prompt (known vs unknown caller)' : 'First line Riley says', value: p.begin_message || '' });
       const stEl = el('div', { style: 'font-size:12.5px;color:var(--mut,#64748b)' }, [
         p.published_at ? 'Published ' + et(p.published_at) + ' (Retell llm v' + (p.published_llm_version ?? '?') + ', agent v' + (p.published_agent_version ?? '?') + ')' : 'Never published from CC — Riley is still on whatever the Retell dashboard holds.',
-        p.dirty ? el('span', { class: 'ry-pill a', style: 'margin-left:8px' }, 'unpublished changes') : el('span', { class: 'ry-pill g', style: 'margin-left:8px' }, 'live'),
+        p.dirty ? el('span', { class: 'ry-pill a', style: 'margin-left:8px' }, 'saved, not published yet') : el('span', { class: 'ry-pill g', style: 'margin-left:8px' }, 'published · live'),
       ]);
       const count = el('span', { style: 'font-size:12px;opacity:.7' }, (p.general_prompt || '').length.toLocaleString() + ' chars');
-      ta.addEventListener('input', () => { count.textContent = ta.value.length.toLocaleString() + ' chars'; });
+      // Button state machine (owner ask, 26 Sep): the buttons must SAY where the prompt stands.
+      //   editing  → "Save draft" live, Publish locked (save first), "Discard changes" shown
+      //   saved, unpublished changes → "Saved ✓" locked, "Publish to Retell" live
+      //   saved and live → "Saved ✓" locked, "Published · live" locked
+      const saveBtn = el('button', { class: 'ry-btn p', onClick: () => save() }, [icon('check', 16), 'Save draft']);
+      const pubBtn = el('button', { class: 'ry-btn o', onClick: () => publish() }, [icon('upload', 16), 'Publish to Retell']);
+      const discardBtn = el('button', { class: 'ry-btn', onClick: () => { ta.value = p.general_prompt || ''; bm.value = p.begin_message || ''; count.textContent = ta.value.length.toLocaleString() + ' chars'; syncButtons(); } }, 'Discard changes');
+      const edited = () => ta.value !== (p.general_prompt || '') || (bm.value || '') !== (p.begin_message || '');
+      function syncButtons() {
+        const e = edited(), m = can();
+        saveBtn.disabled = !m || !e;
+        saveBtn.textContent = ''; saveBtn.append(icon('check', 16), e ? 'Save draft' : 'Saved ✓');
+        saveBtn.classList.toggle('p', e); saveBtn.classList.toggle('done', !e);
+        pubBtn.disabled = !m || e || !p.dirty;
+        pubBtn.textContent = ''; pubBtn.append(icon('upload', 16), e ? 'Save first, then publish' : (p.dirty ? 'Publish to Retell' : 'Published · live'));
+        pubBtn.classList.toggle('o', !e && p.dirty); pubBtn.classList.toggle('done', !e && !p.dirty);
+        pubBtn.title = e ? 'Save the draft before publishing' : (p.dirty ? 'Make this draft live for the very next call' : 'Retell is running exactly this text');
+        discardBtn.hidden = !e;
+      }
+      ta.addEventListener('input', () => { count.textContent = ta.value.length.toLocaleString() + ' chars'; syncButtons(); });
+      bm.addEventListener('input', syncButtons);
       const save = async () => {
         try { const r = await ccRileyPromptSave(p.agent_key, bm.value, ta.value); if (r && r.error) throw new Error(r.error); toast('Saved. Not live yet — press Publish when you are ready.'); await loadPrompts(); paintPrompts(); paintWarn(); }
         catch (e) { toast(humanizeError(e), 'error'); }
@@ -258,7 +279,7 @@ export async function renderRiley(host, query) {
           ]), { size: 'lg' });
         } catch (e) { toast(humanizeError(e), 'error'); }
       };
-      return el('div', { class: 'ry-card' }, [
+      const card = el('div', { class: 'ry-card' }, [
         el('h3', null, [KEYS[p.agent_key] || p.agent_key, count]),
         el('p', { class: 'hint' }, p.agent_key === 'inbound'
           ? 'Every inbound caller — carrier, broker, shipper, dispatcher — is handled by this ONE prompt through its role playbooks. Riley receives {{name}}, {{role}}, {{topic}} and {{context}} from the inbound webhook before she speaks.'
@@ -267,12 +288,13 @@ export async function renderRiley(host, query) {
         el('label', { style: 'display:grid;gap:5px;font-size:12.5px;font-weight:600;margin-top:10px' }, ['Opening line', bm]),
         el('label', { style: 'display:grid;gap:5px;font-size:12.5px;font-weight:600;margin-top:10px' }, ['System prompt', ta]),
         el('div', { class: 'ry-row', style: 'margin-top:10px' }, [
-          el('button', { class: 'ry-btn p', disabled: !can(), onClick: save }, [icon('check', 16), 'Save draft']),
-          el('button', { class: 'ry-btn o', disabled: !can(), onClick: publish }, [icon('upload', 16), 'Publish to Retell']),
+          saveBtn, pubBtn, discardBtn,
           el('button', { class: 'ry-btn', onClick: compare }, 'Show what Retell has now'),
           el('span', { style: 'font-size:12px;opacity:.7' }, 'Canonical copies: docs/voice-agent/prompts/. Never type the Riley phone number into a prompt.'),
         ]),
       ]);
+      syncButtons();
+      return card;
     });
     const hist = (prompts.history || []);
     cards.push(el('div', { class: 'ry-card' }, [
