@@ -144,6 +144,31 @@ export function avatar(name, fallback) {
 // ---- slide-in drawer ----
 // Phones: a table with a header becomes a stack of cards. Every <td> gets data-label from its column
 // header; CSS (command-center.css, .lb-stack) shows "LABEL  value" rows under 640px. Idempotent.
+// cc-nav-unlock (25 Sep 2026): a link inside a popup (e.g. "carrier 360") changes the route while the
+// popup is still open, so its close() never runs and html.cc-dlg-lock stayed on — the next page could not
+// scroll until a refresh. On every route change: close any open popup/overlay and drop the scroll lock.
+// Registered at module load, i.e. before the router's own hashchange listener, so a route that opens a
+// new popup (#/carriers?id=…) still opens it after the old one is gone.
+if (typeof window !== 'undefined' && !window.__ccNavUnlock) {
+  window.__ccNavUnlock = true;
+  window.addEventListener('hashchange', () => {
+    try {
+      const r = document.getElementById('cc-drawer-root');
+      if (r) { if (r._lbClose) r._lbClose(true); else r.remove(); }
+      document.querySelectorAll('.cc-xdlg-ovl').forEach((o) => o.remove());
+    } catch (_) {}
+    document.documentElement.classList.remove('cc-dlg-lock');
+  });
+  // 26 call sites across CC remove '#cc-drawer-root' directly (…?.remove()) instead of calling close(),
+  // e.g. after Save. Watch the body: once no popup is left, the lock goes too.
+  const unlockIfIdle = () => {
+    const h = document.documentElement;
+    if (h.classList.contains('cc-dlg-lock') && !document.getElementById('cc-drawer-root') && !document.querySelector('.cc-xdlg-ovl')) h.classList.remove('cc-dlg-lock');
+  };
+  const watch = () => { try { new MutationObserver(unlockIfIdle).observe(document.body, { childList: true }); } catch (_) {} };
+  if (document.body) watch(); else document.addEventListener('DOMContentLoaded', watch, { once: true });
+}
+
 export function stackTables(scope) {
   if (!scope || !scope.querySelectorAll) return;
   scope.querySelectorAll('table').forEach((t) => {

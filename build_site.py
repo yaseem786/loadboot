@@ -1299,7 +1299,7 @@ HOME_RATES = ('<section id="market-rates" class="bg-soft"><div class="wrap">'
  '.hmr .r{font-size:.72rem;color:#64748b}'
  '.hmr-note{text-align:center;font-size:.8rem;color:#64748b;margin-top:6px}</style>'
  '<div class="hmr-g reveal" id="hmrTiles">'
- + ''.join('<div class="hmr"><div class="e">' + e + ' Rates</div><div class="p" data-eq="' + e + '">\u2014</div><div class="r" data-eqr="' + e + '">loading\u2026</div></div>'
+ + ''.join('<div class="hmr"><div class="e">' + e + ' Rates</div><div class="p" data-eq="' + e + '">\u2014</div><div class="r" data-eqr="' + e + '">loading\u2026</div><div class="r" data-eqt="' + e + '"></div></div>'
            for e in ['Dry Van', 'Reefer', 'Flatbed', 'Hotshot'])
  + '</div>'
  '<div class="hmr-note" id="hmrAsOf">National spot averages, all-in linehaul per mile \u00b7 each figure carries its own as-of date</div>'
@@ -1324,7 +1324,8 @@ HOME_RATES_JS = ("<script>(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD
  "fetch(SB+'/rest/v1/rpc/get_public_market_rates',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'})"
  ".then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(!d)return;var asof='';"
  "d.forEach(function(b){asof=b.as_of||asof;var p=document.querySelector('[data-eq=\"'+b.equipment+'\"]');var r2=document.querySelector('[data-eqr=\"'+b.equipment+'\"]');"
- "if(p)p.textContent='$'+Number(b.carrier_rpm).toFixed(2)+'/mi';if(r2)r2.textContent='range $'+Number(b.low).toFixed(2)+'\u2013'+Number(b.high).toFixed(2);});"
+ "if(p)p.textContent='$'+Number(b.carrier_rpm).toFixed(2)+'/mi';if(r2)r2.textContent='range $'+Number(b.low).toFixed(2)+'\u2013'+Number(b.high).toFixed(2);"
+ "var t=document.querySelector('[data-eqt=\"'+b.equipment+'\"]');if(t&&window.LBT)t.innerHTML=LBT(b);});"
  "var a=document.getElementById('hmrAsOf');if(a&&asof)a.textContent='National spot averages, all-in linehaul per mile \u00b7 updated '+asof;"
  "}).catch(function(){});})();</script>")
 
@@ -1402,6 +1403,34 @@ def _sf_load():
     return _sf, 'fallback (fetched %s)' % _sf.get('fetched', '?')
 _SF, _SF_FROM = _sf_load()
 _SF_FACTS = _SF.get('facts') or {}
+# Week-on-week trend arrows (25 Sep 2026): each equipment's rate is compared with its previous publish in
+# rate_history (the latest as_of before the live one). Rendered client-side by window.LBT next to the live
+# figure, and only while the live as_of is still the one this build saw - a publish after the build hides the
+# arrow instead of comparing against the wrong week. No history (fallback build) = no arrows, never a guess.
+def _mr_prev_load():
+    import datetime as _dtm
+    _h = {}
+    for _r in (_SF.get('rate_history') or []):
+        try: _h.setdefault(_r['equipment'], []).append((str(_r['as_of']), float(_r['rpm'])))
+        except (KeyError, TypeError, ValueError): continue
+    _out = {}
+    for _e in _MR_EQS:
+        _cur = str(_MR_LIVE[_e]['as_of'])
+        _old = sorted(_x for _x in _h.get(_e, []) if _x[0] < _cur)
+        if _old:
+            _out[_e] = {'r': _old[-1][1], 'c': _cur, 'l': _dtm.date.fromisoformat(_old[-1][0]).strftime('%b %-d')}
+    return _out
+_MR_PREV = _mr_prev_load()
+_MR_TREND_JS = ("<script>(function(){var P=" + json.dumps(_MR_PREV) + ";"
+  "window.LBT=function(b){var p=P[b.equipment];if(!p||String(b.as_of)!==p.c)return '';"
+  "var d=Math.round((Number(b.carrier_rpm)-p.r)*100)/100,up=d>0,dn=d<0;"
+  "var col=up?'#15803d':(dn?'#b91c1c':'#64748b'),pc=(d/p.r*100).toFixed(1);"
+  "return '<span class=\"lbt\" style=\"color:'+col+';font-weight:700;font-size:.78rem;white-space:nowrap\">'"
+  "+(up?'\u25B2 +':(dn?'\u25BC \u2212':'\u2192 '))+(d===0?'unchanged':'$'+Math.abs(d).toFixed(2)+' ('+(up?'+':'')+pc+'%)')+' vs '+p.l+'</span>';};"
+  "})();</script>")
+HOME_RATES_JS = _MR_TREND_JS + HOME_RATES_JS
+print('trend arrows: %d of %d equipment have a previous publish (%s)' % (len(_MR_PREV), len(_MR_EQS),
+      ', '.join('%s %.2f %s' % (_e, _v['r'], _v['l']) for _e, _v in _MR_PREV.items()) or 'none'))
 _FACT_USED, _FACT_MISSING = {}, {}
 def fact(key, default=None, page=None):
     """One site fact by key. kind=number comes back as float. A key the registry does not have falls
@@ -6040,7 +6069,7 @@ _MR_JS = ("(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "';"
   ".then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(!d||!d.length)return;"
   "var tb=document.getElementById('mrRows');if(!tb)return;var asof='';"
   "tb.innerHTML=d.map(function(b){asof=b.as_of||asof;return '<tr><td><b>'+b.equipment+'</b><div class=\"mr-sub\">$'+Number(b.low).toFixed(2)+'–'+Number(b.high).toFixed(2)+'/mi range</div></td>'"
-  "+'<td class=\"mr-c\">$'+Number(b.carrier_rpm).toFixed(2)+'</td>'"
+  "+'<td class=\"mr-c\">$'+Number(b.carrier_rpm).toFixed(2)+(window.LBT?'<div>'+LBT(b)+'</div>':'')+'</td>'"
   "+'<td class=\"mr-b\">$'+Number(b.broker_buy_rpm).toFixed(2)+' / $'+Number(b.broker_sell_rpm).toFixed(2)+'</td>'"
   "+'<td class=\"mr-s\">$'+Number(b.shipper_rpm).toFixed(2)+'</td></tr>';}).join('');"
   "var el2=document.getElementById('mrAsOf');if(el2&&asof)el2.textContent='Updated '+asof+'.';"
@@ -6120,7 +6149,7 @@ _mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org",
   '{"@type":"Question","name":"What is the average trucking rate per mile right now?","acceptedAnswer":{"@type":"Answer","text":' + json.dumps(_MR_FAQ_AVG_TXT) + '}},'
   '{"@type":"Question","name":"What is the difference between shipper, broker and carrier rates?","acceptedAnswer":{"@type":"Answer","text":"The carrier rate is what the truck is paid. Brokers buy capacity at the carrier rate and sell the shipment to shippers with a typical 12-18% margin, so shipper rates run higher than carrier rates on the same lane."}},'
   '{"@type":"Question","name":"What is the minimum rate per mile a carrier should accept?","acceptedAnswer":{"@type":"Answer","text":"Most owner-operators need $2.00-$2.50 per mile for dry van and $2.50+ for reefer or flatbed to cover an all-in operating cost of roughly $1.80-$2.00 per mile plus margin."}}]}</script>'
-  '<script>' + _MR_JS + '</script>')
+  + _MR_TREND_JS + '<script>' + _MR_JS + '</script>')
 
 page('market-rates.html', 'Truckload Rates Per Mile 2026 — Carrier, Broker &amp; Shipper | LoadBoot',
      'Current truckload freight rates per mile, ' + _MR_MONTH + ': dry van ' + _mrd(_mrc('Dry Van')) + ', reefer ' + _mrd(_mrc('Reefer')) + ', flatbed ' + _mrd(_mrc('Flatbed')) + ' to the carrier. Carrier, broker, shipper sides, dated.',
@@ -6568,7 +6597,7 @@ _EQR_CSS = ('<style>'
 
 def _eqr_js(eq_name, lanes):
     import json as _j
-    return ("<script>(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "',EQ=" + _j.dumps(eq_name)
+    return (_MR_TREND_JS + "<script>(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "',EQ=" + _j.dumps(eq_name)
       + ",LANES=" + _j.dumps([m for _o, _d, m in lanes]) + ";"
       "fetch(SB+'/rest/v1/rpc/get_public_market_rates',{method:'POST',headers:{apikey:KEY,"
       "Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'})"
@@ -6584,6 +6613,7 @@ def _eqr_js(eq_name, lanes):
       "var mg=(b.broker_sell_rpm-b.broker_buy_rpm)/b.broker_sell_rpm*100;"
       "set('eqrMargin','About '+mg.toFixed(0)+'% gross margin at these numbers');"
       "if(b.as_of)set('eqrAsOf','Updated '+b.as_of);"
+      "var tt=document.getElementById('eqrTrend');if(tt&&window.LBT)tt.innerHTML=LBT(b);"
       "for(var k=0;k<LANES.length;k++){set('eqrLc'+k,m0(LANES[k]*b.carrier_rpm));"
       "set('eqrLs'+k,m0(LANES[k]*b.shipper_rpm));}"
       "set('eqrBd1',m2(b.carrier_rpm*0.78));set('eqrBd2',m2(b.carrier_rpm*0.22));"
@@ -6632,7 +6662,7 @@ for _eq in _EQ_RATES:
     _b += ('<section><div class="wrap">'
       '<div class="eqr-grid">'
       '<div class="eqr-c c"><div class="who">Carrier is paid</div><div class="big" id="eqrC">\u2014</div>'
-        '<div class="sub" id="eqrRange">Typical range</div></div>'
+        '<div class="sub" id="eqrRange">Typical range</div><div class="sub" id="eqrTrend"></div></div>'
       '<div class="eqr-c b"><div class="who">Broker buys \u2192 sells</div><div class="big" id="eqrB">\u2014</div>'
         '<div class="sub" id="eqrMargin">Gross margin</div></div>'
       '<div class="eqr-c s"><div class="who">Shipper pays</div><div class="big" id="eqrS">\u2014</div>'
@@ -9296,7 +9326,15 @@ DOMAIN = 'https://loadboot.com'
 _SITEMAP_EXCLUDE = {'dashboard.html', '404.html', 'broker-claim.html', 'agent-confirm.html', 'claim-confirm.html', 'unsub.html',
                     'referral.html'}  # SEO-0: referral.html 301s to agents.html on Netlify — a sitemap URL must not redirect
 pages = [f for f in sorted(os.listdir(OUT)) if f.endswith('.html') and f not in _SITEMAP_EXCLUDE]
-urls = ''.join('<url><loc>%s/%s</loc><changefreq>weekly</changefreq></url>' % (DOMAIN, ('' if f=='index.html' else f)) for f in pages)
+# S9 (seo-audit-2026-10): <lastmod> only where the page itself carries a real date — its own JSON-LD
+# dateModified (article first-commit dates, market-report as_of, policy dates). Never the build date:
+# pages without one get no <lastmod> rather than a fake one Google learns to ignore.
+_LASTMOD_RE = re.compile(r'"dateModified"\s*:\s*"(\d{4}-\d{2}-\d{2})')
+def _lastmod(f):
+    with open(os.path.join(OUT, f), encoding='utf-8') as fh:
+        ds = _LASTMOD_RE.findall(fh.read())
+    return ('<lastmod>%s</lastmod>' % max(ds)) if ds else ''
+urls = ''.join('<url><loc>%s/%s</loc>%s<changefreq>weekly</changefreq></url>' % (DOMAIN, ('' if f=='index.html' else f), _lastmod(f)) for f in pages)
 sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>' % urls
 with open(os.path.join(OUT,'sitemap.xml'),'w',encoding='utf-8') as f: f.write(sitemap)
 with open(os.path.join(OUT,'robots.txt'),'w',encoding='utf-8') as f:

@@ -50,7 +50,8 @@ bad production migration costs more than a month of saved tokens.
 
 ### Delegate to a `sonnet` subagent — needs writing ability, not deep judgement:
 
-- Blog article drafts (the weekly article task already does this: Fable-first, Opus-fallback)
+- Blog article drafts (the weekly premium-article Routine does this every Tuesday; its rules live in
+  `docs/seo-audit-2026-10/ARTICLES.md`)
 - Outreach copy, email templates, store-listing text
 - Documentation and changelog prose
 
