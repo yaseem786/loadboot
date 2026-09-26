@@ -80,8 +80,23 @@ export function renderPartners(host) {
           el('td', null, a.email || '\u2014'),
           el('td', null, a.contact || '\u2014'),
           el('td', null, (() => {
-            const ok = Number(a.packet_done) >= Number(a.packet_total);
             const aw = Number(a.awaiting) || 0;
+            if (a.is_agent) {
+              // bl_bp_0450: a broker agent has no packet of their own - the bond / BOC-3 / MC are the brokerage's.
+              // Say whose agent they are instead of "0/8 verified".
+              const ps = Array.isArray(a.agent_parents) ? a.agent_parents : [];
+              const conf = ps.filter((x) => x.status === 'confirmed').map((x) => x.name).filter(Boolean);
+              const pend = ps.filter((x) => x.status === 'pending').map((x) => x.name).filter(Boolean);
+              const lost = ps.filter((x) => x.status === 'declined' || x.status === 'revoked').map((x) => x.name).filter(Boolean);
+              let txt, tone;
+              if (conf.length) { txt = 'Agent of ' + conf.join(', '); tone = 'background:#e7f9ee;color:#12a150'; }
+              else if (pend.length) { txt = 'Agent of ' + pend.join(', ') + ' \u00b7 awaiting brokerage'; tone = 'background:#fef3c7;color:#b45309'; }
+              else if (lost.length) { txt = 'Agent \u00b7 ' + (ps.some((x) => x.status === 'revoked') ? 'revoked' : 'declined') + ' by ' + lost.join(', '); tone = 'background:#fee2e2;color:#b91c1c'; }
+              else { txt = 'Agent \u00b7 no brokerage yet'; tone = 'background:#fee2e2;color:#b91c1c'; }
+              if (aw) txt += ' \u00b7 ' + aw + ' awaiting';
+              return el('span', { class: 'cc-pill', style: tone, title: 'Broker agent \u00b7 trust tier: ' + (a.agent_tier || 'new').replace(/_/g, ' ') }, txt);
+            }
+            const ok = Number(a.packet_done) >= Number(a.packet_total);
             return el('span', { class: 'cc-pill', style: aw ? 'background:#fef3c7;color:#b45309' : ok ? 'background:#e7f9ee;color:#12a150' : 'background:#fee2e2;color:#b91c1c' },
               aw ? aw + ' awaiting \u00b7 ' + a.packet_done + '/' + a.packet_total : (ok ? 'Complete \u2713 (' + a.packet_total + ')' : a.packet_done + '/' + a.packet_total + ' verified'));
           })()),
