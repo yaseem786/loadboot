@@ -70,8 +70,9 @@ and the partner packet summary read that instead of the tag. Why not `<> 'option
 booking"; a CC approval stricter than the posting gate only produced hand-waives. No prod org differed between the
 two readings on 26 Sep and no `conditional` item was `rejected`, so nothing changed on live data.
 
-Also: `onboarding_packet_templates` seed and `app_private.org_onboarding_complete` exist only on the live
-DB, not in `migrations/`. Worth dumping into a migration file once so staging/prod parity is checkable.
+Also: `onboarding_packet_templates` seed and `app_private.org_onboarding_complete` existed only on the live
+DB, not in `migrations/`. **Both in files now — `bl_bp_0451` (function) and `bl_bp_0453` (seed); see §7 item 7 for the
+staging drift the dump exposed.**
 
 ## 4. The signup in the screenshot — SALAYIM / "khannawab m afzal"
 
@@ -133,10 +134,10 @@ Agent)"). The app does not:
 | Fraud pattern in §4 (junk MC, own email as contact) | Highway blocks free-mail + name mismatch automatically | Lands in "Needs a human" with the truth visible; no automatic nudge to the person that their MC is not a brokerage | ⚠ small: on `entity_type='CARRIER'` or `broker_authority=false` auto-notify the agent "that MC is not a brokerage" (no staff needed) |
 | Docs / SEO for agents | — | `broker-agents.html`, `freight-agent-vs-freight-broker.html` (0 clicks / 111 impressions / pos 12.7), create-broker-account copy | ⚠ pages exist; no product doc for the workflow except `docs/BROKER-SUPPLY-2026-09-02.md`; naming collision "Agent Program" (referral) vs "Broker agent" on the same nav |
 
-## 7. Recommended order (owner decides; nothing here is done)
+## 7. Recommended order (owner decides; status per item below — 26 Sep: 1–7 done, 8 waits on the owner)
 
 1. **Broker 360 agent-aware** — when `broker_trust.is_agent`: hide the 8-item packet, show the brokerages block from the trust queue, and let "Approve account" pass when `agent_confirmed` (or make `cc_partner_set_status` treat a confirmed agent as packet-complete). Fixes LinkLane sitting `pending` too. *(main-loop work — touches approval logic.)*
-2. **Signup picker** — `signup.html` card text; agent card at partner step A; referral card rename; `handle_new_user` list. *(small, mechanical.)*
+2. **Signup picker** — `signup.html` card text; agent card at partner step A; referral card rename; `handle_new_user` list. *(small, mechanical.)* **Done 26 Sep — shipped inside `bl_bp_0448`'s commit** (`signup.html` card reads "Broker · Broker agent · Shipper" with the one-line "Freight agent posting under a brokerage? Choose Broker agent"; referral card says "Not for freight agents posting loads"; Broker Agent card at step A stored as `partner_kind='broker'` + `agent_intent=true`, so `handle_new_user`'s list did not need to change; step B pre-selects it). 26 Sep session 2 added the §5 label-only item: the broker card now reads "Freight Broker / 3PL — brokers, 3PLs and freight forwarders" (kind stays `broker`). Ships with the next site push.
 3. **Auto-nudge on non-brokerage MC** — in `agent_parent_screened`, when the screen returns `entity_type='CARRIER'` / `broker_authority=false` / `not_found`, notify the agent with the legal name FMCSA returned and ask for the right MC. *(small.)* **Done 26 Sep — `bl_bp_0449`**: `agent_parent_mc_nudge`, e-mail `broker.agent_parent_mc_check` (catalogued). Fires on `not_found`, `broker_authority=false`, or unknown authority + FMCSA power units; NOT on `entity_type='CARRIER'` alone (LinkLane and M&M read CARRIER too). Once per declared MC. No backfill — SALAYIM gets it on its next screen.
 4. **Directory purity** — `cc_partners_accounts` label agents "Agent of X" instead of `x/8`. *(small.)* **Done 26 Sep — `bl_bp_0450`**: three new keys (`is_agent`, `agent_tier`, `agent_parents[{name,mc,status}]`), Packet cell in `partners.js` reads them for agents only; everyone else unchanged. Full create-or-replace (staging never had bl_ops_0205, bodies now identical on both). Anon SECDEF surface unchanged, 34/33 by name.
 5. **One "mandatory" definition** shared by 360 and `partner_trust_status`. **Done 26 Sep — `bl_bp_0451`** (see §3). Also puts `app_private.org_onboarding_complete` into a migration file (half of item 7).
@@ -147,5 +148,23 @@ Agent)"). The app does not:
    and its "insufficient data" line prints unconditionally. `bl_bp_0452`: one `app_private.broker_pay_stats`
    (median days delivered→received, n≥3 and ≥2 carriers to show), surfaced as `details.broker_pay` on the board and
    in the poster panel; cold start shows nothing on the card and "no history yet · bond on file" in the panel.
-7. Dump `onboarding_packet_templates` seed + `org_onboarding_complete` into a migration file. *(`org_onboarding_complete` done in 0451; the templates seed is still live-only.)*
+7. Dump `onboarding_packet_templates` seed + `org_onboarding_complete` into a migration file. **Done 26 Sep — `org_onboarding_complete` in `bl_bp_0451`, the seed in `bl_bp_0453` (applied staging + prod).** Dumping it found staging was NOT at parity: 30 rows vs prod's 32 (no `broker.boc3`, no `broker.ucr`) and no `needs_expiry` column, so staging's broker packet had 6 mandatory items where prod has 7 and 0315's autofill was writing a `boc3` item no template described. 0453 is an idempotent upsert of the 32 prod rows with a row-count + content-hash check (`41241fb6…`); prod unchanged, staging now 32/7 mandatory, hash identical. Anon SECDEF 36/35 by name, unchanged.
 8. Handle the four July "(Agent)" orgs: archive, or convert to real agents once a brokerage confirms them (BROKER-SUPPLY §"YASEEN" item 6 is still open).
+   **Facts pulled 26 Sep (prod, read-only), owner decides:** all four are `kind=broker`, `mc_number`/`dot_number` NULL, no
+   `broker_trust` row at all (so `is_agent` NULL, not false), no `broker_screenings`, 0 loads as `broker_org`, 0 packet items.
+
+   | Org | status | created | login | last sign-in |
+   |---|---|---|---|---|
+   | Ali Raza (Agent) | active | 18 Jul | loadboot90@gmail.com | 11 Sep |
+   | Asim Latif (Agent) | active | 18 Jul | asimmr749@gmail.com | 25 Sep |
+   | M Usman Farooq (Agent) | pending | 22 Jul | musmanfarooq.dispatch@gmail.com | 20 Jul |
+   | Charanpreet Kaur (Agent) | active | 22 Jul | charanpurba99@gmail.com | 25 Jul |
+
+   Two still log in (Asim yesterday), so this is not dead data. `organizations.status` has no `archived` value on prod
+   (only `active` / `pending` / `paused`), so "archive" today means `paused` + a `hold_reason`, or deleting the org. Nothing
+   was changed. Recommended path, pending BROKER-SUPPLY item 6: (a) if LoadBoot will NOT hold broker authority, convert
+   the two live ones (Asim, Ali Raza) into real agents — insert their `broker_trust` row with `is_agent=true` and let them
+   declare a partner brokerage MC from the portal, which then flows through 0449's nudge / the code e-mail as normal; set
+   Usman and Charanpreet to `paused` with `hold_reason='july agent placeholder — no brokerage'`; (b) if LoadBoot WILL obtain
+   authority, they become agents under LoadBoot's own MC the same way once it exists. Either way the `kind=broker, active,
+   no MC` shape should not survive — it is exactly what the §5 picker fix now prevents at signup.

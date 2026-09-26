@@ -586,7 +586,7 @@ function authScreen() {
   const typeBlock = h('div', { style: 'display:none' }, [
     h('label', { class: 'cp-lbl' }, 'What kind of partner are you?'),
     h('div', { class: 'cp-typegrid' }, [
-      typeOpt('broker', 'Freight Broker', 'Post loads to our carrier network and track them.'),
+      typeOpt('broker', 'Freight Broker / 3PL', 'Post loads under your own MC authority — brokers, 3PLs and freight forwarders.'),
       typeOpt('shipper', 'Shipper', 'Request freight, get it moved, and track shipments.'),
       typeOpt('facility', 'Facility / Warehouse', 'Schedule dock appointments and manage check-ins.'),
       typeOpt('agent', 'Broker Agent', 'Post under the brokerage you work for — they confirm you with one click.'),
@@ -800,7 +800,7 @@ function choosePartnerType(user) {
       h('h1', null, 'Welcome to LoadBoot'),
       h('p', { class: 'cp-auth-sub' }, 'What kind of partner are you? You can set up more later.'),
       h('div', { class: 'cp-typegrid' }, [
-        opt('broker', 'Freight Broker', 'Post loads to our carrier network and track them.'),
+        opt('broker', 'Freight Broker / 3PL', 'Post loads under your own MC authority — brokers, 3PLs and freight forwarders.'),
         opt('shipper', 'Shipper', 'Request freight, get it moved, and track shipments.'),
         opt('facility', 'Facility / Warehouse', 'Schedule dock appointments and manage check-ins.'),
         opt('agent', 'Broker Agent', 'Post under the brokerage you work for — they confirm you with one click.'),
