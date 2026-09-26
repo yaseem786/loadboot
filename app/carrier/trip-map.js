@@ -11,6 +11,7 @@
 // • Manual buttons remain as fallback when GPS is flaky
 import { tripArriveGps, tripDepart, pocketAdvanceTrip, tripSetStopCoords, tripCheckin, pocketPostLocation, pocketUploadTripDoc, ccLoadStops, tripStopsProgress } from '../shared/api.js';
 import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
+import { geoFetch } from '../shared/geo-api.js';   // board audit #9
 
 const RADIUS_M = 800;
 const ORANGE = '#FC5305', BLUE = '#0883F7';
@@ -46,7 +47,7 @@ function ensurePulseCss() {
 async function geocode(q) {
   if (!q) return null;
   try {
-    const r = await fetch('https://photon.komoot.io/api/?limit=1&q=' + encodeURIComponent(q));
+    const r = await geoFetch('https://photon.komoot.io/api/?limit=1&q=' + encodeURIComponent(q));
     const j = await r.json(); const f = j && j.features && j.features[0];
     return f ? { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] } : null;
   } catch (_) { return null; }
@@ -55,7 +56,7 @@ async function osrmRoute(a, b, withSteps, alts) {
   if (!a || !b) return null;
   try {
     const u = 'https://router.project-osrm.org/route/v1/driving/' + a.lng + ',' + a.lat + ';' + b.lng + ',' + b.lat + '?overview=full&geometries=geojson' + (withSteps ? '&steps=true' : '') + (alts ? '&alternatives=2' : '');
-    const r = await fetch(u); const j = await r.json();
+    const r = await geoFetch(u); const j = await r.json();
     if (alts && j && j.routes) return j.routes.map(rt2 => parseRt(rt2, withSteps));
     const rt = j && j.routes && j.routes[0]; if (!rt) return null;
     return parseRt(rt, withSteps);

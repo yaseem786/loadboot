@@ -55,6 +55,7 @@ import { enablePush, disablePush, isPushEnabled, pushSupported, ensurePushHealth
 import { renderFaq, PARTNER_FAQ } from '../shared/faq.js';
 import { initInstallPrompt } from '../shared/installprompt.js';
 import { showWhatsNew } from '../shared/whatsnew.js';
+import { geoFetch } from '../shared/geo-api.js';   // board audit #9: OSRM/Photon via our geo edge function
 initTelemetry();  // real-user error + Core Web Vitals capture
 (async () => { try { window.__lbAgentOrg = !!(await isMyOrgAgent()); } catch (_) { window.__lbAgentOrg = false; } })();
 
@@ -1900,6 +1901,9 @@ async function brokerDash(user, ov) {
   const stepHost = h('div');
   const STEPS = ['Lane', 'Schedule', 'Equipment & commodity', 'Requirements', 'Review'];
   let step = 0, confirmDup = false, prevStep = 0;
+  // Board audit #8 — quick repost: steps already complete from the copy advance on their own through
+  // the SAME Next handler (same checks), once per step. Schedule and Review always wait for the broker.
+  let quickPost = false; const quickTried = new Set();
   // reactive=true => re-render the step live on each keystroke (market estimate, TEAM check, etc.)
   // stay wired even after the value is cleared and retyped, with focus + caret preserved.
   function renderStepFocus(fkey, caret) { renderStep(); try { const el = stepHost.querySelector('[data-fkey="' + fkey + '"]'); if (el) { el.focus(); if (el.type !== 'number' && caret != null) { try { el.setSelectionRange(caret, caret); } catch (_) {} } } } catch (_) {} }
@@ -1950,11 +1954,11 @@ async function brokerDash(user, ov) {
             const wp9 = (Array.isArray(w.stops) ? w.stops : []).filter((sp) => sp && sp.lat && sp.lng).map((sp) => sp.lng + ',' + sp.lat);
             const coords9 = [geo.o.lng + ',' + geo.o.lat, ...wp9, geo.d.lng + ',' + geo.d.lat].join(';');
             if (wp9.length && !w.__direct_miles) { try {
-              const rd9 = await fetch('https://router.project-osrm.org/route/v1/driving/' + geo.o.lng + ',' + geo.o.lat + ';' + geo.d.lng + ',' + geo.d.lat + '?overview=false');
+              const rd9 = await geoFetch('https://router.project-osrm.org/route/v1/driving/' + geo.o.lng + ',' + geo.o.lat + ';' + geo.d.lng + ',' + geo.d.lat + '?overview=false');
               const jd9 = await rd9.json(); const dm9 = jd9 && jd9.routes && jd9.routes[0] && jd9.routes[0].distance;
               if (dm9) w.__direct_miles = Math.round(dm9 / 1609.34);
             } catch (_) {} }
-            const r = await fetch('https://router.project-osrm.org/route/v1/driving/' + coords9 + '?overview=false');
+            const r = await geoFetch('https://router.project-osrm.org/route/v1/driving/' + coords9 + '?overview=false');
             const j = await r.json();
             const m9 = j && j.routes && j.routes[0] && j.routes[0].distance;
             if (m9) { const miles = Math.round(m9 / 1609.34); mIn.value = String(miles); w.miles = String(miles); w.__auto_miles = true; try { w.__drive_hours = (j.routes[0].duration || 0) / 3600; w.__leg_hours = (j.routes[0].legs || []).map((lg9) => (lg9.duration || 0) / 3600); } catch (_) {}
@@ -1978,7 +1982,7 @@ async function brokerDash(user, ov) {
           const cityFromPin9 = async (sp) => {
             if ((sp.city || '').trim() || !sp.lat) return;
             try {
-              const r9 = await fetch('https://photon.komoot.io/reverse?lat=' + sp.lat + '&lon=' + sp.lng + '&limit=1&lang=en');
+              const r9 = await geoFetch('https://photon.komoot.io/reverse?lat=' + sp.lat + '&lon=' + sp.lng + '&limit=1&lang=en');
               const j9 = await r9.json(); const p9 = j9 && j9.features && j9.features[0] && j9.features[0].properties;
               if (p9) { sp.city = p9.city || p9.district || p9.county || ''; if (!sp.state) sp.state = (p9.state || '').length === 2 ? p9.state : sp.state; if (sp.city) paintStops(); }
             } catch (_) {}
@@ -1987,7 +1991,7 @@ async function brokerDash(user, ov) {
             if (sp.lat || !((sp.street || '').trim() && (sp.city || '').trim() && (sp.state || '').trim())) return;
             try {
               const q9 = [sp.street, sp.city, sp.state, sp.zip].filter(Boolean).join(', ');
-              const r9 = await fetch('https://photon.komoot.io/api/?q=' + encodeURIComponent(q9) + '&limit=1&lang=en&bbox=-125,24,-66.5,49.6');
+              const r9 = await geoFetch('https://photon.komoot.io/api/?q=' + encodeURIComponent(q9) + '&limit=1&lang=en&bbox=-125,24,-66.5,49.6');
               const j9 = await r9.json();
               const f9 = j9 && j9.features && j9.features[0];
               if (f9 && f9.geometry && f9.geometry.coordinates) {
@@ -2945,6 +2949,13 @@ async function brokerDash(user, ov) {
         else { next.disabled = false; next.textContent = nextLbl; err.textContent = msg; }
       }
     } }, nextLbl);
+    if (quickPost && step === STEPS.length - 1) quickPost = false;
+    if (quickPost && (step === 0 || step === 2 || step === 3) && !quickTried.has(step)) {
+      // A step that fails its check stays put with its error showing; it is not retried, so the
+      // broker's own edits (which re-render the step) never trigger an automatic Next.
+      const at9 = step; quickTried.add(at9);
+      setTimeout(() => { if (quickPost && step === at9 && next.isConnected) next.click(); }, 60);
+    }
     mount(stepHost, h('div', null, [
       (() => {
         if (!document.getElementById('plw-css')) {
@@ -3013,7 +3024,12 @@ async function brokerDash(user, ov) {
   // loads into the wizard. Never copies dates, schedule, reference or document numbers — those are
   // per-shipment. Main pickup/delivery pins are re-geocoded strictly (house number + same ZIP) since
   // cc_partner_load_full does not return them; no match = no pin, same as manual typing today.
-  async function postSimilar(l, btn) {
+  // Audit #8: "⚡ Quick repost" = Post similar + the auto-advance above. The broker sets the new dates on
+  // Schedule, presses Next once, and lands on Review.
+  function quickRepost(l, btn) { return postSimilar(l, btn, true); }
+
+  async function postSimilar(l, btn, quick) {
+    quickPost = false;
     const draftBusy9 = ['o_street', 'd_street', 'equipment', 'rate', 'commodity'].some((k9) => String(w[k9] || '').trim());
     if (draftBusy9 && !confirm('Replace the load you are drafting with a copy of ' + (l.origin || '') + ' → ' + (l.destination || '') + '?')) return;
     const idle9 = btn ? btn.textContent : '';
@@ -3071,9 +3087,12 @@ async function brokerDash(user, ov) {
     for (const k in w) delete w[k];
     Object.assign(w, next9);
     step = 0; prevStep = 0; confirmDup = false;
+    // quick mode starts only here, with the copy in place — never while the load is still loading
+    if (quick) { quickPost = true; quickTried.clear(); }
     _plSave(); renderStep();
     if (window.__lbOpenPost) window.__lbOpenPost();
-    pToast('Lane, freight and rate card copied. Check the addresses, then set the new pickup & delivery dates.', { kind: 'ok', title: '⧉ Copied from ' + (l.origin || '') + ' → ' + (l.destination || '') });
+    pToast(quick ? 'Set the new pickup & delivery dates and press Next. Lane, freight and rate card are copied, so you go straight to Review.'
+      : 'Lane, freight and rate card copied. Check the addresses, then set the new pickup & delivery dates.', { kind: 'ok', title: (quick ? '⚡ Quick repost of ' : '⧉ Copied from ') + (l.origin || '') + ' → ' + (l.destination || '') });
     // pins: bl_board_0458 returns the original ones (exact, no network); older rows fall back to the
     // geocoder, and only if the draft is still this copy when it answers
     const pin9 = (la9, ln9) => (la9 != null && ln9 != null && isFinite(la9) && isFinite(ln9)) ? { lat: Number(la9), lng: Number(ln9) } : null;
@@ -3171,6 +3190,7 @@ async function brokerDash(user, ov) {
               } }, '✎ Request change');
             })(),
             h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Start a new load with this lane, freight and rate card — you only set the new dates', onClick: (e9) => postSimilar(l, e9.currentTarget) }, '⧉ Post similar'),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Same lane again: set the new dates, then review and submit. Steps that are already complete are skipped.', onClick: (e9) => quickRepost(l, e9.currentTarget) }, '⚡ Quick repost'),
             (() => {
               const rqs9 = __bq9[[l.origin, l.destination, l.equipment].join('|')] || [];
               if (!rqs9.length || /book|deliver|cancel/.test(String(l.status || '') + String(l.board_status || ''))) return null;
@@ -3914,7 +3934,7 @@ async function brokerDash(user, ov) {
           const from9 = tk || pk, to9 = dl;
           if (from9 && to9) {
             try {
-              const r9 = await fetch('https://router.project-osrm.org/route/v1/driving/' + from9[1] + ',' + from9[0] + ';' + to9[1] + ',' + to9[0] + '?overview=full&geometries=geojson');
+              const r9 = await geoFetch('https://router.project-osrm.org/route/v1/driving/' + from9[1] + ',' + from9[0] + ';' + to9[1] + ',' + to9[0] + '?overview=full&geometries=geojson');
               const j9 = await r9.json(); const rt9 = j9 && j9.routes && j9.routes[0];
               if (rt9 && map) {
                 L.geoJSON(rt9.geometry, { style: { color: '#0883F7', weight: 4, opacity: .85 } }).addTo(map);
