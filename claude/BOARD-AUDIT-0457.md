@@ -47,7 +47,7 @@ protected from back-solicitation.
    city and state. Many brokers do not have the dock address, or do not want to give it, until the
    load is booked. LoadBoot needs the exact pin for the geofence and the automatic miles, so this is
    **your decision**: keep it strict, or allow city-only posting with the address due before dispatch.
-7. **Missing standard posting fields:** trailer length (48/53 ft), dimensions (L×W×H) for
+7. ✅ **SHIPPED (0457d) — see below.** **Missing standard posting fields:** trailer length (48/53 ft), dimensions (L×W×H) for
    flatbed/step-deck/over-dimension loads, and alternate equipment ("Van OR Reefer"). DAT postings
    carry all three, and carriers filter on length.
 8. **A 5-step wizard compared with DAT's one-screen post.** The wizard is thorough (HOS checks,
@@ -116,3 +116,43 @@ approval) → #3 radius search → #7 length/dims/alt equipment (the posting sid
   destination radius would then use real pins and make no Photon calls. It changes RETURNS TABLE, so
   it needs a drop/create, the execute re-grant, and an anon SECDEF name check. It could go in the
   same migration as `posted_at`.
+
+## 0457d — trailer length, dimensions, alternate equipment (audit #7, shipped client-side)
+
+- **No migration needed (checked read-only on prod and staging, 26 Sep).** The new values ride in
+  `details`. `cc_partner_submit_load` stores `p->'details'` whole. `cc_decide_partner_load` copies
+  `coalesce(l.details,'{}')` into `public.loads` (prod line 29). `cc_pocket_available_loads` returns
+  `details - 'load_source'`, and `cc_load_detail` returns `details`. The pocket and decide function
+  bodies differ between prod and staging (md5), but the `details` lines are the same on both.
+- **New keys in `details`, set only when given:** `alt_equipment` (text[]), `trailer_length_ft` (number),
+  `dims_ft` `{l,w,h}` (feet), and `oversize` (true only when flagged). Older loads have none of them,
+  so every reader treats them as optional.
+- **Wizard, step 2 (`app/partner/app.js`):**
+  - "Also OK with" chips under Equipment. Power Only and the primary equipment are not offered.
+  - "Trailer length needed". The list depends on the equipment: 53/48 for van, reefer and open deck,
+    40/35/30 for hotshot, and 26/24/20/16 for box truck. The first option reads "53 ft" and the rest
+    "N ft or longer". Power Only and the vans without a trailer get no length field.
+  - Freight L×W×H for open deck (Flatbed, Step Deck, Conestoga, Hotshot). It accepts `8'6"`, `8.5` or
+    `102 in` and stores feet. The **OVERSIZE** flag is an estimate: width over 8'6", length over 53',
+    or height over 13'6" minus an assumed deck height (5' for flatbed and conestoga, 3'6" for step
+    deck and hotshot). Legal limits differ by state, and the hint says "most states".
+  - The new fields also appear in the review step and the broker's load detail page, and "Post
+    similar" copies them. The direct-carrier equipment hint now accepts a match on an alternate.
+- **Board (`app/carrier/app.js`):**
+  - The Equipment filter also matches alternates.
+  - New **Trailer** filter ("My trailer 48 ft"). It hides loads that need a longer trailer. Loads
+    with no posted length always show. The setting is saved in `lb_lb_filters.tl`.
+  - Cards show "Dry Van or Reefer", a 📏 length chip, and a 📐 dimensions chip (⚠ OVERSIZE in amber).
+    The detail sheet lists all three.
+  - **Book gate:** a carrier whose fleet has any listed equipment (primary or alternate) can now
+    request the load. Before this, the client blocked everything except the primary.
+- **Limit (server, not changed):** `app_private.match_eligibility` and `equip_serves` still match on
+  `loads.equipment` only. So the broker's eligible-carrier list, direct offers and the CC matching do
+  not yet count alternates. Only the board and the carrier's book request do. `cc_request_book_load`
+  has no equipment check, so a request from a carrier that runs only the alternate goes through.
+  Dispatch may still see an equipment mismatch in CC. Teaching `match_eligibility` about
+  `details->'alt_equipment'` is a DB change, so it's your call.
+- **Tested:** the size parser, the OVERSIZE rules, and the board filter and book-gate logic were run
+  in node against sample loads. `npm run check` passes. **Not tested in a signed-in browser.** On
+  staging, please post one flatbed load with W 9' and "Also OK: Step Deck", then check the board card
+  and the Trailer filter.

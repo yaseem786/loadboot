@@ -385,6 +385,13 @@ function lbExpired(l) { if (!l || !l.pickup_date) return false; const d = new Da
 // tapping Book and getting an error.
 function lbSourceNotice(l) { const n = l && l.details && l.details.source_notice; return (n && typeof n === 'object') ? n : null; }
 function lbSourceBlocked(l) { const n = lbSourceNotice(l); return !!(n && n.bookable === false); }
+// bl_board_0457d (board audit #7): alternate equipment ("Van OR Reefer"), the trailer length the load
+// needs, and open-deck freight dimensions, as posted in the broker wizard. They live in details
+// (copied whole by cc_decide_partner_load) and are absent on older loads, so all of them are optional.
+function lbAltEq(l) { const a = l && l.details && l.details.alt_equipment; const p = String((l && l.equipment) || '').trim().toLowerCase(); return Array.isArray(a) ? a.map((x) => String(x || '').trim()).filter((x) => x && x.toLowerCase() !== p) : []; }
+function lbTrailerFt(l) { const n = Number(l && l.details && l.details.trailer_length_ft); return isFinite(n) && n > 0 ? n : null; }
+function lbFtIn(ft) { const n = Number(ft); if (!isFinite(n) || n <= 0) return ''; let f = Math.floor(n), i = Math.round((n - f) * 12); if (i === 12) { f += 1; i = 0; } return i ? f + '\'' + i + '"' : f + '\''; }
+function lbDimsTxt(l) { const d = l && l.details && l.details.dims_ft; return (d && typeof d === 'object') ? [['L', d.l], ['W', d.w], ['H', d.h]].filter(([, v]) => Number(v) > 0).map(([k, v]) => k + ' ' + lbFtIn(v)).join(' × ') : ''; }
 function lbSourceProvider(l) { const n = lbSourceNotice(l); return (n && n.provider) ? String(n.provider) : 'a partner network'; }
 // Full-trip feasibility from the driver's live GPS: location -> pickup -> delivery, with HOS.
 // Solo = 11h drive then 10h reset; Team = nonstop. Used for the board badges AND to block a
@@ -4427,6 +4434,8 @@ async function appView(user) {
       fRadHint.style.display = bits9.length ? 'block' : 'none';
     };
     const fEq = h('input', { class: 'cp-in', placeholder: 'Equipment', style: 'margin:0' });
+    // Board audit #7: trailer length (DAT's Length). A load that posted "48 ft or longer" shows for a 48 or 53.
+    const fLen = h('select', { class: 'cp-in', title: 'Hide loads that need a longer trailer than yours. Loads with no length posted always show.', style: 'margin:0;max-width:150px' }, [['', 'Trailer: any'], ['53', 'My trailer 53 ft'], ['48', 'My trailer 48 ft'], ['40', 'My trailer 40 ft'], ['35', 'My trailer 35 ft'], ['30', 'My trailer 30 ft'], ['26', 'My truck 26 ft'], ['24', 'My truck 24 ft'], ['20', 'My truck 20 ft'], ['16', 'My truck 16 ft']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
     const fRpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi', style: 'margin:0;max-width:110px' });
     const fRate = h('input', { class: 'cp-in', type: 'number', placeholder: 'Min $', style: 'margin:0;max-width:110px' });
     const fSize = h('select', { class: 'cp-in', style: 'margin:0;max-width:150px' }, [['', 'Size: all'], ['full', 'Full (FTL)'], ['partial', 'Partial (LTL)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
@@ -4500,21 +4509,24 @@ async function appView(user) {
       const out9 = (list || []).filter(l => {
       const okO = oR9 ? inRad9(oR9, pinPt9(l.pickup_lat, l.pickup_lng) || placePt9(l.origin), l.id) : (!fOrigin.value.trim() || String(l.origin || '').toLowerCase().includes(fOrigin.value.trim().toLowerCase()));
       const okD = dR9 ? inRad9(dR9, pinPt9(l.delivery_lat, l.delivery_lng) || placePt9(l.destination), l.id) : (!fDest.value.trim() || String(l.destination || '').toLowerCase().includes(fDest.value.trim().toLowerCase()));
-      const okE = !fEq.value.trim() || String(l.equipment || '').toLowerCase().includes(fEq.value.trim().toLowerCase());
+      const eqQ9 = fEq.value.trim().toLowerCase();
+      const okE = !eqQ9 || [l.equipment].concat(lbAltEq(l)).some((e9) => String(e9 || '').toLowerCase().includes(eqQ9));
+      // "My trailer": hide loads that need a longer trailer; loads with no posted length stay (most loads)
+      const okL = !fLen.value || !lbTrailerFt(l) || lbTrailerFt(l) <= Number(fLen.value);
       const okR = !fRpm.value || (l.rate && Number(l.miles) > 0 && (Number(l.rate) / Number(l.miles)) >= Number(fRpm.value));
       const okM = !fRate.value || Number(l.rate || 0) >= Number(fRate.value);
       const sz = String(((l.details || {}).load_size) || '').toLowerCase();
       const okS = !fSize.value || (fSize.value === 'partial' ? /partial|ltl/.test(sz) : (!!sz && !/partial|ltl/.test(sz)));
       const okF = !_favOnly || _lbFavs().has(String(l.id));
-      return okF && okO && okD && okE && okR && okM && okS;
+      return okF && okO && okD && okE && okL && okR && okM && okS;
     }); radHint9(oC9, dC9); return out9; };
     // Collapsed by default — tap "Filters" to open (inDrive pattern)
     const fBody = h('div', { style: 'display:none;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px' },
-      [fOrigin, fORad, fDest, fDRad, fEq, fSize, fRpm, fRate, h('button', { class: 'cp-btn cp-btn-sm', onClick: () => renderList() }, 'Apply'),
-       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; fSize.value = fORad.value = fDRad.value = ''; try { localStorage.removeItem('lb_lb_filters'); } catch (_) {} renderList(); fCount(); } }, 'Clear'), fRadHint]);
+      [fOrigin, fORad, fDest, fDRad, fEq, fLen, fSize, fRpm, fRate, h('button', { class: 'cp-btn cp-btn-sm', onClick: () => renderList() }, 'Apply'),
+       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; fSize.value = fORad.value = fDRad.value = fLen.value = ''; try { localStorage.removeItem('lb_lb_filters'); } catch (_) {} renderList(); fCount(); } }, 'Clear'), fRadHint]);
     const fChip = h('span', { class: 'cpx-chip', style: 'display:none' }, '');
-    const fCount = () => { const n = [fOrigin, fDest, fEq, fRpm, fRate, fSize].filter(x => (x.value || '').trim()).length; fChip.style.display = n ? 'inline-block' : 'none'; fChip.textContent = n + ' active'; };
-    [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount)); fSize.addEventListener('change', () => { fCount(); renderList(); });
+    const fCount = () => { const n = [fOrigin, fDest, fEq, fLen, fRpm, fRate, fSize].filter(x => (x.value || '').trim()).length; fChip.style.display = n ? 'inline-block' : 'none'; fChip.textContent = n + ' active'; };
+    [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount)); [fSize, fLen].forEach((x9) => x9.addEventListener('change', () => { fCount(); renderList(); }));
     const fToggle = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { const open = fBody.style.display !== 'none'; fBody.style.display = open ? 'none' : 'flex'; fToggle.firstChild.textContent = open ? '⚙ Filters ▾' : '⚙ Filters ▴'; } }, [h('span', null, '⚙ Filters ▾'), fChip]);
     const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px', 'data-tour': 'loads-filters' }, [
       h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [fToggle, favBtn, tbBtn, fSort]),
@@ -4522,10 +4534,10 @@ async function appView(user) {
     ]);
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(inp => { inp.onkeydown = (e) => { if (e.key === 'Enter') renderList(); }; });
     // Smart defaults (2026-08 audit): filters remember themselves across visits.
-    const _fSave = () => { try { localStorage.setItem('lb_lb_filters', JSON.stringify({ o: fOrigin.value, d: fDest.value, e: fEq.value, r: fRpm.value, m: fRate.value, s: fSize.value, or: fORad.value, dr: fDRad.value })); } catch (_) {} };
-    [fOrigin, fDest, fEq, fRpm, fRate].forEach(x9 => x9.addEventListener('input', _fSave)); [fSize, fORad, fDRad].forEach(x9 => x9.addEventListener('change', _fSave));
+    const _fSave = () => { try { localStorage.setItem('lb_lb_filters', JSON.stringify({ o: fOrigin.value, d: fDest.value, e: fEq.value, r: fRpm.value, m: fRate.value, s: fSize.value, or: fORad.value, dr: fDRad.value, tl: fLen.value })); } catch (_) {} };
+    [fOrigin, fDest, fEq, fRpm, fRate].forEach(x9 => x9.addEventListener('input', _fSave)); [fSize, fORad, fDRad, fLen].forEach(x9 => x9.addEventListener('change', _fSave));
     [fORad, fDRad].forEach(x9 => x9.addEventListener('change', () => renderList()));
-    try { const _fs9 = JSON.parse(localStorage.getItem('lb_lb_filters') || 'null'); if (_fs9 && [_fs9.o, _fs9.d, _fs9.e, _fs9.r, _fs9.m, _fs9.s].some(x9 => x9)) { fOrigin.value = _fs9.o || ''; fDest.value = _fs9.d || ''; fEq.value = _fs9.e || ''; fRpm.value = _fs9.r || ''; fRate.value = _fs9.m || ''; fSize.value = _fs9.s || ''; fORad.value = _fs9.or || ''; fDRad.value = _fs9.dr || ''; fCount(); fBody.style.display = 'flex'; fToggle.firstChild.textContent = '⚙ Filters ▴'; } } catch (_) {}
+    try { const _fs9 = JSON.parse(localStorage.getItem('lb_lb_filters') || 'null'); if (_fs9 && [_fs9.o, _fs9.d, _fs9.e, _fs9.r, _fs9.m, _fs9.s, _fs9.tl].some(x9 => x9)) { fOrigin.value = _fs9.o || ''; fDest.value = _fs9.d || ''; fEq.value = _fs9.e || ''; fRpm.value = _fs9.r || ''; fRate.value = _fs9.m || ''; fSize.value = _fs9.s || ''; fORad.value = _fs9.or || ''; fDRad.value = _fs9.dr || ''; fLen.value = _fs9.tl || ''; fCount(); fBody.style.display = 'flex'; fToggle.firstChild.textContent = '⚙ Filters ▴'; } } catch (_) {}
     let renderList = () => {};
     const bestCard = null; // AI Pilot removed — its deadhead/score estimates were unreliable
 
@@ -4618,8 +4630,8 @@ async function appView(user) {
           ]);
           return;
         }
-        const eqNeed9 = String(l.equipment || '').trim();
-        if (eqNeed9 && Array.isArray(window.__fleetEq) && window.__fleetEq.length && window.__fleetEq.indexOf(eqNeed9.toLowerCase()) < 0) {
+        const eqNeed9 = [String(l.equipment || '').trim()].concat(lbAltEq(l)).filter(Boolean).join(' or ');
+        if (eqNeed9 && Array.isArray(window.__fleetEq) && window.__fleetEq.length && ![l.equipment].concat(lbAltEq(l)).some((e9) => e9 && window.__fleetEq.indexOf(String(e9).trim().toLowerCase()) >= 0)) {
           const closeE9 = openModal('\ud83d\ude9b ' + eqNeed9 + ' equipment required', [
             h('div', { style: 'text-align:center;padding:6px 0' }, [
               h('div', { style: 'font-size:44px;line-height:1' }, '\ud83d\ude9b'),
@@ -4715,6 +4727,9 @@ async function appView(user) {
       if (dx.pallets) meta.push(dx.pallets + ' plt');
       if (dx.temperature) meta.push('Reefer ' + dx.temperature + '\u00b0F');
       if (dx.tarps) meta.push(dx.tarps);
+      if (lbAltEq(l).length) meta.push('Also: ' + lbAltEq(l).join(', '));
+      if (lbTrailerFt(l)) meta.push(lbTrailerFt(l) + ' ft+ trailer');
+      if (lbDimsTxt(l)) meta.push((dx.oversize ? '\u26a0 OVERSIZE ' : '') + lbDimsTxt(l));
       if (dx.load_method_pickup) meta.push('PU: ' + dx.load_method_pickup);
       if (dx.load_method_delivery) meta.push('DEL: ' + dx.load_method_delivery);
       if (dx.dock_hours_pickup) meta.push('PU hours ' + dx.dock_hours_pickup);
@@ -4984,7 +4999,9 @@ async function appView(user) {
         h('div', { class: 'cpx-req-rate' }, [h('span', { class: 'v' }, money(l.rate)), rpm ? h('span', { class: 'rpm' }, rpm) : null, profitEl,
           (function () { const k9 = String(l.id); const on9 = _lbFavs().has(k9); const b9 = h('button', { class: 'cpx-fav' + (on9 ? ' on' : ''), title: 'Save this load', 'aria-label': 'Save this load', onClick: (e9) => { e9.stopPropagation(); const now9 = lbFavToggle(k9); e9.currentTarget.classList.toggle('on', now9); e9.currentTarget.textContent = now9 ? '★' : '☆'; haptic('tap'); if (_favOnly) renderList(); } }, on9 ? '★' : '☆'); return b9; })()].filter(Boolean)),
         h('div', { class: 'cpx-req-chips' }, [
-          h('span', { class: 'cpx-chip eq' }, [icon('truck',15), ' ' + (l.equipment || 'Van')]),
+          h('span', { class: 'cpx-chip eq', title: lbAltEq(l).length ? 'The broker accepts any of these' : null }, [icon('truck',15), ' ' + [l.equipment || 'Van'].concat(lbAltEq(l)).join(' or ')]),
+          lbTrailerFt(l) ? h('span', { class: 'cpx-chip', title: 'Trailer length this load needs' }, '\ud83d\udccf ' + lbTrailerFt(l) + ' ft+') : null,
+          lbDimsTxt(l) ? h('span', { class: 'cpx-chip', style: (l.details && l.details.oversize) ? 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)' : '', title: 'Freight dimensions (L \u00d7 W \u00d7 H)' }, ((l.details && l.details.oversize) ? '\u26a0 OVERSIZE \u00b7 ' : '\ud83d\udcd0 ') + lbDimsTxt(l)) : null,
           l.hazmat ? h('span', { class: 'cpx-chip', style: 'background:rgba(220,38,38,.14);color:#b91c1c;font-weight:800' }, '☣ HAZMAT') : null,
           l.pickup_date ? h('span', { class: 'cpx-chip' }, '🕐 Pickup: ' + l.pickup_date) : null,
           l.direct_to_you ? (l.direct_offer_expired
@@ -5133,6 +5150,9 @@ async function appView(user) {
         const rows2 = DL.map(([k2, lb2]) => dx[k2] != null && dx[k2] !== '' ? line(lb2, k2 === 'cargo_value' ? '$' + Number(dx[k2]).toLocaleString() : dx[k2]) : null).filter(Boolean);
         if (dx.driver_assist_required) rows2.push(line('Driver assist', '\u26a0 REQUIRED \u2014 driver loads/unloads (paid per the rate card)'));
         if (dx.team_required) rows2.push(line('Drivers', '\u26a0 TEAM required'));
+        if (lbAltEq(t).length) rows2.push(line('Also OK with', lbAltEq(t).join(', ')));
+        if (lbTrailerFt(t)) rows2.push(line('Trailer length', lbTrailerFt(t) + ' ft or longer'));
+        if (lbDimsTxt(t)) rows2.push(line('Freight dimensions', lbDimsTxt(t) + (dx.oversize ? ' \u00b7 \u26a0 OVERSIZE \u2014 permits may be needed' : '')));
         if (!rows2.length) return null;
         return h('div', { style: 'margin:8px 0' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Load details'), ...rows2]);
       })(),
