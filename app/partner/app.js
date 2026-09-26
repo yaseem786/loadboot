@@ -4313,6 +4313,8 @@ function packetDocRow(it, onAction) {
     pending:   { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: ['Required', '#fef3c7', '#b45309'], rs: 'Required — not on file yet' },
   }[st] || { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: [st, '#f1f5f9', '#64748b'], rs: '' };
   if (st === 'pending' && String(it.tag || '').toLowerCase() === 'optional') { V.di = '–'; V.dibg = '#f1f5f9'; V.dic = '#64748b'; V.pill = ['Optional', '#f1f5f9', '#64748b']; V.rs = 'Recommended'; }
+  // bl_bp_0451: a conditional item never gates verification or posting — say so instead of "Required"
+  if (st === 'pending' && String(it.tag || '').toLowerCase() === 'conditional') { V.di = '○'; V.dibg = '#eff6ff'; V.dic = '#1d4ed8'; V.pill = ['Before first booking', '#dbeafe', '#1d4ed8']; V.rs = 'Not needed for verification — have it ready before your first booking'; }
   // bl_bp_0316: authority, bond and BOC-3 are read live from FMCSA on the dashboard screen (bl_bp_0315) — nothing to upload.
   if (it.auto && (st === 'pending' || st === 'rejected')) {
     V.di = '⟳'; V.dibg = '#eff6ff'; V.dic = '#1d4ed8'; V.pill = ['Auto', '#dbeafe', '#1d4ed8'];
@@ -4418,7 +4420,7 @@ function brokerOnboardingWizard() {
           ? 'Everything in one glance. Quote requests are already open; this packet is what a broker needs before your first booking (our team confirms items within 1 business day).'
           : 'Everything in one glance — submit whatever is missing, then our team reviews (usually within 1 business day).'));
         items.forEach((it) => kids.push(itemRow(it)));
-        const reqd = items.filter((x) => String(x.tag || '').toLowerCase() !== 'optional');
+        const reqd = items.filter((x) => x.mandatory);   // bl_bp_0451: server-decided (legal|required) — matches pk.complete and the posting gate
         const missing = reqd.filter((x) => (x.status === 'pending' || x.status === 'rejected') && !x.auto);
         const autoLeft = reqd.filter((x) => x.auto && (x.status === 'pending' || x.status === 'rejected')).length;
         if (autoLeft) kids.push(h('div', { class: 'cp-sub', style: 'margin-top:8px;color:#1e3a8a' }, autoLeft + ' authority item(s) fill in on their own once you run the FMCSA screen on your dashboard.'));
