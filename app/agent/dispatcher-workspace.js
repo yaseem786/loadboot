@@ -717,18 +717,20 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   function vTrucks() {
     const ts = trucksAll();
     if (!ts.length) return h('div', { class: 'dw-card' }, [h('h3', null, 'Trucks'), h('div', { class: 'dw-muted' }, A().length ? 'Your carrier has no active truck on file yet — ask LoadBoot to add it.' : 'No carrier assigned yet.')]);
-    return h('div', null, [
+    const root = h('div', null, [
       ...A().map((a) => carrierCard(a)),
       ...ts.map((t) => truckCard(t)),
     ]);
+    try { mountCarrierFill(root, A(), { reload: load, toast }); } catch (_) {}   // bl_disp_0459 — guides + in-place fill of every empty field, provenance pills
+    return root;
   }
   function carrierCard(a) {
     const c = a.carrier || {}; const s = a.sop || {};
-    return h('div', { class: 'dw-card' }, [
+    return h('div', { class: 'dw-card', 'data-carrier': a.carrier_org_id }, [
       h('h3', null, [h('span', null, [ic('building'), ' ' + (c.name || 'Carrier')]), h('div', { class: 'dw-row', style: 'gap:6px' }, [
         h('span', { class: 'dw-pill', style: 'color:#4ade80;border-color:currentColor' }, 'ASSIGNED'),
         h('span', { class: 'dw-pill', style: 'color:' + (c.broker_visible ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, c.broker_visible ? 'LIVE TO BROKERS' : 'NOT YET VISIBLE')])]),
-      h('div', { class: 'dw-grid' }, [
+      h('div', { class: 'dw-grid', 'data-fill': 'profile' }, [
         f('MC', c.mc), f('USDOT', c.dot), f('Contact', c.contact_name), f('Phone', c.phone ? tel(c.phone, { name: c.contact_name || c.name }) : null), f('WhatsApp', c.whatsapp), f('Email', c.email, 'wide'),
         f('Home base', c.home_base), f('Carrier min $/mi', c.min_rpm != null ? '$' + Number(c.min_rpm).toFixed(2) : null), f('Max deadhead', c.max_deadhead != null ? c.max_deadhead + ' mi' : null),
         f('Avoid states', Array.isArray(c.avoid_states) ? c.avoid_states.join(', ') : c.avoid_states), f('Weekends', yn(c.weekend_ok)), f('Factoring', c.factoring_company ? c.factoring_company + (c.factoring_status ? ' · ' + c.factoring_status : '') : null),
@@ -746,14 +748,13 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         s.min_rate ? h('div', null, ['Min rate/mile: ', h('b', { style: 'color:#fff' }, '$' + Number(s.min_rate).toFixed(2)), s.min_rate_note ? ' — ' + s.min_rate_note : '']) : null,
         s.equipment ? h('div', null, 'Equipment: ' + s.equipment) : null, s.home_time ? h('div', null, 'Home time: ' + s.home_time) : null, s.rules ? h('div', null, 'Rules: ' + s.rules) : null,
       ])]) : null,
-      // bl_disp_0459 — the carrier work sheet replaces the read-only prefs block; falls back to it if the RPC is unavailable
-      (() => { const host = h('div'); try { mountCarrierFill(host, a, { reload: load, toast, fallback: () => prefsBlock(a.prefs) }); } catch (_) { mount(host, prefsBlock(a.prefs)); } return host; })(),
+      prefsBlock(a.prefs),
       driversBlock(a.drivers || []),
     ]);
   }
   // bl_disp_0409 — the carrier's real preference set (what the carrier typed in Account → Dispatch), operating prefs only.
   function prefsBlock(pf) {
-    if (!pf) return h('div', { class: 'dw-avail', style: 'margin-top:10px' }, [h('b', { style: 'color:#fbbf24' }, [ic('alert', 16), ' No preferences set by the carrier yet']), h('div', { class: 'dw-muted' }, 'Ask the owner for rate floor, lanes and home time in the thread — do not guess them.')]);
+    if (!pf) return h('div', { class: 'dw-avail', style: 'margin-top:10px' }, [h('b', { style: 'color:#fbbf24' }, [ic('alert', 16), ' No preferences set by the carrier yet']), h('div', { class: 'dw-muted' }, 'Ask the owner for rate floor, lanes and home time in the thread — do not guess them.'), h('div', { class: 'dw-grid', 'data-fill': 'prefs', style: 'margin-top:8px' })]);
     const arr = (v) => (Array.isArray(v) && v.length ? v.join(', ') : null);
     const money = (v) => (v == null || v === '' ? null : '$' + Number(v).toFixed(2));
     const rows = [
@@ -771,7 +772,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     ];
     return h('div', { style: 'margin-top:12px' }, [
       h('div', { class: 'dw-row', style: 'justify-content:space-between;align-items:baseline;margin-bottom:4px' }, [h('b', { style: 'color:#7cc0ff' }, [ic('filter', 16), ' Carrier preferences — set by the owner']), h('span', { class: 'dw-muted', style: 'font-size:.78rem' }, pf.updated_at ? 'updated ' + whenDay(pf.updated_at) : '')]),
-      h('div', { class: 'dw-grid' }, rows.map((r) => f(r[0], r[1]))),
+      h('div', { class: 'dw-grid', 'data-fill': 'prefs' }, rows.map((r) => f(r[0], r[1]))),
       pf.notes ? h('div', { class: 'dw-muted', style: 'margin-top:6px;white-space:pre-wrap' }, ['Owner note: ', pf.notes]) : null,
     ]);
   }
@@ -802,7 +803,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const av = t.availability || {}; const act = activeFor(t.id).filter((b) => MOVING.includes(b.status)); const pend = activeFor(t.id).length - act.length;
     const chips = [['Dock-high', t.dock_high], ['Liftgate' + (t.liftgate && t.liftgate_cap_lbs ? ' ' + num(t.liftgate_cap_lbs) + ' lb' : ''), t.liftgate], ['Pallet jack', t.has_pallet_jack], ['Ramp', t.has_ramp], ['Straps', t.has_straps], ['Chains', t.has_chains], ['Tarps', t.has_tarps], ['E-track', t.has_etrack], ['Load bars', t.has_load_bars], ['Blankets', t.has_blankets], ['Team', t.team_driven], ['Hazmat', t.hazmat_placarded]].filter(([, v]) => v != null);
     const card = h('div', { class: 'dw-card', 'data-truck': t.id });
-    const availBox = h('div');
+    const availBox = h('div', { 'data-fill': 'avail' });
     const gps = t.last_gps && t.last_gps.lat != null ? t.last_gps : null;
     const renderAvail = (editing) => {
       if (!editing) {
@@ -854,7 +855,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     mount(card, [
       h('h3', null, [h('span', null, [ic('truck'), ' Unit ' + (t.unit_no || '?') + (function () { const d9 = [[t.year, t.make, t.model].filter(Boolean).join(' '), t.equipment].filter(Boolean); return d9.length ? ' — ' + d9.join(' · ') : ''; })()]), h('span', { class: 'dw-pill', style: 'color:' + (act.length ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, act.length ? act.length + ' LOAD' + (act.length > 1 ? 'S' : '') + ' MOVING' : pend ? pend + ' BOOKING' + (pend > 1 ? 'S' : '') + ' PENDING' : (av.status || 'EMPTY').toUpperCase())]),
       h('div', { class: 'dw-muted' }, (t._a.carrier && t._a.carrier.name) || ''),
-      h('div', { class: 'dw-grid', style: 'margin-top:8px' }, [
+      h('div', { class: 'dw-grid', 'data-fill': 'truck', style: 'margin-top:8px' }, [
         f('Payload', t.payload_lbs != null ? num(t.payload_lbs) + ' lb' : null), f('Interior L × W × H', (t.cargo_len_in || t.cargo_width_in || t.cargo_height_in) ? ftin(t.cargo_len_in) + ' × ' + inches(t.cargo_width_in) + ' × ' + inches(t.cargo_height_in) : null),
         f('Deck height', t.deck_height_in != null ? t.deck_height_in + '"' : null), f('GVWR', t.gvwr), f('Pallet positions', t.pallet_positions),
         t.trailer_type ? f('Trailer', t.trailer_type + (t.trailer_len_ft ? ' · ' + t.trailer_len_ft + ' ft' : '')) : null,
