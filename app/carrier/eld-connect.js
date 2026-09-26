@@ -171,7 +171,7 @@ export async function mountEldCard(host, opts = {}) {
         href: waHref('Hi LoadBoot — I want to connect my ELD to LoadBoot but I do not know how to get the API token. Can you guide me step by step?'),
         target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp us — we will guide you'),
       h('div', { class: 'cp-muted', style: 'margin-top:7px;font-size:.76rem;line-height:1.5' },
-        'Mon–Fri we usually reply within a few minutes; outside those hours, the next morning. Prefer a call? +1 (469) 253-7575, any hour.'),
+        'Mon–Fri we usually reply within a few minutes; outside those hours, the next morning. Prefer to call or WhatsApp? +1 (815) 365-1168 — one number for both, any hour.'),
     ]);
 
     const webhookBox = () => {

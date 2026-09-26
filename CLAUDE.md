@@ -177,8 +177,13 @@ The owner does not want the Retell/"Riley" line **+1 (469) 253-7575** shown to c
 reach LoadBoot. Every email, template, CC screen and popup must use the contact switch instead:
 
 - Source of truth: `app_private.contact_channel` (CC contact-channel toggle; read with
-  `public.lb_contact_channel()`). On 24 Sep 2026 it is `whatsapp` = **+1 (815) 365-1168**,
-  link **https://wa.me/18153651168** (the Telnyx WhatsApp number).
+  `public.lb_contact_channel()`). **Since 26 Sep 2026 (`bl_comm_0464`) it is ONE number:** channel `both`,
+  phone AND WhatsApp = **+1 (815) 365-1168** (the Telnyx line; calls forward to Riley, WhatsApp is the same
+  number), link **https://wa.me/18153651168**. `lb_contact_channel()` says `same: true` and hands the sign as
+  `one: {display, tel, url, label, text}`. Every surface renders that one sign, same words, same icons:
+  **📞💬 Call or WhatsApp · +1 (815) 365-1168** (+ "Open WhatsApp →" where there is room). Never show two
+  numbers side by side again — that was the confusion this closed. Signatures for hello@ and dispatch@ live
+  in `dispatch/signatures/`.
 - In SQL-built emails write the tokens, never a number: `{{contact_inline}}`, `{{contact_sig}}`,
   `{{whatsapp_url}}`, `{{whatsapp_display}}`. `app_private.contact_expand` fills them at send time
   (`sys_email`, `outreach_prepare`), so flipping the switch changes every email with no deploy.
