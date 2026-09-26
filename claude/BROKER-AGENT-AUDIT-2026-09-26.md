@@ -53,7 +53,7 @@ all — they sell a seat under the brokerage's account. Highway's "identity ≠ 
 |---|---|
 | **Partners → Broker trust** (`brokerTrust.js`) | ✅ Full. Shows "Agent of X · parent MC", each brokerage with status / code emailed to whom / source, `Resend code email`, `Confirm brokerage` (note required), `Pass by hand`, `Re-screen`, `Hold`, `Limit`. `needsHuman` includes screening `unknown/not_found/error`. |
 | **Broker 360** (`broker360.js`, the screenshot) | ❌ Knows nothing about agents. Renders the **broker packet (0/8)** for an agent who by definition has no bond, BOC-3 or own MC. "Approve account" calls `cc_partner_set_status('approve')` which **raises unless every non-optional packet item is verified/waived** → an agent can only be made `active` by waiving 8 items by hand. No parent / brokerage / code status shown. |
-| **Partners → Directory** (`partners.js`) | ⚠ Lists agents as ordinary brokers with `x/8 verified`. The old `'(Agent)'`-in-name exclusion (bl_ops_0205) does not catch `is_agent` orgs. |
+| **Partners → Directory** (`partners.js`) | ✅ **Fixed 26 Sep — `bl_bp_0450`**: agents read "Agent of X" (green when confirmed, amber "awaiting brokerage", red when declined/revoked or no brokerage declared). Was `x/8 verified`; the old `'(Agent)'`-in-name exclusion (bl_ops_0205) only catches dispatch agents. |
 | **Partner Intake** | ✅ loads posted by an agent show the parent MC (`details.agent_parent_id`). |
 | **Partner compliance / authority poll** | ⚠ polls `organizations.dot_number/mc_number` — NULL for agents; the parent MC is re-screened by 0343's nightly job instead. Fine, but the board shows agents as NO DOCKET. |
 | Agents under a brokerage / invites | ❌ No CC view lists agents *under* a given brokerage or its pending invites (`broker_agent_invites` is portal-only). |
@@ -83,6 +83,18 @@ What to do (CC → Partners → Broker trust → row "khannawab m afzal"):
 2. Press **Hold** with a reason the person will see, e.g. *"MC-2026 belongs to KMG Enterprises LLC, a one-truck carrier — not a brokerage. Reply with the real MC of the brokerage you post for and your agent agreement, and we will re-check."* This stops the row sitting in Action Needed and tells them exactly what is missing. Posting is already blocked; hold makes that explicit.
 3. Nothing to approve in Broker 360 — ignore the 0/8 packet for this account.
 4. If they never come back, leave it. If they reply with a real brokerage MC, `Re-screen` in the trust queue → the code email goes to that brokerage's FMCSA contact automatically.
+
+**Decision 26 Sep (owner asked for a recommendation + implementation): Re-screen, not Hold.** The steps
+above were written before `bl_bp_0449` existed. With the nudge live, a re-screen of MC-2026 returns the same
+`unknown` and `agent_parent_mc_nudge` fires (reason `carrier_record`: authority unknown + 1 power unit): the agent
+gets the in-app card and the catalogued e-mail naming KMG ENTERPRISES LLC and asking for the real brokerage MC —
+the same message step 2 would have typed by hand, from the template instead. Hold was rejected because (a) posting
+is already blocked (tier `new`, org `pending`), so hold protects nothing extra; (b) it tells a day-one signup their
+account is paused for a typo; (c) it needs a staff "Release hold" later even when the agent does the right thing,
+whereas after the nudge a new MC flows on its own (new `agent_parents` row → screen → code e-mail to the brokerage).
+Cost accepted: the row keeps sitting under "Needs a human" in the trust queue. If nothing comes back in a week,
+treat it like the July "(Agent)" orgs (§7 item 8). Fired via `broker_screen_request` + `log_audit
+('broker.trust.rescreen')` — the same two calls `cc_broker_trust_set(...,'rescreen')` makes.
 
 Also on prod right now (same queue): **LinkLane** is `agent_confirmed` (parent confirmed 25 Sep, packet 3/3) but org status still `pending` — that is the 360 gap in §3, not a data problem. **Vertex Web Systems 2** is `agent_pending` (M&M Brokerage, code emailed 25 Sep 07:01, unanswered).
 
@@ -117,7 +129,7 @@ Agent)"). The app does not:
 1. **Broker 360 agent-aware** — when `broker_trust.is_agent`: hide the 8-item packet, show the brokerages block from the trust queue, and let "Approve account" pass when `agent_confirmed` (or make `cc_partner_set_status` treat a confirmed agent as packet-complete). Fixes LinkLane sitting `pending` too. *(main-loop work — touches approval logic.)*
 2. **Signup picker** — `signup.html` card text; agent card at partner step A; referral card rename; `handle_new_user` list. *(small, mechanical.)*
 3. **Auto-nudge on non-brokerage MC** — in `agent_parent_screened`, when the screen returns `entity_type='CARRIER'` / `broker_authority=false` / `not_found`, notify the agent with the legal name FMCSA returned and ask for the right MC. *(small.)* **Done 26 Sep — `bl_bp_0449`**: `agent_parent_mc_nudge`, e-mail `broker.agent_parent_mc_check` (catalogued). Fires on `not_found`, `broker_authority=false`, or unknown authority + FMCSA power units; NOT on `entity_type='CARRIER'` alone (LinkLane and M&M read CARRIER too). Once per declared MC. No backfill — SALAYIM gets it on its next screen.
-4. **Directory purity** — `cc_partners_accounts` label agents "Agent of X" instead of `x/8`. *(small.)*
+4. **Directory purity** — `cc_partners_accounts` label agents "Agent of X" instead of `x/8`. *(small.)* **Done 26 Sep — `bl_bp_0450`**: three new keys (`is_agent`, `agent_tier`, `agent_parents[{name,mc,status}]`), Packet cell in `partners.js` reads them for agents only; everyone else unchanged. Full create-or-replace (staging never had bl_ops_0205, bodies now identical on both). Anon SECDEF surface unchanged, 34/33 by name.
 5. **One "mandatory" definition** shared by 360 and `partner_trust_status`.
 6. **Broker pay-behaviour signal to carriers** — medium; design first.
 7. Dump `onboarding_packet_templates` seed + `org_onboarding_complete` into a migration file.
