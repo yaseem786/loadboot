@@ -61,6 +61,8 @@ const ic = (n, s) => h('span', { class: 'lbd-ic', 'aria-hidden': 'true', html: '
 
 // ---------------------------------------------------------------- formatting
 const digits = (s) => String(s || '').replace(/[^0-9]/g, '');
+// bl_wa_0462 — SMS composer grows with its text like WhatsApp, capped at ~7 lines then scrolls (same as the WhatsApp tab)
+function growTa(ta) { try { ta.style.height = 'auto'; ta.style.height = Math.min(170, Math.max(40, ta.scrollHeight)) + 'px'; } catch (_) {} }
 function pretty(n) {
   const d = digits(n); const k = d.length === 11 && d[0] === '1' ? d.slice(1) : d;
   if (k.length === 10) return '(' + k.slice(0, 3) + ') ' + k.slice(3, 6) + '-' + k.slice(6);
@@ -131,6 +133,7 @@ body.lb-sw-bar{--lb-lift:72px}   /* bl_ui_0460 — the SW 'new version' bar is 6
 .lbd-tabs .lbd-tab{font-size:12px;gap:5px;padding:0 4px}
 .lbd-th{display:flex;align-items:center;gap:8px;margin-bottom:8px}.lbd-th .who{flex:1;min-width:0}.lbd-th .who b{display:block;color:#fff;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lbd-th .who span{font-size:11.5px;color:var(--mu)}
 .lbd-msgs{display:flex;flex-direction:column;gap:6px;max-height:300px;min-height:140px;overflow-y:auto;padding:4px 2px 8px}
+.lbd-ta-grow{resize:none;min-height:40px;max-height:170px;overflow-y:auto;line-height:1.45;white-space:pre-wrap}
 .lbd-bub{max-width:82%;padding:8px 11px;border-radius:14px;font-size:13px;line-height:1.4;white-space:pre-wrap;word-break:break-word;background:rgba(255,255,255,.08);color:#e8eefc;align-self:flex-start;border-bottom-left-radius:4px}
 .lbd-bub.out{align-self:flex-end;background:var(--bl);color:#fff;border-radius:14px;border-bottom-right-radius:4px}
 .lbd-bub.fail{background:rgba(239,68,68,.22);color:#fecaca}
@@ -721,7 +724,7 @@ function createDialer() {
         : !(S.smsConsent && S.smsConsent.consented) ? vConsent() : [
           h('div', { class: 'lbd-tpl' }, SMS_TPL.map((x) => h('button', { type: 'button', onClick: () => { S.smsDraft = (S.smsDraft ? S.smsDraft.replace(/\s*$/, ' ') : '') + x; const ta = root.querySelector('#lbd-sms'); if (ta) { ta.value = S.smsDraft; ta.focus(); } paintSend(); } }, x.length > 34 ? x.slice(0, 32) + '…' : x))),
           h('div', { class: 'lbd-comp' }, [
-            h('textarea', { class: 'lbd-in', id: 'lbd-sms', rows: '2', maxlength: '1000', placeholder: 'Write a text…', 'aria-label': 'Message', onInput: (e) => { S.smsDraft = e.target.value; paintSend(); }, onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } } }, S.smsDraft),
+            h('textarea', { class: 'lbd-in lbd-ta-grow', id: 'lbd-sms', rows: '1', maxlength: '1000', placeholder: 'Write a text… (Shift+Enter = new line)', 'aria-label': 'Message', onInput: (e) => { S.smsDraft = e.target.value; growTa(e.target); paintSend(); }, onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } } }, S.smsDraft),
             h('button', { class: 'lbd-send', 'data-smssend': '1', 'aria-label': 'Send text', disabled: S.smsBusy || !(S.smsDraft || '').trim() || !sm.enabled, onClick: sendText }, ic('send', 17)),
           ]),
         ],
