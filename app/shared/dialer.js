@@ -23,6 +23,7 @@ import {
   waInbox, waThread, waClaim, waStart, waSend, waMediaBlob, waUploadMedia,
 } from './api.js';
 import { createWaPanel } from './dialer-wa.js';
+import { guideView, guideSeen } from './dialer-guide.js';   // bl_dial_0461 — in-phone guide (auto once, then the ? in the header)
 
 const h = el;
 const ET = 'America/New_York';
@@ -228,7 +229,7 @@ function createDialer() {
     call: null,                                                      // { sdk, row, dir, state, muted, held, pad, since, note, name, number, ctx }
     wrap: null,                                                      // after-call disposition { row, outcome, note, … }
     terms: null, termsTick: false, termsBusy: false,                 // bl_dial_0362: LoadBoot Phone Terms gate { version, required, accepted, points, consent }
-    history: null, histQ: '', micId: localStorage.getItem('lbd_mic') || '', mics: [], showSettings: false, pushOn: null, sms: null, smsTo: null, smsThread: null, smsDraft: '', smsBusy: false, smsConsent: null, smsConsentBusy: false, smsConsentMethod: 'verbal', smsEvidence: '',
+    history: null, histQ: '', micId: localStorage.getItem('lbd_mic') || '', mics: [], showSettings: false, showGuide: false, guideAuto: false, pushOn: null, sms: null, smsTo: null, smsThread: null, smsDraft: '', smsBusy: false, smsConsent: null, smsConsentBusy: false, smsConsentMethod: 'verbal', smsEvidence: '',
     chan: 'sms', wa: null, waId: null, waThread: null, waDraft: '', waBusy: false, waTpl: null, waVars: [],   // bl_wa_0367
   };
   let client = null, SDK = null, hbTimer = null, tickTimer = null, retry = 0, retryTimer = null, lockRelease = null;
@@ -849,6 +850,7 @@ function createDialer() {
     const head = h('div', { class: 'lbd-hd' }, [
       h('div', { class: 'who' }, [h('b', null, b.line ? pretty(b.line.number) : 'LoadBoot Phone'), h('span', null, b.line ? connLine() : 'No line assigned')]),
       b.line ? h('button', { class: 'lbd-ib', 'aria-label': 'Copy my number', title: 'Copy my number', onClick: async () => { try { await navigator.clipboard.writeText(b.line.number); toast('Number copied — give this to brokers and load boards.'); } catch (_) {} } }, ic('copy', 17)) : null,
+      b.line ? h('button', { class: 'lbd-ib', 'aria-label': 'How to use the phone', title: 'How to use the phone', style: S.showGuide ? 'color:#fff;background:rgba(8,131,247,.25)' : '', onClick: () => { S.showGuide = !S.showGuide; S.showSettings = false; paint(); } }, h('b', { style: 'font-size:15px' }, '?')) : null,   // bl_dial_0461
       h('button', { class: 'lbd-ib', 'aria-label': 'Phone settings', onClick: async () => { S.showSettings = !S.showSettings; paint(); if (S.showSettings) { loadMics().then(() => { if (S.showSettings) paint(); }); isPushEnabled().then((v) => { S.pushOn = !!v; }).catch(() => { S.pushOn = false; }).then(() => { if (S.showSettings) paint(); }); } } }, ic('cog', 17)),
       h('button', { class: 'lbd-ib', 'aria-label': 'Minimise phone', onClick: () => { S.open = false; paint(); } }, ic('min', 19)),
     ]);
@@ -859,8 +861,10 @@ function createDialer() {
     else if ((S.conn === 'error' || S.conn === 'offline') && S.connMsg) note = h('div', { class: 'lbd-note bad' }, S.connMsg);
     else if (S.connMsg && /icrophone/.test(S.connMsg)) note = h('div', { class: 'lbd-note bad' }, S.connMsg);
     const gate = S.conn === 'terms' && !c;
-    const body = gate ? vTerms() : S.showSettings ? vSettings() : c ? vCall() : S.wrap ? vWrap() : !b.line ? h('div', { class: 'lbd-empty' }, 'No phone line yet.') : S.tab === 'recent' ? vRecent() : S.tab === 'texts' ? vTexts() : S.tab === 'callbacks' ? vCallbacks() : vKeypad();
-    const showChrome = !gate && !c && !S.wrap && !S.showSettings && b.line;
+    // bl_dial_0461 — first time the phone opens with a line and no call: show the guide once (per browser)
+    if (!gate && b.line && S.open && !c && !S.wrap && !S.guideAuto) { S.guideAuto = true; if (!guideSeen()) S.showGuide = true; }
+    const body = gate ? vTerms() : S.showSettings ? vSettings() : c ? vCall() : S.wrap ? vWrap() : S.showGuide && b.line ? guideView({ h, ic, pretty, line: b.line, terms: S.terms, onClose: () => { S.showGuide = false; S.tab = 'keypad'; paint(); } }) : !b.line ? h('div', { class: 'lbd-empty' }, 'No phone line yet.') : S.tab === 'recent' ? vRecent() : S.tab === 'texts' ? vTexts() : S.tab === 'callbacks' ? vCallbacks() : vKeypad();
+    const showChrome = !gate && !c && !S.wrap && !S.showSettings && !S.showGuide && b.line;
     mount(root, [live, h('div', { class: 'lbd-panel' + (justOpened ? ' in' : ''), role: 'dialog', 'aria-label': 'LoadBoot phone' }, [
       head, note,
       showChrome ? h('div', { class: 'lbd-stats' }, [['calls', 'Calls'], ['connected', 'Connected'], ['talk_sec', 'Talk'], ['missed', 'Missed']].map(([k, l]) => h('div', null, [h('b', null, k === 'talk_sec' ? talk(t[k]) : String(t[k] || 0)), h('span', null, l)]))) : null,
