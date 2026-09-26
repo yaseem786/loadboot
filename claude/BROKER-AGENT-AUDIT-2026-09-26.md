@@ -84,6 +84,18 @@ What to do (CC → Partners → Broker trust → row "khannawab m afzal"):
 3. Nothing to approve in Broker 360 — ignore the 0/8 packet for this account.
 4. If they never come back, leave it. If they reply with a real brokerage MC, `Re-screen` in the trust queue → the code email goes to that brokerage's FMCSA contact automatically.
 
+**Decision 26 Sep (owner asked for a recommendation + implementation): Re-screen, not Hold.** The steps
+above were written before `bl_bp_0449` existed. With the nudge live, a re-screen of MC-2026 returns the same
+`unknown` and `agent_parent_mc_nudge` fires (reason `carrier_record`: authority unknown + 1 power unit): the agent
+gets the in-app card and the catalogued e-mail naming KMG ENTERPRISES LLC and asking for the real brokerage MC —
+the same message step 2 would have typed by hand, from the template instead. Hold was rejected because (a) posting
+is already blocked (tier `new`, org `pending`), so hold protects nothing extra; (b) it tells a day-one signup their
+account is paused for a typo; (c) it needs a staff "Release hold" later even when the agent does the right thing,
+whereas after the nudge a new MC flows on its own (new `agent_parents` row → screen → code e-mail to the brokerage).
+Cost accepted: the row keeps sitting under "Needs a human" in the trust queue. If nothing comes back in a week,
+treat it like the July "(Agent)" orgs (§7 item 8). Fired via `broker_screen_request` + `log_audit
+('broker.trust.rescreen')` — the same two calls `cc_broker_trust_set(...,'rescreen')` makes.
+
 Also on prod right now (same queue): **LinkLane** is `agent_confirmed` (parent confirmed 25 Sep, packet 3/3) but org status still `pending` — that is the 360 gap in §3, not a data problem. **Vertex Web Systems 2** is `agent_pending` (M&M Brokerage, code emailed 25 Sep 07:01, unanswered).
 
 ## 5. Signup role options — what is missing
