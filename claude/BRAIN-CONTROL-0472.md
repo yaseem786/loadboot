@@ -66,7 +66,9 @@ source likewise. The 9 planned write tools already have rows (`send_email`, `sen
   one the credit went to. Pipeline itself is fine: enqueue → pg_net 202 → function → Anthropic → `brain_rpc('fail')`
   in 0.9 s. Nothing goes to prod until `brain_gate_report()` shows `done` rows with `cache_read > 0`.
 
+**Gate re-run 27 Sep 2026, after the owner added $20 credit: PASSED.** Jobs 15–35 all `done`; cache written once per language, then read on every job ($0.012–0.031 per job, ≈ $0.80 for the whole gate); no invented numbers, no promises, right contact line. Observations for §3: answers take 8–22 s, and the model uses emoji freely — decide in §3 whether a `rule.*` row should forbid that.
+
 ## Not done / next
 
-- Prod: 0470 + 0472 + `brain` function wait for the gate (blocked on the key/credit above), then secdef 36 names.
+- Prod: gate passed; 0470 + 0472 + `brain` function go to prod once the owner puts a prod key in prod secrets, then secdef 36 names.
 - §3 live chat on Claude flips `source.chat` (this screen already shows the Gemini `lc-brain` job count meanwhile).

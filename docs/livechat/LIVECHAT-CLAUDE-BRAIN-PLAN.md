@@ -135,7 +135,7 @@ Gate status (staging, 27 Sep 2026):
 | kill switch | ✅ `enabled=false` → job `skipped`, no POST |
 | cap trips | ✅ `daily_usd_cap=0` → job `capped`, no POST |
 | queue → function → write-back | ✅ job 3: pg_net 202, function wrote back through `brain_rpc` in 0.6 s |
-| Claude call, `cache_read_input_tokens > 0`, cost accounting | ⏳ blocked on `ANTHROPIC_API_KEY` in staging Edge Function secrets (job 3 failed with exactly that message) |
+| Claude call, `cache_read_input_tokens > 0`, cost accounting | ✅ 27 Sep 2026 after the owner added $20 credit to the Default org (key `loadboot-staging`): jobs 15–35 all `done`. First EN job wrote the cache (21,362 tok, $0.285), first ES job 5,603 tok ($0.092); every job after read it — $0.012–0.031 each, ≈ $0.02 average. Whole gate ≈ $0.80. 8–22 s per answer (effort `low`). "How many carriers" / "guarantee 3 loads" answered with no number and no promise; contact line = +1 (815) 365-1168 only; brokering/margin rule stated. 0 tool calls (the cached KB covered everything). |
 
 **Control room — staged 27 Sep 2026** (`migrations/bl_brain_0472_control.sql`, `app/command-center/views/brain.js`,
 CC → AI Brain, `#/brain`; doc `claude/BRAIN-CONTROL-0472.md`): `app_private.brain_permissions` is the one registry of
