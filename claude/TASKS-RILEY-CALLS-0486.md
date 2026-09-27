@@ -9,7 +9,13 @@ Rules: Mon–Fri 9:00–18:30 carrier time, 1 call / carrier / day.
 - [ ] **Human + Riley on the same line**: "Office first" inbound ring (staff browser + mobile ~20 s, then Riley) for callers without a dispatcher; Riley transfer to a staff mobile (escalation_number + prompt change + publish). Owner to name who rings.
 - [x] **Carrier 360 live / last seen** — bl_ux_0486 (this commit).
 
-## Batch 1 — book this week
+## Batch 1 — BOOKED 27 Sep for Monday 28 Sep (plans #2–#9, booked as the owner, all confidence ≥ 0.72, no brain flags)
+Times (ET): Carol Lee #1 9:00 · D'Z #3 9:20 · JMS #6 9:40 · Warren's #5 10:30 · Clockwork #2 11:00 · Munster #4 11:20 ·
+L M Cassella #9 11:30 (10:30 CT; "Monroe TN" may be ET or CT, safe either way) · Wildewood #8 11:40 (10:40 CT) · Summit 15 #7 12:00 (10:00 MT).
+Plans were read before booking: the phone numbers / emails / holder address in Clockwork + D'Z come from our own rejection notes;
+"you approve every load" (Warren's) is on the public site. Monday: read each card's "The call" + "Next step".
+Known gap: home_base written as a full state name ("Ohio") is not recognised by us_state_tz → safe Eastern window 11:00–18:30.
+
 1. CLOCKWORK CARGO (Angelique Griffin, OH) — document_missing: COI certificate holder (rejected 25 Sep); 3 docs valid
 2. D'Z TRUCKING (David Gilbert Sr, FL) — document_missing: COI holder + uploaded USDOT instead of MC
 3. MUNSTER LOGISTICS (Justin Male, OH) — choice_pending: Jugraj Singh (26 Sep)
