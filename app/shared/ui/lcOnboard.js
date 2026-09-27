@@ -389,7 +389,7 @@
     var n = card();
     prog(n, pctFor(s.role, 'contact'), 'Step ' + stepNum(s.role, 'contact'));
     n.appendChild(el('div', 'lbo-h', '\ud83d\udcde Want us to just call you?'));
-    n.appendChild(el('div', 'lbo-s', 'Riley can ring you on <b>' + esc(s.data.phone) + '</b> in about thirty seconds and walk you through the rest. She already has everything you have told me here, so you will not be repeating yourself. Or keep going in chat — about two more minutes.'));
+    n.appendChild(el('div', 'lbo-s', 'We can ring you on <b>' + esc(s.data.phone) + '</b> in about thirty seconds and walk you through the rest. The caller already has everything you have told me here, so you will not be repeating yourself. Or keep going in chat — about two more minutes.'));
     var b1 = el('button', 'lbo-btn', '\ud83d\udcde Call me now');
     var err = el('div', 'lbo-err');
     var b2 = el('button', 'lbo-btn ghost', 'Keep going in chat →');

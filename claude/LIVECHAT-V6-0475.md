@@ -51,3 +51,23 @@ staff suggested replies stay on Fable ($3/day); sales / voice / WhatsApp / email
 ## Not done
 - CC → AI Brain → Overview does not yet show `model_by_route`; the owner sets it by SQL / this migration for now.
 - Spanish desk names untested (the tag is language-neutral; the model answers in the visitor's language).
+
+---
+
+## 0476 — no "Riley" in chat (owner, 27 Sep 2026, later the same day)
+
+Owner: *"chat mein koi naam Riley nahi hona chahiye."* Riley stays the **phone** persona (Retell, CC → Live chat
+"Riley calls them", `retell_dial`). The chat's general desk is now plain **LoadBoot Support**, no personal name.
+
+- **Widget (`bl_lc_0476`, `app/shared/ui/liveChatCore.js`)**: `SPECIALISTS.general = { name: 'LoadBoot', role: 'Support' }`
+  → header reads **LoadBoot · ASSISTANT**, avatar **L**, who-line "LoadBoot · Support", welcome "Hi! 👋 I'm the LoadBoot
+  assistant — instant answers 24/7, and a real person is one tap away." Sara/Omar/Ali/Maya/Daniel unchanged.
+  `lcOnboard.js` call offer now says "We can ring you on … The caller already has everything you have told me here."
+- **Brain (`migrations/bl_brain_0476_no_riley_in_chat.sql`)**: `app_private.brain_user_text` 'chat' persona line →
+  "You are answering as the LoadBoot assistant ("LoadBoot Support") … never call yourself Riley (Riley is the phone
+  line)"; `rule.chat_specialists` description → `[[as:general]] LoadBoot Support — no personal name, never "Riley"`,
+  sign-off line updated; `brain_log` row written. **Flags untouched**: prod rule stays parked OFF (see above), staging ON.
+  Patched by anchor on the live definition; anon SECDEF surface unchanged (no public function touched).
+- **Gemini fallback (`supabase/functions/lc-brain/index.ts`)**: prompt line no longer says Riley. Needs the usual
+  edge-function deploy from the owner's machine (staging, then prod) — same as load-mail v10.
+- CC staff strings ("Riley calls them", "Context for Riley") stay: they are about the phone agent, not the chat.
