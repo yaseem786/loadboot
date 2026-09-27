@@ -73,12 +73,15 @@ Verification checklist to re-run each time (staging AND prod):
 Resend inbound routes could not be read from this session (no Resend API access here); the DB evidence says the same
 thing as on the 27th: only `loads@` reaches `inbound-mail`. Owner confirms in Resend → Receiving before §4.
 
-**§1 correction (27 Sep 2026, session 3, after `bl_mail_0471` on prod):** the "86 system/postmaster" mail is not 86
-different things. Filed by `mail_classify` on the 93 prod rows: **75 `forwarder_rewrite`** (the Namecheap forwarder
-rewrites the sender to `postmaster@*.jellyfish.systems` — every one of them a notification, a receipt or a password
-reset; the real sender is gone), **10 `own_copy`** (our own outbound copies and `[TEST → …]` sends), 3 `noreply`,
-1 `bounce`, 1 `receipt`, and **3 `human`** (Apple developer support, a carrier reply, a broker). 7 senders arrived as
-SRS (`srs0=…@fwd.privateemail.com`) and are now unwrapped to the real address. Inbox = 3 threads, 1 unread.
+**Corrected 27 Sep 2026 (session 3, DNS + row inspection).** Inbound is not Resend at all:
+- `loadboot.com` MX → `mx1/mx2.privateemail.com` (Namecheap: hello@, dispatch@, billing@, the dmail IMAP boxes).
+- `in.loadboot.com` MX → `route*.mx.cloudflare.net` (Cloudflare Email Routing → worker → `inbound-mail`).
+- loads@ is a Namecheap forward to `in.loadboot.com`. **hello@ is forwarded the same way** — the "[TEST → hello@loadboot.com]"
+  copy, the Apple Developer mails and the Telnyx/Retell receipts in `mail_messages` all arrived through it. So hello@ DOES
+  reach the DB, but mangled: the forward target starts with `loads@`, `inbound-mail` v5 routes anything with a `loads@`
+  recipient to `load-mail`, which files it as `[loads@ other]` under mailbox `loads@` with the forwarder's rewritten sender
+  (`srs0=…@fwd.privateemail.com`, or `postmaster@out-*.jellyfish.systems` when DMARC failed on the forward).
+- The "hello@ = 0" row above was therefore wrong in the direction that matters: hello@ mail was landing, unread, as loads@ noise.
 
 ---
 
@@ -174,26 +177,50 @@ Mailbox screen (CC, `openDrawer` for previews, no new side drawer):
 
 Staging gate: 40 seeded inbound emails across the six classes. 100% of legal-money/partner held; 0 replies to a suppressed address (check `email_blocked_log`); all system mail in `system`; every sent reply has a catalog row.
 
-**Build notes — plumbing step 2, `migrations/bl_mail_0471_system_folder.sql` (staging 27 Sep 2026 01:44 UTC; prod 27 Sep 2026, session 3):**
+**Build notes — plumbing step 2 staged 27 Sep 2026** (`migrations/bl_mail_0471_system_folder.sql`, `app/shared/api.js`,
+`app/command-center/views/mailbox.js`; staging only, prod after the owner's read):
 
-- `mail_messages.folder` (`inbox` | `system`, not null, default `inbox`), `mail_class` (why), `envelope_from` (the raw
-  SRS sender when unwrapped). `app_private.mail_unwrap_srs`, `mail_decode_words` (RFC 2047 subjects),
-  `mail_classify(from, subject, body)` — all `app_private`, revoked from public/anon/authenticated.
-- `cc_mail_ingest` unwraps SRS, classifies, files, auto-reads `system`, and raises the staff in-app notification only
-  for `inbox`. Still service_role-only (asserted). `cc_mail_stats` counts the inbox only and adds `system` /
-  `system_30d`; `cc_mail_list(..., p_folder default 'inbox')` (`system` | `all` on request; old 4-arg signature
-  dropped); new `cc_mail_set_folder(thread, folder)` for staff (comm.manage), audited as `comm.mail_folder_set`.
-- Backfill on prod: 93 inbound rows → inbox 3 (1 unread) / system 90 (75 forwarder_rewrite, 10 own_copy, 3 noreply,
-  1 bounce, 1 receipt); 7 SRS senders unwrapped. Every row has a folder. Staging: 0 rows, functions + self-tests only.
-- anon SECURITY DEFINER surface after: **prod 36, staging 35, names identical to the baseline** (the migration
-  refuses to commit otherwise).
-- CC Mailbox (`app/command-center/views/mailbox.js`): folder switch Inbox / System / All, a System KPI tile (click =
-  open the folder), class pill on system rows, "Move to System" / "Move to Inbox" on a thread (comm.manage).
-  `api.mailList` passes `folder`; new `api.mailSetFolder`.
-- Known gap, not this migration's: when the Namecheap forwarder rewrites a sender to `postmaster@*.jellyfish.systems`
-  the real address is lost before we see it, so such a mail is filed `system` even if a human wrote it. On prod all
-  75 were machine mail. The fix is plumbing step 1 (route hello@/dispatch@ to the Cloudflare worker directly, so
-  `inbound-mail` sees the original sender) — after it, watch `mail_class = 'forwarder_rewrite'` for a week.
+- `mail_messages.folder` (`inbox` | `system`) + `mail_class` (why) + `envelope_from` (raw SRS sender). `cc_mail_ingest` v2
+  unwraps SRS (`srs0=HASH=TT=domain=local@fwd…` → `local@domain`), decodes RFC 2047 subjects, classifies with
+  `app_private.mail_classify` (deterministic rules: `[loads@ spam]`/`[unsubscribe]` → own copies by `[TEST →` marker, our
+  domains or our footer → `postmaster@*.jellyfish.systems` → bounces/DSNs → auto-replies → no-reply local parts → vendor
+  receipt/sign-in/verification subjects → else `human`). Only `human` lands in `inbox`; everything else is filed read, with
+  no staff notification. Same RPC signature — `inbound-mail`, `load-mail` untouched.
+- `cc_mail_stats`: `threads`/`unread` are inbox-only ("Unread = humans waiting"), plus `system`, `system_30d`, per-mailbox
+  `system`. `cc_mail_list(…, p_folder default 'inbox' | 'system' | 'all')` (old 4-arg overload dropped — PostgREST cannot
+  pick between two by named args). `cc_mail_thread` returns `folder`/`mail_class`/`envelope_from`.
+  `cc_mail_set_folder(thread, folder)` — comm.manage, audited `comm.mail_folder_set`; → system marks read, → inbox marks
+  unread. CC Mailbox: folder select (Inbox / System / All), System KPI, "system · <class>" pill, Move to System/Inbox button.
+- Backfill runs every existing row through the same rules. **Prod dry-run (select only, nothing written):** of 93 inbound
+  rows, 3 threads stay in the inbox — `eurodev@apple.com` (Apple Developer Support, a person, unread since 20 Sep),
+  `summit15transport@gmail.com` (`[loads@ interest]`, a carrier, read), `broker@example.com` (2 Aug test). Everything else
+  → `system` (80 forwarder-rewritten own copies/receipts, Telnyx bounce, Apple/Zyla no-reply, "program enrollment received").
+- Known limits: a human from a `p=reject` domain (Yahoo, many corporates) forwarded through Namecheap arrives as
+  `postmaster@…jellyfish.systems` and is filed `forwarder_rewrite` → System; the fix is the owner's routing step below
+  (no Namecheap hop, no rewrite) plus the Move button meanwhile. Staff mailing hello@ from `@loadboot.com` files as `own_copy`.
+
+Staging gate for step 2 (27 Sep 2026): 10 seeded rows across the shapes seen in prod → 3 inbox/unread (gmail carrier,
+SRS-wrapped Apple human, broker rate con), 7 system/read (encoded `[TEST →` via postmaster, SRS Telnyx bounce, Retell
+no-reply receipt, auto-reply, `[unsubscribe]`, our footer from a Yahoo forward, Telnyx sign-in link); 3 staff
+notifications (humans only); `cc_mail_stats` under a comm.manage user = unread 4 / system 7; Move → system → inbox round
+trip (class `manual`, read flag flips both ways, 2 audit rows); anon secdef names unchanged (asserted in the migration);
+seeded rows and notifications deleted afterwards.
+
+**Prod, 27 Sep 2026 (session 4):** `bl_mail_0471` applied to `rwscphuhpjoudvljvmdk` from the staging migration record
+(the repo file had not been pushed yet), plus `bl_mail_0471b` for `cc_mail_thread` (that statement was missing from the
+staging record; staging already had it). Backfill: 93 inbound → **inbox 3 (1 unread) / system 90** — 75
+`forwarder_rewrite` (all our own live-chat "N min unanswered" and form alerts, Telnyx receipts), 10 `own_copy`, 3
+`noreply`, 1 `bounce`, 1 `receipt`; 7 SRS senders unwrapped to the real address. anon secdef surface **36, names identical
+to the baseline**; `cc_mail_ingest` service_role-only. §12 step 3's filter half is live; step 1 (routing) is still the
+owner's.
+
+**Plumbing step 1 is the owner's (dashboards, no code):** in Namecheap, forward **hello@** → `hello@in.loadboot.com` and
+**dispatch@** → `dispatch@in.loadboot.com` (keep a copy in the mailbox so dmail IMAP keeps working); in Cloudflare Email
+Routing for `in.loadboot.com`, add routes for those two addresses to the same worker that serves `loads@in.loadboot.com`.
+`inbound-mail` v5 already files by the `@loadboot.com` address in the headers, so hello@ mail then lands under mailbox
+`hello@loadboot.com` with its real sender. Verify with one test mail to hello@ → `select mailbox, peer_email, folder from
+app_private.mail_messages order by created_at desc limit 1`. Until then hello@ keeps arriving as `[loads@ other]`, now
+correctly split into inbox/system.
 
 ---
 
@@ -282,8 +309,6 @@ Each step: staging → gate above → owner reads the staging evidence → prod 
 1. §1 re-verify (both DBs) — 1 session
 2. §2 core (migration + `brain` function + cap + kill switch) — 1–2 sessions
 3. §4 plumbing only (hello@/dispatch@ routing, system-mail filter) — this alone fixes the Mailbox counters — 1 session
-   — system-mail filter **done on prod 27 Sep 2026** (`bl_mail_0471`); hello@/dispatch@ routing is the owner's
-   dashboard step (Namecheap forward → `*@in.loadboot.com`, Cloudflare Email Routing → the `inbound-mail` worker).
 4. §3 live chat on Claude — 1–2 sessions
 5. §4 brain on email + Mailbox screen — 2 sessions
 6. §5 carrier onboarding, then dispatcher hiring, then agent, then broker/shipper — 3–4 sessions

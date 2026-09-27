@@ -726,8 +726,9 @@ export const mailList = (o = {}) => rpc('cc_mail_list', {
   p_mailbox: o.mailbox ?? null,
   p_search: o.search ?? null,
   p_before: o.before ?? null,
-  p_folder: o.folder || 'inbox',            // inbox (default) | system | all — bl_mail_0471
+  p_folder: o.folder ?? 'inbox',          // inbox | system | all (bl_mail_0471)
 });
+// Move a whole thread between Inbox and System (comm.manage, audited). System = auto-read, not counted.
 export const mailSetFolder = (thread, folder) => rpc('cc_mail_set_folder', { p_thread: thread, p_folder: folder });
 export const mailThread = (thread, markRead = true) => rpc('cc_mail_thread', { p_thread: thread, p_mark_read: markRead !== false });
 export const mailMark = (thread, read = true) => rpc('cc_mail_mark', { p_thread: thread, p_read: read !== false });

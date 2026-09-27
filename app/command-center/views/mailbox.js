@@ -21,6 +21,10 @@
 //   comm.view   → read the mailbox
 //   comm.send   → save / discard drafts
 //   comm.manage → actually send  (stats.can_send mirrors the server's answer)
+//
+// FOLDERS (bl_mail_0471): every inbound is classified at ingest. 'inbox' = a human may be waiting;
+// 'system' = bounces, receipts, our own notification copies, auto-replies — filed read, never in
+// the Unread counter. Staff with comm.manage can move a thread either way (cc_mail_set_folder).
 
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
@@ -44,7 +48,7 @@ export function renderMailbox(host, initialThread) {
     threads: [],
     nextBefore: null,
     mailbox: '',
-    folder: 'inbox',          // inbox | system | all  (bl_mail_0471: system = bounces, receipts, our own copies)
+    folder: 'inbox',
     search: '',
     openThread: initialThread || null,
     canSend: false,
@@ -60,16 +64,16 @@ export function renderMailbox(host, initialThread) {
     el('option', { value: '' }, 'All mailboxes'));
   mailboxSel.onchange = () => { S.mailbox = mailboxSel.value; reload(); };
 
-  const folderSel = el('select', { class: 'cc-input', style: 'max-width:200px', title: 'Inbox = a human may be waiting. System = bounces, receipts, our own copies, forwarder rewrites — filed automatically, never counted as unread.' }, [
-    el('option', { value: 'inbox' },  'Inbox'),
-    el('option', { value: 'system' }, 'System'),
-    el('option', { value: 'all' },    'All folders'),
+  const folderSel = el('select', { class: 'cc-input', style: 'max-width:200px', title: 'Folder' }, [
+    el('option', { value: 'inbox' }, 'Inbox — humans'),
+    el('option', { value: 'system' }, 'System — auto-filed'),
+    el('option', { value: 'all' }, 'All'),
   ]);
-  folderSel.onchange = () => { S.folder = folderSel.value; S.openThread = null; reload(true); };
+  folderSel.onchange = () => { S.folder = folderSel.value; reload(); };
 
   mount(host, el('div', null, [
     sectionHead('Mailbox',
-      'Shared inbound mail (loads@, dispatch@, billing@ …). Replies are saved as drafts — nothing leaves LoadBoot until someone with send rights presses Send.',
+      'Shared inbound mail (hello@, loads@, dispatch@ …). Bounces, receipts and our own notification copies are filed under System automatically, so Unread means a person is waiting. Replies are saved as drafts — nothing leaves LoadBoot until someone with send rights presses Send.',
       el('button', { class: 'lb-btn lb-btn-sm', onClick: () => reload(true) }, 'Refresh')),
     kpis,
     filterBar,
@@ -91,13 +95,12 @@ export function renderMailbox(host, initialThread) {
     try { s = await mailStats(); } catch (_) { return; }          // KPIs are decoration, never fatal
     S.canSend = !!(s && s.can_send);
     mount(kpis, el('div', { class: 'cc-kpi-grid' }, [
-      statCard({ icon: 'list',  label: 'Inbox',   value: String(s?.threads ?? 0), sub: 'threads, all mailboxes', accent: 'blue' }),
-      statCard({ icon: 'bell',  label: 'Unread',  value: String(s?.unread  ?? 0), sub: 'humans waiting on us', accent: (s?.unread ? 'amber' : 'green') }),
+      statCard({ icon: 'list',  label: 'Threads', value: String(s?.threads ?? 0), sub: 'inbox, all mailboxes', accent: 'blue' }),
+      statCard({ icon: 'bell',  label: 'Unread',  value: String(s?.unread  ?? 0), sub: 'humans waiting',  accent: (s?.unread ? 'amber' : 'green') }),
       statCard({ icon: 'doc',   label: 'Drafts',  value: String(s?.drafts  ?? 0), sub: 'not sent',      accent: 'violet' }),
       statCard({ icon: 'check', label: 'Sent',    value: String(s?.sent    ?? 0), sub: 'from the CC',   accent: 'green' }),
-      statCard({ icon: 'list',  label: 'System',  value: String(s?.system  ?? 0), sub: (s?.system_30d ?? 0) + ' in 30 d · auto-filed', onClick: () => { S.folder = 'system'; folderSel.value = 'system'; S.openThread = null; reload(); } }),
+      statCard({ icon: 'list',  label: 'System',  value: String(s?.system  ?? 0), sub: (s?.system_30d ?? 0) + ' auto-filed in 30 d' }),
     ]));
-    folderSel.value = S.folder;
 
     const boxes = Array.isArray(s?.mailboxes) ? s.mailboxes : [];
     const keep = mailboxSel.value;
@@ -139,8 +142,8 @@ export function renderMailbox(host, initialThread) {
     if (!S.threads.length) {
       showEmpty(listHost, S.search || S.mailbox
         ? 'No mail matches this filter.'
-        : S.folder === 'system' ? 'Nothing in System. Bounces, receipts and our own copies land here automatically.'
-        : S.folder === 'inbox'  ? 'Inbox is clear — nobody is waiting on a reply. Auto-filed mail is under System.'
+        : S.folder === 'system' ? 'Nothing auto-filed yet.'
+        : S.folder === 'inbox' ? 'Inbox is clear — nobody is waiting on a reply.'
         : 'No mail has been ingested yet. Inbound mail arrives via cc_mail_ingest.');
       return;
     }
@@ -160,9 +163,7 @@ export function renderMailbox(host, initialThread) {
           : ''),
         el('div', { class: 'cc-mail-tags' }, [
           el('span', { class: 'cc-pill cc-pill-gray' }, t.mailbox || '—'),
-          (t.folder === 'system' || S.folder === 'all') && t.mail_class
-            ? el('span', { class: 'cc-pill cc-pill-gray', title: 'Why it was filed here (bl_mail_0471)' },
-                (t.folder === 'system' ? 'system · ' : '') + String(t.mail_class).replace(/_/g, ' ')) : null,
+          t.folder === 'system' ? el('span', { class: 'cc-pill cc-pill-gray', title: 'Auto-filed — not counted as unread' }, 'system · ' + (t.mail_class || '').replace(/_/g, ' ')) : null,
           unread ? el('span', { class: 'cc-pill cc-pill-amber' }, unread + ' unread') : null,
           t.has_draft ? el('span', { class: 'cc-pill cc-pill-violet' }, 'draft') : null,
           Number(t.msg_count) > 1 ? el('span', { class: 'cc-sub' }, t.msg_count + ' messages') : null,
@@ -210,6 +211,8 @@ export function renderMailbox(host, initialThread) {
     const head = msgs[0];
     const draft = msgs.find(m => m.status === 'draft') || null;
     const lastIn = [...msgs].reverse().find(m => m.direction === 'in') || head;
+    const listRow = S.threads.find(x => x.thread_key === key);
+    const inSystem = (listRow?.folder || head.folder) === 'system';
 
     mount(paneHost, el('div', { class: 'cc-mail-thread' }, [
       el('div', { class: 'cc-mail-thread-head' }, [
@@ -223,18 +226,16 @@ export function renderMailbox(host, initialThread) {
             try { await mailMark(key, false); toast('Marked unread', 'success'); loadStats(); reload(); }
             catch (e) { toast(humanizeError(e), 'error'); }
           } }, 'Mark unread'),
-          (() => {
-            // Folder move (bl_mail_0471). The list row carries the folder; the thread RPC does not.
-            const cur = (S.threads.find(t => t.thread_key === key) || {}).folder || 'inbox';
-            const to  = cur === 'system' ? 'inbox' : 'system';
-            return S.canSend ? el('button', {
-              class: 'lb-btn lb-btn-sm',
-              title: to === 'system' ? 'Not a customer — file it away, it stops counting as unread.' : 'A human is waiting — bring it back to the Inbox.',
-              onClick: async () => {
-                try { await mailSetFolder(key, to); toast(to === 'system' ? 'Moved to System' : 'Moved to Inbox', 'success'); S.openThread = null; reload(true); }
-                catch (e) { toast(humanizeError(e), 'error'); }
-              } }, to === 'system' ? 'Move to System' : 'Move to Inbox') : null;
-          })(),
+          S.canSend ? el('button', { class: 'lb-btn lb-btn-sm', title: inSystem
+              ? 'A person is waiting on this — put it back in the Inbox and count it as unread'
+              : 'Not a person waiting on us — file it under System (auto-read, not counted)',
+            onClick: async () => {
+              try {
+                await mailSetFolder(key, inSystem ? 'inbox' : 'system');
+                toast(inSystem ? 'Moved to Inbox' : 'Moved to System', 'success');
+                S.openThread = null; reload(true);
+              } catch (e) { toast(humanizeError(e), 'error'); }
+            } }, inSystem ? 'Move to Inbox' : 'Move to System') : null,
           lastIn.peer_email ? el('a', {
             class: 'lb-btn lb-btn-sm',
             href: 'mailto:' + encodeURIComponent(lastIn.peer_email)
