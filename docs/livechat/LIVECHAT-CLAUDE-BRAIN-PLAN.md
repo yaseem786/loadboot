@@ -57,6 +57,22 @@ Verification checklist to re-run each time (staging AND prod):
 - [ ] Resend inbound routes: which addresses hit `inbound-mail`.
 - [ ] `select count(*) from app_private.mail_messages where created_at > now()-interval '30 days'` by mailbox.
 
+**Re-verified 27 Sep 2026 (session 2, before §2):**
+
+| Check | prod `rwscphuhpjoudvljvmdk` | staging `snslhvmkjusozgjelghi` |
+|---|---|---|
+| anon SECURITY DEFINER names | **36**, identical to the baseline list (33 + `get_public_site_facts`, `newsletter_confirm`, `newsletter_request`) | **35**, same list minus `retell_inbound` |
+| `has_schema_privilege('anon','app_private','usage')` | false | false |
+| `lc_brain_config.enabled` | true (Gemini, `lc-brain`) | true |
+| Live chat convs / brain jobs 30 d | 54 / 54 | 0 / 0 |
+| `mail_messages` in, 30 d, by mailbox | `loads@loadboot.com` = 92, nothing else | 0 |
+| `dmail_messages` 30 d | 8 | 2 (IMAP login failing on staging — "check the mailbox password") |
+| hello@ reaching the DB | still **0** | 0 |
+| KB | 133 rows | 109 rows (106 en / 3 es) |
+
+Resend inbound routes could not be read from this session (no Resend API access here); the DB evidence says the same
+thing as on the 27th: only `loads@` reaches `inbound-mail`. Owner confirms in Resend → Receiving before §4.
+
 ---
 
 ## §2 Foundation — `brain` core (one function, one queue, one audit log)
@@ -77,6 +93,44 @@ Edge function `supabase/functions/brain/index.ts` (Deno, `@anthropic-ai/sdk`):
 - Cost accounting from `response.usage` into `brain_jobs` and `brain_usage_daily` on every call.
 
 Staging gate for §2: 20 synthetic jobs through the queue, `cache_read_input_tokens > 0` on the 2nd+ call, cap trips at the configured number, kill switch verified, secdef names unchanged.
+
+**Build notes — staged 27 Sep 2026** (`migrations/bl_brain_0470_core.sql`, `supabase/functions/brain/index.ts`, both on staging):
+
+- **Write-back is `public.brain_rpc(token, op, payload)`, service_role-only** (revoked from public/anon/authenticated,
+  asserted in the migration). The function uses the platform-injected `SUPABASE_SERVICE_ROLE_KEY` for that one call and
+  nothing else; every op is still scoped to the job the one-time token names (15-minute life, `queued|running` only).
+  This is the one deliberate change from the wording above ("no service key"): it is what keeps the anon secdef list at
+  **36/35 with no new name** — `lc_brain_write`-style anon RPCs would have grown it. Ops: `start`, `tool`, `done`, `fail`.
+- Postgres builds everything: `brain_system(route, lang)` = frozen `brain_rules()` + `brain_facts_block()` (from
+  `brain_facts` + the live contact switch) + `brain_kb_block(lang)` (whole `lc_kb`, ~51 K chars ≈ 13 K tokens) as the
+  1-hour-cached block; `brain_user_text()` is the volatile turn. Tools are executed in `brain_tool_exec()` and logged to
+  `brain_actions`; §2 ships `kb_search`, `get_facts`, `account_lookup` (job's own user only), `note`, `escalate`,
+  `report_finding`. `brain_sink(job)` is the per-source delivery hook (§3 adds `chat`).
+- Function: `claude-fable-5-1`, `thinking` omitted, `output_config.effort` per route, structured output
+  (`json_schema`, lenient re-parse fallback), `strict` tools, `betas: ["server-side-fallback-2026-07-01"]` +
+  `fallbacks: "default"`, refusal → escalate. Replies **202 immediately** and runs the job in `EdgeRuntime.waitUntil`,
+  so pg_net's timeout never cuts a tool loop. Usage from every iteration is summed and priced by `brain_usd()` from
+  `brain_config.price` (Fable cache-read price taken from the Anthropic skill notes, $0.25/MTok — correct in config if wrong).
+- Extra table, owner ask of 27 Sep: `brain_findings` (bug | kb_gap | portal | growth | seo | ads | process) — the
+  inbox §15 fills. `cc_brain_status()` / `cc_brain_set()` (settings.manage) are the kill switch and cap from CC/SQL.
+- `lc_brain_jobs`, `lc_brain_dispatch`, `lc-brain` are untouched: chat stays on Gemini until §3.
+- Staging cleanup found on the way: cron `lb-email-worker` posted to `delivery-worker` every minute with no auth header
+  (401 forever; the real job is `delivery-worker-minutely`). Unscheduled on staging; prod has no such job.
+
+Gate status (staging, 27 Sep 2026):
+
+| Gate item | Result |
+|---|---|
+| secdef names unchanged | ✅ 35, list identical (migration asserts it too) |
+| kill switch | ✅ `enabled=false` → job `skipped`, no POST |
+| cap trips | ✅ `daily_usd_cap=0` → job `capped`, no POST |
+| queue → function → write-back | ✅ job 3: pg_net 202, function wrote back through `brain_rpc` in 0.6 s |
+| Claude call, `cache_read_input_tokens > 0`, cost accounting | ⏳ blocked on `ANTHROPIC_API_KEY` in staging Edge Function secrets (job 3 failed with exactly that message) |
+
+To finish the gate once the key is in: `select app_private.brain_test_enqueue(20);` then, a minute later,
+`select * from app_private.brain_gate_report();` — expect `done` rows, `cache_read > 0` from the 2nd job on, `usd`
+filled, ES answers on the even rows, and the "how many carriers" / "guarantee 3 loads" probes answered without a number
+or a promise. Then `select * from app_private.brain_findings;` to see what the brain filed.
 
 ---
 
@@ -204,6 +258,7 @@ Each step: staging → gate above → owner reads the staging evidence → prod 
 5. §4 brain on email + Mailbox screen — 2 sessions
 6. §5 carrier onboarding, then dispatcher hiring, then agent, then broker/shipper — 3–4 sessions
 7. §7 sales + §8 admin + digest — 2 sessions
+   7b. §15 growth brain: findings digest, KB training loop, SEO monitor + keyword plan, ads plan (PREP) — 2 sessions
 8. §6 dispatcher ops — 2–3 sessions
 9. §10 facts sweep + regulation agent — 1–2 sessions
 10. §9 voice phase 1, then phase 2 — 1 + 2 sessions
@@ -329,3 +384,85 @@ Calls cost money; use them only where a customer is worth it. Daily 10:00–18:0
 - **Riley prompts**: the brain maintains `app_private.riley_prompts` (inbound/outbound) from `brain_facts` + the same rules as chat, so a fact changes in one place and Riley says it on the next publish. Publish via `retell-admin` — **AUTO+OK** (owner reads the diff, taps publish). The canonical files in `docs/voice-agent/prompts/` are written back on every publish.
 - **In-app notification marketing** (carrier, broker/shipper, dispatcher portals + push): plan and run per-audience nudges from product events — first load booked, doc verified, weekly market move on their lanes, idle 7 days, new feature that applies to them. Rules: max 2/week per user, quiet hours, one per event, each with a stop switch in the user's preferences, every one a catalog row (`notify.*` family), measured by open → action. Brain drafts the calendar monthly (**AUTO+OK**), sends daily (**AUTO**).
 - **Email marketing, end to end**: audience build (from `audiences`, never from scraped lists), calendar, copy (brain drafts; premium articles stay with the Tuesday Routine), A/B subject lines, send through `campaign-manager` → `outreach_prepare` → catalog → unsub law, deliverability watch (`lb-email-health`), attribution (`lb-outreach-attrib`), monthly report in the digest. **AUTO+OK** on each campaign send for the first two months, then AUTO for sends under 500 recipients. Suppression, bounces and complaints handled only through `unsub_apply`.
+
+---
+
+## §15 Growth brain — bugs → fixes, KB training, portal ideas, growth / SEO / ads (owner asks, 27 Sep 2026)
+
+Owner, mid-session: *"saath saath live — jahan bug pakre, fix mujhe de, main Claude se karwaoon; live chat ko train
+karta rahe; portals mein improvement ki suggestions de; growth ki strategy de … SEO monitoring, keyword search plan,
+ad-run plan, advertisement strategy … SEO planning, ranking planning. LoadBoot successful karne ke liye jo jo help
+kar sakta hai kare."* Everything here is **PREP / AUTO+OK** — the brain observes, files, drafts and measures; the owner
+decides and spends. Nothing in this section moves money or ships code.
+
+The plumbing is already in §2: every finding is a `brain_findings` row (`kind`, `surface`, `title`, `detail`,
+`evidence`, `suggested_fix`, `status open→accepted→done|dismissed`) filed through the `report_finding` tool, so every
+section's brain (chat, mail, onboarding, dispatch) feeds the same inbox from day one.
+
+### 15.1 Bugs → a fix the owner can paste into Claude Code (AUTO file, owner applies)
+- Triggers: a tool error inside a job, a customer describing a broken path ("the upload button does nothing"), a
+  portal RPC the brain saw fail in `account_lookup`, an email that bounced from our side, a repeated escalation with the
+  same root cause.
+- The finding carries: surface + exact page/RPC, the customer's words, counts (how many people hit it, first/last
+  seen), and a **suggested fix written as a Claude Code prompt** (file path if known, expected behaviour, how to verify).
+  The owner copies that prompt into a session — no reconstruction.
+- Daily digest (with §8's owner digest): new bugs first, then everything else. CC → Brain → Findings screen lists
+  them with one-tap accept / done / dismiss (§8 builds the screen; the RPCs are cheap once the table exists).
+
+### 15.2 Live chat keeps training itself (AUTO propose, owner approves)
+- Every escalate, `confidence < 0.6`, repeat question, CSAT ≤ 3 → `kb_gap` finding **with a drafted `lc_kb` row**
+  (patterns[], answer, lang, priority) written in the KB's own style.
+- Nightly sweep clusters the day's misses (same question asked different ways → one row, all the phrasings as patterns).
+- Owner approves in CC → row inserted into `lc_kb` (extends `bl_lc_0399` teach-every-miss); the next job's cached system
+  block picks it up within the hour. Metrics on the Live chat stats card: escalation rate, repeat-question rate, "answered
+  from KB" share, ES coverage. Target: escalation rate halves in 4 weeks.
+
+### 15.3 Portal improvement suggestions (weekly, PREP)
+- Sources: chat and mail transcripts, support tickets, onboarding funnel drop-offs (profiles → orgs → packets → verified
+  → first load), `track_web_event` paths, dispatcher-test outcomes, Riley call summaries.
+- Output: `portal` findings ranked by *people affected × effort*, each with evidence counts and a concrete change
+  ("Fleet: show 'VIN missing on COI' inline on the truck row, not only at posting — 14 carriers hit LB001 this week").
+- Never a redesign essay: one screen, one change, one reason, one number.
+
+### 15.4 Growth strategy (monthly memo, PREP)
+- Data the brain reads: signups by role and source, activation (verified carriers, first posted load, first booked
+  load), leads by stage, Riley/WhatsApp/email outcomes, revenue (read-only), churn signals (no login 30 d, documents
+  expiring, no loads 14 d).
+- Output: a one-page memo — what moved, why (with evidence), three bets for next month with a success number each,
+  and what to stop. Owner picks; the picked bets become `growth` findings the sweeps track.
+
+### 15.5 SEO monitoring + ranking plan (weekly, AUTO measure · PREP fix)
+- Already wired: `gsc-insights` and `ga4-insights` edge functions, `docs/seo-audit-2026-10/` (audit + the Tuesday
+  premium-article Routine), `site_facts` registry, `build_site.py`.
+- Weekly sweep: Search Console queries/pages — rank movements, lost top-10 positions, "striking distance" queries
+  (position 8–20 with impressions), CTR outliers, indexation/coverage errors, Core Web Vitals from GA4; each issue → `seo`
+  finding with the page and the fix (title/meta rewrite drafted, internal links to add, thin page to merge, schema to add).
+- Ranking plan per target cluster: current position → target → the pages that must exist or change → the articles the
+  Tuesday Routine should write next (the Routine takes its topic queue from here instead of guessing). Reviewed monthly.
+
+### 15.6 Keyword research plan (monthly, PREP)
+- Seed clusters: truck dispatch service / dispatcher for owner-operators, free load board for carriers, broker & shipper
+  load posting, per-state and per-equipment carrier pages, dispatcher jobs / how to become a dispatcher, factoring & NOA,
+  FMCSA authority questions, accessorial standards (detention, TONU, layover), Spanish equivalents.
+- The brain expands each cluster from our own GSC queries (real demand we already touch) and the questions people ask in
+  chat/mail (demand we answer but do not rank for), maps keyword → existing page or new page, and prioritises by
+  impressions × intent × how close we already are. Output: a keyword→page map with owners' yes/no per row; the yes rows
+  feed 15.5's ranking plan and the article queue.
+- No third-party volume numbers are invented: where we have no GSC data the row says "no data — test with an article".
+
+### 15.7 Ads run plan + advertising strategy (PREP only — the brain never spends)
+- Strategy draft: who to pay for (carriers with authority + trucks, brokers/shippers posting, dispatcher applicants only
+  if hiring), where they are (Google Search intent terms from 15.6, YouTube/Meta retargeting of site visitors, Spanish
+  campaigns), and what we can afford per verified carrier given the 5% model (target CAC set by the owner).
+- Run plan: campaign structure (search campaigns per cluster, ad groups per intent, negatives — "free dispatch course",
+  "dispatcher salary" …), ad copy variants written from the KB facts (no invented numbers, one contact sign), landing
+  pages per campaign (existing pages first), conversion spec (`track_web_event` → GA4 events: signup, verified, first
+  load), budget tiers ($10/$30/$100 a day) with the expected signal at each, a 2-week kill/scale rule.
+- Owner creates the accounts and enters payment details himself (CLAUDE.md §4); the brain then reads spend + results
+  weekly and files `ads` findings (pause X, move budget to Y, new negative Z). Every recommendation carries our numbers.
+
+### 15.8 Guardrails for this section
+- Every finding cites evidence from our own data; a suggestion with no number behind it is filed as an idea, not a finding.
+- Money is NEVER touched (ads spend, tools purchases); identity/payment values are typed by the owner only.
+- No customer is contacted by anything in §15 — it writes to the owner, never outward.
+- Cost: ~40 extra sweep jobs a month ≈ $20–30 at Fable prices, inside the §13 envelope.
