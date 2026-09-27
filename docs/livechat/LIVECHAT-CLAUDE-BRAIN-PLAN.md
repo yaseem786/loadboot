@@ -289,6 +289,7 @@ Staging gate: one seeded lead through the full sequence; "stop" reply suppresses
 - **Phase 1 (with §3/§7)**: the brain schedules and triggers calls via `retell_dial()` (only to people who asked — TCPA), reads the transcript + post-call analysis back, and continues the thread. Fix first: number wiring and prompt publish per `docs/voice-agent/RILEY-0458.md`.
 - **Phase 2 (after §3–§7 are stable)**: Claude as Riley's LLM through Retell's custom-LLM socket, so chat/email/call share one memory. Confirm the Retell feature and pricing at build time; keep the Retell-hosted prompt as fallback.
 - Cost: Retell ≈ $0.13/min + brain ≈ $0.05/call.
+- **Shipped 27 Sep 2026 — `bl_voice_0483` (first slice of Phase 1):** call PLANS. Staff press "Plan a Riley call" on Carrier 360 / Carrier choices; the brain (route `voice_plan`, Sonnet 5, ≈ $0.02) writes Riley's briefing — goal, opener, five talking points, confirm, do-not-say, best time, language — read in CC → Riley → Call plans. `source.voice` is live; `tool.schedule_riley_call` stays **prep** (nothing dials) until the owner flips it. Doc: `claude/RILEY-CALL-PLANS-0483.md`.
 - **Owner decision 27 Sep 2026:** Riley keeps running on Retell's hosted LLM while the current **$30 Retell balance** lasts (Phase 1 only touches scheduling and transcripts). When the balance is spent, cut over to Phase 2 (Claude behind Riley). Add a CC → Riley → Settings line showing the Retell balance so the cut-over date is visible, not guessed.
 
 ---

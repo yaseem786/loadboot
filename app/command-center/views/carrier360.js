@@ -21,6 +21,7 @@ import { equipmentDetailCard, carrierNotesCard } from '../../shared/ui/carrierDe
 import { staffUploadCard } from './staffUpload.js';
 import { can } from '../../shared/permissions.js';
 import { META as REMINDER_META } from './carrierReminders.js';
+import { planCallFlow } from './rileyPlanFlow.js';   // bl_voice_0483 — Riley call plan
 
 export function renderCarrier360(host, orgId) {
   mount(host, el('div', { class: 'cc-view' }, [
@@ -59,6 +60,8 @@ export function renderCarrier360(host, orgId) {
           el('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.1em;color:#7c8db5;text-transform:uppercase' }, 'Contact (staff only)'),
           el('div', { style: 'font-weight:700;font-size:.92rem;margin-top:3px' }, p.contact_name || '\u2014'),
           el('div', { style: 'color:#9db4d6;font-size:.84rem' }, p.phone || '\u2014'),
+          // bl_voice_0483: the Ops Brain writes Riley's briefing for a call to THIS carrier; nothing dials from here.
+          (p.phone && (can('comm.manage') || can('dispatch.manage') || can('settings.manage'))) ? el('button', { class: 'lb-btn', style: 'margin-top:8px;font-size:.8rem;padding:6px 12px', title: 'Riley call plan — the brain writes the briefing first, you read it under Riley → Call plans', onClick: () => planCallFlow(orgId, d.name, { reason: d.compliance_ok ? 'no_reply' : 'onboarding_gap' }) }, [icon('phone', 14), ' Plan a Riley call']) : null,
         ]),
       ]),
     ]);

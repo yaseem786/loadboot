@@ -14,6 +14,7 @@ import { sectionHead } from '../../shared/ui/components.js';
 import { ccDispatcherChoices } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { choiceAcceptFlow, choiceDeclineFlow, CHOICE_MK } from './dispatcher-360.js';
+import { planCallFlow } from './rileyPlanFlow.js';   // bl_voice_0483 — Riley call plan for the chosen carrier
 
 const ET = 'America/New_York';
 const et = (v) => { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? '—' : d.toLocaleString('en-US', { timeZone: ET, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET'; };
@@ -108,6 +109,7 @@ export async function renderCarrierChoices(host, query) {
         el('div', { class: 'chq-actions' }, [
           el('a', { class: 'chq-btn', href: link360(c) }, [icon('user', 16), 'Open Dispatcher 360']),
           el('a', { class: 'chq-btn', href: '#/carrier?id=' + (c.carrier_org_id || '') }, [icon('truck', 16), 'Open carrier']),
+          el('button', { class: 'chq-btn', title: 'Ask the Ops Brain for Riley’s briefing before calling this carrier about the trial (nothing dials)', onClick: () => planCallFlow(c.carrier_org_id, cr.name, { reason: 'choice_pending', note: 'Candidate ' + (dp.name || '') + ' picked this carrier (' + (mk[0] || '') + ' match). Explain the trial and confirm they want to proceed.' }) }, [icon('phone', 16), 'Plan a Riley call']),   // bl_voice_0483
         ]),
       ]),
       el('div', { class: 'chq-grid' }, [

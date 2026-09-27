@@ -210,3 +210,19 @@ comma-joined list unchanged before and after all three. `public.brain_rpc` is se
 authenticated both false); the fifteen `cc_brain_*` functions all have anon=false. `lc_brain_write` was re-created by
 0473 with the same signature and ACL and is still on the list. Staging: 35 → 35 for the same three files.
 
+
+## 27 Sep 2026 — 36 / 35 confirmed by name (bl_voice_0483)
+
+The two names `bl_comm_0447` added on 26 Sep were never written into this file: **`newsletter_request`** and
+**`newsletter_confirm`** (newsletter double opt-in form + confirm link). They are intentional anon names. With them the
+prod list is **36** and staging **35** (staging lacks `retell_inbound` only). Verified by name after `bl_voice_0483`
+(Riley call plans) on both databases: no new anon name — the four new `cc_riley_plan*` functions revoke `public, anon`
+explicitly and are `authenticated, service_role` only.
+
+Full prod list, 27 Sep 2026 (36): all_flags, cc_get_public_form, dispatcher_submit_id, eld_ingest,
+get_active_public_announcements, get_public_load_opportunities, get_public_market_rates, get_public_site_facts,
+lb_contact_channel, lb_email_claim_get, lb_email_claim_sign, lb_email_ping_confirm, lb_email_ping_get, lc_brain_write,
+lc_chat_request_call, lc_history, lc_identify, lc_ob_get, lc_ob_save, lc_ob_upload_check, lc_poll, lc_rate,
+lc_request_call, lc_send, lc_start, newsletter_confirm, newsletter_request, outreach_unsubscribe, partner_agent_confirm,
+partner_agent_confirm_get, partner_claim_confirm, partner_claim_get, retell_inbound, retell_webhook, submit_web_form,
+track_web_event.

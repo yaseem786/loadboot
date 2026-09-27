@@ -283,11 +283,12 @@ async function boot() {
       { id: 'dispatchers', label: 'Dispatchers', path: '/dispatchers', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDispatchers(h) },
       { id: 'phones', label: 'Phones & live calls', path: '/phones', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDialerLive(h) },
       { id: 'riley', label: 'Riley (AI phone)', path: '/riley', allowed: () => anyOf('comm.view', 'comm.manage', 'support.view', 'dispatch.manage', 'settings.manage'), render: (h, q) => renderRiley(h, q),   // bl_voice_0458
-        keywords: 'riley ai phone voice agent retell calls recording transcript prompt whatsapp line 815 live calls',
+        keywords: 'riley ai phone voice agent retell calls recording transcript prompt whatsapp line 815 live calls call plans',
         sections: [
           { id: 'calls', label: 'Riley calls — live, recordings, transcripts', keywords: 'riley calls recording transcript live analysis lead hot' },
           { id: 'prompts', label: 'Riley prompts — edit & publish', keywords: 'riley prompt publish retell script inbound outbound history' },
           { id: 'wa', label: 'WhatsApp line → Riley', keywords: 'whatsapp line riley forward 815 dispatcher first callbacks voicemail' },
+          { id: 'plans', label: 'Riley call plans — brain briefings before a call', keywords: 'riley call plan plans brain briefing talking points outbound carrier call tcpa' },   // bl_voice_0483
           { id: 'settings', label: 'Riley settings & Retell wiring', keywords: 'riley settings wiring retell agent escalation security' },
         ] },
       { id: 'whatsapp', label: 'WhatsApp', path: '/whatsapp', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderWhatsappLive(h) },

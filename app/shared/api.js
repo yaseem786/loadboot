@@ -590,6 +590,10 @@ export const ccRileyPromptsGet = () => rpc('cc_riley_prompts_get', {});
 export const ccRileyPromptSave = (key, beginMessage, generalPrompt) => rpc('cc_riley_prompt_save', { p_key: key, p_begin_message: beginMessage ?? null, p_general_prompt: generalPrompt });
 export const ccRileyPromptRestore = (historyId) => rpc('cc_riley_prompt_restore', { p_history_id: historyId });
 export const ccRileyCallbackDone = (id, note) => rpc('cc_riley_callback_done', { p_id: id, p_note: note ?? null });
+export const ccRileyPlanCreate = (org, reason, note, lang) => rpc('cc_riley_plan_create', { p_org: org, p_reason: reason, p_note: note ?? null, p_lang: lang || 'en' });   // bl_voice_0483
+export const ccRileyPlans = (status, limit, org) => rpc('cc_riley_plans', { p_status: status ?? null, p_limit: limit ?? 100, p_org: org ?? null });
+export const ccRileyPlan = (id) => rpc('cc_riley_plan', { p_id: id });
+export const ccRileyPlanSet = (id, action, note) => rpc('cc_riley_plan_set', { p_id: id, p_action: action, p_note: note ?? null });
 export const rileyAdmin = async (op, body = {}) => {
   const { getClient } = await import('./supabaseClient.js');
   const sb = await getClient();

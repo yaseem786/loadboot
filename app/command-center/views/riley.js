@@ -10,7 +10,8 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm } from '../../shared/ui/components.js';
-import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, rileyAdmin, rileyRecordingBlob } from '../../shared/api.js';
+import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, ccRileyPlans, ccRileyPlanSet, rileyAdmin, rileyRecordingBlob } from '../../shared/api.js';
+import { PLAN_STATUS, PLAN_REASON_LABEL } from './rileyPlanFlow.js';   // bl_voice_0483 — call plans
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ET = 'America/New_York';
@@ -53,6 +54,7 @@ const CSS = `
 .ry-t th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--mut,#64748b);padding:8px 10px;border-bottom:1px solid var(--line,#e5e9f2);white-space:nowrap}
 .ry-t td{padding:10px;border-bottom:1px solid var(--line,#eef1f6);vertical-align:middle}
 .ry-t tr:last-child td{border-bottom:0}.ry-t tr.click{cursor:pointer}.ry-t tr.click:hover td{background:rgba(8,131,247,.05)}
+.ry-t tr.hit td{background:rgba(8,131,247,.09)}
 .ry-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
 .ry-pill.g{background:rgba(34,197,94,.14);color:#15803d}.ry-pill.r{background:rgba(239,68,68,.13);color:#b91c1c}.ry-pill.a{background:rgba(245,158,11,.16);color:#b45309}.ry-pill.b{background:rgba(8,131,247,.13);color:#0369a1}.ry-pill.m{background:rgba(100,116,139,.15);color:#475569}
 .ry-btn{border:1px solid var(--line,#d8dee9);background:var(--card,#fff);color:inherit;border-radius:10px;padding:8px 13px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
@@ -87,7 +89,10 @@ export async function renderRiley(host, query) {
 
   let data = { calls: [], wa_legs: [], wa_callbacks: [], stats: {} }, settings = {}, prompts = null, status = null;
   const wanted = (() => { try { return query && query.get ? query.get('tab') : null; } catch (_) { return null; } })();
-  let tab = ['calls', 'prompts', 'wa', 'settings'].includes(wanted) ? wanted : 'calls', timer = null, tick = null, busy = false, statusBusy = false;
+  let tab = ['calls', 'plans', 'prompts', 'wa', 'settings'].includes(wanted) ? wanted : 'calls', timer = null, tick = null, busy = false, statusBusy = false;
+  let plans = null, plansBusy = false;   // bl_voice_0483: CC → Riley → Call plans (cc_riley_plans)
+  const PF = { status: '' };
+  let focusPlan = (() => { try { return query && query.get ? query.get('id') : null; } catch (_) { return null; } })();
   const F = { q: '', dir: '', days: '30' };
   const can = () => !!settings.can_manage;
 
@@ -98,10 +103,17 @@ export async function renderRiley(host, query) {
       if (c && c.error) throw new Error(c.error);
       if (s && s.error) throw new Error(s.error);
       data = c; settings = s;
-      paintBoard(); paintWarn(); paintBody();
+      paintBoard(); paintWarn(); if (tab !== 'plans') paintBody();
     } catch (e) { mount(boardEl, el('div', { class: 'ry-card' }, humanizeError(e))); }
     busy = false;
     if (withStatus) loadStatus();
+    if (tab === 'plans') loadPlans();
+  }
+  async function loadPlans() {
+    if (plansBusy) return; plansBusy = true;
+    try { const r = await ccRileyPlans(PF.status || null, 150); if (r && r.error) throw new Error(r.error); plans = r; if (tab === 'plans') paintPlans(); }
+    catch (e) { if (tab === 'plans') mount(bodyEl, el('div', { class: 'ry-card' }, humanizeError(e))); }
+    plansBusy = false;
   }
   async function loadStatus() {
     if (statusBusy) return; statusBusy = true;
@@ -149,11 +161,12 @@ export async function renderRiley(host, query) {
 
   // ---------- tabs
   function paintTabs() {
-    const T = [['calls', 'Calls'], ['prompts', 'Prompts'], ['wa', 'WhatsApp line'], ['settings', 'Settings & wiring']];
-    mount(tabsEl, el('div', { class: 'ry-tabs' }, T.map(([k, l]) => el('button', { class: 'ry-tab' + (tab === k ? ' on' : ''), onClick: async () => { tab = k; paintTabs(); if (k === 'prompts' && !prompts) await loadPrompts(); if (k === 'settings' && !status) loadStatus(); paintBody(); } }, l))));
+    const nPlanning = plans && plans.counts ? Number(plans.counts.planning || 0) + Number(plans.counts.ready || 0) : 0;
+    const T = [['calls', 'Calls'], ['plans', 'Call plans' + (nPlanning ? ' · ' + nPlanning : '')], ['prompts', 'Prompts'], ['wa', 'WhatsApp line'], ['settings', 'Settings & wiring']];
+    mount(tabsEl, el('div', { class: 'ry-tabs' }, T.map(([k, l]) => el('button', { class: 'ry-tab' + (tab === k ? ' on' : ''), onClick: async () => { tab = k; paintTabs(); if (k === 'prompts' && !prompts) await loadPrompts(); if (k === 'settings' && !status) loadStatus(); if (k === 'plans') { if (!plans) { mount(bodyEl, el('div', { class: 'ry-card' }, 'Loading call plans…')); loadPlans(); return; } } paintBody(); } }, l))));
   }
   function paintBody() {
-    if (tab === 'calls') paintCalls(); else if (tab === 'prompts') paintPrompts(); else if (tab === 'wa') paintWa(); else paintSettings();
+    if (tab === 'calls') paintCalls(); else if (tab === 'plans') paintPlans(); else if (tab === 'prompts') paintPrompts(); else if (tab === 'wa') paintWa(); else paintSettings();
   }
 
   // ---------- one recording at a time (0458d). State lives HERE, not in the DOM: loadAll repaints the calls table
@@ -264,6 +277,113 @@ export async function renderRiley(host, query) {
       ]),
     );
     openDrawer((c.name && c.name !== 'there' ? c.name : pretty(num)) + ' — Riley call', body, { size: 'lg', subtitle: 'Recording, analysis and transcript' });
+  }
+
+
+  // ---------- call plans (bl_voice_0483) — the brain's briefing BEFORE a call; nothing here dials
+  const planUsd = (n) => '$' + Number(n || 0).toFixed(2);
+  const canPlan = () => !!(plans && plans.can_manage);
+  function paintPlans() {
+    if (!plans) { mount(bodyEl, el('div', { class: 'ry-card' }, 'Loading call plans…')); return; }
+    const keep = document.activeElement && document.activeElement.id === 'ry-pf';
+    const rows = plans.plans || [], cnt = plans.counts || {}, dial = plans.dial_tool || {};
+    const dialOn = dial.enabled && dial.status === 'live' && dial.mode === 'auto';
+    mount(bodyEl, el('div', null, [
+      el('div', { class: 'ry-card' }, [
+        el('h3', null, ['Call plans', el('span', { class: 'ry-pill ' + (plans.source_on ? 'g' : 'a') }, plans.source_on ? 'Brain source.voice ON' : 'Brain source.voice OFF'),
+          el('span', { class: 'ry-pill ' + (dialOn ? 'g' : 'm') }, dialOn ? 'Riley booking ON' : 'Riley booking OFF (tool prep)')]),
+        el('p', { class: 'hint' }, 'Start from a carrier: Carrier 360 → “Plan a Riley call”, or Carrier choices → “Plan a Riley call”. The Ops Brain reads the carrier file and writes Riley’s briefing — goal, opener, five talking points, what to confirm, what not to say, best time. You read it here first. ' + (dialOn ? 'Booking through Riley is live.' : 'Booking through Riley stays off until tool.schedule_riley_call is flipped to live under AI Brain → Permissions; until then the plan is a briefing for whoever calls.')),
+        el('div', { class: 'ry-kv', style: 'margin-top:10px' }, [
+          el('div', null, [el('small', null, 'Planning now'), el('span', null, String(cnt.planning || 0))]),
+          el('div', null, [el('small', null, 'Ready to call'), el('span', null, String(cnt.ready || 0))]),
+          el('div', null, [el('small', null, 'Called'), el('span', null, String(cnt.called || 0))]),
+          el('div', null, [el('small', null, 'Failed'), el('span', null, String(cnt.failed || 0))]),
+          el('div', null, [el('small', null, 'Brain cost · 30 days'), el('span', null, planUsd(plans.usd_30d))]),
+          el('div', null, [el('small', null, 'Retell when placed'), el('span', null, '≈ $0.13 / min')]),
+        ]),
+      ]),
+      el('div', { class: 'ry-card' }, [
+        el('div', { class: 'ry-filters' }, [
+          el('select', { class: 'ry-in', id: 'ry-pf', value: PF.status, onChange: (e) => { PF.status = e.target.value; plans = null; mount(bodyEl, el('div', { class: 'ry-card' }, 'Loading…')); loadPlans(); } },
+            [['', 'Every status'], ['planning', 'Planning'], ['ready', 'Ready'], ['failed', 'Failed'], ['scheduled', 'Call booked'], ['called', 'Called'], ['cancelled', 'Cancelled']].map(([v, l]) => el('option', { value: v, selected: PF.status === v ? 'selected' : undefined }, l))),
+          el('span', { style: 'color:var(--mut,#64748b);font-size:12.5px' }, rows.length + ' plans'),
+          el('a', { class: 'ry-btn sm', href: '#/carriers', style: 'margin-left:auto' }, [icon('truck', 14), 'Carriers']),
+        ]),
+        rows.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ry-t' }, [
+          el('thead', null, el('tr', null, ['When', 'Carrier', 'Why', 'Status', 'Goal', 'Cost', ''].map((x) => el('th', null, x)))),
+          el('tbody', null, rows.map((p) => {
+            const st = PLAN_STATUS[p.status] || [p.status, 'm']; const pl = p.plan || {};
+            return el('tr', { class: 'click' + (focusPlan && String(p.id) === String(focusPlan) ? ' hit' : ''), 'data-plan': p.id, onClick: () => openPlan(p) }, [
+              el('td', { style: 'white-space:nowrap' }, [et(p.created_at), el('div', { style: 'font-size:11.5px;opacity:.65' }, ago(p.created_at))]),
+              el('td', null, [el('b', null, p.org_name || '—'), el('div', { style: 'font-size:12px;opacity:.7' }, [p.contact_name || '', p.contact_name ? ' · ' : '', pretty(p.to_number)].join(''))]),
+              el('td', null, [PLAN_REASON_LABEL[p.reason] || p.reason, p.lang === 'es' ? el('div', { style: 'font-size:11.5px;opacity:.7' }, 'Spanish') : null]),
+              el('td', null, [el('span', { class: 'ry-pill ' + st[1] }, st[0]), p.review_note ? el('div', { style: 'font-size:11.5px;color:#b45309;font-weight:700' }, 'check first') : null, p.confidence != null && p.status === 'ready' ? el('div', { style: 'font-size:11.5px;opacity:.7' }, 'confidence ' + Math.round(Number(p.confidence) * 100) + '%') : null]),
+              el('td', { style: 'max-width:380px' }, p.status === 'failed' ? el('span', { style: 'color:#b91c1c' }, p.error || 'failed') : (pl.goal || (p.status === 'planning' ? 'The brain is writing the plan…' : '—'))),
+              el('td', { style: 'white-space:nowrap;font-variant-numeric:tabular-nums' }, p.cost ? planUsd(p.cost.est_total) : '—'),
+              el('td', { style: 'white-space:nowrap' }, el('button', { class: 'ry-btn sm', onClick: (e) => { e.stopPropagation(); openPlan(p); } }, 'Open')),
+            ]);
+          })),
+        ])) : el('div', { style: 'opacity:.7;padding:8px 0' }, 'No call plans yet. Open a carrier and press “Plan a Riley call”.'),
+      ]),
+    ]));
+    if (keep) { const i = bodyEl.querySelector('#ry-pf'); if (i) i.focus(); }
+    if (focusPlan) { const hit = rows.find((p) => String(p.id) === String(focusPlan)); focusPlan = null; if (hit) openPlan(hit); }
+  }
+
+  async function planAct(p, action, note, okMsg) {
+    try { const r = await ccRileyPlanSet(p.id, action, note); if (r && r.error) throw new Error(r.error); toast(okMsg); plans = null; await loadPlans(); return r; }
+    catch (e) { toast(humanizeError(e), 'error'); return null; }
+  }
+  function openPlan(p) {
+    const st = PLAN_STATUS[p.status] || [p.status, 'm']; const pl = p.plan || {}; const c = p.consent || {}; const cost = p.cost || {}; const job = p.job || {}; const dial = p.dial_tool || {};
+    const dialOn = dial.enabled && dial.status === 'live' && dial.mode === 'auto';
+    const open = !['called', 'cancelled'].includes(p.status);
+    const kv = (k, v) => el('div', null, [el('small', null, k), el('span', null, v == null || v === '' ? '—' : String(v))]);
+    const list = (title, arr, ordered) => (arr && arr.length) ? el('div', null, [el('b', null, title), el(ordered ? 'ol' : 'ul', { style: 'margin:4px 0 0;padding-left:22px;line-height:1.55;font-size:13.5px' }, arr.map((x) => el('li', null, x)))]) : null;
+    const body = el('div', { style: 'display:grid;gap:14px' });
+    const secs = pl.parsed ? el('div', { style: 'display:grid;gap:12px' }, [
+      pl.goal ? el('div', null, [el('b', null, 'Goal'), el('div', { style: 'font-size:14px;line-height:1.5;margin-top:3px' }, pl.goal)]) : null,
+      pl.opener ? el('div', null, [el('b', null, 'Opener'), el('div', { class: 'ry-tr', style: 'margin-top:4px' }, pl.opener)]) : null,
+      list('Talking points', pl.points, true), list('Confirm with the carrier', pl.confirm, false), list('Do not say', pl.do_not_say, false),
+      el('div', { class: 'ry-kv' }, [kv('Best time', pl.best_time), kv('Language', pl.language)]),
+    ]) : (p.plan_text ? el('div', { class: 'ry-tr' }, p.plan_text) : null);
+    body.append(
+      el('div', { class: 'ry-row' }, [el('span', { class: 'ry-pill ' + st[1] }, st[0]),
+        p.confidence != null ? el('span', { class: 'ry-pill ' + (Number(p.confidence) >= 0.6 ? 'g' : 'a') }, 'confidence ' + Math.round(Number(p.confidence) * 100) + '%') : null,
+        el('span', { style: 'font-size:13px;opacity:.75' }, ['Requested ', et(p.created_at), p.created_by_name ? ' by ' + p.created_by_name : '', job.model ? ' · ' + job.model : '', job.secs != null ? ' · ' + job.secs + ' s' : ''].join(''))]),
+      p.review_note ? el('div', { class: 'ry-warn' }, [el('b', null, 'The brain wants a person to check first'), el('div', null, p.review_note)]) : null,
+      p.status === 'failed' ? el('div', { class: 'ry-warn' }, [el('b', null, 'No plan'), el('div', null, p.error || job.error || 'The brain returned nothing.')]) : null,
+      p.status === 'planning' ? el('div', { style: 'opacity:.8' }, 'The brain is writing the plan — this popup does not refresh; close and reopen in a few seconds.') : null,
+      el('div', { class: 'ry-kv' }, [
+        kv('Carrier', p.org_name), kv('Contact', p.contact_name), kv('Number', pretty(p.to_number)), kv('Why', PLAN_REASON_LABEL[p.reason] || p.reason),
+        kv('Call language', p.lang === 'es' ? 'Spanish' : 'English'), kv('Consent basis', c.basis ? (c.basis + (c.sms_consent ? ' · SMS consent on file' : '')) : '—'),
+        kv('Cost estimate', cost.est_total != null ? planUsd(cost.est_total) + ' (brain ' + planUsd(cost.brain_usd) + ' + Retell ≈ ' + cost.est_minutes + ' min × $' + cost.retell_per_min + ')' : '—'),
+        kv('Staff note', p.note),
+      ]),
+      secs,
+      p.plan_text && pl.parsed ? el('details', null, [el('summary', { style: 'cursor:pointer;font-weight:600' }, 'Briefing as Riley will read it (verbatim)'), el('div', { class: 'ry-tr', style: 'margin-top:8px' }, p.plan_text)]) : null,
+      el('div', { class: 'ry-row', style: 'flex-wrap:wrap' }, [
+        el('a', { class: 'ry-btn', href: '#/carrier?id=' + encodeURIComponent(p.org_id || '') }, [icon('truck', 14), 'Open carrier']),
+        p.plan_text ? el('button', { class: 'ry-btn', onClick: async () => { try { await navigator.clipboard.writeText(p.plan_text); toast('Briefing copied.'); } catch (_) { toast('Copy failed — select the text instead.', 'error'); } } }, 'Copy briefing') : null,
+        open && p.plan_text && canPlan() ? el('button', { class: 'ry-btn', onClick: () => {
+          const ta = el('textarea', { class: 'ry-ta', rows: '16', style: 'width:100%' }); ta.value = p.plan_text;
+          const dr2 = openDrawer('Edit the briefing — ' + (p.org_name || ''), el('div', { style: 'display:grid;gap:10px' }, [
+            el('p', { class: 'hint' }, 'Keep the seven headers (GOAL, OPENER, TALKING POINTS, CONFIRM, DO NOT SAY, BEST TIME, LANGUAGE) so the card still reads it. Riley gets exactly this text.'),
+            ta, el('div', { class: 'ry-row' }, [el('button', { class: 'ry-btn', onClick: async () => { const r = await planAct(p, 'edit', ta.value, 'Briefing saved.'); if (r) { dr2.close(); openPlan(r); } } }, 'Save')])]), { size: 'lg' });
+        } }, 'Edit briefing') : null,
+        open && canPlan() ? el('button', { class: 'ry-btn', onClick: async () => {
+          const n = await askReason('Redo the plan — what should change?', { placeholder: 'e.g. focus on the insurance certificate; the owner speaks Spanish; skip the trial talk', submitLabel: 'Ask the brain again', subtitle: 'A new brain job; the old text is replaced' });
+          if (n == null) return; const r = await planAct(p, 'redo', n, 'Asked the brain for a new plan.'); if (r) openPlan(r);
+        } }, 'Redo plan') : null,
+        open && canPlan() ? el('button', { class: 'ry-btn done', onClick: async () => {
+          const n = await askReason('Mark as called — what happened?', { placeholder: 'One or two lines: reached / voicemail / agreed next step', submitLabel: 'Mark called', subtitle: 'Recorded on the plan for the next person' });
+          if (n == null) return; const r = await planAct(p, 'called', n, 'Marked as called.'); if (r) openPlan(r);
+        } }, 'Mark called') : null,
+        open && canPlan() ? el('button', { class: 'ry-btn', onClick: async () => { const ok = await askConfirm('Cancel this call plan?', { body: 'The text stays on record; nobody calls.', confirmLabel: 'Cancel plan' }); if (!ok) return; const r = await planAct(p, 'cancel', null, 'Plan cancelled.'); if (r) openPlan(r); } }, 'Cancel plan') : null,
+        open && p.status === 'ready' ? el('button', { class: 'ry-btn', disabled: true, title: dialOn ? 'Booking arrives with the next slice (tool.schedule_riley_call executor)' : 'Off by owner decision: tool.schedule_riley_call is prep. Flip it under CC → AI Brain → Permissions when Riley may place calls.' }, [icon('phone', 14), dialOn ? 'Book with Riley (soon)' : 'Book with Riley — off']) : null,
+      ]),
+    );
+    openDrawer((p.org_name || 'Carrier') + ' — call plan', body, { size: 'lg', subtitle: 'Riley’s briefing before the call · staff only' });
   }
 
   // ---------- prompts
