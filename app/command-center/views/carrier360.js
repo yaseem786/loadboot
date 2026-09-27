@@ -5,7 +5,7 @@
 // timeline — each section linking back into the module it came from. Read-only aggregate
 // via cc_carrier_360 (keyed on the carrier organization id), RBAC-gated on carriers.view.
 import { el, mount } from '../../shared/ui/dom.js';
-import { ccDispatcherDelaySet } from '../../shared/api.js';   // bl_disp_0410
+import { ccDispatcherDelaySet, ccCarrierLoginStatus } from '../../shared/api.js';   // bl_disp_0410 · bl_ux_0486
 import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
 import { icon } from '../../shared/ui/icons.js';
 
@@ -44,6 +44,19 @@ export function renderCarrier360(host, orgId) {
 
     const _stage = String((d.onboarding && d.onboarding.stage) || 'not started').replace('_', ' ');
     const _init = String(d.name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+    // bl_ux_0486: portal presence — live now (ping < 3 min) / last seen + device / last sign-in. Loads after the header.
+    const loginEl = el('div', { style: 'margin-top:8px;font-size:.82rem;color:#9db4d6;min-height:18px' }, 'Checking portal activity\u2026');
+    const agoTxt = (v) => { if (!v) return null; const m = Math.round((Date.now() - new Date(v).getTime()) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
+    ccCarrierLoginStatus(orgId).then((ls) => {
+      if (!ls || ls.error) { mount(loginEl, ''); return; }
+      const dot = (c) => el('span', { style: 'display:inline-block;width:9px;height:9px;border-radius:50%;background:' + c + ';margin-right:6px;vertical-align:1px' + (c === '#22c55e' ? ';box-shadow:0 0 0 3px rgba(34,197,94,.25)' : '') });
+      mount(loginEl, ls.never ? [dot('#94a3b8'), 'Never logged in to the portal']
+        : [ls.live ? dot('#22c55e') : dot(ls.last_seen && (Date.now() - new Date(ls.last_seen).getTime()) < 7 * 864e5 ? '#f59e0b' : '#ef4444'),
+           el('b', { style: 'color:#fff' }, ls.live ? 'Live now in the portal' : ('Last seen ' + (agoTxt(ls.last_seen) || 'never'))),
+           ls.device ? ' \u00b7 ' + ls.device : '',
+           ls.last_sign_in ? ' \u00b7 last sign-in ' + fmtDate(ls.last_sign_in) + ' (' + agoTxt(ls.last_sign_in) + ')' : ' \u00b7 no sign-in on record',
+           ls.devices > 1 ? ' \u00b7 ' + ls.devices + ' devices' : '']);
+    }).catch(() => mount(loginEl, ''));
     const head = el('div', { style: 'background:linear-gradient(135deg,#0b1b33,#12294a);border-radius:18px;padding:22px 26px;color:#fff;box-shadow:0 14px 34px -18px rgba(8,30,63,.45)' }, [
       el('div', { style: 'display:flex;gap:18px;align-items:center;flex-wrap:wrap' }, [
         el('div', { style: 'width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#0883F7,#0a6fd6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;flex:none;box-shadow:0 10px 24px -8px rgba(8,131,247,.6)' }, _init),
@@ -55,6 +68,7 @@ export function renderCarrier360(host, orgId) {
           ]),
           el('div', { style: 'color:#9db4d6;font-size:.86rem;margin-top:6px' },
             ['MC ' + (p.mc || '\u2014'), 'USDOT ' + (p.dot || '\u2014'), p.home_base || null, p.created_at ? 'joined ' + fmtDate(p.created_at) : null].filter(Boolean).join('  \u00b7  ')),
+          loginEl,
         ]),
         el('div', { style: 'text-align:right;flex:none' }, [
           el('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.1em;color:#7c8db5;text-transform:uppercase' }, 'Contact (staff only)'),

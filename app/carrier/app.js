@@ -8864,7 +8864,10 @@ async function boot() {
   try { initInstallPrompt(); } catch (_) {}
   try { ensurePushHealthy('Carrier portal'); } catch (_) {}
   // Device list (2026-08 audit): register/refresh this device so Settings → Security can show it.
-  try { let dk9 = localStorage.getItem('lb_device_key'); if (!dk9) { dk9 = 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('lb_device_key', dk9); } deviceSeen(dk9, (/android/i.test(navigator.userAgent) ? 'Android' : /iphone|ipad/i.test(navigator.userAgent) ? 'iPhone/iPad' : 'Computer') + ' \u00b7 ' + (/chrome/i.test(navigator.userAgent) ? 'Chrome' : /safari/i.test(navigator.userAgent) ? 'Safari' : 'Browser'), navigator.userAgent).catch(() => {}); } catch (_) {}
+  // bl_ux_0486: the same ping every 2 minutes while the tab is visible, so CC → Carrier 360 can say "live now".
+  const devPing9 = () => { try { let dk9 = localStorage.getItem('lb_device_key'); if (!dk9) { dk9 = 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('lb_device_key', dk9); } deviceSeen(dk9, (/android/i.test(navigator.userAgent) ? 'Android' : /iphone|ipad/i.test(navigator.userAgent) ? 'iPhone/iPad' : 'Computer') + ' \u00b7 ' + (/chrome/i.test(navigator.userAgent) ? 'Chrome' : /safari/i.test(navigator.userAgent) ? 'Safari' : 'Browser'), navigator.userAgent).catch(() => {}); } catch (_) {} };
+  devPing9();
+  try { setInterval(() => { if (document.visibilityState === 'visible') devPing9(); }, 120000); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') devPing9(); }); } catch (_) {}
   // Flush any offline-queued support tickets (2026-08 audit outbox).
   async function flushTicketOutbox9() {
     let q9 = []; try { q9 = JSON.parse(localStorage.getItem('lb_ticket_outbox') || '[]'); } catch (_) {}
