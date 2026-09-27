@@ -11,7 +11,7 @@
 // Bearer header is now REQUIRED (cc_mail_ingest already carried it). No other change.
 // Source was not in the repo before 2026-09-05 (v7 lived only in the Supabase deploy) — this
 // file is the canonical copy from now on. Deploy order on prod: v8 FIRST, then bl_sec_0320.
-// v7 — v6 + BOOKING-CONFIRM reply path (broker replies to booking-ping → confirms/declines the hold).
+// v10 — Gemini 5xx moves to the next model + one retry pass (27 Sep 2026). v7 — v6 + BOOKING-CONFIRM reply path (broker replies to booking-ping → confirms/declines the hold).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-flash-latest"];
 let WM: string | null = null;
@@ -19,15 +19,26 @@ const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: 
 async function gem(key: string, prompt: string): Promise<{ text: string | null; err: string }> {
   const tryM = WM ? [WM, ...MODELS.filter((m) => m !== WM)] : MODELS;
   let err = "";
-  for (const m of tryM) {
-    try {
-      const cfg: any = { temperature: 0, maxOutputTokens: 4000, responseMimeType: "application/json" };
-      if (m.startsWith("gemini-2.5")) cfg.thinkingConfig = { thinkingBudget: 0 };
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: cfg }) });
-      if (r.ok) { WM = m; const d = await r.json(); return { text: d?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") ?? null, err: String(d?.candidates?.[0]?.finishReason || "") }; }
-      err = m + ":" + r.status;
-      if (r.status !== 404 && r.status !== 429 && r.status !== 400) return { text: null, err };
-    } catch (e) { err = String(e).slice(0, 100); }
+  // v10 (27 Sep 2026): a 5xx from Gemini (503 "overloaded" is the common one) used to abort the whole loop on the
+  // FIRST model, so a warm `WM` that hiccupped once turned into `502 parse_failed gemini-flash-latest:503` for the
+  // mail (prod, 14:18 UTC) and inbound-mail had to fall back to the Mailbox. Now every 4xx-quota/5xx status moves on
+  // to the next model, and if the whole list fails transiently we wait a moment and go round once more.
+  const TRANSIENT = new Set([400, 404, 429, 500, 502, 503, 504]);
+  for (let pass = 0; pass < 2; pass++) {
+    let transient = false;
+    for (const m of tryM) {
+      try {
+        const cfg: any = { temperature: 0, maxOutputTokens: 4000, responseMimeType: "application/json" };
+        if (m.startsWith("gemini-2.5")) cfg.thinkingConfig = { thinkingBudget: 0 };
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: cfg }) });
+        if (r.ok) { WM = m; const d = await r.json(); return { text: d?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") ?? null, err: String(d?.candidates?.[0]?.finishReason || "") }; }
+        err = m + ":" + r.status;
+        if (!TRANSIENT.has(r.status)) return { text: null, err };   // 401/403 etc.: the key is wrong, no model will help
+        if (r.status === 429 || r.status >= 500) transient = true;    // 400/404 = this model, not the service: no second pass for those
+      } catch (e) { err = String(e).slice(0, 100); transient = true; }
+    }
+    if (!transient) break;
+    if (pass === 0) { WM = null; await new Promise((res) => setTimeout(res, 1500)); }
   }
   return { text: null, err };
 }

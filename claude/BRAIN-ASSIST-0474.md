@@ -72,3 +72,20 @@ Anon SECURITY DEFINER surface: **36 prod / 35 staging — unchanged** (both new 
   unpushed; add "UI items shipped in 0474" there when merging.
 - Not built: the `A` keyboard shortcut for *Suggest a reply*; Spanish draft check on staging (the route passes `lang`,
   the model is bilingual — untested).
+
+## Follow-up session (27 Sep 2026, evening)
+
+- Prod `ANTHROPIC_API_KEY`: **still missing** at the time of this note — `brain_jobs` on prod has only jobs 1–3
+  (all `ANTHROPIC_API_KEY is not set`), nothing newer. `source.chat` stays OFF (`source.assist` ON, $3/day) until the
+  owner adds the secret and one *Try a question* comes back.
+- Repo consolidated: this branch = 0474 + the 0472/0473 files (`bl_brain_0472_control.sql`, `bl_brain_0473_chat.sql`,
+  their docs, the anon-secdef baseline rows, plan doc, inbound-mail v6). The 0472 `#/brain` screen is superseded by the
+  0474 tabbed `#/ai-brain`; docs updated to say so.
+- load-mail "502 parse_failed gemini-flash-latest:503" (prod 14:18 UTC, mail "LoadBoot: Skills test submitted" →
+  filed by inbound-mail v6's fallback, nothing lost): root cause is in `gem()` — a 5xx from Gemini returned
+  immediately instead of trying the next model, so one 503 on the warm model failed the mail. Fixed in the repo as
+  load-mail v10 (5xx → next model, one retry pass after 1.5 s). **Not deployed** — no Deno here to check it, and the
+  ingestion path should go staging → prod from the owner's machine.
+- hello@ test mail: no inbound to `hello@` in the last 24 h of prod logs; the only owner test (14:32 UTC) went to
+  `loads@` and logged `rcpts:["loads@loadboot.com"] route:"load-mail"` correctly. Send one to hello@ and check the
+  `inbound-mail` log line for `rcpts` / `route:"mailbox"`.

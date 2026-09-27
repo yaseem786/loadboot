@@ -1,4 +1,4 @@
-// inbound-mail v5 — Resend/Cloudflare inbound webhook. Emails addressed to loads@*
+// inbound-mail v6 — Resend/Cloudflare inbound webhook. Emails addressed to loads@*
 // route to the load-mail parser (email load ingestion); everything else files into the
 // CC Mailbox via cc_mail_ingest. Optional ?secret= gate via INBOUND_SECRET.
 //
@@ -15,6 +15,12 @@
 // v5 (2026-09-21): non-loads@ mail now files under OUR recipient (the @loadboot.com address in
 // any recipient field), not tos[0] — a Bcc'd or forwarded copy leaves a stranger's address in
 // To, which would have become mail_messages.mailbox. Needed before dispatch@ is forwarded here.
+//
+// v6 (2026-09-27): a mail is NEVER lost. When load-mail answers anything but 2xx/ok (502 parse_failed
+// when Gemini is down or out of quota, 500, 403, a fetch error) the mail used to vanish — inbound-mail
+// returned ok:true and nothing was filed. Now it files into the CC Mailbox under the loads@ recipient
+// with a "[loads@ unparsed] " tag and the failure in the response, so staff see it and can act. Also
+// logs one line per mail (from, recipients, route) so the relay payload can be checked in the function logs.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const pick = (v: unknown): string => (typeof v === "string" ? v : "");
@@ -68,17 +74,37 @@ Deno.serve(async (req) => {
   ])];
   if (!from.email || rcpts.length === 0) return Response.json({ ok: false, reason: "missing from/to" }, { status: 200 });
 
-  if (rcpts.some((t) => t.startsWith("loads@"))) {
+  const subjectRaw = pick(d.subject);
+  const textRaw = pick(d.text) || pick(d.html).replace(/<[^>]+>/g, " ");
+  const messageId = pick(d.message_id) || pick(hdrs["message-id"]);
+  const inReplyTo = pick(hdrs["in-reply-to"]);
+  const sb = createClient(SUPABASE_URL, SERVICE_KEY);
+  const loadsBox = rcpts.find((t) => t.startsWith("loads@"));
+  console.log(JSON.stringify({ inbound: true, from: from.email, rcpts, route: loadsBox ? "load-mail" : "mailbox", subject: subjectRaw.slice(0, 80) }));
+
+  if (loadsBox) {
+    let reason = "";
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/load-mail`, {
         method: "POST", headers: { "Content-Type": "application/json", apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
-        body: JSON.stringify({ from: from.email, subject: pick(d.subject), text: pick(d.text) || pick(d.html).replace(/<[^>]+>/g, " ") }),
+        body: JSON.stringify({ from: from.email, subject: subjectRaw, text: textRaw }),
       });
       const out = await r.json().catch(() => ({}));
-      return Response.json({ ok: true, routed: "load-mail", result: out }, { status: 200 });
+      if (r.ok && !(out && (out as { error?: unknown }).error)) return Response.json({ ok: true, routed: "load-mail", result: out }, { status: 200 });
+      const o = (out ?? {}) as { error?: unknown; detail?: unknown };
+      reason = `load-mail ${r.status}: ${String(o.error ?? "")} ${String(o.detail ?? "")}`.trim();
     } catch (e) {
-      return Response.json({ ok: false, routed: "load-mail", reason: String(e).slice(0, 200) }, { status: 200 });
+      reason = `load-mail fetch: ${String(e).slice(0, 160)}`;
     }
+    // v6: load-mail could not take it — file it in the CC Mailbox instead of dropping it.
+    console.error(JSON.stringify({ inbound: true, from: from.email, loads_fallback: reason }));
+    const { data, error } = await sb.rpc("cc_mail_ingest", { p: {
+      from_email: from.email, from_name: from.name, to_email: loadsBox,
+      subject: "[loads@ unparsed] " + subjectRaw, body_text: pick(d.text), body_html: pick(d.html),
+      message_id: messageId, in_reply_to: inReplyTo,
+    } });
+    if (error) return Response.json({ ok: false, routed: "load-mail", fallback: "mailbox", reason, error: error.message }, { status: 200 });
+    return Response.json({ ok: true, routed: "load-mail", fallback: "mailbox", reason, id: data }, { status: 200 });
   }
 
   // v5 (2026-09-21): which of OUR addresses this mail was for. A Bcc'd or forwarded copy leaves
@@ -86,11 +112,7 @@ Deno.serve(async (req) => {
   // to_email — so prefer the loadboot.com recipient and fall back to To only if there is none.
   const ourBox = rcpts.find((t) => t.endsWith("@loadboot.com"));
 
-  const sb = createClient(SUPABASE_URL, SERVICE_KEY);
-
   // Honor "reply to unsubscribe" before filing the mail.
-  const subjectRaw = pick(d.subject);
-  const textRaw = pick(d.text) || pick(d.html).replace(/<[^>]+>/g, " ");
   let unsubscribed = false;
   if (UNSUB_RE.test(subjectRaw) || UNSUB_RE.test(textRaw.slice(0, 2000))) {
     try { const { data: u } = await sb.rpc("cc_mail_unsubscribe_from", { p_email: from.email }); unsubscribed = !!(u && (u as { ok?: boolean }).ok); } catch (_) { /* file the mail regardless */ }
@@ -99,8 +121,7 @@ Deno.serve(async (req) => {
   const { data, error } = await sb.rpc("cc_mail_ingest", { p: {
     from_email: from.email, from_name: from.name, to_email: ourBox || tos[0] || rcpts[0],
     subject: (unsubscribed ? "[unsubscribe] " : "") + subjectRaw, body_text: pick(d.text), body_html: pick(d.html),
-    message_id: pick(d.message_id) || pick((d.headers as Record<string, unknown> | undefined)?.["message-id"]),
-    in_reply_to: pick((d.headers as Record<string, unknown> | undefined)?.["in-reply-to"]),
+    message_id: messageId, in_reply_to: inReplyTo,
   } });
   if (error) return Response.json({ ok: false, reason: error.message, unsubscribed }, { status: 200 });
   return Response.json({ ok: true, id: data, unsubscribed }, { status: 200 });
