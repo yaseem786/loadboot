@@ -594,6 +594,8 @@ export const ccRileyPlanCreate = (org, reason, note, lang) => rpc('cc_riley_plan
 export const ccRileyPlans = (status, limit, org) => rpc('cc_riley_plans', { p_status: status ?? null, p_limit: limit ?? 100, p_org: org ?? null });
 export const ccRileyPlan = (id) => rpc('cc_riley_plan', { p_id: id });
 export const ccRileyPlanSet = (id, action, note) => rpc('cc_riley_plan_set', { p_id: id, p_action: action, p_note: note ?? null });
+export const ccRileyPlanBook = (id, when, force) => rpc('cc_riley_plan_book', { p_id: id, p_when: when ?? null, p_force: !!force });   // bl_voice_0485
+export const ccRileyFollowupAct = (id, action, payload) => rpc('cc_riley_followup_act', { p_id: id, p_action: action, p_payload: payload || {} });
 export const rileyAdmin = async (op, body = {}) => {
   const { getClient } = await import('./supabaseClient.js');
   const sb = await getClient();

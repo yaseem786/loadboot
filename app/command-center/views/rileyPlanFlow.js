@@ -2,8 +2,8 @@
 //
 // One popup, used from Carrier 360, Carrier choices and Riley → Call plans: pick why we are calling, add a note,
 // and the Ops Brain writes Riley's briefing (goal, opener, five talking points, confirm, do-not-say, best time,
-// language). Nothing dials from here — the plan is read first under Riley → Call plans; booking the call waits on
-// `tool.schedule_riley_call` (CC → AI Brain → Permissions). Popup = openDrawer (CLAUDE.md §8).
+// language). Nothing dials from here — the plan is read first under Riley → Call plans, where it is booked
+// (bl_voice_0485, gated by `tool.schedule_riley_call` in CC → AI Brain → Permissions). Popup = openDrawer (CLAUDE.md §8).
 
 import { el } from '../../shared/ui/dom.js';
 import { openDrawer } from '../../shared/ui/components.js';
@@ -18,11 +18,13 @@ export const PLAN_REASONS = [
   ['no_reply',         'No reply to our email / message'],
   ['custom',           'Custom — say what to cover in the note'],
 ];
-export const PLAN_REASON_LABEL = Object.fromEntries(PLAN_REASONS.map(([k, l]) => [k, l.split(' — ')[0]]));
+export const PLAN_REASON_LABEL = Object.assign(Object.fromEntries(PLAN_REASONS.map(([k, l]) => [k, l.split(' — ')[0]])), { follow_up: 'Follow-up call' });
 export const PLAN_STATUS = {
   planning: ['Planning…', 'a'], ready: ['Plan ready', 'g'], failed: ['Failed', 'r'],
-  scheduled: ['Call booked', 'b'], called: ['Called', 'm'], cancelled: ['Cancelled', 'm'],
+  scheduled: ['Call booked', 'b'], dialing: ['Riley is calling', 'b'], called: ['Called', 'm'], no_answer: ['No answer', 'a'], cancelled: ['Cancelled', 'm'],
 };
+// bl_voice_0485 — the next step after a call (brain or rule)
+export const NEXT_ACTION = { second_call: 'Second call', email: 'Follow-up email', staff_task: 'Task for a person', none: 'Nothing needed' };
 export const planLink = (id) => '#/riley?tab=plans' + (id ? '&id=' + encodeURIComponent(id) : '');
 
 /** Open the "Plan a call" popup for one carrier. opts: { reason, note, onDone(plan) } */

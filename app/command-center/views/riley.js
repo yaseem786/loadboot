@@ -9,9 +9,9 @@
 
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
-import { sectionHead, openDrawer, askConfirm } from '../../shared/ui/components.js';
-import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, ccRileyPlans, ccRileyPlanSet, rileyAdmin, rileyRecordingBlob } from '../../shared/api.js';
-import { PLAN_STATUS, PLAN_REASON_LABEL } from './rileyPlanFlow.js';   // bl_voice_0483 — call plans
+import { sectionHead, openDrawer, askConfirm, askReason } from '../../shared/ui/components.js';
+import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, ccRileyPlans, ccRileyPlan, ccRileyPlanSet, ccRileyPlanBook, ccRileyFollowupAct, rileyAdmin, rileyRecordingBlob } from '../../shared/api.js';
+import { PLAN_STATUS, PLAN_REASON_LABEL, NEXT_ACTION } from './rileyPlanFlow.js';   // bl_voice_0483 — call plans (+0485 booking / next step)
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ET = 'America/New_York';
@@ -282,24 +282,28 @@ export async function renderRiley(host, query) {
   }
 
 
-  // ---------- call plans (bl_voice_0483) — the brain's briefing BEFORE a call; nothing here dials
+  // ---------- call plans (bl_voice_0483) — the brain's briefing BEFORE a call; booking + next step since bl_voice_0485
   const planUsd = (n) => '$' + Number(n || 0).toFixed(2);
   const canPlan = () => !!(plans && plans.can_manage);
+  const bookingState = (dial) => !dial || !dial.enabled || dial.status !== 'live' || dial.mode === 'deny'
+    ? ['Riley booking OFF', 'm'] : dial.mode === 'auto' ? ['Riley booking ON · auto follow-ups', 'g'] : ['Riley booking ON · staff book', 'g'];
   function paintPlans() {
     if (!plans) { mount(bodyEl, el('div', { class: 'ry-card' }, 'Loading call plans…')); return; }
     const keep = document.activeElement && document.activeElement.id === 'ry-pf';
     const rows = plans.plans || [], cnt = plans.counts || {}, dial = plans.dial_tool || {};
-    const dialOn = dial.enabled && dial.status === 'live' && dial.mode === 'auto';
+    const bs = bookingState(dial);
+    const nextReady = rows.filter((p) => p.followup_status === 'proposed').length;
     mount(bodyEl, el('div', null, [
       el('div', { class: 'ry-card' }, [
         el('h3', null, ['Call plans', el('span', { class: 'ry-pill ' + (plans.source_on ? 'g' : 'a') }, plans.source_on ? 'Brain source.voice ON' : 'Brain source.voice OFF'),
-          el('span', { class: 'ry-pill ' + (dialOn ? 'g' : 'm') }, dialOn ? 'Riley booking ON' : 'Riley booking OFF (tool prep)')]),
-        el('p', { class: 'hint' }, 'Start from a carrier: Carrier 360 → “Plan a Riley call”, or Carrier choices → “Plan a Riley call”. The Ops Brain reads the carrier file and writes Riley’s briefing — goal, opener, five talking points, what to confirm, what not to say, best time. You read it here first. ' + (dialOn ? 'Booking through Riley is live.' : 'Booking through Riley stays off until tool.schedule_riley_call is flipped to live under AI Brain → Permissions; until then the plan is a briefing for whoever calls.')),
+          el('span', { class: 'ry-pill ' + bs[1] }, bs[0])]),
+        el('p', { class: 'hint' }, 'Start from a carrier: Carrier 360 → “Plan a Riley call”, or Carrier choices → “Plan a Riley call”. The Ops Brain writes Riley’s briefing; you read it here, then press “Book with Riley”. Riley calls Mon–Fri 9:00–18:30 in the carrier’s time zone, one call per carrier per day. After the call the brain proposes the next step — a second call, an email or a task — and you approve it. ' + (bs[1] === 'm' ? 'Booking is off until tool.schedule_riley_call is switched on under AI Brain → Permissions.' : '')),
         el('div', { class: 'ry-kv', style: 'margin-top:10px' }, [
-          el('div', null, [el('small', null, 'Planning now'), el('span', null, String(cnt.planning || 0))]),
           el('div', null, [el('small', null, 'Ready to call'), el('span', null, String(cnt.ready || 0))]),
+          el('div', null, [el('small', null, 'Booked / calling'), el('span', null, String((cnt.scheduled || 0) + (cnt.dialing || 0)))]),
           el('div', null, [el('small', null, 'Called'), el('span', null, String(cnt.called || 0))]),
-          el('div', null, [el('small', null, 'Failed'), el('span', null, String(cnt.failed || 0))]),
+          el('div', null, [el('small', null, 'No answer'), el('span', null, String(cnt.no_answer || 0))]),
+          el('div', null, [el('small', null, 'Next step waiting'), el('span', null, String(nextReady))]),
           el('div', null, [el('small', null, 'Brain cost · 30 days'), el('span', null, planUsd(plans.usd_30d))]),
           el('div', null, [el('small', null, 'Retell when placed'), el('span', null, '≈ $0.13 / min')]),
         ]),
@@ -307,20 +311,27 @@ export async function renderRiley(host, query) {
       el('div', { class: 'ry-card' }, [
         el('div', { class: 'ry-filters' }, [
           el('select', { class: 'ry-in', id: 'ry-pf', value: PF.status, onChange: (e) => { PF.status = e.target.value; plans = null; mount(bodyEl, el('div', { class: 'ry-card' }, 'Loading…')); loadPlans(); } },
-            [['', 'Every status'], ['planning', 'Planning'], ['ready', 'Ready'], ['failed', 'Failed'], ['scheduled', 'Call booked'], ['called', 'Called'], ['cancelled', 'Cancelled']].map(([v, l]) => el('option', { value: v, selected: PF.status === v ? 'selected' : undefined }, l))),
+            [['', 'Every status'], ['planning', 'Planning'], ['ready', 'Ready'], ['failed', 'Failed'], ['scheduled', 'Call booked'], ['dialing', 'Riley is calling'], ['called', 'Called'], ['no_answer', 'No answer'], ['cancelled', 'Cancelled']].map(([v, l]) => el('option', { value: v, selected: PF.status === v ? 'selected' : undefined }, l))),
           el('span', { style: 'color:var(--mut,#64748b);font-size:12.5px' }, rows.length + ' plans'),
           el('a', { class: 'ry-btn sm', href: '#/carriers', style: 'margin-left:auto' }, [icon('truck', 14), 'Carriers']),
         ]),
         rows.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ry-t' }, [
-          el('thead', null, el('tr', null, ['When', 'Carrier', 'Why', 'Status', 'Goal', 'Cost', ''].map((x) => el('th', null, x)))),
+          el('thead', null, el('tr', null, ['When', 'Carrier', 'Why', 'Status', 'Goal / next step', 'Cost', ''].map((x) => el('th', null, x)))),
           el('tbody', null, rows.map((p) => {
-            const st = PLAN_STATUS[p.status] || [p.status, 'm']; const pl = p.plan || {};
+            const st = PLAN_STATUS[p.status] || [p.status, 'm']; const pl = p.plan || {}; const f = p.followup || {};
             return el('tr', { class: 'click' + (focusPlan && String(p.id) === String(focusPlan) ? ' hit' : ''), 'data-plan': p.id, onClick: () => openPlan(p) }, [
               el('td', { style: 'white-space:nowrap' }, [et(p.created_at), el('div', { style: 'font-size:11.5px;opacity:.65' }, ago(p.created_at))]),
               el('td', null, [el('b', null, p.org_name || '—'), el('div', { style: 'font-size:12px;opacity:.7' }, [p.contact_name || '', p.contact_name ? ' · ' : '', pretty(p.to_number)].join(''))]),
-              el('td', null, [PLAN_REASON_LABEL[p.reason] || p.reason, p.lang === 'es' ? el('div', { style: 'font-size:11.5px;opacity:.7' }, 'Spanish') : null]),
-              el('td', null, [el('span', { class: 'ry-pill ' + st[1] }, st[0]), p.review_note ? el('div', { style: 'font-size:11.5px;color:#b45309;font-weight:700' }, 'check first') : null, p.confidence != null && p.status === 'ready' ? el('div', { style: 'font-size:11.5px;opacity:.7' }, 'confidence ' + Math.round(Number(p.confidence) * 100) + '%') : null]),
-              el('td', { style: 'max-width:380px' }, p.status === 'failed' ? el('span', { style: 'color:#b91c1c' }, p.error || 'failed') : (pl.goal || (p.status === 'planning' ? 'The brain is writing the plan…' : '—'))),
+              el('td', null, [PLAN_REASON_LABEL[p.reason] || p.reason, p.attempt > 1 ? el('div', { style: 'font-size:11.5px;opacity:.7' }, 'attempt ' + p.attempt + ' of 3') : null, p.lang === 'es' ? el('div', { style: 'font-size:11.5px;opacity:.7' }, 'Spanish') : null]),
+              el('td', null, [el('span', { class: 'ry-pill ' + st[1] }, st[0]),
+                p.status === 'scheduled' && p.scheduled_local ? el('div', { style: 'font-size:11.5px;opacity:.75' }, p.scheduled_local) : null,
+                p.followup_status === 'proposed' ? el('div', { style: 'font-size:11.5px;color:#1d4ed8;font-weight:700' }, 'next step ready') : null,
+                p.dnc ? el('div', { style: 'font-size:11.5px;color:#b91c1c;font-weight:700' }, 'do-not-call') : null,
+                p.review_note && p.status === 'ready' ? el('div', { style: 'font-size:11.5px;color:#b45309;font-weight:700' }, 'check first') : null,
+                p.confidence != null && p.status === 'ready' ? el('div', { style: 'font-size:11.5px;opacity:.7' }, 'confidence ' + Math.round(Number(p.confidence) * 100) + '%') : null]),
+              el('td', { style: 'max-width:380px' }, p.status === 'failed' ? el('span', { style: 'color:#b91c1c' }, p.error || 'failed')
+                : p.followup_status === 'proposed' ? [el('b', null, (NEXT_ACTION[f.action] || f.action || '') + ': '), f.why || f.outcome || '']
+                : (pl.goal || (p.status === 'planning' ? 'The brain is writing the plan…' : '—'))),
               el('td', { style: 'white-space:nowrap;font-variant-numeric:tabular-nums' }, p.cost ? planUsd(p.cost.est_total) : '—'),
               el('td', { style: 'white-space:nowrap' }, el('button', { class: 'ry-btn sm', onClick: (e) => { e.stopPropagation(); openPlan(p); } }, 'Open')),
             ]);
@@ -332,14 +343,98 @@ export async function renderRiley(host, query) {
     if (focusPlan) { const hit = rows.find((p) => String(p.id) === String(focusPlan)); focusPlan = null; if (hit) openPlan(hit); }
   }
 
+  let planDr = null;   // the open plan popup, so an action can refresh it in place
+  const reopen = (r) => { if (planDr) { try { planDr.close(); } catch (_) {} } if (r && r.id) openPlan(r); };
   async function planAct(p, action, note, okMsg) {
     try { const r = await ccRileyPlanSet(p.id, action, note); if (r && r.error) throw new Error(r.error); toast(okMsg); plans = null; await loadPlans(); return r; }
     catch (e) { toast(humanizeError(e), 'error'); return null; }
   }
+  async function followAct(p, action, payload, okMsg) {
+    try { const r = await ccRileyFollowupAct(p.id, action, payload); if (r && r.error) throw new Error(r.error); toast(okMsg); plans = null; loadPlans(); return r; }
+    catch (e) { toast(humanizeError(e), 'error'); return null; }
+  }
+  async function openPlanById(id) {
+    try { const r = await ccRileyPlan(id); if (r && r.error) throw new Error(r.error); reopen(r); } catch (e) { toast(humanizeError(e), 'error'); }
+  }
+
+  // Book with Riley (tool.schedule_riley_call executor). The server picks the slot inside calling hours and re-checks at dial time.
+  function bookFlow(p) {
+    const when = el('input', { type: 'datetime-local', class: 'ry-in', style: 'min-width:220px' });
+    const pickNow = el('input', { type: 'radio', name: 'ry-bk', checked: true });
+    const pickAt = el('input', { type: 'radio', name: 'ry-bk' });
+    when.addEventListener('focus', () => { pickAt.checked = true; });
+    const go = async (force) => {
+      const at = pickAt.checked && when.value ? new Date(when.value).toISOString() : null;
+      try {
+        const r = await ccRileyPlanBook(p.id, at, force);
+        if (r && r.needs_confirm && !force) {
+          const ok = await askConfirm('Book it anyway?', { body: r.error, confirmLabel: 'Book anyway' });
+          if (ok) return go(true); return;
+        }
+        if (r && r.error) throw new Error(r.error);
+        dr.close(); toast('Booked — Riley calls ' + (r.scheduled_local || 'at the next allowed time') + '.'); plans = null; loadPlans(); reopen(r);
+      } catch (e) { toast(humanizeError(e), 'error'); }
+    };
+    const dr = openDrawer('Book with Riley — ' + (p.org_name || ''), el('div', { style: 'display:grid;gap:12px' }, [
+      el('p', { class: 'hint' }, 'Riley calls ' + pretty(p.to_number) + ' with this briefing. Calls only go out Mon–Fri 9:00–18:30 in the carrier’s time zone' + (p.tz ? ' (' + p.tz.replace('_', ' ') + ')' : ' (unknown zone → 11:00–18:30 Eastern)') + ', one per carrier per day. Every rule is checked again right before dialling.'),
+      el('label', { class: 'ry-row' }, [pickNow, 'Next allowed time' + (p.gate && p.gate.next_slot ? ' — ' + et(p.gate.next_slot) : '')]),
+      el('label', { class: 'ry-row' }, [pickAt, 'At (your local time):', when]),
+      el('div', { class: 'ry-row' }, [el('button', { class: 'ry-btn o', onClick: () => go(false) }, [icon('phone', 14), 'Book the call'])]),
+    ]), { size: 'sm' });
+  }
+
+  function emailFlow(p) {
+    const f = p.followup || {};
+    const subj = el('input', { class: 'ry-in', style: 'width:100%', maxlength: '140' }); subj.value = f.email_subject || '';
+    const body = el('textarea', { class: 'ry-ta', rows: '12', style: 'width:100%' }); body.value = f.email_body || '';
+    const dr2 = openDrawer('Follow-up email — ' + (p.org_name || ''), el('div', { style: 'display:grid;gap:10px' }, [
+      el('p', { class: 'hint' }, 'Goes to the carrier’s account email as “riley.followup” (Email catalog, compliance group). Unsubscribes are checked first; the signature and contact line are added automatically. Edit anything before sending.'),
+      subj, body,
+      el('div', { class: 'ry-row' }, [el('button', { class: 'ry-btn o', onClick: async () => {
+        const r = await followAct(p, 'email', { subject: subj.value.trim(), body: body.value.trim() }, 'Email sent.'); if (r) { dr2.close(); reopen(r); }
+      } }, 'Send email')]),
+    ]), { size: 'lg' });
+  }
+
+  function nextStepCard(p) {
+    const fs = p.followup_status; if (!fs && !['called', 'no_answer'].includes(p.status)) return null;
+    const f = p.followup || {}; const done = p.followup_done || {};
+    const sug = f.action || 'none';
+    const btn = (key, label, fn) => el('button', { class: 'ry-btn' + (sug === key && fs === 'proposed' ? ' o' : ''), disabled: !canPlan(), onClick: fn }, label);
+    const actions = canPlan() && ['proposed', 'failed'].includes(fs) ? el('div', { class: 'ry-row', style: 'flex-wrap:wrap' }, [
+      p.attempt < 3 && !p.dnc ? btn('second_call', 'Plan 2nd call', async () => {
+        const n = await askReason('Second call — what must Riley cover?', { value: f.call_note || '', submitLabel: 'Ask the brain for the plan', subtitle: 'Attempt ' + (p.attempt + 1) + ' of 3 · the brain writes a new briefing; you book it after reading' });
+        if (n == null) return; const r = await followAct(p, 'second_call', { note: n }, 'Follow-up plan requested.'); if (r) reopen(r);
+      }) : null,
+      p.email_on_file ? btn('email', 'Review & send email', () => emailFlow(p)) : null,
+      btn('staff_task', 'Create task', async () => {
+        const n = await askReason('Task for a person', { value: f.staff_task || '', submitLabel: 'Create task', subtitle: 'Lands in the task list, due tomorrow' });
+        if (n == null) return; const r = await followAct(p, 'staff_task', { title: n }, 'Task created.'); if (r) reopen(r);
+      }),
+      el('button', { class: 'ry-btn', onClick: async () => { const r = await followAct(p, 'dismiss', {}, 'Next step dismissed.'); if (r) reopen(r); } }, 'Dismiss'),
+    ]) : null;
+    return el('div', { class: 'ry-card', style: 'margin:0;border:1px solid var(--line,#e2e8f0)' }, [
+      el('h3', null, ['Next step', fs === 'proposed' ? el('span', { class: 'ry-pill b' }, (f.source === 'rule' ? 'rule · ' : 'AI · ') + (NEXT_ACTION[sug] || sug))
+        : fs === 'done' ? el('span', { class: 'ry-pill g' }, 'done') : fs === 'dismissed' ? el('span', { class: 'ry-pill m' }, 'dismissed')
+        : fs === 'failed' ? el('span', { class: 'ry-pill r' }, 'no suggestion') : el('span', { class: 'ry-pill a' }, 'thinking…')]),
+      ['pending', 'thinking'].includes(fs) ? el('p', { class: 'hint' }, fs === 'pending' ? 'Waiting for Retell’s call analysis (the brain starts within 10 minutes either way).' : 'The brain is reading the call…') : null,
+      fs === 'failed' ? el('div', { class: 'ry-warn' }, (f.error || 'The brain returned nothing.') + ' Pick the next step yourself below.') : null,
+      f.outcome ? el('div', { style: 'font-size:14px;line-height:1.5' }, [el('b', null, 'What happened: '), f.outcome]) : null,
+      f.why ? el('div', { style: 'font-size:13.5px;line-height:1.5;margin-top:4px' }, [el('b', null, 'Why: '), f.why]) : null,
+      f.suggested_at || f.when ? el('div', { style: 'font-size:13px;opacity:.8;margin-top:4px' }, 'When: ' + (f.suggested_at ? et(f.suggested_at) : '') + (f.when ? (f.suggested_at ? ' · ' : '') + f.when : '')) : null,
+      f.overridden ? el('div', { style: 'font-size:12.5px;color:#b45309;margin-top:4px' }, 'Changed by the rules: ' + f.overridden) : null,
+      sug === 'email' && f.email_subject ? el('details', { style: 'margin-top:6px' }, [el('summary', { style: 'cursor:pointer;font-weight:600' }, 'Draft email: ' + f.email_subject), el('div', { class: 'ry-tr', style: 'margin-top:6px' }, f.email_body || '')]) : null,
+      fs === 'done' ? el('div', { style: 'font-size:13.5px;margin-top:6px' }, done.kind === 'email' ? 'Email sent to ' + (done.to || 'the carrier') + ' · ' + et(done.at)
+        : done.kind === 'second_call' ? ['Second-call plan ', el('a', { href: '#', onClick: (e) => { e.preventDefault(); openPlanById(done.plan_id); } }, '#' + done.plan_id), done.auto ? ' (auto)' : '', ' · ' + et(done.at)]
+        : done.kind === 'staff_task' ? 'Task created for a person' + (done.auto ? ' (auto)' : '') + ' · ' + et(done.at) : done.kind === 'dismissed' ? 'Dismissed · ' + et(done.at) : et(done.at)) : null,
+      actions,
+    ]);
+  }
+
   function openPlan(p) {
     const st = PLAN_STATUS[p.status] || [p.status, 'm']; const pl = p.plan || {}; const c = p.consent || {}; const cost = p.cost || {}; const job = p.job || {}; const dial = p.dial_tool || {};
-    const dialOn = dial.enabled && dial.status === 'live' && dial.mode === 'auto';
-    const open = !['called', 'cancelled'].includes(p.status);
+    const bs = bookingState(dial); const gate = p.gate || {}; const out = p.outcome || {};
+    const editable = ['planning', 'ready', 'failed'].includes(p.status);
     const kv = (k, v) => el('div', null, [el('small', null, k), el('span', null, v == null || v === '' ? '—' : String(v))]);
     const list = (title, arr, ordered) => (arr && arr.length) ? el('div', null, [el('b', null, title), el(ordered ? 'ol' : 'ul', { style: 'margin:4px 0 0;padding-left:22px;line-height:1.55;font-size:13.5px' }, arr.map((x) => el('li', null, x)))]) : null;
     const body = el('div', { style: 'display:grid;gap:14px' });
@@ -349,43 +444,72 @@ export async function renderRiley(host, query) {
       list('Talking points', pl.points, true), list('Confirm with the carrier', pl.confirm, false), list('Do not say', pl.do_not_say, false),
       el('div', { class: 'ry-kv' }, [kv('Best time', pl.best_time), kv('Language', pl.language)]),
     ]) : (p.plan_text ? el('div', { class: 'ry-tr' }, p.plan_text) : null);
+    const canBook = p.status === 'ready' && canPlan() && gate.ok;
     body.append(
       el('div', { class: 'ry-row' }, [el('span', { class: 'ry-pill ' + st[1] }, st[0]),
+        p.attempt > 1 ? el('span', { class: 'ry-pill m' }, 'attempt ' + p.attempt + ' of 3') : null,
         p.confidence != null ? el('span', { class: 'ry-pill ' + (Number(p.confidence) >= 0.6 ? 'g' : 'a') }, 'confidence ' + Math.round(Number(p.confidence) * 100) + '%') : null,
-        el('span', { style: 'font-size:13px;opacity:.75' }, ['Requested ', et(p.created_at), p.created_by_name ? ' by ' + p.created_by_name : '', job.model ? ' · ' + job.model : '', job.secs != null ? ' · ' + job.secs + ' s' : ''].join(''))]),
-      p.review_note ? el('div', { class: 'ry-warn' }, [el('b', null, 'The brain wants a person to check first'), el('div', null, p.review_note)]) : null,
+        p.dnc ? el('span', { class: 'ry-pill r' }, 'do-not-call') : null,
+        el('span', { style: 'font-size:13px;opacity:.75' }, ['Requested ', et(p.created_at), p.created_by_name ? ' by ' + p.created_by_name : (p.parent_id ? ' by the brain (follow-up)' : ''), job.model ? ' · ' + job.model : '', job.secs != null ? ' · ' + job.secs + ' s' : ''].join(''))]),
+      p.dnc ? el('div', { class: 'ry-warn' }, [el('b', null, 'On the Riley do-not-call list'), el('div', null, p.dnc.reason + ' · ' + et(p.dnc.at)),
+        canPlan() ? el('button', { class: 'ry-btn sm', style: 'margin-top:6px', onClick: async () => {
+          const n = await askReason('Remove from do-not-call — why is calling OK again?', { submitLabel: 'Remove', subtitle: 'Only when the carrier asked us to call again' });
+          if (n == null) return; const r = await followAct(p, 'dnc_clear', { reason: n }, 'Removed from the do-not-call list.'); if (r) reopen(r);
+        } }, 'Remove from do-not-call') : null]) : null,
+      p.review_note && editable ? el('div', { class: 'ry-warn' }, [el('b', null, 'The brain wants a person to check first'), el('div', null, p.review_note)]) : null,
       p.status === 'failed' ? el('div', { class: 'ry-warn' }, [el('b', null, 'No plan'), el('div', null, p.error || job.error || 'The brain returned nothing.')]) : null,
-      p.status === 'planning' ? el('div', { style: 'opacity:.8' }, 'The brain is writing the plan — this popup does not refresh; close and reopen in a few seconds.') : null,
+      p.status === 'ready' && p.error ? el('div', { class: 'ry-warn' }, p.error) : null,
+      p.status === 'planning' ? el('div', { style: 'opacity:.8' }, 'The brain is writing the plan — close and reopen in a few seconds.') : null,
+      ['scheduled', 'dialing'].includes(p.status) ? el('div', { class: 'ry-card', style: 'margin:0;border:1px solid var(--line,#e2e8f0)' }, [
+        el('h3', null, [p.status === 'dialing' ? 'Riley is calling now' : 'Booked', el('span', { class: 'ry-pill b' }, p.scheduled_local || et(p.scheduled_for))]),
+        el('div', { style: 'font-size:13px;opacity:.8' }, 'Booked ' + et(p.booked_at) + (p.booked_by_name ? ' by ' + p.booked_by_name : '') + '. Every rule is checked again right before Riley dials; if one fails, the plan comes back here as ready with the reason.'),
+      ]) : null,
+      ['called', 'no_answer'].includes(p.status) ? el('div', { class: 'ry-card', style: 'margin:0;border:1px solid var(--line,#e2e8f0)' }, [
+        el('h3', null, ['The call', el('span', { class: 'ry-pill ' + (p.status === 'called' ? 'g' : 'a') }, p.status === 'called' ? mmss(out.duration_sec) + ' min' : 'not reached')]),
+        el('div', { class: 'ry-kv' }, [kv('When', et(p.called_at)), kv('Sentiment', out.sentiment), kv('Interest', out.interest), kv('Riley’s next step', out.next_step)]),
+        out.summary ? el('div', { style: 'font-size:14px;line-height:1.5;margin-top:6px' }, out.summary) : null,
+        p.call && p.call.has_recording ? el('div', { style: 'font-size:12.5px;opacity:.75;margin-top:4px' }, 'Recording and transcript: Riley → Calls.') : null,
+      ]) : null,
+      nextStepCard(p),
+      (p.children || []).length ? el('div', { style: 'font-size:13.5px' }, [el('b', null, 'Follow-up plans: '), ...(p.children || []).map((ch) => el('a', { href: '#', style: 'margin-right:10px', onClick: (e) => { e.preventDefault(); openPlanById(ch.id); } }, '#' + ch.id + ' · ' + ((PLAN_STATUS[ch.status] || [ch.status])[0])))]) : null,
+      p.parent_id ? el('div', { style: 'font-size:13.5px' }, ['Follow-up to ', el('a', { href: '#', onClick: (e) => { e.preventDefault(); openPlanById(p.parent_id); } }, 'plan #' + p.parent_id)]) : null,
       el('div', { class: 'ry-kv' }, [
         kv('Carrier', p.org_name), kv('Contact', p.contact_name), kv('Number', pretty(p.to_number)), kv('Why', PLAN_REASON_LABEL[p.reason] || p.reason),
-        kv('Call language', p.lang === 'es' ? 'Spanish' : 'English'), kv('Consent basis', c.basis ? (c.basis + (c.sms_consent ? ' · SMS consent on file' : '')) : '—'),
-        kv('Cost estimate', cost.est_total != null ? planUsd(cost.est_total) + ' (brain ' + planUsd(cost.brain_usd) + ' + Retell ≈ ' + cost.est_minutes + ' min × $' + cost.retell_per_min + ')' : '—'),
+        kv('Call language', p.lang === 'es' ? 'Spanish' : 'English'), kv('Carrier time zone', p.tz ? p.tz.replace('_', ' ') : 'unknown → Eastern window'),
+        kv('Consent basis', c.basis ? (c.basis + (c.sms_consent ? ' · SMS consent on file' : '')) : '—'),
+        kv('Cost', cost.est_total != null ? planUsd(cost.est_total) + ' (brain ' + planUsd(cost.brain_usd) + ' + Retell ≈ ' + (out.duration_sec ? mmss(out.duration_sec) : cost.est_minutes + ' min') + ' × $' + cost.retell_per_min + '/min)' : '—'),
         kv('Staff note', p.note),
       ]),
       secs,
       p.plan_text && pl.parsed ? el('details', null, [el('summary', { style: 'cursor:pointer;font-weight:600' }, 'Briefing as Riley will read it (verbatim)'), el('div', { class: 'ry-tr', style: 'margin-top:8px' }, p.plan_text)]) : null,
+      p.status === 'ready' && !gate.ok && bs[1] !== 'm' ? el('div', { style: 'font-size:12.5px;color:#b45309' }, 'Cannot book right now: ' + (gate.reason || '—')) : null,
       el('div', { class: 'ry-row', style: 'flex-wrap:wrap' }, [
         el('a', { class: 'ry-btn', href: '#/carrier?id=' + encodeURIComponent(p.org_id || '') }, [icon('truck', 14), 'Open carrier']),
         p.plan_text ? el('button', { class: 'ry-btn', onClick: async () => { try { await navigator.clipboard.writeText(p.plan_text); toast('Briefing copied.'); } catch (_) { toast('Copy failed — select the text instead.', 'error'); } } }, 'Copy briefing') : null,
-        open && p.plan_text && canPlan() ? el('button', { class: 'ry-btn', onClick: () => {
+        editable && p.plan_text && canPlan() ? el('button', { class: 'ry-btn', onClick: () => {
           const ta = el('textarea', { class: 'ry-ta', rows: '16', style: 'width:100%' }); ta.value = p.plan_text;
           const dr2 = openDrawer('Edit the briefing — ' + (p.org_name || ''), el('div', { style: 'display:grid;gap:10px' }, [
             el('p', { class: 'hint' }, 'Keep the seven headers (GOAL, OPENER, TALKING POINTS, CONFIRM, DO NOT SAY, BEST TIME, LANGUAGE) so the card still reads it. Riley gets exactly this text.'),
-            ta, el('div', { class: 'ry-row' }, [el('button', { class: 'ry-btn', onClick: async () => { const r = await planAct(p, 'edit', ta.value, 'Briefing saved.'); if (r) { dr2.close(); openPlan(r); } } }, 'Save')])]), { size: 'lg' });
+            ta, el('div', { class: 'ry-row' }, [el('button', { class: 'ry-btn', onClick: async () => { const r = await planAct(p, 'edit', ta.value, 'Briefing saved.'); if (r) { dr2.close(); reopen(r); } } }, 'Save')])]), { size: 'lg' });
         } }, 'Edit briefing') : null,
-        open && canPlan() ? el('button', { class: 'ry-btn', onClick: async () => {
+        editable && canPlan() ? el('button', { class: 'ry-btn', onClick: async () => {
           const n = await askReason('Redo the plan — what should change?', { placeholder: 'e.g. focus on the insurance certificate; the owner speaks Spanish; skip the trial talk', submitLabel: 'Ask the brain again', subtitle: 'A new brain job; the old text is replaced' });
-          if (n == null) return; const r = await planAct(p, 'redo', n, 'Asked the brain for a new plan.'); if (r) openPlan(r);
+          if (n == null) return; const r = await planAct(p, 'redo', n, 'Asked the brain for a new plan.'); if (r) reopen(r);
         } }, 'Redo plan') : null,
-        open && canPlan() ? el('button', { class: 'ry-btn done', onClick: async () => {
-          const n = await askReason('Mark as called — what happened?', { placeholder: 'One or two lines: reached / voicemail / agreed next step', submitLabel: 'Mark called', subtitle: 'Recorded on the plan for the next person' });
-          if (n == null) return; const r = await planAct(p, 'called', n, 'Marked as called.'); if (r) openPlan(r);
+        editable && canPlan() ? el('button', { class: 'ry-btn done', onClick: async () => {
+          const n = await askReason('Mark as called — what happened?', { placeholder: 'One or two lines: reached / voicemail / agreed next step', submitLabel: 'Mark called', subtitle: 'Someone called by hand — recorded on the plan for the next person' });
+          if (n == null) return; const r = await planAct(p, 'called', n, 'Marked as called.'); if (r) reopen(r);
         } }, 'Mark called') : null,
-        open && canPlan() ? el('button', { class: 'ry-btn', onClick: async () => { const ok = await askConfirm('Cancel this call plan?', { body: 'The text stays on record; nobody calls.', confirmLabel: 'Cancel plan' }); if (!ok) return; const r = await planAct(p, 'cancel', null, 'Plan cancelled.'); if (r) openPlan(r); } }, 'Cancel plan') : null,
-        open && p.status === 'ready' ? el('button', { class: 'ry-btn', disabled: true, title: dialOn ? 'Booking arrives with the next slice (tool.schedule_riley_call executor)' : 'Off by owner decision: tool.schedule_riley_call is prep. Flip it under CC → AI Brain → Permissions when Riley may place calls.' }, [icon('phone', 14), dialOn ? 'Book with Riley (soon)' : 'Book with Riley — off']) : null,
+        (editable || p.status === 'scheduled') && canPlan() ? el('button', { class: 'ry-btn', onClick: async () => { const ok = await askConfirm(p.status === 'scheduled' ? 'Cancel the booked call?' : 'Cancel this call plan?', { body: p.status === 'scheduled' ? 'Riley will not call. The plan text stays on record.' : 'The text stays on record; nobody calls.', confirmLabel: 'Cancel' }); if (!ok) return; const r = await planAct(p, 'cancel', null, 'Cancelled.'); if (r) reopen(r); } }, p.status === 'scheduled' ? 'Cancel booking' : 'Cancel plan') : null,
+        p.status === 'ready' ? el('button', { class: 'ry-btn' + (canBook ? ' o' : ''), disabled: !canBook, title: canBook ? 'Book this call with Riley' : (gate.reason || 'Booking is off'), onClick: () => bookFlow(p) },
+          [icon('phone', 14), canBook ? 'Book with Riley' : (bs[1] === 'm' ? 'Book with Riley — off' : 'Book with Riley — blocked')]) : null,
+        !p.dnc && canPlan() && p.to_number ? el('button', { class: 'ry-btn', onClick: async () => {
+          const n = await askReason('Put this number on the Riley do-not-call list?', { placeholder: 'e.g. asked us not to call; prefers email', submitLabel: 'Do not call', subtitle: 'Anything booked to this number is cancelled at once' });
+          if (n == null) return; const r = await followAct(p, 'dnc', { reason: n }, 'Riley will never call this number.'); if (r) reopen(r);
+        } }, 'Do not call') : null,
       ]),
     );
-    openDrawer((p.org_name || 'Carrier') + ' — call plan', body, { size: 'lg', subtitle: 'Riley’s briefing before the call · staff only' });
+    planDr = openDrawer((p.org_name || 'Carrier') + ' — call plan', body, { size: 'lg', subtitle: 'Riley’s briefing, the booking, the call and the next step · staff only' });
   }
 
   // ---------- prompts

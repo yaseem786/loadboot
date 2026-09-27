@@ -62,7 +62,7 @@ call is placed; the card shows `est_minutes (4) × 0.13 + brain_usd`. `source.vo
 - No email, no SMS, no dial from this slice. No new anon-executable name.
 - Every brain change is a `brain_permissions` / `brain_config` row with a `brain_log` entry (CLAUDE.md §9).
 
-## Next slice (not built)
+## Next slice — BUILT in `bl_voice_0485` (see `claude/RILEY-SLICE2-0485.md`); items 1–2 done, 3 still open
 
 1. `tool.schedule_riley_call` executor in `brain_tool_exec` + a **Book with Riley** button: inserts `lc_calls`
    (direction outbound, `source 'cc'`, `context = plan_text`, `org_id`, `scheduled_at` from best time, requested_by) and
