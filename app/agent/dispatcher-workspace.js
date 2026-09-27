@@ -17,7 +17,7 @@ import {
   dispatcherBookingEvent, dispatcherBookingTimeline, dispatcherBrokerUpsert, dispatcherBrokerDelete,
   dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead,
   dispatcherBoard, dispatcherLoadDetail, dispatcherRequestBook, dispatcherPostTruck, dispatcherUpdatePosting, dispatcherPostingMatches, dispatcherMyKpis,
-  dispatcherTrip, dispatcherTripAction,
+  dispatcherTrip, dispatcherTripAction, dispatcherTrialFeedback,
 } from '../shared/api.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { el, mount, clear } from '../shared/ui/dom.js';
@@ -450,6 +450,12 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     let raw; try { raw = String(location.hash || '').replace(/^#/, '').split('?')[0]; } catch (_) { return; }
     if (!raw) return;
     let parts; try { parts = raw.split('/').filter(Boolean).map(decodeURIComponent); } catch (_) { parts = raw.split('/').filter(Boolean); }
+    const ti = parts.findIndex((x) => String(x).toLowerCase() === 'trial');
+    if (ti >= 0) {
+      try { history.replaceState(null, '', location.pathname + location.search + '#dashboard'); } catch (_) {}
+      trialAsk(String(parts[ti + 1] || '').toLowerCase(), String(parts[ti + 2] || '').toLowerCase());
+      return;
+    }
     for (let i = 0; i < parts.length; i++) {
       const key = parts[i].toLowerCase();
       if (DW_TABS.indexOf(DW_ALIAS[key] || key) < 0) continue;          // agent-shell tabs pass through untouched
@@ -458,6 +464,36 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         try { history.replaceState(null, '', location.pathname + location.search + '#dashboard'); } catch (_) {}
       }
       return;
+    }
+  }
+  // bl_disp_0484 — the daily trial report's buttons land here: #trial/help · #trial/feedback · #trial/mood/<smooth|mixed|stuck>.
+  // Help and feedback need a few words; a mood tap is saved at once ("Stuck" also alerts LoadBoot). Staff read it in CC.
+  async function trialAsk(kind, mood) {
+    const send = async (k, m, note) => {
+      try {
+        const r = await dispatcherTrialFeedback(k, m, note);
+        if (!r || r.ok === false) { toast((r && r.error) || 'Could not send. Try again, or use Messages.', true); return false; }
+        toast(k === 'help' ? 'Sent. A LoadBoot coordinator will get back to you today.' : k === 'feedback' ? 'Thanks. Your feedback reached LoadBoot.' : m === 'stuck' ? 'Got it. LoadBoot will call you today.' : 'Thanks. Noted for today.');
+        return true;
+      } catch (e) { toast((e && e.message) || 'Could not send. Try again, or use Messages.', true); return false; }
+    };
+    if (kind === 'mood' && ['smooth', 'mixed', 'stuck'].includes(mood)) {
+      if (!(await send('mood', mood, null))) return;
+      if (mood === 'stuck') {
+        const v = await ask({ title: 'What is blocking you?', text: 'Optional. A line or two helps the coordinator call you with the answer ready.', fields: [{ key: 'note', label: 'What happened', type: 'textarea', rows: 4, placeholder: 'e.g. The carrier has not answered about the truck length since Tuesday.' }], ok: 'Send', cancel: 'Skip' });
+        if (v && String(v.note || '').trim()) await send('help', null, v.note);
+      }
+      return;
+    }
+    if (kind === 'help' || kind === 'feedback') {
+      const help = kind === 'help';
+      const v = await ask({
+        title: help ? 'I need help' : 'Send feedback',
+        text: help ? 'Tell us what is in the way. A LoadBoot coordinator reads this the same day, usually within the hour during US business hours.' : 'What is working, what is not, what would make your day easier. It goes straight to LoadBoot.',
+        fields: [{ key: 'note', label: help ? 'What do you need help with?' : 'Your feedback', type: 'textarea', rows: 5, required: true, placeholder: help ? 'e.g. I cannot reach the carrier, the dialer drops calls, I am not sure about a rate…' : '' }],
+        ok: 'Send',
+      });
+      if (v) await send(kind, null, v.note);
     }
   }
   const dwHash = () => dwReadHash();
