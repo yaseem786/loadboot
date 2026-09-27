@@ -15,6 +15,7 @@ import { PLAN_STATUS, PLAN_REASON_LABEL } from './rileyPlanFlow.js';   // bl_voi
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ET = 'America/New_York';
+const LOW_BALANCE_USD = 10;   // bl_voice_0484 — below this the Riley page warns (typed Retell balance)
 const digits = (s) => String(s || '').replace(/[^0-9]/g, '');
 const pretty = (n) => { const d = digits(n); const k = d.length === 11 && d[0] === '1' ? d.slice(1) : d; return k.length === 10 ? '(' + k.slice(0, 3) + ') ' + k.slice(3, 6) + '-' + k.slice(6) : String(n || '—'); };
 const mmss = (s) => { s = Math.max(0, Math.round(Number(s || 0))); const m = Math.floor(s / 60); return String(m) + ':' + String(s % 60).padStart(2, '0'); };
@@ -129,6 +130,7 @@ export async function renderRiley(host, query) {
   function paintWarn() {
     const m = [];
     if (!settings.retell_key_set) m.push('Retell is not configured on this environment (no API key in retell_config).');
+    if (settings.retell_balance_usd != null && Number(settings.retell_balance_usd) < LOW_BALANCE_USD) m.push('Retell balance was $' + Number(settings.retell_balance_usd).toFixed(2) + ' at the last reading (' + et(settings.retell_balance_as_of) + '). Top up on the Retell dashboard before Riley stops answering, then update Settings → Retell balance.');
     if (status && !status.error && status.phone && status.expected) {
       if (status.phone.inbound_agent_id && status.expected.inbound_agent_id && status.phone.inbound_agent_id !== status.expected.inbound_agent_id)
         m.push('The Retell number answers with the WRONG agent (' + status.phone.inbound_agent_id + '). Settings → “Fix number wiring”.');
@@ -513,6 +515,27 @@ export async function renderRiley(host, query) {
     ]));
   }
 
+  // ---------- Retell balance (bl_voice_0484). Retell has no balance API, so it is typed from the Retell dashboard;
+  // the usage line counts our own Riley calls since that reading. No guessed dollars.
+  function balanceCard(s) {
+    const has = s.retell_balance_usd != null; const u = s.retell_usage_since || {};
+    const kvLine = (k, v) => el('div', null, [el('small', null, k), el('span', null, v)]);
+    const low = has && Number(s.retell_balance_usd) < LOW_BALANCE_USD;
+    const stale = has && s.retell_balance_as_of && (Date.now() - new Date(s.retell_balance_as_of).getTime()) > 7 * 86400e3;
+    const amt = el('input', { class: 'ry-in', inputmode: 'decimal', placeholder: 'e.g. 27.40', value: has ? Number(s.retell_balance_usd).toFixed(2) : '', style: 'width:120px' });
+    const save = async (v) => { try { const r = await ccRileySettingsSet({ retell_balance_usd: v }); if (r && r.error) throw new Error(r.error); settings = r; toast(v === '' ? 'Balance cleared.' : 'Balance saved as of now.'); paintWarn(); paintSettings(); } catch (e) { toast(humanizeError(e), 'error'); } };
+    return el('div', { class: 'ry-card' }, [
+      el('h3', null, ['Retell balance', has ? el('span', { class: 'ry-pill ' + (low ? 'r' : stale ? 'a' : 'g') }, '$' + Number(s.retell_balance_usd).toFixed(2) + (low ? ' · low' : stale ? ' · old reading' : '')) : el('span', { class: 'ry-pill m' }, 'not entered')]),
+      el('p', { class: 'hint' }, 'Retell does not publish the balance through its API, so this is the figure from the Retell dashboard (Billing), typed here by hand. Below it: Riley calls since that reading, from our own call log.'),
+      has ? el('div', { class: 'ry-kv' }, [
+        kvLine('As of', et(s.retell_balance_as_of) + (s.retell_balance_set_by ? ' · by ' + s.retell_balance_set_by : '')),
+        kvLine('Since then', (u.calls ?? 0) + ' Riley call' + (u.calls === 1 ? '' : 's') + ' · ' + (u.minutes ?? 0) + ' min'),
+      ]) : null,
+      el('div', { class: 'ry-row', style: 'margin-top:10px' }, [el('span', null, '$'), amt,
+        el('button', { class: 'ry-btn', disabled: !can(), onClick: () => save(amt.value.trim()) }, 'Save reading'),
+        has ? el('button', { class: 'ry-btn', disabled: !can(), onClick: () => save('') }, 'Clear') : null]),
+    ]);
+  }
   // ---------- settings & wiring
   function paintSettings() {
     const s = settings; const st = status;
@@ -544,6 +567,7 @@ export async function renderRiley(host, query) {
         el('h3', null, 'Escalation'), el('p', { class: 'hint' }, 'Riley is written to never transfer. If you ever want a human fallback, put a mobile here and re-publish the prompts; Riley gets a transfer tool pointed at it. Never the Riley line, never the WhatsApp line.'),
         el('div', { class: 'ry-row' }, [esc, el('button', { class: 'ry-btn', disabled: !can(), onClick: async () => { try { const r = await ccRileySettingsSet({ escalation_number: esc.value }); if (r && r.error) throw new Error(r.error); settings = r; toast(r.escalation_number ? 'Escalation number saved. Publish both prompts to attach the transfer tool.' : 'Escalation cleared. Publish both prompts to remove the transfer tool.'); paintSettings(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Save')]),
       ]),
+      balanceCard(s),
       el('div', { class: 'ry-card' }, [
         el('h3', null, 'Security checks'),
         el('div', { class: 'ry-kv' }, [

@@ -71,5 +71,6 @@ call is placed; the card shows `est_minutes (4) × 0.13 + brain_usd`. `source.vo
    post-call job (`voice_followup` route) continues the thread (§14.2 "after every call").
 3. Auto triggers per §14.2 (day-1 welcome, 48 h vanished, hot lead in 10 min) — each a `source.voice` job through the
    same `cc_riley_plan_create` path with `created_by = null` and a cap per carrier per day.
-4. Retell balance line in CC → Riley → Settings (§9 owner decision) — `retell-admin` has no balance op yet; check the
-   Retell API for an account/balance endpoint first.
+4. ~~Retell balance line~~ — DONE in `bl_voice_0484` (27 Sep): Retell's API has no balance endpoint (docs: only per-call
+   `call_cost` and get-concurrency), so CC → Riley → Settings & wiring → **Retell balance** takes the dashboard figure by
+   hand (`retell_config.balance_usd/_as_of/_set_by`) and shows Riley calls + minutes since that reading; banner under $10.
