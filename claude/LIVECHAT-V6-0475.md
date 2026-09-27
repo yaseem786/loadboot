@@ -42,6 +42,12 @@ staff suggested replies stay on Fable ($3/day); sales / voice / WhatsApp / email
 
 ## Staging gate (jobs 47–48) — see the session note in the commit for the transcript summary.
 
+## Prod state at hand-off (27 Sep, ~18:40 UTC)
+- `source.chat` ON (the owner flipped it) → visitors already get Claude, now on **Sonnet 5** (prod job 7: Maya, honest, 4 s, $0.10 cold).
+- `rule.chat_specialists` **parked OFF on prod** until the v6 widget is on the live site — the old widget would print the raw
+  `[[as:…]]` tag. Order: merge this branch → Netlify deploys → CC → AI Brain → Permissions → switch the rule on. Staging has it on.
+- Anon-executable SECURITY DEFINER surface: 36, every name on the baseline (checked after the migration).
+
 ## Not done
 - CC → AI Brain → Overview does not yet show `model_by_route`; the owner sets it by SQL / this migration for now.
 - Spanish desk names untested (the tag is language-neutral; the model answers in the visitor's language).
