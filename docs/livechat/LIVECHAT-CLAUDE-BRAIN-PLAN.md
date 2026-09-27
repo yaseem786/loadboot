@@ -230,3 +230,95 @@ Session hygiene applies (CLAUDE.md §2): one section per session, handoff note a
 Cap default $25/day (≈ $750/mo ceiling). Riley separate (§9). Model prices used: Fable 5.1 $10/$50 per MTok, Haiku 4.5 $1/$5.
 
 **Scale.** The brain has no headcount. It handles whatever volume arrives, in parallel, 24/7; the only limits are the API rate limit and the daily cap, both of which are numbers the owner raises. "The work of 100,000 employees" is not a figure that can be verified; what can be: at 10× today's traffic the bill is ≈ 10× (~$2.5–3K/mo) and the staff count is still zero. The owner's own time stays at the §0 list, roughly 15–20 min/day, whatever the volume.
+
+---
+
+## §14 Control map — every surface, what the brain owns (added 27 Sep 2026, owner: "see yourself what the max should be")
+
+Legend: **AUTO** = brain acts, logs, no human · **AUTO+OK** = brain does everything, owner taps approve · **PREP** = brain summarises/drafts, owner acts · **NEVER** = brain does not touch (money, legal, identity values, code).
+
+### 14.1 COI vehicle schedule → VINs (owner: "especially this — auto")
+Today: `lc-doc-check` already extracts the vehicles/VINs and says ANY AUTO vs SCHEDULED in its verdict, but `coiCoverage.js` still asks a reviewer to paste the schedule. The gap is wiring, not the model. Build (in §5, first item):
+1. On every COI verdict (upload via portal `doc-precheck`, chat `lc-doc-check`, or CC review): brain reads the verdict + the document (vision), returns `{mode: any_auto|scheduled|unclear, vins[], exp_date, confidence}`.
+2. Deterministic checks before anything is saved: VIN check-digit (ISO 3779), 17 chars, no I/O/Q; each VIN matched against Fleet (`fleet` trucks) — exact, then transposition-tolerant.
+3. `confidence ≥ 0.85` and every VIN valid → **AUTO**: save coverage mode + VINs + expiry through the same RPC the screen uses, `set by: brain`, and unblock posting for the matched trucks (LB001 resolved). Fleet truck with no VIN on the COI → carrier gets the exact "have your agent add VIN X" message (catalog `document.coi.vin_missing`).
+4. Anything else → **AUTO+OK**: the Document review drawer opens pre-filled (mode, chips, expiry, the schedule text), reviewer taps confirm. Never a blank textarea again.
+5. Metric: % of COIs saved with zero human touch. Target 80% by week 4.
+
+### 14.2 Riley daily follow-up plan (owner decision 27 Sep 2026)
+Calls cost money; use them only where a customer is worth it. Daily 10:00–18:00 recipient local time, only to people who gave a number at signup (TCPA consent recorded), max one call attempt/day, 3 attempts total, WhatsApp/email between attempts.
+- **New carriers, day 1**: welcome + "what is missing to get dispatched" (from the compliance check) — **AUTO**.
+- **Signed up then vanished (no activity 48h)**: carrier, broker, shipper, agent — one call, then WhatsApp/email sequence — **AUTO**.
+- **Dispatchers: NO calls** (owner rule — they will pester; not worth the minutes). Daily WhatsApp reply/nudge instead — **AUTO**.
+- **Hot leads from chat/forms**: Riley call within 10 minutes of the request — **AUTO**.
+- After every call: transcript + post-call analysis → brain continues the thread, updates `lead_stage`, `crm_leads`, onboarding state — **AUTO**. Money/legal promise heard on a call → owner.
+- Riley stays on Retell's hosted LLM until the $30 balance is spent (§9), then Phase 2.
+
+### 14.3 Dispatcher management (daily, all brain)
+- **Hiring daily** (§5): score, screen by email/chat, verdict draft — **AUTO+OK** for the verdict; trial start, conduct terms — **AUTO** once approved.
+- **Assignment**: match a new/idle dispatcher to carriers needing one (`dispatcher_assignments`, `carrier_requests`) by equipment, lanes, time zone, load — **AUTO**, with the WA assignment notice that already exists (`wa-auto-worker`).
+- **Stage moves**: trial → active → senior, or trial → out, on published criteria (loads booked, RPM vs market, cancellations, QA score, response time) — **AUTO+OK** (owner taps). Salary/commission numbers — **NEVER**.
+- **Performance check**: daily per dispatcher: bookings, RPM vs `get_public_market_rates`, cancellations, carrier complaints, call QA (§6), WA response time. Drift → coaching message to the dispatcher (**AUTO**), repeated drift → owner line.
+- **Eyes on everything**: the owner digest (§8) carries one line per dispatcher, one per stalled carrier, one per stuck lead.
+
+### 14.4 Carrier portal (app/carrier)
+| Screen | Brain |
+|---|---|
+| Dashboard, Ratings, Alerts | AUTO — explains the score, what to fix next, answers "why" in chat |
+| Load Board, My Loads | AUTO — load questions, status, ETA, detention clock reminders; **booking itself stays the carrier's approval (no forced dispatch)** |
+| Dispatcher (relationship) | AUTO — bridge (§6): summaries, nudges, EN⇄ES |
+| Profile, Fleet | AUTO — completeness nudges, VIN/COI mismatch (14.1); never edits identity values |
+| Finance | PREP — explains an invoice/settlement, drafts a dispute summary; **never changes money** |
+| Documents | AUTO — chase, check, verdict (§5, 14.1); gray → owner |
+| Market Rates | AUTO — answers from the registry only |
+| Support, Safety | AUTO triage/resolve (§8); safety incident → immediate owner alert + human line, never brain-only |
+| Account (deletion, security) | AUTO for deletion flow (§8); security/password/bank — NEVER |
+| Onboarding, Reinstate | AUTO state machine (§5) |
+| Driver mode | AUTO — same support brain, driver audience |
+
+### 14.5 Broker / shipper portal (app/partner)
+| Screen | Brain |
+|---|---|
+| Dashboard, My Loads, Requests | AUTO — posting help, missing fields, "why no carrier yet", match explanation |
+| Claims | PREP — collects facts, drafts the claim packet, owner decides (money/legal) |
+| Carriers, Network, Market Rates | AUTO — answers, verified-carrier explanations, rate from registry |
+| Agents & team | AUTO — invites, role questions |
+| Documents (onboarding) | AUTO — MC verify, activation (§5) |
+| Invoices | PREP — explain only |
+| API & Keys | AUTO — how-to answers only; never issues or reads keys |
+| Account | as carrier |
+| Trust scores (broker/shipper) | AUTO — explains; the score logic stays code |
+
+### 14.6 Dispatcher / referral-partner portal (app/agent)
+| Screen | Brain |
+|---|---|
+| Referral Home | AUTO — link kit, "how earnings work", pipeline nudges |
+| Dispatcher Workspace (Today/Board/Trucks/Bookings/Brokers/Money/Messages/Email/Packet/KPIs) | AUTO — §6 in full: booking checks, RC cross-check, bridge, email/WA triage, packet completeness, KPI explanation. **Money tab: PREP only** |
+| Choose Carrier, Carrier Fill | AUTO — assignment (14.3), fill prompts |
+| Skills test, Re-application gate | AUTO — grading stays code; brain explains the gap list and the reapply path |
+
+### 14.7 Investor & developer portals
+- Investor: **NEVER** for ledger, payments, statements, agreement (money + legal). Brain answers only "how does this screen work" through support.
+- Developer: AUTO for docs/how-to answers and webhook debugging explanations; **NEVER** creates/reads keys.
+
+### 14.8 Command Center (staff side) — where the brain is the worker
+| Group | AUTO | AUTO+OK | PREP | NEVER |
+|---|---|---|---|---|
+| Home: Today, Task queue, Deletion requests | Task queue drained by brain routes; deletion verify+purge | — | Today = the digest | — |
+| Loads: Load board, Dispatch, Trip, Control tower, Intake, Email loads, Smart matching, Market rates, Rate standards | intake parsing, email loads, matching explanations, trip comm, exception notes, weekly words draft | rate-standard edits | control-tower escalations | rate numbers themselves (owner edits registry) |
+| Carriers: Directory, Fleet, Scorecards, Contacts, Compliance/Onboarding, Document review, Carrier reminders | onboarding, doc verdicts (14.1), reminders, compliance check, scorecard explanations | gray docs, rejections | — | — |
+| Partners & People: Brokers & shippers, Partner intake, Broker trust/SLA, Dispatchers & agents, Phones, Riley, WhatsApp, Dispatcher email, Carrier requests, Referral partners & payouts, Referral program | intake, screening follow-ups, WA replies, dispatcher email triage, carrier requests routing, Riley scheduling (14.2), dispatcher mgmt (14.3) | dispatcher verdicts/stage moves, partnership replies | broker SLA breach summaries | **payouts** |
+| Money & Customers: Finance, Fee approvals, Finance analytics, Investors, Live chat, Mailbox, Support, CRM, Forms, Form builder | chat (§3), mailbox (§4), support (§8), CRM sequences + quotes (§7), form replies | — | finance explanations, fee-approval summaries, dispute drafts | **fee approvals, settlements, investors** |
+| Insights & Admin: BI, Analytics, Reports, Web analytics, Marketing intel, SEO, Content, Email catalog, Deliverability, Unsubscribes, Newsletter, Templates, Email builder, Campaigns, Audiences, Announcements, Automation rules, Workflows, Integrations, Settings, Staff, Brand kit, Flags, Audit, Health, Plugins | weekly report narratives, SEO/content drafts (Tuesday Routine stays), deliverability + signup-health alerts explained, unsub handling via `unsub_apply` | campaign sends, announcements, new automation rules | audit anomalies, health incidents | **staff & roles, flags, integrations/secrets, settings** |
+| Ungrouped: Radar, Booking requests, Safety desk, Account health, 360 pages, Verification, POD review, Exceptions, Notifications, Ops map, Comms, Outreach | booking-request checks (§6), account-health nudges, POD completeness check, exception triage, outreach replies | POD disputes | safety desk (human line always) | — |
+
+### 14.9 Public website (loadboot.com, `build_site.py`)
+- Chat widget on every page: §3.
+- Weekly numbers/words: brain drafts from Market data (§8), owner publishes — **AUTO+OK**. The build itself stays code.
+- Content: articles via the Tuesday Routine (sonnet) — unchanged; brain answers "is this fact still true" against `brain_facts` before publish — **AUTO**.
+- Forms (contact, quote, careers, partner): §7 — **AUTO** reply within minutes; careers → dispatcher hiring pipeline; partner → owner queue.
+- Never: pricing/terms/privacy text changes without the owner (legal).
+
+### 14.10 Scheduled jobs and channels
+- Existing pg_cron jobs stay as they are. The brain adds routes on top of their outputs (expiry reminders → compliance check; signup-health → vanished-user calls; lc-sla-alert → brain takes the chat if no human; outreach-daily → replies triaged). Enable the four commented-out jobs (`lb-lc-unanswered`, `lb-notif-gap-sweep`, `lb-carrier-reminders`, `lb_autopay_due`) only after their owner-side review — `lb_autopay_due` is money, owner decides.
+- Channels: WhatsApp (Telnyx WABA) — AUTO replies + templates through the catalog; SMS — transactional only, START/STOP untouched; push — brain may send through the outbox, never bypass it; Riley — 14.2; Telnyx softphone — recordings → call QA (§6).
