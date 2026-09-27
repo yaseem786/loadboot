@@ -21,6 +21,7 @@ import { renderRiley } from './views/riley.js';   // bl_voice_0458
 import { renderWhatsappLive } from './views/whatsappLive.js';
 import { renderDispatcherMail } from './views/dispatcherMail.js';
 import { renderCarrierRequests } from './views/carrierRequests.js';   // bl_disp_0457 — Carrier requests (pause / change-dispatcher)   // bl_dmail_0356 — Dispatcher email (company mailbox, no login)           // bl_dial_0351 — Phones & live calls
+import { renderCarrierChoices } from './views/carrierChoices.js';   // bl_disp_0481 — Carrier choices (candidate picked a carrier → Accept / Decline)
 import { renderDispatcher360 } from './views/dispatcher-360.js';   // bl_disp_0317 — Dispatcher 360 page
 import { renderCarriers } from './views/carriers.js';
 import { renderLoads } from './views/loads.js';
@@ -292,6 +293,8 @@ async function boot() {
       { id: 'whatsapp', label: 'WhatsApp', path: '/whatsapp', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderWhatsappLive(h) },
       { id: 'dmail', label: 'Dispatcher email', path: '/dispatcher-email', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDispatcherMail(h) },
       { id: 'creq', label: 'Carrier requests', path: '/carrier-requests', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderCarrierRequests(h) },
+      { id: 'choices', label: 'Carrier choices', path: '/carrier-choices', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h, q) => renderCarrierChoices(h, q),   // bl_disp_0481
+        keywords: 'carrier choice choices candidate picked fleet book accept decline trial assign dispatcher' },
       { id: 'agents', label: 'Referral partners & payouts', path: '/agents', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderAgents(h) },
       { id: 'referrals', label: 'Referral program', path: '/referrals', allowed: () => referralProgramEnabled && can('finance.view'), render: (h) => renderReferrals(h) },
     ] },
@@ -385,6 +388,7 @@ async function boot() {
     '/riley': tabbed('team', 'riley'),
     '/dispatcher-email': tabbed('team', 'dmail'),
     '/carrier-requests': tabbed('team', 'creq'),
+    '/carrier-choices': tabbed('team', 'choices'),   // bl_disp_0481
     '/dispatcher': ({ query }) => { setActive('/dispatchers'); guard(['carriers.approve', 'dispatch.manage'], () => renderDispatcher360(content, query))(); },   // bl_disp_0317
     '/fleet': tabbed('carriers', 'fleet'),
     '/fleet-expiry': tabbed('compliance', 'expiry'),

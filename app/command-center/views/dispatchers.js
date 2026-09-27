@@ -339,7 +339,7 @@ export function renderDispatchers(host) {
       el('div', { class: 'dq-act' }, [el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => byUser(b.dispatcher_user_id, b.id) }, 'Open')]),
     ]);
 
-    let head = '', list = [];
+    let head = '', list = [], headLink = null;   // bl_disp_0481: headLink → the dedicated screen for a filter
     if (state.dq === 'rc') {
       head = 'Rate confirmations waiting — approve from the RC, never from the summary';
       list = ap.map(rcRow);
@@ -390,6 +390,7 @@ export function renderDispatchers(host) {
       // bl_disp_0442: the candidate chose from the Fleet Book in their portal. Accept (on the 360, Carriers tab)
       // = trial terms + SOP + assignment in one step; Decline frees the carrier and the candidate picks again.
       head = 'Carrier choices waiting — Accept starts the trial and assigns the carrier in one step';
+      headLink = el('a', { class: 'lb-btn lb-btn-ghost', href: '#/carrier-choices' }, 'Open Carrier choices — decide all from one screen ›');   // bl_disp_0481
       const MK = { exact: ['EXACT MATCH', 'green'], partial: ['PARTIAL MATCH', 'amber'], related: ['RELATED CLASS', 'blue'], unknown: ['EQUIPMENT NOT ON FILE', 'violet'], none: ['OUTSIDE STATED EQUIPMENT', 'red'] };
       list = ch.map((c) => { const d = c.dispatcher || {}, cr = c.carrier || {}; const m = MK[c.match_kind] || [c.match_kind, 'violet']; return el('div', { class: 'dq-rc' }, [
         el('div', { class: 'dq-c1' }, [
@@ -405,6 +406,7 @@ export function renderDispatchers(host) {
       card([
         el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px' }, [
           el('div', { style: 'font-weight:800' }, head || 'Dispatch queue'),
+          headLink || '',
           el('span', { style: 'flex:1' }),
           el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => { state.comm = null; paintQueue(); } }, [icon('refresh', 14), ' Refresh']),
         ]),

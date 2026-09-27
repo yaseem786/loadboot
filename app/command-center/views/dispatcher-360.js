@@ -41,6 +41,7 @@ const daysBetween = (a, b) => Math.round((dAt(b) - dAt(a)) / 86400000);
 const workingDays = (a, b) => { let n = 0; const x = dAt(a); const e = dAt(b); while (x <= e) { const d = x.getDay(); if (d !== 0 && d !== 6) n++; x.setDate(x.getDate() + 1); } return n; };
 const initials = (n) => { const p = String(n || '').trim().split(/\s+/).filter(Boolean).slice(0, 2); return p.length ? p.map((w) => w[0]).join('').toUpperCase() : '?'; };
 const hue = (k) => { let h = 0; const s = String(k || ''); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return ['#7c3aed', '#0e7490', '#b45309', '#0f766e', '#9333ea', '#1d4ed8'][h % 6]; };
+export const CHOICE_MK = { exact: ['EXACT MATCH', 'green'], partial: ['PARTIAL MATCH', 'amber'], related: ['RELATED CLASS', 'blue'], unknown: ['EQUIPMENT NOT ON FILE', 'violet'], none: ['OUTSIDE STATED EQUIPMENT', 'red'] };   // bl_disp_0442 · exported for CC → Carrier choices (bl_disp_0481)
 const STL = { applied: ['Applied', 'violet'], screening: ['Screening', 'amber'], skills_test: ['Skills test', 'amber'], trial: ['Trial', 'blue'], verified: ['Verified', 'green'], active: ['Active', 'green'], suspended: ['Suspended', 'red'], rejected: ['Rejected', 'red'], withdrawn: ['Withdrawn', 'violet'] };
 const pill = (txt, tone, ic) => el('span', { class: 'd3-pill ' + (tone || '') }, [ic ? icon(ic, 12) : '', txt]);
 const stPill = (st) => { const m = STL[st] || [st || '—', '']; return pill(m[0], m[1]); };
@@ -270,6 +271,96 @@ function nextActions(dd, test, k, bookings, comm, go, act) {
 }
 
 // ---------------------------------------------------------------- page
+// ---- bl_disp_0481: shared Accept / Decline / SOP flow — used by the 360 (Carriers tab) AND by CC → Carrier choices.
+// One code path, so accepting from the queue behaves exactly like accepting on the profile.
+//   sopDrawer(a, onSave, opts)      a = { carrier_org_id, carrier, sop };  onSave(sop) → Promise<boolean> (true closes)
+//   choiceAcceptFlow(c, pp, userId, onDone)   c = a cc_dispatcher_choices row; pp = dispatcher profile (status, terms)
+//   choiceDeclineFlow(c, candidateName, onDone)
+export function sopDrawer(a, onSave, opts) {
+  style();
+  const assign = !!(opts && opts.assign);
+  const s = a.sop || {};
+  const prefsHint = el('div', { class: 'cc-sub', style: 'display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 10px;margin-bottom:10px;color:#1d4ed8;font-weight:600' });
+  (async () => { try {
+    const pr = await ccCarrierPrefs(a.carrier_org_id);
+    if (!pr || pr.error || pr.none) return;
+    const eb = pr.external_boards || {}; const bits = [];
+    if (eb.dat === 'active' || eb.truckstop === 'active') bits.push('Carrier has ' + [eb.dat === 'active' ? 'DAT' : null, eb.truckstop === 'active' ? 'Truckstop' : null].filter(Boolean).join(' + ') + ' — the dispatcher still uses their OWN board login, never the carrier’s');
+    if (!lanes.value && Array.isArray(pr.preferred_lanes) && pr.preferred_lanes.length) lanes.value = pr.preferred_lanes.join(', ');
+    if (!minRate.value && pr.min_rpm != null) { minRate.value = String(pr.min_rpm); bits.push('Floor pre-filled from the carrier’s own preference ($' + Number(pr.min_rpm).toFixed(2) + '/mi)'); }
+    if (!equipment.value && Array.isArray(pr.preferred_equipment) && pr.preferred_equipment.length) equipment.value = pr.preferred_equipment.join('/');
+    if (!homeTime.value && pr.home_time) homeTime.value = pr.home_time;
+    if (pr.weekend_ok === false) bits.push('No weekends'); if (pr.load_size) bits.push(pr.load_size + ' loads');
+    if (bits.length) { prefsHint.textContent = bits.join('  ·  '); prefsHint.style.display = 'block'; }
+  } catch (_) {} })();
+  const scopeType = el('select', { class: 'd3-in' }, [['geography', 'Geography (origin region)'], ['equipment', 'Equipment type'], ['commodity', 'Commodity / hazmat'], ['single', 'Single-carrier (no others)']].map(([v9, l9]) => el('option', { value: v9, selected: (s.scope_type || 'geography') === v9 ? '' : undefined }, l9)));
+  const scopeVal = el('input', { class: 'd3-in', value: s.scope_value || '', placeholder: 'e.g. "Origins in TX/OK/LA" or "Reefer only"' });
+  const lanes = el('input', { class: 'd3-in', value: s.lanes || '', placeholder: 'Preferred lanes (e.g. TX↔CA)' });
+  const minRate = el('input', { class: 'd3-in', type: 'number', step: '0.05', min: '0', value: s.min_rate != null && s.min_rate !== '' ? s.min_rate : '', placeholder: 'e.g. 2.10', style: 'max-width:140px' });
+  const minNote = el('input', { class: 'd3-in', value: s.min_rate_note || '', placeholder: 'e.g. $2.10/mi loaded, radius 1,000 mi, weekends home', style: 'flex:1' });
+  const equipment = el('input', { class: 'd3-in', value: s.equipment || '', placeholder: 'Equipment (van/reefer/flatbed)' });
+  const homeTime = el('input', { class: 'd3-in', value: s.home_time || '', placeholder: 'Home-time rule' });
+  const rules = el('textarea', { class: 'd3-in', style: 'min-height:70px' }, s.rules || '');
+  const err = el('div', { class: 'cc-sub', style: 'color:#dc2626;min-height:18px' });
+  const save = btn(assign ? 'Save SOP & assign' : 'Save SOP', async () => {
+    const mr = minRate.value === '' ? null : Number(minRate.value);
+    if (mr != null && !(mr >= 0 && mr < 20)) { err.textContent = 'Floor rate must be a number per mile (e.g. 2.10).'; return; }
+    if (mr == null && !(await askConfirm('No floor rate?', { body: 'Without a floor every booking passes the rate check. Continue?', danger: true }))) return;
+    const sop = { scope_type: scopeType.value, scope_value: scopeVal.value.trim(), lanes: lanes.value.trim(), min_rate: mr, min_rate_note: minNote.value.trim(), equipment: equipment.value.trim(), home_time: homeTime.value.trim(), rules: rules.value.trim(), rc_to_staff_first: true, driver_moves_only_after_approval: true };
+    const ok = await onSave(sop); if (ok) dr.close();
+  }, 'p', 'check');
+  const lab = (t) => el('label', { class: 'cc-sub', style: 'margin-top:8px;display:block' }, t);
+  const dr = openDrawer('SOP — ' + (a.carrier || 'carrier'), el('div', { class: 'cc-form', style: 'display:flex;flex-direction:column;gap:4px' }, [
+    el('div', { class: 'cc-sub', style: 'margin-bottom:6px;line-height:1.5' }, 'Scope basis keeps this carrier’s loads NON-overlapping with your other carriers — no load is ever "allocated" between carriers (FMCSA 88 FR 39371). The floor is what the rate check uses: a booking under it needs your written reason to approve.'),
+    prefsHint, lab('Scope basis (required for compliance)'), scopeType, scopeVal,
+    lab('Floor rate $/loaded mile (number)'), el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [minRate, minNote]),
+    lab('Lanes'), lanes, lab('Equipment'), equipment, lab('Home-time'), homeTime, lab('Do’s / don’ts'), rules, err,
+    el('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [save, btn('Cancel', () => dr.close())]),
+  ]), { subtitle: assign ? 'Assignment is created only after the SOP is saved' : 'The dispatcher sees the SOP in Trucks' });
+}
+export function choiceAcceptFlow(c, pp, userId, onDone) {
+  style();
+  const cr = c.carrier || {}; const done = () => { if (onDone) onDone(); };
+  const needsTerms = !['trial', 'verified', 'active'].includes(pp.status);
+  // step 2: the SOP (pre-filled from the carrier's own preferences), then the one-step accept
+  const sopStep = (note) => sopDrawer({ carrier_org_id: c.carrier_org_id, carrier: cr.name, sop: {} }, async (sop) => {
+    const r = await ccDispatcherChoiceDecide(c.id, 'accept', note, sop).catch((e) => ({ error: humanizeError(e) }));
+    if (r && r.error) { toast(r.error); return false; }
+    toast(r.trial_started ? '✓ Trial started + carrier assigned — candidate and carrier notified' : '✓ Carrier assigned — candidate and carrier notified');
+    if (r.warning) toast(r.warning);
+    done(); return true;
+  }, { assign: true });
+  if (!needsTerms) { sopStep(null); return; }
+  // step 1: the trial terms — the same rule as "Move to trial": no 0% trials by accident
+  const pct = el('input', { class: 'd3-in', type: 'number', step: '0.25', min: '0', max: '5', value: pp.commission_pct != null && Number(pp.commission_pct) > 0 ? pp.commission_pct : 2.5, style: 'max-width:110px' });
+  const today = new Date().toISOString().slice(0, 10);
+  const ts = el('input', { class: 'd3-in', type: 'date', value: pp.trial_start || today });
+  const te = el('input', { class: 'd3-in', type: 'date', value: pp.trial_end || addWorkingDays(today, 10) });
+  const note = el('textarea', { class: 'd3-in', rows: '3', style: 'width:100%;resize:vertical', placeholder: 'Optional — printed in the trial e-mail as "A note from LoadBoot". E.g. First check-in call Monday 9am ET.' });
+  const err = el('div', { class: 'cc-sub', style: 'color:#dc2626;min-height:18px' });
+  const goBtn = btn('Next — SOP for ' + (cr.name || 'the carrier'), async () => {
+    const p = Number(pct.value); if (!(p > 0 && p <= 5)) { err.textContent = 'Commission must be above 0 and at most 5%.'; return; }
+    if (!ts.value || !te.value || te.value < ts.value) { err.textContent = 'Set a valid trial window.'; return; }
+    const r = await ccDispatcherSetTerms(userId, p, ts.value, te.value).catch((e) => ({ error: humanizeError(e) }));
+    if (r && r.error) { err.textContent = r.error; return; }
+    dr.close(); sopStep(note.value.trim() || null);
+  }, 'p', 'play');
+  const dr = openDrawer('Accept the choice — trial terms first', el('div', { class: 'cc-form' }, [
+    el('p', { class: 'cc-sub', style: 'margin:0 0 10px;line-height:1.6' }, (pp.full_name || 'The candidate') + ' chose ' + (cr.name || 'a carrier') + '. Accepting does two things in one step: starts the commission-only trial with these terms, then assigns the carrier with the SOP you set next. The candidate gets the trial e-mail and the full carrier brief; the carrier gets the intro.'),
+    el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [el('span', { class: 'cc-sub' }, '% of gross'), pct, el('span', { class: 'cc-sub' }, 'from'), ts, el('span', { class: 'cc-sub' }, 'to'), te]),
+    el('div', { class: 'cc-sub', style: 'margin:13px 0 5px' }, 'A note from LoadBoot — optional.'), note, err,
+    el('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [goBtn, btn('Cancel', () => dr.close())]),
+  ]), { subtitle: 'Step 1 of 2 · terms are recorded in the terms log' });
+}
+export async function choiceDeclineFlow(c, candidateName, onDone) {
+  const cr = c.carrier || {};
+  const reason = await askReason('Decline ' + (cr.name || 'this carrier') + ' for ' + (candidateName || 'the candidate') + '? The candidate reads this and chooses again.');
+  if (reason === null) return;
+  const r = await ccDispatcherChoiceDecide(c.id, 'decline', reason || null, null).catch((e) => ({ error: humanizeError(e) }));
+  if (r && r.error) { toast(r.error); return; }
+  toast('✓ Declined — the carrier is free and the candidate was told to choose again'); if (onDone) onDone();
+}
+
 export async function renderDispatcher360(host, query) {
   style();
   const id = query && query.get('id');
@@ -539,48 +630,13 @@ export async function renderDispatcher360(host, query) {
       if (sel) state.carriers.forEach((c) => sel.appendChild(el('option', { value: c.id }, c.name || c.id)));
     } catch (e) { /* leave empty */ }
   }
+  // bl_disp_0481: the SOP drawer is module-level (sopDrawer) so CC → Carrier choices runs the identical flow.
   function editSop(a, onSave) {
-    const s = a.sop || {};
-    const prefsHint = el('div', { class: 'cc-sub', style: 'display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 10px;margin-bottom:10px;color:#1d4ed8;font-weight:600' });
-    (async () => { try {
-      const pr = await ccCarrierPrefs(a.carrier_org_id);
-      if (!pr || pr.error || pr.none) return;
-      const eb = pr.external_boards || {}; const bits = [];
-      if (eb.dat === 'active' || eb.truckstop === 'active') bits.push('Carrier has ' + [eb.dat === 'active' ? 'DAT' : null, eb.truckstop === 'active' ? 'Truckstop' : null].filter(Boolean).join(' + ') + ' — the dispatcher still uses their OWN board login, never the carrier’s');
-      if (!lanes.value && Array.isArray(pr.preferred_lanes) && pr.preferred_lanes.length) lanes.value = pr.preferred_lanes.join(', ');
-      if (!minRate.value && pr.min_rpm != null) { minRate.value = String(pr.min_rpm); bits.push('Floor pre-filled from the carrier’s own preference ($' + Number(pr.min_rpm).toFixed(2) + '/mi)'); }
-      if (!equipment.value && Array.isArray(pr.preferred_equipment) && pr.preferred_equipment.length) equipment.value = pr.preferred_equipment.join('/');
-      if (!homeTime.value && pr.home_time) homeTime.value = pr.home_time;
-      if (pr.weekend_ok === false) bits.push('No weekends'); if (pr.load_size) bits.push(pr.load_size + ' loads');
-      if (bits.length) { prefsHint.textContent = bits.join('  ·  '); prefsHint.style.display = 'block'; }
-    } catch (_) {} })();
-    const scopeType = el('select', { class: 'd3-in' }, [['geography', 'Geography (origin region)'], ['equipment', 'Equipment type'], ['commodity', 'Commodity / hazmat'], ['single', 'Single-carrier (no others)']].map(([v9, l9]) => el('option', { value: v9, selected: (s.scope_type || 'geography') === v9 ? '' : undefined }, l9)));
-    const scopeVal = el('input', { class: 'd3-in', value: s.scope_value || '', placeholder: 'e.g. "Origins in TX/OK/LA" or "Reefer only"' });
-    const lanes = el('input', { class: 'd3-in', value: s.lanes || '', placeholder: 'Preferred lanes (e.g. TX↔CA)' });
-    const minRate = el('input', { class: 'd3-in', type: 'number', step: '0.05', min: '0', value: s.min_rate != null && s.min_rate !== '' ? s.min_rate : '', placeholder: 'e.g. 2.10', style: 'max-width:140px' });
-    const minNote = el('input', { class: 'd3-in', value: s.min_rate_note || '', placeholder: 'e.g. $2.10/mi loaded, radius 1,000 mi, weekends home', style: 'flex:1' });
-    const equipment = el('input', { class: 'd3-in', value: s.equipment || '', placeholder: 'Equipment (van/reefer/flatbed)' });
-    const homeTime = el('input', { class: 'd3-in', value: s.home_time || '', placeholder: 'Home-time rule' });
-    const rules = el('textarea', { class: 'd3-in', style: 'min-height:70px' }, s.rules || '');
-    const err = el('div', { class: 'cc-sub', style: 'color:#dc2626;min-height:18px' });
-    const save = btn(onSave ? 'Save SOP & assign' : 'Save SOP', async () => {
-      const mr = minRate.value === '' ? null : Number(minRate.value);
-      if (mr != null && !(mr >= 0 && mr < 20)) { err.textContent = 'Floor rate must be a number per mile (e.g. 2.10).'; return; }
-      if (mr == null && !(await askConfirm('No floor rate?', { body: 'Without a floor every booking passes the rate check. Continue?', danger: true }))) return;
-      const sop = { scope_type: scopeType.value, scope_value: scopeVal.value.trim(), lanes: lanes.value.trim(), min_rate: mr, min_rate_note: minNote.value.trim(), equipment: equipment.value.trim(), home_time: homeTime.value.trim(), rules: rules.value.trim(), rc_to_staff_first: true, driver_moves_only_after_approval: true };
-      if (onSave) { const ok = await onSave(sop); if (ok) dr.close(); return; }
+    return sopDrawer(a, onSave || (async (sop) => {
       const r = await ccDispatcherSop(a.id, sop).catch((e) => ({ error: humanizeError(e) }));
-      if (r && r.error) { err.textContent = r.error; return; }
-      dr.close(); toast('✓ SOP saved — the dispatcher sees it in Trucks'); rerender('dd');
-    }, 'p', 'check');
-    const lab = (t) => el('label', { class: 'cc-sub', style: 'margin-top:8px;display:block' }, t);
-    const dr = openDrawer('SOP — ' + (a.carrier || 'carrier'), el('div', { class: 'cc-form', style: 'display:flex;flex-direction:column;gap:4px' }, [
-      el('div', { class: 'cc-sub', style: 'margin-bottom:6px;line-height:1.5' }, 'Scope basis keeps this carrier’s loads NON-overlapping with your other carriers — no load is ever "allocated" between carriers (FMCSA 88 FR 39371). The floor is what the rate check uses: a booking under it needs your written reason to approve.'),
-      prefsHint, lab('Scope basis (required for compliance)'), scopeType, scopeVal,
-      lab('Floor rate $/loaded mile (number)'), el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [minRate, minNote]),
-      lab('Lanes'), lanes, lab('Equipment'), equipment, lab('Home-time'), homeTime, lab('Do’s / don’ts'), rules, err,
-      el('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [save, btn('Cancel', () => dr.close())]),
-    ]), { subtitle: onSave ? 'Assignment is created only after the SOP is saved' : 'The dispatcher sees the SOP in Trucks' });
+      if (r && r.error) { toast(r.error); return false; }
+      toast('✓ SOP saved — the dispatcher sees it in Trucks'); rerender('dd'); return true;
+    }), { assign: !!onSave });
   }
   function assignPicker() {
     const pp = state.dd.profile;
@@ -599,48 +655,8 @@ export async function renderDispatcher360(host, query) {
     return el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [sel, b, el('span', { class: 'd3-mut', style: 'font-size:11.8px' }, 'The carrier gets an e-mail + a confirm card in their portal saying exactly what the dispatcher can see — never bank details. They can pause the dispatcher themselves.')]);
   }
   // ---- bl_disp_0442: the candidate's carrier choice (from the Fleet Book in their portal)
-  const CHOICE_MK = { exact: ['EXACT MATCH', 'green'], partial: ['PARTIAL MATCH', 'amber'], related: ['RELATED CLASS', 'blue'], unknown: ['EQUIPMENT NOT ON FILE', 'violet'], none: ['OUTSIDE STATED EQUIPMENT', 'red'] };
-  function acceptChoice(c) {
-    const pp = state.dd.profile; const cr = c.carrier || {};
-    const needsTerms = !['trial', 'verified', 'active'].includes(pp.status);
-    // step 2: the SOP (pre-filled from the carrier's own preferences), then the one-step accept
-    const sopStep = (note) => editSop({ carrier_org_id: c.carrier_org_id, carrier: cr.name, sop: {} }, async (sop) => {
-      const r = await ccDispatcherChoiceDecide(c.id, 'accept', note, sop).catch((e) => ({ error: humanizeError(e) }));
-      if (r && r.error) { toast(r.error); return false; }
-      toast(r.trial_started ? '✓ Trial started + carrier assigned — candidate and carrier notified' : '✓ Carrier assigned — candidate and carrier notified');
-      if (r.warning) toast(r.warning);
-      rerender(); return true;
-    });
-    if (!needsTerms) { sopStep(null); return; }
-    // step 1: the trial terms — the same rule as "Move to trial": no 0% trials by accident
-    const pct = el('input', { class: 'd3-in', type: 'number', step: '0.25', min: '0', max: '5', value: pp.commission_pct != null && Number(pp.commission_pct) > 0 ? pp.commission_pct : 2.5, style: 'max-width:110px' });
-    const today = new Date().toISOString().slice(0, 10);
-    const ts = el('input', { class: 'd3-in', type: 'date', value: pp.trial_start || today });
-    const te = el('input', { class: 'd3-in', type: 'date', value: pp.trial_end || addWorkingDays(today, 10) });
-    const note = el('textarea', { class: 'd3-in', rows: '3', style: 'width:100%;resize:vertical', placeholder: 'Optional — printed in the trial e-mail as "A note from LoadBoot". E.g. First check-in call Monday 9am ET.' });
-    const err = el('div', { class: 'cc-sub', style: 'color:#dc2626;min-height:18px' });
-    const goBtn = btn('Next — SOP for ' + (cr.name || 'the carrier'), async () => {
-      const p = Number(pct.value); if (!(p > 0 && p <= 5)) { err.textContent = 'Commission must be above 0 and at most 5%.'; return; }
-      if (!ts.value || !te.value || te.value < ts.value) { err.textContent = 'Set a valid trial window.'; return; }
-      const r = await ccDispatcherSetTerms(id, p, ts.value, te.value).catch((e) => ({ error: humanizeError(e) }));
-      if (r && r.error) { err.textContent = r.error; return; }
-      dr.close(); sopStep(note.value.trim() || null);
-    }, 'p', 'play');
-    const dr = openDrawer('Accept the choice — trial terms first', el('div', { class: 'cc-form' }, [
-      el('p', { class: 'cc-sub', style: 'margin:0 0 10px;line-height:1.6' }, (pp.full_name || 'The candidate') + ' chose ' + (cr.name || 'a carrier') + '. Accepting does two things in one step: starts the commission-only trial with these terms, then assigns the carrier with the SOP you set next. The candidate gets the trial e-mail and the full carrier brief; the carrier gets the intro.'),
-      el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [el('span', { class: 'cc-sub' }, '% of gross'), pct, el('span', { class: 'cc-sub' }, 'from'), ts, el('span', { class: 'cc-sub' }, 'to'), te]),
-      el('div', { class: 'cc-sub', style: 'margin:13px 0 5px' }, 'A note from LoadBoot — optional.'), note, err,
-      el('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [goBtn, btn('Cancel', () => dr.close())]),
-    ]), { subtitle: 'Step 1 of 2 · terms are recorded in the terms log' });
-  }
-  async function declineChoice(c) {
-    const cr = c.carrier || {};
-    const reason = await askReason('Decline ' + (cr.name || 'this carrier') + ' for ' + (state.dd.profile.full_name || 'the candidate') + '? The candidate reads this and chooses again.');
-    if (reason === null) return;
-    const r = await ccDispatcherChoiceDecide(c.id, 'decline', reason || null, null).catch((e) => ({ error: humanizeError(e) }));
-    if (r && r.error) { toast(r.error); return; }
-    toast('✓ Declined — the carrier is free and the candidate was told to choose again'); rerender();
-  }
+  function acceptChoice(c) { choiceAcceptFlow(c, state.dd.profile, id, () => rerender()); }
+  function declineChoice(c) { choiceDeclineFlow(c, state.dd.profile.full_name, () => rerender()); }
   function choiceCards() {
     const pend = (state.choices || []).filter((c) => c.status === 'pending');
     return pend.map((c) => {
