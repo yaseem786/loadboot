@@ -73,6 +73,13 @@ Verification checklist to re-run each time (staging AND prod):
 Resend inbound routes could not be read from this session (no Resend API access here); the DB evidence says the same
 thing as on the 27th: only `loads@` reaches `inbound-mail`. Owner confirms in Resend → Receiving before §4.
 
+**§1 correction (27 Sep 2026, session 3, after `bl_mail_0471` on prod):** the "86 system/postmaster" mail is not 86
+different things. Filed by `mail_classify` on the 93 prod rows: **75 `forwarder_rewrite`** (the Namecheap forwarder
+rewrites the sender to `postmaster@*.jellyfish.systems` — every one of them a notification, a receipt or a password
+reset; the real sender is gone), **10 `own_copy`** (our own outbound copies and `[TEST → …]` sends), 3 `noreply`,
+1 `bounce`, 1 `receipt`, and **3 `human`** (Apple developer support, a carrier reply, a broker). 7 senders arrived as
+SRS (`srs0=…@fwd.privateemail.com`) and are now unwrapped to the real address. Inbox = 3 threads, 1 unread.
+
 ---
 
 ## §2 Foundation — `brain` core (one function, one queue, one audit log)
@@ -167,6 +174,27 @@ Mailbox screen (CC, `openDrawer` for previews, no new side drawer):
 
 Staging gate: 40 seeded inbound emails across the six classes. 100% of legal-money/partner held; 0 replies to a suppressed address (check `email_blocked_log`); all system mail in `system`; every sent reply has a catalog row.
 
+**Build notes — plumbing step 2, `migrations/bl_mail_0471_system_folder.sql` (staging 27 Sep 2026 01:44 UTC; prod 27 Sep 2026, session 3):**
+
+- `mail_messages.folder` (`inbox` | `system`, not null, default `inbox`), `mail_class` (why), `envelope_from` (the raw
+  SRS sender when unwrapped). `app_private.mail_unwrap_srs`, `mail_decode_words` (RFC 2047 subjects),
+  `mail_classify(from, subject, body)` — all `app_private`, revoked from public/anon/authenticated.
+- `cc_mail_ingest` unwraps SRS, classifies, files, auto-reads `system`, and raises the staff in-app notification only
+  for `inbox`. Still service_role-only (asserted). `cc_mail_stats` counts the inbox only and adds `system` /
+  `system_30d`; `cc_mail_list(..., p_folder default 'inbox')` (`system` | `all` on request; old 4-arg signature
+  dropped); new `cc_mail_set_folder(thread, folder)` for staff (comm.manage), audited as `comm.mail_folder_set`.
+- Backfill on prod: 93 inbound rows → inbox 3 (1 unread) / system 90 (75 forwarder_rewrite, 10 own_copy, 3 noreply,
+  1 bounce, 1 receipt); 7 SRS senders unwrapped. Every row has a folder. Staging: 0 rows, functions + self-tests only.
+- anon SECURITY DEFINER surface after: **prod 36, staging 35, names identical to the baseline** (the migration
+  refuses to commit otherwise).
+- CC Mailbox (`app/command-center/views/mailbox.js`): folder switch Inbox / System / All, a System KPI tile (click =
+  open the folder), class pill on system rows, "Move to System" / "Move to Inbox" on a thread (comm.manage).
+  `api.mailList` passes `folder`; new `api.mailSetFolder`.
+- Known gap, not this migration's: when the Namecheap forwarder rewrites a sender to `postmaster@*.jellyfish.systems`
+  the real address is lost before we see it, so such a mail is filed `system` even if a human wrote it. On prod all
+  75 were machine mail. The fix is plumbing step 1 (route hello@/dispatch@ to the Cloudflare worker directly, so
+  `inbound-mail` sees the original sender) — after it, watch `mail_class = 'forwarder_rewrite'` for a week.
+
 ---
 
 ## §5 Onboarding A→Z (per role)
@@ -254,6 +282,8 @@ Each step: staging → gate above → owner reads the staging evidence → prod 
 1. §1 re-verify (both DBs) — 1 session
 2. §2 core (migration + `brain` function + cap + kill switch) — 1–2 sessions
 3. §4 plumbing only (hello@/dispatch@ routing, system-mail filter) — this alone fixes the Mailbox counters — 1 session
+   — system-mail filter **done on prod 27 Sep 2026** (`bl_mail_0471`); hello@/dispatch@ routing is the owner's
+   dashboard step (Namecheap forward → `*@in.loadboot.com`, Cloudflare Email Routing → the `inbound-mail` worker).
 4. §3 live chat on Claude — 1–2 sessions
 5. §4 brain on email + Mailbox screen — 2 sessions
 6. §5 carrier onboarding, then dispatcher hiring, then agent, then broker/shipper — 3–4 sessions

@@ -726,7 +726,9 @@ export const mailList = (o = {}) => rpc('cc_mail_list', {
   p_mailbox: o.mailbox ?? null,
   p_search: o.search ?? null,
   p_before: o.before ?? null,
+  p_folder: o.folder || 'inbox',            // inbox (default) | system | all — bl_mail_0471
 });
+export const mailSetFolder = (thread, folder) => rpc('cc_mail_set_folder', { p_thread: thread, p_folder: folder });
 export const mailThread = (thread, markRead = true) => rpc('cc_mail_thread', { p_thread: thread, p_mark_read: markRead !== false });
 export const mailMark = (thread, read = true) => rpc('cc_mail_mark', { p_thread: thread, p_read: read !== false });
 export const mailDraftSave = (thread, bodyHtml) => rpc('cc_mail_draft_save', { p_thread: thread, p_body_html: bodyHtml });

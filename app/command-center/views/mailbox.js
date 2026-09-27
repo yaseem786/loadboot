@@ -25,7 +25,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, searchBox, fmtDateTime, ago, askConfirm } from '../../shared/ui/components.js';
-import { mailList, mailThread, mailMark, mailDraftSave, mailDraftDiscard, mailSend, mailStats } from '../../shared/api.js';
+import { mailList, mailThread, mailMark, mailDraftSave, mailDraftDiscard, mailSend, mailStats, mailSetFolder } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 import { decodeMessage, decodeSubject, previewOf } from '../../shared/mime.js';
@@ -44,6 +44,7 @@ export function renderMailbox(host, initialThread) {
     threads: [],
     nextBefore: null,
     mailbox: '',
+    folder: 'inbox',          // inbox | system | all  (bl_mail_0471: system = bounces, receipts, our own copies)
     search: '',
     openThread: initialThread || null,
     canSend: false,
@@ -59,6 +60,13 @@ export function renderMailbox(host, initialThread) {
     el('option', { value: '' }, 'All mailboxes'));
   mailboxSel.onchange = () => { S.mailbox = mailboxSel.value; reload(); };
 
+  const folderSel = el('select', { class: 'cc-input', style: 'max-width:200px', title: 'Inbox = a human may be waiting. System = bounces, receipts, our own copies, forwarder rewrites — filed automatically, never counted as unread.' }, [
+    el('option', { value: 'inbox' },  'Inbox'),
+    el('option', { value: 'system' }, 'System'),
+    el('option', { value: 'all' },    'All folders'),
+  ]);
+  folderSel.onchange = () => { S.folder = folderSel.value; S.openThread = null; reload(true); };
+
   mount(host, el('div', null, [
     sectionHead('Mailbox',
       'Shared inbound mail (loads@, dispatch@, billing@ …). Replies are saved as drafts — nothing leaves LoadBoot until someone with send rights presses Send.',
@@ -69,6 +77,7 @@ export function renderMailbox(host, initialThread) {
   ]));
 
   mount(filterBar, [
+    folderSel,
     mailboxSel,
     searchBox('Search subject, sender or body…', (q) => { S.search = q || ''; reload(); }),
   ]);
@@ -82,11 +91,13 @@ export function renderMailbox(host, initialThread) {
     try { s = await mailStats(); } catch (_) { return; }          // KPIs are decoration, never fatal
     S.canSend = !!(s && s.can_send);
     mount(kpis, el('div', { class: 'cc-kpi-grid' }, [
-      statCard({ icon: 'list',  label: 'Threads', value: String(s?.threads ?? 0), sub: 'all mailboxes', accent: 'blue' }),
-      statCard({ icon: 'bell',  label: 'Unread',  value: String(s?.unread  ?? 0), sub: 'need a reply',  accent: (s?.unread ? 'amber' : 'green') }),
+      statCard({ icon: 'list',  label: 'Inbox',   value: String(s?.threads ?? 0), sub: 'threads, all mailboxes', accent: 'blue' }),
+      statCard({ icon: 'bell',  label: 'Unread',  value: String(s?.unread  ?? 0), sub: 'humans waiting on us', accent: (s?.unread ? 'amber' : 'green') }),
       statCard({ icon: 'doc',   label: 'Drafts',  value: String(s?.drafts  ?? 0), sub: 'not sent',      accent: 'violet' }),
       statCard({ icon: 'check', label: 'Sent',    value: String(s?.sent    ?? 0), sub: 'from the CC',   accent: 'green' }),
+      statCard({ icon: 'list',  label: 'System',  value: String(s?.system  ?? 0), sub: (s?.system_30d ?? 0) + ' in 30 d · auto-filed', onClick: () => { S.folder = 'system'; folderSel.value = 'system'; S.openThread = null; reload(); } }),
     ]));
+    folderSel.value = S.folder;
 
     const boxes = Array.isArray(s?.mailboxes) ? s.mailboxes : [];
     const keep = mailboxSel.value;
@@ -110,7 +121,7 @@ export function renderMailbox(host, initialThread) {
     S.loading = true;
     let res;
     try {
-      res = await mailList({ limit: PAGE, mailbox: S.mailbox || null, search: S.search || null, before: S.nextBefore });
+      res = await mailList({ limit: PAGE, mailbox: S.mailbox || null, search: S.search || null, before: S.nextBefore, folder: S.folder });
     } catch (e) {
       S.loading = false;
       showError(listHost, humanizeError(e), () => reload(true));
@@ -128,6 +139,8 @@ export function renderMailbox(host, initialThread) {
     if (!S.threads.length) {
       showEmpty(listHost, S.search || S.mailbox
         ? 'No mail matches this filter.'
+        : S.folder === 'system' ? 'Nothing in System. Bounces, receipts and our own copies land here automatically.'
+        : S.folder === 'inbox'  ? 'Inbox is clear — nobody is waiting on a reply. Auto-filed mail is under System.'
         : 'No mail has been ingested yet. Inbound mail arrives via cc_mail_ingest.');
       return;
     }
@@ -147,6 +160,9 @@ export function renderMailbox(host, initialThread) {
           : ''),
         el('div', { class: 'cc-mail-tags' }, [
           el('span', { class: 'cc-pill cc-pill-gray' }, t.mailbox || '—'),
+          (t.folder === 'system' || S.folder === 'all') && t.mail_class
+            ? el('span', { class: 'cc-pill cc-pill-gray', title: 'Why it was filed here (bl_mail_0471)' },
+                (t.folder === 'system' ? 'system · ' : '') + String(t.mail_class).replace(/_/g, ' ')) : null,
           unread ? el('span', { class: 'cc-pill cc-pill-amber' }, unread + ' unread') : null,
           t.has_draft ? el('span', { class: 'cc-pill cc-pill-violet' }, 'draft') : null,
           Number(t.msg_count) > 1 ? el('span', { class: 'cc-sub' }, t.msg_count + ' messages') : null,
@@ -207,6 +223,18 @@ export function renderMailbox(host, initialThread) {
             try { await mailMark(key, false); toast('Marked unread', 'success'); loadStats(); reload(); }
             catch (e) { toast(humanizeError(e), 'error'); }
           } }, 'Mark unread'),
+          (() => {
+            // Folder move (bl_mail_0471). The list row carries the folder; the thread RPC does not.
+            const cur = (S.threads.find(t => t.thread_key === key) || {}).folder || 'inbox';
+            const to  = cur === 'system' ? 'inbox' : 'system';
+            return S.canSend ? el('button', {
+              class: 'lb-btn lb-btn-sm',
+              title: to === 'system' ? 'Not a customer — file it away, it stops counting as unread.' : 'A human is waiting — bring it back to the Inbox.',
+              onClick: async () => {
+                try { await mailSetFolder(key, to); toast(to === 'system' ? 'Moved to System' : 'Moved to Inbox', 'success'); S.openThread = null; reload(true); }
+                catch (e) { toast(humanizeError(e), 'error'); }
+              } }, to === 'system' ? 'Move to System' : 'Move to Inbox') : null;
+          })(),
           lastIn.peer_email ? el('a', {
             class: 'lb-btn lb-btn-sm',
             href: 'mailto:' + encodeURIComponent(lastIn.peer_email)
