@@ -200,3 +200,13 @@ _send_confirm / _preview / _set`) are revoked from public + anon and the migrati
 anon-executable. Staging name-level check after apply: **33 → 35**, the only added names are the two above.
 **Prod applied 26 Sep 2026** (`bl_comm_0447_newsletter_double_optin`): **34 → 36**, the only added names are the two
 above; the other 34 names hash identically to before (`d98c0b18…`); `app_private` usage for anon still false. CLAUDE.md §4 reads 36/35.
+
+## 27 Sep 2026 — Ops Brain 0470 / 0472 / 0473 on prod: 36 → 36, names identical
+
+`bl_brain_0470_core`, `bl_brain_0472_control`, `bl_brain_0473_chat` applied to prod in that order. Each file snapshots the
+anon-executable SECURITY DEFINER names at its top and raises at its bottom if a single name was added or removed, so a
+failed assertion would have rolled the file back. Read back by hand after each: **36** names, md5 of the sorted
+comma-joined list unchanged before and after all three. `public.brain_rpc` is service_role only (anon and
+authenticated both false); the fifteen `cc_brain_*` functions all have anon=false. `lc_brain_write` was re-created by
+0473 with the same signature and ACL and is still on the list. Staging: 35 → 35 for the same three files.
+

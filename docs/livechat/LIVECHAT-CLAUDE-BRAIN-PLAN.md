@@ -155,6 +155,8 @@ or a promise. Then `select * from app_private.brain_findings;` to see what the b
 
 ## §3 Live chat (replaces `lc-brain` Gemini)
 
+**Status 27 Sep 2026:** shipped as `bl_brain_0473_chat` — staging gate passed, prod applied with `source.chat` live but OFF (Gemini stays the fallback engine). Evidence and what is left (CC "AI suggested reply", brain-vs-human stats) in `claude/BRAIN-CHAT-0473.md`.
+
 - `lc_brain_dispatch` enqueues a `brain_jobs` row (source `chat`) instead of calling Gemini. Fallback chain: Claude → (cap/outage) Gemini `lc-brain` v4 → exact-phrase KB → honest escalate. Never a fuzzy answer.
 - Context: last 20 messages, `visitor_role`, `lead_stage`, signed-in account block (compliance rows, trucks, payments), `staff_online`, page the visitor is on, prior conversations by the same `visitor_key`/email (memory).
 - The brain may: answer, capture name/email/MC, `create_lead`, send the signup link, `schedule_riley_call`, hand off to a human with a summary. It never promises a person who is not there.
