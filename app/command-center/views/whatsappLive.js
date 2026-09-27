@@ -451,7 +451,7 @@ function waLightbox(url) {
 
 // ---- per-browser list state (pin / mute / favorites / unread mark / lists / clear / delete) ----
 const LS = 'lb.cc.wa.ui.v1';
-const U0 = () => ({ pin: {}, fav: {}, mute: {}, unr: {}, del: {}, clr: {}, lists: {} });
+const U0 = () => ({ pin: {}, fav: {}, mute: {}, unr: {}, del: {}, clr: {}, lists: {}, seen: {} });
 function uLoad() {
   try { const v = JSON.parse(localStorage.getItem(LS) || 'null'); const u = U0(); if (v && typeof v === 'object') for (const k in u) if (v[k] && typeof v[k] === 'object') u[k] = v[k]; return u; }
   catch (_) { return U0(); }
@@ -477,7 +477,23 @@ export async function renderWhatsappLive(host) {
   const cur = () => { const a = byId(open); const b = thr && thr.thread && thr.thread.id === open ? thr.thread : null; return a && b ? Object.assign({}, b, a) : (a || b); };
   const tName = (t) => (t.who && t.who.name) || t.contact_name || pretty(t.number);
   const isMuted = (id) => { const m = U.mute[id]; return m != null && (m === -1 || m > Date.now()); };
-  const isUnr = (t) => (t.unread > 0) || !!U.unr[t.id];
+  // bl_wa_0475 — the server's unread counter belongs to the chat's OWNER: wa_thread only clears it when the owner
+  // opens the chat, so a dispatcher's own badge is not wiped by staff looking in. What THIS staff member has seen is
+  // kept here instead: { at: last_at when seen, n: server unread when seen }. Only messages after that count.
+  const unreadN = (t) => {
+    const n = t.unread || 0, s = U.seen[t.id];
+    if (!n) return 0;
+    if (!s) return n;
+    if (!t.last_at || (s.at && new Date(t.last_at).getTime() <= new Date(s.at).getTime())) return 0;
+    return n > s.n ? n - s.n : n < s.n ? n : 0;   // n < s.n: the owner read it since, so these are all new
+  };
+  const isUnr = (t) => unreadN(t) > 0 || !!U.unr[t.id];
+  function markSeen(t) {
+    if (!t) return;
+    const at = t.last_at || null, n = t.unread || 0, s = U.seen[t.id];
+    if (s && s.at === at && s.n === n) return;
+    U.seen[t.id] = { at, n }; uSave();
+  }
   const isDel = (t) => U.del[t.id] != null && !(t.last_at && new Date(t.last_at).getTime() > U.del[t.id]);
   const PILL = { dispatcher: { trial: '#0883F7', active: '#15803d', verified: '#15803d' }, carrier: '#10223B', driver: '#0f766e' };
   const whoColor = (w) => w.kind === 'dispatcher' ? (PILL.dispatcher[w.status] || '#64748b') : (PILL[w.kind] || '#64748b');
@@ -573,9 +589,8 @@ export async function renderWhatsappLive(host) {
   function mute(t, ms) { U.mute[t.id] = ms === -1 ? -1 : Date.now() + ms; uSave(); paintSide(); paintMain(); toast('Notifications muted'); }
   function unmute(t) { delete U.mute[t.id]; uSave(); paintSide(); paintMain(); toast('Notifications unmuted'); }
   async function markRead(t) {
-    delete U.unr[t.id]; uSave();
-    if (t.unread > 0) { try { await waThread(t.id); t.unread = 0; } catch (e) { toast(humanizeError(e)); } }
-    paintSide(); paintRail(); load(true);
+    delete U.unr[t.id]; markSeen(t); uSave();
+    paintSide(); paintRail();
   }
   function markUnread(t) { U.unr[t.id] = true; uSave(); if (open === t.id) closeChat(); else { paintSide(); paintRail(); } }
   function inList(name, id) { return (U.lists[name] || []).includes(id); }
@@ -725,7 +740,7 @@ export async function renderWhatsappLive(host) {
             t.needs_reply ? el('span', { class: 'wx-wt' + (late ? ' r' : ''), title: 'Waiting on us' }, wait(t.waiting_min)) : null,
             muted ? sv('mute', 18) : null,
             U.pin[t.id] && t.status === 'open' ? sv('pin', 18) : null,
-            unr ? el('span', { class: 'wx-badge' + (muted ? ' mu' : '') + (t.unread > 0 ? '' : ' e') }, t.unread > 0 ? String(t.unread) : '') : null,
+            unr ? el('span', { class: 'wx-badge' + (muted ? ' mu' : '') + (unreadN(t) > 0 ? '' : ' e') }, unreadN(t) > 0 ? String(unreadN(t)) : '') : null,
             el('button', { class: 'wx-chev', type: 'button', 'aria-label': 'Chat options', onClick: (e) => menuAt(e, chatItems(t), r) }, sv('down', 22)),
           ]),
         ]),
@@ -739,7 +754,7 @@ export async function renderWhatsappLive(host) {
       { ic: 'newchat', label: 'New chat', on: () => { side = 'new'; paintSide(); } },
       { ic: 'archive', label: 'Archived', on: () => { side = 'archived'; paintSide(); } },
       { ic: 'list', label: 'New list', on: () => newList(null) },
-      { ic: 'unread', label: 'Mark all as read', on: () => { const l = threads().filter((t) => isUnr(t)); l.forEach((t) => { delete U.unr[t.id]; }); uSave(); Promise.all(l.filter((t) => t.unread > 0).map((t) => waThread(t.id).catch(() => null))).then(() => load(true)); paintSide(); } },
+      { ic: 'unread', label: 'Mark all as read', on: () => { const l = threads().filter((t) => isUnr(t)); l.forEach((t) => { delete U.unr[t.id]; markSeen(t); }); uSave(); paintSide(); paintRail(); } },
       { ic: 'refresh', label: 'Refresh', on: () => load(false) },
       { sep: true },
       { ic: 'tpl', label: 'Templates', on: () => { rail = 'tpl'; paintLayout(); } },
@@ -1275,8 +1290,7 @@ export async function renderWhatsappLive(host) {
     if (rec) { try { rec.stop(); } catch (_) {} }
     clearPend();
     open = id; thr = null; findQ = null; infoOpen = false; trayOpen = false; emoOpen = false; tplName = ''; tplVars = [];
-    delete U.unr[id]; uSave();
-    const t = byId(id); if (t) t.unread = 0;
+    delete U.unr[id]; uSave(); markSeen(byId(id));
     paintSide(); paintRail();
     buildChat();
     mount(built.msgs, el('div', { class: 'wx-day', style: 'position:static' }, 'Loading…'));
@@ -1291,7 +1305,7 @@ export async function renderWhatsappLive(host) {
       const r = await waThread(id);
       if (r && r.error) throw new Error(r.error);
       if (open !== id) return;
-      thr = r; paintMain();
+      thr = r; markSeen(cur()); paintMain(); paintSide(); paintRail();
     } catch (e) { if (!quiet) toast(humanizeError(e)); }
   }
 
@@ -1302,6 +1316,7 @@ export async function renderWhatsappLive(host) {
       const r = await ccWaOverview({ q, dispatcher: F.dispatcher });
       if (r && r.error) throw new Error(r.error);
       ov = r; ovQ = q;
+      if (open && rail === 'chats') markSeen(byId(open));
       paintRail(); paintSide();
       if (rail === 'chats') { if (open) { paintHead(); syncComp(); } else paintMain(); } else paintPage();
     } catch (e) { if (!quiet) toast(humanizeError(e)); }
