@@ -42,3 +42,4 @@ docs/apple/*.docx
 
 # Phase 2 SEO crawl: regenerable (harness/seo-crawl.py), 600 KB per run - keep csv/report, not the json
 docs/seo-audit-2026-10/data/crawl.json
+docs/dispatch/private/
