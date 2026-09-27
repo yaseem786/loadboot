@@ -81,6 +81,7 @@ import { renderVerificationCenter } from './views/verificationCenter.js';
 import { renderPodReview } from './views/podReview.js';
 import { renderLoadIntake } from './views/loadIntake.js';
 import { renderMailbox } from './views/mailbox.js';
+import { renderBrain } from './views/brain.js';   // bl_brain_0474 — AI Brain (Ops Brain control plane)
 import { renderControlTower } from './views/controlTower.js';
 import { renderExceptionCenter } from './views/exceptionCenter.js';
 import { renderWorkflowBuilder } from './views/workflowBuilder.js';
@@ -334,6 +335,20 @@ async function boot() {
       { id: 'rules', label: 'Automation rules', path: '/automations', allowed: () => automationsAdminEnabled, render: (h) => renderAutomationsAdmin(h) },
       { id: 'workflows', label: 'Workflow builder', path: '/workflows', allowed: () => loadMarketplaceEnabled && (can('settings.manage') || can('content.manage')), render: (h) => renderWorkflowBuilder(h) },
     ] },
+    brain: { nav: '/ai-brain', tabs: [   // bl_brain_0474 — every tab re-checks settings.manage server-side (brain_cc_guard)
+      { id: 'overview', label: 'Overview', path: '/ai-brain', allowed: () => can('settings.manage'), render: (h, q) => renderBrain(h, 'overview', q),
+        keywords: 'ai brain claude anthropic api usage spend tokens cost cap kill switch model live chat on claude gemini fallback' },
+      { id: 'jobs', label: 'Jobs', path: '/ai-brain-jobs', allowed: () => can('settings.manage'), render: (h, q) => renderBrain(h, 'jobs', q),
+        keywords: 'ai brain jobs queue claude runs failed capped escalated tool calls tokens per job' },
+      { id: 'permissions', label: 'Permissions', path: '/ai-brain-permissions', allowed: () => can('settings.manage'), render: (h, q) => renderBrain(h, 'permissions', q),
+        keywords: 'ai brain permissions sources tools rules auto prep deny caps per day usd cap max per job' },
+      { id: 'findings', label: 'Findings', path: '/ai-brain-findings', allowed: () => can('settings.manage'), render: (h, q) => renderBrain(h, 'findings', q),
+        keywords: 'ai brain findings bugs kb gap portal ideas growth seo ads suggested fix' },
+      { id: 'facts', label: 'Facts', path: '/ai-brain-facts', allowed: () => can('settings.manage'), render: (h, q) => renderBrain(h, 'facts', q),
+        keywords: 'ai brain facts registry fees verification accessorials contact line' },
+      { id: 'log', label: 'Change log', path: '/ai-brain-log', allowed: () => can('settings.manage'), render: (h, q) => renderBrain(h, 'log', q),
+        keywords: 'ai brain change log who flipped what permission config history' },
+    ] },
     settings: { nav: '/settings', tabs: [
       { id: 'settings', label: 'Settings', path: '/settings', allowed: () => can('settings.manage'), render: (h) => renderSettings(h) },
       { id: 'staff', label: 'Staff & roles', path: '/staff', allowed: () => anyOf('users.manage', 'roles.manage', 'staff.suspend'), render: (h) => renderStaffRoles(h) },
@@ -387,6 +402,12 @@ async function boot() {
     '/comms': () => { setActive('/live-chat'); if (commsEnabled && can('comm.view')) renderComms(content); else denied(); },
     // The dead link cc_mail_ingest has been pointing notifications at since bl_mail_loads_0176.
     // Deep link: #mailbox?thread=<thread_key> opens that conversation without marking it read.
+    '/ai-brain': tabbed('brain', 'overview'),            // bl_brain_0474
+    '/ai-brain-jobs': tabbed('brain', 'jobs'),
+    '/ai-brain-permissions': tabbed('brain', 'permissions'),
+    '/ai-brain-findings': tabbed('brain', 'findings'),
+    '/ai-brain-facts': tabbed('brain', 'facts'),
+    '/ai-brain-log': tabbed('brain', 'log'),
     '/mailbox': ({ query }) => { setActive('/mailbox'); if (can('comm.view')) renderMailbox(content, query.get('thread')); else denied(); },
     '/finance': tabbed('finance', 'invoices'),
     '/fee-approvals': tabbed('finance', 'approvals'),

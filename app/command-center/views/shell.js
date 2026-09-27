@@ -55,6 +55,7 @@ const NAV = [
     { path: '/unsubscribes', label: 'Unsubscribes', icon: 'shield', perm: 'any:comm.view,comm.manage,content.view,settings.manage' },
     { path: '/newsletter', label: 'Newsletter', icon: 'mail', perm: 'any:comm.view,comm.manage,content.view,settings.manage' },
     { path: '/templates', label: 'Templates', icon: 'copy', perm: 'content.view' },
+    { path: '/ai-brain', label: 'AI Brain', icon: 'bot', perm: 'settings.manage' },   // bl_brain_0474
     { path: '/integrations', label: 'Integrations', icon: 'link', perm: 'integrations.view', flag: 'integrations' },
     { path: '/settings', label: 'Settings', icon: 'cog', perm: 'any:settings.manage,users.manage,roles.manage,flags.manage,audit.view' },
   ] },

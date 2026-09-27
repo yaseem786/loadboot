@@ -610,6 +610,24 @@ export const ccLcPresenceSet = (available, name, designation, alertEmail) => rpc
 export const ccLcHeartbeat = () => rpc('cc_lc_heartbeat', {});
 export const ccLcTyping = (id) => rpc('cc_lc_typing', { p_id: id });
 export const ccLcBotResume = (id) => rpc('cc_lc_bot_resume', { p_id: id });
+// bl_brain_0474: the Ops Brain on one live chat — ask for a staff-only draft, read what the brain did here.
+export const ccLcAssist = (id) => rpc('cc_lc_assist', { p_id: id });
+export const ccLcBrain = (id) => rpc('cc_lc_brain', { p_id: id });
+
+// ---- AI Brain control plane (bl_brain_0472; CC screen bl_brain_0474). Every RPC re-checks settings.manage. ----
+export const ccBrainOverview = () => rpc('cc_brain_overview', {});
+export const ccBrainJobs = (limit, source, status) => rpc('cc_brain_jobs', { p_limit: limit ?? 60, p_source: source ?? null, p_status: status ?? null });
+export const ccBrainJob = (id) => rpc('cc_brain_job', { p_id: id });
+export const ccBrainConfigSet = (patch) => rpc('cc_brain_config_set', { p_patch: patch || {} });
+export const ccBrainPermSet = (key, patch) => rpc('cc_brain_perm_set', { p_key: key, p_patch: patch || {} });
+export const ccBrainPermAdd = (kind, name, label, description, patch) => rpc('cc_brain_perm_add', { p_kind: kind, p_name: name, p_label: label, p_description: description ?? null, p_patch: patch || {} });
+export const ccBrainPermDelete = (key) => rpc('cc_brain_perm_delete', { p_key: key });
+export const ccBrainPermLog = (limit) => rpc('cc_brain_perm_log', { p_limit: limit ?? 100 });
+export const ccBrainFindings = (status, limit) => rpc('cc_brain_findings', { p_status: status ?? null, p_limit: limit ?? 100 });
+export const ccBrainFindingSet = (id, status) => rpc('cc_brain_finding_set', { p_id: id, p_status: status });
+export const ccBrainFacts = () => rpc('cc_brain_facts', {});
+export const ccBrainFactSet = (key, value, note) => rpc('cc_brain_fact_set', { p_key: key, p_value: value, p_note: note ?? null });
+export const ccBrainTest = (question, lang) => rpc('cc_brain_test', { p_question: question, p_lang: lang || 'en' });
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });

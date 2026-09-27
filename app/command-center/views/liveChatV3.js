@@ -22,16 +22,16 @@
 // marked ⚡ (AI draft, translate, transfer-to-teammate, collision presence, journey events,
 // internal notes) are NOT built here; they need backend work and are listed in the handoff.
 import { el, mount } from '../../shared/ui/dom.js';
-import { fmtDateTime, openDrawer } from '../../shared/ui/components.js';
+import { fmtDateTime, ago, openDrawer } from '../../shared/ui/components.js';
 import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach,
          ccLcMissDismiss, ccLcAssign, ccLcCannedList, ccLcCannedSave, ccLcCannedDelete,
          ccRetellCallback, ccLcCalls, ccLcPresenceGet, ccLcPresenceSet,
-         ccLcHeartbeat, ccLcTyping, ccLcBotResume } from '../../shared/api.js';
+         ccLcHeartbeat, ccLcTyping, ccLcBotResume, ccLcAssist, ccLcBrain } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { richText, parseDirectives } from '../../shared/ui/chatText.js';
 import { ico, icoHtml, ensureIcons } from '../../shared/ui/lucide.js';
 
-const CSS_HREF = '/app/command-center/livechat-v3.css?v=20260919b';   // bl_perf_0458: absolute — import.meta.url moves once the CC is bundled
+const CSS_HREF = '/app/command-center/livechat-v3.css?v=20260927';   // bl_perf_0458: absolute — import.meta.url moves once the CC is bundled
 const LIST_MS = 5000, CONV_MS = 2500, BEAT_MS = 45000, TYPE_MS = 3000;
 const PORTAL = 'https://loadboot.com/app/';
 
@@ -198,6 +198,7 @@ export function renderLiveChatV3(host) {
     activeId: null, rows: [], stats: null, presence: null, canned: [], conv: null,
     seenIds: new Set(), lastDay: '', needsHuman: new Set(), lastMsgAt: {}, alerted: false,
     lastTyping: 0, misses: 0, sel: new Set(), menu: null, view: 'q',
+    brain: null, brainAt: 0, brainFor: null, assistPoll: 0,   // bl_brain_0474: the Ops Brain on the open chat
   };
   const timers = []; let listTickers = []; let drawerRef = null;
 
@@ -238,8 +239,9 @@ export function renderLiveChatV3(host) {
   const input = el('textarea', { class: 'lcv-ta', rows: '1', placeholder: 'Reply… ( / saved replies )' });
   const sendBtn = el('button', { class: 'lcv-btn pri', title: 'Send (Enter)' }, [el('span', null, 'Send'), ico('send')]);
   const linkMenu = el('div', { class: 'lcv-menu lcv-menu-up' });
+  const aiCard = el('div', { class: 'lcv-aicard', style: 'display:none' });   // bl_brain_0474: AI suggested reply (staff only)
   const composer = el('div', { class: 'lcv-comp' }, [
-    cannedPop, aiNote, closedNote,
+    aiCard, cannedPop, aiNote, closedNote,
     el('div', { class: 'lcv-cbox' }, [
       input,
       el('div', { class: 'lcv-ctools' }, [
@@ -389,7 +391,20 @@ export function renderLiveChatV3(host) {
       m('1st reply', med == null ? '—' : mmss(Number(med)), med == null ? '' : med > 900 ? 'alert' : med > 300 ? 'warn' : 'good', 'Median first staff reply, last 7 days'),
       m('<15 min', ans == null ? '—' : Math.round(ans) + '%', ans == null ? '' : ans < 80 ? 'alert' : ans < 95 ? 'warn' : 'good', (s.handoffs_7d || 0) + ' handoffs · 7d'),
       m('AI solved', ai == null ? '—' : Math.round(ai) + '%', '', (s.convs_7d || 0) + ' chats · 7d'),
+      whoMetric(s),
       m('CSAT 30d', csat == null ? '—' : String(Math.round(csat * 10) / 10), csat == null ? '' : csat < 4 ? 'warn' : 'good', (s.csat_n_30d || 0) + ' ratings'),
+    ]);
+  }
+
+  // bl_brain_0474: who actually answered in the last 7 days — Claude, Gemini or a person — and what Claude cost.
+  function whoMetric(s) {
+    const w = s.who_7d || {}; const cl = Number(w.claude || 0), ge = Number(w.gemini || 0), hu = Number(w.human || 0);
+    const title = cl + ' Claude · ' + ge + ' Gemini · ' + hu + ' human · Claude $' + Number(s.claude_usd_7d || 0).toFixed(2) + ' · 7 days' + (s.chat_on_claude ? '' : ' · Claude is OFF for visitors');
+    const seg = (n, cls) => el('i', { class: 'lcv-whoseg ' + cls, style: 'flex:' + Math.max(n, 0.15) });
+    return el('div', { class: 'lcv-m lcv-who' + (s.chat_on_claude ? '' : ' off'), title, onclick: () => { location.hash = '#/ai-brain'; } }, [
+      el('u', null, 'Who answered'),
+      el('b', null, [el('span', { class: 'c' }, String(cl)), ' · ', el('span', { class: 'g' }, String(ge)), ' · ', el('span', { class: 'h' }, String(hu))]),
+      el('div', { class: 'lcv-whobar' }, [seg(cl, 'c'), seg(ge, 'g'), seg(hu, 'h')]),
     ]);
   }
 
@@ -534,6 +549,93 @@ export function renderLiveChatV3(host) {
     if (!silent) mount(msgsEl, '');
     paintHead(c); paintPlaybar(c); paintMessages(c, !silent); paintComposer(c); paintContext(c);
     typingEl.style.display = c.visitor_typing ? '' : 'none';
+    loadBrain(c, !silent);
+  }
+
+  /* ---------------------------------------------------- bl_brain_0474: the Ops Brain on this chat */
+  // One read (cc_lc_brain) feeds two surfaces: the "AI suggested reply" card above the composer and the
+  // "Why the AI said this" card in Details. Polled every 10 s with the conversation, every 2 s while a draft is
+  // being written. The draft is staff-only: nothing here reaches the visitor until Send.
+  async function loadBrain(c, force) {
+    const now = Date.now();
+    if (!force && S.brainFor === c.id && now - S.brainAt < 10000) return;
+    S.brainAt = now; S.brainFor = c.id;
+    let b; try { b = await ccLcBrain(c.id); } catch (e) { return; }
+    if (!b || b.error || c.id !== S.activeId) return;
+    S.brain = b;
+    paintAiCard(b, c); paintBrainCard(b, c);
+    const a = b.assist;
+    if (a && (a.status === 'queued' || a.status === 'running') && S.assistPoll < 40) {
+      S.assistPoll++;
+      setTimeout(() => { if (root.isConnected && S.activeId === c.id) loadBrain(S.conv || c, true); }, 2000);
+    } else S.assistPoll = 0;
+  }
+  async function askAssist(c) {
+    try {
+      const r = await ccLcAssist(c.id);
+      if (r && r.status && r.status !== 'queued' && r.status !== 'running') { toast('Not drafted: ' + (r.error || r.status), 'error'); return; }
+      S.assistPoll = 0;
+      loadBrain(c, true);
+    } catch (e) { toast(humanizeError(e), 'error'); }
+  }
+  function paintAiCard(b, c) {
+    const open = c.status === 'open';
+    if (!open || (!b.assist_on && !b.assist && !b.escalation)) { aiCard.style.display = 'none'; return; }
+    aiCard.style.display = '';
+    const a = b.assist, esc = b.escalation;
+    const engine = el('span', { class: 'lcv-aieng ' + (b.engine === 'claude' ? 'on' : ''), title: b.engine === 'claude' ? 'Visitors get Claude here; Gemini only on cap / error / timeout' : 'Visitors get Gemini (lc-brain); switch Claude on in CC → AI Brain' },
+      b.engine === 'claude' ? 'Claude answers visitors' : 'Gemini answers visitors');
+    const head = el('div', { class: 'lcv-aihead' }, [ico('sparkles'), el('b', null, 'AI suggested reply'), el('s', null, 'staff only'), engine,
+      Number(b.usd) > 0 ? el('span', { class: 'lcv-aicost' }, '$' + Number(b.usd).toFixed(2) + ' on this chat') : null].filter(Boolean));
+    const useBtn = (text, label) => el('button', { class: 'lcv-btn sm pri', onclick: () => { input.value = text; input.focus(); autoGrow(); toast('Draft is in the box — read it, then Send'); } }, [ico('check'), label || 'Use this']);
+    const redo = (label) => el('button', { class: 'lcv-btn sm', onclick: () => askAssist(c) }, [ico('refresh-cw'), label || 'Redo']);
+    const kids = [head];
+    if (a && (a.status === 'queued' || a.status === 'running')) {
+      kids.push(el('div', { class: 'lcv-aiwait' }, [el('i'), el('i'), el('i'), el('span', null, 'Drafting… reading the account file and the knowledge base (usually 5–20 s)')]));
+    } else if (a && a.status === 'done' && a.reply) {
+      const conf = a.confidence != null ? Math.round(Number(a.confidence) * 100) : null;
+      kids.push(el('div', { class: 'lcv-aidraft' }, a.reply));
+      if (a.escalate) kids.push(el('div', { class: 'lcv-aiflag' }, [ico('triangle-alert'), 'Read before sending — ' + (a.escalate_reason || 'the AI was not sure')]));
+      kids.push(el('div', { class: 'lcv-airow' }, [
+        useBtn(a.reply), el('button', { class: 'lcv-btn sm', onclick: () => copy(a.reply) }, [ico('copy'), 'Copy']), redo(),
+        el('span', { class: 'lcv-aimeta' }, [conf != null ? conf + '% sure · ' : '', (a.tools || []).length ? (a.tools || []).map(t => t.tool.replace(/_/g, ' ')).join(', ') + ' · ' : 'no tools · ',
+          a.secs != null ? a.secs + ' s · ' : '', '$' + Number(a.usd || 0).toFixed(3), ' · ', el('span', { class: 'lcv-ent', onclick: () => view('d') }, 'why?')]),
+      ]));
+    } else if (a && (a.status === 'failed' || a.status === 'capped' || a.status === 'skipped')) {
+      kids.push(el('div', { class: 'lcv-aiflag' }, [ico('triangle-alert'), (a.status === 'failed' ? 'Draft failed: ' : 'Not drafted: ') + (a.error || a.status)]));
+      kids.push(el('div', { class: 'lcv-airow' }, [redo('Try again')]));
+    } else if (esc && esc.suggested_reply) {
+      kids.push(el('div', { class: 'lcv-aisum' }, [el('b', null, 'Handed to you: '), esc.summary || esc.reason || '']));
+      kids.push(el('div', { class: 'lcv-aidraft' }, esc.suggested_reply));
+      kids.push(el('div', { class: 'lcv-airow' }, [useBtn(esc.suggested_reply), el('button', { class: 'lcv-btn sm', onclick: () => copy(esc.suggested_reply) }, [ico('copy'), 'Copy']),
+        b.assist_on ? redo('Fresh draft') : null, el('span', { class: 'lcv-aimeta' }, 'written by the AI when it handed off · ' + ago(esc.at))].filter(Boolean)));
+    } else if (b.assist_on) {
+      kids.push(el('div', { class: 'lcv-airow' }, [el('button', { class: 'lcv-btn sm pri', onclick: () => askAssist(c) }, [ico('sparkles'), 'Suggest a reply']),
+        el('span', { class: 'lcv-aimeta' }, 'Reads this chat, the account file and the knowledge base. Costs a few cents. You still press Send.')]));
+    }
+    mount(aiCard, kids);
+  }
+  function paintBrainCard(b, c) {
+    const host = ctxHost.querySelector('.lcv-braincard'); if (!host) return;
+    const jobs = b.jobs || [];
+    const rows = [
+      kv('Engine for visitors', b.engine === 'claude' ? 'Claude (Gemini fallback)' : 'Gemini (Claude off)'),
+      kv('Claude spend on this chat', '$' + Number(b.usd || 0).toFixed(3)),
+      kv('Claude answers here', String(jobs.filter(j => j.status === 'done').length) + (jobs.some(j => j.fell_back) ? ' · ' + jobs.filter(j => j.fell_back).length + ' fell back to Gemini' : '')),
+    ];
+    jobs.slice(0, 6).forEach(j => {
+      const conf = j.confidence != null ? Math.round(Number(j.confidence) * 100) + '% sure' : '';
+      const tools = (j.tools || []).map(t => el('span', { class: 'lcv-aitool' + (t.ok === false || t.outcome === 'denied' ? ' bad' : '') }, t.tool.replace(/_/g, ' ') + (t.summary ? ': ' + t.summary.slice(0, 60) : '')));
+      rows.push(el('div', { class: 'lcv-aijob' }, [
+        el('b', null, [clock(j.created_at) + ' · ', j.fell_back ? el('span', { class: 'lcv-bad' }, 'fell back — ' + (j.error || j.status)) : (conf + (j.escalate ? ' · handed off: ' + (j.escalate_reason || '') : ''))]),
+        el('p', null, '“' + (j.question || '') + '”'),
+        (j.actions || []).length ? el('p', { class: 'lcv-sub2' }, 'Said it: ' + j.actions.join('; ')) : null,
+        tools.length ? el('div', { class: 'lcv-aitools' }, tools) : el('span', { class: 'lcv-sub2' }, 'answered without tools'),
+        el('span', { class: 'lcv-sub2' }, (j.tool_calls || 0) + ' tool calls · ' + (j.secs != null ? j.secs + ' s · ' : '') + '$' + Number(j.usd || 0).toFixed(3) + (j.model ? ' · ' + j.model : '')),
+      ].filter(Boolean)));
+    });
+    if (!jobs.length) rows.push(el('div', { class: 'lcv-sub2' }, b.engine === 'claude' ? 'No Claude answers on this chat yet.' : 'Claude is off for visitors — every bot reply here came from Gemini. Switch it on in CC → AI Brain.'));
+    mount(host, rows);
   }
   function firstAsk(c) {
     const m = (c.messages || []).find(x => x.sender === 'visitor' && splitSys(x.body).rest && !/^\[\[/.test(x.body));
@@ -761,6 +863,7 @@ export function renderLiveChatV3(host) {
         : card('Account health', 'circle-check', rowsC.length ? rowsC : [el('div', { class: 'lcv-sub2' }, 'No compliance items on file.')]));
     }
     kids.push(card('Next best actions', 'zap', el('div', { class: 'lcv-qa' }, playbook(c).slice(0, 4).map(p => actionBtn(c, p, 'sm')))));
+    kids.push(card('Why the AI said this', 'brain', el('div', { class: 'lcv-braincard' }, el('div', { class: 'lcv-sub2' }, 'Reading…'))));   // bl_brain_0474, filled by paintBrainCard
     const links = [];
     if (org) { links.push(['Carrier 360', '#/carrier?id=' + org, 'id-card'], ['Documents', '#/carrier?id=' + org + '&tab=documents', 'file-text'], ['Fleet', '#/fleet?org=' + org, 'truck']); }
     if (roleKey(c) === 'partner' || roleKey(c) === 'broker') links.push(['Partners', '#/partners', 'building-2'], ['Broker trust', '#/broker-trust', 'shield-check']);
@@ -798,6 +901,7 @@ export function renderLiveChatV3(host) {
       kv('Messages', String((c.messages || []).length)),
     ].filter(Boolean)));
     mount(ctxHost, kids);
+    if (S.brain && S.brainFor === c.id) paintBrainCard(S.brain, c);
   }
 
   /* ------------------------------------------------------------- overlays */
