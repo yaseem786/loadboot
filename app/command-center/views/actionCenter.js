@@ -14,6 +14,8 @@ const KIND_META = {
   ticket: { tone: 'amber', label: 'Ticket' },
   form: { tone: 'violet', label: 'Lead' },
   choice: { tone: 'green', label: 'Carrier choice' },   // bl_disp_0481 — a candidate picked a carrier; Accept/Decline on #/carrier-choices
+  trial_zero: { tone: 'amber', label: 'Trial · no activity' },   // bl_disp_0485 — red daily report; Seen on the Dispatcher 360 → Performance
+  trial_help: { tone: 'violet', label: 'Trial · dispatcher wrote' },   // bl_disp_0485 — Help / Feedback / Stuck from the daily report
 };
 // where a queue item links, by its related entity
 const DESK = { emergency_sla: '#/safety', pod_missing: '#/pod-review', claim_decision_stale: '#/exceptions', load_post_review: '#/partner-intake' };
@@ -21,6 +23,7 @@ function linkFor(it) {
   if (it.kind === 'ticket') return '#/support' + (it.related_id ? '?id=' + it.related_id : '');
   if (it.kind === 'form') return '#/forms' + (it.related_id ? '?id=' + it.related_id : '');
   if (it.kind === 'choice') return '#/carrier-choices' + (it.related_id ? '?id=' + it.related_id : '');
+  if (it.kind === 'trial_zero' || it.kind === 'trial_help') return '#/dispatcher?id=' + (it.related_id || '') + '&tab=performance';
   if (it.task_type && DESK[it.task_type]) return DESK[it.task_type]; // work lives on a dedicated desk
   switch (it.related_type) {
     case 'carrier': return '#/carrier?id=' + (it.related_id || '');
@@ -61,6 +64,7 @@ export function renderActionCenter(host, ctx, user) {
       statCard({ icon: 'shield', label: 'Expiring soon', value: String(n('compliance_expiring')), sub: 'credentials (30d)', accent: n('compliance_expiring') ? 'amber' : 'green', to: '#/compliance' }),
       statCard({ icon: 'flag', label: 'Settlements', value: String(n('settlements_pending')), sub: 'awaiting approval', accent: n('settlements_pending') ? 'amber' : 'green', to: '#/finance' }),
       statCard({ icon: 'handshake', label: 'Carrier choices', value: String(n('choices_pending')), sub: n('choices_pending') ? 'candidates waiting on you' : 'nothing waiting', accent: n('choices_pending') ? 'amber' : 'green', to: '#/carrier-choices' }),   // bl_disp_0481
+      statCard({ icon: 'timer', label: 'Trial alerts', value: String(n('trial_alerts')), sub: n('trial_alerts') ? 'red days + help requests' : 'every trial is moving', accent: n('trial_alerts') ? 'amber' : 'green', to: '#/dispatchers?tab=queue' }),   // bl_disp_0485
     ]);
 
     const queue = (d && d.queue) || [];

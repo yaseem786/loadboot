@@ -22,6 +22,7 @@ import { humanizeError, toast } from '../../shared/errors.js';
 import { ccDispatcherSetRejectReasons, ccDispatcherChoices, ccDispatcherChoiceDecide } from '../../shared/api.js';   // bl_disp_0442 — carrier choices
 import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
 import { ccDispatcherReports, ccDispatcherReportDecide } from '../../shared/api.js';   // bl_disp_0443 — carrier reports → permanent block
+import { ccDispatcherTrialReports, ccDispatcherTrialAck } from '../../shared/api.js';   // bl_disp_0485 — trial daily report history + feedback
 import { REASONS } from '../../agent/dispatcher-gaps.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { renderTestPanel } from './dispatcher-test.js';
@@ -371,13 +372,14 @@ export async function renderDispatcher360(host, query) {
   const root = el('div', { class: 'd3' }, el('div', { class: 'd3-empty' }, 'Loading dispatcher…'));
   mount(host, root);
 
-  const state = { dd: null, test: null, kpi: null, kpiDays: 30, bookings: null, comm: null, activity: null, carriers: [], choices: [], reports: [] };
+  const state = { dd: null, test: null, kpi: null, kpiDays: 30, bookings: null, comm: null, activity: null, carriers: [], choices: [], reports: [], trial: null };
   const load = async (what) => {
     const all = !what;
     const jobs = [];
     if (all || what === 'dd') jobs.push(ccDispatcher360(id).then((r) => { state.dd = r; }));
     if (all || what === 'dd') jobs.push(ccDispatcherChoices('all', id).then((r) => { state.choices = Array.isArray(r) ? r : []; }).catch(() => { state.choices = []; }));   // bl_disp_0442
     if (all || what === 'dd') jobs.push(ccDispatcherReports('all', id).then((r) => { state.reports = Array.isArray(r) ? r : []; }).catch(() => { state.reports = []; }));   // bl_disp_0443
+    if (all || what === 'trial') jobs.push(ccDispatcherTrialReports(id, 30).then((r) => { state.trial = r; }).catch((e) => { state.trial = { error: humanizeError(e) }; }));   // bl_disp_0485
     if (all || what === 'test') jobs.push(ccDispatcherTestReview(id).then((r) => { state.test = r; }).catch((e) => { state.test = { error: humanizeError(e) }; }));
     if (all || what === 'kpi') jobs.push(ccDispatcherKpis(id, state.kpiDays).then((r) => { state.kpi = r; }).catch((e) => { state.kpi = { error: humanizeError(e) }; }));
     if (all || what === 'bookings') jobs.push(ccDispatcherBookings({ user: id, limit: 200 }).then((r) => { state.bookings = Array.isArray(r) ? r : []; }).catch(() => { state.bookings = []; }));
@@ -546,12 +548,13 @@ export async function renderDispatcher360(host, query) {
   }
 
   const TABS = [['overview', 'Overview', 'grid'], ['test', 'Skills test', 'clipboard'], ['carriers', 'Carriers & trucks', 'truck'], ['performance', 'Performance', 'trend'], ['loads', 'Loads', 'route'], ['money', 'Money', 'wallet'], ['messages', 'Messages', 'chat'], ['timeline', 'Timeline', 'activity'], ['documents', 'Documents', 'doc']];
+  function trialOpen() { const s = (state.trial && state.trial.summary) || {}; return Number(s.open_bad || 0) + Number(s.open_feedback || 0); }
   function tabCounts() {
     const t = state.test || {}; const live = (state.dd.assignments || []).filter((a) => a.status === 'active');
     const owed = (state.comm || []).filter((c) => c.status === 'approved' || c.status === 'draft').reduce((a, c) => a + Number(c.amount || 0), 0);
     const unread = (state.dd.assignments || []).reduce((a, x) => a + Number(x.unread || 0), 0);
     const open = (state.bookings || []).filter((b) => ['pending_rc', 'rc_received', 'approved', 'dispatched', 'picked_up'].includes(b.status)).length;
-    return { test: t.state === 'scored' && t.staff_score != null ? [String(t.staff_score), false] : t.state === 'submitted' ? ['grade', true] : null, carriers: [String(live.length), false], loads: open ? [String(open), (state.bookings || []).some((b) => b.status === 'rc_received')] : null, money: owed ? [money(owed), true] : null, messages: unread ? [String(unread), true] : null };
+    return { test: t.state === 'scored' && t.staff_score != null ? [String(t.staff_score), false] : t.state === 'submitted' ? ['grade', true] : null, carriers: [String(live.length), false], loads: open ? [String(open), (state.bookings || []).some((b) => b.status === 'rc_received')] : null, money: owed ? [money(owed), true] : null, messages: unread ? [String(unread), true] : null, performance: trialOpen() ? [String(trialOpen()), true] : null };
   }
   function tabs() {
     const c = tabCounts();
@@ -709,6 +712,57 @@ export async function renderDispatcher360(host, query) {
       out.push(card('Carrier report waiting', 'Filed by the carrier in their Dispatcher tab · Report a contact', 'alert', body, [], 'carriers'));
     });
     return out;
+  }
+  // bl_disp_0485 — the 8 AM ET trial report history, and what came back from its Help / Feedback / mood buttons.
+  // A red day and an open help request sit on CC home → Needs you now until marked Seen / Handled here.
+  async function trialAck(kind, rid, undo) {
+    const r = await ccDispatcherTrialAck(kind, rid, undo).catch((e) => ({ error: humanizeError(e) }));
+    if (!r || r.error || r.ok === false) { toast((r && r.error) || 'Could not save'); return; }
+    toast(undo ? '✓ Reopened' : kind === 'report' ? '✓ Marked seen — off Needs you now' : '✓ Marked handled');
+    rerender('trial');
+  }
+  function trialReportsCard() {
+    const t = state.trial;
+    if (!t || t.error) return card('Trial daily reports', null, 'mail', el('div', { class: 'd3-empty' }, (t && t.error) || 'Unavailable'), [], 'performance');
+    const reps = t.reports || [], fb = t.feedback || [], sm = t.summary || {};
+    const TONE = { bad: ['red', 'No activity'], warn: ['amber', 'Quiet day'], good: ['green', 'Solid day'], info: ['blue', 'Kick-off'] };
+    const MOOD = { smooth: ['green', 'Smooth'], mixed: ['amber', 'Mixed'], stuck: ['red', 'Stuck'] };
+    const n = (w, k) => Number((w || {})[k] || 0);
+    const deliv = (d) => !d ? pill('not queued', 'line') : d.failure ? pill('failed', 'red') : d.clicked_at ? pill('clicked', 'green') : d.opened_at ? pill('opened', 'green') : d.delivered_at ? pill('delivered', 'blue') : pill(d.status || 'queued', 'line');
+    const openFb = fb.filter((f) => f.needs_action && !f.handled_at);
+    const fbRow = (f) => el('div', { style: 'padding:9px 0;border-top:1px solid var(--line2);display:flex;gap:10px;align-items:flex-start' }, [
+      el('div', { style: 'flex:1;min-width:0;font-size:12.5px;line-height:1.55' }, [
+        el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:center' }, [
+          f.kind === 'mood' ? pill((MOOD[f.mood] || ['', f.mood])[1], (MOOD[f.mood] || ['line'])[0]) : pill(f.kind === 'help' ? 'Help' : 'Feedback', f.kind === 'help' ? 'orange' : 'violet'),
+          el('span', { class: 'd3-mut' }, ago(f.created_at)),
+          f.handled_at ? el('span', { class: 'd3-mut' }, '· handled ' + dShort(f.handled_at) + (f.handled_by ? ' by ' + f.handled_by : '')) : '']),
+        f.note ? el('div', { style: 'margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere' }, f.note) : '']),
+      f.needs_action ? (f.handled_at ? btn('Reopen', () => trialAck('feedback', f.id, true), 'sm g') : btn('Handled', () => trialAck('feedback', f.id, false), 'sm', 'check')) : '']);
+    const body = el('div', null, [
+      el('div', { class: 'd3-pad d3-kpis', style: 'padding-bottom:4px' }, [['Reports sent', sm.reports], ['Red days', sm.bad], ['Quiet days', sm.warn], ['Solid days', sm.good], ['Last mood', sm.last_mood ? (MOOD[sm.last_mood.mood] || ['', sm.last_mood.mood])[1] : null]]
+        .map(([l, v]) => el('div', { class: 'd3-kpi' }, [el('b', null, v == null ? '—' : String(v)), el('span', null, l)]))),
+      reps.length ? el('div', { class: 'd3-scroll', style: 'padding:4px 6px 6px' }, el('table', { class: 'd3-tbl' }, [
+        el('thead', null, el('tr', null, ['Sent', 'Day', 'Verdict', 'Broker · carrier · driver', 'Mail out / in', 'Loads', 'E-mail', ''].map((h) => el('th', null, h)))),
+        el('tbody', null, reps.map((r) => { const w = r.window || {}; const tn = TONE[r.tone] || ['line', r.tone];
+          return el('tr', null, [
+            el('td', { class: 'd3-mono', title: r.subject || '' }, dShort(r.report_date)),
+            el('td', { class: 'd3-mono' }, r.trial_day + ' / ' + r.trial_days),
+            el('td', null, pill(tn[1], tn[0])),
+            el('td', { class: 'd3-mono' }, n(w, 'brokers') + ' · ' + n(w, 'carrier') + ' · ' + n(w, 'driver')),
+            el('td', { class: 'd3-mono' }, n(w, 'sent') + ' / ' + n(w, 'received')),
+            el('td', { class: 'd3-mono' }, String(n(w, 'loads'))),
+            el('td', null, deliv(r.delivery)),
+            el('td', null, r.tone === 'bad' ? (r.ack_at ? el('span', { class: 'd3-mut', style: 'font-size:11.5px', title: r.ack_by || '' }, 'seen ' + dShort(r.ack_at)) : btn('Seen', () => trialAck('report', r.id, false), 'sm', 'eye')) : ''),
+          ]); })),
+      ])) : el('div', { class: 'd3-empty' }, state.dd.profile.status === 'trial' ? 'No report sent yet. The first goes out at 8 AM ET on the next working day of the trial.' : 'No trial reports for this dispatcher.'),
+      el('div', { class: 'd3-pad', style: 'padding-top:6px' }, [
+        el('div', { style: 'font-weight:800;font-size:12.5px;margin-bottom:2px' }, 'What the dispatcher told us' + (openFb.length ? ' · ' + openFb.length + ' open' : '')),
+        fb.length ? el('div', null, fb.slice(0, 30).map(fbRow)) : el('div', { class: 'd3-mut', style: 'font-size:12.3px' }, 'No help requests, feedback or mood taps yet.'),
+      ]),
+    ]);
+    const ob = Number(sm.open_bad || 0);
+    return card('Trial daily reports', 'The 8 AM ET e-mail for the previous working day, and what came back from its buttons', 'mail', body,
+      [ob ? pill(ob + ' red day' + (ob === 1 ? '' : 's') + ' unseen', 'red', 'alert') : '', openFb.length ? pill(openFb.length + ' to answer', 'orange') : ''], 'performance');
   }
   async function decideReport(r, action) {
     let note = null;
@@ -943,10 +997,10 @@ export async function renderDispatcher360(host, query) {
   // ---- compose
   function body() {
     const left = []; const right = [];
-    if (tab === 'overview') { left.push(...reportCards(), ...choiceCards(), nbaCard(), readinessCard(), carriersCard(false), scorecardCard(false)); right.push(termsCard(), documentsCard(false), signalsCard(), activityCard(), noteCard()); }   // bl_disp_0442: a waiting carrier choice comes first
+    if (tab === 'overview') { left.push(...reportCards(), ...choiceCards(), ...(trialOpen() ? [trialReportsCard()] : []), nbaCard(), readinessCard(), carriersCard(false), scorecardCard(false)); right.push(termsCard(), documentsCard(false), signalsCard(), activityCard(), noteCard()); }   // bl_disp_0442: a waiting carrier choice comes first
     else if (tab === 'test') { const h = el('div'); renderTestPanel(h, { userId: id, name: state.dd.profile.full_name, onChange: () => rerender('test') }); left.push(h); right.push(signalsCard(), applicationCard()); }
     else if (tab === 'carriers') { left.push(...reportCards(), ...choiceCards(), carriersCard(true)); right.push(termsCard(), signalsCard(), activityCard()); }
-    else if (tab === 'performance') { left.push(scorecardCard(true), readinessCard()); right.push(termsCard(), signalsCard()); }
+    else if (tab === 'performance') { left.push(scorecardCard(true), trialReportsCard(), readinessCard()); right.push(termsCard(), signalsCard()); }
     else if (tab === 'loads') { left.push(loadsCard()); right.push(carriersCard(false), termsCard()); }
     else if (tab === 'money') { left.push(moneyCard()); right.push(termsCard(), activityCard()); }
     else if (tab === 'messages') { left.push(messagesCard()); right.push(carriersCard(false), activityCard()); }
