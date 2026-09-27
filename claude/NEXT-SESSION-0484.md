@@ -25,4 +25,3 @@ Paste this whole file into the new session. Roman Urdu + English, be direct, CLA
 - Retell API (checked 27 Sep): no balance/credit endpoint. Per-call cost is `call_cost.combined_cost` on get-call /
   list-calls; we do not store it yet (lc_calls has duration_sec only). If $ spend is wanted later: capture
   `call_cost` in retell-hook — verify the unit (cents vs dollars) on a real call first.
-- Prod `retell_config.allow_unsigned_webhook` column still exists (0329's drop was conditional) — not touched here.
