@@ -15,7 +15,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { openDrawer } from '../../shared/ui/components.js';
 import { waVoiceFile } from '../../shared/wa-opus.js';   // bl_wa_0378 - Chrome records webm; WhatsApp needs ogg
-import { ccWaOverview, ccWaAssign, ccWaThreadSet, ccWaTemplateSet, ccWaTemplatesSync, ccWaTemplateSubmit, ccWaNotifyAssigned, ccDialerConfigSet, waThread, waSend, waMediaBlob, waStart, waUploadMedia } from '../../shared/api.js';
+import { ccWaOverview, ccWaAssign, ccWaThreadSet, ccWaTemplateSet, ccWaTemplatesSync, ccWaTemplateSubmit, ccWaNotifyAssigned, ccDialerConfigSet, ccWaMessageHide, waThread, waSend, waMediaBlob, waStart, waUploadMedia } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ET = 'America/New_York';
@@ -88,6 +88,9 @@ const G = {
   pen: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z',
   doc: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z',
   check: 'M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z',
+  eyeoff: 'M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7M2 4.27l2.28 2.28.46.46A11.8 11.8 0 0 0 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2m4.31-.78 3.15 3.15.02-.16c0-1.66-1.34-3-3-3z',
+  eye: 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5M12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5m0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3',
+  copy: 'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m0 16H8V7h11z',
 };
 const sv = (n, s, cls) => el('span', { class: 'wx-i' + (cls ? ' ' + cls : ''), 'aria-hidden': 'true',
   html: '<svg viewBox="0 0 24 24" width="' + (s || 24) + '" height="' + (s || 24) + '" fill="currentColor"><path d="' + (G[n] || '') + '"/></svg>' });
@@ -234,6 +237,12 @@ const CSS = `
 .wx-meta .tp{font-style:italic}
 .wx-err{display:flex;gap:4px;align-items:center;color:#c0002d;font-size:12px;margin-top:4px;clear:both;white-space:normal}
 .wx-bub mark{background:#ffe066;color:inherit;border-radius:2px}
+.wx-bchev{position:absolute;top:2px;right:3px;width:26px;height:22px;border:0;border-radius:0 6px 0 12px;cursor:pointer;color:#8696a0;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(at top right,#fff 55%,rgba(255,255,255,0) 80%);z-index:1}
+.wx-mr.out .wx-bchev{background:radial-gradient(at top right,var(--out) 55%,rgba(217,253,211,0) 80%)}
+.wx-bub:hover .wx-bchev,.wx-bub.menu .wx-bchev{display:flex}
+.wx-bub.hid{outline:2px dashed #f59e0b;outline-offset:-2px}
+.wx-hidl{display:flex;align-items:center;gap:4px;padding-right:24px;font-size:11.5px;font-weight:600;color:#b45309;margin:0 0 3px;white-space:normal}
 .wx-bub.med{padding:3px 3px 6px}
 .wx-bub.med .wx-txt{display:block;padding:4px 4px 0}
 .wx-bub.med .wx-meta{margin-right:4px}
@@ -1020,6 +1029,38 @@ export async function renderWhatsappLive(host) {
     if (i < text.length) out.push(text.slice(i));
     return out;
   }
+  // bl_wa_0487 — per-message menu. WhatsApp's Business API cannot unsend a message, so "delete for everyone"
+  // is shown but disabled; what staff CAN do is hide a message from the dispatcher (server-side, cc_wa_message_hide).
+  function longPress(node, fn) {
+    let lp = null;
+    node.addEventListener('touchstart', (e) => { const p = e.touches[0]; clearTimeout(lp); lp = setTimeout(() => { node.dataset.lp = '1'; try { navigator.vibrate && navigator.vibrate(12); } catch (_) {} fn(p.clientX, p.clientY); }, 480); }, { passive: true });
+    const stop = (e) => { clearTimeout(lp); if (node.dataset.lp && e.type === 'touchend' && e.cancelable) e.preventDefault(); delete node.dataset.lp; };
+    node.addEventListener('touchmove', () => clearTimeout(lp), { passive: true });
+    node.addEventListener('touchend', stop); node.addEventListener('touchcancel', stop);
+  }
+  async function hideMsg(m, on) {
+    try {
+      const r = await ccWaMessageHide(m.id, on);
+      if (r && r.error) throw new Error(r.error);
+      m.hidden = on;
+      toast(on ? 'Hidden from the dispatcher. Only Command Center sees this message now.' : 'The dispatcher can see this message again.');
+      paintMsgs(true); await loadThread(open, true); load(true);
+    } catch (e) { toast(humanizeError(e)); }
+  }
+  function msgItems(m) {
+    const t = cur();
+    const who = t && t.owner ? t.owner : 'the dispatcher';
+    return [
+      m.body ? { ic: 'copy', label: 'Copy', on: async () => { try { await navigator.clipboard.writeText(m.body); toast('Copied'); } catch (_) { toast('Could not copy'); } } } : null,
+      m.hidden
+        ? { ic: 'eye', label: 'Show to dispatcher', on: () => hideMsg(m, false) }
+        : { ic: 'eyeoff', label: 'Hide from dispatcher', on: () => dialog('Hide this message from ' + who + '?',
+            'Only Command Center will see it. The dispatcher will not see it in the chat, in the inbox preview, or as an attachment — even if the chat is handed to them later. The customer still has it on their phone.',
+            'Hide from dispatcher', () => hideMsg(m, true)) },
+      { sep: true },
+      { ic: 'del', label: 'Delete for everyone', disabled: true, hint: 'WhatsApp’s Business API cannot unsend a message' },
+    ];
+  }
   function paintMsgs(force) {
     if (!built || !thr || !thr.thread || thr.thread.id !== open) return;
     const t = cur();
@@ -1028,7 +1069,7 @@ export async function renderWhatsappLive(host) {
     let list = (thr.messages || []).filter((m) => !cut || new Date(m.at).getTime() > cut);
     const total = list.length;
     if (q) list = list.filter((m) => (m.body || '').toLowerCase().includes(q.toLowerCase()) || (m.file_name || '').toLowerCase().includes(q.toLowerCase()));
-    const sig = [t.window_open, t.window_ends && left(t.window_ends), cut, q, list.map((m) => m.id + m.status + (m.error || '')).join('|')].join('#');
+    const sig = [t.window_open, t.window_ends && left(t.window_ends), cut, q, list.map((m) => m.id + m.status + (m.hidden ? 'h' : '') + (m.error || '')).join('|')].join('#');
     if (!force && sig === built.sig) return;
     const first = !built.sig;
     built.sig = sig;
@@ -1049,7 +1090,10 @@ export async function renderWhatsappLive(host) {
       const tail = !prev || prev.direction !== m.direction;
       prev = m;
       const media = m.has_media ? mediaEl(m) : null;
-      rows.push(el('div', { class: 'wx-mr ' + (out ? 'out' : 'in') + (tail ? ' tail' : '') }, el('div', { class: 'wx-bub' + (fail ? ' fail' : '') + (media ? ' med' : '') }, [
+      const bub = el('div', { class: 'wx-bub' + (fail ? ' fail' : '') + (media ? ' med' : '') + (m.hidden ? ' hid' : ''),
+        onContextmenu: (e) => { e.preventDefault(); showMenu(msgItems(m), e.clientX, e.clientY, bub); } }, [
+        el('button', { class: 'wx-bchev', type: 'button', 'aria-label': 'Message options', onClick: (e) => { e.stopPropagation(); const b = e.currentTarget.getBoundingClientRect(); showMenu(msgItems(m), b.right - 232, b.bottom + 2, bub); } }, sv('down', 20)),
+        m.hidden ? el('div', { class: 'wx-hidl', title: m.hidden_at ? 'Hidden ' + et(m.hidden_at) : null }, [sv('eyeoff', 14), 'Hidden from dispatcher · only Command Center sees this']) : null,
         media,
         m.body ? el('span', { class: 'wx-txt' }, hl(m.body, q)) : null,
         el('span', { class: 'wx-meta', title: et(m.at) }, [
@@ -1057,7 +1101,9 @@ export async function renderWhatsappLive(host) {
           hm(new Date(m.at)), tick(m),
         ]),
         fail ? el('div', { class: 'wx-err' }, [sv('alert', 14), 'Not delivered' + (m.error ? ' · ' + m.error : '')]) : null,
-      ])));
+      ]);
+      longPress(bub, (x, y) => showMenu(msgItems(m), x, y, bub));
+      rows.push(el('div', { class: 'wx-mr ' + (out ? 'out' : 'in') + (tail ? ' tail' : '') }, bub));
     });
     if (!list.length) rows.push(el('div', { class: 'wx-day', style: 'position:static;text-transform:none' }, q ? 'No messages found' : 'No messages yet'));
     mount(built.msgs, rows);
