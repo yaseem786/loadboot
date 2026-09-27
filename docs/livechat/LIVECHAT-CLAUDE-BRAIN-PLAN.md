@@ -169,6 +169,7 @@ Staging gate: one seeded lead through the full sequence; "stop" reply suppresses
 - **Phase 1 (with §3/§7)**: the brain schedules and triggers calls via `retell_dial()` (only to people who asked — TCPA), reads the transcript + post-call analysis back, and continues the thread. Fix first: number wiring and prompt publish per `docs/voice-agent/RILEY-0458.md`.
 - **Phase 2 (after §3–§7 are stable)**: Claude as Riley's LLM through Retell's custom-LLM socket, so chat/email/call share one memory. Confirm the Retell feature and pricing at build time; keep the Retell-hosted prompt as fallback.
 - Cost: Retell ≈ $0.13/min + brain ≈ $0.05/call.
+- **Owner decision 27 Sep 2026:** Riley keeps running on Retell's hosted LLM while the current **$30 Retell balance** lasts (Phase 1 only touches scheduling and transcripts). When the balance is spent, cut over to Phase 2 (Claude behind Riley). Add a CC → Riley → Settings line showing the Retell balance so the cut-over date is visible, not guessed.
 
 ---
 
