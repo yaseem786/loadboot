@@ -47,9 +47,12 @@ export function parseDirectives(body) {
     return '';
   });
   text = text.replace(/\[\[callform\]\]/gi, () => { callback = true; return ''; });
+  // v6 (bl_lc_0475): the desk the assistant answered from — Riley/Sara/Omar/Ali/Maya/Daniel in the widget.
+  let desk = null;
+  text = text.replace(/\[\[as:([a-z]+)\]\]\s*/gi, (_m, d) => { desk = String(d).toLowerCase(); return ''; });
   text = text.replace(/^\s*\[\[note\]\]\s*/i, () => { note = true; return ''; });
 
-  return { text: text.trim(), chips, askedFor, callback, note };
+  return { text: text.trim(), chips, askedFor, callback, note, desk };
 }
 
 export default { richText, escapeHtml, parseDirectives };

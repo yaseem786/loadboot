@@ -1,4 +1,4 @@
-// brain — LoadBoot Ops Brain, edge side. v1 (bl_brain_0470)
+// brain — LoadBoot Ops Brain, edge side. v2 (bl_brain_0475: per-route model; refusal fallbacks only on Fable/Opus/Mythos). v1 (bl_brain_0470)
 //
 // Called by Postgres via pg_net from app_private.brain_enqueue(). Postgres builds the WHOLE prompt (frozen rules +
 // facts + KB as the cached system block, the volatile context as the user turn), mints a one-time job token and
@@ -148,8 +148,9 @@ async function runJob(body: any) {
         model, max_tokens: maxTokens, system, messages,
         tools: tools.length ? tools : undefined,
         output_config: useFormat ? { effort, format: { type: "json_schema", schema: OUTPUT_SCHEMA } } : { effort },
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
+        // bl_brain_0475: refusal fallbacks are a Fable/Opus/Mythos-tier feature; a cheaper per-route model
+        // (Sonnet 5 on `chat`) must not carry the beta or the parameter.
+        ...(/^claude-(fable|opus|mythos)/.test(model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" } : {}),
       };
       let res: any;
       try {

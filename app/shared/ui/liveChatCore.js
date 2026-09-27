@@ -1,4 +1,10 @@
-// liveChatCore.js — LoadBoot live chat widget v5 (bl_lc_0312): AI assistant + real human takeover.
+// liveChatCore.js — LoadBoot live chat widget v6 (bl_lc_0475, 27 Sep 2026): premium shell + named specialists.
+//   v6: Amazon/Uber-grade shell (taller header with the specialist's avatar, grouped bubbles, day dividers, pill composer,
+//   pulsing launcher, full-screen sheet on phones, reduced-motion aware). The assistant answers from a named desk —
+//   Riley (general), Sara (billing), Omar (onboarding), Ali (tech), Maya (plans & pricing), Daniel (dispatch) — chosen
+//   by the model with a leading [[as:<desk>]] tag (rule.chat_specialists). Same rules as before: it introduces itself as
+//   LoadBoot's assistant, says plainly that it is an AI when asked, and a real person is always one tap away.
+// v5 (bl_lc_0312): AI assistant + real human takeover.
 // Plain script (no imports) so the SAME file powers the marketing site and all portals.
 // Usage: window.LBChat.mount({ url, anon, origin, getToken? })
 //   url      = https://<ref>.supabase.co     anon = publishable anon key
@@ -20,57 +26,72 @@
   if (typeof window === 'undefined' || window.LBChat) return;
 
   var CSS = [
-    '#lbc-fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;z-index:2147483646;',
-    'background:linear-gradient(135deg,#0883F7,#065fb8);color:#fff;box-shadow:0 10px 30px rgba(8,131,247,.45);display:flex;align-items:center;justify-content:center;transition:transform .18s,opacity .2s}',
-    '#lbc-fab:hover{transform:scale(1.07)}',
+    '#lbc-fab{position:fixed;right:18px;bottom:18px;width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;z-index:2147483646;',
+    'background:linear-gradient(135deg,#1a8ff9 0%,#0883F7 55%,#0a5fc0 100%);color:#fff;box-shadow:0 12px 32px rgba(8,131,247,.42),0 2px 6px rgba(2,6,23,.18);display:flex;align-items:center;justify-content:center;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s}',
+    '#lbc-fab::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(8,131,247,.55);animation:lbcPulse 2.6s ease-out infinite;pointer-events:none}',
+    '#lbc-fab:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 16px 38px rgba(8,131,247,.5)}',
+    '#lbc-fab.lbc-open::after{display:none}',
+    '@keyframes lbcPulse{0%{transform:scale(.9);opacity:.8}70%{transform:scale(1.35);opacity:0}100%{transform:scale(1.35);opacity:0}}',
     // 23 Sep 2026 — portals dock the launcher into the premium header (window.LBChat.dock(host)); the floating FAB stays for the marketing site
     '#lbc-fab.lbc-docked{position:relative;right:auto!important;bottom:auto!important;top:auto!important;margin:0;width:38px;height:38px;border-radius:10px;box-shadow:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#8ec5ff;z-index:1}',
+    '#lbc-fab.lbc-docked::after{display:none}',
     '#lbc-fab.lbc-docked:hover{transform:none;background:rgba(8,131,247,.22);color:#fff}',
     '#lbc-fab.lbc-docked svg{width:20px;height:20px}',
     '#lbc-fab.lbc-docked #lbc-badge{top:-6px;right:-6px;min-width:18px;height:18px;line-height:18px;font-size:10px}',
-    '#lbc-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;background:#FC5305;color:#fff;font:800 11px/20px Inter,Arial;padding:0 5px;display:none}',
-    '#lbc-panel{position:fixed;right:18px;bottom:86px;width:378px;max-width:calc(100vw - 24px);height:600px;max-height:calc(100vh - 110px);',
-    'background:#fff;border-radius:20px;box-shadow:0 24px 80px rgba(2,6,23,.4);z-index:2147483647;display:none;flex-direction:column;overflow:hidden;',
-    'font-family:Inter,system-ui,Arial,sans-serif;animation:lbcUp .25s ease}',
-    '@keyframes lbcUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}',
-    '#lbc-head{background:linear-gradient(135deg,#10223B,#0B1830);padding:14px 16px;display:flex;align-items:center;gap:12px;position:relative}',
-    '#lbc-head img{height:30px;width:30px;border-radius:8px}',
-    '.lbc-hav{height:32px;width:32px;border-radius:50%;background:#FC5305;color:#fff;font:800 13px/32px Inter,Arial;text-align:center;flex:none;display:none}',
-    '.lbc-ht{color:#fff;font-weight:800;font-size:15px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}',
-    '.lbc-hs{color:#9fb3cc;font-size:11.5px;display:flex;align-items:center;gap:5px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}',
-    '.lbc-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25);flex:none}',
-    '.lbc-dot.off{background:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.25)}',
-    '.lbc-hb{margin-left:auto;display:flex;gap:6px}',
-    '.lbc-hb button{background:rgba(255,255,255,.1);border:none;color:#cbd5e1;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;line-height:30px;padding:0}',
+    '#lbc-badge{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:10px;background:#FC5305;color:#fff;font:800 11px/20px Inter,Arial;padding:0 5px;display:none;box-shadow:0 0 0 2px #fff}',
+    '#lbc-panel{position:fixed;right:18px;bottom:88px;width:392px;max-width:calc(100vw - 24px);height:640px;max-height:calc(100vh - 112px);',
+    'background:#fff;border-radius:22px;box-shadow:0 30px 90px rgba(2,6,23,.38),0 0 0 1px rgba(2,6,23,.06);z-index:2147483647;display:none;flex-direction:column;overflow:hidden;',
+    'font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;animation:lbcUp .28s cubic-bezier(.2,.8,.2,1);-webkit-font-smoothing:antialiased}',
+    '@keyframes lbcUp{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}',
+    '@keyframes lbcIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}',
+    '#lbc-head{background:radial-gradient(120% 140% at 0% 0%,#1b3a63 0%,#10223B 45%,#0B1830 100%);padding:14px 16px 14px;display:flex;align-items:center;gap:12px;position:relative;min-height:70px;box-sizing:border-box}',
+    '#lbc-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.14),rgba(255,255,255,0))}',
+    '#lbc-logo{display:none}',
+    '.lbc-hav{height:42px;width:42px;border-radius:50%;background:linear-gradient(135deg,#1a8ff9,#0a5fc0);color:#fff;font:800 15px/42px Inter,Arial;text-align:center;flex:none;position:relative;box-shadow:0 0 0 2px rgba(255,255,255,.14),0 6px 16px rgba(0,0,0,.25);transition:background .3s}',
+    '.lbc-hav::after{content:"";position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#22c55e;border:2px solid #10223B}',
+    '.lbc-hav.off::after{background:#94a3b8}',
+    '.lbc-hav.human{background:linear-gradient(135deg,#ff7a33,#e34a02)}',
+    '.lbc-hgrp{min-width:0;flex:1}',
+    '.lbc-ht{color:#fff;font-weight:800;font-size:15.5px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:7px}',
+    '.lbc-ht small{font:700 9.5px/16px Inter,Arial;letter-spacing:.06em;text-transform:uppercase;color:#bfe0ff;background:rgba(8,131,247,.28);border:1px solid rgba(142,197,255,.35);border-radius:6px;padding:0 6px;flex:none}',
+    '.lbc-hs{color:#9fb3cc;font-size:11.5px;display:flex;align-items:center;gap:6px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lbc-dot{display:none}',
+    '.lbc-hb{margin-left:auto;display:flex;gap:4px;flex:none}',
+    '.lbc-hb button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);color:#cbd5e1;width:32px;height:32px;border-radius:10px;cursor:pointer;font-size:15px;line-height:30px;padding:0;transition:background .15s}',
     '.lbc-hb button:hover{background:rgba(255,255,255,.18);color:#fff}',
-    '#lbc-menu{position:absolute;top:56px;right:12px;background:#fff;border:1px solid #e6edf5;border-radius:12px;box-shadow:0 14px 40px rgba(2,6,23,.25);padding:6px;display:none;z-index:5;min-width:190px}',
-    '#lbc-menu button{display:block;width:100%;text-align:left;background:none;border:none;padding:9px 12px;font:600 13px Inter,Arial;color:#0f172a;border-radius:8px;cursor:pointer}',
+    '#lbc-menu{position:absolute;top:60px;right:12px;background:#fff;border:1px solid #e6edf5;border-radius:14px;box-shadow:0 18px 50px rgba(2,6,23,.28);padding:6px;display:none;z-index:5;min-width:210px;animation:lbcIn .15s ease}',
+    '#lbc-menu button{display:block;width:100%;text-align:left;background:none;border:none;padding:10px 12px;font:600 13px Inter,Arial;color:#0f172a;border-radius:9px;cursor:pointer}',
     '#lbc-menu button:hover{background:#f1f5f9}',
+    '#lbc-menu hr{border:0;border-top:1px solid #eef2f7;margin:4px 6px}',
     '#lbc-net{display:none;background:#fef3c7;color:#92400e;font:600 11.5px Inter,Arial;padding:6px 12px;text-align:center}',
-    '#lbc-body{flex:1;overflow-y:auto;padding:16px 14px;background:#F4F7FB;display:flex;flex-direction:column;gap:10px}',
-    '.lbc-row{display:flex;gap:8px;align-items:flex-end;animation:lbcUp .2s ease}',
+    '#lbc-body{flex:1;overflow-y:auto;padding:18px 14px 14px;background:linear-gradient(180deg,#F1F5FA 0%,#F6F8FC 60px);display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth;overscroll-behavior:contain}',
+    '#lbc-body::-webkit-scrollbar{width:6px}#lbc-body::-webkit-scrollbar-thumb{background:#d6dee9;border-radius:6px}',
+    '.lbc-row{display:flex;gap:9px;align-items:flex-end;animation:lbcIn .22s ease}',
     '.lbc-row.me{flex-direction:row-reverse}',
-    '.lbc-av{width:28px;height:28px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px}',
-    '.lbc-av.bot{background:#10223B;color:#fff}.lbc-av.staff{background:#FC5305;color:#fff;font-weight:800;font-size:11px}',
-    '.lbc-b{max-width:78%;padding:10px 13px;border-radius:16px;font-size:13.5px;line-height:1.55;word-wrap:break-word;white-space:pre-wrap}',
+    '.lbc-av{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font:800 12px Inter,Arial;color:#fff;box-shadow:0 2px 6px rgba(2,6,23,.15)}',
+    '.lbc-av.bot{background:linear-gradient(135deg,#1a8ff9,#0a5fc0)}.lbc-av.staff{background:linear-gradient(135deg,#ff7a33,#e34a02);font-size:11px}',
+    '.lbc-b{max-width:80%;padding:11px 14px;border-radius:18px;font-size:14px;line-height:1.55;word-wrap:break-word;white-space:pre-wrap;letter-spacing:-.005em}',
     '.lbc-b a{color:#0883F7;font-weight:600;text-decoration:none}.lbc-b a:hover{text-decoration:underline}',
-    '.me .lbc-b{background:#0883F7;color:#fff;border-bottom-right-radius:6px}.me .lbc-b a{color:#fff;text-decoration:underline}',
-    '.them .lbc-b{background:#fff;color:#0f172a;border:1px solid #e6edf5;border-bottom-left-radius:6px;box-shadow:0 1px 3px rgba(2,6,23,.05)}',
+    '.me .lbc-b{background:linear-gradient(135deg,#1a8ff9,#0876e0);color:#fff;border-bottom-right-radius:6px;box-shadow:0 6px 16px rgba(8,131,247,.25)}.me .lbc-b a{color:#fff;text-decoration:underline}',
+    '.them .lbc-b{background:#fff;color:#0f172a;border:1px solid #E7EDF5;border-bottom-left-radius:6px;box-shadow:0 2px 8px rgba(15,23,42,.05)}',
     '.staffrow .lbc-b{border-color:#fed7aa;background:#fffaf5}',
-    '.lbc-who{font-size:10.5px;color:#94a3b8;margin:0 38px 2px;font-weight:600}',
-    '.lbc-sys{text-align:center;font:600 11px Inter,Arial;color:#64748b;margin:2px 0;padding:0 10px}',
-    '.lbc-sys span{background:#e8eef6;border-radius:999px;padding:4px 10px;display:inline-block}',
-    '.lbc-day{text-align:center;font:600 10.5px Inter,Arial;color:#94a3b8;margin:4px 0 0;letter-spacing:.04em;text-transform:uppercase}',
-    '.lbc-chips{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 0 36px}',
-    '.lbc-chip{background:#fff;border:1.5px solid #cfe3fb;color:#0883F7;font:600 12px Inter,Arial;padding:7px 12px;border-radius:999px;cursor:pointer;transition:all .15s}',
-    '.lbc-chip:hover{background:#0883F7;color:#fff;border-color:#0883F7}',
-    '#lbc-typing{display:none;margin-left:38px}.lbc-tb{display:inline-flex;gap:4px;background:#fff;border:1px solid #e6edf5;padding:11px 14px;border-radius:16px;border-bottom-left-radius:6px;align-items:center}',
+    '.lbc-who{font:600 11px Inter,Arial;color:#64748b;margin:6px 40px 0;display:flex;align-items:center;gap:6px}',
+    '.lbc-who i{width:6px;height:6px;border-radius:50%;background:#0883F7;display:inline-block;flex:none}',
+    '.lbc-who em{font-style:normal;color:#94a3b8;font-weight:500}',
+    '.lbc-sys{text-align:center;font:600 11px Inter,Arial;color:#64748b;margin:4px 0;padding:0 10px}',
+    '.lbc-sys span{background:#e8eef6;border-radius:999px;padding:5px 11px;display:inline-block}',
+    '.lbc-day{display:flex;align-items:center;gap:10px;font:700 10px Inter,Arial;color:#94a3b8;margin:6px 0 2px;letter-spacing:.08em;text-transform:uppercase}',
+    '.lbc-day::before,.lbc-day::after{content:"";flex:1;height:1px;background:#e2e8f0}',
+    '.lbc-chips{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 0 39px;animation:lbcIn .25s ease}',
+    '.lbc-chip{background:#fff;border:1.5px solid #cfe0f7;color:#0b5cc7;font:600 12.5px Inter,Arial;padding:8px 13px;border-radius:999px;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(2,6,23,.04)}',
+    '.lbc-chip:hover{background:#0883F7;color:#fff;border-color:#0883F7;transform:translateY(-1px);box-shadow:0 6px 14px rgba(8,131,247,.25)}',
+    '#lbc-typing{display:none;margin-left:39px}.lbc-tb{display:inline-flex;gap:4px;background:#fff;border:1px solid #E7EDF5;padding:12px 15px;border-radius:18px;border-bottom-left-radius:6px;align-items:center;box-shadow:0 2px 8px rgba(15,23,42,.05)}',
     '.lbc-td{width:7px;height:7px;border-radius:50%;background:#94a3b8;animation:lbcBl 1.2s infinite}',
     '.lbc-td:nth-child(2){animation-delay:.18s}.lbc-td:nth-child(3){animation-delay:.36s}',
     '.lbc-tl{font:600 11px Inter,Arial;color:#94a3b8;margin:4px 0 0 4px;display:none}',
     '@keyframes lbcBl{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-3px)}}',
-    '#lbc-foot{padding:10px 12px 8px;background:#fff;border-top:1px solid #eef2f7}',
-    '.lbc-form{margin:2px 0 0 36px;max-width:82%;background:linear-gradient(180deg,#ffffff,#f7faff);border:1.5px solid #dbe9fb;border-radius:16px;border-bottom-left-radius:6px;padding:14px;box-shadow:0 6px 22px rgba(8,131,247,.10);display:flex;flex-direction:column;gap:8px;animation:lbcUp .25s ease}',
+    '#lbc-foot{padding:10px 12px calc(8px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid #eef2f7}',
+    '.lbc-form{margin:2px 0 0 39px;max-width:82%;background:linear-gradient(180deg,#ffffff,#f7faff);border:1.5px solid #dbe9fb;border-radius:18px;border-bottom-left-radius:6px;padding:14px;box-shadow:0 8px 24px rgba(8,131,247,.10);display:flex;flex-direction:column;gap:8px;animation:lbcUp .25s ease}',
     '.lbc-form label{font:700 10.5px Inter,Arial;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:-4px}',
     '.lbc-form::before{content:"";display:block;height:2px;border-radius:2px;background:linear-gradient(90deg,#0883F7 0%,#0883F7 55%,#FC5305 100%);margin:-4px -2px 6px;opacity:.9}',
     '.lbc-fhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:2px}',
@@ -81,7 +102,7 @@
     '.lbc-form button.lbc-fskip{background:none;border:0;box-shadow:none;margin:0;color:#64748b;font:600 11.5px Inter,Arial;cursor:pointer;padding:4px 6px;text-decoration:underline;text-underline-offset:2px;border-radius:8px;transform:none}',
     '.lbc-form button.lbc-fskip:hover{color:#0f172a;background:#f1f5f9;transform:none;box-shadow:none}',
     '.lbc-form.lbc-card-past{opacity:.5}',
-    '.lbc-fdone{margin:2px 0 0 36px;font:600 11.5px Inter,Arial;color:#64748b}',
+    '.lbc-fdone{margin:2px 0 0 39px;font:600 11.5px Inter,Arial;color:#64748b}',
     '.lbc-form input,.lbc-form textarea{border:1.5px solid #dbe4ef;border-radius:11px;padding:10px 12px;font:400 13.5px Inter,Arial;outline:none;color:#0f172a;background:#fff;width:100%;box-sizing:border-box}',
     '.lbc-form input:focus,.lbc-form textarea:focus{border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.12)}',
     '.lbc-form button{margin-top:2px;background:linear-gradient(135deg,#FC5305,#e34a02);color:#fff;border:none;border-radius:11px;padding:11px;font:800 13.5px Inter,Arial;cursor:pointer;transition:transform .15s;box-shadow:0 8px 20px rgba(252,83,5,.35)}',
@@ -92,22 +113,41 @@
     '.lbc-star{font-size:26px;line-height:1;cursor:pointer;color:#cbd5e1;background:none;border:none;padding:2px;box-shadow:none;margin:0;transition:transform .1s}',
     '.lbc-star.on{color:#f59e0b}.lbc-star:hover{transform:scale(1.15)}',
     '.lbc-chk{display:flex;align-items:center;gap:8px;font:500 12px Inter,Arial;color:#334155}.lbc-chk input{width:auto}',
-    '.lbc-hist{margin:2px 0 0 36px;max-width:86%;background:#fff;border:1.5px solid #dbe9fb;border-radius:16px;border-bottom-left-radius:6px;padding:10px;display:flex;flex-direction:column;gap:6px}',
+    '.lbc-hist{margin:2px 0 0 39px;max-width:86%;background:#fff;border:1.5px solid #dbe9fb;border-radius:18px;border-bottom-left-radius:6px;padding:10px;display:flex;flex-direction:column;gap:6px}',
     '.lbc-hi{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;cursor:pointer;border:1px solid #eef2f7;font:500 12px Inter,Arial;color:#0f172a}',
     '.lbc-hi:hover{background:#f4f8fd;border-color:#cfe3fb}.lbc-hi small{color:#94a3b8;font-weight:600;white-space:nowrap}',
-    '#lbc-form{display:flex;gap:8px;align-items:flex-end}',
-    '#lbc-in{flex:1;border:1.5px solid #dbe4ef;border-radius:14px;padding:10px 13px;font:400 13.5px Inter,Arial;resize:none;max-height:90px;outline:none;color:#0f172a;background:#fff}',
-    '#lbc-in:focus{border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.12)}',
-    '#lbc-send{width:42px;height:42px;border-radius:13px;border:none;background:#FC5305;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;transition:transform .15s}',
+    '#lbc-form{display:flex;gap:8px;align-items:flex-end;background:#F4F7FB;border:1.5px solid #E1E8F0;border-radius:24px;padding:5px 5px 5px 8px;transition:border-color .15s,box-shadow .15s}',
+    '#lbc-form:focus-within{border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.12);background:#fff}',
+    '#lbc-in{flex:1;border:none;border-radius:18px;padding:10px 10px;font:400 14px Inter,Arial;resize:none;max-height:90px;outline:none;color:#0f172a;background:transparent}',
+    '#lbc-send{width:40px;height:40px;border-radius:50%;border:none;background:linear-gradient(135deg,#FC5305,#e34a02);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;transition:transform .15s,box-shadow .15s;box-shadow:0 6px 14px rgba(252,83,5,.3)}',
     '#lbc-send:hover{transform:scale(1.06)}#lbc-send:disabled{opacity:.5}',
-    '#lbc-pow{text-align:center;color:#b6c2d4;font-size:10px;margin-top:6px}',
+    '#lbc-pow{text-align:center;color:#b6c2d4;font:500 10.5px Inter,Arial;margin-top:7px;letter-spacing:.01em}',
     '#lbc-closedbar{display:none;background:#f1f5f9;border-top:1px solid #e2e8f0;color:#475569;font-size:12px;padding:9px 14px;text-align:center}',
     '#lbc-closedbar button{background:none;border:none;color:#FC5305;font-weight:800;cursor:pointer;font-size:12px}',
-    '@media (max-width:520px){#lbc-panel{right:0;bottom:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0}#lbc-in,.lbc-form input,.lbc-form select,.lbc-form textarea{font-size:16px!important}}'
+    '@media (max-width:520px){#lbc-panel{right:0;bottom:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0;animation:lbcUp .3s cubic-bezier(.2,.8,.2,1)}#lbc-head{padding-top:calc(14px + env(safe-area-inset-top,0px))}#lbc-in,.lbc-form input,.lbc-form select,.lbc-form textarea{font-size:16px!important}.lbc-b{max-width:84%}}',
+    '@media (prefers-reduced-motion:reduce){#lbc-panel,.lbc-row,.lbc-chips,#lbc-menu,.lbc-form{animation:none}#lbc-fab::after{animation:none;display:none}.lbc-td{animation-duration:2s}}'
   ].join('');
 
   var cfg = null, open = false, convId = null, vKey = null, lastId = 0, pollT = null, unread = 0, started = false;
   var mode = 'bot', botPaused = false, staffName = null, online = false, awaiting = false, awaitingSince = 0;
+  // v6 — the desks the assistant answers from. The model picks one per reply with a leading [[as:<key>]] tag
+  // (rule.chat_specialists in CC → AI Brain → Permissions); Gemini fallback replies carry no tag → Riley.
+  var SPECIALISTS = {
+    general:    { name: 'Riley',  role: 'LoadBoot Support',          grad: 'linear-gradient(135deg,#1a8ff9,#0a5fc0)', dot: '#0883F7' },
+    billing:    { name: 'Sara',   role: 'Billing & payments',        grad: 'linear-gradient(135deg,#a78bfa,#6d28d9)', dot: '#7c3aed' },
+    onboarding: { name: 'Omar',   role: 'Onboarding & verification', grad: 'linear-gradient(135deg,#34d399,#047857)', dot: '#059669' },
+    tech:       { name: 'Ali',    role: 'Technical support',         grad: 'linear-gradient(135deg,#38bdf8,#0369a1)', dot: '#0ea5e9' },
+    sales:      { name: 'Maya',   role: 'Plans & pricing',           grad: 'linear-gradient(135deg,#fb923c,#c2410c)', dot: '#FC5305' },
+    dispatch:   { name: 'Daniel', role: 'Dispatch & loads',          grad: 'linear-gradient(135deg,#fbbf24,#b45309)', dot: '#d97706' }
+  };
+  var specKey = 'general';
+  function spec() { return SPECIALISTS[specKey] || SPECIALISTS.general; }
+  function setSpec(k, announce) {
+    if (!SPECIALISTS[k] || k === specKey) return;
+    var prev = specKey; specKey = k;
+    setHeader();
+    if (announce && prev !== 'general') sysLine(spec().name + ' · ' + spec().role + ' is with you now');
+  }
   var status = 'open', csat = null, hasEmail = false, lastSent = { text: '', at: 0 }, lastTyped = 0, typingSent = 0;
   var netDown = false, signedIn = false, hello = null, lastDay = '', ratedShown = false, baseTitle = null, titleT = null;
   var els = {};
@@ -194,12 +234,20 @@
     if (fm) { formDef = (fm[1] || 'name,email'); body = body.replace(fm[0], ''); }
     var callForm = false;
     if (body.indexOf('[[callform]]') >= 0) { callForm = true; body = body.replace('[[callform]]', ''); }
-    body = body.replace(/\s+$/, '');
-    var who = sender === 'bot' ? 'LoadBoot AI ⚡' : sender === 'staff' ? ((meta.staff_name || staffName || 'LoadBoot Team') + ' · LoadBoot') : '';
+    var am = body.match(/\[\[as:([a-z]+)\]\]\s*/);
+    if (am) { body = body.replace(am[0], ''); if (sender === 'bot') setSpec(am[1], true); }
+    body = body.replace(/^\s+|\s+$/g, '');
+    if (!body) { if (chipDef && !me) chips(chipDef.split('|').map(function (c) { var i = c.indexOf('='); return [i > 0 ? c.slice(0, i).trim() : c.trim(), i > 0 ? c.slice(i + 1).trim() : c.trim()]; })); return; }
+    var sp = spec();
+    var who = sender === 'bot' ? sp.name + '<em>· ' + esc(sp.role) + '</em>'
+            : sender === 'staff' ? esc(meta.staff_name || staffName || 'LoadBoot Team') + '<em>· real person</em>' : '';
+    var prevRow = els.typing.previousElementSibling;
+    var sameGroup = prevRow && prevRow.classList && prevRow.classList.contains('lbc-row') && prevRow.getAttribute('data-s') === (sender + ':' + (sender === 'bot' ? specKey : (meta.staff_name || staffName || '')));
     var html = '';
-    if (!me && who) html += '<div class="lbc-who">' + esc(who) + '</div>';
-    html += '<div class="lbc-row ' + (me ? 'me' : 'them') + (sender === 'staff' ? ' staffrow' : '') + '">';
-    if (!me) html += '<div class="lbc-av ' + (sender === 'bot' ? 'bot' : 'staff') + '">' + (sender === 'bot' ? '⚡' : esc(((meta.staff_name || staffName || 'LB').slice(0, 1)).toUpperCase())) + '</div>';
+    if (!me && who && !sameGroup) html += '<div class="lbc-who"><i style="background:' + (sender === 'bot' ? sp.dot : '#FC5305') + '"></i>' + who + '</div>';
+    html += '<div class="lbc-row ' + (me ? 'me' : 'them') + (sender === 'staff' ? ' staffrow' : '') + '" data-s="' + esc(sender + ':' + (sender === 'bot' ? specKey : (meta.staff_name || staffName || ''))) + '">';
+    if (!me) html += '<div class="lbc-av ' + (sender === 'bot' ? 'bot' : 'staff') + '"' + (sender === 'bot' ? ' style="background:' + sp.grad + '"' : '') + '>'
+                   + (sender === 'bot' ? esc(sp.name.slice(0, 1)) : esc(((meta.staff_name || staffName || 'LB').slice(0, 1)).toUpperCase())) + '</div>';
     html += '<div class="lbc-b">' + linkify(body) + '</div></div>';
     var w = document.createElement('div');
     w.innerHTML = html;
@@ -359,6 +407,7 @@
   function typing(on) {
     els.typing.style.display = on ? 'block' : 'none';
     els.tlabel.style.display = 'none';
+    els.stypeLabel.textContent = (staffName || 'LoadBoot Team') + ' is typing…';
     awaiting = !!on; awaitingSince = on ? Date.now() : 0;
     if (on) els.body.scrollTop = els.body.scrollHeight;
   }
@@ -370,17 +419,16 @@
   }
 
   function setHeader() {
-    var t = els.ht, s = els.hs, av = els.hav, dot = els.dot;
+    var t = els.ht, sub = els.hs, av = els.hav;
     if (botPaused && staffName) {
-      t.textContent = staffName + ' · LoadBoot';
-      s.textContent = 'Real person · replies right here';
-      av.style.display = 'block'; av.textContent = staffName.slice(0, 1).toUpperCase(); els.logo.style.display = 'none';
-      dot.className = 'lbc-dot';
+      t.innerHTML = esc(staffName) + '<small>Team</small>';
+      sub.textContent = 'Real person · replies right here';
+      av.textContent = staffName.slice(0, 1).toUpperCase(); av.className = 'lbc-hav human'; av.style.background = '';
     } else {
-      t.textContent = 'LoadBoot Support';
-      s.textContent = online ? ('AI answers instantly · ' + (staffName || 'a person') + ' is online') : 'AI answers instantly · a person by email/phone';
-      av.style.display = 'none'; els.logo.style.display = '';
-      dot.className = 'lbc-dot' + (online ? '' : ' off');
+      var sp = spec();
+      t.innerHTML = esc(sp.name) + '<small>' + (specKey === 'general' ? 'Assistant' : esc(sp.role.split(' ')[0])) + '</small>';
+      sub.textContent = (specKey === 'general' ? 'Instant answers, 24/7' : sp.role) + ' · ' + (online ? (staffName || 'team') + ' online' : 'person one tap away');
+      av.textContent = sp.name.slice(0, 1); av.className = 'lbc-hav' + (online ? '' : ' off'); av.style.background = sp.grad;
     }
   }
 
@@ -417,7 +465,7 @@
              ['🙋 Talk to a person', 'I want to talk to a real person']]);
       return;
     }
-    addMsg('bot', "Hi! 👋 I'm the LoadBoot assistant — I answer instantly, 24/7, and a real person is one tap away. Which one are you?");
+    addMsg('bot', "Hi! 👋 I'm Riley, LoadBoot's assistant — instant answers 24/7, and a real person is one tap away. Which one are you?");
     chips([['🚀 Get set up in 5 min', 'Start my 5-minute setup'],
            ['🚚 I\'m a carrier', "I'm a carrier"],
            ['🏢 I\'m a broker', "I'm a broker"],
@@ -535,7 +583,7 @@
   }
   function clearBody() {
     els.body.querySelectorAll('.lbc-row,.lbc-who,.lbc-chips,.lbc-sys,.lbc-day,.lbc-form,.lbc-hist,.lbc-fdone').forEach(function (n) { n.remove(); });
-    lastDay = ''; ratedShown = false; csat = null; status = 'open'; botPaused = false; typing(false); closedBar(false);
+    lastDay = ''; ratedShown = false; csat = null; status = 'open'; botPaused = false; specKey = 'general'; typing(false); closedBar(false); setHeader();
   }
   function openConversation(id) {
     clearBody(); convId = id; lsSet('lb_lc_conv', id); lastId = 0; started = true;
@@ -634,6 +682,7 @@
   async function togglePanel(force) {
     open = force != null ? force : !open;
     els.panel.style.display = open ? 'flex' : 'none';
+    els.fab.classList.toggle('lbc-open', open);
     els.menu.style.display = 'none';
     if (open) {
       unread = 0; badge();
@@ -671,11 +720,13 @@
     panel.innerHTML =
       '<div id="lbc-head">' +
         '<img id="lbc-logo" src="/icon-192.png" alt="" onerror="this.style.display=\'none\'">' +
-        '<div class="lbc-hav" id="lbc-hav"></div>' +
-        '<div><div class="lbc-ht" id="lbc-ht">LoadBoot Support</div>' +
-        '<div class="lbc-hs"><span class="lbc-dot off" id="lbc-dot"></span><span id="lbc-hs">AI answers instantly · a person by email/phone</span></div></div>' +
+        '<div class="lbc-hav off" id="lbc-hav">R</div>' +
+        '<div class="lbc-hgrp"><div class="lbc-ht" id="lbc-ht">Riley<small>Assistant</small></div>' +
+        '<div class="lbc-hs"><span class="lbc-dot off" id="lbc-dot"></span><span id="lbc-hs">Instant answers, 24/7 · person one tap away</span></div></div>' +
         '<div class="lbc-hb"><button id="lbc-more" aria-label="More">⋯</button><button id="lbc-min" aria-label="Minimize">—</button></div>' +
         '<div id="lbc-menu">' +
+          '<button data-act="person">🙋 Talk to a person</button>' +
+          '<hr>' +
           '<button data-act="history">🗂 Previous chats</button>' +
           '<button data-act="new">＋ Start a new chat</button>' +
           '<button data-act="transcript">📧 Email me this chat</button>' +
@@ -694,7 +745,7 @@
       '</div><div id="lbc-pow">' +
       ((cfg.origin === 'carrier' || cfg.origin === 'partner' || cfg.origin === 'agent')
         ? '<a href="tel:+18153651168" style="color:#64748b;text-decoration:none;font-weight:800">📞💬 +1 (815) 365-1168</a> · Call or WhatsApp · LoadBoot'
-        : 'LoadBoot · The Operating System for Trucking') +
+        : 'LoadBoot · Instant answers · real people on hand') +
       '</div></div>';
 
     var fab = document.createElement('button'); fab.id = 'lbc-fab';
@@ -731,6 +782,7 @@
         els.menu.style.display = 'none';
         var a = b.getAttribute('data-act');
         if (a === 'history') showHistory();
+        else if (a === 'person') sendText('I want to talk to a real person');
         else if (a === 'new') newChat();
         else if (a === 'transcript') emailTranscript();
         else if (a === 'end') endChat();
