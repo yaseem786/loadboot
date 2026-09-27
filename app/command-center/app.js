@@ -340,6 +340,8 @@ async function boot() {
         keywords: 'ai brain claude anthropic api usage spend tokens cost cap kill switch model live chat on claude gemini fallback' },
       { id: 'jobs', label: 'Jobs', path: '/ai-brain-jobs', allowed: () => can('settings.manage'), render: (h, q) => renderBrain(h, 'jobs', q),
         keywords: 'ai brain jobs queue claude runs failed capped escalated tool calls tokens per job' },
+      { id: 'chats', label: 'Chats', path: '/ai-brain-chats', allowed: () => can('settings.manage'), render: (h, q) => renderBrain(h, 'chats', q),   // bl_brain_0479
+        keywords: 'ai brain chats live chat answers desk specialist riley sara omar ali maya daniel cost per chat who answered' },
       { id: 'permissions', label: 'Permissions', path: '/ai-brain-permissions', allowed: () => can('settings.manage'), render: (h, q) => renderBrain(h, 'permissions', q),
         keywords: 'ai brain permissions sources tools rules auto prep deny caps per day usd cap max per job' },
       { id: 'findings', label: 'Findings', path: '/ai-brain-findings', allowed: () => can('settings.manage'), render: (h, q) => renderBrain(h, 'findings', q),
@@ -404,6 +406,7 @@ async function boot() {
     // Deep link: #mailbox?thread=<thread_key> opens that conversation without marking it read.
     '/ai-brain': tabbed('brain', 'overview'),            // bl_brain_0474
     '/ai-brain-jobs': tabbed('brain', 'jobs'),
+    '/ai-brain-chats': tabbed('brain', 'chats'),          // bl_brain_0479
     '/ai-brain-permissions': tabbed('brain', 'permissions'),
     '/ai-brain-findings': tabbed('brain', 'findings'),
     '/ai-brain-facts': tabbed('brain', 'facts'),

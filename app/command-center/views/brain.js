@@ -15,7 +15,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, openDrawer, askConfirm, fmtDateTime, ago } from '../../shared/ui/components.js';
-import { ccBrainOverview, ccBrainJobs, ccBrainJob, ccBrainConfigSet, ccBrainPermSet, ccBrainPermAdd, ccBrainPermDelete,
+import { ccBrainOverview, ccBrainJobs, ccBrainJob, ccBrainChats, ccBrainConfigSet, ccBrainPermSet, ccBrainPermAdd, ccBrainPermDelete,
          ccBrainPermLog, ccBrainFindings, ccBrainFindingSet, ccBrainFacts, ccBrainFactSet, ccBrainTest } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
@@ -67,6 +67,7 @@ export function renderBrain(host, tab, query) {
   const q = query || new URLSearchParams('');
   switch (tab) {
     case 'jobs': return renderJobs(host, q);
+    case 'chats': return renderChats(host, q);   // bl_brain_0479
     case 'permissions': return renderPermissions(host, q);
     case 'findings': return renderFindings(host, q);
     case 'facts': return renderFacts(host, q);
@@ -138,6 +139,12 @@ function renderOverview(host) {
           try { await ccBrainPermSet('source.assist', { enabled: on, reason: 'CC → AI Brain → Overview' }); toast(on ? 'Suggested replies on' : 'Suggested replies off'); load(true); }
           catch (e) { input.checked = !on; toast(humanizeError(e), 'error'); }
         }, 'source.assist')),
+      // bl_brain_0479 — one bell notification the moment the AI writes the FIRST reply of a new chat (never per message).
+      row('Tell me when the AI takes a new chat', cfg.chat_notify_new !== false ? 'On — a bell notification with the visitor’s question, linked to the chat' : 'Off — AI chats only show in Live chat and the Chats tab',
+        sw(cfg.chat_notify_new !== false, async (on, input) => {
+          try { await ccBrainConfigSet({ chat_notify_new: on, reason: 'CC → AI Brain → Overview' }); toast(on ? 'You will be told when the AI takes a new chat' : 'New-chat notifications off'); load(true); }
+          catch (e) { input.checked = !on; toast(humanizeError(e), 'error'); }
+        }, 'brain_config.chat_notify_new')),
       row('Daily cap', 'Hard stop for the day (UTC). Over the cap: chat → Gemini, everything else waits for tomorrow.',
         el('div', { class: 'cc-brain-capbox' }, [el('span', null, '$'), capInput, capBtn])),
     ]);
@@ -307,6 +314,52 @@ function renderJobs(host, q) {
         el('td', { class: 'cc-brain-num' }, fmtK(j.input) + ' / ' + fmtK(j.cache_read) + ' / ' + fmtK(j.output)),
         el('td', { class: 'cc-brain-num' }, usd(j.usd, 3)),
         el('td', { class: 'cc-brain-num' }, j.secs != null ? secs(j.secs) : '—'),
+      ]))),
+    ]);
+    mount(listHost, tbl);
+  }
+  load();
+}
+
+/* ================================================================== CHATS (bl_brain_0479) */
+// Every live-chat answer the brain gave, next to the conversation it was given in: who asked, which desk
+// answered (the [[as:<desk>]] tag → a name), what it cost, and whether a person has since taken over.
+const DESK = { general: 'Riley', billing: 'Sara', onboarding: 'Omar', tech: 'Ali', sales: 'Maya', dispatch: 'Daniel' };
+function renderChats(host) {
+  const sumHost = el('div', { class: 'cc-brain-chatsum' });
+  const listHost = el('div');
+  mount(host, el('div', { class: 'cc-brain' }, [
+    sectionHead('Chats', 'Every live-chat reply the AI wrote — who asked, which desk answered, what it cost, and whether a person took over. Click a row for the full answer; "Open chat" jumps to the conversation.'),
+    el('div', { class: 'cc-toolbar cc-brain-toolbar' }, [el('button', { class: 'lb-btn lb-btn-sm', onClick: () => load() }, 'Refresh')]),
+    sumHost, listHost,
+  ]));
+  let timer = setInterval(() => { if (!host.isConnected) { clearInterval(timer); return; } load(true); }, REFRESH_MS);
+  const who = (r) => (r.name && String(r.name).trim()) || (r.email && String(r.email).trim()) || (r.origin === 'website' ? 'Website visitor' : (r.origin ? r.origin + ' visitor' : 'Visitor'));
+  const now = (r) => !r.conv_id ? pill('no chat', 'gray') : r.conv_status !== 'open' ? pill('closed', 'gray') : r.human ? pill('person took over', 'amber') : pill('AI handling', 'blue');
+  async function load(silent) {
+    if (!silent) showLoading(listHost, 'Loading chats…');
+    let rows; try { rows = await ccBrainChats(200); } catch (e) { if (!silent) showError(listHost, humanizeError(e), () => load()); return; }
+    if (!Array.isArray(rows) || !rows.length) { mount(sumHost, null); mount(listHost, el('div', { class: 'lb-state lb-empty' }, 'The AI has not answered a live chat yet.')); return; }
+    const convs = new Set(rows.map(r => r.conv_id).filter(Boolean));
+    const cost = rows.reduce((a, r) => a + n0(r.usd), 0);
+    const esc = rows.filter(r => r.escalate).length, human = rows.filter(r => r.human).length;
+    mount(sumHost, el('div', { class: 'cc-brain-kvs' }, [
+      ['Replies', String(rows.length)], ['Conversations', String(convs.size)], ['Cost', usd(cost, 2) + ' · ' + usd(cost / rows.length, 3) + ' per reply'],
+      ['Handed to a person', esc + ' by the AI · ' + human + ' chats now with a person'],
+    ].map(m => el('div', { class: 'cc-brain-kv' }, [el('u', null, m[0]), el('b', null, m[1])]))));
+    const tbl = el('table', { class: 'cc-table cc-brain-jobs cc-brain-chats' }, [
+      el('thead', null, el('tr', null, ['When', 'Visitor', 'Desk', 'Question', 'Answer', 'Now', 'Model', 'Cost', 'Time', ''].map(h => el('th', null, h)))),
+      el('tbody', null, rows.map(r => el('tr', { class: 'cc-brain-jr', onClick: () => openJob(r.id) }, [
+        el('td', { title: fmtDateTime(r.created_at) }, ago(r.created_at)),
+        el('td', null, [el('b', null, who(r)), el('br'), el('small', { class: 'cc-brain-muted' }, [r.visitor_role || 'unknown role', r.page ? ' · ' + r.page : ''].join(''))]),
+        el('td', null, r.desk ? [el('b', null, DESK[r.desk] || r.desk), el('br'), el('small', { class: 'cc-brain-muted' }, r.desk)] : el('span', { class: 'cc-brain-muted' }, '—')),
+        el('td', { class: 'cc-brain-q' }, r.question || (r.error ? el('span', { class: 'cc-brain-bad' }, r.error) : '')),
+        el('td', { class: 'cc-brain-q' }, [r.escalate ? el('small', { class: 'cc-brain-esc' }, '→ person · ') : null, (r.reply || '').replace(/<[^>]+>/g, ' ').slice(0, 160) || (r.status === 'done' ? '—' : r.status)]),
+        el('td', null, now(r)),
+        el('td', null, el('small', null, (r.model || '—').replace(/^claude-/, ''))),
+        el('td', { class: 'cc-brain-num' }, usd(r.usd, 3)),
+        el('td', { class: 'cc-brain-num' }, r.secs != null ? secs(r.secs) : '—'),
+        el('td', null, r.conv_id ? el('a', { class: 'lb-btn lb-btn-sm', href: '#/live-chat?id=' + r.conv_id, onClick: (e) => e.stopPropagation() }, 'Open chat') : null),
       ]))),
     ]);
     mount(listHost, tbl);
@@ -608,6 +661,7 @@ function injectStyleOnce() {
 .cc-brain-q{max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cc-brain-num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .cc-brain-esc{color:#b45309;font-weight:700}
 .cc-brain-kvs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px 14px}
+.cc-brain-chatsum{margin:0 0 12px}.cc-brain-chats td{vertical-align:top}
 .cc-brain-kv u{display:block;text-decoration:none;font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--lb-muted,#64748b)}.cc-brain-kv b{font-size:.86rem;font-weight:600;word-break:break-word}
 .cc-brain-quote{background:#f6f8fb;border-left:3px solid #cbd5e1;border-radius:6px;padding:8px 12px;white-space:pre-wrap;font-size:.88rem;line-height:1.5}
 .cc-brain-quote.ans{border-left-color:#7c3aed}

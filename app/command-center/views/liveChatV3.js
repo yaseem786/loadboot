@@ -179,7 +179,9 @@ function playbook(c) {
   }
 }
 const TABS = [
-  { k: 'need',   l: 'Needs you',   f: c => stateOf(c) === 'wa' },
+  // bl_brain_0479 — the default tab also lists the chats the AI is answering (badge "AI answering"), so nothing the
+  // AI is handling is out of sight; the red "urgent" tint still means a person is waited on (stateOf === 'wa').
+  { k: 'need',   l: 'Needs you',   f: c => stateOf(c) === 'wa' || stateOf(c) === 'ai' },
   { k: 'mine',   l: 'Mine',        f: c => !!c.assigned_me && c.status === 'open' },
   { k: 'ai',     l: 'AI handling', f: c => stateOf(c) === 'ai' },
   { k: 'all',    l: 'All open',    f: c => c.status === 'open' },
@@ -423,7 +425,8 @@ export function renderLiveChatV3(host) {
   function paintTabs() {
     mount(tabsHost, TABS.map(t => {
       const n = S.rows.filter(t.f).length;
-      return el('button', { class: 'lcv-qtab' + (S.tab === t.k ? ' on' : '') + (t.k === 'need' && n ? ' urgent' : ''), onclick: () => setTab(t.k) }, [t.l, el('s', null, String(n))]);
+      const urgent = t.k === 'need' && S.rows.some(c => stateOf(c) === 'wa');   // bl_brain_0479: AI-handled rows never tint the tab red
+      return el('button', { class: 'lcv-qtab' + (S.tab === t.k ? ' on' : '') + (urgent ? ' urgent' : ''), onclick: () => setTab(t.k) }, [t.l, el('s', null, String(n))]);
     }));
   }
   function paintFilters() {
@@ -498,6 +501,7 @@ export function renderLiveChatV3(host) {
       const intent = rowIntent(c);
       const tags = [
         tag(R.lbl, 't-role', R.ic),
+        st === 'ai' ? tag('AI answering', 't-ai', 'bot', 'The AI is handling this chat — send a reply to take over') : null,   // bl_brain_0479
         tag(INTENT_LBL[intent], 't-int', null, 'Topic guessed from their words — not stored'),
         FRUSTRATED.test(c.last_msg || '') ? tag('Frustrated', 't-sent', 'frown', 'Wording suggests frustration') : null,
         c.assigned_email ? tag(c.assigned_me ? 'Mine' : String(c.assigned_email).split('@')[0], c.assigned_me ? 't-mine' : 't-role', 'user-round') : null,

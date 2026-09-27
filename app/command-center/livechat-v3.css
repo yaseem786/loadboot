@@ -94,7 +94,7 @@
 .lcv-r2{display:flex;gap:5px;margin:4px 0 3px;flex-wrap:wrap}
 .lcv-tag{font-size:10.5px;font-weight:700;border-radius:6px;padding:2px 6px;letter-spacing:.01em;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
 .lcv-tag.t-role{background:#eef3f9;color:#41597a}.lcv-tag.t-int{background:#f4f0ff;color:#6b3fd4}.lcv-tag.t-sent{background:#fff1f1;color:#c02626}
-.lcv-tag.t-mine{background:#e9f9ef;color:#12833f}.lcv-tag.t-lang{background:#fff6e8;color:#a4530b}.lcv-tag.t-lead{background:#fff6e8;color:#a4530b}
+.lcv-tag.t-mine{background:#e9f9ef;color:#12833f}.lcv-tag.t-lang{background:#fff6e8;color:#a4530b}.lcv-tag.t-lead{background:#fff6e8;color:#a4530b}.lcv-tag.t-ai{background:#eef2ff;color:#3730a3}
 .lcv-r3{padding-right:28px;font-size:12.2px;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .lcv-unread{position:absolute;right:10px;bottom:10px;background:var(--blue);color:#fff;font-size:10.5px;font-weight:800;border-radius:99px;min-width:18px;height:18px;display:grid;place-items:center;padding:0 5px}
 .lcv-sel{position:absolute;left:8px;top:8px;width:16px;height:16px;border-radius:5px;border:1.5px solid #b9c9dc;background:#fff;display:none;place-items:center;color:#fff;z-index:2}
