@@ -248,12 +248,15 @@ const CSS = `
 .wx-down.show{display:flex}
 /* composer */
 .wx-comp{flex:none;padding:6px 16px 12px;background:transparent;position:relative;z-index:2}
-.wx-box{background:#fff;border-radius:26px;box-shadow:0 1px 3px rgba(11,20,26,.12);padding:6px 8px 6px 8px}
+.wx-box{background:#fff;border-radius:26px;box-shadow:0 1px 3px rgba(11,20,26,.12);padding:6px 8px;display:grid;align-items:center;
+  grid-template-columns:auto auto auto auto 1fr auto;grid-template-areas:"ta ta ta ta ta ta" "clip emo qr recd . send"}
 .wx-box.dis{background:#f7f8fa}
+.wx-pill{display:contents}
+.wx-box .wx-ta{grid-area:ta}.wx-box .wx-clip{grid-area:clip}.wx-box .wx-emob{grid-area:emo}.wx-box .wx-qr{grid-area:qr}.wx-box .wx-recd{grid-area:recd}.wx-box .wx-sendb{grid-area:send}
+.wx-qr .m{display:none}
+.wx-fab{display:none}
 .wx-ta{display:block;width:100%;border:0;outline:none;resize:none;background:transparent;font:400 15px ${FONT};line-height:21px;color:var(--tx);padding:8px 12px 4px;min-height:37px;max-height:170px;overflow-y:auto;white-space:pre-wrap}
 .wx-ta::placeholder{color:#8696a0}
-.wx-bar{display:flex;align-items:center;gap:2px}
-.wx-bar .sp{flex:1}
 .wx-qr{display:inline-flex;align-items:center;gap:4px;border:1px solid #d1d7db;background:#fff;border-radius:18px;height:34px;padding:0 10px 0 14px;font:600 14px ${FONT};color:var(--tx);cursor:pointer;margin-left:4px}
 .wx-qr:hover{background:var(--hv)}.wx-qr.on{background:#d9fdd3;border-color:#d9fdd3;color:var(--gd)}
 .wx-sendb{width:42px;height:42px;border-radius:50%;border:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;background:transparent;color:var(--ic)}
@@ -307,18 +310,63 @@ const CSS = `
 .wx-page .wx-ph2 h2{margin:0;font:700 20px ${FONT};flex:1}
 .wx-page .pad{padding:16px 18px}
 @media (max-width:860px){
-  .wx{grid-template-columns:1fr;border-radius:12px}
+  .wx{grid-template-columns:1fr;border-radius:14px;font-size:15px}
   .wx-rail{display:none}
   .wx-page{grid-column:1}
   .wx .wx-main{display:none}
+  .wx-sh h2{color:#1daa61;font-size:23px}
+  .wx-sh .wx-new{display:none}
+  .wx-fab{display:flex;position:absolute;right:16px;bottom:18px;width:56px;height:56px;border-radius:16px;border:0;background:#1daa61;color:#fff;
+    align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(11,20,26,.28);cursor:pointer;z-index:4}
+  .wx-fab:active{transform:scale(.96)}
+  .wx-list{padding:0 4px 88px}
+  .wx-row{height:74px;padding:0 10px;border-radius:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none}
+  .wx-row:hover{background:transparent}.wx-row:active,.wx-row.menu{background:var(--pn)}
+  .wx-rbd{border-bottom:0}
+  .wx-tag{max-width:96px}
+  .wx-chev{display:none}
+  /* an open chat takes the whole phone screen, the way WhatsApp opens one */
+  .wx.m-chat{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh) !important;min-height:0;z-index:8000;border:0;border-radius:0;box-shadow:none;animation:wxslide .18s ease-out}
+  @keyframes wxslide{from{transform:translateX(30px);opacity:.4}}
   .wx.m-chat .wx-side{display:none}
   .wx.m-chat .wx-main{display:flex}
   .wx-back{display:inline-flex}
-  .wx-body{padding:10px 8px}
-  .wx-bub{max-width:85%}
+  .wx-ch{height:auto;min-height:58px;padding:calc(4px + env(safe-area-inset-top,0px)) 4px 4px 2px;gap:4px;background:#fff}
+  .wx-ch .who b{font-weight:600;font-size:16.5px}
+  .wx-ch .who small{font-size:12.5px}
+  .wx-ch .wx-ib{width:40px;height:40px}
   .wx-own{display:none}
-  .wx-comp{padding:6px 8px 10px}
+  .wx-body{padding:8px 4px}
+  .wx-mr{padding:0 6px}
+  .wx-bub{max-width:86%;font-size:15px;line-height:20px}
+  .wx-img{max-width:260px}
+  .wx-aud{width:220px}
+  .wx-note{font-size:12px;margin:4px 8px 10px}
+  .wx-down{bottom:84px;right:12px}
+  .wx-comp{padding:6px 6px calc(8px + env(safe-area-inset-bottom,0px))}
+  .wx-box{display:flex;align-items:flex-end;gap:6px;background:transparent;box-shadow:none;padding:0}
+  .wx-box.dis{background:transparent}
+  .wx-pill{display:flex;align-items:flex-end;flex:1;min-width:0;background:#fff;border-radius:26px;padding:2px 4px;min-height:48px;box-shadow:0 1px 2px rgba(11,20,26,.18)}
+  .wx-box.dis .wx-pill{background:#f7f8fa}
+  .wx-pill .wx-ib{width:42px;height:44px}
+  .wx-ta{order:2;flex:1;min-width:0;padding:12px 4px;min-height:44px;font-size:16px;line-height:20px;max-height:128px}
+  .wx-emob{order:1}.wx-clip{order:3}.wx-qr{order:4}.wx-recd{order:5}
+  .wx-qr{border:0;background:transparent;width:42px;height:44px;padding:0;margin:0;justify-content:center;color:var(--ic)}
+  .wx-qr.on{background:transparent;color:var(--g)}
+  .wx-qr .d{display:none}.wx-qr .m{display:inline-flex}
+  .wx-recd{align-self:center;margin:0 6px 0 0;font-size:12px}
+  .wx-sendb,.wx-sendb.go,.wx-sendb.rec{width:48px;height:48px;background:#1daa61;color:#fff;flex:none;box-shadow:0 1px 2px rgba(11,20,26,.2)}
+  .wx-sendb.rec{background:#ea0038}
+  .wx-tray,.wx-emo{border-radius:14px}
+  .wx-emo{grid-template-columns:repeat(8,1fr)}
+  .wx-info{width:100%;border-left:0;animation:wxslide .18s ease-out}
+  .wx-ih{padding-top:env(safe-area-inset-top,0px)}
+  .wx-isec{padding:14px 18px}
+  .wx-isec.hero .wx-av{width:140px !important;height:140px !important;font-size:52px !important}
+  .wx-find input{font-size:16px}
+  .wx-srch input,.wx-in{font-size:16px}
 }
+html.wx-lock,html.wx-lock body{overflow:hidden !important}
 /* floating menus + dialogs live on <body>, outside .wx */
 .wx-menu{position:fixed;z-index:100000;background:#fff;border-radius:16px;box-shadow:0 2px 5px rgba(11,20,26,.26),0 2px 10px rgba(11,20,26,.16);padding:10px;min-width:232px;font-family:${FONT};color:#111b21;animation:wxm .12s ease-out}
 @keyframes wxm{from{opacity:0;transform:scale(.96)}}
@@ -337,6 +385,15 @@ const CSS = `
 .wx-mw > .wx-menu{display:none;position:absolute;top:-10px;left:calc(100% + 4px)}
 .wx-menu.flip .wx-mw > .wx-menu{left:auto;right:calc(100% + 4px)}
 .wx-mw.open > .wx-menu{display:block}
+@media (max-width:600px){
+  .wx-menu{left:0 !important;right:0;top:auto !important;bottom:0;min-width:0;width:100%;border-radius:20px 20px 0 0;padding:8px 8px calc(10px + env(safe-area-inset-bottom,0px));
+    max-height:78vh;overflow:auto;box-shadow:0 0 0 100vmax rgba(11,20,26,.4);animation:wxup .18s ease-out}
+  @keyframes wxup{from{transform:translateY(40px);opacity:.5}}
+  .wx-menu::before{content:"";display:block;width:38px;height:4px;border-radius:2px;background:#d1d7db;margin:2px auto 8px}
+  .wx-mi{height:50px;font-size:16px}
+  .wx-mw > .wx-menu,.wx-menu.flip .wx-mw > .wx-menu{position:static;box-shadow:none;border-radius:0;padding:0 0 0 34px;max-height:none;animation:none;width:auto}
+  .wx-mw > .wx-menu::before{display:none}
+}
 .wx-dlg{font-family:${FONT}}
 .wx-dlg p{margin:0 0 18px;color:#3b4a54;font-size:14.5px;line-height:1.55}
 .wx-dlg .row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
@@ -437,6 +494,8 @@ export async function renderWhatsappLive(host) {
 
   // ---- floating menus (WhatsApp's rounded white menu, with fly-out sub-menus) ----
   let menuEl = null, menuRow = null;
+  const canHover = () => { try { return window.matchMedia('(hover: hover)').matches; } catch (_) { return true; } };
+  const isPhone = () => window.innerWidth <= 860;
   function closeMenu() {
     if (!menuEl) return;
     menuEl.remove(); menuEl = null;
@@ -452,7 +511,7 @@ export async function renderWhatsappLive(host) {
       const btn = el('button', { class: 'wx-mi', role: 'menuitem', type: 'button', disabled: !!it.disabled, title: it.hint || null,
         onClick: (e) => {
           e.stopPropagation();
-          if (it.sub) { const w = e.currentTarget.parentNode; const was = w.classList.contains('open'); w.parentNode.querySelectorAll('.wx-mw.open').forEach((x) => x.classList.remove('open')); if (!was) w.classList.add('open'); return; }
+          if (it.sub) { const w = e.currentTarget.parentNode; const was = w.classList.contains('open'); w.parentNode.querySelectorAll('.wx-mw.open').forEach((x) => x.classList.remove('open')); if (!was || canHover()) w.classList.add('open'); return; }
           closeMenu(); if (it.on) it.on();
         } }, [
         it.ic ? sv(it.ic, 20) : null,
@@ -461,7 +520,7 @@ export async function renderWhatsappLive(host) {
         it.sub ? sv('right', 18) : null,
       ]);
       if (!it.sub) return btn;
-      const w = el('div', { class: 'wx-mw', onMouseenter: (e) => { const p = e.currentTarget; p.parentNode.querySelectorAll(':scope > .wx-mw.open').forEach((x) => { if (x !== p) x.classList.remove('open'); }); p.classList.add('open'); }, onMouseleave: (e) => e.currentTarget.classList.remove('open') }, [btn, menuNode(it.sub)]);
+      const w = el('div', { class: 'wx-mw', onMouseenter: (e) => { if (!canHover()) return; const p = e.currentTarget; p.parentNode.querySelectorAll(':scope > .wx-mw.open').forEach((x) => { if (x !== p) x.classList.remove('open'); }); p.classList.add('open'); }, onMouseleave: (e) => { if (canHover()) e.currentTarget.classList.remove('open'); } }, [btn, menuNode(it.sub)]);
       return w;
     }));
   }
@@ -476,7 +535,7 @@ export async function renderWhatsappLive(host) {
     if (px + r.width + 250 > window.innerWidth) menuEl.classList.add('flip');
     if (row) { menuRow = row; row.classList.add('menu'); }
     setTimeout(() => { document.addEventListener('mousedown', menuOutside, true); window.addEventListener('resize', closeMenu); }, 0);
-    const first = menuEl.querySelector('.wx-mi:not(:disabled)'); if (first) first.focus({ preventScroll: true });
+    if (canHover()) { const first = menuEl.querySelector('.wx-mi:not(:disabled)'); if (first) first.focus({ preventScroll: true }); }
   }
   function menuAt(e, items, row) { e.preventDefault(); e.stopPropagation(); const b = e.currentTarget.getBoundingClientRect(); showMenu(items, e.type === 'contextmenu' ? e.clientX : b.right - 232, e.type === 'contextmenu' ? e.clientY : b.bottom + 4, row); }
 
@@ -548,6 +607,7 @@ export async function renderWhatsappLive(host) {
     const names = Object.keys(U.lists);
     return [
       inHeader ? { ic: 'info', label: 'Contact info', on: () => { infoOpen = true; paintInfo(); } } : null,
+      inHeader ? { ic: 'assign', label: 'Who answers this chat', on: () => { infoOpen = true; paintInfo(); } } : null,
       inHeader ? { ic: 'search', label: 'Search', on: () => openFind() } : null,
       inHeader ? { ic: 'close', label: 'Close chat', on: () => closeChat() } : null,
       inHeader ? { sep: true } : null,
@@ -581,13 +641,14 @@ export async function renderWhatsappLive(host) {
       const top = root.getBoundingClientRect().top + window.scrollY;
       const mobile = window.innerWidth <= 860;
       root.style.height = Math.max(mobile ? 480 : 540, window.innerHeight - top - (mobile ? 84 : 20)) + 'px';
+      document.documentElement.classList.toggle('wx-lock', !!open && rail === 'chats' && mobile);
     } catch (_) {}
   }
   function paintLayout() {
     closeMenu();
     if (rail === 'chats') mount(root, [railEl, sideEl, mainEl]);
     else { mount(root, [railEl, pageEl]); paintPage(); }
-    root.classList.toggle('m-chat', !!open && rail === 'chats');
+    mChat();
     paintRail();
   }
 
@@ -642,10 +703,13 @@ export async function renderWhatsappLive(host) {
   function row(t) {
     const unr = isUnr(t), muted = isMuted(t.id), draft = drafts[t.id] && open !== t.id ? drafts[t.id] : '';
     const late = t.needs_reply && (t.waiting_min || 0) >= 60;
+    let lp = null, fired = false;
     const r = el('div', { class: 'wx-row' + (open === t.id ? ' on' : '') + (unr ? ' unr' : '') + (late ? ' late' : ''), role: 'button', tabindex: '0', 'aria-label': tName(t),
-      onClick: () => openChat(t.id),
+      onClick: () => { if (fired) { fired = false; return; } openChat(t.id); },
+      onTouchstart: (e) => { fired = false; const p = e.touches[0]; clearTimeout(lp); lp = setTimeout(() => { fired = true; try { navigator.vibrate && navigator.vibrate(12); } catch (_) {} showMenu(chatItems(t), p.clientX, p.clientY, r); }, 480); },
+      onTouchmove: () => clearTimeout(lp), onTouchend: (e) => { clearTimeout(lp); if (fired && e.cancelable) e.preventDefault(); }, onTouchcancel: () => clearTimeout(lp),
       onKeydown: (e) => { if (e.key === 'Enter') openChat(t.id); },
-      onContextmenu: (e) => menuAt(e, chatItems(t), r) }, [
+      onContextmenu: (e) => { if (fired || menuEl) { e.preventDefault(); return; } menuAt(e, chatItems(t), r); } }, [
       avatar(t, 49),
       el('div', { class: 'wx-rbd' }, [
         el('div', { class: 'wx-r1' }, [
@@ -753,6 +817,7 @@ export async function renderWhatsappLive(host) {
           el('button', { class: 'wx-ib wx-new', type: 'button', title: 'New chat', 'aria-label': 'New chat', onClick: () => { side = 'new'; paintSide(); } }, sv('newchat', 22)),
         ]),
         srchBox, chipsEl, listEl,
+        el('button', { class: 'wx-fab', type: 'button', title: 'New chat', 'aria-label': 'New chat', onClick: () => { side = 'new'; paintSide(); } }, sv('newchat', 24)),
       ]);
     }
   }
@@ -841,12 +906,12 @@ export async function renderWhatsappLive(host) {
       onInput: (e) => { drafts[open] = e.target.value; grow(); syncComp(); },
       onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } } });
     B.ta.value = drafts[open] || '';
-    B.emoB = el('button', { class: 'wx-ib', type: 'button', title: 'Emoji', 'aria-label': 'Emoji', onClick: () => { emoOpen = !emoOpen; trayOpen = false; paintTrays(); } }, sv('emoji', 24));
-    B.clip = el('button', { class: 'wx-ib', type: 'button', title: 'Attach', 'aria-label': 'Attach', onClick: () => pickFile() }, sv('clip', 24));
-    B.qr = el('button', { class: 'wx-qr', type: 'button', title: 'Approved WhatsApp templates', onClick: () => { trayOpen = !trayOpen; emoOpen = false; paintTrays(); } }, ['Templates', sv('down', 18)]);
+    B.emoB = el('button', { class: 'wx-ib wx-emob', type: 'button', title: 'Emoji', 'aria-label': 'Emoji', onClick: () => { emoOpen = !emoOpen; trayOpen = false; paintTrays(); } }, sv('emoji', 24));
+    B.clip = el('button', { class: 'wx-ib wx-clip', type: 'button', title: 'Attach', 'aria-label': 'Attach', onClick: () => pickFile() }, sv('clip', 24));
+    B.qr = el('button', { class: 'wx-qr', type: 'button', title: 'Approved WhatsApp templates', onClick: () => { trayOpen = !trayOpen; emoOpen = false; paintTrays(); } }, [sv('tpl', 22, 'm'), el('span', { class: 'd' }, 'Templates'), sv('down', 18, 'd')]);
     B.recd = el('span', { class: 'wx-recd', style: 'display:none' }, 'Recording…');
     B.send = el('button', { class: 'wx-sendb', type: 'button', onClick: () => { if (hasText() || pend) submit(); else toggleRec(); } });
-    B.box = el('div', { class: 'wx-box' }, [B.ta, el('div', { class: 'wx-bar' }, [B.clip, B.emoB, B.qr, B.recd, el('span', { class: 'sp' }), B.send])]);
+    B.box = el('div', { class: 'wx-box' }, [el('div', { class: 'wx-pill' }, [B.emoB, B.ta, B.clip, B.qr, B.recd]), B.send]);
     B.comp = el('footer', { class: 'wx-comp' }, [B.pend, B.emo, B.tray, B.box]);
     B.info = el('div');
     B.sig = '';
@@ -1008,7 +1073,7 @@ export async function renderWhatsappLive(host) {
     const B = built;
     B.box.classList.toggle('dis', !open24);
     B.ta.disabled = !open24 || !!rec;
-    B.ta.placeholder = !open24 ? 'The 24-hour window is closed — send an approved template instead'
+    B.ta.placeholder = !open24 ? (isPhone() ? 'Window closed — use a template' : 'The 24-hour window is closed — send an approved template instead')
       : rec ? 'Recording… press ■ to send' : pend ? 'Add a caption (optional)' : 'Type a message';
     B.clip.disabled = !open24 || sending || !!rec;
     B.emoB.disabled = !open24 || !!rec;
@@ -1185,9 +1250,20 @@ export async function renderWhatsappLive(host) {
     ]));
   }
 
+  function mChat() {
+    const on = !!open && rail === 'chats';
+    root.classList.toggle('m-chat', on);
+    document.documentElement.classList.toggle('wx-lock', on && isPhone());
+    vv();
+  }
+  function vv() {
+    const v = window.visualViewport;
+    root.style.setProperty('--vvh', (v ? v.height : window.innerHeight) + 'px');
+    root.style.setProperty('--vvt', (v ? v.offsetTop : 0) + 'px');
+  }
   function paintMain(force) {
     if (rail !== 'chats') return;
-    root.classList.toggle('m-chat', !!open);
+    mChat();
     if (!open) { built = null; mount(mainEl, welcome()); return; }
     if (!built || built.id !== open || !mainEl.contains(built.head)) buildChat();
     paintHead(); paintMsgs(force); syncComp();
@@ -1205,7 +1281,8 @@ export async function renderWhatsappLive(host) {
     buildChat();
     mount(built.msgs, el('div', { class: 'wx-day', style: 'position:static' }, 'Loading…'));
     await loadThread(id, false);
-    if (open === id && built) { const c = cur(); if (c && !c.window_open) { trayOpen = true; paintTrays(); } else built.ta.focus(); }
+    // on a phone the keyboard stays down until they tap the box, like WhatsApp
+    if (open === id && built) { const c = cur(); if (c && !c.window_open) { trayOpen = true; paintTrays(); } else if (!isPhone()) built.ta.focus(); }
   }
   function closeChat() { if (rec) { try { rec.stop(); } catch (_) {} } clearPend(); open = null; thr = null; findQ = null; infoOpen = false; paintMain(); paintSide(); }
 
@@ -1391,6 +1468,8 @@ export async function renderWhatsappLive(host) {
   }
   document.addEventListener('keydown', onKey);
   window.addEventListener('resize', fit);
+  const onVV = () => { vv(); if (built && built.stick) stick(); };
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', onVV); window.visualViewport.addEventListener('scroll', onVV); }
 
   paintLayout(); fit(); paintSide(); paintMain();
   await load(false);
@@ -1401,6 +1480,8 @@ export async function renderWhatsappLive(host) {
   return () => {
     if (timer) clearInterval(timer); if (thrTimer) clearInterval(thrTimer);
     document.removeEventListener('keydown', onKey); window.removeEventListener('resize', fit);
+    if (window.visualViewport) { window.visualViewport.removeEventListener('resize', onVV); window.visualViewport.removeEventListener('scroll', onVV); }
+    document.documentElement.classList.remove('wx-lock');
     closeMenu(); if (rec) { try { rec.stop(); } catch (_) {} } clearPend();
   };
 }
