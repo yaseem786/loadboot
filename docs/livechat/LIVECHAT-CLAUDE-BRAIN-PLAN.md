@@ -137,6 +137,15 @@ Gate status (staging, 27 Sep 2026):
 | queue → function → write-back | ✅ job 3: pg_net 202, function wrote back through `brain_rpc` in 0.6 s |
 | Claude call, `cache_read_input_tokens > 0`, cost accounting | ⏳ blocked on `ANTHROPIC_API_KEY` in staging Edge Function secrets (job 3 failed with exactly that message) |
 
+**Control room — staged 27 Sep 2026** (`migrations/bl_brain_0472_control.sql`, `app/command-center/views/brain.js`,
+CC → AI Brain, `#/brain`; doc `claude/BRAIN-CONTROL-0472.md`): `app_private.brain_permissions` is the one registry of
+everything the brain may do — `source.*` (when it runs, per-source job/USD caps), `tool.*` (what it may do; `auto` /
+`prep` = record only; per-job + per-day caps; per-source restriction; **a tool with no row is denied**), `rule.*`
+(owner policy lines rendered into the cached system block). Every flip is logged (`brain_permission_log`), every tool
+call carries `outcome` (executed | prepared | denied | error) + ms, and the screen polls the live feed every 5 s.
+Gate re-run 27 Sep: jobs 8–10 still fail with "credit balance too low" — the key in staging secrets is not in the org
+that got the credit. Pipeline verified end to end (0.9 s round trip); prod waits.
+
 To finish the gate once the key is in: `select app_private.brain_test_enqueue(20);` then, a minute later,
 `select * from app_private.brain_gate_report();` — expect `done` rows, `cache_read > 0` from the 2nd job on, `usd`
 filled, ES answers on the even rows, and the "how many carriers" / "guarantee 3 loads" probes answered without a number

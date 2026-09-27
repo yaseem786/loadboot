@@ -1693,3 +1693,19 @@ export const dieselPullNow = () => rpc('cc_diesel_pull_now');
 export const dieselSet = (region, usdGal, asOf) => rpc('cc_diesel_set', { p_region: region, p_usd_gal: usdGal, p_as_of: asOf || null });
 export const dieselConfigSet = (url, anon, token) => rpc('cc_diesel_config_set', { p_function_url: url || null, p_anon_key: anon || null, p_worker_token: token || null });
 export const dieselWorkerToken = () => rpc('cc_diesel_worker_token');
+
+// ---- AI Brain control (bl_brain_0470 / 0472, 27 Sep 2026): the CC "AI Brain" screen. settings.manage only,
+// enforced server-side. Every write lands in app_private.brain_permission_log.
+export const ccBrainOverview   = () => rpc('cc_brain_overview');
+export const ccBrainPermSet    = (key, patch) => rpc('cc_brain_perm_set', { p_key: key, p_patch: patch || {} });
+export const ccBrainPermAdd    = (kind, name, label, description, patch) => rpc('cc_brain_perm_add', { p_kind: kind, p_name: name, p_label: label, p_description: description || null, p_patch: patch || {} });
+export const ccBrainPermDelete = (key) => rpc('cc_brain_perm_delete', { p_key: key });
+export const ccBrainConfigSet  = (patch) => rpc('cc_brain_config_set', { p_patch: patch || {} });
+export const ccBrainJobs       = (limit, source, status) => rpc('cc_brain_jobs', { p_limit: limit || 60, p_source: source || null, p_status: status || null });
+export const ccBrainJob        = (id) => rpc('cc_brain_job', { p_id: id });
+export const ccBrainFindings   = (status, limit) => rpc('cc_brain_findings', { p_status: status === undefined ? 'open' : status, p_limit: limit || 100 });
+export const ccBrainFindingSet = (id, status) => rpc('cc_brain_finding_set', { p_id: id, p_status: status });
+export const ccBrainFacts      = () => rpc('cc_brain_facts');
+export const ccBrainFactSet    = (key, value, note) => rpc('cc_brain_fact_set', { p_key: key, p_value: value, p_note: note || null });
+export const ccBrainTest       = (question, lang) => rpc('cc_brain_test', { p_question: question, p_lang: lang || 'en' });
+export const ccBrainPermLog    = (limit) => rpc('cc_brain_perm_log', { p_limit: limit || 100 });

@@ -81,6 +81,7 @@ import { renderVerificationCenter } from './views/verificationCenter.js';
 import { renderPodReview } from './views/podReview.js';
 import { renderLoadIntake } from './views/loadIntake.js';
 import { renderMailbox } from './views/mailbox.js';
+import { renderBrain } from './views/brain.js';   // bl_brain_0472 — AI Brain control (permissions, live usage, jobs, findings, facts, settings)
 import { renderControlTower } from './views/controlTower.js';
 import { renderExceptionCenter } from './views/exceptionCenter.js';
 import { renderWorkflowBuilder } from './views/workflowBuilder.js';
@@ -388,6 +389,8 @@ async function boot() {
     // The dead link cc_mail_ingest has been pointing notifications at since bl_mail_loads_0176.
     // Deep link: #mailbox?thread=<thread_key> opens that conversation without marking it read.
     '/mailbox': ({ query }) => { setActive('/mailbox'); if (can('comm.view')) renderMailbox(content, query.get('thread')); else denied(); },
+    // bl_brain_0472 — the Claude Ops Brain control room. settings.manage only (every RPC re-checks server-side).
+    '/brain': ({ query }) => { setActive('/brain'); if (can('settings.manage')) renderBrain(content, query); else denied(); },
     '/finance': tabbed('finance', 'invoices'),
     '/fee-approvals': tabbed('finance', 'approvals'),
     '/finance-analytics': tabbed('finance', 'analytics'),

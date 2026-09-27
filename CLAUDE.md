@@ -198,3 +198,16 @@ Every CC popup is `openDrawer()` in `app/shared/ui/components.js` — a centred 
 desktop and a bottom sheet on phones (`bl_ui_0439`). Do not build a new side drawer or a hand-rolled
 `position:fixed` overlay. Pass `size: 'sm'` for confirmations, `'lg'` for wide tables (5+ columns
 auto-upgrade to `lg`). Esc closes it and the page behind does not scroll.
+
+## 9. AI Brain permissions — every brain capability is a row the owner can switch (set 27 Sep 2026)
+
+The Claude Ops Brain (`bl_brain_0470`/`0472`, plan `docs/livechat/LIVECHAT-CLAUDE-BRAIN-PLAN.md`) is controlled from
+**CC → AI Brain** (`#/brain`). The registry is `app_private.brain_permissions`: `source.<name>` (WHEN it runs),
+`tool.<name>` (WHAT it may do), `rule.<name>` (owner policy lines in the prompt). Enforcement is in Postgres
+(`brain_enqueue`, `brain_tool_exec`), and **a tool that has no row is denied**.
+
+- **A migration that teaches the brain a new tool or source adds/flips its `brain_permissions` row in the same
+  file** — same law as the email catalog (§6). Planned write tools already have rows (`prep`, off): flip `status`
+  to `live` when the executor ships; never bypass the registry with a hard-coded tool name.
+- Every permission/config change goes through the `cc_brain_*` RPCs or an explicit update + `app_private.brain_log(...)`
+  so the CC change log stays complete. Doc: `claude/BRAIN-CONTROL-0472.md`.
