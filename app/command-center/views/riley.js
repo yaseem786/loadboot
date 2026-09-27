@@ -15,6 +15,7 @@ import { PLAN_STATUS, PLAN_REASON_LABEL, NEXT_ACTION } from './rileyPlanFlow.js'
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ET = 'America/New_York';
+const addTo = (host, ...xs) => host.append(...xs.flat().filter((x) => x != null && x !== false && x !== ''));   // Node.append(null) would print "null"
 const LOW_BALANCE_USD = 10;   // bl_voice_0484 — below this the Riley page warns (typed Retell balance)
 const digits = (s) => String(s || '').replace(/[^0-9]/g, '');
 const pretty = (n) => { const d = digits(n); const k = d.length === 11 && d[0] === '1' ? d.slice(1) : d; return k.length === 10 ? '(' + k.slice(0, 3) + ') ' + k.slice(3, 6) + '-' + k.slice(6) : String(n || '—'); };
@@ -256,7 +257,7 @@ export async function renderRiley(host, query) {
     const paintAudio = (url) => mount(audioEl, url ? el('div', { class: 'ry-row' }, [playBtn({ call_id: c.call_id, recording_url: url }), el('span', { style: 'font-size:12.5px;opacity:.7' }, c.duration_sec ? 'Recording · ' + mmss(c.duration_sec) : 'Recording')]) : el('div', { style: 'opacity:.7;font-size:13px' }, c.status === 'in-progress' ? 'Recording appears here after the call ends.' : 'No recording on file for this call.'));
     paintAudio(c.recording_url);
     const kv = (k, v) => el('div', null, [el('small', null, k), el('span', null, v == null || v === '' ? '—' : String(v))]);
-    body.append(
+    addTo(body,
       el('div', { class: 'ry-row' }, [el('span', { class: 'ry-pill ' + st[1] }, st[0]), il ? el('span', { class: 'ry-pill ' + il[1] }, il[0]) : null,
         an.needs_human === true ? el('span', { class: 'ry-pill r' }, 'needs a human') : null,
         el('span', { style: 'font-size:13px;opacity:.75' }, [c.direction === 'inbound' ? 'Inbound' : 'Callback (' + (c.source || 'cc') + ')', ' · ', et(c.at), c.duration_sec ? ' · ' + mmss(c.duration_sec) : ''].join(''))]),
@@ -445,7 +446,7 @@ export async function renderRiley(host, query) {
       el('div', { class: 'ry-kv' }, [kv('Best time', pl.best_time), kv('Language', pl.language)]),
     ]) : (p.plan_text ? el('div', { class: 'ry-tr' }, p.plan_text) : null);
     const canBook = p.status === 'ready' && canPlan() && gate.ok;
-    body.append(
+    addTo(body,
       el('div', { class: 'ry-row' }, [el('span', { class: 'ry-pill ' + st[1] }, st[0]),
         p.attempt > 1 ? el('span', { class: 'ry-pill m' }, 'attempt ' + p.attempt + ' of 3') : null,
         p.confidence != null ? el('span', { class: 'ry-pill ' + (Number(p.confidence) >= 0.6 ? 'g' : 'a') }, 'confidence ' + Math.round(Number(p.confidence) * 100) + '%') : null,
@@ -468,7 +469,15 @@ export async function renderRiley(host, query) {
         el('h3', null, ['The call', el('span', { class: 'ry-pill ' + (p.status === 'called' ? 'g' : 'a') }, p.status === 'called' ? mmss(out.duration_sec) + ' min' : 'not reached')]),
         el('div', { class: 'ry-kv' }, [kv('When', et(p.called_at)), kv('Sentiment', out.sentiment), kv('Interest', out.interest), kv('Riley’s next step', out.next_step)]),
         out.summary ? el('div', { style: 'font-size:14px;line-height:1.5;margin-top:6px' }, out.summary) : null,
-        p.call && p.call.has_recording ? el('div', { style: 'font-size:12.5px;opacity:.75;margin-top:4px' }, 'Recording and transcript: Riley → Calls.') : null,
+        el('div', { class: 'ry-row', style: 'margin-top:8px' }, [
+          el('button', { class: 'ry-btn', onClick: () => {
+            const row = (data.calls || []).find((x) => String(x.id) === String(p.call_id));
+            if (row) { if (planDr) { try { planDr.close(); } catch (_) {} } openCall(row); return; }
+            if (planDr) { try { planDr.close(); } catch (_) {} }
+            tab = 'calls'; paintTabs(); paintBody(); toast('Open the call in the list — it is the ' + (p.org_name || 'carrier') + ' call on ' + et(p.called_at) + '.');
+          } }, [icon('phone', 14), p.call && p.call.has_recording ? 'Recording & transcript' : 'Open the call']),
+          el('span', { style: 'font-size:12.5px;opacity:.7' }, p.call && p.call.has_recording ? 'Plays here; also under Riley → Calls.' : 'The recording appears once Retell sends it (usually within a minute).'),
+        ]),
       ]) : null,
       nextStepCard(p),
       (p.children || []).length ? el('div', { style: 'font-size:13.5px' }, [el('b', null, 'Follow-up plans: '), ...(p.children || []).map((ch) => el('a', { href: '#', style: 'margin-right:10px', onClick: (e) => { e.preventDefault(); openPlanById(ch.id); } }, '#' + ch.id + ' · ' + ((PLAN_STATUS[ch.status] || [ch.status])[0])))]) : null,
