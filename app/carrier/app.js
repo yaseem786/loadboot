@@ -5726,7 +5726,7 @@ function tripStepper(status) {
         let close9 = null;
         close9 = openModal('Contact dispatch', [
           h('div', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'A person answers — dispatch is on call for active loads.'),
-          h('a', { class: 'cp-btn', style: 'display:block;text-align:center;margin-bottom:8px;text-decoration:none', href: 'tel:+14692537575' }, '📞 Call dispatch'),
+          h('a', { class: 'cp-btn', style: 'display:block;text-align:center;margin-bottom:8px;text-decoration:none', href: 'tel:+18153651168' }, '📞💬 Call or WhatsApp dispatch'),
           document.querySelector('.lbc-fab') ? h('button', { class: 'cp-btn ghost', style: 'width:100%', onClick: () => { if (close9) close9(); const f9 = document.querySelector('.lbc-fab'); if (f9) f9.click(); } }, '💬 Live chat') : null,
           h('button', { class: 'cp-btn ghost', style: 'width:100%;margin-top:8px', onClick: () => { if (close9) close9(); go('support'); } }, '🎫 Open a support ticket'),
         ].filter(Boolean));

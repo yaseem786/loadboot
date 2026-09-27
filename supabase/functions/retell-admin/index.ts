@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// retell-admin v1 (bl_voice_0458, 2026-09-26) — the ONE staff-gated door from Command Center to Retell.
+// retell-admin v2 (bl_voice_0458, 2026-09-26) — the ONE staff-gated door from Command Center to Retell.
 //
 // WHY. Riley's prompts, agent wiring and phone-number mapping lived only in the Retell dashboard, and on
 // 7 Sep the inbound line was left pointing at a one-off "Broker Outbound" script by hand. Postgres cannot
@@ -20,6 +20,10 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 //                                   agent draft at that llm version + shared post-call analysis, publish the
 //                                   agent, mark the row published. (write)
 //   get_call            { call_id } -> GET v2/get-call (fresh recording_url + transcript + analysis) (read)
+//   recording           { call_id } -> the recording BYTES (read). v2 (0458d): Retell serves recordings from CloudFront as
+//                                   application/octet-stream with no CORS headers, which Safari/iOS will not play in an
+//                                   <audio src>; the browser gets the bytes from here instead (same shape as telnyx-recording:
+//                                   octet-stream so functions.invoke() hands back a Blob, X-Audio-Type says what it is).
 //
 // Deployed to staging + production via Supabase MCP. verify_jwt = true.
 
@@ -115,7 +119,7 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json().catch(() => ({}));
     const op = String(body.op || "");
-    const READ = ["status", "get_llm", "get_call"];
+    const READ = ["status", "get_llm", "get_call", "recording"];
     const WRITE = ["set_phone_agents", "publish"];
     if (READ.includes(op) && !hasAny(staff, ["comm.view", "comm.manage", "support.view", "dispatch.manage", "settings.manage"])) return json({ error: "not authorized" }, 403);
     if (WRITE.includes(op) && !hasAny(staff, ["comm.manage", "settings.manage"])) return json({ error: "not authorized" }, 403);
@@ -239,6 +243,20 @@ Deno.serve(async (req: Request) => {
         start: b.start_timestamp, end: b.end_timestamp, duration_ms: b.duration_ms, recording_url: b.recording_url ?? null,
         transcript: b.transcript ?? null, analysis: b.call_analysis ?? null, disconnection_reason: b.disconnection_reason ?? null,
         cost: b.call_cost ?? null });
+    }
+
+    if (op === "recording") {
+      const callId = String(body.call_id || "");
+      if (!/^[a-zA-Z0-9_-]{6,80}$/.test(callId)) return json({ error: "bad call_id" }, 400);
+      const r = await retell(cfg, "GET", `/v2/get-call/${callId}`);
+      if (!r.ok) return json({ error: `retell ${r.status}`, detail: r.body }, 502);
+      const url = String((r.body && r.body.recording_url) || "");
+      if (!/^https:\/\//.test(url)) return json({ error: "recording not available", status: r.body && r.body.call_status }, 404);
+      const audio = await fetch(url);
+      if (!audio.ok || !audio.body) return json({ error: "download " + audio.status }, 502);
+      const kind = /\.mp3(\?|$)/i.test(url) ? "audio/mpeg" : "audio/wav";
+      return new Response(audio.body, { headers: { ...cors, "Content-Type": "application/octet-stream", "X-Audio-Type": kind,
+        "Access-Control-Expose-Headers": "X-Audio-Type", "Cache-Control": "private, max-age=600" } });
     }
 
     return json({ error: "unknown op" }, 400);

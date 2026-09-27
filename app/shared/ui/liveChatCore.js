@@ -693,7 +693,7 @@
         '<button id="lbc-send" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 11.5 21 3l-8.5 18-2.6-7.4L3 11.5Z" fill="currentColor"/></svg></button>' +
       '</div><div id="lbc-pow">' +
       ((cfg.origin === 'carrier' || cfg.origin === 'partner' || cfg.origin === 'agent')
-        ? '<a href="tel:+14692537575" style="color:#64748b;text-decoration:none;font-weight:800">📞 +1 (469) 253-7575</a> · 24/7 · LoadBoot'
+        ? '<a href="tel:+18153651168" style="color:#64748b;text-decoration:none;font-weight:800">📞💬 +1 (815) 365-1168</a> · Call or WhatsApp · LoadBoot'
         : 'LoadBoot · The Operating System for Trucking') +
       '</div></div>';
 

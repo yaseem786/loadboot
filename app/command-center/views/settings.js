@@ -92,7 +92,7 @@ export async function renderSettings(host) {
     const CH = [
       { v: 'phone',    t: 'Call',     d: 'Phone number only' },
       { v: 'whatsapp', t: 'WhatsApp', d: 'WhatsApp number only' },
-      { v: 'both',     t: 'Both',     d: 'WhatsApp shown beside the phone' },
+      { v: 'both',     t: 'Both',     d: 'Both — and when the two numbers are the same line, one sign: Call or WhatsApp' },
     ];
     async function paint() {
       let c = null;
@@ -118,6 +118,7 @@ export async function renderSettings(host) {
       const meta = CH.filter((x) => x.v === cur)[0] || CH[0];
       const liveTxt = cur === 'phone' ? (ph.display || '\u2014')
         : cur === 'whatsapp' ? (wa.display || '\u2014')
+        : (c && c.same && c.one && c.one.text) ? '\uD83D\uDCDE\uD83D\uDCAC ' + c.one.text   // bl_comm_0464: one number
         : (wa.display || '\u2014') + '  +  ' + (ph.display || '\u2014');
       const dot = el('span', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (cur === 'phone' ? '#0883F7' : '#25D366') + ';margin-right:8px;vertical-align:middle' });
       const statusLine = el('div', {

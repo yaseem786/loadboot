@@ -426,11 +426,12 @@ NAV = [('index.html','Home'),('services.html','Services'),('how-it-works.html','
        ('pricing.html','Pricing'),('load-score.html','Load Score'),('blog.html','Blog'),
        ('about.html','About'),('contact.html','Contact')]
 
-PHONE_DISP = '+1 (469) 253-7575'
-PHONE_TEL = '+14692537575'
+# bl_comm_0464 (26 Sep 2026): ONE number — the 815 line takes calls (Telnyx → Riley) and WhatsApp. Never 469 here.
+PHONE_DISP = '+1 (815) 365-1168'
+PHONE_TEL = '+18153651168'
 # One consistent "call us / we call you" strip for decision-point pages (mobile-wraps).
 PHONE_STRIP = ('<section style="padding:14px 0 0"><div class="wrap"><div class="call-strip">'
- 'Questions? Reach us 24/7: <a href="tel:' + PHONE_TEL + '" data-lb-contact="inline">' + PHONE_DISP + '</a>'
+ 'Questions? Call or WhatsApp us 24/7: <a href="tel:' + PHONE_TEL + '" data-lb-contact="inline">' + PHONE_DISP + '</a>'
  '<span style="color:#94a3b8" data-lb-callonly>&middot;</span>'
  '<a href="contact.html#call" data-lb-callonly>or we call you &mdash; right now or scheduled &rarr;</a>'
  '</div></div></section>')
@@ -446,8 +447,8 @@ def header_v1(active):
                       '<div class="nav-dd-menu">%s</div></div>') % (href, 'active' if is_act else '', label, dd)
         else:
             links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
-    mob = '<a href="tel:+14692537575" class="nav-mob" data-lb-contact="nav">&#128222; Call us 24/7 &mdash; +1 (469) 253-7575</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
-    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+14692537575" class="tb-call" data-lb-contact="topbar">&#128222; 24/7&nbsp; +1 (469) 253-7575</a><a href="contact.html#call" class="tb-cb" data-lb-callonly>or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
+    mob = '<a href="tel:+18153651168" class="nav-mob" data-lb-contact="nav">&#128222;&#128172; Call or WhatsApp us &mdash; +1 (815) 365-1168</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
+    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+18153651168" class="tb-call" data-lb-contact="topbar">&#128222;&#128172; Call or WhatsApp&nbsp; +1 (815) 365-1168</a><a href="contact.html#call" class="tb-cb" data-lb-callonly>or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
 <a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" width="165" height="36" fetchpriority="high" decoding="async" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
@@ -474,7 +475,7 @@ def _footer_raw():
 <div class="foot-top">
 <div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" width="146" height="32" decoding="async" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
-<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no long-term contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+14692537575" data-lb-contact="footer">&#128222; +1 (469) 253-7575 &middot; 24/7</a><a class="foot-cb" href="contact.html#call" data-lb-callonly>We call you &rarr;</a></div>
+<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no long-term contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+18153651168" data-lb-contact="footer">&#128222;&#128172; +1 (815) 365-1168 &middot; Call or WhatsApp</a><a class="foot-cb" href="contact.html#call" data-lb-callonly>We call you &rarr;</a></div>
 <div class="foot-h" style="margin-top:16px">Contact</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
 <div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
@@ -503,7 +504,7 @@ def _footer_raw():
 GA_ID = 'G-C2ELQ7H8EM'  # GA4 Measurement ID — injected on every page.
 LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"LoadBoot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Truck dispatch for owner-operators, small fleets and new-authority carriers: a dedicated, LoadBoot-vetted dispatcher on your truck plus the platform that verifies, tracks and settles every load. Flat 5% of line-haul at delivery, no long-term contract.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
 GA_SNIPPET = ('<script async src="https://www.googletagmanager.com/gtag/js?id=%s"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag(\'js\',new Date());gtag(\'config\',\'%s\');</script>' % (GA_ID, GA_ID)) if GA_ID else ''
-ORG_SCHEMA = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://loadboot.com/#org","name":"LoadBoot","legalName":"LoadBoot LLC","url":"https://loadboot.com/","logo":"https://loadboot.com/icon-512.png","slogan":"The Operating System for Trucking","description":"The Operating System for Trucking: a verified load board, carrier app, GPS proof, documents and settlements on one platform, with a LoadBoot-run network of dedicated, vetted truck dispatchers. Flat 5% of line-haul for carriers; free for brokers, shippers, broker agents and referral partners.","email":"hello@loadboot.com","telephone":"+1-469-253-7575","sameAs":["https://www.linkedin.com/company/135138228/","https://play.google.com/store/apps/details?id=com.loadboot.app"],"areaServed":{"@type":"Country","name":"United States"}}</script>'
+ORG_SCHEMA = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://loadboot.com/#org","name":"LoadBoot","legalName":"LoadBoot LLC","url":"https://loadboot.com/","logo":"https://loadboot.com/icon-512.png","slogan":"The Operating System for Trucking","description":"The Operating System for Trucking: a verified load board, carrier app, GPS proof, documents and settlements on one platform, with a LoadBoot-run network of dedicated, vetted truck dispatchers. Flat 5% of line-haul for carriers; free for brokers, shippers, broker agents and referral partners.","email":"hello@loadboot.com","telephone":"+1-815-365-1168","sameAs":["https://www.linkedin.com/company/135138228/","https://play.google.com/store/apps/details?id=com.loadboot.app"],"areaServed":{"@type":"Country","name":"United States"}}</script>'
 HEADX = LOCALBIZ + ORG_SCHEMA + GA_SNIPPET
 
 # First-party analytics beacon (privacy-safe). Posts pageviews to the context's Supabase
@@ -548,6 +549,26 @@ _CONTACT_SWITCH = ("<script>(function(){"
         "inline:function(d){return d+' on WhatsApp';}};"
   "function apply(c){try{"
     "if(!c||!c.whatsapp||!c.whatsapp.url)return;"
+    # bl_comm_0464: ONE number. Same sign as the static build; static anchors carry data-lb-one so nothing doubles.
+    "if(c.same&&c.one&&c.one.tel){"
+      "var O={topbar:function(d){return '\\uD83D\\uDCDE\\uD83D\\uDCAC Call or WhatsApp  '+d;},"
+             "nav:function(d){return '\\uD83D\\uDCDE\\uD83D\\uDCAC Call or WhatsApp us \\u2014 '+d;},"
+             "footer:function(d){return '\\uD83D\\uDCDE\\uD83D\\uDCAC '+d+' \\u00b7 Call or WhatsApp';},"
+             "inline:function(d){return '\\uD83D\\uDCDE\\uD83D\\uDCAC '+d;}};"
+      "var od=c.one.display||'',ot='tel:'+c.one.tel,ou=c.one.url||'',_j,_x;"
+      "var w1=document.querySelectorAll('[data-lb-waonly]');"
+      "for(_j=0;_j<w1.length;_j++){_x=w1[_j];_x.style.display=_x.getAttribute('data-lb-waonly')||'';"
+        "if(_x.tagName==='A'&&ou){_x.setAttribute('href',ou);_x.setAttribute('rel','noopener');_x.setAttribute('target','_blank');}"
+        "var _m=_x.querySelector('[data-lb-wa-num]');if(_m)_m.textContent=od;}"
+      "var e1=document.querySelectorAll('[data-lb-contact]');"
+      "for(_j=0;_j<e1.length;_j++){_x=e1[_j];if(_x.getAttribute('data-lb-one'))continue;"
+        "var k=_x.getAttribute('data-lb-contact'),g=O[k]||O.inline;"
+        "_x.setAttribute('href',ot);_x.removeAttribute('target');_x.removeAttribute('rel');_x.textContent=g(od);_x.setAttribute('data-lb-one','1');"
+        "if((k==='footer'||k==='nav')&&ou&&!_x.getAttribute('data-lb-wa-added')){"
+          "var a1=document.createElement('a');a1.setAttribute('href',ou);a1.setAttribute('rel','noopener');a1.setAttribute('target','_blank');"
+          "a1.className=_x.className;a1.textContent='\\uD83D\\uDCAC Open WhatsApp \\u2192';_x.setAttribute('data-lb-wa-added','1');"
+          "if(_x.parentNode){_x.parentNode.insertBefore(document.createTextNode(' '),_x.nextSibling);_x.parentNode.insertBefore(a1,_x.nextSibling);}}}"
+      "return;}"
     "var _d=c.whatsapp.display||'',_u=c.whatsapp.url,_i,_e;"
     "var co=document.querySelectorAll('[data-lb-callonly]');"
     "for(_i=0;_i<co.length;_i++){co[_i].style.display=(c.channel==='whatsapp')?'none':'';}"
@@ -588,8 +609,10 @@ HEADX = HEADX + _CONTACT_SWITCH
 # data-lb-callonly bits. On phone/both the header is left as it was. Since 26 Sep the footer (strict) and body data-lb-contact links get it too; schema.org keeps the phone
 # version and stay on the runtime switch. A flip in CC applies at runtime at once and to the static header on
 # the next build (every market-data Publish rebuilds).
-_CONTACT_FALLBACK = {'channel': 'whatsapp',
-                     'whatsapp': {'url': 'https://wa.me/18153651168', 'display': '+1 (815) 365-1168'}}
+_CONTACT_FALLBACK = {'channel': 'both', 'same': True,   # bl_comm_0464: one number, offline shape of lb_contact_channel()
+                     'phone': {'display': '+1 (815) 365-1168', 'tel': '+18153651168', 'label': 'Call or WhatsApp'},
+                     'whatsapp': {'url': 'https://wa.me/18153651168', 'display': '+1 (815) 365-1168'},
+                     'one': {'display': '+1 (815) 365-1168', 'tel': '+18153651168', 'url': 'https://wa.me/18153651168', 'label': 'Call or WhatsApp'}}
 def _contact_load():
     if os.environ.get('LOADBOOT_RATES_OFFLINE') != '1':
         try:
@@ -610,21 +633,46 @@ _CONTACT_WA = _CONTACT.get('whatsapp') or {}
 _CONTACT_HDR_WA = (_CONTACT.get('channel') == 'whatsapp' and str(_CONTACT_WA.get('url') or '').startswith('https://wa.me/')
                    and bool(_CONTACT_WA.get('display')))
 print('contact channel: %s (%s), header ships %s' % (_CONTACT.get('channel'), _CONTACT_FROM,
+      'ONE number (call or WhatsApp) ' + str((_CONTACT.get('one') or {}).get('display', '')) if (_CONTACT.get('channel') == 'both' and _CONTACT.get('same')) else
       'WhatsApp ' + _CONTACT_WA.get('display', '') if _CONTACT_HDR_WA else 'the phone line'))
 _CONTACT_HDR_LABEL = {'topbar': '&#128172; WhatsApp&nbsp; %s', 'nav': '&#128172; WhatsApp us &mdash; %s',
                       'footer': '&#128172; %s &middot; WhatsApp', 'inline': '%s on WhatsApp'}
+_CONTACT_ONE_D = _CONTACT.get('one') if isinstance(_CONTACT.get('one'), dict) else {}
+# bl_comm_0464 (26 Sep 2026): ONE number. When the switch says `same` (channel both, phone digits == WhatsApp
+# digits — the 815 line takes calls via Telnyx → Riley AND WhatsApp), every contact link renders one sign:
+#   📞💬 Call or WhatsApp · +1 (815) 365-1168     (tel: link; footer + mobile nav add "Open WhatsApp →" beside it)
+_CONTACT_ONE = (_CONTACT.get('channel') == 'both' and bool(_CONTACT.get('same'))
+                and str(_CONTACT_ONE_D.get('url') or '').startswith('https://wa.me/')
+                and bool(_CONTACT_ONE_D.get('display')) and bool(_CONTACT_ONE_D.get('tel')))
+_CONTACT_ONE_LABEL = {'topbar': '&#128222;&#128172; Call or WhatsApp&nbsp; %s', 'nav': '&#128222;&#128172; Call or WhatsApp us &mdash; %s',
+                      'footer': '&#128222;&#128172; %s &middot; Call or WhatsApp', 'inline': '&#128222;&#128172; %s'}
 def _contact_header(h, strict=True):
-    if not _CONTACT_HDR_WA:
+    if not (_CONTACT_HDR_WA or _CONTACT_ONE):
         return h
     import html as _html
-    _u, _d = _html.escape(_CONTACT_WA['url']), _html.escape(_CONTACT_WA['display'])
+    if _CONTACT_ONE:
+        _u, _d = _html.escape(_CONTACT_ONE_D['url']), _html.escape(_CONTACT_ONE_D['display'])
+        _t = 'tel:' + _html.escape(_CONTACT_ONE_D['tel'])
+    else:
+        _u, _d = _html.escape(_CONTACT_WA['url']), _html.escape(_CONTACT_WA['display'])
+        _t = None
     def _a(m):
         kind = m.group(2)
         attrs = re.sub(r'\shref="tel:[^"]*"', '', m.group(1))
+        if _CONTACT_ONE:
+            cls = re.search(r'\sclass="([^"]*)"', attrs + m.group(3))
+            extra = ' data-lb-one="1"' + (' data-lb-wa-added="1"' if kind in ('footer', 'nav') else '')
+            out = '<a%s href="%s" data-lb-contact="%s"%s%s>%s</a>' % (
+                attrs, _t, kind, extra, m.group(3), _CONTACT_ONE_LABEL.get(kind, _CONTACT_ONE_LABEL['inline']) % _d)
+            if kind in ('footer', 'nav'):
+                out += ' <a class="%s" href="%s" rel="noopener" target="_blank" data-lb-wa-open="1">&#128172; Open WhatsApp &rarr;</a>' % (
+                    cls.group(1) if cls else '', _u)
+            return out
         return '<a%s href="%s" rel="noopener" target="_blank" data-lb-contact="%s"%s>%s</a>' % (
             attrs, _u, kind, m.group(3), _CONTACT_HDR_LABEL.get(kind, _CONTACT_HDR_LABEL['inline']) % _d)
     h = re.sub(r'<a((?:\s[^>]*?)?)\sdata-lb-contact="(\w+)"([^>]*)>.*?</a>', _a, h, flags=re.S)
-    h = re.sub(r'(<[a-z]+\b[^>]*?)\sdata-lb-callonly(?=[\s>])', r'\1 style="display:none" data-lb-callonly', h)
+    if not _CONTACT_ONE:   # whatsapp-only hides the "we call you" bits; one-number keeps them (the line takes calls)
+        h = re.sub(r'(<[a-z]+\b[^>]*?)\sdata-lb-callonly(?=[\s>])', r'\1 style="display:none" data-lb-callonly', h)
     # 26 Sep 2026: data-lb-waonly elements (the FAQ WhatsApp card) used to appear only after the runtime
     # fetch landed, so first paint / no-JS / crawlers saw no WhatsApp card at all. Reveal them statically,
     # exactly as the switch does: drop display:none (or use the attribute's own display value), point an
@@ -638,9 +686,9 @@ def _contact_header(h, strict=True):
         return '<%s%s data-lb-waonly%s>' % (tag, attrs, ('="%s"' % disp) if disp else '')
     h = re.sub(r'<([a-z]+)\b([^>]*?)\sdata-lb-waonly(?:="([^"]*)")?([^>]*)>', _wa, h)
     h = re.sub(r'(<[a-z]+\b[^>]*?\sdata-lb-wa-num(?:="[^"]*")?[^>]*>)(?=</)', r'\g<1>' + _d, h)
-    h = h.replace('Riley answers 24/7', 'WhatsApp any hour')
+    h = h.replace('Riley answers 24/7', 'Call or WhatsApp any hour' if _CONTACT_ONE else 'WhatsApp any hour')
     if strict and re.search(r'253-?7575|2537575', h):
-        sys.exit('BUILD REFUSED - the header/footer still carries the Riley line while the contact channel is whatsapp (CLAUDE.md §7).')
+        sys.exit('BUILD REFUSED - the header/footer still carries the Riley line while the contact channel is %s (CLAUDE.md §7).' % _CONTACT.get('channel'))
     return h
 
 
@@ -2067,7 +2115,7 @@ serv_body += '''<section><div class="wrap"><div class="sec-head reveal"><div cla
 <div class="card reveal d2"><div class="icon">&#129309;</div><h3>Broker Communication</h3><p>Calls, packet setups, and check-ins handled for you.</p></div>
 <div class="card reveal"><div class="icon">&#129517;</div><h3>Route &amp; Lane Planning</h3><p>Smart planning to reduce empty miles.</p></div>
 <div class="card reveal d1"><div class="icon">&#128196;</div><h3>Document Management</h3><p>Rate cons, BOLs, and PODs &mdash; organized and on time.</p></div>
-<div class="card reveal d2"><div class="icon">&#128336;</div><h3>Dispatch Desk + On-Call</h3><p>A dedicated dispatcher during US business hours (Eastern), an on-call desk for every load in motion &mdash; breakdowns, late pickups, detention &mdash; and Riley on the phone 24/7.</p></div>
+<div class="card reveal d2"><div class="icon">&#128336;</div><h3>Dispatch Desk + On-Call</h3><p>A dedicated dispatcher during US business hours (Eastern), an on-call desk for every load in motion &mdash; breakdowns, late pickups, detention &mdash; and Riley, our AI assistant, on the phone 24/7.</p></div>
 </div></div></section>'''
 serv_body += dos_steps('full')
 serv_body += m_statband([('20+','services under one roof'),('5%','of line-haul, no long-term contract'),('3 days','business days to a dedicated dispatcher'),('2','approvals on every rate con')])
@@ -2180,7 +2228,7 @@ about_body += _about_faq_html
 
 _about_org_schema = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"AboutPage","name":"About LoadBoot",'
     '"url":"https://loadboot.com/about.html","mainEntity":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/",'
-    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","telephone":"+1-469-253-7575","areaServed":"US",'
+    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","telephone":"+1-815-365-1168","areaServed":"US",'
     '"founder":{"@type":"Person","name":"Muhammad Yaseen"},'
     '"legalName":"LoadBoot LLC",'
     '"duns":"149880967",'
@@ -2248,11 +2296,11 @@ var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit'
 </script>"""
 
 # ---------- "Get a call" section (contact page): role-gated number + call-me-now/schedule ----------
-VOICE_NUMBER_DISPLAY = '+1 (469) 253-7575'
-VOICE_NUMBER_TEL = '+14692537575'
+VOICE_NUMBER_DISPLAY = PHONE_DISP   # bl_comm_0464: one number
+VOICE_NUMBER_TEL = PHONE_TEL
 call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="max-width:820px">
 <div class="sec-head center reveal"><div class="eyebrow">Prefer to talk?</div><h2>Get a call from LoadBoot</h2>
-<p class="lead center" style="max-width:600px;margin:0 auto">""" + ('Message us on WhatsApp any hour' if _CONTACT_HDR_WA else 'Riley, our 24/7 front desk, answers instantly') + """ &mdash; or we call you the moment you ask, or at a time you pick.</p></div>
+<p class="lead center" style="max-width:600px;margin:0 auto">""" + ('Call or WhatsApp ' + PHONE_DISP + ' any hour &mdash; Riley, our AI assistant, picks up instantly' if _CONTACT_ONE else 'Message us on WhatsApp any hour' if _CONTACT_HDR_WA else 'Riley, our 24/7 front desk, answers instantly') + """ &mdash; or we call you the moment you ask, or at a time you pick.</p></div>
 <div class="quote-wrap reveal" id="lbCallCard">
 <h3 style="margin-bottom:6px">Who are you?</h3>
 <p style="color:var(--muted);margin-bottom:14px">So we point you to the right person.</p>
@@ -2268,7 +2316,7 @@ call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="m
 <a class="btn btn-secondary" href="create-agent-account.html">Referral / agent account &rarr;</a></div></div>
 <div id="cwMain" hidden style="margin-top:14px">
 <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:16px">
-&#128172; Reach a human any hour:&nbsp;<a href="tel:""" + VOICE_NUMBER_TEL + """" data-lb-contact="inline" style="font-weight:800;font-size:1.15rem;color:#0883F7;text-decoration:none">""" + VOICE_NUMBER_DISPLAY + """</a></div>
+&#128222;&#128172; Call or WhatsApp any hour:&nbsp;<a href="tel:""" + VOICE_NUMBER_TEL + """" data-lb-contact="inline" style="font-weight:800;font-size:1.15rem;color:#0883F7;text-decoration:none">""" + VOICE_NUMBER_DISPLAY + """</a></div>
 <h3 style="margin:0 0 12px">&hellip;or we call you</h3>
 <div class="form-grid">
 <div class="field"><label for="cwName">Your name</label><input type="text" id="cwName" placeholder="Full name"></div>
@@ -2297,7 +2345,7 @@ btn.disabled=true;btn.textContent='Requesting…';
 fetch('https://""" + APP_REF + """.supabase.co/rest/v1/rpc/lc_request_call',{method:'POST',headers:{'Content-Type':'application/json','apikey':'""" + (APP_ANON or '') + """','Authorization':'Bearer """ + (APP_ANON or '') + """'},body:JSON.stringify({p_visitor_key:visitorKey,p_name:name,p_phone:phone,p_role:role,p_topic:document.getElementById('cwTopic').value.trim()||null,p_when:when})})
 .then(function(r){return r.json();}).then(function(d){
 if(d&&d.error){msg.textContent=d.error;msg.style.color='#dc2626';btn.disabled=false;btn.textContent='📞 Call me';return;}
-btn.textContent='✅ Done!';msg.style.color='#16a34a';msg.textContent=d&&d.scheduled?'Scheduled! Riley will call you at your picked time.':'Riley is calling you right now — your phone should ring in ~30 seconds!';
+btn.textContent='✅ Done!';msg.style.color='#16a34a';msg.textContent=d&&d.scheduled?'Scheduled! Riley, our AI assistant, will call you at your picked time.':'Riley, our AI assistant, is calling you right now — your phone should ring in ~30 seconds!';
 }).catch(function(){msg.textContent='Something went wrong — call us directly or use live chat.';msg.style.color='#dc2626';btn.disabled=false;btn.textContent='📞 Call me';});
 });})();</script>"""
 )
@@ -2308,7 +2356,7 @@ page('contact.html','Get Started, Get a Quote or Contact Us | LoadBoot','Create 
 # ---------- PRICING ----------
 pr_body = svc_hero('Simple, Honest Dispatch Pricing','One flat rate, no long-term contracts, no hidden fees. You only pay when we actually book you a load &mdash; so our goals and yours are always the same.')
 pr_body += '''<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Our Rate</div><h2>A flat 5% of line-haul &mdash; that's it</h2><p>No setup fees. No monthly minimums. No long-term contract. We charge 5% of the gross line-haul on loads your dispatcher books and you deliver &mdash; fuel surcharge and accessorials are yours &mdash; and nothing on the weeks you don't run. If we don't add value, you can walk away anytime.</p><div class="reply">&#9989; You only pay when you earn</div></div></div></section>'''
-pr_inc = ['A dedicated, LoadBoot-vetted dispatcher for your truck &mdash; assigned by hand within 3 business days','Load sourcing on DAT, Truckstop, 123Loadboard, broker networks, direct shippers and the LoadBoot board','Rate negotiation to your floor on every load &mdash; you approve, then LoadBoot approves the rate con','The platform: verified board, carrier app, GPS proof, document vault, settlements ledger','Broker setup, check calls and communication','Route and reload planning to cut deadhead','Business-hours desk + on-call while loaded; Riley on the phone 24/7','Help with factoring, IFTA, and compliance','Pause or switch dispatcher from your app']
+pr_inc = ['A dedicated, LoadBoot-vetted dispatcher for your truck &mdash; assigned by hand within 3 business days','Load sourcing on DAT, Truckstop, 123Loadboard, broker networks, direct shippers and the LoadBoot board','Rate negotiation to your floor on every load &mdash; you approve, then LoadBoot approves the rate con','The platform: verified board, carrier app, GPS proof, document vault, settlements ledger','Broker setup, check calls and communication','Route and reload planning to cut deadhead','Business-hours desk + on-call while loaded; Riley, our AI assistant, on the phone 24/7','Help with factoring, IFTA, and compliance','Pause or switch dispatcher from your app']
 _pr_receipt = ('<div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:30px;max-width:400px;margin:0 auto;box-shadow:0 30px 60px -30px rgba(15,23,42,.35)">'
  '<div style="font-family:Manrope;font-weight:800;font-size:1.05rem;margin-bottom:16px;display:flex;justify-content:space-between"><span>Example load</span><span style="color:#94a3b8;font-weight:600;font-size:.8rem">illustrative</span></div>'
  '<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f1f5f9;font-size:.95rem"><span style="color:#64748b">Linehaul (Dallas &rarr; Atlanta)</span><b>$2,640</b></div>'
@@ -6969,7 +7017,7 @@ def _hub_cta(portal_href, portal_label):
             '<div class="hub-cta-t"><h3>Create your free account</h3>'
             '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
             '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No long-term contracts</span></div>'
-            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+14692537575" style="color:#fff;font-weight:800;text-decoration:none" data-lb-contact="inline">+1 (469) 253-7575</a> &mdash; 24/7,<span data-lb-callonly> or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></span></p></div>'
+            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+18153651168" style="color:#fff;font-weight:800;text-decoration:none" data-lb-contact="inline">+1 (815) 365-1168</a> &mdash; call or WhatsApp, 24/7,<span data-lb-callonly> or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></span></p></div>'
             '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
             '</div></div></section>')
 
