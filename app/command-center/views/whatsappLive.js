@@ -15,7 +15,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { openDrawer } from '../../shared/ui/components.js';
 import { waVoiceFile } from '../../shared/wa-opus.js';   // bl_wa_0378 - Chrome records webm; WhatsApp needs ogg
-import { ccWaOverview, ccWaAssign, ccWaThreadSet, ccWaTemplateSet, ccWaTemplatesSync, ccWaTemplateSubmit, ccWaNotifyAssigned, ccDialerConfigSet, waThread, waSend, waMediaBlob, waStart, waUploadMedia } from '../../shared/api.js';
+import { ccWaOverview, ccWaAssign, ccWaThreadSet, ccWaTemplateSet, ccWaTemplatesSync, ccWaTemplateSubmit, ccWaNotifyAssigned, ccDialerConfigSet, ccWaMessageHide, waThread, waSend, waMediaBlob, waStart, waUploadMedia } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ET = 'America/New_York';
@@ -88,6 +88,9 @@ const G = {
   pen: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z',
   doc: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z',
   check: 'M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z',
+  eyeoff: 'M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7M2 4.27l2.28 2.28.46.46A11.8 11.8 0 0 0 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2m4.31-.78 3.15 3.15.02-.16c0-1.66-1.34-3-3-3z',
+  eye: 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5M12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5m0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3',
+  copy: 'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m0 16H8V7h11z',
 };
 const sv = (n, s, cls) => el('span', { class: 'wx-i' + (cls ? ' ' + cls : ''), 'aria-hidden': 'true',
   html: '<svg viewBox="0 0 24 24" width="' + (s || 24) + '" height="' + (s || 24) + '" fill="currentColor"><path d="' + (G[n] || '') + '"/></svg>' });
@@ -234,6 +237,12 @@ const CSS = `
 .wx-meta .tp{font-style:italic}
 .wx-err{display:flex;gap:4px;align-items:center;color:#c0002d;font-size:12px;margin-top:4px;clear:both;white-space:normal}
 .wx-bub mark{background:#ffe066;color:inherit;border-radius:2px}
+.wx-bchev{position:absolute;top:2px;right:3px;width:26px;height:22px;border:0;border-radius:0 6px 0 12px;cursor:pointer;color:#8696a0;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(at top right,#fff 55%,rgba(255,255,255,0) 80%);z-index:1}
+.wx-mr.out .wx-bchev{background:radial-gradient(at top right,var(--out) 55%,rgba(217,253,211,0) 80%)}
+.wx-bub:hover .wx-bchev,.wx-bub.menu .wx-bchev{display:flex}
+.wx-bub.hid{outline:2px dashed #f59e0b;outline-offset:-2px}
+.wx-hidl{display:flex;align-items:center;gap:4px;padding-right:24px;font-size:11.5px;font-weight:600;color:#b45309;margin:0 0 3px;white-space:normal}
 .wx-bub.med{padding:3px 3px 6px}
 .wx-bub.med .wx-txt{display:block;padding:4px 4px 0}
 .wx-bub.med .wx-meta{margin-right:4px}
@@ -248,12 +257,15 @@ const CSS = `
 .wx-down.show{display:flex}
 /* composer */
 .wx-comp{flex:none;padding:6px 16px 12px;background:transparent;position:relative;z-index:2}
-.wx-box{background:#fff;border-radius:26px;box-shadow:0 1px 3px rgba(11,20,26,.12);padding:6px 8px 6px 8px}
+.wx-box{background:#fff;border-radius:26px;box-shadow:0 1px 3px rgba(11,20,26,.12);padding:6px 8px;display:grid;align-items:center;
+  grid-template-columns:auto auto auto auto 1fr auto;grid-template-areas:"ta ta ta ta ta ta" "clip emo qr recd . send"}
 .wx-box.dis{background:#f7f8fa}
+.wx-pill{display:contents}
+.wx-box .wx-ta{grid-area:ta}.wx-box .wx-clip{grid-area:clip}.wx-box .wx-emob{grid-area:emo}.wx-box .wx-qr{grid-area:qr}.wx-box .wx-recd{grid-area:recd}.wx-box .wx-sendb{grid-area:send}
+.wx-qr .m{display:none}
+.wx-fab{display:none}
 .wx-ta{display:block;width:100%;border:0;outline:none;resize:none;background:transparent;font:400 15px ${FONT};line-height:21px;color:var(--tx);padding:8px 12px 4px;min-height:37px;max-height:170px;overflow-y:auto;white-space:pre-wrap}
 .wx-ta::placeholder{color:#8696a0}
-.wx-bar{display:flex;align-items:center;gap:2px}
-.wx-bar .sp{flex:1}
 .wx-qr{display:inline-flex;align-items:center;gap:4px;border:1px solid #d1d7db;background:#fff;border-radius:18px;height:34px;padding:0 10px 0 14px;font:600 14px ${FONT};color:var(--tx);cursor:pointer;margin-left:4px}
 .wx-qr:hover{background:var(--hv)}.wx-qr.on{background:#d9fdd3;border-color:#d9fdd3;color:var(--gd)}
 .wx-sendb{width:42px;height:42px;border-radius:50%;border:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;background:transparent;color:var(--ic)}
@@ -307,18 +319,63 @@ const CSS = `
 .wx-page .wx-ph2 h2{margin:0;font:700 20px ${FONT};flex:1}
 .wx-page .pad{padding:16px 18px}
 @media (max-width:860px){
-  .wx{grid-template-columns:1fr;border-radius:12px}
+  .wx{grid-template-columns:1fr;border-radius:14px;font-size:15px}
   .wx-rail{display:none}
   .wx-page{grid-column:1}
   .wx .wx-main{display:none}
+  .wx-sh h2{color:#1daa61;font-size:23px}
+  .wx-sh .wx-new{display:none}
+  .wx-fab{display:flex;position:absolute;right:16px;bottom:18px;width:56px;height:56px;border-radius:16px;border:0;background:#1daa61;color:#fff;
+    align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(11,20,26,.28);cursor:pointer;z-index:4}
+  .wx-fab:active{transform:scale(.96)}
+  .wx-list{padding:0 4px 88px}
+  .wx-row{height:74px;padding:0 10px;border-radius:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none}
+  .wx-row:hover{background:transparent}.wx-row:active,.wx-row.menu{background:var(--pn)}
+  .wx-rbd{border-bottom:0}
+  .wx-tag{max-width:96px}
+  .wx-chev{display:none}
+  /* an open chat takes the whole phone screen, the way WhatsApp opens one */
+  .wx.m-chat{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh) !important;min-height:0;z-index:8000;border:0;border-radius:0;box-shadow:none;animation:wxslide .18s ease-out}
+  @keyframes wxslide{from{transform:translateX(30px);opacity:.4}}
   .wx.m-chat .wx-side{display:none}
   .wx.m-chat .wx-main{display:flex}
   .wx-back{display:inline-flex}
-  .wx-body{padding:10px 8px}
-  .wx-bub{max-width:85%}
+  .wx-ch{height:auto;min-height:58px;padding:calc(4px + env(safe-area-inset-top,0px)) 4px 4px 2px;gap:4px;background:#fff}
+  .wx-ch .who b{font-weight:600;font-size:16.5px}
+  .wx-ch .who small{font-size:12.5px}
+  .wx-ch .wx-ib{width:40px;height:40px}
   .wx-own{display:none}
-  .wx-comp{padding:6px 8px 10px}
+  .wx-body{padding:8px 4px}
+  .wx-mr{padding:0 6px}
+  .wx-bub{max-width:86%;font-size:15px;line-height:20px}
+  .wx-img{max-width:260px}
+  .wx-aud{width:220px}
+  .wx-note{font-size:12px;margin:4px 8px 10px}
+  .wx-down{bottom:84px;right:12px}
+  .wx-comp{padding:6px 6px calc(8px + env(safe-area-inset-bottom,0px))}
+  .wx-box{display:flex;align-items:flex-end;gap:6px;background:transparent;box-shadow:none;padding:0}
+  .wx-box.dis{background:transparent}
+  .wx-pill{display:flex;align-items:flex-end;flex:1;min-width:0;background:#fff;border-radius:26px;padding:2px 4px;min-height:48px;box-shadow:0 1px 2px rgba(11,20,26,.18)}
+  .wx-box.dis .wx-pill{background:#f7f8fa}
+  .wx-pill .wx-ib{width:42px;height:44px}
+  .wx-ta{order:2;flex:1;min-width:0;padding:12px 4px;min-height:44px;font-size:16px;line-height:20px;max-height:128px}
+  .wx-emob{order:1}.wx-clip{order:3}.wx-qr{order:4}.wx-recd{order:5}
+  .wx-qr{border:0;background:transparent;width:42px;height:44px;padding:0;margin:0;justify-content:center;color:var(--ic)}
+  .wx-qr.on{background:transparent;color:var(--g)}
+  .wx-qr .d{display:none}.wx-qr .m{display:inline-flex}
+  .wx-recd{align-self:center;margin:0 6px 0 0;font-size:12px}
+  .wx-sendb,.wx-sendb.go,.wx-sendb.rec{width:48px;height:48px;background:#1daa61;color:#fff;flex:none;box-shadow:0 1px 2px rgba(11,20,26,.2)}
+  .wx-sendb.rec{background:#ea0038}
+  .wx-tray,.wx-emo{border-radius:14px}
+  .wx-emo{grid-template-columns:repeat(8,1fr)}
+  .wx-info{width:100%;border-left:0;animation:wxslide .18s ease-out}
+  .wx-ih{padding-top:env(safe-area-inset-top,0px)}
+  .wx-isec{padding:14px 18px}
+  .wx-isec.hero .wx-av{width:140px !important;height:140px !important;font-size:52px !important}
+  .wx-find input{font-size:16px}
+  .wx-srch input,.wx-in{font-size:16px}
 }
+html.wx-lock,html.wx-lock body{overflow:hidden !important}
 /* floating menus + dialogs live on <body>, outside .wx */
 .wx-menu{position:fixed;z-index:100000;background:#fff;border-radius:16px;box-shadow:0 2px 5px rgba(11,20,26,.26),0 2px 10px rgba(11,20,26,.16);padding:10px;min-width:232px;font-family:${FONT};color:#111b21;animation:wxm .12s ease-out}
 @keyframes wxm{from{opacity:0;transform:scale(.96)}}
@@ -337,6 +394,15 @@ const CSS = `
 .wx-mw > .wx-menu{display:none;position:absolute;top:-10px;left:calc(100% + 4px)}
 .wx-menu.flip .wx-mw > .wx-menu{left:auto;right:calc(100% + 4px)}
 .wx-mw.open > .wx-menu{display:block}
+@media (max-width:600px){
+  .wx-menu{left:0 !important;right:0;top:auto !important;bottom:0;min-width:0;width:100%;border-radius:20px 20px 0 0;padding:8px 8px calc(10px + env(safe-area-inset-bottom,0px));
+    max-height:78vh;overflow:auto;box-shadow:0 0 0 100vmax rgba(11,20,26,.4);animation:wxup .18s ease-out}
+  @keyframes wxup{from{transform:translateY(40px);opacity:.5}}
+  .wx-menu::before{content:"";display:block;width:38px;height:4px;border-radius:2px;background:#d1d7db;margin:2px auto 8px}
+  .wx-mi{height:50px;font-size:16px}
+  .wx-mw > .wx-menu,.wx-menu.flip .wx-mw > .wx-menu{position:static;box-shadow:none;border-radius:0;padding:0 0 0 34px;max-height:none;animation:none;width:auto}
+  .wx-mw > .wx-menu::before{display:none}
+}
 .wx-dlg{font-family:${FONT}}
 .wx-dlg p{margin:0 0 18px;color:#3b4a54;font-size:14.5px;line-height:1.55}
 .wx-dlg .row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
@@ -394,7 +460,7 @@ function waLightbox(url) {
 
 // ---- per-browser list state (pin / mute / favorites / unread mark / lists / clear / delete) ----
 const LS = 'lb.cc.wa.ui.v1';
-const U0 = () => ({ pin: {}, fav: {}, mute: {}, unr: {}, del: {}, clr: {}, lists: {} });
+const U0 = () => ({ pin: {}, fav: {}, mute: {}, unr: {}, del: {}, clr: {}, lists: {}, seen: {} });
 function uLoad() {
   try { const v = JSON.parse(localStorage.getItem(LS) || 'null'); const u = U0(); if (v && typeof v === 'object') for (const k in u) if (v[k] && typeof v[k] === 'object') u[k] = v[k]; return u; }
   catch (_) { return U0(); }
@@ -420,7 +486,23 @@ export async function renderWhatsappLive(host) {
   const cur = () => { const a = byId(open); const b = thr && thr.thread && thr.thread.id === open ? thr.thread : null; return a && b ? Object.assign({}, b, a) : (a || b); };
   const tName = (t) => (t.who && t.who.name) || t.contact_name || pretty(t.number);
   const isMuted = (id) => { const m = U.mute[id]; return m != null && (m === -1 || m > Date.now()); };
-  const isUnr = (t) => (t.unread > 0) || !!U.unr[t.id];
+  // bl_wa_0475 — the server's unread counter belongs to the chat's OWNER: wa_thread only clears it when the owner
+  // opens the chat, so a dispatcher's own badge is not wiped by staff looking in. What THIS staff member has seen is
+  // kept here instead: { at: last_at when seen, n: server unread when seen }. Only messages after that count.
+  const unreadN = (t) => {
+    const n = t.unread || 0, s = U.seen[t.id];
+    if (!n) return 0;
+    if (!s) return n;
+    if (!t.last_at || (s.at && new Date(t.last_at).getTime() <= new Date(s.at).getTime())) return 0;
+    return n > s.n ? n - s.n : n < s.n ? n : 0;   // n < s.n: the owner read it since, so these are all new
+  };
+  const isUnr = (t) => unreadN(t) > 0 || !!U.unr[t.id];
+  function markSeen(t) {
+    if (!t) return;
+    const at = t.last_at || null, n = t.unread || 0, s = U.seen[t.id];
+    if (s && s.at === at && s.n === n) return;
+    U.seen[t.id] = { at, n }; uSave();
+  }
   const isDel = (t) => U.del[t.id] != null && !(t.last_at && new Date(t.last_at).getTime() > U.del[t.id]);
   const PILL = { dispatcher: { trial: '#0883F7', active: '#15803d', verified: '#15803d' }, carrier: '#10223B', driver: '#0f766e' };
   const whoColor = (w) => w.kind === 'dispatcher' ? (PILL.dispatcher[w.status] || '#64748b') : (PILL[w.kind] || '#64748b');
@@ -437,6 +519,8 @@ export async function renderWhatsappLive(host) {
 
   // ---- floating menus (WhatsApp's rounded white menu, with fly-out sub-menus) ----
   let menuEl = null, menuRow = null;
+  const canHover = () => { try { return window.matchMedia('(hover: hover)').matches; } catch (_) { return true; } };
+  const isPhone = () => window.innerWidth <= 860;
   function closeMenu() {
     if (!menuEl) return;
     menuEl.remove(); menuEl = null;
@@ -452,7 +536,7 @@ export async function renderWhatsappLive(host) {
       const btn = el('button', { class: 'wx-mi', role: 'menuitem', type: 'button', disabled: !!it.disabled, title: it.hint || null,
         onClick: (e) => {
           e.stopPropagation();
-          if (it.sub) { const w = e.currentTarget.parentNode; const was = w.classList.contains('open'); w.parentNode.querySelectorAll('.wx-mw.open').forEach((x) => x.classList.remove('open')); if (!was) w.classList.add('open'); return; }
+          if (it.sub) { const w = e.currentTarget.parentNode; const was = w.classList.contains('open'); w.parentNode.querySelectorAll('.wx-mw.open').forEach((x) => x.classList.remove('open')); if (!was || canHover()) w.classList.add('open'); return; }
           closeMenu(); if (it.on) it.on();
         } }, [
         it.ic ? sv(it.ic, 20) : null,
@@ -461,7 +545,7 @@ export async function renderWhatsappLive(host) {
         it.sub ? sv('right', 18) : null,
       ]);
       if (!it.sub) return btn;
-      const w = el('div', { class: 'wx-mw', onMouseenter: (e) => { const p = e.currentTarget; p.parentNode.querySelectorAll(':scope > .wx-mw.open').forEach((x) => { if (x !== p) x.classList.remove('open'); }); p.classList.add('open'); }, onMouseleave: (e) => e.currentTarget.classList.remove('open') }, [btn, menuNode(it.sub)]);
+      const w = el('div', { class: 'wx-mw', onMouseenter: (e) => { if (!canHover()) return; const p = e.currentTarget; p.parentNode.querySelectorAll(':scope > .wx-mw.open').forEach((x) => { if (x !== p) x.classList.remove('open'); }); p.classList.add('open'); }, onMouseleave: (e) => { if (canHover()) e.currentTarget.classList.remove('open'); } }, [btn, menuNode(it.sub)]);
       return w;
     }));
   }
@@ -476,7 +560,7 @@ export async function renderWhatsappLive(host) {
     if (px + r.width + 250 > window.innerWidth) menuEl.classList.add('flip');
     if (row) { menuRow = row; row.classList.add('menu'); }
     setTimeout(() => { document.addEventListener('mousedown', menuOutside, true); window.addEventListener('resize', closeMenu); }, 0);
-    const first = menuEl.querySelector('.wx-mi:not(:disabled)'); if (first) first.focus({ preventScroll: true });
+    if (canHover()) { const first = menuEl.querySelector('.wx-mi:not(:disabled)'); if (first) first.focus({ preventScroll: true }); }
   }
   function menuAt(e, items, row) { e.preventDefault(); e.stopPropagation(); const b = e.currentTarget.getBoundingClientRect(); showMenu(items, e.type === 'contextmenu' ? e.clientX : b.right - 232, e.type === 'contextmenu' ? e.clientY : b.bottom + 4, row); }
 
@@ -514,9 +598,8 @@ export async function renderWhatsappLive(host) {
   function mute(t, ms) { U.mute[t.id] = ms === -1 ? -1 : Date.now() + ms; uSave(); paintSide(); paintMain(); toast('Notifications muted'); }
   function unmute(t) { delete U.mute[t.id]; uSave(); paintSide(); paintMain(); toast('Notifications unmuted'); }
   async function markRead(t) {
-    delete U.unr[t.id]; uSave();
-    if (t.unread > 0) { try { await waThread(t.id); t.unread = 0; } catch (e) { toast(humanizeError(e)); } }
-    paintSide(); paintRail(); load(true);
+    delete U.unr[t.id]; markSeen(t); uSave();
+    paintSide(); paintRail();
   }
   function markUnread(t) { U.unr[t.id] = true; uSave(); if (open === t.id) closeChat(); else { paintSide(); paintRail(); } }
   function inList(name, id) { return (U.lists[name] || []).includes(id); }
@@ -548,6 +631,7 @@ export async function renderWhatsappLive(host) {
     const names = Object.keys(U.lists);
     return [
       inHeader ? { ic: 'info', label: 'Contact info', on: () => { infoOpen = true; paintInfo(); } } : null,
+      inHeader ? { ic: 'assign', label: 'Who answers this chat', on: () => { infoOpen = true; paintInfo(); } } : null,
       inHeader ? { ic: 'search', label: 'Search', on: () => openFind() } : null,
       inHeader ? { ic: 'close', label: 'Close chat', on: () => closeChat() } : null,
       inHeader ? { sep: true } : null,
@@ -581,13 +665,14 @@ export async function renderWhatsappLive(host) {
       const top = root.getBoundingClientRect().top + window.scrollY;
       const mobile = window.innerWidth <= 860;
       root.style.height = Math.max(mobile ? 480 : 540, window.innerHeight - top - (mobile ? 84 : 20)) + 'px';
+      document.documentElement.classList.toggle('wx-lock', !!open && rail === 'chats' && mobile);
     } catch (_) {}
   }
   function paintLayout() {
     closeMenu();
     if (rail === 'chats') mount(root, [railEl, sideEl, mainEl]);
     else { mount(root, [railEl, pageEl]); paintPage(); }
-    root.classList.toggle('m-chat', !!open && rail === 'chats');
+    mChat();
     paintRail();
   }
 
@@ -642,10 +727,13 @@ export async function renderWhatsappLive(host) {
   function row(t) {
     const unr = isUnr(t), muted = isMuted(t.id), draft = drafts[t.id] && open !== t.id ? drafts[t.id] : '';
     const late = t.needs_reply && (t.waiting_min || 0) >= 60;
+    let lp = null, fired = false;
     const r = el('div', { class: 'wx-row' + (open === t.id ? ' on' : '') + (unr ? ' unr' : '') + (late ? ' late' : ''), role: 'button', tabindex: '0', 'aria-label': tName(t),
-      onClick: () => openChat(t.id),
+      onClick: () => { if (fired) { fired = false; return; } openChat(t.id); },
+      onTouchstart: (e) => { fired = false; const p = e.touches[0]; clearTimeout(lp); lp = setTimeout(() => { fired = true; try { navigator.vibrate && navigator.vibrate(12); } catch (_) {} showMenu(chatItems(t), p.clientX, p.clientY, r); }, 480); },
+      onTouchmove: () => clearTimeout(lp), onTouchend: (e) => { clearTimeout(lp); if (fired && e.cancelable) e.preventDefault(); }, onTouchcancel: () => clearTimeout(lp),
       onKeydown: (e) => { if (e.key === 'Enter') openChat(t.id); },
-      onContextmenu: (e) => menuAt(e, chatItems(t), r) }, [
+      onContextmenu: (e) => { if (fired || menuEl) { e.preventDefault(); return; } menuAt(e, chatItems(t), r); } }, [
       avatar(t, 49),
       el('div', { class: 'wx-rbd' }, [
         el('div', { class: 'wx-r1' }, [
@@ -661,7 +749,7 @@ export async function renderWhatsappLive(host) {
             t.needs_reply ? el('span', { class: 'wx-wt' + (late ? ' r' : ''), title: 'Waiting on us' }, wait(t.waiting_min)) : null,
             muted ? sv('mute', 18) : null,
             U.pin[t.id] && t.status === 'open' ? sv('pin', 18) : null,
-            unr ? el('span', { class: 'wx-badge' + (muted ? ' mu' : '') + (t.unread > 0 ? '' : ' e') }, t.unread > 0 ? String(t.unread) : '') : null,
+            unr ? el('span', { class: 'wx-badge' + (muted ? ' mu' : '') + (unreadN(t) > 0 ? '' : ' e') }, unreadN(t) > 0 ? String(unreadN(t)) : '') : null,
             el('button', { class: 'wx-chev', type: 'button', 'aria-label': 'Chat options', onClick: (e) => menuAt(e, chatItems(t), r) }, sv('down', 22)),
           ]),
         ]),
@@ -675,7 +763,7 @@ export async function renderWhatsappLive(host) {
       { ic: 'newchat', label: 'New chat', on: () => { side = 'new'; paintSide(); } },
       { ic: 'archive', label: 'Archived', on: () => { side = 'archived'; paintSide(); } },
       { ic: 'list', label: 'New list', on: () => newList(null) },
-      { ic: 'unread', label: 'Mark all as read', on: () => { const l = threads().filter((t) => isUnr(t)); l.forEach((t) => { delete U.unr[t.id]; }); uSave(); Promise.all(l.filter((t) => t.unread > 0).map((t) => waThread(t.id).catch(() => null))).then(() => load(true)); paintSide(); } },
+      { ic: 'unread', label: 'Mark all as read', on: () => { const l = threads().filter((t) => isUnr(t)); l.forEach((t) => { delete U.unr[t.id]; markSeen(t); }); uSave(); paintSide(); paintRail(); } },
       { ic: 'refresh', label: 'Refresh', on: () => load(false) },
       { sep: true },
       { ic: 'tpl', label: 'Templates', on: () => { rail = 'tpl'; paintLayout(); } },
@@ -753,6 +841,7 @@ export async function renderWhatsappLive(host) {
           el('button', { class: 'wx-ib wx-new', type: 'button', title: 'New chat', 'aria-label': 'New chat', onClick: () => { side = 'new'; paintSide(); } }, sv('newchat', 22)),
         ]),
         srchBox, chipsEl, listEl,
+        el('button', { class: 'wx-fab', type: 'button', title: 'New chat', 'aria-label': 'New chat', onClick: () => { side = 'new'; paintSide(); } }, sv('newchat', 24)),
       ]);
     }
   }
@@ -841,12 +930,12 @@ export async function renderWhatsappLive(host) {
       onInput: (e) => { drafts[open] = e.target.value; grow(); syncComp(); },
       onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } } });
     B.ta.value = drafts[open] || '';
-    B.emoB = el('button', { class: 'wx-ib', type: 'button', title: 'Emoji', 'aria-label': 'Emoji', onClick: () => { emoOpen = !emoOpen; trayOpen = false; paintTrays(); } }, sv('emoji', 24));
-    B.clip = el('button', { class: 'wx-ib', type: 'button', title: 'Attach', 'aria-label': 'Attach', onClick: () => pickFile() }, sv('clip', 24));
-    B.qr = el('button', { class: 'wx-qr', type: 'button', title: 'Approved WhatsApp templates', onClick: () => { trayOpen = !trayOpen; emoOpen = false; paintTrays(); } }, ['Templates', sv('down', 18)]);
+    B.emoB = el('button', { class: 'wx-ib wx-emob', type: 'button', title: 'Emoji', 'aria-label': 'Emoji', onClick: () => { emoOpen = !emoOpen; trayOpen = false; paintTrays(); } }, sv('emoji', 24));
+    B.clip = el('button', { class: 'wx-ib wx-clip', type: 'button', title: 'Attach', 'aria-label': 'Attach', onClick: () => pickFile() }, sv('clip', 24));
+    B.qr = el('button', { class: 'wx-qr', type: 'button', title: 'Approved WhatsApp templates', onClick: () => { trayOpen = !trayOpen; emoOpen = false; paintTrays(); } }, [sv('tpl', 22, 'm'), el('span', { class: 'd' }, 'Templates'), sv('down', 18, 'd')]);
     B.recd = el('span', { class: 'wx-recd', style: 'display:none' }, 'Recording…');
     B.send = el('button', { class: 'wx-sendb', type: 'button', onClick: () => { if (hasText() || pend) submit(); else toggleRec(); } });
-    B.box = el('div', { class: 'wx-box' }, [B.ta, el('div', { class: 'wx-bar' }, [B.clip, B.emoB, B.qr, B.recd, el('span', { class: 'sp' }), B.send])]);
+    B.box = el('div', { class: 'wx-box' }, [el('div', { class: 'wx-pill' }, [B.emoB, B.ta, B.clip, B.qr, B.recd]), B.send]);
     B.comp = el('footer', { class: 'wx-comp' }, [B.pend, B.emo, B.tray, B.box]);
     B.info = el('div');
     B.sig = '';
@@ -940,6 +1029,38 @@ export async function renderWhatsappLive(host) {
     if (i < text.length) out.push(text.slice(i));
     return out;
   }
+  // bl_wa_0487 — per-message menu. WhatsApp's Business API cannot unsend a message, so "delete for everyone"
+  // is shown but disabled; what staff CAN do is hide a message from the dispatcher (server-side, cc_wa_message_hide).
+  function longPress(node, fn) {
+    let lp = null;
+    node.addEventListener('touchstart', (e) => { const p = e.touches[0]; clearTimeout(lp); lp = setTimeout(() => { node.dataset.lp = '1'; try { navigator.vibrate && navigator.vibrate(12); } catch (_) {} fn(p.clientX, p.clientY); }, 480); }, { passive: true });
+    const stop = (e) => { clearTimeout(lp); if (node.dataset.lp && e.type === 'touchend' && e.cancelable) e.preventDefault(); delete node.dataset.lp; };
+    node.addEventListener('touchmove', () => clearTimeout(lp), { passive: true });
+    node.addEventListener('touchend', stop); node.addEventListener('touchcancel', stop);
+  }
+  async function hideMsg(m, on) {
+    try {
+      const r = await ccWaMessageHide(m.id, on);
+      if (r && r.error) throw new Error(r.error);
+      m.hidden = on;
+      toast(on ? 'Hidden from the dispatcher. Only Command Center sees this message now.' : 'The dispatcher can see this message again.');
+      paintMsgs(true); await loadThread(open, true); load(true);
+    } catch (e) { toast(humanizeError(e)); }
+  }
+  function msgItems(m) {
+    const t = cur();
+    const who = t && t.owner ? t.owner : 'the dispatcher';
+    return [
+      m.body ? { ic: 'copy', label: 'Copy', on: async () => { try { await navigator.clipboard.writeText(m.body); toast('Copied'); } catch (_) { toast('Could not copy'); } } } : null,
+      m.hidden
+        ? { ic: 'eye', label: 'Show to dispatcher', on: () => hideMsg(m, false) }
+        : { ic: 'eyeoff', label: 'Hide from dispatcher', on: () => dialog('Hide this message from ' + who + '?',
+            'Only Command Center will see it. The dispatcher will not see it in the chat, in the inbox preview, or as an attachment — even if the chat is handed to them later. The customer still has it on their phone.',
+            'Hide from dispatcher', () => hideMsg(m, true)) },
+      { sep: true },
+      { ic: 'del', label: 'Delete for everyone', disabled: true, hint: 'WhatsApp’s Business API cannot unsend a message' },
+    ];
+  }
   function paintMsgs(force) {
     if (!built || !thr || !thr.thread || thr.thread.id !== open) return;
     const t = cur();
@@ -948,7 +1069,7 @@ export async function renderWhatsappLive(host) {
     let list = (thr.messages || []).filter((m) => !cut || new Date(m.at).getTime() > cut);
     const total = list.length;
     if (q) list = list.filter((m) => (m.body || '').toLowerCase().includes(q.toLowerCase()) || (m.file_name || '').toLowerCase().includes(q.toLowerCase()));
-    const sig = [t.window_open, t.window_ends && left(t.window_ends), cut, q, list.map((m) => m.id + m.status + (m.error || '')).join('|')].join('#');
+    const sig = [t.window_open, t.window_ends && left(t.window_ends), cut, q, list.map((m) => m.id + m.status + (m.hidden ? 'h' : '') + (m.error || '')).join('|')].join('#');
     if (!force && sig === built.sig) return;
     const first = !built.sig;
     built.sig = sig;
@@ -969,7 +1090,10 @@ export async function renderWhatsappLive(host) {
       const tail = !prev || prev.direction !== m.direction;
       prev = m;
       const media = m.has_media ? mediaEl(m) : null;
-      rows.push(el('div', { class: 'wx-mr ' + (out ? 'out' : 'in') + (tail ? ' tail' : '') }, el('div', { class: 'wx-bub' + (fail ? ' fail' : '') + (media ? ' med' : '') }, [
+      const bub = el('div', { class: 'wx-bub' + (fail ? ' fail' : '') + (media ? ' med' : '') + (m.hidden ? ' hid' : ''),
+        onContextmenu: (e) => { e.preventDefault(); showMenu(msgItems(m), e.clientX, e.clientY, bub); } }, [
+        el('button', { class: 'wx-bchev', type: 'button', 'aria-label': 'Message options', onClick: (e) => { e.stopPropagation(); const b = e.currentTarget.getBoundingClientRect(); showMenu(msgItems(m), b.right - 232, b.bottom + 2, bub); } }, sv('down', 20)),
+        m.hidden ? el('div', { class: 'wx-hidl', title: m.hidden_at ? 'Hidden ' + et(m.hidden_at) : null }, [sv('eyeoff', 14), 'Hidden from dispatcher · only Command Center sees this']) : null,
         media,
         m.body ? el('span', { class: 'wx-txt' }, hl(m.body, q)) : null,
         el('span', { class: 'wx-meta', title: et(m.at) }, [
@@ -977,7 +1101,9 @@ export async function renderWhatsappLive(host) {
           hm(new Date(m.at)), tick(m),
         ]),
         fail ? el('div', { class: 'wx-err' }, [sv('alert', 14), 'Not delivered' + (m.error ? ' · ' + m.error : '')]) : null,
-      ])));
+      ]);
+      longPress(bub, (x, y) => showMenu(msgItems(m), x, y, bub));
+      rows.push(el('div', { class: 'wx-mr ' + (out ? 'out' : 'in') + (tail ? ' tail' : '') }, bub));
     });
     if (!list.length) rows.push(el('div', { class: 'wx-day', style: 'position:static;text-transform:none' }, q ? 'No messages found' : 'No messages yet'));
     mount(built.msgs, rows);
@@ -1008,7 +1134,7 @@ export async function renderWhatsappLive(host) {
     const B = built;
     B.box.classList.toggle('dis', !open24);
     B.ta.disabled = !open24 || !!rec;
-    B.ta.placeholder = !open24 ? 'The 24-hour window is closed — send an approved template instead'
+    B.ta.placeholder = !open24 ? (isPhone() ? 'Window closed — use a template' : 'The 24-hour window is closed — send an approved template instead')
       : rec ? 'Recording… press ■ to send' : pend ? 'Add a caption (optional)' : 'Type a message';
     B.clip.disabled = !open24 || sending || !!rec;
     B.emoB.disabled = !open24 || !!rec;
@@ -1185,9 +1311,20 @@ export async function renderWhatsappLive(host) {
     ]));
   }
 
+  function mChat() {
+    const on = !!open && rail === 'chats';
+    root.classList.toggle('m-chat', on);
+    document.documentElement.classList.toggle('wx-lock', on && isPhone());
+    vv();
+  }
+  function vv() {
+    const v = window.visualViewport;
+    root.style.setProperty('--vvh', (v ? v.height : window.innerHeight) + 'px');
+    root.style.setProperty('--vvt', (v ? v.offsetTop : 0) + 'px');
+  }
   function paintMain(force) {
     if (rail !== 'chats') return;
-    root.classList.toggle('m-chat', !!open);
+    mChat();
     if (!open) { built = null; mount(mainEl, welcome()); return; }
     if (!built || built.id !== open || !mainEl.contains(built.head)) buildChat();
     paintHead(); paintMsgs(force); syncComp();
@@ -1199,13 +1336,13 @@ export async function renderWhatsappLive(host) {
     if (rec) { try { rec.stop(); } catch (_) {} }
     clearPend();
     open = id; thr = null; findQ = null; infoOpen = false; trayOpen = false; emoOpen = false; tplName = ''; tplVars = [];
-    delete U.unr[id]; uSave();
-    const t = byId(id); if (t) t.unread = 0;
+    delete U.unr[id]; uSave(); markSeen(byId(id));
     paintSide(); paintRail();
     buildChat();
     mount(built.msgs, el('div', { class: 'wx-day', style: 'position:static' }, 'Loading…'));
     await loadThread(id, false);
-    if (open === id && built) { const c = cur(); if (c && !c.window_open) { trayOpen = true; paintTrays(); } else built.ta.focus(); }
+    // on a phone the keyboard stays down until they tap the box, like WhatsApp
+    if (open === id && built) { const c = cur(); if (c && !c.window_open) { trayOpen = true; paintTrays(); } else if (!isPhone()) built.ta.focus(); }
   }
   function closeChat() { if (rec) { try { rec.stop(); } catch (_) {} } clearPend(); open = null; thr = null; findQ = null; infoOpen = false; paintMain(); paintSide(); }
 
@@ -1214,7 +1351,7 @@ export async function renderWhatsappLive(host) {
       const r = await waThread(id);
       if (r && r.error) throw new Error(r.error);
       if (open !== id) return;
-      thr = r; paintMain();
+      thr = r; markSeen(cur()); paintMain(); paintSide(); paintRail();
     } catch (e) { if (!quiet) toast(humanizeError(e)); }
   }
 
@@ -1225,6 +1362,7 @@ export async function renderWhatsappLive(host) {
       const r = await ccWaOverview({ q, dispatcher: F.dispatcher });
       if (r && r.error) throw new Error(r.error);
       ov = r; ovQ = q;
+      if (open && rail === 'chats') markSeen(byId(open));
       paintRail(); paintSide();
       if (rail === 'chats') { if (open) { paintHead(); syncComp(); } else paintMain(); } else paintPage();
     } catch (e) { if (!quiet) toast(humanizeError(e)); }
@@ -1391,6 +1529,8 @@ export async function renderWhatsappLive(host) {
   }
   document.addEventListener('keydown', onKey);
   window.addEventListener('resize', fit);
+  const onVV = () => { vv(); if (built && built.stick) stick(); };
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', onVV); window.visualViewport.addEventListener('scroll', onVV); }
 
   paintLayout(); fit(); paintSide(); paintMain();
   await load(false);
@@ -1401,6 +1541,8 @@ export async function renderWhatsappLive(host) {
   return () => {
     if (timer) clearInterval(timer); if (thrTimer) clearInterval(thrTimer);
     document.removeEventListener('keydown', onKey); window.removeEventListener('resize', fit);
+    if (window.visualViewport) { window.visualViewport.removeEventListener('resize', onVV); window.visualViewport.removeEventListener('scroll', onVV); }
+    document.documentElement.classList.remove('wx-lock');
     closeMenu(); if (rec) { try { rec.stop(); } catch (_) {} } clearPend();
   };
 }

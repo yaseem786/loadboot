@@ -1505,6 +1505,8 @@ export const ccWaAssign = (id, userId) => rpc('cc_wa_assign', { p_id: id, p_user
 export const ccWaThreadSet = (p) => rpc('cc_wa_thread_set', { p: p ?? {} });
 export const ccWaTemplateSet = (p) => rpc('cc_wa_template_set', { p: p ?? {} });
 export const ccWaNotifyAssigned = (userId) => rpc('cc_wa_notify_assigned', { p_user: userId });
+// bl_wa_0487 — staff hide a message from the dispatcher (Command Center only); false shows it again
+export const ccWaMessageHide = (id, hidden) => rpc('cc_wa_message_hide', { p_id: id, p_hidden: hidden !== false });
 // bl_wa_0377 - the templates' REAL status, read from Meta through Telnyx (the account that owns the WABA).
 // { action: 'sync' } reads them all and writes them into wa_templates; { action: 'submit', name } sends one
 // drafted template off for Meta's approval. Staff only - the edge function calls the RPCs as the caller.
