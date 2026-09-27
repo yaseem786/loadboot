@@ -542,6 +542,8 @@ export const dispatcherPostTruck = (org, p) => rpc('dispatcher_post_truck', { p_
 export const dispatcherUpdatePosting = (org, id, action) => rpc('dispatcher_update_posting', { p_org: org, p_id: id, p_action: action });
 export const dispatcherPostingMatches = (org, id) => rpc('dispatcher_posting_matches', { p_org: org, p_id: id });
 export const dispatcherMyKpis = (days) => rpc('dispatcher_my_kpis', { p_days: days ?? 30 });
+// bl_disp_0484 — help / feedback / one-tap mood from the daily trial report (kind: help | feedback | mood)
+export const dispatcherTrialFeedback = (kind, mood, note) => rpc('disp_trial_feedback', { p_kind: kind, p_mood: mood ?? null, p_note: note ?? null });
 export const ccDispatcherKpis = (user, days) => rpc('cc_dispatcher_kpis', { p_user: user, p_days: days ?? 30 });
 // ---- bl_disp_0290 — real-trip tools behind an approved booking ----
 export const dispatcherTrip = (org, trip) => rpc('dispatcher_trip', { p_org: org, p_trip: trip });
