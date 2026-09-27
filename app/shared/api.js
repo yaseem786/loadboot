@@ -1427,6 +1427,7 @@ export const ccDriverAdoptionKpis = () => rpc('cc_driver_adoption_kpis');
 export const dialerBootstrap = () => rpc('dialer_bootstrap', {});
 export const dialerHeartbeat = () => rpc('dialer_heartbeat', {});
 export const dialerForwardSet = (number) => rpc('dialer_forward_set', { p_number: number ?? '' });   // bl_dial_0351e — dispatcher's own US/CA forward mobile
+export const dialerWaAlertSet = (number, on = true) => rpc('dialer_wa_alert_set', { p_number: number ?? '', p_on: on });   // bl_dial_0487 — dispatcher's WhatsApp call-alert number (any country) / off
 export const dialerLookup = (number) => rpc('dialer_lookup', { p_number: number });
 export const dialerCallStart = (p) => rpc('dialer_call_start', { p: p ?? {} });
 export const dialerCallUpdate = (id, p) => rpc('dialer_call_update', { p_id: id, p: p ?? {} });

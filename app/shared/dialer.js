@@ -18,7 +18,7 @@ import { pushSupported, enablePush, isPushEnabled } from './push.js';
 import {
   dialerBootstrap, dialerHeartbeat, dialerLookup, dialerCallStart, dialerCallUpdate, dialerCallTag,
   dialerCallbackSet, dialerHistory, dialerToken, dialerClaimWaiting, dialerRecordingBlob,
- dialerForwardSet, dialerSmsThreads, dialerSmsThread, dialerSmsSend,
+ dialerForwardSet, dialerWaAlertSet, dialerSmsThreads, dialerSmsThread, dialerSmsSend,
  dialerSmsConsentState, dialerSmsConsentRecord,
   waInbox, waThread, waClaim, waStart, waSend, waMediaBlob, waUploadMedia,
 } from './api.js';
@@ -782,6 +782,24 @@ function createDialer() {
     } catch (e) { toast('Recording is not ready yet — try again in a minute.'); } finally { if (btn) btn.disabled = false; paint(); }
   }
   async function loadMics() { try { const d = await navigator.mediaDevices.enumerateDevices(); S.mics = d.filter((x) => x.kind === 'audioinput'); } catch (_) { S.mics = []; } }
+  // bl_dial_0487 — the WhatsApp call-alert state comes with dialer_bootstrap (line.wa_alert)
+  function waAlert() { return S.boot && S.boot.line && S.boot.line.wa_alert; }
+  function waAlertLine() {
+    const w = waAlert();
+    if (!w) return 'Incoming and missed calls are sent to your WhatsApp, even when you are signed out.';
+    if (w.mode === 'off') return 'WhatsApp call alerts are switched off for everyone right now.';
+    if (w.off) return 'OFF — you get no WhatsApp message for calls.';
+    if (!w.number) return 'No WhatsApp number yet — add yours below (with the country code).';
+    return 'ON — ' + w.number + (w.mode === 'always' ? ' gets a message for every incoming call' : ' gets a message when a call rings while you are not in LoadBoot') + ', and one for every missed call (with Riley\u2019s summary when she answered).';
+  }
+  async function saveWaAlert(e, v, on) {
+    const b = e.currentTarget; b.disabled = true;
+    try {
+      const r = await dialerWaAlertSet(v, on);
+      if (r && r.ok) { if (S.boot && S.boot.line) S.boot.line.wa_alert = r.wa_alert; const w = r.wa_alert || {}; toast(!on ? 'WhatsApp call alerts are off.' : (w.number ? 'Call alerts go to ' + w.number + ' on WhatsApp.' : 'Saved — but there is no usable number yet.')); paint(); }
+      else toast((r && r.error) || 'Could not save that number.');
+    } catch (err) { toast((err && err.message) || 'Could not save that number.'); } finally { b.disabled = false; }
+  }
   function vSettings() {
     return h('div', null, [
       h('button', { class: 'lbd-btn ghost', style: 'width:100%;margin-bottom:12px', onClick: () => { S.showSettings = false; paint(); } }, '\u2190 Back to dialer'),
@@ -801,6 +819,17 @@ function createDialer() {
           catch (err) { toast((err && err.message) || 'Could not save that number.'); } finally { b.disabled = false; } } }, 'Save'),
       ]),
       h('div', { class: 'lbd-match', style: 'margin-top:6px' }, 'US or Canada numbers only. Leave empty to turn it off — calls then go straight to the backup line / voicemail.'),
+      // bl_dial_0487 — WhatsApp call alerts: any country, works when signed out (ring alert while not in the portal, missed call + Riley's summary)
+      h('label', { class: 'lbd-lbl', for: 'lbd-wa', style: 'margin-top:14px;display:block' }, 'WhatsApp call alerts'),
+      h('div', { class: 'lbd-match', style: 'margin-bottom:6px' }, waAlertLine()),
+      h('div', { style: 'display:flex;gap:8px' }, [
+        h('input', { class: 'lbd-sel', id: 'lbd-wa', type: 'tel', inputmode: 'tel', autocomplete: 'tel', placeholder: 'WhatsApp with country code, e.g. +91 98765 43210', value: (waAlert() && waAlert().own && waAlert().number) || '', style: 'flex:1;min-width:0' }),
+        h('button', { class: 'lbd-btn', onClick: (e) => saveWaAlert(e, ((root.querySelector('#lbd-wa') || {}).value || ''), true) }, 'Save'),
+      ]),
+      h('div', { class: 'lbd-match', style: 'margin-top:6px' }, ['Leave empty to use the phone on your profile. ',
+        waAlert() && waAlert().off
+          ? h('button', { class: 'lbd-btn ghost', style: 'padding:2px 8px', onClick: (e) => saveWaAlert(e, '', true) }, 'Turn alerts back on')
+          : h('button', { class: 'lbd-btn ghost', style: 'padding:2px 8px', onClick: (e) => saveWaAlert(e, '', false) }, 'Turn WhatsApp alerts off')]),
       h('button', { class: 'lbd-btn ghost', style: 'width:100%;margin-top:10px', onClick: () => { S.showSettings = false; connect(true); paint(); } }, 'Reconnect phone'),
       h('button', { class: 'lbd-btn', style: 'width:100%;margin-top:10px', onClick: () => { S.showSettings = false; paint(); } }, 'Done'),
     ]);
