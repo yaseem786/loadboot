@@ -20,6 +20,7 @@ import { renderFmcsaOnly } from '../carrier/profile-view.js';
 import { mountBrokerTrust, kickoffScreening } from './broker-trust.js';
 import { mountBrokerAgents } from './broker-agents.js';
 import { mountShipperTrust, shipperBadge } from './shipper-trust.js';  // bl_bp_0319
+import { shipperVerificationPage, shipperBrokersPage, shipperLaneCard } from './shipper-onboarding.js';  // bl_ship_0491
 import { partnerTrustStatus } from '../shared/api.js';
 import { renderMarketWidget } from '../shared/market-widget.js';
 import {
@@ -4570,7 +4571,7 @@ function brokerOnboardingWizard() {
           if (!co.value.trim() || !ph.value.trim() || !cn.value.trim()) { msg0.textContent = 'Company, contact name and phone are required.'; return; }
 
           ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
-          try { await partnerUpdateProfile({ company: co.value.trim(), mc: mc.value.trim() || null, phone: ph.value.trim(), contact_name: cn.value.trim() }); prof = Object.assign(prof, { company: co.value.trim(), mc: mc.value.trim(), phone: ph.value.trim(), contact_name: cn.value.trim() }); step = 1; draw(); }
+          try { await partnerUpdateProfile({ company: co.value.trim(), phone: ph.value.trim(), contactName: cn.value.trim() });  // bl_ship_0491: was contact_name → saved NULL prof = Object.assign(prof, { company: co.value.trim(), mc: mc.value.trim(), phone: ph.value.trim(), contact_name: cn.value.trim() }); step = 1; draw(); }
           catch (e) { msg0.textContent = (e && e.message) || 'Could not save.'; ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save & continue →'; }
         } }, 'Save & continue →'));
       } else if (step === 1) {
@@ -4676,10 +4677,11 @@ function packetAgreementCards(skipPacket) {
     ['claims', 'Claims', 'alert'],
     ['requests', 'Requests', 'clock'],
     ['carriers', 'Carriers', 'truck'],
+    ...(ov.kind === 'shipper' ? [['brokers', 'Brokers', 'building']] : []),  // bl_ship_0491: shipper chooses a verified broker
     ['rates', 'Market Rates', 'tag'],
     ['network', 'Network', 'building'],
     ...(ov.kind === 'broker' ? [['agents', 'Agents & team', 'users']] : []),
-    ['onboarding', 'Documents', 'docs'],
+    ['onboarding', ov.kind === 'shipper' ? 'Verification' : 'Documents', 'docs'],
     ['invoices', 'Invoices', 'receipt'],
     ['developers', 'API & Keys', 'zap'],
     ['account', 'Account', 'user'],
@@ -4863,7 +4865,9 @@ function packetAgreementCards(skipPacket) {
     rates: [(() => { const hst = h('div', { 'data-tour': 'rates' }); renderMarketWidget(hst); return hst; })()],
     network: [approvedPartnersCard(), ratingCard(), referralCard()],
     agents: ov.kind === 'broker' ? [h('div', { id: 'bd-agents' })] : [],  // mounted lazily on first visit (see brender)
-    onboarding: [brokerOnboardingWizard()],
+    // bl_ship_0491: shippers get the sectioned verification (A–G, per-lane progress); brokers keep their wizard
+    onboarding: [ov.kind === 'shipper' ? shipperVerificationPage({ openModal, toast: (m, bad) => pToast(m, { kind: bad ? 'error' : 'ok' }), onChange: () => { partnerOverview().then((o) => { if (o) { ov.onboarded = o.onboarded; } }).catch(() => {}); } }) : brokerOnboardingWizard()],
+    brokers: ov.kind === 'shipper' ? [shipperBrokersPage({ openModal, toast: (m, bad) => pToast(m, { kind: bad ? 'error' : 'ok' }), onPost: () => { bgo('dashboard'); } })] : [],
     invoices: [carrierInvoicesCard(), payablesCard(), invoicesCard()],
     account: [accountCard(), securityCard(), pnotifCard(), phelpCard(), plegalCard(), pdeleteCard()],
   };
@@ -5251,7 +5255,7 @@ function packetAgreementCards(skipPacket) {
         try { window.scrollTo(0, 0); } catch (_) {}
         return;
       }
-      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(true), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { __postFocus = false; postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : verifyGateCard(ov))]), h('div', { class: 'bd-peek' }, [myLoadsCard, h('button', { class: 'cp-btn cp-btn-sm ghost bd-peek-all', onClick: () => bgo('loads') }, 'View all loads \u2192')]), bdNetwork(), bdActivity()]));
+      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(true), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { __postFocus = false; postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : ov.kind === 'shipper' ? shipperLaneCard({ goVerify: () => bgo('onboarding'), goBrokers: () => bgo('brokers'), onPost: () => bgo('onboarding') }) : verifyGateCard(ov))]), h('div', { class: 'bd-peek' }, [myLoadsCard, h('button', { class: 'cp-btn cp-btn-sm ghost bd-peek-all', onClick: () => bgo('loads') }, 'View all loads \u2192')]), bdNetwork(), bdActivity()]));
       return;
     }
     mount(bContent, h('div', null, PAGES[btab] || []));

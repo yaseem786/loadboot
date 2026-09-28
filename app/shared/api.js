@@ -232,6 +232,22 @@ export const partnersAccounts = () => rpc('cc_partners_accounts', {});
 export const partner360 = (org) => rpc('cc_partner_360', { p_org: org });
 export const onboardingBoard = (kind) => rpc('cc_onboarding_board', { p_kind: kind ?? null });
 export const shipperPostLoad = (p) => rpc('cc_shipper_post_load', { p });
+// bl_ship_0491 — shipper two-lane onboarding (sections A–G, lane gates, agreements, locations, codes, brokers)
+export const shipperOnboarding = () => rpc('cc_shipper_onboarding');
+export const shipperItemSave = (key, data, confirm) => rpc('cc_shipper_item_save', { p_key: key, p_data: data || {}, p_confirm: !!confirm });
+export const shipperAgreement = (kind) => rpc('cc_shipper_agreement', { p_kind: kind });
+export const shipperAgreementSign = (kind, version, sha, name, title, consent) => rpc('cc_shipper_agreement_sign', { p_kind: kind, p_version: version, p_body_sha256: sha, p_signer_name: name, p_signer_title: title, p_consent: !!consent });
+export const shipperFacilities = () => rpc('cc_shipper_facilities');
+export const shipperFacilitySave = (p) => rpc('cc_shipper_facility_save', { p });
+export const shipperFacilityArchive = (id) => rpc('cc_shipper_facility_archive', { p_id: id });
+export const shipperPhoneCodeSend = () => rpc('cc_shipper_phone_code_send');
+export const shipperCodeVerify = (code) => rpc('cc_shipper_code_verify', { p_code: code });
+export const shipperBrokers = () => rpc('cc_shipper_brokers');
+// staff (Command Center → Shipper 360)
+export const shipperVerification = (org) => rpc('cc_shipper_verification', { p_org: org });
+export const shipperCallbackStart = (org, phone, source, url) => rpc('cc_shipper_callback_start', { p_org: org, p_phone: phone, p_source: source, p_source_url: url ?? null });
+export const shipperCallbackFail = (org, note) => rpc('cc_shipper_callback_fail', { p_org: org, p_note: note });
+export const shipperLimitsLift = (org, reason) => rpc('cc_shipper_limits_lift', { p_org: org, p_reason: reason });
 export const brokerClaimShipment = (id) => rpc('cc_broker_claim_shipment', { p_id: id });
 export const brokerTenderShipment = (id, rate, acc) => rpc('cc_broker_tender_shipment', { p_id: id, p_rate: rate, p_accessorials: acc });
 export const shipperMyShipments = () => rpc('cc_shipper_my_shipments');

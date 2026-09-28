@@ -337,9 +337,8 @@ export function renderPartnerIntake(host, focusId) {
         const actW = el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center' });
         act.appendChild(actW);
         if (manage && (s.status === 'requested' || s.status === 'quoted')) {
-          if (s.status === 'requested') actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: (ev) => decide2(s.id, 'quote', ev, loadShipper) }, 'Quote'));
-          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (ev) => decide2(s.id, 'book', ev, loadShipper) }, 'Book'));
-          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: (ev) => decide2(s.id, 'decline', ev, loadShipper) }, 'Decline'));
+          // bl_ship_0491: LoadBoot is not a broker — staff never quote or book shipper freight. Decline = block (fraud/safety).
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', title: 'Block this shipment (fraud or safety). The shipper chooses the broker or carrier — staff never quote or book.', onClick: (ev) => decide2(s.id, 'decline', ev, loadShipper) }, 'Decline (block)'));
         }
         return el('tr', null, [
           el('td', null, el('b', null, s.shipper || '—')),

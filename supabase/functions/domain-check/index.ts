@@ -1,5 +1,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
+// domain-check v6 (bl_ship_0491, 2026-09-28): four FREE fraud signals added for the shipper trust engine.
+//   • rdap_created — domain registration date from RDAP (rdap.org bootstrap → the registry). Young domain = review.
+//   • dmarc / spf  — TXT records. DMARC p=none/absent on a budget mail host is how look-alike shippers usually look.
+//   • mx_class     — corporate (Google Workspace / Microsoft 365 / big hosted suites) | budget_host (Namecheap
+//                    Private Email, Titan, Hostinger, Zoho, GoDaddy/secureserver, …) | self_hosted | free | none.
+//   • sec_name_hit — exact company name found as an SEC EDGAR filer or subsidiary (efts full-text search). A match
+//                    means "this name belongs to a real public company" — the collector then asks whether THIS domain
+//                    looks like that company's (the MII Brand Import case). Never "fraud" on its own.
+// Every new lookup is best-effort with a short timeout: a failed lookup returns null, and null is never read
+// as a negative signal. Same response shape as v5 plus the new keys.
+
 // domain-check v5 (audit F02, 2026-09-06): strict IPv6 syntax before classification.
 // Compression must replace at least one word; a dotted quad must be final and decimal.
 // The regression suite now evaluates this source instead of a copied implementation.
@@ -179,6 +190,54 @@ function textOf(html: string): string {
   return html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").slice(0, 60000);
 }
 
+const CORPORATE_MX = [/\.google\.com\.?$/, /\.googlemail\.com\.?$/, /aspmx\.l\.google\.com/, /\.outlook\.com\.?$/, /\.protection\.outlook\.com/, /\.pphosted\.com/, /\.mimecast\.com/, /\.barracudanetworks\.com/, /\.messagelabs\.com/, /\.iphmx\.com/, /\.fireeyecloud\.com/, /\.proofpoint\.com/];
+const BUDGET_MX = [/privateemail\.com/, /registrar-servers\.com/, /titan\.email/, /hostinger/, /zoho\./, /secureserver\.net/, /mailhostbox\.com/, /emailsrvr\.com/, /mxlogin\.com/, /yandex/, /mail\.ru/, /zmail/, /web-hosting\.com/, /namecheaphosting/, /hostgator/, /bluehost/, /ionos|1and1|kundenserver/, /ovh\./, /dreamhost/, /mail\.protection\.privateemail/];
+function mxClass(hosts: string[], freeMail: boolean): string {
+  if (freeMail) return "free";
+  if (!hosts.length) return "none";
+  const h = hosts.map((x) => x.toLowerCase());
+  if (h.some((x) => CORPORATE_MX.some((re) => re.test(x)))) return "corporate";
+  if (h.some((x) => BUDGET_MX.some((re) => re.test(x)))) return "budget_host";
+  return "self_hosted";
+}
+async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  let t: number | undefined;
+  try { return await Promise.race([p, new Promise<null>((res) => { t = setTimeout(() => res(null), ms); })]); }
+  catch { return null; } finally { clearTimeout(t); }
+}
+async function txt(name: string): Promise<string[]> {
+  try { const r = await Deno.resolveDns(name, "TXT"); return (r as string[][]).map((parts) => parts.join("")); } catch { return []; }
+}
+async function rdapCreated(domain: string): Promise<string | null> {
+  // fixed, trusted host (not user-controlled); the path is the validated domain
+  const r = await withTimeout(fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`, { headers: { "Accept": "application/rdap+json" } }), 6000);
+  if (!r || !r.ok) { try { await r?.body?.cancel(); } catch (_) { /* noop */ } return null; }
+  try {
+    const j: any = await r.json();
+    const ev = (j.events || []).find((e: any) => e.eventAction === "registration");
+    return ev?.eventDate ? String(ev.eventDate) : null;
+  } catch { return null; }
+}
+async function secNameHit(company: string): Promise<{ hit: boolean | null; names: string[] }> {
+  // exact-phrase EDGAR full-text search; SEC asks for a descriptive User-Agent with contact (fair-access policy)
+  const q = company.replace(/[^A-Za-z0-9 &.,'-]/g, " ").replace(/\s+/g, " ").trim();
+  if (q.length < 6) return { hit: null, names: [] };
+  const url = `https://efts.sec.gov/LATEST/search-index?q=${encodeURIComponent('"' + q + '"')}`;
+  const r = await withTimeout(fetch(url, { headers: { "User-Agent": "LoadBoot LLC hello@loadboot.com", "Accept": "application/json" } }), 6000);
+  if (!r || !r.ok) { try { await r?.body?.cancel(); } catch (_) { /* noop */ } return { hit: null, names: [] }; }
+  try {
+    const j: any = await r.json();
+    const all = (j?.hits?.hits || []) as any[];
+    // Only two kinds of hit mean "this name IS a public company or its subsidiary": the name is a filer's own
+    // display name, or it appears in an Exhibit 21 subsidiary list. A passing mention in some filing is not.
+    const low = q.toLowerCase();
+    const hits = all.filter((h) => /^EX-21/i.test(String(h?._source?.file_type || ""))
+      || ((h?._source?.display_names || []) as string[]).some((n) => String(n).toLowerCase().includes(low)));
+    const names = Array.from(new Set(hits.flatMap((h) => (h?._source?.display_names || []) as string[]))).slice(0, 5);
+    return { hit: all.length === 0 ? false : hits.length > 0, names };
+  } catch { return { hit: null, names: [] }; }
+}
+
 Deno.serve(async (req: Request) => {
   const cors = corsFor(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -221,8 +280,19 @@ Deno.serve(async (req: Request) => {
     // the domain itself often carries the company name (acmefreight.com ↔ "Acme Freight")
     const domain_name_match = ctoks.some((w) => domain.replace(/[^a-z0-9]/g, "").includes(w));
 
+    // v6 signals (best-effort, run together; null = could not look it up, never "bad")
+    const [rdap_created, dmarcTxt, rootTxt, sec] = await Promise.all([
+      free_mail ? Promise.resolve(null) : rdapCreated(domain),
+      txt(`_dmarc.${domain}`), txt(domain),
+      free_mail || !company ? Promise.resolve({ hit: null, names: [] as string[] }) : secNameHit(company),
+    ]);
+    const dm = dmarcTxt.find((t) => /^v=DMARC1/i.test(t)) || null;
+    const dmarc = !dm ? "none" : (/;\s*p\s*=\s*reject/i.test(dm) ? "reject" : /;\s*p\s*=\s*quarantine/i.test(dm) ? "quarantine" : "p_none");
+    const spf = rootTxt.some((t) => /^v=spf1/i.test(t));
+
     return out({ ok: true, domain, free_mail, mx: mx_hosts.length > 0, mx_hosts, mx_err, dns_a: a_ok,
       site: { ok: site.ok, status: site.status, final_url: site.ok ? site.final_url : null, title, took: site.took, err: (site as any).err ?? null },
-      name_match, domain_name_match, company_tokens: ctoks, matched_tokens: hits });
+      name_match, domain_name_match, company_tokens: ctoks, matched_tokens: hits,
+      rdap_created, dmarc, spf, mx_class: mxClass(mx_hosts, free_mail), sec_name_hit: sec.hit, sec_names: sec.names });
   } catch (e) { return out({ ok: false, error: String((e as Error)?.message ?? e) }); }
 });

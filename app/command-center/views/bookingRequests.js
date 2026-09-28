@@ -64,7 +64,10 @@ export function renderBookingRequests(host) {
         checklist,
         note,
         el('div', { style: 'display:flex;gap:8px;margin-top:8px' }, [
-          el('button', { class: 'lb-btn lb-btn-primary', onClick: (e) => { if (prebookState.go === false && !confirm('Pre-booking checks returned NO-GO.\n\nApprove and book anyway?')) return; decide('approve', e); } }, 'Approve & book'),
+          // bl_ship_0491: on a SHIPPER's load only the shipper accepts the carrier — staff can decline (block), never approve.
+          r.owner_kind === 'shipper'
+            ? el('span', { class: 'cc-pill cc-pill-blue', title: 'LoadBoot never selects the carrier for a shipper (FMCSA 2023 broker guidance).' }, 'Shipper decides')
+            : el('button', { class: 'lb-btn lb-btn-primary', onClick: (e) => { if (prebookState.go === false && !confirm('Pre-booking checks returned NO-GO.\n\nApprove and book anyway?')) return; decide('approve', e); } }, 'Approve & book'),
           el('button', { class: 'lb-btn lb-btn-secondary', onClick: (e) => decide('reject', e) }, 'Decline'),
         ]),
       ], 'lb-card');

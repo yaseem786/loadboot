@@ -12,6 +12,7 @@ import {
   journeyCard, shipperTrustAct, holdReleaseButtons, gateRow, packetCard, bankCard, agreementBlock, loadsCard, shipmentsCard, claimsCard, invoicesBlock,
   commsCard, healthCard, membersCard, timelineCard, copyLinkButton, jumpHandlers,
 } from './partner360-kit.js';
+import { shipperVerifyCard } from './shipperVerify360.js';  // bl_ship_0491
 
 export function shipperSections(ctx) {
   const { d, manage } = ctx; const o = d.org || {}; const t = d.trust || {}; const j = d.journey || {}; const ss = d.shipment_stats || {}; const ls = d.load_stats || {}; const ah = d.health || {}; const ps = d.packet_summary || {};
@@ -75,6 +76,7 @@ export function shipperSections(ctx) {
 
   const sections = [
     section('p360-journey', 'Journey', journeyCard(ctx, H), ctx),
+    section('p360-lanes', 'Two-lane verification', shipperVerifyCard(ctx), ctx),  // bl_ship_0491
     section('p360-trust', 'Verification', trustCard, ctx),
     section('p360-packet', 'Packet', el('div', null, [
       packetCard(ctx, { title: 'Shipper packet — billing, claims contact, agreement', explainer: 'Three required items unlock booking; conditional items (payment terms, credit application, special commodity) apply only when relevant; the rest are optional. No FMCSA / bond / BOC-3 — shippers are not carriers or brokers.' }),
