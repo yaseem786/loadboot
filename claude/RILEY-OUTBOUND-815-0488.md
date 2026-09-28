@@ -78,3 +78,7 @@ NULL outbound + unrelated numbers → ignored · 815 without `direction` → acc
   publishing is what actually fixes result saving. The agent's Retell **voicemail_option** text (dashboard, not our
   prompt) says "callback number four six nine, two five three, seven five seven five" and uses `{{user_name}}` (we pass
   `{{name}}`) — owner to replace it in the Retell dashboard before publishing.
+- Verified live 28 Sep (Retell list-agents / get-retell-llm): Riley Outbound **published v15** = webhook `retell-hook`,
+  new voicemail text (815, `{{name}}`, no "AI"), LLM v15 prompt identical to `riley_prompts.outbound` (new "assistant"
+  rule). Riley Inbound published v10 / LLM v10 carries the new rule. Check-in routine `trig_013dAStyB5NscBkS2N1QBJJQ`
+  fires 29 Sep 20:30 UTC to confirm outbound results save by themselves.
