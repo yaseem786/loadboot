@@ -449,7 +449,7 @@ def header_v1(active):
             links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
     mob = '<a href="tel:+18153651168" class="nav-mob" data-lb-contact="nav">&#128222;&#128172; Call or WhatsApp us &mdash; +1 (815) 365-1168</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
     return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+18153651168" class="tb-call" data-lb-contact="topbar">&#128222;&#128172; Call or WhatsApp&nbsp; +1 (815) 365-1168</a><a href="contact.html#call" class="tb-cb" data-lb-callonly>or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
-<a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" width="165" height="36" fetchpriority="high" decoding="async" style="display:block;height:36px;width:auto"></a>
+<a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png?v=3" alt="LoadBoot" width="165" height="36" fetchpriority="high" decoding="async" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
 <button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu" aria-expanded="false"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#10223B" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
@@ -473,7 +473,7 @@ def footer():
 def _footer_raw():
     return '''<footer><div class="wrap">
 <div class="foot-top">
-<div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" width="146" height="32" decoding="async" style="display:block;height:32px;width:auto"></div>
+<div><div class="logo"><img src="/logo-full-dark.png?v=3" alt="LoadBoot" width="146" height="32" decoding="async" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
 <p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no long-term contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+18153651168" data-lb-contact="footer">&#128222;&#128172; +1 (815) 365-1168 &middot; Call or WhatsApp</a><a class="foot-cb" href="contact.html#call" data-lb-callonly>We call you &rarr;</a></div>
 <div class="foot-h" style="margin-top:16px">Contact</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
@@ -502,9 +502,9 @@ def _footer_raw():
 '''
 
 GA_ID = 'G-C2ELQ7H8EM'  # GA4 Measurement ID — injected on every page.
-LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"LoadBoot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Truck dispatch for owner-operators, small fleets and new-authority carriers: a dedicated, LoadBoot-vetted dispatcher on your truck plus the platform that verifies, tracks and settles every load. Flat 5% of line-haul at delivery, no long-term contract.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
+LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"LoadBoot","image":"https://loadboot.com/icon-512.png?v=3","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Truck dispatch for owner-operators, small fleets and new-authority carriers: a dedicated, LoadBoot-vetted dispatcher on your truck plus the platform that verifies, tracks and settles every load. Flat 5% of line-haul at delivery, no long-term contract.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
 GA_SNIPPET = ('<script async src="https://www.googletagmanager.com/gtag/js?id=%s"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag(\'js\',new Date());gtag(\'config\',\'%s\');</script>' % (GA_ID, GA_ID)) if GA_ID else ''
-ORG_SCHEMA = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://loadboot.com/#org","name":"LoadBoot","legalName":"LoadBoot LLC","url":"https://loadboot.com/","logo":"https://loadboot.com/icon-512.png","slogan":"The Operating System for Trucking","description":"The Operating System for Trucking: a verified load board, carrier app, GPS proof, documents and settlements on one platform, with a LoadBoot-run network of dedicated, vetted truck dispatchers. Flat 5% of line-haul for carriers; free for brokers, shippers, broker agents and referral partners.","email":"hello@loadboot.com","telephone":"+1-815-365-1168","sameAs":["https://www.linkedin.com/company/135138228/","https://play.google.com/store/apps/details?id=com.loadboot.app"],"areaServed":{"@type":"Country","name":"United States"}}</script>'
+ORG_SCHEMA = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://loadboot.com/#org","name":"LoadBoot","legalName":"LoadBoot LLC","url":"https://loadboot.com/","logo":"https://loadboot.com/icon-512.png?v=3","slogan":"The Operating System for Trucking","description":"The Operating System for Trucking: a verified load board, carrier app, GPS proof, documents and settlements on one platform, with a LoadBoot-run network of dedicated, vetted truck dispatchers. Flat 5% of line-haul for carriers; free for brokers, shippers, broker agents and referral partners.","email":"hello@loadboot.com","telephone":"+1-815-365-1168","sameAs":["https://www.linkedin.com/company/135138228/","https://play.google.com/store/apps/details?id=com.loadboot.app"],"areaServed":{"@type":"Country","name":"United States"}}</script>'
 HEADX = LOCALBIZ + ORG_SCHEMA + GA_SNIPPET
 
 # First-party analytics beacon (privacy-safe). Posts pageviews to the context's Supabase
@@ -788,7 +788,7 @@ def page(fname, title, desc, active, body, schema=''):
     body = _contact_header(body + photo_band(fname) + related_block(fname), strict=False)
     doc = '''<!DOCTYPE html><html lang="en" class="no-js"><head><script>document.documentElement.classList.remove("no-js")</script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%s</title><meta name="description" content="%s"><link rel="canonical" href="https://loadboot.com/%s">
-<meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta property="og:type" content="website"><meta property="og:url" content="https://loadboot.com/%s"><meta property="og:image" content="https://loadboot.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="LoadBoot — the load board with zero ghost loads, plus dispatch, GPS proof and payments"><meta property="og:image" content="https://loadboot.com/og-image-square.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="1200"><meta property="og:site_name" content="LoadBoot"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="%s"><meta name="twitter:description" content="%s"><meta name="twitter:image" content="https://loadboot.com/og-image.png"><meta name="twitter:image:alt" content="LoadBoot — the load board with zero ghost loads"><meta name="theme-color" content="#10223B">
+<meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta property="og:type" content="website"><meta property="og:url" content="https://loadboot.com/%s"><meta property="og:image" content="https://loadboot.com/og-image.png?v=3"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="LoadBoot — the load board with zero ghost loads, plus dispatch, GPS proof and payments"><meta property="og:image" content="https://loadboot.com/og-image-square.png?v=3"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="1200"><meta property="og:site_name" content="LoadBoot"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="%s"><meta name="twitter:description" content="%s"><meta name="twitter:image" content="https://loadboot.com/og-image.png?v=3"><meta name="twitter:image:alt" content="LoadBoot — the load board with zero ghost loads"><meta name="theme-color" content="#10223B">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="LoadBoot">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2228,7 +2228,7 @@ about_body += _about_faq_html
 
 _about_org_schema = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"AboutPage","name":"About LoadBoot",'
     '"url":"https://loadboot.com/about.html","mainEntity":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/",'
-    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","telephone":"+1-815-365-1168","areaServed":"US",'
+    '"logo":"https://loadboot.com/logo-full.png?v=3","email":"hello@loadboot.com","telephone":"+1-815-365-1168","areaServed":"US",'
     '"founder":{"@type":"Person","name":"Muhammad Yaseen"},'
     '"legalName":"LoadBoot LLC",'
     '"duns":"149880967",'
@@ -2413,10 +2413,10 @@ def blog_post(fname,title,desc,excerpt,blocks):
     # market_reports_module._article_common; the date is the article's first commit (BLOG_PUB).
     pub = BLOG_PUB.get(fname)
     art = {"@context":"https://schema.org","@type":"Article","headline":title.replace('"',"'"),"description":desc,
-           "image":["https://loadboot.com/og-image.png","https://loadboot.com/og-image-square.png"],
+           "image":["https://loadboot.com/og-image.png?v=3","https://loadboot.com/og-image-square.png?v=3"],
            "mainEntityOfPage":{"@type":"WebPage","@id":"https://loadboot.com/"+fname},
            "author":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/"},
-           "publisher":{"@type":"Organization","name":"LoadBoot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}}}
+           "publisher":{"@type":"Organization","name":"LoadBoot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png?v=3"}}}
     if pub:
         art["datePublished"] = art["dateModified"] = pub
     sch = '<script type="application/ld+json">%s</script>' % json.dumps(art, ensure_ascii=False, separators=(',',':'))
@@ -2612,8 +2612,8 @@ def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,bod
     fhtml,fsch=faq_block(faqs)
     body=crumb+herob+feat+'<div class="wrap art-grid">'+toch+'<div class="art-body">'+body_html+'</div></div>'+author+fhtml+final_cta()
     art=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"'+e(headline or h1)
-         +'","description":"'+e(desc)+'","image":"https://loadboot.com/'+(hero if asset_exists(hero) else 'icon-512.png')+'","author":{"@type":"Organization","name":"LoadBoot"},'
-         '"publisher":{"@type":"Organization","name":"LoadBoot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}},'
+         +'","description":"'+e(desc)+'","image":"https://loadboot.com/'+(hero if asset_exists(hero) else 'icon-512.png?v=3')+'","author":{"@type":"Organization","name":"LoadBoot"},'
+         '"publisher":{"@type":"Organization","name":"LoadBoot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png?v=3"}},'
          '"datePublished":"'+pub+'","dateModified":"'+pub+'"}</script>')
     bcr=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":'
          '[{"@type":"ListItem","position":1,"name":"Home","item":"https://loadboot.com/"},'
@@ -3351,7 +3351,7 @@ def blog_card(fn,title,excerpt,read):
     # Optional real photo: only referenced if thumb-<slug>.jpg is actually present in SRC,
     # otherwise the branded SVG thumbnail is used (no broken/missing image reference).
     img=('<img src="thumb-'+slug+'.jpg" alt="'+title.replace('"','')+'" width="1200" height="675" loading="lazy" decoding="async">') if asset_exists('thumb-'+slug+'.jpg') else ''
-    ov='<div class="bc-ov"></div><span class="bc-brand" style="padding:6px 10px"><img src="logo-full-dark.png" alt="LoadBoot" width="69" height="15" style="height:15px;width:auto;display:block" loading="lazy" decoding="async"></span>'
+    ov='<div class="bc-ov"></div><span class="bc-brand" style="padding:6px 10px"><img src="logo-full-dark.png?v=3" alt="LoadBoot" width="69" height="15" style="height:15px;width:auto;display:block" loading="lazy" decoding="async"></span>'
     return ('<a class="blogcard" href="'+fn+'"><div class="bc-thumb">'+thumb+img+ov+'</div><div class="bc-body">'
             '<div class="bc-meta">Guide &middot; '+str(read)+' min read</div><h3>'+title+'</h3><p>'+excerpt
             +'</p><span class="bc-link">Read guide &rarr;</span></div></a>')
@@ -8551,11 +8551,30 @@ hiw += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60
  '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:24px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; Verified on both sides</span><span>&#x2713; Rate card in writing</span><span>&#x2713; GPS proof end to end</span></div></div>'
  '<div class="reveal"><img src="/shots/board-web-available.webp" alt="The live load board — verified loads with the full rate card, filters and real deadhead" width="1100" height="773" loading="eager" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Where it starts &mdash; the real board: verified loads, rate card printed, zero ghosts.</div></div>'
  '</div></div></section>')
-hiw += ('<section style="background:#0b1220;padding:0 0 30px"><div class="wrap">'
- '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">'
- + ''.join('<span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:7px 14px;font-size:.78rem;font-weight:700;color:#cbd5e1">' + x + '</span><span style="color:#475569;align-self:center">&rarr;</span>' for x in ['&#128203; Posted','&#9889; Offered &middot; first accept wins','&#128666; Booked &middot; RC e-signed','&#128752; Tracked &middot; geofenced','&#127937; Delivered &middot; POD','&#129534; Invoiced &middot; auto-DUE','&#128181; Paid &middot; receipt-verified'])
- + '<span style="background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.3);border-radius:99px;padding:7px 14px;font-size:.78rem;font-weight:800;color:#4ade80">&#128218; Settled &middot; books sync</span>'
- '</div></div></section>')
+# The loop strip: numbered steps. Desktop = one centred row with arrows; phone = a tidy
+# 2-column grid (1-2 / 3-4 / ...), every chip the same width, label over detail. It used to be
+# free-wrapping pills whose widths and trailing arrows zig-zagged down the phone screen.
+# Icons are all ICONS keys so deglyph() turns every one into the same 15px SVG (no raw emoji).
+_HIW_FLOW = [('&#128203;','Posted','rate card in writing'),('&#9889;','Offered','first accept wins'),
+ ('&#128666;','Booked','RC e-signed'),('&#128225;','Tracked','geofenced'),('&#9989;','Delivered','POD'),
+ ('&#129534;','Invoiced','auto-DUE'),('&#128181;','Paid','receipt-verified'),('&#128202;','Settled','books sync')]
+hiw += ('<style>'
+ '.hiw-flow{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:10px 30px;counter-reset:hf}'
+ '.hiw-flow li{position:relative;display:flex;align-items:center;gap:8px;margin:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:6px 14px 6px 6px;font-size:.78rem;font-weight:700;color:#cbd5e1;line-height:1.3}'
+ '.hiw-flow li::before{counter-increment:hf;content:counter(hf);flex:none;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:.68rem;font-weight:800;display:grid;place-items:center}'
+ '.hiw-flow li:not(:last-child)::after{content:"\\2192";position:absolute;right:-22px;top:50%;transform:translateY(-50%);color:#475569;font-weight:400}'
+ '.hiw-flow svg{width:15px;height:15px;flex:none;color:#94a3b8}'
+ '.hiw-flow .t{color:#fff}.hiw-flow .s{color:#94a3b8;font-weight:600}.hiw-flow .s::before{content:"\\00b7  "}'
+ '.hiw-flow li.end{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.3)}'
+ '.hiw-flow li.end::before{background:rgba(34,197,94,.28)}.hiw-flow li.end svg,.hiw-flow li.end .t{color:#4ade80}'
+ '@media(max-width:640px){.hiw-flow{display:grid;grid-template-columns:1fr 1fr;gap:8px}'
+ '.hiw-flow li{border-radius:12px;padding:9px 10px;align-items:center}'
+ '.hiw-flow li::after{display:none}.hiw-flow .x{min-width:0}.hiw-flow .t,.hiw-flow .s{display:block}.hiw-flow .s{font-size:.72rem}.hiw-flow .s::before{content:none}}'
+ '</style>'
+ '<section style="background:#0b1220;padding:0 0 30px"><div class="wrap">'
+ '<ol class="hiw-flow" aria-label="The LoadBoot load loop, step by step">'
+ + ''.join('<li%s>%s<span class="x"><span class="t">%s</span> <span class="s">%s</span></span></li>' % (' class="end"' if t == 'Settled' else '', i, t, d) for i, t, d in _HIW_FLOW)
+ + '</ol></div></section>')
 hiw += ('<section style="background:#0b1220;padding:0 0 40px"><div class="wrap"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">'
  '<a href="#for-carriers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#128666; I haul the freight</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Carrier &mdash; board to booked to paid &darr;</div></a>'
  '<a href="#for-brokers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#127970; I post the loads</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Broker &mdash; posted to covered to settled &darr;</div></a>'
