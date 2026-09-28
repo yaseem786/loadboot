@@ -44,9 +44,13 @@ const PLAYBOOK = {
   trip_overdue: { do: 'URGENT: trip is past its appointment — call the driver, warn the receiver, and log the reason.', go: (t) => '#/trips' },
   driver_renewal: { do: 'Driver license/medical expiring — warn the carrier and track the renewal.', go: (t) => '#/fleet-expiry' },
   doc_renewal: { do: 'Compliance document expiring — request the renewal from the account.', go: (t) => t.related_type === 'carrier' ? '#/carrier?id=' + t.related_id : '#/compliance' },
+  // bl_ops_0489 — these close themselves once the work is done (automation_tasks_reconcile, every minute)
+  dispatcher_review: { do: 'Screen → skills test → score → start the trial or reject, all on the Dispatcher 360. Closes itself when you do.', go: (t) => t.related_id ? '#/dispatcher?id=' + t.related_id : '#/dispatchers' },
+  followup: { do: 'Call the hot lead back. Closes itself once a call-back connects.', go: (t) => '#/riley' },
+  incident: { do: 'Check the delivery ledger; closes itself once mail has flowed for an hour with nothing stuck.', go: (t) => t.related_id === 'email_health' ? '#/delivery' : '#/automation' },
 };
-const RELGO = { trip: (id) => '#/trips?id=' + id, load: (id) => '#/loads?id=' + id, carrier: (id) => '#/carrier?id=' + id, partner: '#/partners', agent: '#/agents', form_submission: (id) => '#/forms?id=' + id, support_ticket: (id) => '#/support?id=' + id, invoice: (id) => '#/finance?id=' + id, settlement: '#/finance', lead: '#/crm', dispatcher: '#/dispatchers', referrer: '#/referrals' };
-function goFor(t) {
+const RELGO = { trip: (id) => '#/trips?id=' + id, load: (id) => '#/loads?id=' + id, carrier: (id) => '#/carrier?id=' + id, partner: '#/partners', agent: '#/agents', form_submission: (id) => '#/forms?id=' + id, support_ticket: (id) => '#/support?id=' + id, invoice: (id) => '#/finance?id=' + id, settlement: '#/finance', lead: '#/crm', dispatcher: (id) => '#/dispatcher?id=' + id, lc_call: '#/riley', referrer: '#/referrals' };   // bl_ops_0489: dispatcher → its 360
+export function goFor(t) {
   const pb = PLAYBOOK[t.task_type];
   if (pb && pb.preferDesk && pb.go) return pb.go(t); // work happens on a dedicated desk (safety/pod/claims/intake)
   // otherwise EXACT record first (deep link), playbook screen as fallback
@@ -56,6 +60,14 @@ function goFor(t) {
   return (pb && pb.go) ? pb.go(t) : null;
 }
 
+// bl_ops_0489 — where the underlying work stands right now (cc_list_tasks.live_text / live_turn)
+const TURN = { you: { tone: 'amber', label: 'Your move' }, them: { tone: 'blue', label: 'Waiting on them' }, done: { tone: 'gray', label: 'Done — closing' } };
+export function liveLine(t) {
+  const text = t.live_text || (t.live && t.live.text);
+  if (!text) return '';
+  const turn = TURN[t.live_turn || (t.live && t.live.turn)] || null;
+  return el('div', { class: 'cc-sub', style: 'margin-top:2px' }, [turn ? el('span', { class: 'cc-tag cc-tag-' + turn.tone }, turn.label) : '', turn ? ' ' : '', '🟢 ' + text]);
+}
 
 export function renderAutomation(host) {
   // UX audit CC2 (24 Sep 2026): the queue fetched 200 tasks and drew every one (phone 15,996px, 200 buttons).
@@ -113,6 +125,7 @@ export function renderAutomation(host) {
             el('b', null, t.title || t.task_type),
             t.requires_approval ? el('span', { class: 'cc-chip-warn', style: 'margin-left:8px' }, 'needs approval') : '',
             t.related_label ? el('div', { class: 'cc-sub', style: 'margin-top:2px' }, '📌 ' + t.related_label) : '',
+            liveLine(t),
             pb.do ? el('div', { class: 'cc-sub', style: 'margin-top:2px;color:#0369a1' }, '👉 ' + pb.do) : (t.description ? el('div', { class: 'cc-sub', style: 'margin-top:2px' }, t.description) : ''),
           ]),
           el('td', null, t.task_type),
