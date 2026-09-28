@@ -571,11 +571,11 @@ def _article_common(fname):
     # S3 (seo-audit-2026-10): Article rich results need `image`. The site OG images (1200x630, 1200x1200)
     # are on every page already; publisher logo is the Organization logo in build_site.ORG_SCHEMA.
     return {
-      "image": ["https://loadboot.com/og-image.png", "https://loadboot.com/og-image-square.png"],
+      "image": ["https://loadboot.com/og-image.png?v=3", "https://loadboot.com/og-image-square.png?v=3"],
       "mainEntityOfPage": {"@type": "WebPage", "@id": "https://loadboot.com/%s" % fname},
       "author": {"@type": "Organization", "name": "LoadBoot", "url": "https://loadboot.com/"},
       "publisher": {"@type": "Organization", "name": "LoadBoot",
-                    "logo": {"@type": "ImageObject", "url": "https://loadboot.com/icon-512.png"}}}
+                    "logo": {"@type": "ImageObject", "url": "https://loadboot.com/icon-512.png?v=3"}}}
 
 
 def _combined_report(snap, prev, eqs_by_name, acc_faq_schema, all_weeks, idx):

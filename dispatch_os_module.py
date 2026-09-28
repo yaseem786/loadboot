@@ -310,8 +310,8 @@ def _hero(kicker, h1, lead, cta=('carrier-application.html', 'Apply as a carrier
 
 def _article_schema(fname, h1, desc, pub='2026-09-25'):
     e = lambda s: _plain(s).replace('"', "'")
-    return ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"%s","description":"%s","image":"https://loadboot.com/og-image.png",'
-            '"author":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/"},"publisher":{"@type":"Organization","name":"LoadBoot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}},'
+    return ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"%s","description":"%s","image":"https://loadboot.com/og-image.png?v=3",'
+            '"author":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/"},"publisher":{"@type":"Organization","name":"LoadBoot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png?v=3"}},'
             '"datePublished":"%s","dateModified":"%s","mainEntityOfPage":"https://loadboot.com/%s"}</script>') % (e(h1), e(desc), pub, pub, fname)
 
 def _service_schema(fname, name, stype, desc):

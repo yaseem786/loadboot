@@ -10,7 +10,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm, askReason } from '../../shared/ui/components.js';
-import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, ccRileyPlans, ccRileyPlan, ccRileyPlanSet, ccRileyPlanBook, ccRileyFollowupAct, rileyAdmin, rileyRecordingBlob } from '../../shared/api.js';
+import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, ccRileyPlans, ccRileyPlan, ccRileyPlanSet, ccRileyPlanBook, ccRileyFollowupAct, rileyAdmin, rileyRecordingBlob, ccRetellCallback } from '../../shared/api.js';
 import { PLAN_STATUS, PLAN_REASON_LABEL, NEXT_ACTION } from './rileyPlanFlow.js';   // bl_voice_0483 — call plans (+0485 booking / next step)
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -669,6 +669,42 @@ export async function renderRiley(host, query) {
         has ? el('button', { class: 'ry-btn', disabled: !can(), onClick: () => save('') }, 'Clear') : null]),
     ]);
   }
+  // bl_voice_0488 — one main line: Riley's outbound caller id (815). Retell must already have the number
+  // (Telnyx SIP connection, outbound only → Retell → Import number) or every dial fails, so the card reads Retell live.
+  function outboundCard(s, st) {
+    const kvLine = (k, v) => el('div', null, [el('small', null, k), el('span', null, v)]);
+    const eff = s.outbound_from_effective || s.riley_number || '';
+    const set = !!s.outbound_from_number;
+    const o = st && st.outbound_from;
+    const pill = !set ? el('span', { class: 'ry-pill m' }, 'Riley number (' + pretty(s.riley_number || '') + ')')
+      : !st ? el('span', { class: 'ry-pill m' }, 'checking…')
+      : st.error || !('outbound_from' in st) ? el('span', { class: 'ry-pill a' }, pretty(eff) + ' · Retell not checked')
+      : o && o.in_retell ? el('span', { class: 'ry-pill g' }, pretty(eff) + ' ✓ in Retell')
+      : el('span', { class: 'ry-pill r' }, pretty(eff) + ' — NOT in Retell');
+    const num = el('input', { class: 'ry-in', placeholder: '+1 815 365 1168', value: s.outbound_from_number || '', style: 'min-width:200px' });
+    const to = el('input', { class: 'ry-in', placeholder: 'your mobile, +1 …', style: 'min-width:200px' });
+    const save = async (v) => {
+      if (v && !(await askConfirm('Riley will call out from ' + v + '?', { body: 'Every Riley call (plans, callbacks, verification codes) uses it from the next dial. Only do this after the number shows in Retell → Phone numbers; then run a test call.', confirmLabel: 'Use this number' }))) return;
+      try { const r = await ccRileySettingsSet({ outbound_from_number: v }); if (r && r.error) throw new Error(r.error); settings = r; toast(v ? 'Outbound number saved. Run a test call now.' : 'Cleared — Riley calls out from the Riley number again.'); status = null; paintSettings(); await loadStatus(); paintSettings(); } catch (e) { toast(humanizeError(e), 'error'); }
+    };
+    const test = async () => {
+      const n = to.value.trim(); if (!n) { toast('Type the mobile that should ring.', 'error'); return; }
+      if (!(await askConfirm('Test call to ' + n + ' from ' + pretty(eff) + '?', { body: 'Riley Outbound rings this phone now. Check the caller id on your screen, say a few words, hang up. It shows in Riley → Calls.', confirmLabel: 'Call now' }))) return;
+      try { const r = await ccRetellCallback({ to: n, name: 'there', topic: 'a quick line test', role: 'carrier',
+        context: 'INTERNAL LINE TEST from LoadBoot staff (CC → Riley → Settings). This is not a carrier. Say you are testing the line, ask whether they can hear you clearly, then thank them and end the call. Do not book anything, do not ask for documents.' });
+        if (r && r.error) throw new Error(r.error); toast('Dialling ' + n + ' — check the caller id.'); } catch (e) { toast(humanizeError(e), 'error'); }
+    };
+    return el('div', { class: 'ry-card' }, [
+      el('h3', null, ['Outbound caller id (one main line)', pill]),
+      el('p', { class: 'hint' }, 'The number carriers see when Riley calls them. Empty = the Riley number. Inbound is not changed: calls to 815 still go through the dialer (dispatcher first, then Riley).'),
+      set && o && !o.in_retell ? el('div', { class: 'ry-warn' }, 'Retell does not have ' + pretty(eff) + ' (HTTP ' + (o.status ?? '—') + '). Every Riley call will fail until it is imported in Retell → Phone numbers, or this field is cleared.') : null,
+      set && o && o.in_retell ? el('div', { class: 'ry-kv' }, [kvLine('Retell termination', o.termination_uri || '—'), kvLine('Retell nickname', o.nickname || '—')]) : null,
+      el('div', { class: 'ry-row', style: 'margin-top:10px' }, [num,
+        el('button', { class: 'ry-btn', disabled: !can(), onClick: () => save(num.value.trim()) }, 'Save'),
+        set ? el('button', { class: 'ry-btn', disabled: !can(), onClick: () => save('') }, 'Clear') : null]),
+      el('div', { class: 'ry-row', style: 'margin-top:10px' }, [to, el('button', { class: 'ry-btn o', disabled: !can(), onClick: test }, 'Test call')]),
+    ]);
+  }
   // ---------- settings & wiring
   function paintSettings() {
     const s = settings; const st = status;
@@ -700,6 +736,7 @@ export async function renderRiley(host, query) {
         el('h3', null, 'Escalation'), el('p', { class: 'hint' }, 'Riley is written to never transfer. If you ever want a human fallback, put a mobile here and re-publish the prompts; Riley gets a transfer tool pointed at it. Never the Riley line, never the WhatsApp line.'),
         el('div', { class: 'ry-row' }, [esc, el('button', { class: 'ry-btn', disabled: !can(), onClick: async () => { try { const r = await ccRileySettingsSet({ escalation_number: esc.value }); if (r && r.error) throw new Error(r.error); settings = r; toast(r.escalation_number ? 'Escalation number saved. Publish both prompts to attach the transfer tool.' : 'Escalation cleared. Publish both prompts to remove the transfer tool.'); paintSettings(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Save')]),
       ]),
+      outboundCard(s, st),
       balanceCard(s),
       el('div', { class: 'ry-card' }, [
         el('h3', null, 'Security checks'),

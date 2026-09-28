@@ -1,4 +1,4 @@
-// dmail v1 (bl_dmail_0356) — Dispatcher Mailbox engine. One function, two callers:
+// dmail v1 (bl_dmail_0356) + alias mode (bl_dmail_0489) — Dispatcher Mailbox engine. One function, two callers:
 //   • pg_cron every minute  → header x-dmail-secret (checked by dmail_cron_check) → sync every due mailbox
 //   • the portal (user JWT) → {action, account, ...}; access is decided by the dmail_access RPC run WITH the
 //     caller's JWT (assigned dispatcher or staff). The mailbox password lives in Vault, is read here with the
@@ -29,6 +29,9 @@ globalThis.addEventListener("unhandledrejection", (e: Any) => { e.preventDefault
 globalThis.addEventListener("error", (e: Any) => { e.preventDefault(); console.warn("dmail late error:", String(e?.message || e?.error).slice(0, 160)); });
 const addrs = (v: Any): { email: string; name: string }[] => (Array.isArray(v) ? v : v ? [v] : []).flatMap((x: Any) => x?.group ? addrs(x.group) : x?.address ? [{ email: String(x.address).toLowerCase(), name: x.name || "" }] : []);
 const strip = (h: string) => h.replace(/<(style|script)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
+// bl_dmail_0489 alias mode: envelope recipient headers, so Bcc'd / forwarded mail to an alias still reaches that alias only.
+const RCPT_H = ["delivered-to", "x-original-to", "envelope-to", "x-envelope-to", "x-rcpt-to"];
+const hdrRcpt = (p: Any): string[] => Array.from(new Set((p.headers || []).filter((h: Any) => RCPT_H.includes(String(h.key || "").toLowerCase())).flatMap((h: Any) => String(h.value || "").toLowerCase().match(/[^\s<>,;"]+@[^\s<>,;"]+/g) || [])));
 const b64 = (u8: Uint8Array) => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); };
 const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 const bytesOf = (c: Any): Uint8Array => typeof c === "string" ? new TextEncoder().encode(c) : c instanceof Uint8Array ? c : new Uint8Array(c);
@@ -62,7 +65,7 @@ async function parseMsg(m: Any) {
   const refs = String(p.references || "").split(/\s+/).filter(Boolean);
   const d = p.date ? new Date(p.date) : null;
   return { ...base, message_id: p.messageId || null, in_reply_to: p.inReplyTo || null, refs, from_name: p.from?.name || "", from_email: p.from?.address || "",
-    to: addrs(p.to), cc: addrs(p.cc), bcc: addrs(p.bcc), subject: p.subject || "", snippet: text.replace(/\s+/g, " ").slice(0, 180), text, html, attachments: atts,
+    to: addrs(p.to), cc: addrs(p.cc), bcc: addrs(p.bcc), subject: p.subject || "", snippet: text.replace(/\s+/g, " ").slice(0, 180), text, html, attachments: atts, rcpt: hdrRcpt(p),
     date: d && !isNaN(+d) ? d.toISOString() : base.date };
 }
 
@@ -221,8 +224,11 @@ Deno.serve(async (req) => {
     if (!ax?.ok || !ax?.uid) return json({ error: "not authorized" }, 403);
     const { data: accs } = await svc.rpc("dmail_sync_targets", { p_account: b.account }); const acc = (accs || [])[0];
     if (!acc) return json({ error: "This mailbox has no password saved yet" }, 400);
+    // bl_dmail_0489 alias mode: an alias borrows its main mailbox's login; IMAP sync always runs on that main mailbox (cron syncs main mailboxes only)
+    let hub: Any = acc;
+    if (acc.is_alias) { const { data: hs } = await svc.rpc("dmail_sync_targets", { p_account: acc.hub_id }); hub = (hs || [])[0]; if (!hub) return json({ error: "The main mailbox for this alias has no password saved" }, 400); }
     switch (b.action) {
-      case "sync": return json(await syncAccount(svc, acc));
+      case "sync": return json(await syncAccount(svc, hub));
       case "verify": {
         if (!ax.staff) return json({ error: "not authorized" }, 403);
         // Explicit timeouts: nodemailer defaults are 2 min connect / 10 min socket, so a throttled or silent mail server
@@ -231,7 +237,7 @@ Deno.serve(async (req) => {
         try { await tx.verify(); }
         catch (e) { const msg = (e as Any)?.code === "EAUTH" ? "Login failed — check the mailbox password" : "SMTP: " + String((e as Any)?.message || e).slice(0, 200); await svc.rpc("dmail_sync_done", { p_account: acc.id, p_folders: null, p_error: msg }); return json({ ok: false, error: msg }); }
         finally { try { tx.close(); } catch (_) { /* ignore */ } }
-        return json(await syncAccount(svc, acc));
+        return json(await syncAccount(svc, hub));
       }
       case "send": return json(await actSend(svc, acc, ax.uid, b));
       case "mark": return json(await actFlags(svc, acc, b));
