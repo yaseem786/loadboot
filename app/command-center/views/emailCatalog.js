@@ -403,7 +403,7 @@ function newEmailDrawer(onDone) {
   const purpose = el('input', { class: 'cc-input', placeholder: 'One line: why this email exists' });
   const audience = select([['carrier', 'Carrier'], ['broker', 'Broker'], ['shipper', 'Shipper'], ['dispatcher', 'Dispatcher'], ['agent', 'Agent'], ['driver', 'Driver'], ['lead', 'Lead'], ['staff', 'Staff']]);
   const klass = select([['T', 'Transactional — no opt-out'], ['O', 'Operational — opt-out allowed'], ['P', 'Lifecycle — opt-out allowed'], ['M', 'Marketing — consent required'], ['S', 'Staff alert']]);
-  const group = select([['account_critical', 'Account & security'], ['load_ops', 'Loads & trips'], ['compliance', 'Documents & compliance'], ['billing', 'Billing & payouts'], ['digests', 'Summaries'], ['product_announcements', 'Product news'], ['marketing', 'Marketing'], ['staff_internal', 'Internal (staff)']]);
+  const group = select([['account_critical', 'Account & security'], ['team_messages', 'Messages from our team'], ['load_ops', 'Loads & trips'], ['compliance', 'Documents & compliance'], ['billing', 'Billing & payouts'], ['digests', 'Summaries'], ['product_announcements', 'Product news'], ['marketing', 'Marketing'], ['staff_internal', 'Internal (staff)']]);
   const html = el('textarea', { class: 'cc-input', rows: '12', style: 'font-family:ui-monospace,monospace;font-size:12px', placeholder: 'HTML body' });
   const file = el('input', { type: 'file', accept: '.html,.htm,.txt' });
   file.addEventListener('change', async () => {
