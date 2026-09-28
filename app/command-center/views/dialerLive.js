@@ -328,12 +328,19 @@ export async function renderDialerLive(host) {
     const vm = el('textarea', { class: 'dl-in', rows: '3' }, c.voicemail_greeting || '');
     const cap = el('input', { class: 'dl-in', type: 'number', min: '1', max: '500', value: String(c.max_calls_per_hour || 60) });
     const sms = chk(c.sms_enabled);
+    // bl_dial_0487 — WhatsApp call alerts to every dispatcher (templates dispatcher_call_incoming / dispatcher_call_missed)
+    const waMode = c.wa_call_alerts || 'offline';
+    const waAlerts = el('select', { class: 'dl-in' }, [
+      ['offline', 'On — ring alert only when the dispatcher is not in LoadBoot, plus every missed call'],
+      ['always', 'On — ring alert for every incoming call, plus every missed call'],
+      ['off', 'Off — no WhatsApp call alerts'],
+    ].map(([v, t]) => el('option', { value: v, selected: v === waMode }, t)));
     const mprof = el('input', { class: 'dl-in', value: c.telnyx_messaging_profile_id || '', placeholder: 'optional — Telnyx messaging profile id' });
     const err = el('div', { style: 'color:#b91c1c;font-size:13px' });
     const save = el('button', { class: 'dl-btn p', onClick: async () => {
       save.disabled = true; err.textContent = '';
       try {
-        const r = await ccDialerConfigSet({ sms_enabled: sms.checked, telnyx_messaging_profile_id: mprof.value, enabled: en.checked, telnyx_connection_id: conn.value, record_calls: rec.checked, recording_notice: beep.checked, ring_timeout_secs: Number(ring.value) || 25, fallback_number: fb.value, voicemail_greeting: vm.value, max_calls_per_hour: Number(cap.value) || 60, allow_international: intl.checked });
+        const r = await ccDialerConfigSet({ sms_enabled: sms.checked, telnyx_messaging_profile_id: mprof.value, enabled: en.checked, telnyx_connection_id: conn.value, record_calls: rec.checked, recording_notice: beep.checked, ring_timeout_secs: Number(ring.value) || 25, fallback_number: fb.value, voicemail_greeting: vm.value, max_calls_per_hour: Number(cap.value) || 60, allow_international: intl.checked, wa_call_alerts: waAlerts.value });
         if (r && r.error) throw new Error(r.error); dr.close(); toast('Phone settings saved'); await load();
       } catch (e) { err.textContent = humanizeError(e); save.disabled = false; }
     } }, 'Save settings');
@@ -345,6 +352,7 @@ export async function renderDialerLive(host) {
       el('label', null, ['Ring the dispatcher for (seconds)', ring]),
       el('label', { class: 'row' }, [sms, el('span', null, ['Text messages (SMS) switched on ', el('small', null, '— only after the 10DLC campaign is APPROVED and every dispatcher number is attached to it; before that carriers block the texts')])]),
       el('label', null, ['Telnyx messaging profile id', mprof, el('small', null, 'Telnyx portal → Messaging → Messaging Profiles → “LoadBoot Dispatch” → its id. Not a secret. Its inbound webhook must point to the same telnyx-hook URL as the voice apps.')]),
+      el('label', null, ['WhatsApp call alerts to dispatchers', waAlerts, el('small', null, 'Sent to each dispatcher’s own WhatsApp (any country) so they know about calls even when signed out. The missed-call message carries Riley’s summary when she answered. Nothing goes out until Meta approves the two templates (WhatsApp → Templates). A dispatcher can change their number or switch it off in the phone’s Settings.')]),
       el('label', null, ['If the dispatcher does not answer, send the caller to', fb, el('small', null, 'Leave empty for voicemail. Either way the dispatcher gets a callback task.')]),
       el('label', null, ['Voicemail greeting (spoken)', vm]),
       el('label', null, ['Max outgoing calls per dispatcher per hour', cap]),
