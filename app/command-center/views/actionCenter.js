@@ -8,6 +8,7 @@ import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, card, ago, fmtDateTime } from '../../shared/ui/components.js';
 import { actionCenter } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
+import { goFor, liveLine } from './automation.js';   // bl_ops_0489: one deep-link map + live line for tasks
 
 const KIND_META = {
   task: { tone: 'blue', label: 'Task' },
@@ -25,6 +26,7 @@ function linkFor(it) {
   if (it.kind === 'choice') return '#/carrier-choices' + (it.related_id ? '?id=' + it.related_id : '');
   if (it.kind === 'trial_zero' || it.kind === 'trial_help') return '#/dispatcher?id=' + (it.related_id || '') + '&tab=performance';
   if (it.task_type && DESK[it.task_type]) return DESK[it.task_type]; // work lives on a dedicated desk
+  if (it.kind === 'task') { const g = goFor(it); if (g) return g; }   // bl_ops_0489: exact record (dispatcher → 360) before the generic switch
   switch (it.related_type) {
     case 'carrier': return '#/carrier?id=' + (it.related_id || '');
     case 'support_ticket': return '#/support';
@@ -77,6 +79,7 @@ export function renderActionCenter(host, ctx, user) {
           el('div', { class: 'cc-action-main' }, [
             el('b', null, it.title || meta.label),
             el('div', { class: 'cc-sub' }, [el('span', { class: 'cc-tag cc-tag-' + meta.tone }, meta.label), ' · ', it.when ? ago(it.when) : '—', it.overdue ? el('span', { class: 'cc-overdue' }, ' · OVERDUE') : '']),
+            it.kind === 'task' ? liveLine(it) : '',   // bl_ops_0489
           ]),
           el('span', { class: 'cc-row-go' }, '›'),
         ]);
