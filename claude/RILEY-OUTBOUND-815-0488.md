@@ -51,3 +51,17 @@ NULL outbound + unrelated numbers → ignored · 815 without `direction` → acc
 `retell_dial` body + row carry 815 · `retell_dial_verify` body + row carry 815 · settings: "12345" refused, "(815) 365-1168"
 → `+18153651168`, escalation number refused, "" clears (effective = Riley number). anon SECDEF 35 staging, names unchanged;
 `retell_out_from` not executable by anon/authenticated.
+
+## Live result (28 Sep 2026)
+- Owner did the Telnyx outbound profile + SIP trunk (815 NOT moved) and the Retell import (inbound none, outbound Riley
+  Outbound, US only). CC field set to +18153651168. Test call rang the owner's mobile showing (815) 365-1168.
+- **Bug found while checking:** Riley Outbound's agent webhook still pointed at the old `rest/v1/rpc/retell_webhook?apikey=…`
+  URL, which enforce mode (`allow_unsigned_webhook = false`) refuses. No outbound call result had been saved since
+  25 Aug; the 9 Monday plan calls were placed (Retell 201) but swept to `no-result`. Owner switched the agent webhook to
+  `/functions/v1/retell-hook` in the Retell dashboard (test webhook OK).
+- Backfill: the 10 calls were read from Retell `v2/list-calls` and replayed through `retell_webhook` as `call_analyzed`
+  (lc_calls 345–354). The brain then proposed next steps (8× second call on 29 Sep, JMS = email because Tim asked for it).
+- Side effect undone: Retell labelled two "mailbox full" calls (Warren's 7286, Cassella 0846) `wrong_number`, which put them
+  on `voice_dnc`; both rows were deleted. Open: `riley_plan_on_call` should not trust `wrong_number` when the call hit
+  voicemail (`call_analysis.in_voicemail = true`).
+- D'Z (plan 3) was `invalid_destination` — the rule still proposes a 2nd call; the phone number itself needs fixing.
