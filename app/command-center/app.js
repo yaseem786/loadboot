@@ -416,7 +416,9 @@ async function boot() {
     '/ai-brain-findings': tabbed('brain', 'findings'),
     '/ai-brain-facts': tabbed('brain', 'facts'),
     '/ai-brain-log': tabbed('brain', 'log'),
-    '/mailbox': ({ query }) => { setActive('/mailbox'); if (can('comm.view')) renderMailbox(content, query.get('thread')); else denied(); },
+    // bl_mail_0488: the Gmail-style mailbox reads its whole state from the query (folder, label, q, thread,
+    // compose, draft) and re-applies it in place on every hashchange, so Back walks its screens.
+    '/mailbox': ({ query }) => { setActive('/mailbox'); if (can('comm.view')) renderMailbox(content, query); else denied(); },
     '/finance': tabbed('finance', 'invoices'),
     '/fee-approvals': tabbed('finance', 'approvals'),
     '/finance-analytics': tabbed('finance', 'analytics'),

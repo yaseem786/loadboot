@@ -765,6 +765,15 @@ export const mailMark = (thread, read = true) => rpc('cc_mail_mark', { p_thread:
 export const mailDraftSave = (thread, bodyHtml) => rpc('cc_mail_draft_save', { p_thread: thread, p_body_html: bodyHtml });
 export const mailDraftDiscard = (thread) => rpc('cc_mail_draft_discard', { p_thread: thread });
 export const mailSend = (draftId) => rpc('cc_mail_send', { p_draft_id: draftId });
+// bl_mail_0488 — Gmail-style mailbox. One RPC for every toolbar button, single or bulk:
+// read | unread | star | unstar (comm.view) · archive | unarchive | snooze | unsnooze (comm.send) · trash | untrash (comm.manage).
+export const mailThreadAction = (threads, action, until) => rpc('cc_mail_thread_action', {
+  p_threads: Array.isArray(threads) ? threads : [threads], p_action: action, p_until: until ?? null,
+});
+// A NEW message (Compose). Saves a draft only — mailSend is still the one call that sends.
+export const mailComposeSave = (o) => rpc('cc_mail_compose_save', {
+  p_from: o.from, p_to: o.to, p_subject: o.subject ?? '', p_body_html: o.bodyHtml, p_draft_id: o.draftId ?? null,
+});
 
 // ---- Wave 4 Communications (flag: comms_enabled) ----
 export const commOverview = () => rpc('cc_comm_overview');
