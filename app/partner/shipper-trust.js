@@ -28,9 +28,19 @@ export function shipperBadge(t) {
   if (!t) return null;
   const tier = t.tier || 'new';
   const cls = tier === 'verified' ? 'green' : tier === 'business_verified' ? 'blue' : tier === 'hold' ? 'red' : 'gray';
-  const txt = tier === 'verified' ? '✓ Onboarding reviewed' : tier === 'business_verified' ? '✓ Company-domain check passed' + (t.domain ? ' · ' + t.domain : '') : tier === 'hold' ? 'On hold' : 'Company domain not checked';
-  const el = h('span', { class: 'cp-pill ' + cls, title: 'Domain and onboarding checks do not establish creditworthiness or payment capacity.' }, txt);
-  return el;
+  // bl_ship_0491: tiers now come from the two-lane verification (identity checked against the state registry +
+  // independent call-back). Older rows without `stage` keep the original wording.
+  const v2 = t.stage != null;
+  const txt = tier === 'verified' ? (v2 ? '✓ Verified shipper' : '✓ Onboarding reviewed')
+    : tier === 'business_verified' ? (v2 ? '✓ Identity verified' : '✓ Company-domain check passed' + (t.domain ? ' · ' + t.domain : ''))
+    : tier === 'hold' ? 'On hold' : (v2 ? 'Verification in progress' : 'Company domain not checked');
+  const el = h('span', { class: 'cp-pill ' + cls, title: 'Identity and onboarding checks do not establish creditworthiness or payment capacity.' }, txt);
+  if (!v2) return el;
+  // what a broker extending credit wants at a glance — never the EIN, bank or reference details
+  const TERMS = { quick_pay: 'Quick pay', net_15: 'Net 15', net_30: 'Net 30', net_45: 'Net 45', net_60: 'Net 60' };
+  const facts = [t.callback_confirmed ? 'call-back ✓' : null, t.payment_terms ? 'terms ' + (TERMS[t.payment_terms] || t.payment_terms) : null,
+    t.credit_refs ? 'credit refs provided' : 'no credit refs yet', t.platform_terms ? 'platform terms signed' : null].filter(Boolean);
+  return h('span', { style: 'display:inline-flex;flex-direction:column;gap:2px;align-items:flex-end' }, [el, h('span', { class: 'cp-sub', style: 'font-size:.72rem' }, facts.join(' · '))]);
 }
 
 let notice = null;

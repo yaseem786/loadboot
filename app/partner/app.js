@@ -2400,7 +2400,7 @@ async function brokerDash(user, ov) {
                 ? '\ud83d\udc65 \u26a0 TEAM pricing check: $' + tRpm.toFixed(2) + '/mi is solo-level \u2014 team freight books at solo +20\u201330% (\u2248 +$0.40\u20130.60/mi), so team loads at this rate sit unbooked.'
                 : '\ud83d\udc65 \u2713 TEAM pricing check: $' + tRpm.toFixed(2) + '/mi looks healthy for team freight \u2014 20\u201330% above solo, as it should be.'));
           })() : null,
-          wi('Cargo value ($ \u2014 carrier checks cargo insurance)', 'cargo_value', 'number'),
+          wi(window.__lbKindLabel === 'Shipper' ? 'Cargo value ($) * \u2014 required: carriers check their cargo insurance covers it' : 'Cargo value ($ \u2014 carrier checks cargo insurance)', 'cargo_value', 'number'),  // bl_ship_0491: required for shippers (server-enforced)
           isReefer ? wi('Temperature (\u00b0F) \u2014 required for reefer *', 'temperature') : null,
           isFlat ? sl('Tarps', 'tarps', ['No tarps needed', '4 ft tarps', '6 ft tarps', '8 ft tarps']) : null,
           isFlat ? (() => {
