@@ -1,7 +1,7 @@
 # partner_landing_module.py — premium, SEO-focused landing pages for the demand side
 # (4 Sep 2026). Two pages, built to the same grade as the carrier home page:
 #   free-load-board-for-brokers.html   — "free load board for brokers / post loads free"
-#   shipper-solutions.html             — "ship freight with verified carriers / truckload quotes"
+#   shipper-solutions.html             — "ship freight direct or via a verified broker"
 # Every number on these pages is either a LoadBoot product fact (from the live build:
 # bl_bp_0312–0319) or an external figure with its source linked in the section. Nothing invented.
 # Links stay on the poster's side of the site: never to carrier sales/dispatch pages.
@@ -129,6 +129,26 @@ def _faq(items):
     return rows, '<script type="application/ld+json">%s</script>' % sch
 
 
+
+def _tender_section():
+    """New (28 Sep 2026): verified shippers can send a load tender straight to a verified broker.
+    Honest framing: the lane is new, broker supply is being onboarded, no volume claim."""
+    return ('<section class="pl-sec soft"><div class="wrap"><div class="pl-split">'
+            '<div class="reveal"><div class="eyebrow">New &middot; the shipper side</div>'
+            '<h2 style="font-size:clamp(1.7rem,3vw,2.3rem);line-height:1.15;margin:0 0 14px">Shippers on LoadBoot &mdash; send you tenders directly</h2>'
+            '<p style="color:#475569;line-height:1.75;font-size:1.05rem">Finding carriers is the easy half of brokering. Finding shippers is the hunt. On LoadBoot, verified shippers can pick a verified broker and send a load tender straight to that broker&rsquo;s inbox &mdash; alongside the free carrier board you already use to cover freight.</p>'
+            '<div class="pl-li"><span class="pl-tick">&#10003;</span><div><b>Shippers are verified first</b> &mdash; legal entity and EIN checked against the state registry, an authorized signer, and a call-back to a company number LoadBoot finds itself, before a tender can reach you.</div></div>'
+            '<div class="pl-li"><span class="pl-tick">&#10003;</span><div><b>You book under your own contract</b> &mdash; the shipper chooses you; you cover the load under your contract with the shipper. LoadBoot is never the broker or a party to the shipment.</div></div>'
+            '<div class="pl-li"><span class="pl-tick">&#10003;</span><div><b>To receive tenders:</b> active FMCSA broker authority and a $75,000 BMC-84/85 bond on file &mdash; the same live check you pass to post.</div></div>'
+            '<p style="color:#64748b;line-height:1.7;font-size:.95rem;margin-top:12px">Honest note: this lane is new. We are onboarding brokers now and make no promise about tender volume &mdash; treat it as one more source next to your own prospecting. <a href="how-freight-brokers-find-shippers.html" style="color:#0883F7;font-weight:700">How freight brokers find shippers &rarr;</a></p></div>'
+            '<div class="reveal"><div class="pl-card"><div class="top"><strong>Load tender</strong><span class="live"><b></b> Illustration</span></div>'
+            '<div class="row"><span>From</span><span>Verified shipper &middot; company &amp; signer checked</span></div>'
+            '<div class="row"><span>To</span><span>You &middot; authority active &middot; BMC-84/85 on file</span></div>'
+            '<div class="row"><span>Lane</span><span>Example lane &middot; dry van</span></div>'
+            '<div class="row"><span>Payment terms</span><span>Stated on the shipper profile</span></div>'
+            '<div class="row"><span>Your move</span><span class="rate">Accept, counter or pass</span></div></div></div>'
+            '</div></div></section>')
+
 # =====================================================================================
 # BROKER — free-load-board-for-brokers.html
 # =====================================================================================
@@ -195,6 +215,8 @@ def broker_landing(ctx):
           ], 'pl-g4') + '</div></section>')
     # ---- VERIFIED NETWORK (existing shared section) ----
     b += cns('broker')
+    # ---- SHIPPER TENDERS (new, 28 Sep 2026) ----
+    b += _tender_section()
     # ---- 2026 FRAUD REALITY (sourced) ----
     b += ('<section class="pl-sec"><div class="wrap"><div class="pl-split">'
           '<div class="reveal"><div class="eyebrow">Built for the 2026 freight-fraud reality</div><h2 style="font-size:clamp(1.7rem,3vw,2.3rem);line-height:1.15;margin:0 0 14px">The cheapest board is the one that never hands your load to a fake carrier</h2>'
@@ -270,10 +292,10 @@ def shipper_landing(ctx):
     b = PL_CSS
     b += ('<section class="pl-hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div><div class="wrap pl-hero-grid"><div>'
           '<span class="pl-kicker reveal"><span class="dot"></span> For shippers &amp; facilities &middot; free to use</span>'
-          '<h1 class="reveal d1">Ship Freight With Verified Carriers &mdash; <span class="gradtext">truckload quotes in minutes, GPS proof on every mile</span></h1>'
-          '<p class="lead reveal d2">Request a shipment, get quotes from licensed brokers backed by FMCSA-verified carriers, and watch the truck on the same live map the carrier sees. Business confirmed from your company email in under a minute &mdash; no documents, no authority, no contract to request a quote.</p>'
-          '<div class="hero-btns reveal d3"><a href="/app/partner/" class="btn btn-primary">Request a quote &rarr;</a><a href="create-shipper-account.html" class="btn btn-secondary">What we ask for &mdash; and when</a><a href="how-it-works.html" class="btn btn-ghost">How it works &rarr;</a></div>'
-          '<div class="pl-trust reveal d3"><span><i>&#10003;</i> Licensed brokerage on every move</span><span><i>&#10003;</i> Geofenced pickup &amp; delivery stamps</span><span><i>&#10003;</i> Published accessorial standards</span></div>'
+          '<h1 class="reveal d1">Ship Freight With Verified Carriers &mdash; <span class="gradtext">you choose the lane, GPS proof on every mile</span></h1>'
+          '<p class="lead reveal d2">Per load, you decide: post direct to FMCSA-verified carriers at your rate and pick the one you accept, or send a load tender to a verified broker. Either way you watch the truck on the same live map the carrier sees. Free to use &mdash; and every shipper is verified first, so carriers and brokers know your freight is real.</p>'
+          '<div class="hero-btns reveal d3"><a href="/app/partner/" class="btn btn-primary">Create a shipper account &rarr;</a><a href="create-shipper-account.html" class="btn btn-secondary">What we ask for &mdash; and when</a><a href="how-it-works.html" class="btn btn-ghost">How it works &rarr;</a></div>'
+          '<div class="pl-trust reveal d3"><span><i>&#10003;</i> Direct to carriers or via a verified broker</span><span><i>&#10003;</i> Geofenced pickup &amp; delivery stamps</span><span><i>&#10003;</i> Published accessorial standards</span></div>'
           '</div><div class="pl-mock reveal d2"><div class="pl-card">'
           '<div class="top"><strong>Shipment #SH-2093</strong><span class="live"><b></b> In transit &middot; on time</span></div>'
           '<div class="row"><span>Lane</span><span>Fresno, CA &rarr; Denver, CO</span></div>'
@@ -281,30 +303,30 @@ def shipper_landing(ctx):
           '<div class="row"><span>Pickup</span><span>Geofence arrive 06:52 &middot; depart 08:10</span></div>'
           '<div class="row"><span>Carrier</span><span>Verified &middot; authority &amp; COI current</span></div>'
           '<div class="row"><span>ETA</span><span class="rate">Tomorrow 11:40 &middot; 1,196 mi</span></div>'
-          '<div class="offers"><div class="of"><span class="av">Q</span>Quote &middot; Atlas Brokerage LLC<span class="ok">Accepted</span></div>'
-          '<div class="of"><span class="av">Q</span>Quote &middot; Northline Logistics<span class="wait">Declined</span></div></div>'
-          '</div><div class="pl-float pl-f1"><span class="ic">&#127970;</span> Business confirmed &middot; company email</div><div class="pl-float pl-f2"><span class="ic">&#128205;</span> Dock stamp recorded server-side</div></div></div></section>')
+          '<div class="offers"><div class="of"><span class="av">&#10003;</span>Verified carrier &middot; requested to book at your rate<span class="ok">You accepted</span></div>'
+          '<div class="of"><span class="av">&#8594;</span>Or send this load as a tender to a verified broker<span class="wait">Your choice</span></div></div>'
+          '</div><div class="pl-float pl-f1"><span class="ic">&#127970;</span> Shipper verified &middot; company &amp; signer checked</div><div class="pl-float pl-f2"><span class="ic">&#128205;</span> Dock stamp recorded server-side</div></div></div></section>')
     b += ('<div class="pl-stats"><div class="wrap">'
-          '<div class="pl-stat reveal"><div class="n">&lt;1<span style="font-size:1.2rem">min</span></div><div class="l">Business confirmed from your company email &mdash; no upload</div></div>'
-          '<div class="pl-stat reveal d1"><div class="n">0</div><div class="l">Documents to request a quote &mdash; no authority, no bond, no contract</div></div>'
-          '<div class="pl-stat reveal d2"><div class="n">3</div><div class="l">Items before your first booking: agreement, claims contact, billing instructions</div></div>'
-          '<div class="pl-stat reveal d3"><div class="n">$0</div><div class="l">To use LoadBoot &mdash; you pay only the broker&rsquo;s quoted rate</div></div>'
+          '<div class="pl-stat reveal"><div class="n">2</div><div class="l">Lanes per load: post direct to carriers, or tender to a verified broker</div></div>'
+          '<div class="pl-stat reveal d1"><div class="n">You</div><div class="l">Set the rate and choose the carrier &mdash; LoadBoot never does either</div></div>'
+          '<div class="pl-stat reveal d2"><div class="n">6</div><div class="l">Identity checks on the company and signer before anything reaches a carrier or broker</div></div>'
+          '<div class="pl-stat reveal d3"><div class="n">$0</div><div class="l">To use LoadBoot today &mdash; you pay the carrier (or your broker) directly</div></div>'
           '</div></div>')
     b += ('<section class="pl-sec soft"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">The four questions your customers ask</div><h2>Answered by the record, not by a phone call</h2>'
           '<p>Where is it, did it really arrive at 8, who is hauling it, and why is there a detention bill &mdash; every one of them ends against server-side evidence instead of somebody&rsquo;s word.</p></div>'
           + _tiles([
               ('&#128205;', 'Where is my freight?', 'A live map and ETA on every shipment, the same feed your carrier sees. Stale positions flag themselves &mdash; you are never comforted by an old dot.'),
               ('&#9201;', 'Did it really arrive at 8?', 'Geofenced arrive/depart stamps are recorded server-side at your dock. Disputes about time end against the record, in everyone&rsquo;s favor.'),
-              ('&#128737;', 'Who is hauling it?', 'Vetted, health-scored carriers under licensed brokerage &mdash; authority and insurance tracked continuously, not photocopied once at setup.'),
+              ('&#128737;', 'Who is hauling it?', 'Vetted, health-scored carriers &mdash; FMCSA authority and insurance tracked continuously, not photocopied once at setup. Or a broker whose authority and bond you can see.'),
               ('&#128203;', 'Why this detention bill?', 'Published standards ride every posting and claims arrive with their GPS evidence attached, so you approve documented time, never an invented number after the fact.'),
           ], 'pl-g4') + '</div></section>')
-    b += ('<section class="pl-sec dark"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">How it works for shippers</div><h2>Company email to moving freight &mdash; four steps</h2>'
-          '<p>We treat a quote request as what it is &mdash; a non-binding ask. Nothing about your business has to be proven with paperwork before you can see what a lane costs.</p></div>'
+    b += ('<section class="pl-sec dark"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">How it works for shippers</div><h2>Verified company to moving freight &mdash; four steps</h2>'
+          '<p>Because your freight and your money are at stake on both sides, verification comes first. Nothing you post reaches a carrier or a broker until your company has passed it.</p></div>'
           '<div class="pl-steps reveal" style="grid-template-columns:repeat(4,1fr)">'
-          '<div class="pl-step"><span class="t">&lt;1 min</span><div class="num">1</div><h3>Business confirmed</h3><p>Sign up with a company email; we confirm the business from the domain itself (it receives mail, it has a website). Personal Gmail? Enter your company address and type the code we send it.</p></div>'
-          '<div class="pl-step"><span class="t">minutes</span><div class="num">2</div><h3>Request the shipment</h3><p>Route with exact pins, schedule, equipment, commodity, facility rules. Licensed brokers quote it; you see a &ldquo;business confirmed&rdquo; badge on your side, they see it on theirs.</p></div>'
-          '<div class="pl-step"><span class="t">1 click</span><div class="num">3</div><h3>Accept a quote &mdash; then the 3 items</h3><p>Shipper Agreement, a claims contact and billing instructions, asked once, when you accept your first quote. Payment terms are agreed at the same point.</p></div>'
-          '<div class="pl-step"><span class="t">live</span><div class="num">4</div><h3>Watch it move, settle clean</h3><p>Live map, milestone timeline, ETA and document status. Delivery generates the paperwork trail; payments run receipt-verified with confirmations.</p></div>'
+          '<div class="pl-step"><span class="t">step 1</span><div class="num">1</div><h3>Verify your company</h3><p>Legal entity and EIN checked against the state registry, business address, authorized signer, company-email confirmation, a code call to the signer&rsquo;s phone and an independent call-back to a company number we find ourselves.</p></div>'
+          '<div class="pl-step"><span class="t">step 2</span><div class="num">2</div><h3>Sign and set up</h3><p>Sign the agreements in the portal, then add billing and payment terms, your cargo profile, insurance requirements and declared value, and your dock locations with hours and detention rules.</p></div>'
+          '<div class="pl-step"><span class="t">per load</span><div class="num">3</div><h3>Choose per load</h3><p>Post direct to verified carriers at your rate and accept the one you want &mdash; or send a load tender to a verified broker. Or do both.</p></div>'
+          '<div class="pl-step"><span class="t">live</span><div class="num">4</div><h3>Track and pay the carrier</h3><p>Live map, milestone timeline, ETA and documents. On the direct lane you pay the carrier (or its factoring company) directly; on a tender you settle with your broker under your contract.</p></div>'
           '</div><div style="text-align:center;margin-top:34px" class="reveal"><a href="create-shipper-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.28)">See the signup walkthrough &rarr;</a></div></div></section>')
     b += ('<section class="pl-sec"><div class="wrap"><div class="pl-split">'
           '<div class="reveal"><div class="eyebrow">Visibility that holds up in a dispute</div><h2 style="font-size:clamp(1.7rem,3vw,2.3rem);line-height:1.15;margin:0 0 14px">Live GPS, geofenced docks and a milestone timeline &mdash; included, not upsold</h2>'
@@ -330,7 +352,7 @@ def shipper_landing(ctx):
           '</div><p class="pl-src">Source: <a href="https://www.cargonet.com/news-and-events/cargonet-in-the-media/2025-theft-trends/" rel="noopener nofollow" target="_blank">Verisk CargoNet, 2025 supply-chain theft trends</a>. Their figures, not LoadBoot&rsquo;s.</p></div>'
           '<div class="reveal"><div class="eyebrow">Protection built into the move</div><h2 style="font-size:clamp(1.7rem,3vw,2.3rem);line-height:1.15;margin:0 0 14px">Strategic theft targets the paperwork gap. We closed it.</h2>'
           '<p style="color:#475569;line-height:1.75;font-size:1.05rem">Fictitious pickups and double-brokered loads work because nobody checks who is actually at the dock. On LoadBoot the carrier is verified against the federal record, the assigned truck is the one reporting GPS, and your gate stamp is recorded by the server &mdash; not typed in later.</p>'
-          '<div class="pl-li"><span class="pl-tick">&#10003;</span><div><b>Licensed brokerage on every shipment</b> &mdash; your freight moves under a property broker whose authority is read live from FMCSA.</div></div>'
+          '<div class="pl-li"><span class="pl-tick">&#10003;</span><div><b>Verified shippers, verified carriers, verified brokers</b> &mdash; carriers are checked against FMCSA records, and any broker you tender to has active authority and a $75,000 BMC-84/85 bond checked.</div></div>'
           '<div class="pl-li"><span class="pl-tick">&#10003;</span><div><b>Carrier authority and COI tracked continuously</b>, with account-health scoring before a truck is ever offered your load.</div></div>'
           '<div class="pl-li"><span class="pl-tick">&#10003;</span><div><b>The truck you see is the truck that hauls</b> &mdash; GPS on the assigned unit, geofence proof at both ends.</div></div>'
           '<a href="protect-freight-from-loss-damage-and-fraud.html" class="btn btn-secondary" style="margin-top:8px">The shipper&rsquo;s guide to loss, damage &amp; fraud &rarr;</a></div>'
@@ -346,37 +368,39 @@ def shipper_landing(ctx):
           '<a href="driver-assist-policy.html"><b>Driver assist</b><span>When the driver works the dock &mdash; agreed before, not argued after.</span><em>Read the standard &rarr;</em></a>'
           '</div></div></section>')
     b += ('<section class="pl-sec soft"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Know the price before you ask</div><h2>Truckload rates per mile &mdash; the buy and sell side, published free</h2>'
-          '<p>Most shippers negotiate blind against a broker looking at a rate screen. Ours is public: carrier, broker and shipper sides for every equipment type, refreshed weekly, plus what your industry&rsquo;s freight actually needs.</p></div>'
+          '<p>Most shippers set a rate blind against a market they cannot see. Ours is public: carrier, broker and shipper sides for every equipment type, refreshed weekly, plus what your industry&rsquo;s freight actually needs.</p></div>'
           '<div class="pl-ind reveal">'
           '<a href="market-rates.html"><b>Market rates per mile</b><span>Dry van, reefer, flatbed, step deck, power only, hotshot, box truck &mdash; all three sides.</span><em>See live rates &rarr;</em></a>'
           '<a href="freight-market-reports.html"><b>Weekly market reports</b><span>What moved, what tightened, what it did to rates this week.</span><em>Read this week &rarr;</em></a>'
           '<a href="freight-shipping-by-industry.html"><b>Freight shipping by industry</b><span>Produce, food &amp; beverage, building materials, metals, manufacturing, retail &mdash; the trailer, the rules, the dock reality.</span><em>Find your industry &rarr;</em></a>'
           '<a href="full-truckload-vs-ltl.html"><b>FTL vs LTL vs partial</b><span>Which mode pays for your freight, and when a partial beats both.</span><em>Compare modes &rarr;</em></a>'
           '<a href="fuel-surcharge-trucking.html"><b>Fuel surcharge</b><span>How FSC per mile is calculated and audited.</span><em>See the formula &rarr;</em></a>'
-          '<a href="how-to-ship-without-a-broker.html"><b>Shipping without a broker</b><span>What going direct really involves &mdash; and where licensed brokerage still protects you.</span><em>Read the guide &rarr;</em></a>'
+          '<a href="how-to-ship-without-a-broker.html"><b>Shipping without a broker</b><span>What going direct really involves &mdash; and when tendering to a verified broker is the better lane.</span><em>Read the guide &rarr;</em></a>'
           '</div></div></section>')
     b += cns('shipper')
     faq_rows, faq_schema = _faq([
-        ('How fast can I get a truckload quote?', 'Minutes. Sign up with a company email and the business is confirmed automatically in under a minute (the domain receives mail and has a website); the request form opens right away and licensed brokers quote it. Signed up with Gmail? Enter your company address and type the 6-digit code we email it.'),
-        ('Do I need a broker authority, a bond or a contract to ship with LoadBoot?', 'No. You bring the freight and the facilities; movement runs under licensed brokerage and LoadBoot&rsquo;s verified carrier network. No authority, no bond, no long-term contract on your side.'),
-        ('What do I have to provide before a booking?', 'Once, when you accept your first quote: the Shipper Agreement (one click), a claims contact and billing instructions, and payment terms agreed at the same point. Quote requests never wait on any of it.'),
+        ('How do I get a rate for my freight?', 'You set it. Create an account, verify your company, then post the load direct to verified carriers at your rate (they request to book, you choose and accept one) &mdash; or send a load tender to a verified broker and ask for their rate. The free <a href="market-rates.html">market-rates page</a> shows where the market is so you can price sensibly.'),
+        ('Do I need a broker authority, a bond or a contract to ship with LoadBoot?', 'No. You do not need authority or a bond of your own. On the direct lane your contract is with the carrier you accept; on a tender it is with the broker you choose. LoadBoot holds no broker authority and is never a party to the shipment.'),
+        ('What do I have to provide before I can post?', 'Verification comes first: legal name and EIN, state entity number, business address, an authorized signer with a direct phone, and company-email confirmation. Then you sign the agreements in the portal and add billing and payment terms, your cargo profile and insurance requirements, and your dock locations. Hazmat, food (FSMA) and high-value sections appear only if your freight needs them. See <a href="create-shipper-account.html">what to have ready</a>.'),
+        ('Why is shipper verification so thorough?', 'Freight fraud and non-payment hurt everyone on a load, and carriers and brokers only take freight from shippers they can trust. Nothing you post reaches them until verification opens a lane. New shippers start with limits (a few open loads and a capped cargo value) that lift as carriers confirm payment on your first loads.'),
         ('How do I know the carrier on my load is legitimate?', 'Every carrier passes authority, insurance and account-health checks before freight is offered to them, credentials are tracked continuously, and GPS on the assigned truck plus geofenced dock stamps prove the carrier you were told about is the one hauling. See <a href="compliance.html">how verification works</a>.'),
         ('What visibility do I get without check calls?', 'A live map with ETA, a milestone timeline and geofenced arrive/depart stamps recorded server-side at your own docks &mdash; the same record your carrier sees. Stale feeds flag themselves.'),
         ('Who controls accessorial charges like detention and lumper?', 'Published standards ride every posting and claims arrive with their GPS evidence attached, so you approve documented time, never an invented number after the fact. Dwell at your docks is measured identically for every carrier.'),
         ('Can my warehouse use LoadBoot without booking freight?', 'Yes &mdash; the Facility / Warehouse role handles dock appointments and geofenced check-ins so your gate has an accurate arrival record even when someone else books the truck.'),
-        ('What does it cost a shipper?', 'Nothing to use the platform &mdash; requesting, tracking, documents and the payables view are free. You pay the broker&rsquo;s quoted rate for the move; LoadBoot&rsquo;s only revenue is the flat 5% dispatch fee on the carrier side.'),
-        ('Can I ship direct to a carrier instead of through a broker?', 'You can post freight to the verified carrier network directly; where the law requires it, the move still runs under licensed brokerage so you keep the protection. See <a href="ship-direct-to-carrier.html">ship direct to carriers</a>.'),
+        ('What does it cost a shipper?', 'Nothing today &mdash; posting, tracking and documents are free for shippers. You pay the carrier (or its factoring company) directly on the direct lane, or your broker under your own contract on a tender. LoadBoot never holds your freight money.'),
+        ('Can I ship direct to a carrier instead of through a broker?', 'Yes. Post the load direct to verified carriers at your rate; they request to book and you choose and accept one. If you would rather hand the load to a professional, send a tender to a verified broker instead. See <a href="ship-direct-to-carrier.html">ship direct to carriers</a>.'),
+        ('Are brokers available on LoadBoot yet?', 'Broker supply is being onboarded and the tender lane is coming soon. Only brokers with active FMCSA authority and a $75,000 BMC-84/85 bond on file can receive tenders. The direct-to-carrier lane works today.'),
         ('What kinds of freight can I ship?', 'Full truckload and partial across dry van, reefer, flatbed, step deck, power only, hotshot and box truck. Industry pages cover the rules for produce, food &amp; beverage, building materials, metals, manufacturing and retail freight.'),
     ])
     b += ('<section class="pl-sec soft" id="faq"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Questions</div><h2>Shipping with LoadBoot &mdash; FAQ</h2></div><div class="pl-faq" style="max-width:840px;margin:0 auto">%s</div></div></section>' % faq_rows)
     b += ('<section class="pl-sec"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Keep reading</div><h2>Before you post your freight</h2></div><div class="grid g3 reveal">'
-          + linkcard('create-shipper-account.html', '&#128221;', 'Create a shipper account', 'Business confirmed from your company email in under a minute, then request your first quote.')
-          + linkcard('ship-direct-to-carrier.html', '&#128666;', 'Ship direct to carriers', 'Post freight to the verified network and keep licensed-brokerage protection where it matters.')
+          + linkcard('create-shipper-account.html', '&#128221;', 'Create a shipper account', 'Verify your company, sign the agreements, then post to carriers or tender to a broker.')
+          + linkcard('ship-direct-to-carrier.html', '&#128666;', 'Ship direct to carriers', 'Set your rate, let verified carriers request to book, and choose the one you accept.')
           + linkcard('protect-freight-from-loss-damage-and-fraud.html', '&#128737;', 'Loss, damage &amp; fraud guide', 'Seven things to do on every load, and how a verified platform does them for you.')
           + '</div></div></section>')
     b += ('<section class="pl-sec" style="padding-top:0"><div class="wrap"><div class="pl-cta reveal"><h2>Your freight. Moved on the record.</h2>'
-          '<p>Sign up with your company email, request a shipment, and watch verified carriers move it with proof at every mile.</p>'
-          '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"><a href="/app/partner/" class="btn btn-primary">Request a quote &rarr;</a><a href="create-shipper-account.html" class="btn btn-secondary">Create a shipper account</a></div></div></div></section>')
+          '<p>Verify your company, choose your lane per load, and watch verified carriers move it with proof at every mile.</p>'
+          '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"><a href="/app/partner/" class="btn btn-primary">Create a shipper account &rarr;</a><a href="create-shipper-account.html" class="btn btn-secondary">Create a shipper account</a></div></div></div></section>')
     return b, faq_schema
 
 
@@ -476,6 +500,8 @@ def broker_product_landing(ctx):
               ('&#128295;', 'API', 'Push loads and pull status, positions and documents straight into your TMS. <a href="api.html" style="color:#0883F7;font-weight:700">Read the developer API &rarr;</a>'),
           ], 'pl-g3') + '</div></section>')
 
+    b += _tender_section()
+
     b += cns('broker')
 
     # ---- FAQ --------------------------------------------------------------------------------
@@ -499,7 +525,7 @@ def broker_product_landing(ctx):
         ('I am a new brokerage. Can I still post?',
          'Yes, and on the same day. New accounts start with a controlled posting allowance that opens up as the account establishes itself, which is what keeps the carrier side willing to trust a brand-new MC.'),
         ('Do you work with shippers directly as well?',
-         'Yes &mdash; shippers and facilities use the same verified network and the same tracking record. Brokerage still runs the move where the law requires a licensed intermediary.'),
+         'Yes. Verified shippers can post direct to verified carriers, or choose a verified broker and send a load tender straight to that broker. To receive tenders you need active FMCSA broker authority and a $75,000 BMC-84/85 bond on file. The tender lane is new and broker supply is being onboarded, so we make no promise about volume. See <a href="how-freight-brokers-find-shippers.html">how freight brokers find shippers</a>.'),
     ])
     b += ('<section class="pl-sec soft" id="faq"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Questions</div><h2>Brokers &amp; LoadBoot &mdash; FAQ</h2></div>'
           '<div class="pl-faq reveal">%s</div></div></section>' % faq_rows)

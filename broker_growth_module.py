@@ -259,8 +259,8 @@ WL_BODY = (
 '<h2 id="keep">Keeping a shipper after the first load</h2>'
 '<p>Shippers keep brokers who make the load boring: the truck shows up when it was booked, they can see it move without calling, the paperwork arrives complete, and accessorials are handled without a fight. A tracking link they can forward to their own customer, proof of delivery attached to the invoice, and detention documented from a timestamp rather than argued from memory turn a one-load trial into a weekly lane.</p>'
 '<h2 id="lb">Shipper-direct freight on LoadBoot</h2>'
-'<p>LoadBoot is built for the whole chain, not only the broker&ndash;carrier leg. Shippers can post loads on the board directly &mdash; after an automated business check on their company email domain &mdash; and carriers are vetted through four gates before any load is offered to them. For a new broker, the board is where you cover the freight you win: post it under your MC after a live FMCSA authority check, take direct offers from verified carriers, and let the load record carry the rate confirmation, GPS milestones, proof of delivery and a published accessorial rate card that your shipper can read. Brokers are never billed; LoadBoot is funded by a flat 5% dispatch fee on the carrier side.</p>'
-'<p>What LoadBoot does not do is hand brokers shippers. Nobody honest will. What it does is make the first load you win look like the fiftieth &mdash; which is how you get the second.</p>'
+'<p>LoadBoot is built for the whole chain, not only the broker&ndash;carrier leg. Shippers can post loads on the board directly &mdash; after a thorough company verification (entity and EIN checked against the state registry, an authorized signer, a code call and an independent call-back) &mdash; and carriers are vetted through four gates before any load is offered to them. For a new broker, the board is where you cover the freight you win: post it under your MC after a live FMCSA authority check, take direct offers from verified carriers, and let the load record carry the rate confirmation, GPS milestones, proof of delivery and a published accessorial rate card that your shipper can read. Brokers are never billed; LoadBoot is funded by a flat 5% dispatch fee on the carrier side.</p>'
+'<p>LoadBoot does not hand brokers a book of shippers, and nobody honest will. What is new is that a verified shipper can now choose a verified broker and send a load tender straight to that broker&rsquo;s inbox &mdash; the tender lane is new and broker supply is still being onboarded, so treat it as one more source next to your own prospecting, not a replacement for it. See <a href="how-freight-brokers-find-shippers.html">how freight brokers find shippers</a> for the full playbook. And it makes the first load you win look like the fiftieth &mdash; which is how you get the second.</p>'
 + _CTA +
 '<p>Related: <a href="how-new-freight-brokers-find-carriers.html">how new brokers find carriers</a>, <a href="freight-broker-startup-checklist.html">the startup checklist</a>, and <a href="shipper-solutions.html">what shippers see on LoadBoot</a>.</p>'
 )
@@ -268,7 +268,7 @@ WL_FAQ = [
  ('Where do freight brokers get their loads?','From shippers who choose to give them freight: direct relationships, overflow from larger brokerages, agents who bring their own customers, and inbound enquiries once the brokerage is findable. Load boards are where brokers post freight to find carriers, not where they take loads from.'),
  ('How does a new freight broker find shippers?','Pick a lane or vertical you can cover, prospect the shippers on it with a specific offer, be ready to show authority, bond, carrier vetting, tracking, claims handling and accessorial terms, and take the awkward first load when it is offered.'),
  ('Do brokers need to check a shipper&rsquo;s credit?','Yes. You pay carriers before shippers pay you, so every shipper is a credit decision. Start with a limit you can afford to lose and grow it with on-time payments.'),
- ('Can shippers post loads on LoadBoot without a broker?','Yes. Shippers post after an automated business check on their company email, and loads go only to carriers who have passed four verification gates. Brokers use the same board to cover the freight they win.'),
+ ('Can shippers post loads on LoadBoot without a broker?','Yes. Shippers post after company verification, and loads go only to carriers who have passed four verification gates. A shipper can also send a load tender to a verified broker; brokers use the same board to cover the freight they win.'),
 ]
 
 # ---------- Page 5: freight-broker-startup-checklist.html ----------
@@ -368,6 +368,65 @@ AB_FAQ = [
  ('How do I post loads as an agent on LoadBoot?','Create an agent account, link it to a brokerage, and have the brokerage confirm the link with the emailed six-digit code. You then post under that brokerage&rsquo;s MC with its allowance.'),
 ]
 
+# ---------- Page 6: how-freight-brokers-find-shippers.html (28 Sep 2026) ----------
+WF_TOC = [('hunt','Why finding shippers is the hard half'),
+          ('methods','Eight ways to find shippers that actually work'),
+          ('credit','Credit-check a new shipper before the first load'),
+          ('agreement','Broker&ndash;shipper agreement basics'),
+          ('concentration','Do not build the company on one customer'),
+          ('lb','How LoadBoot helps &mdash; and what is new')]
+
+WF_BODY = (
+'<p>Ask a working broker what the hardest part of the job is and the answer is rarely carriers. Capacity can be bought, borrowed or found on a board in an afternoon. <em>Shippers</em> are the scarce side: they are busy, they already have a broker, and they have no reason to answer a stranger. This guide is the practical version of &ldquo;how to find shippers as a freight broker&rdquo; &mdash; the methods that work, how to check a new shipper before you extend terms, what belongs in the agreement, and how to avoid building a business on one customer.</p>'
+'<h2 id="hunt">Why finding shippers is the hard half</h2>'
+'<p>A carrier who needs a load will take a call from anyone with a fair rate. A shipper who needs a truck already has three brokers on speed dial and a routing guide. Getting into that guide means being visibly better at something narrow, not being available for everything. Our companion guide, <a href="where-freight-brokers-get-loads.html">where freight brokers get loads</a>, covers the sources of freight; this one is about the work of getting in front of the people who control it.</p>'
+'<h2 id="methods">Eight ways to find shippers that actually work</h2>'
+'<ol>'
+'<li><strong>Pick a lane or a vertical first.</strong> &ldquo;We move anything&rdquo; is invisible. &ldquo;We cover produce out of the Rio Grande Valley&rdquo; is memorable. Choose a niche where you can already source trucks, then prospect only inside it.</li>'
+'<li><strong>Industry directories and trade associations.</strong> Manufacturers&rsquo; associations, grower groups and distributor directories list the companies that ship, often with a plant location and a contact role. Start with the traffic, logistics or transportation manager, not the general inbox.</li>'
+'<li><strong>Trade shows and regional events.</strong> Shippers attend events for their own industry, not for freight. Go to those. A ten-minute conversation about their lane beats a hundred cold emails.</li>'
+'<li><strong>LinkedIn, done specifically.</strong> Find the people who buy freight at companies in your niche, follow what they post, and comment with something useful before you ever pitch. Reference a lane or a problem you noticed, never a template.</li>'
+'<li><strong>Referrals.</strong> Ask every shipper you already serve who else in their building or network has a problem you solved for them. A warm introduction is worth more than any lead list. Carriers and customs brokers who see many shippers are another source.</li>'
+'<li><strong>Bids and RFPs.</strong> Larger shippers put lanes out to bid on a schedule. New brokerages rarely win whole networks, but you can win a lane nobody wants, and a single lane run well is how you get invited to the next bid.</li>'
+'<li><strong>Be the backup broker.</strong> Every incumbent misses loads. Ask to be on the shipper&rsquo;s backup list for one lane, then cover the awkward load properly. This is the most common way a new broker gets its first regular freight.</li>'
+'<li><strong>Be findable.</strong> A simple site that names your niche, lanes and equipment, with your authority and bond details easy to find, picks up the shippers who are already searching. It compounds slowly, but it costs almost nothing once it exists.</li>'
+'</ol>'
+'<p>Whatever the channel, arrive with the five things a shipper checks before trusting a new broker: your authority and bond, how you vet carriers, how they will track the load, how claims are handled and your accessorial terms in writing.</p>'
+'<h2 id="credit">Credit-check a new shipper before the first load</h2>'
+'<p>You will usually pay the carrier long before the shipper pays you, so every new shipper is a credit decision. A short routine keeps that decision honest:</p>'
+'<ul>'
+'<li><strong>Confirm the entity is real.</strong> Match the legal name, address and registration against the state record, and check that the person you are talking to can bind the company.</li>'
+'<li><strong>Get trade references and call them.</strong> Ask two or three vendors what the shipper&rsquo;s payment pattern really is.</li>'
+'<li><strong>Pull a business credit report</strong> where one exists, and read payment history rather than only the score.</li>'
+'<li><strong>Start with a limit you can afford to lose</strong> and raise it as invoices are paid on time.</li>'
+'<li><strong>Watch for red flags:</strong> a brand-new entity asking for large open credit, pressure to book before the paperwork is signed, or payment details that change late.</li>'
+'</ul>'
+'<h2 id="agreement">Broker&ndash;shipper agreement basics</h2>'
+'<p>A one-page agreement signed before the first load prevents most disputes later. It should cover, at minimum: the services and lanes in scope; rates and how accessorials such as detention, layover and lumper are agreed; payment terms and what happens on late payment; how cargo claims are filed, who investigates and what documents are required; insurance each side carries; a clause that stops the shipper going straight to your carriers to cut you out (and the reverse); and how either side ends the arrangement. Have a transportation attorney review your template once &mdash; it is cheap next to a single disputed invoice.</p>'
+'<h2 id="concentration">Do not build the company on one customer</h2>'
+'<p>The first shipper that gives you real volume is also your biggest risk. If one customer is most of your loads, their late payment, their lost contract or their decision to go direct can end the company in a month. Keep growing the pipeline while the first account is going well, set your own internal limit on how much of your freight any single shipper can be, and treat every new shipper as a hedge against the one you already have.</p>'
+'<h2 id="lb">How LoadBoot helps &mdash; and what is new</h2>'
+'<p>LoadBoot already gives brokers the free carrier side: a load board where posting costs nothing and every carrier is FMCSA-verified and health-scored. What is new is the shipper side. Verified shippers on LoadBoot can choose a verified broker and send a <strong>load tender straight to that broker&rsquo;s inbox</strong>.</p>'
+'<ul>'
+'<li><strong>Verified shipper profiles.</strong> Before a shipper can reach a broker, LoadBoot checks the company: legal entity and EIN against the state registry, business address, an authorized signer, company-email confirmation, a code call to the signer and an independent call-back to a company number LoadBoot finds itself.</li>'
+'<li><strong>Terms up front.</strong> Payment terms and a billing contact sit on the shipper&rsquo;s profile, with credit references where the shipper provides them, so your credit decision starts with facts rather than a blank page.</li>'
+'<li><strong>Tenders to your inbox.</strong> The shipper picks you; you accept, counter or pass, and you book the truck under your own contract with the shipper. LoadBoot is never the broker and never a party to the shipment.</li>'
+'<li><strong>The free carrier board</strong> to cover what you win, with the rate card, live GPS and one-receipt payables already built in.</li>'
+'</ul>'
+'<p>Two honest limits. To receive tenders you need active FMCSA broker authority and a $75,000 BMC-84/85 bond on file. And the tender lane is new: broker supply is still being onboarded and we make no promise about how many tenders any broker will see. Treat it as one more source next to your own prospecting, not a substitute for it.</p>'
++ _CTA +
+'<p>Related: <a href="where-freight-brokers-get-loads.html">where freight brokers get loads</a>, <a href="how-new-freight-brokers-find-carriers.html">how new brokers find carriers</a>, <a href="freight-broker-startup-checklist.html">the startup checklist</a> and <a href="brokers.html">LoadBoot for brokers</a>.</p>'
+)
+
+WF_FAQ = [
+ ('How do I find shippers as a freight broker?','Pick a narrow lane or vertical, then prospect the shippers in it through industry directories, trade events, LinkedIn, referrals and lane bids. Offer to be the backup broker on one lane and cover the awkward load well; that is the most common route to regular freight.'),
+ ('Where can freight brokers get direct shipper leads?','Industry association directories, trade shows for the shipper&rsquo;s own industry, LinkedIn searches for traffic and logistics managers, referrals from current customers, published bids and RFPs, and inbound enquiries from a site that names your niche. On LoadBoot, verified shippers can also send tenders to brokers directly.'),
+ ('How do I check a new shipper&rsquo;s credit?','Confirm the legal entity and signer, call two or three trade references, read a business credit report if one exists, and start with a credit limit you can afford to lose. Raise it as invoices are paid on time.'),
+ ('What should a broker&ndash;shipper agreement include?','Scope and lanes, rates and accessorial terms, payment terms and late-payment handling, the cargo claims process, insurance each side carries, a clause against circumventing the broker or the carriers, and termination terms. Have a transportation attorney review your template.'),
+ ('Can shippers on LoadBoot send me loads directly?','Yes, through load tenders. A verified shipper picks a verified broker and sends a tender straight to the broker&rsquo;s inbox. You need active FMCSA broker authority and a $75,000 BMC-84/85 bond on file. The lane is new, broker supply is being onboarded and no volume is promised.'),
+]
+
+
 BROKER_GROWTH_ARTICLES += [
  dict(fname='how-new-freight-brokers-find-carriers.html',
       title='How New Freight Brokers Find Carriers (and Vet Them Before the First Load) | LoadBoot',
@@ -397,6 +456,13 @@ BROKER_GROWTH_ARTICLES += [
       deck='Everything a new brokerage has to do, in order, from the first filing to the ninetieth day &mdash; with the four numbers to measure at the end.',
       read_min=6, hero='', hero_alt='Freight broker startup checklist',
       toc=SC_TOC, body_html=SC_BODY, faqs=SC_FAQ, feat_svg=_feat('Filing to day 90','#FC5305'), pub='2026-09-13'),
+ dict(fname='how-freight-brokers-find-shippers.html',
+      title='How Freight Brokers Find Shippers | LoadBoot',
+      desc='How to find shippers as a freight broker: prospecting that works, credit-checking a new shipper, agreement basics, and shipper tenders on LoadBoot.',
+      eyebrow='New Broker Guides', h1='How Freight Brokers Find Shippers',
+      deck='Carriers are the easy half. Here is how brokers actually find direct shippers &mdash; prospecting that works, how to credit-check a new one, the agreement basics, and where LoadBoot helps.',
+      read_min=7, hero='', hero_alt='Freight broker finding direct shippers',
+      toc=WF_TOC, body_html=WF_BODY, faqs=WF_FAQ, feat_svg=_feat('Finding shippers','#0883F7'), pub='2026-09-28'),
  dict(fname='freight-agent-vs-freight-broker.html',
       title='Freight Agent vs Freight Broker: Authority, Pay, Risk and Working Under Several Brokerages | LoadBoot',
       desc='Freight broker vs agent: the broker holds FMCSA authority and the $75,000 bond; the agent works under its MC for a share of the margin. Pay and risk.',
@@ -407,9 +473,10 @@ BROKER_GROWTH_ARTICLES += [
 ]
 
 BROKER_GROWTH_RELATED.update({
+ 'how-freight-brokers-find-shippers.html': [('where-freight-brokers-get-loads.html','Where Brokers Get Loads'),('how-new-freight-brokers-find-carriers.html','Finding Carriers'),('freight-broker-startup-checklist.html','Startup Checklist'),('brokers.html','For Brokers'),('free-load-board-for-brokers.html','Free Load Board for Brokers'),('create-broker-account.html','Create a Broker Account')],
  'how-new-freight-brokers-find-carriers.html': [('how-to-become-a-freight-broker.html','How to Become a Freight Broker'),('freight-broker-software-cost.html','Freight Broker Software Cost'),('ghost-loads-load-board-problems.html','Ghost Loads &amp; Fake Freight'),('free-load-board-for-brokers.html','Free Load Board for Brokers'),('create-broker-account.html','Create a Broker Account'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
  'how-to-become-a-freight-broker.html': [('freight-broker-startup-checklist.html','Startup Checklist'),('how-new-freight-brokers-find-carriers.html','Finding Carriers'),('where-freight-brokers-get-loads.html','Where Brokers Get Loads'),('freight-broker-software-cost.html','Freight Broker Software Cost'),('create-broker-account.html','Create a Broker Account'),('brokers.html','For Brokers')],
- 'where-freight-brokers-get-loads.html': [('how-to-become-a-freight-broker.html','How to Become a Freight Broker'),('how-new-freight-brokers-find-carriers.html','Finding Carriers'),('freight-shipping-by-industry.html','Freight by Industry'),('shipper-solutions.html','For Shippers'),('freight-agent-vs-freight-broker.html','Agent vs Broker'),('create-broker-account.html','Create a Broker Account')],
+ 'where-freight-brokers-get-loads.html': [('how-freight-brokers-find-shippers.html','How Brokers Find Shippers'),('how-to-become-a-freight-broker.html','How to Become a Freight Broker'),('how-new-freight-brokers-find-carriers.html','Finding Carriers'),('freight-shipping-by-industry.html','Freight by Industry'),('shipper-solutions.html','For Shippers'),('freight-agent-vs-freight-broker.html','Agent vs Broker'),('create-broker-account.html','Create a Broker Account')],
  'freight-broker-startup-checklist.html': [('how-to-become-a-freight-broker.html','How to Become a Freight Broker'),('how-new-freight-brokers-find-carriers.html','Finding Carriers'),('where-freight-brokers-get-loads.html','Where Brokers Get Loads'),('freight-broker-software-cost.html','Freight Broker Software Cost'),('freight-agent-vs-freight-broker.html','Agent vs Broker'),('create-broker-account.html','Create a Broker Account')],
  'freight-agent-vs-freight-broker.html': [('how-to-become-a-freight-broker.html','How to Become a Freight Broker'),('create-agent-account.html','Create an Agent Account'),('freight-broker-startup-checklist.html','Startup Checklist'),('brokers.html','For Brokers'),('agents.html','Agent Program'),('create-broker-account.html','Create a Broker Account')],
 })
