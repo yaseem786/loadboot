@@ -148,7 +148,7 @@ export async function renderUnsubscribes(host) {
     const k = overview.kpis || {};
     // the category list for the filter comes from the state shape; cheap to derive from by_group + known groups
     overview.by_group_all = [
-      ['load_ops', 'Loads & trips'], ['compliance', 'Documents & compliance'], ['billing', 'Billing & payouts'], ['digests', 'Summaries'],
+      ['team_messages', 'Messages from our team'], ['load_ops', 'Loads & trips'], ['compliance', 'Documents & compliance'], ['billing', 'Billing & payouts'], ['digests', 'Summaries'],
       ['product_announcements', 'Product news'], ['marketing', 'Marketing'], ['*', 'Every optional email'],
     ].map(([code, label]) => ({ code, label }));
     mount(kpis, [

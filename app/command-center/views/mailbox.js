@@ -1,4 +1,10 @@
-// mailbox.js — Command Center Mailbox, Gmail edition (bl_mail_0335 → bl_mail_0488).
+// mailbox.js — Command Center Mailbox, Gmail edition (bl_mail_0335 → bl_mail_0488 → bl_mail_0489).
+//
+// bl_mail_0489 — FOUR MAILBOXES. hello@, dispatch@, billing@ and loads@ each get their own colour,
+// icon, banner, folder counts, From identity and signature. "All inboxes" shows everything this
+// person may open. WHICH mailboxes that is, is decided by the server (app_private.mail_boxes +
+// mail.box.* permissions, returned in cc_mail_stats.mailboxes): billing@ is owner/operations_admin
+// only, dispatch@ adds dispatcher. This screen never lists a mailbox the server did not hand it.
 //
 // Owner ask, 28 Sep 2026: "same to same Gmail" — composer, inbox, reading view, mobile, deep links.
 // So this screen copies Gmail's anatomy on purpose: left rail (Compose + folders + labels), a search
@@ -25,7 +31,8 @@
 // DEEP LINKS — every screen state lives in the hash, so Back, refresh and shared links all work:
 //   #/mailbox                              Inbox (Primary)
 //   #/mailbox?folder=updates|starred|snoozed|sent|drafts|all|trash
-//   #/mailbox?label=loads@loadboot.com     one mailbox (Gmail "label")
+//   #/mailbox?label=dispatch@loadboot.com  one mailbox; combines with folder= and q=
+//   #/mailbox?label=billing@loadboot.com&folder=sent   that mailbox's Sent
 //   #/mailbox?q=rate+con                   search
 //   #/mailbox?thread=<thread_key>          open a conversation (a deep link never marks it read)
 //   #/mailbox?compose=new&to=a@b.com&subject=Hi&from=dispatch@loadboot.com   open the composer
@@ -35,6 +42,7 @@
 //   comm.view   → read, star, mark read/unread
 //   comm.send   → compose/reply drafts, archive, snooze
 //   comm.manage → send, trash, move between Primary and Updates  (stats.can_send mirrors it)
+//   mail.box.dispatch / mail.box.billing → open those two mailboxes at all (server-enforced, bl_mail_0489)
 //
 // CLAUDE.md §8 says CC popups are openDrawer(). Snooze, the phone folder list and every confirm use
 // it. The floating composer and the undo snackbar are the deliberate exceptions: they ARE Gmail.
@@ -52,14 +60,20 @@ import { decodeMessage, decodeSubject, previewOf } from '../../shared/mime.js';
 const PAGE = 50;
 const MOBILE = () => window.matchMedia('(max-width: 780px)').matches;
 
-const FROM_ADDRS = [
-  { v: 'hello@loadboot.com', label: 'LoadBoot <hello@loadboot.com>' },
-  { v: 'dispatch@loadboot.com', label: 'LoadBoot Dispatch <dispatch@loadboot.com>' },
-  { v: 'billing@loadboot.com', label: 'LoadBoot Billing <billing@loadboot.com>' },
+// The four mailboxes (bl_mail_0489). The server registry (app_private.mail_boxes, handed over in
+// cc_mail_stats.mailboxes) is the source of truth AND decides which ones this person may open. This
+// list only names/colours an address before stats arrive; it never adds a mailbox to the screen.
+const BOX_DEFAULTS = [
+  { mailbox: 'hello@loadboot.com',    label: 'Hello',    from_name: 'LoadBoot',          color: '#0b57d0', icon: 'chat',   known: true },
+  { mailbox: 'dispatch@loadboot.com', label: 'Dispatch', from_name: 'LoadBoot Dispatch', color: '#e8590c', icon: 'truck',  known: true },
+  { mailbox: 'billing@loadboot.com',  label: 'Billing',  from_name: 'LoadBoot Billing',  color: '#188038', icon: 'dollar', known: true },
+  { mailbox: 'loads@loadboot.com',    label: 'Loads',    from_name: 'LoadBoot Loads',    color: '#9334e6', icon: 'boxes',  known: true },
 ];
-// Which address a REPLY actually leaves from (delivery-worker picks the identity by template key).
-const replyFromFor = (mailbox) => /^dispatch@/i.test(mailbox || '') ? 'dispatch@loadboot.com'
-  : /^billing@/i.test(mailbox || '') ? 'billing@loadboot.com' : 'hello@loadboot.com';
+const BOX_ADDRS = BOX_DEFAULTS.map(b => b.mailbox);
+// Which address a REPLY leaves from: the mailbox the mail came to (cc_mail_send takes the catalog key
+// prefix from the registry; delivery-worker picks the identity by key). Anything else → hello@.
+const replyFromFor = (mailbox) => { const a = String(mailbox || '').toLowerCase(); return BOX_ADDRS.includes(a) ? a : 'hello@loadboot.com'; };
+const safeColor = (c) => /^#[0-9a-f]{6}$/i.test(String(c || '')) ? c : '#5f6368';
 
 const FOLDERS = [
   { id: 'inbox',   label: 'Inbox',   ic: 'inbox', count: 'inbox_unread', bold: true },
@@ -134,6 +148,12 @@ const IC = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   caret: '<path d="M7 10l5 5 5-5z" fill="currentColor" stroke="none"/>',
   image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  // mailboxes (bl_mail_0489)
+  chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  truck: '<path d="M1 4h14v12H1z"/><path d="M15 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/>',
+  dollar: '<path d="M12 2v20"/><path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  boxes: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/>',
+  layers: '<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/>',
 };
 function ic(name, size = 20, extra = '') {
   return el('span', {
@@ -176,7 +196,6 @@ function longDate(ts) {
   const base = d.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   return (Date.now() - d.getTime() < 7 * 86400000) ? base + ' (' + relAgo(ts) + ')' : base;
 }
-const shortBox = (mb) => String(mb || '').replace(/@loadboot\.com$/i, '@');
 const titleCase = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 // The server's own sentence for the errors WE raise (validation, the unsubscribe gate). Everything
 // else still goes through humanizeError so no SQL text ever reaches the screen.
@@ -337,7 +356,7 @@ function createMailbox(host) {
 
   function apply(q, opts = {}) {
     const folder = FOLDER_IDS.includes(q.get('folder')) ? q.get('folder') : 'inbox';
-    const label = q.get('label') || '';
+    const label = (q.get('label') || '').trim().toLowerCase();
     const search = q.get('q') || '';
     const thread = q.get('thread') || null;
     const listKey = [folder, label, search].join('|');
@@ -382,6 +401,7 @@ function createMailbox(host) {
     S.canSend = !!(s && s.can_send);
     if (s && typeof s.can_draft === 'boolean') S.canDraft = s.can_draft;
     paintRail();
+    if (composer && composer.refreshFrom) composer.refreshFrom();
     if (!S.thread) paintListView();   // permissions just arrived: the row hover actions depend on them
   }
 
@@ -416,54 +436,84 @@ function createMailbox(host) {
     S.railCollapsed = !S.railCollapsed;
     root.classList.toggle('rail-collapsed', S.railCollapsed);
   }
+  // ── mailboxes (bl_mail_0489) ──
+  // Only what the server returned: a mailbox this person may not open is never listed.
+  function boxList() { return Array.isArray(S.stats?.mailboxes) ? S.stats.mailboxes : []; }
+  function boxMeta(addr) {
+    const a = String(addr || '').toLowerCase() || 'hello@loadboot.com';
+    return boxList().find(b => b.mailbox === a) || BOX_DEFAULTS.find(b => b.mailbox === a)
+      || { mailbox: a, label: titleCase(a.split('@')[0]), from_name: 'LoadBoot', color: '#5f6368', icon: 'label', known: false };
+  }
+  // Mailboxes this person may write FROM (registry rows only). Before stats arrive: hello@ only.
+  function sendBoxes() {
+    const b = boxList().filter(x => x.known !== false && x.can_compose !== false);
+    return b.length ? b : (S.stats ? [] : BOX_DEFAULTS.slice(0, 1));
+  }
+  function curBox() { return S.label ? boxMeta(S.label) : null; }
+  function scopeFolders() {
+    if (!S.label) return (S.stats && S.stats.folders) || {};
+    const b = boxList().find(x => x.mailbox === S.label);
+    return (b && b.folders) || {};
+  }
+  function boxIcon(b, size = 18) { return el('span', { class: 'gm-boxic', style: '--bx:' + safeColor(b.color) }, ic(b.icon || 'label', size)); }
+  function boxTag(addr) { const b = boxMeta(addr); return el('span', { class: 'gm-boxtag', style: '--bx:' + safeColor(b.color), title: b.mailbox }, b.label); }
+  function sigHtml(addr) { const b = boxMeta(addr); return b && b.signature_html ? String(b.signature_html) : ''; }
+  function goBox(addr, onPick) { onPick && onPick(); nav({ label: addr, folder: 'inbox', q: '', thread: null }); }
+
   function folderCount(f) {
-    const c = f.count && S.stats && S.stats.folders ? Number(S.stats.folders[f.count] || 0) : 0;
+    const c = f.count ? Number(scopeFolders()[f.count] || 0) : 0;
     return c > 0 ? c.toLocaleString('en-US') : '';
   }
   function navItem(f, onPick) {
     const count = folderCount(f);
-    const active = !S.label && (S.folder === f.id || (f.id === 'inbox' && S.folder === 'updates'));
+    const active = S.folder === f.id || (f.id === 'inbox' && S.folder === 'updates');
     const a = el('a', {
       class: 'gm-nav' + (active ? ' active' : '') + (f.bold && count ? ' bold' : ''),
-      href: hrefFor({ folder: f.id, label: '', q: '', thread: null }), title: f.label,
+      href: hrefFor({ folder: f.id, q: '', thread: null }), title: f.label,
       onClick: (e) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey) return;
         e.preventDefault(); onPick && onPick();
-        nav({ folder: f.id, label: '', q: '', thread: null });
+        nav({ folder: f.id, q: '', thread: null });
       },
     }, [ic(f.id === 'starred' && active ? 'star' : f.ic, 20, f.id === 'starred' && active ? 'filled' : ''),
       el('span', { class: 'gm-nav-t' }, f.label), el('span', { class: 'gm-nav-c' }, count)]);
     return a;
   }
-  function labelItems(onPick) {
-    const boxes = Array.isArray(S.stats?.mailboxes) ? S.stats.mailboxes : [];
-    return boxes.map((b, i) => {
-      const active = S.label === b.mailbox;
+  function mailboxItems(onPick) {
+    const boxes = boxList();
+    if (boxes.length < 2) return [];   // one mailbox: nothing to switch between
+    const item = (b) => {
+      const addr = b ? b.mailbox : '';
+      const f = b ? (b.folders || {}) : ((S.stats && S.stats.folders) || {});
+      const n = Number(f.inbox_unread || 0);
       return el('a', {
-        class: 'gm-nav' + (active ? ' active' : '') + (b.unread ? ' bold' : ''),
-        href: hrefFor({ folder: 'all', label: b.mailbox, q: '', thread: null }), title: b.mailbox,
-        onClick: (e) => {
-          if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-          e.preventDefault(); onPick && onPick();
-          nav({ folder: 'all', label: b.mailbox, q: '', thread: null });
-        },
-      }, [el('span', { class: 'gm-i gm-lbl-ic', style: 'color:' + AV_COLORS[(i * 5 + 2) % AV_COLORS.length] }, ic('label', 18)),
-        el('span', { class: 'gm-nav-t' }, titleCase(b.mailbox)), el('span', { class: 'gm-nav-c' }, b.unread ? String(b.unread) : '')]);
-    });
+        class: 'gm-nav gm-boxnav' + (S.label === addr ? ' active' : '') + (n ? ' bold' : ''),
+        style: b ? '--bx:' + safeColor(b.color) : null,
+        href: hrefFor({ label: addr, folder: 'inbox', q: '', thread: null }),
+        title: b ? b.mailbox + (b.purpose ? ' — ' + b.purpose : '') : 'Every mailbox you can open',
+        onClick: (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); goBox(addr, onPick); },
+      }, [b ? boxIcon(b, 16) : el('span', { class: 'gm-boxic all' }, ic('layers', 16)),
+        el('span', { class: 'gm-nav-t' }, b ? b.label : 'All inboxes'),
+        el('span', { class: 'gm-nav-c' }, n ? n.toLocaleString('en-US') : '')]);
+    };
+    return [item(null), ...boxes.map(item)];
   }
   function railBody(onPick) {
     const more = !!onPick || S.moreOpen || MORE_FOLDERS.some(f => f.id === S.folder);
+    const boxes = mailboxItems(onPick);
+    const cur = curBox();
     return [
-      S.canDraft ? el('button', { type: 'button', class: 'gm-compose', onClick: () => { onPick && onPick(); openCompose({}); } },
+      S.canDraft ? el('button', { type: 'button', class: 'gm-compose', onClick: () => { onPick && onPick(); openCompose(cur && cur.known !== false ? { from: cur.mailbox } : {}); } },
         [ic('pencil', 22), el('span', null, 'Compose')]) : null,
+      boxes.length ? el('div', { class: 'gm-labels-h' }, [el('span', null, 'Mailboxes')]) : null,
+      boxes.length ? el('nav', { class: 'gm-navs gm-boxnavs' }, boxes) : null,
+      boxes.length ? el('div', { class: 'gm-labels-h gm-folders-h' }, [el('span', null, cur ? cur.label + ' folders' : 'Folders')]) : null,
       el('nav', { class: 'gm-navs' }, [
         ...FOLDERS.map(f => navItem(f, onPick)),
         onPick ? null : el('button', { type: 'button', class: 'gm-nav gm-more', onClick: () => { S.moreOpen = !more; paintRail(); } },
           [ic(more ? 'up' : 'down'), el('span', { class: 'gm-nav-t' }, more ? 'Less' : 'More')]),
         ...(more ? MORE_FOLDERS.map(f => navItem(f, onPick)) : []),
       ]),
-      el('div', { class: 'gm-labels-h' }, [el('span', null, 'Labels')]),
-      el('nav', { class: 'gm-navs' }, labelItems(onPick)),
     ];
   }
   function paintRail() { mount(railHost, railBody(null)); }
@@ -484,19 +534,21 @@ function createMailbox(host) {
   }
 
   function folderTitle() {
-    if (S.label) return titleCase(S.label);
-    if (S.q) return 'Search results';
+    const box = curBox();
+    if (S.q) return 'Search results' + (box ? ' in ' + box.label : '');
     const f = FOLDERS.concat(MORE_FOLDERS).find(x => x.id === S.folder);
-    return S.folder === 'inbox' ? 'Primary' : (f ? f.label : 'Inbox');
+    const name = f ? f.label : 'Inbox';
+    if (box) return box.label + ' · ' + name;
+    return S.folder === 'inbox' ? 'Primary' : name;
   }
 
   // ── list view ──
   const tabsHost = el('div', { class: 'gm-tabs', role: 'tablist' });
   function paintTabs() {
-    if (!(S.folder === 'inbox' || S.folder === 'updates') || S.label || S.q) { mount(tabsHost, null); tabsHost.hidden = true; return; }
+    if (!(S.folder === 'inbox' || S.folder === 'updates') || S.q) { mount(tabsHost, null); tabsHost.hidden = true; return; }
     tabsHost.hidden = false;
-    const upd = Number(S.stats?.folders?.system_unread || 0);
-    const inb = Number(S.stats?.folders?.inbox_unread || 0);
+    const upd = Number(scopeFolders().system_unread || 0);
+    const inb = Number(scopeFolders().inbox_unread || 0);
     const tab = (id, label, icName, badge, badgeCls) => el('a', {
       class: 'gm-tab' + (S.folder === id ? ' active' : ''), role: 'tab', 'aria-selected': S.folder === id ? 'true' : 'false',
       href: hrefFor({ folder: id, thread: null }),
@@ -615,20 +667,65 @@ function createMailbox(host) {
       mount(body, el('div', { class: 'gm-empty' }, 'Loading…'));
     } else if (S.listError) {
       mount(body, el('div', { class: 'gm-empty' }, [S.listError, ' ', el('button', { type: 'button', class: 'gm-linkbtn', onClick: () => reloadAll() }, 'Try again')]));
+    } else if (S.label && S.stats && !boxList().some(b => b.mailbox === S.label)) {
+      mount(body, el('div', { class: 'gm-empty' }, ['You do not have access to ' + S.label + '. ',
+        el('button', { type: 'button', class: 'gm-linkbtn', onClick: () => goBox('') }, 'Go to All inboxes')]));
     } else if (!S.threads.length) {
-      mount(body, el('div', { class: 'gm-empty' }, S.q ? 'No messages matched your search.' : S.label ? 'No conversations for ' + S.label + '.' : (EMPTY_TEXT[S.folder] || 'No conversations.')));
+      mount(body, el('div', { class: 'gm-empty' }, S.q ? 'No messages matched your search.'
+        : S.label ? 'Nothing in ' + folderTitle() + '.' : (EMPTY_TEXT[S.folder] || 'No conversations.')));
     } else {
       mount(body, S.threads.map(t => listRow(t)));
     }
     paintTabs();
     mount(mainHost, [
       listToolbar(),
+      boxBar(),
       tabsHost,
       el('div', { class: 'gm-mhead' }, [
         el('span', null, folderTitle()),
         S.q ? el('button', { type: 'button', class: 'gm-linkbtn', onClick: () => { searchIn.value = ''; nav({ q: '', folder: 'inbox' }); } }, 'Clear search') : null,
       ]),
       body,
+    ]);
+  }
+
+  // Mailbox switcher above the list (every width; on phones it is THE switcher) + the open mailbox's banner.
+  function boxBar() {
+    const boxes = boxList();
+    if (boxes.length < 2 && !S.label) return null;
+    const pill = (b) => {
+      const addr = b ? b.mailbox : '';
+      const active = S.label === addr;
+      const n = Number((b ? (b.folders || {}) : ((S.stats && S.stats.folders) || {})).inbox_unread || 0);
+      return el('a', {
+        class: 'gm-bxp' + (active ? ' active' : ''), style: b ? '--bx:' + safeColor(b.color) : null,
+        role: 'tab', 'aria-selected': active ? 'true' : 'false', title: b ? b.mailbox : 'All inboxes',
+        href: hrefFor({ label: addr, folder: 'inbox', q: '', thread: null }),
+        onClick: (e) => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); goBox(addr); },
+      }, [ic(b ? (b.icon || 'label') : 'layers', 16), el('span', null, b ? b.label : 'All inboxes'),
+        n ? el('span', { class: 'gm-bxp-n' }, n > 99 ? '99+' : String(n)) : null]);
+    };
+    const cur = S.label ? boxList().find(b => b.mailbox === S.label) : null;
+    let banner = null;
+    if (cur) {
+      const f = cur.folders || {};
+      const kpi = (n, label) => el('span', { class: 'gm-boxban-kpi' }, [el('b', null, Number(n || 0).toLocaleString('en-US')), ' ' + label]);
+      banner = el('div', { class: 'gm-boxban', style: '--bx:' + safeColor(cur.color) }, [
+        boxIcon(cur, 22),
+        el('div', { class: 'gm-boxban-t' }, [
+          el('div', { class: 'gm-boxban-h' }, [el('b', null, cur.label), el('span', { class: 'gm-boxban-a' }, cur.mailbox)]),
+          cur.purpose ? el('div', { class: 'gm-boxban-p' }, cur.purpose) : null,
+          !cur.last_in_at ? el('div', { class: 'gm-boxban-p gm-boxban-warn' },
+            'No mail has reached ' + cur.mailbox + ' yet. It will appear here once that address forwards to in.loadboot.com. Sent mail and drafts already work.') : null,
+        ]),
+        el('div', { class: 'gm-boxban-k' }, [kpi(f.inbox_unread, 'unread'), kpi(f.inbox, 'in inbox'), kpi(f.drafts, 'drafts')]),
+        S.canDraft && cur.known !== false ? el('button', { type: 'button', class: 'gm-boxban-cmp', onClick: () => openCompose({ from: cur.mailbox }) },
+          [ic('pencil', 16), el('span', null, 'Write from ' + cur.label)]) : null,
+      ]);
+    }
+    return el('div', { class: 'gm-boxbar-wrap' }, [
+      boxes.length >= 2 ? el('div', { class: 'gm-boxbar', role: 'tablist', 'aria-label': 'Mailboxes' }, [pill(null), ...boxes.map(pill)]) : null,
+      banner,
     ]);
   }
 
@@ -654,13 +751,15 @@ function createMailbox(host) {
       selected ? el('span', { class: 'gm-av gm-av-sel' }, ic('check', 22)) : avatar(t.peer_name || t.peer_email));
 
     const count = Number(t.msg_count || 0);
+    const showBox = !S.label && t.mailbox && boxList().length > 1;
     const fromCell = el('div', { class: 'gm-from' }, [
       el('span', { class: 'gm-from-t' }, senderLabel(t)),
+      showBox ? boxTag(t.mailbox) : null,   // phones: the tag rides on the sender line
       count > 1 ? el('span', { class: 'gm-count' }, String(count)) : null,
       t.has_draft ? el('span', { class: 'gm-draft' }, 'Draft') : null,
     ]);
     const chips = [];
-    if (!S.label && t.mailbox) chips.push(el('span', { class: 'gm-chip' }, shortBox(t.mailbox)));
+    if (showBox) chips.push(boxTag(t.mailbox));
     if (t.folder === 'system' && S.folder !== 'updates' && t.mail_class) chips.push(el('span', { class: 'gm-chip amber' }, String(t.mail_class).replace(/_/g, ' ')));
     if (t.snoozed_until && S.folder === 'snoozed') chips.push(el('span', { class: 'gm-chip blue' }, 'until ' + listDate(t.snoozed_until)));
     const mid = el('div', { class: 'gm-mid' }, [
@@ -909,7 +1008,7 @@ function createMailbox(host) {
       el('h2', { class: 'gm-th-subj' }, [
         el('span', null, subject + ' '),
         folderChip ? el('span', { class: 'gm-chip gm-chip-x' }, folderChip) : null,
-        head.mailbox ? el('span', { class: 'gm-chip gm-chip-x' }, shortBox(head.mailbox)) : null,
+        head.mailbox ? boxTag(head.mailbox) : null,
       ]),
       el('div', { class: 'gm-th-tools' }, [
         el('button', { type: 'button', class: 'gm-star gm-star-lg' + (starred ? ' on' : ''), title: starred ? 'Starred' : 'Not starred',
@@ -1074,7 +1173,8 @@ function createMailbox(host) {
       openCompose({ to: out.peer_email, subject: 'Re: ' + (decodeSubject(head.subject) || '').replace(/^(re|fwd?)\s*:\s*/i, ''), from: out.mailbox });
       return;
     }
-    if (!S.reply) S.reply = { mode, html: '', draftId: null, dirty: false };
+    const sig = sigHtml(replyFromFor(lastIn.mailbox));
+    if (!S.reply) S.reply = { mode, html: sig ? '<p><br></p>' + sig : '', draftId: null, dirty: false };
     paintThread();
     setTimeout(() => { const b = mainHost.querySelector('.gm-reply .gm-editor'); if (b) { b.focus(); b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }, 30);
   }
@@ -1145,7 +1245,7 @@ function createMailbox(host) {
       avatar('LoadBoot'),
       el('div', { class: 'gm-reply-card' }, [
         el('div', { class: 'gm-reply-to' }, [ic(R.mode === 'forward' ? 'forward' : 'reply', 18), el('span', null, (lastIn && lastIn.peer_email) || ''),
-          el('span', { class: 'gm-reply-from' }, 'from ' + from)]),
+          el('span', { class: 'gm-reply-from', style: '--bx:' + safeColor(boxMeta(from).color) }, [el('i', { class: 'gm-dot' }), 'from ' + boxMeta(from).from_name + ' <' + from + '>'])]),
         editor.node,
         err,
         el('div', { class: 'gm-cmp-bottom' }, [
@@ -1234,15 +1334,49 @@ function createMailbox(host) {
   function createComposer(init, opts = {}) {
     const C = { draftId: init.draftId || null, threadKey: init.threadKey || null, dirty: false, sending: false,
       routed: true, routeCompose: opts.routeDraft ? null : 'new', routeDraft: opts.routeDraft || null };
-    const fromSel = el('select', { class: 'gm-fld-in gm-from-sel', 'aria-label': 'From' },
-      FROM_ADDRS.map(a => el('option', { value: a.v }, a.label)));
-    fromSel.value = FROM_ADDRS.some(a => a.v === String(init.from || '').toLowerCase()) ? String(init.from).toLowerCase() : 'hello@loadboot.com';
+    // From = the mailboxes this person may write from (server list). Default: the requested From,
+    // else the mailbox being viewed, else the first one (hello@).
+    const fromSel = el('select', { class: 'gm-fld-in gm-from-sel', 'aria-label': 'From' });
+    const wantFrom = String(init.from || S.label || '').toLowerCase();
+    const fillFrom = (want) => {
+      const list = sendBoxes();
+      mount(fromSel, list.map(b => el('option', { value: b.mailbox }, (b.from_name || 'LoadBoot') + ' <' + b.mailbox + '>')));
+      const keep = list.find(b => b.mailbox === want) || list[0];
+      if (keep) fromSel.value = keep.mailbox;
+    };
+    fillFrom(wantFrom);
     const toIn = el('input', { class: 'gm-fld-in', type: 'email', autocomplete: 'email', 'aria-label': 'To recipients', value: init.to || '' });
     const subjIn = el('input', { class: 'gm-fld-in', type: 'text', placeholder: 'Subject', 'aria-label': 'Subject', value: init.subject || '' });
     const titleEl = el('span', { class: 'gm-cmp-title' }, init.subject || 'New Message');
     const markDirty = () => { C.dirty = true; titleEl.textContent = subjIn.value.trim() || 'New Message'; };
     [fromSel, toIn, subjIn].forEach(n => n.addEventListener('input', markDirty));
     const editor = makeEditor(init.bodyHtml || (init.body ? textToHtml(init.body) : ''), markDirty);
+    // Signature of the From mailbox. Swapped when From changes, as long as nobody has edited it.
+    let sigNode = null, sigPrinted = '';
+    const placeSig = () => {
+      const html = sigHtml(fromSel.value);
+      if (sigNode && sigNode.isConnected && sigNode.innerHTML === sigPrinted) {
+        if (!html) { sigNode.remove(); sigNode = null; return; }
+        mount(sigNode, sanitizeNodes(html)); sigPrinted = sigNode.innerHTML; return;
+      }
+      if (sigNode || !html || C.draftId || htmlToText(editor.getHtml())) return;
+      editor.node.appendChild(el('p', null, el('br')));
+      sigNode = el('div', { class: 'gm-sig' }, sanitizeNodes(html));
+      editor.node.appendChild(sigNode); sigPrinted = sigNode.innerHTML;
+    };
+    const paintFrom = () => {
+      const b = boxMeta(fromSel.value);
+      win.style.setProperty('--bx', safeColor(b.color));
+      fromTag.textContent = b.label;
+      placeSig();
+    };
+    const onlySig = () => {
+      const all = htmlToText(editor.getHtml()).trim();
+      const sg = sigNode && sigNode.isConnected ? htmlToText(sigNode.innerHTML).trim() : '';
+      return !all || (!!sg && all === sg);
+    };
+    const fromTag = el('span', { class: 'gm-cmp-box' });
+    fromSel.addEventListener('change', () => paintFrom());
     const err = el('div', { class: 'gm-cmp-err', hidden: !init.note, role: 'alert' }, init.note || '');
     const showErr = (m) => { err.textContent = m || ''; err.hidden = !m; err.classList.toggle('info', false); };
     const saved = el('span', { class: 'gm-reply-status' }, C.draftId ? 'Draft saved' : '');
@@ -1315,7 +1449,7 @@ function createMailbox(host) {
     const win = el('div', { class: 'gm-cmp', role: 'dialog', 'aria-label': 'New Message' }, [
       el('div', { class: 'gm-cmp-head', onClick: (e) => { if (!e.target.closest('button') && win.classList.contains('min')) win.classList.remove('min'); } }, [
         ib('back', 'Save & close', () => close({ save: true }), { cls: 'gm-m-only' }),
-        titleEl, el('span', { class: 'gm-flex' }), minBtn, maxBtn, closeBtn,
+        titleEl, fromTag, el('span', { class: 'gm-flex' }), minBtn, maxBtn, closeBtn,
         el('button', { type: 'button', class: 'gm-ib gm-m-only gm-m-send', title: 'Send', 'aria-label': 'Send', onClick: send }, ic('send', 22)),
       ]),
       el('div', { class: 'gm-cmp-body' }, [
@@ -1337,6 +1471,7 @@ function createMailbox(host) {
     const scrim = el('div', { class: 'gm-cmp-scrim', hidden: true, onClick: () => { win.classList.remove('max'); scrim.hidden = true; } });
     editor.node.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); send(); } });
     win.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !document.getElementById('cc-drawer-root')) { e.stopPropagation(); close({ save: true }); } });
+    paintFrom();
     document.body.appendChild(scrim);
     document.body.appendChild(win);
     if (MOBILE()) document.documentElement.classList.add('gm-lock');
@@ -1374,9 +1509,12 @@ function createMailbox(host) {
       routed: C.routed, routeCompose: C.routeCompose, routeDraft: C.routeDraft,
       close, destroyQuiet,
       focus: () => { win.classList.remove('min'); toIn.focus(); },
+      // stats arrived after the window opened: rebuild From from the server's list, keep the choice
+      refreshFrom: () => { fillFrom(String(fromSel.value || wantFrom)); if (wantFrom && sendBoxes().some(b => b.mailbox === wantFrom) && !C.dirty) fromSel.value = wantFrom; paintFrom(); },
       fill: (i) => { if (!i) return; if (i.to && !toIn.value) toIn.value = i.to; if (i.subject && !subjIn.value) { subjIn.value = i.subject; titleEl.textContent = i.subject; }
-        if (i.from) fromSel.value = FROM_ADDRS.some(a => a.v === String(i.from).toLowerCase()) ? String(i.from).toLowerCase() : fromSel.value;
-        if (i.bodyHtml && !htmlToText(editor.getHtml())) { sanitizeNodes(i.bodyHtml).forEach(n => editor.node.appendChild(n)); }
+        if (i.from && sendBoxes().some(b => b.mailbox === String(i.from).toLowerCase())) { fromSel.value = String(i.from).toLowerCase(); paintFrom(); }
+        // body goes ABOVE an untouched signature (forward, prefilled links)
+        if (i.bodyHtml && onlySig()) { const first = editor.node.firstChild; sanitizeNodes(i.bodyHtml).forEach(n => editor.node.insertBefore(n, first)); }
         if (i.note) { err.textContent = i.note; err.hidden = false; }
         C.dirty = true; },
     };
@@ -1695,6 +1833,67 @@ html.gm-lock,html.gm-lock body{overflow:hidden}
   .gm-editor{font-size:16px;padding:14px 16px}
   .gm-cmp-scrim{display:none!important}
   .gm-snack{left:16px;right:16px;bottom:calc(88px + env(safe-area-inset-bottom,0px));min-width:0;max-width:none}
+}
+/* ── four mailboxes (bl_mail_0489) ── */
+.gm-boxic{--bx:#5f6368;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;flex:none;
+  background:color-mix(in srgb,var(--bx) 14%,#fff);color:var(--bx)}
+.gm-boxic.all{background:#e8eaed;color:#444746}
+.gm-boxnav{gap:14px}
+.gm-boxnav.active{background:color-mix(in srgb,var(--bx,#0b57d0) 16%,#fff);color:#1f1f1f}
+.gm-boxnav.active .gm-boxic{background:var(--bx,#0b57d0);color:#fff}
+.gm-boxnav .gm-boxic .gm-i{color:inherit!important}
+.gm-from .gm-boxtag{display:none}
+.gm-boxnav:not([style]).active{background:var(--gm-act)}
+.gm-boxnav:not([style]).active .gm-boxic{background:#001d35;color:#fff}
+.gm-folders-h{margin-top:8px}
+.gm.rail-collapsed .gm-boxnav .gm-boxic{width:32px;height:32px}
+.gm-boxtag{--bx:#5f6368;display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:18px;padding:0 8px 0 6px;border-radius:9px;margin-right:6px;
+  font-weight:500;white-space:nowrap;vertical-align:1px;background:color-mix(in srgb,var(--bx) 12%,#fff);color:color-mix(in srgb,var(--bx) 80%,#000)}
+.gm-boxtag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--bx)}
+.gm-th-subj .gm-boxtag{font-size:12px;vertical-align:4px;margin-left:4px}
+.gm-boxbar-wrap{flex:none;border-bottom:1px solid var(--gm-line)}
+.gm-boxbar{display:flex;gap:8px;padding:10px 16px;overflow-x:auto;scrollbar-width:none}
+.gm-boxbar::-webkit-scrollbar{display:none}
+.gm-bxp{--bx:#444746;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 12px;border-radius:17px;border:1px solid #dadce0;
+  background:#fff;color:#1f1f1f;text-decoration:none;font:500 14px "Google Sans",Roboto,Arial,sans-serif;white-space:nowrap;flex:none;transition:background .15s,border-color .15s,box-shadow .15s}
+.gm-bxp .gm-i{color:var(--bx)}
+.gm-bxp:hover{background:color-mix(in srgb,var(--bx) 7%,#fff);border-color:color-mix(in srgb,var(--bx) 35%,#dadce0)}
+.gm-bxp.active{background:var(--bx);border-color:var(--bx);color:#fff;box-shadow:0 1px 3px color-mix(in srgb,var(--bx) 45%,transparent)}
+.gm-bxp.active .gm-i{color:#fff}
+.gm-bxp:not([style]).active{background:#1f1f1f;border-color:#1f1f1f}
+.gm-bxp-n{min-width:20px;height:20px;padding:0 6px;border-radius:10px;font-size:12px;line-height:20px;text-align:center;font-weight:700;
+  background:color-mix(in srgb,var(--bx) 14%,#fff);color:color-mix(in srgb,var(--bx) 85%,#000)}
+.gm-bxp.active .gm-bxp-n{background:rgba(255,255,255,.25);color:#fff}
+.gm-boxban{--bx:#0b57d0;display:flex;align-items:center;gap:14px;margin:0 16px 12px;padding:12px 16px;border-radius:14px;
+  background:linear-gradient(100deg,color-mix(in srgb,var(--bx) 11%,#fff),color-mix(in srgb,var(--bx) 3%,#fff));border:1px solid color-mix(in srgb,var(--bx) 22%,#fff)}
+.gm-boxban .gm-boxic{width:44px;height:44px;border-radius:12px;background:var(--bx);color:#fff;box-shadow:0 2px 6px color-mix(in srgb,var(--bx) 35%,transparent)}
+.gm-boxban-t{flex:1;min-width:0}
+.gm-boxban-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.gm-boxban-h b{font:500 18px/24px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f}
+.gm-boxban-a{color:color-mix(in srgb,var(--bx) 75%,#000);font-size:13px}
+.gm-boxban-p{color:var(--gm-mut);font-size:13px;line-height:18px;margin-top:2px}
+.gm-boxban-warn{color:#8a5300}
+.gm-boxban-k{display:flex;gap:18px;flex:none;color:var(--gm-mut);font-size:12px}
+.gm-boxban-kpi b{display:block;font:500 18px/22px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f}
+.gm-boxban-cmp{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:18px;border:0;flex:none;cursor:pointer;
+  background:var(--bx);color:#fff;font:500 14px "Google Sans",Roboto,Arial,sans-serif}
+.gm-boxban-cmp:hover{filter:brightness(1.07);box-shadow:0 1px 4px color-mix(in srgb,var(--bx) 45%,transparent)}
+.gm-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bx,#5f6368);margin-right:6px;vertical-align:1px}
+.gm-cmp{--bx:#0b57d0}
+.gm-cmp .gm-cmp-head{box-shadow:inset 0 3px 0 var(--bx)}
+.gm-cmp-box{margin-left:8px;font-size:12px;font-weight:500;padding:0 8px;border-radius:9px;line-height:18px;
+  background:color-mix(in srgb,var(--bx) 14%,#fff);color:color-mix(in srgb,var(--bx) 85%,#000)}
+.gm-sig{color:#5f6368}
+@media (max-width:1100px){.gm-boxban-k{display:none}}
+@media (max-width:780px){
+  .gm-boxbar-wrap{border-bottom:0}
+  .gm-boxbar{padding:4px 12px 8px}
+  .gm-bxp{height:32px}
+  .gm-boxban{margin:0 12px 8px;padding:10px 12px;gap:10px;flex-wrap:wrap}
+  .gm-boxban .gm-boxic{width:36px;height:36px}
+  .gm-boxban-cmp{width:100%;justify-content:center}
+  .gm-mid .gm-boxtag{display:none}
+  .gm-from .gm-boxtag{display:inline-flex;font-size:11px;line-height:16px;padding:0 6px 0 5px;margin-left:6px;font-weight:500}
 }
 `));
 }

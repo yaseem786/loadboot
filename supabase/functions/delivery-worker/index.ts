@@ -43,6 +43,8 @@
 // uses (cc_delivery_worker_optional_allowed → app_private.email_gate) runs right before Resend, so a
 // one-click that landed after the row was queued still wins. Marketing keeps its "Unsubscribe" label.
 // v20 (2026-09-26, bl_comm_0446c): the gate no longer needs meta.preference_group; see the loop.
+// v22 (2026-09-28, bl_mail_0489): fifth identity "loads" (LoadBoot Loads <loads@loadboot.com>) for the
+//   CC Mailbox's loads@ replies and new messages (template keys loads.mail.*). DB mirror: email_sender_for.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // v16: normalize a full HTML document into a shell-safe fragment.
@@ -226,6 +228,7 @@ Deno.serve(async (_req) => {
     dispatch: { from: Deno.env.get("SENDER_DISPATCH") || "LoadBoot Dispatch <dispatch@loadboot.com>", replyTo: "dispatch@loadboot.com" },
     billing: { from: Deno.env.get("SENDER_BILLING") || "LoadBoot Billing <billing@loadboot.com>", replyTo: "billing@loadboot.com" },
     support: { from: Deno.env.get("SENDER_SUPPORT") || "LoadBoot Support <hello@loadboot.com>", replyTo: "hello@loadboot.com" },
+    loads: { from: Deno.env.get("SENDER_LOADS") || "LoadBoot Loads <loads@loadboot.com>", replyTo: "loads@loadboot.com" },
   };
   const DISPATCH_RE = /(load|trip|offer|dispatch|booking|tracking|pod|detention|checkin|carrier|driver|ops\.)/i;
   const BILLING_RE = /(billing|invoice|payment|settlement|payout|statement|receipt|factoring)/i;
@@ -238,6 +241,9 @@ Deno.serve(async (_req) => {
     // were being classified as dispatch and sent from the address that carries real load
     // mail. Operational and acquisition email must never share a sender identity.
     if (/^outreach[._-]/i.test(key)) return "marketing";
+    // v22: CC Mailbox replies from loads@ (loads.mail.*) leave from loads@. Checked before
+    // DISPATCH_RE, which would otherwise claim them for the word "load".
+    if (/^loads\.mail\./i.test(key)) return "loads";
     if (BILLING_RE.test(key)) return "billing";
     if (DISPATCH_RE.test(key)) return "dispatch";
     if (d.source === "campaign") return "marketing";
