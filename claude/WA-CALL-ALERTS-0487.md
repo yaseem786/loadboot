@@ -8,7 +8,8 @@ Philippines included (the "ring my mobile" forward is US/Canada only, bl_dial_03
 | Call rings | `dispatcher_call_incoming` (2 vars: caller, number) | only while the dispatcher is NOT in the portal (line not seen 3 min). `dialer_config.wa_call_alerts = 'always'` → every call |
 | Call missed | `dispatcher_call_missed` (3 vars: caller, number, what happened) | every unanswered call. If Riley took it, waits up to 6 min after hang-up for her summary (`lc_calls.summary`); a trigger on `lc_calls` sends it the moment the summary lands |
 
-Switch: `dialer_config.wa_call_alerts` = `offline` (default) / `always` / `off`. SQL only for now (no CC toggle).
+Switch: `dialer_config.wa_call_alerts` = `offline` (default) / `always` / `off`. CC → Phone → Phone settings →
+"WhatsApp call alerts to dispatchers" (bl_dial_0487c, `cc_dialer_config_set` key `wa_call_alerts`, staff only, audited).
 
 ## Status on prod (27 Sep 2026)
 - Migration applied to staging + prod. Anon SECURITY DEFINER surface unchanged (prod 36, staging 35; names md5 same).
