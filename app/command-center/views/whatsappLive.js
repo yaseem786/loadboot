@@ -15,7 +15,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { openDrawer } from '../../shared/ui/components.js';
 import { waVoiceFile } from '../../shared/wa-opus.js';   // bl_wa_0378 - Chrome records webm; WhatsApp needs ogg
-import { ccWaOverview, ccWaAssign, ccWaThreadSet, ccWaTemplateSet, ccWaTemplatesSync, ccWaTemplateSubmit, ccWaNotifyAssigned, ccDialerConfigSet, ccWaMessageHide, waThread, waSend, waMediaBlob, waStart, waUploadMedia } from '../../shared/api.js';
+import { ccWaOverview, ccWaAssign, ccWaThreadSet, ccWaTemplateSet, ccWaTemplatesSync, ccWaTemplateSubmit, ccWaNotifyAssigned, ccDialerConfigSet, ccWaMessageHide, ccWaTemplateHide, waThread, waSend, waMediaBlob, waStart, waUploadMedia } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ET = 'America/New_York';
@@ -287,6 +287,15 @@ const CSS = `
 .wx-tpl.on{border-color:var(--g);box-shadow:0 0 0 2px rgba(0,168,132,.18)}
 .wx-tpl b{display:block;font-size:13px;text-transform:capitalize;margin-bottom:2px;color:var(--tx)}
 .wx-tpl span{display:block;font-size:12.5px;line-height:1.45;color:var(--sb);white-space:pre-wrap}
+/* bl_wa_0489 — one-click eye on each template: hide it from dispatchers / show it again */
+.wx-tplr{position:relative}
+.wx-tplr .wx-tpl{padding-right:46px}
+.wx-tpl.hid{border-style:dashed;background:#fffaf0}
+.wx-tplh{display:inline-block;font-style:normal;font-size:11px;font-weight:600;color:#b45309;background:#fef3c7;border-radius:999px;padding:1px 8px;margin:0 0 4px}
+.wx-tple{position:absolute;top:6px;right:6px;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--sb);cursor:pointer;display:grid;place-items:center}
+.wx-tple:hover{background:var(--hv);color:var(--tx)}
+.wx-tple.on{color:#b45309}
+.wx-tple:disabled{opacity:.5;cursor:default}
 .wx-tvars{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
 .wx-tvars .wx-in{width:auto;flex:1;min-width:150px;padding:8px 10px;font-size:14px}
 .wx-tprev{background:var(--out);border-radius:8px;padding:8px 10px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;margin:6px 0 8px}
@@ -1172,8 +1181,16 @@ export async function renderWhatsappLive(host) {
       ? [el('h4', null, 'Templates'), el('p', { class: 'wx-hint', style: 'padding:0 4px' }, 'No template is approved at Meta yet. Outside the 24-hour window nothing can be sent until the person writes first.')]
       : [
         el('h4', null, t && t.window_open ? 'Send an approved template' : 'Window closed — pick an approved template'),
-        ...approved.map((x) => el('button', { type: 'button', class: 'wx-tpl' + (tplName === x.name ? ' on' : ''),
-          onClick: () => { tplName = x.name; tplVars = new Array(x.variables || 0).fill(''); paintTrays(); } }, [el('b', null, x.name.replace(/_/g, ' ')), el('span', null, labelled(x))])),
+        ...approved.map((x) => el('div', { class: 'wx-tplr' }, [
+          el('button', { type: 'button', class: 'wx-tpl' + (tplName === x.name ? ' on' : '') + (x.hidden ? ' hid' : ''),
+            onClick: () => { tplName = x.name; tplVars = new Array(x.variables || 0).fill(''); paintTrays(); } }, [
+            x.hidden ? el('em', { class: 'wx-tplh' }, 'Hidden from dispatchers') : null,
+            el('b', null, x.name.replace(/_/g, ' ')), el('span', null, labelled(x))]),
+          el('button', { type: 'button', class: 'wx-tple' + (x.hidden ? ' on' : ''), disabled: tplHideBusy,
+            title: x.hidden ? 'Hidden from dispatchers — click to show it to them again' : 'Hide this template from dispatchers',
+            'aria-label': x.hidden ? 'Show to dispatchers' : 'Hide from dispatchers',
+            onClick: () => hideTpl(x, !x.hidden) }, sv(x.hidden ? 'eyeoff' : 'eye', 18)),
+        ])),
         chosen ? el('div', null, [
           (chosen.var_labels || []).length ? el('div', { class: 'wx-tvars' }, (chosen.var_labels || []).map((lab, i) => el('input', { class: 'wx-in', placeholder: lab, value: tplVars[i] || '',
             onInput: (e) => { tplVars[i] = e.target.value; const p = built.tray.querySelector('.wx-tprev'); if (p) p.textContent = fill(chosen.body, tplVars); } }))) : null,
@@ -1185,6 +1202,22 @@ export async function renderWhatsappLive(host) {
         ]) : null,
       ]));
     syncComp();
+  }
+
+  // bl_wa_0489 — one click hides an approved template from every dispatcher's picker (the server also refuses it
+  // from them at send time); one click shows it again. Staff keep seeing and sending it.
+  let tplHideBusy = false;
+  async function hideTpl(x, on) {
+    if (tplHideBusy) return;
+    tplHideBusy = true; paintTrays(); if (rail === 'tpl') paintTpl();
+    try {
+      const r = await ccWaTemplateHide(x.name, on);
+      if (r && r.error) throw new Error(r.error);
+      x.hidden = on;
+      toast(on ? 'Hidden from dispatchers. Only Command Center can send this template now.' : 'Dispatchers can see and send this template again.');
+      await load(true);
+    } catch (e) { toast(humanizeError(e)); }
+    tplHideBusy = false; paintTrays(); if (rail === 'tpl') paintTpl();
   }
 
   // one click, one message: a second click while the first is still in flight is ignored (the first live
@@ -1474,7 +1507,7 @@ export async function renderWhatsappLive(host) {
         el('span', { class: 'hint' }, synced ? 'Last read ' + et(synced) : 'Never read from Meta yet.'),
       ]),
       el('div', { class: 'wl-tw' }, el('table', { class: 'wl-t' }, [
-        el('thead', null, el('tr', null, ['Name', 'Category', 'Variables', 'Body', 'Status at Meta', 'Override'].map((k) => el('th', null, k)))),
+        el('thead', null, el('tr', null, ['Name', 'Category', 'Variables', 'Body', 'Status at Meta', 'Dispatchers', 'Override'].map((k) => el('th', null, k)))),
         el('tbody', null, rows.map((x) => el('tr', null, [
           el('td', null, el('b', null, x.name)),
           el('td', null, x.category),
@@ -1488,6 +1521,12 @@ export async function renderWhatsappLive(host) {
             x.rejection_reason ? el('div', { class: 'hint' }, 'Meta: ' + x.rejection_reason) : null,
             x.note ? el('div', { class: 'hint' }, x.note) : null,
             x.status === 'draft' ? el('div', null, el('button', { class: 'wl-btn', disabled: tplBusy, onClick: () => tplSubmit(x.name) }, 'Submit to Meta')) : null,
+          ]),
+          el('td', null, [
+            el('button', { class: 'wl-btn' + (x.hidden ? '' : ' pri'), disabled: tplHideBusy, onClick: () => hideTpl(x, !x.hidden),
+              title: x.hidden ? 'Dispatchers cannot see or send this template. Click to show it again.' : 'Dispatchers can see and send this template. Click to hide it from them.' },
+              x.hidden ? 'Hidden · Show' : 'Visible · Hide'),
+            x.hidden && x.hidden_at ? el('div', { class: 'hint' }, 'Hidden ' + et(x.hidden_at)) : null,
           ]),
           el('td', null, x.status === 'draft' ? el('span', { class: 'hint' }, '—') : (() => {
             const sel = el('select', { class: 'wl-sel', onChange: async (e) => {
