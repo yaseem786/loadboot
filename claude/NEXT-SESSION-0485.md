@@ -2,6 +2,10 @@
 
 Paste this whole file into the new session. Roman Urdu + English, be direct, CLAUDE.md applies.
 
+## Start here (28 Sep)
+- Build **"One main line 815"** — first bullet under *Builds* in `claude/TASKS-RILEY-CALLS-0486.md` (Riley outbound caller ID = +1 (815) 365-1168). Step 1: read Retell's import-number / SIP-trunk docs and confirm the owner steps; only then write code.
+- (The numbered list in that file is carriers — #6 there is Summit 15 Transport, not this build.)
+
 ## Ids
 - Supabase prod `rwscphuhpjoudvljvmdk` · staging `snslhvmkjusozgjelghi` · Netlify site `6882ea72-0dd6-4b16-80f8-64fe9136573e`
 
