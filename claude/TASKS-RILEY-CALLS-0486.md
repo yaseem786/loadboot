@@ -5,7 +5,7 @@ Flow per call: Carrier 360 → "Plan a Riley call" → read the plan in Riley �
 Rules: Mon–Fri 9:00–18:30 carrier time, 1 call / carrier / day.
 
 ## Builds
-- [~] **One main line 815** — code done, bl_voice_0488 live on staging + prod (inactive until the CC field is set). Left: deploy edge `retell-admin` (staging, then prod), then owner steps 1–10 in `claude/RILEY-OUTBOUND-815-0488.md` (Telnyx outbound-only SIP connection → Retell Import → CC field → test call).
+- [~] **One main line 815** — code done, bl_voice_0488 + edge `retell-admin` v4 live on staging + prod (inactive until the CC field is set). Left: merge to main, then owner steps 1–10 in `claude/RILEY-OUTBOUND-815-0488.md` (Telnyx outbound-only SIP connection → Retell Import → CC field → test call).
 - [ ] **Human + Riley on the same line**: "Office first" inbound ring (staff browser + mobile ~20 s, then Riley) for callers without a dispatcher; Riley transfer to a staff mobile (escalation_number + prompt change + publish). Owner to name who rings.
 - [x] **Carrier 360 live / last seen** — bl_ux_0486 (this commit).
 
