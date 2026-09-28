@@ -65,3 +65,16 @@ NULL outbound + unrelated numbers → ignored · 815 without `direction` → acc
   on `voice_dnc`; both rows were deleted. Open: `riley_plan_on_call` should not trust `wrong_number` when the call hit
   voicemail (`call_analysis.in_voicemail = true`).
 - D'Z (plan 3) was `invalid_destination` — the rule still proposes a 2nd call; the phone number itself needs fixing.
+
+## Follow-ups done 28 Sep (same session)
+- `bl_voice_0489` (staging + prod): `retell_webhook` keeps `in_voicemail` + `disconnection_reason` in `lc_calls.analysis`;
+  `riley_plan_on_call` never puts a voicemail on `voice_dnc` (in_voicemail / voicemail_reached / machine_detected /
+  summary says voicemail|mailbox). Tested on staging in a rolled-back block: voicemail+wrong_number → no DNC,
+  real conversation+wrong_number → DNC. Notes written on plans #5/#9.
+- `bl_voice_0489b` (prod; dry-run first): owner decision — Riley says "LoadBoot's assistant", says "AI" only when asked,
+  never denies it. Inbound + outbound prompts (history rows written) + `brain_user_text` (call-plan OPENER). Live in
+  Retell only after CC → Riley → Prompts → Publish (both). Staging prompt rows untouched.
+- Found: Riley Outbound agent draft v14 carries the new `retell-hook` webhook but published v13 still has the old URL →
+  publishing is what actually fixes result saving. The agent's Retell **voicemail_option** text (dashboard, not our
+  prompt) says "callback number four six nine, two five three, seven five seven five" and uses `{{user_name}}` (we pass
+  `{{name}}`) — owner to replace it in the Retell dashboard before publishing.
