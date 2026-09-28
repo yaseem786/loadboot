@@ -69,7 +69,7 @@ async function svcRpc(name: string, body: unknown): Promise<{ ok: boolean; statu
   return { ok: r.ok, status: r.status, body: b };
 }
 
-type Cfg = { api_key: string; from_number: string; inbound_agent_id: string | null; outbound_agent_id: string | null; escalation_number: string | null };
+type Cfg = { api_key: string; from_number: string; outbound_from_number: string | null; inbound_agent_id: string | null; outbound_agent_id: string | null; escalation_number: string | null };
 
 async function retell(cfg: Cfg, method: string, path: string, body?: unknown): Promise<{ ok: boolean; status: number; body: any }> {
   const r = await fetch(`${RETELL}${path}`, {
@@ -130,10 +130,13 @@ Deno.serve(async (req: Request) => {
     const cfg = c.body as Cfg;
 
     if (op === "status") {
-      const [phone, agents, rows] = await Promise.all([
+      // bl_voice_0488: the outbound caller id (815) must exist in Retell (imported via Telnyx SIP) or every dial fails.
+      const out = cfg.outbound_from_number && cfg.outbound_from_number !== cfg.from_number ? cfg.outbound_from_number : null;
+      const [phone, agents, rows, outPhone] = await Promise.all([
         retell(cfg, "GET", `/get-phone-number/${encodeURIComponent(cfg.from_number)}`),
         retell(cfg, "GET", `/list-agents`),
         svcRpc("riley_prompts_admin_get", {}),
+        out ? retell(cfg, "GET", `/get-phone-number/${encodeURIComponent(out)}`) : Promise.resolve(null),
       ]);
       const ours: Record<string, any> = {};
       if (agents.ok && Array.isArray(agents.body)) {
@@ -161,6 +164,9 @@ Deno.serve(async (req: Request) => {
           outbound_agent_id: p.outbound_agent_id ?? (p.outbound_agents?.[0]?.agent_id ?? null),
           inbound_webhook_url: p.inbound_webhook_url ?? null, nickname: p.nickname ?? null,
         } : { error: `retell ${phone.status}` },
+        outbound_from: out ? { number: out, in_retell: !!outPhone?.ok, status: outPhone?.status ?? null,
+          termination_uri: outPhone?.ok ? (outPhone.body?.sip_outbound_trunk_config?.termination_uri ?? outPhone.body?.termination_uri ?? null) : null,
+          nickname: outPhone?.ok ? (outPhone.body?.nickname ?? null) : null } : null,
         expected: { inbound_agent_id: cfg.inbound_agent_id, outbound_agent_id: cfg.outbound_agent_id },
         agents: ours,
         prompts: rows.ok ? rows.body : null,
