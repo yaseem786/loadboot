@@ -236,6 +236,8 @@ They are staging only. Their passwords were never stored in the repo. Create fre
 
 ## 6. Prod rollout (only on "prod pe chalao")
 
+> **Status 29 Sep 2026 — rollout PAUSED after step 2 partway.** Owner said "prod pe chalao". Applied on prod: **0491, 0492** only (stored text md5 = repo file body: `b1eef6f1…`, `eacc4b58…`). Anon after: 36, names md5 `06f779f7…` (unchanged). Not yet applied: 0493 → 0500c; domain-check v6 + dmail not deployed; agreements not published (0 shipper agreements published, so no shipper lane can open); `yuayui788` not yet `is_demo`. Resume at 0493. Staging text check: 0491/0492 differ from staging's record only in trailing comments; 0500 differs only by the `xs` alias fix that staging runs live.
+
 1. Read the anon baseline (must be 36, names per `docs/audit-2026-09/anon-secdef-baseline.md`).
 2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c → 0499d → 0500 → 0500b → 0500c (same files).
 3. Deploy domain-check v6 **and dmail** (with the 0499 guard). Compare each deployed version to repo HEAD first. Deploy dmail only after 0499 is applied.
