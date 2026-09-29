@@ -4571,7 +4571,7 @@ function brokerOnboardingWizard() {
           if (!co.value.trim() || !ph.value.trim() || !cn.value.trim()) { msg0.textContent = 'Company, contact name and phone are required.'; return; }
 
           ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
-          try { await partnerUpdateProfile({ company: co.value.trim(), phone: ph.value.trim(), contactName: cn.value.trim() });  // bl_ship_0491: was contact_name → saved NULL prof = Object.assign(prof, { company: co.value.trim(), mc: mc.value.trim(), phone: ph.value.trim(), contact_name: cn.value.trim() }); step = 1; draw(); }
+          try { await partnerUpdateProfile({ company: co.value.trim(), phone: ph.value.trim(), contactName: cn.value.trim() }); prof = Object.assign(prof, { company: co.value.trim(), mc: mc.value.trim(), phone: ph.value.trim(), contact_name: cn.value.trim() }); step = 1; draw(); }  // bl_ship_0491: key was contact_name → saved NULL
           catch (e) { msg0.textContent = (e && e.message) || 'Could not save.'; ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save & continue →'; }
         } }, 'Save & continue →'));
       } else if (step === 1) {
