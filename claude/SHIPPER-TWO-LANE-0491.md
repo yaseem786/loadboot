@@ -182,7 +182,7 @@ They are staging only. Their passwords were never stored in the repo. Create fre
 7. **Prod safety (`shipV2`):** the two-lane shipper UI (Verification, Brokers, lane card) shows only when `cc_partner_overview` returns `shipper_stage`, which happens only with 0493+. On prod before the rollout, shippers keep the previous UI instead of calling functions that do not exist. When the rollout lands, the new UI switches on by itself.
 
 **Still open:**
-1. The staff "post" step: a shipper's load waits in `submitted` until staff post it. That is a review gate, not allocation. **Drafted 29 Sep as Platform Terms v2** (`claude/agreements/SHIPPER-PLATFORM-TERMS-v2.md`, new §4.4 + §2.3 wording; details in `claude/agreements/README.md`). Waits for owner approval, then staging publish.
+1. The staff "post" step: a shipper's load waits in `submitted` until staff post it. That is a review gate, not allocation. **Done 29 Sep: Platform Terms v2** (`claude/agreements/SHIPPER-PLATFORM-TERMS-v2.md`, new §4.4 + §2.3 wording). Owner approved; published on staging (hash in `claude/agreements/README.md`).
 
 **Partner portal outage (production):** since `d8bf908`, `app/partner/app.js:4574` had a mid-line `//` comment that swallowed a closing brace. The whole Partner portal (brokers and shippers) rendered blank on loadboot.com. It was fixed and pushed to `main` as `06536c4` on 29 Sep.
 
@@ -198,18 +198,48 @@ They are staging only. Their passwords were never stored in the repo. Create fre
 
 1. **Agreements.** Owner review done on 29 Sep: Texas law and courts; liability cap = greater of 12 months' fees or $100, plus a consequential-damages exclusion; the fee wording is honest; boilerplate added (see `claude/agreements/README.md`). The only blank left is the publication date. An attorney review is still recommended. **Until they are published, no shipper can open a lane on either environment.** For a staging walkthrough before approval, the drafts can be published on staging only as a clearly marked test copy (ask first).
 2. **LoadBoot dispatchers talking rates with shippers.** *Closed in code by 0498 and 0499/0499b*: book-request note, counter-offer, staff offers, and every text channel (mail, dmail, SMS, WhatsApp, CC threads, live chat and the AI brain). The conduct terms are v2. Voice calls are still policy only. Original note: FMCSA 2023 guidance (IV.F) lists "interacts with or negotiates any shipment of freight directly with the shipper" as an indicator that a dispatch service needs broker authority. On direct loads the shipper sets the rate and carriers request at it. Dispatchers should **not** counter-offer to shippers. This is not yet enforced in code (counter-offer paths were not audited). The marketing copy no longer claims dispatchers negotiate with shippers.
-3. **Existing shippers on prod (4).** After prod rollout they fall back to `new` until they complete the new verification. They are told by the portal. A draft message to them is for the owner to send.
+3. **Existing shippers on prod — checked 29 Sep (read-only).** Five `kind='shipper'` orgs, all self-signups with a confirmed email; none was made by Claude (Claude's test accounts are `@resend.dev` / `loadboot.test`, staging only). Every one has 0 loads, 0 partner loads and 0 CC mail, and none ever had an agreement (owner). So there is nothing to migrate: after the rollout each lands in `new` and the portal shows Verification.
+   - `yuayui788@gmail.com` "The Shipper" — owner's test account → `is_demo = true` at rollout (step 6).
+   - `play.shipper@loadboot.com` — Google Play reviewer demo, already `is_demo`. Leave it.
+   - SOFTBANK ROBOTICS AMERICA — `connor.immel@softbankrobotics.com`, 23 Sep. Real outside signup. The mailbox was confirmed, but the company is not verified.
+   - MII BRAND IMPORT LLC — `logistics@miibrandimport.com`, "Jason Kervax", 28 Sep. Real outside signup. Stays on hold (step 7).
+   - Sourcing Advisory Group — `steve@sadvgrp.com`, Steve Cross, 18 Sep. It signed up with `role: agent`, but the org is a shipper.
+   - Suggestion: send no email now. The portal tells them on their next sign-in. Any later notice goes through the email catalog with `cc_email_can_send` first (CLAUDE.md §6).
 4. **Staff approving carriers on broker loads** is still allowed (unchanged). This is the owner's call.
 5. **Phone codes use the Retell verify agent** (real calls). Staging has it configured. Tests inserted code rows directly and placed no calls.
 6. **Per-load location linking.** Posting currently requires ≥1 saved location. Picking a saved location inside the post wizard is a follow-up.
 
+## 5b. Shipper contact log — `bl_ship_0500` / `0500b` (29 Sep 2026, staging)
+
+- `app_private.shipper_contact_log` has one row for every message or call between LoadBoot and a shipper contact. The resolver is the same as the 0499 guard (`shipper_org_for_contact`); prospect shippers in live chat get `org_id` null. Channels:
+  - CC mail (logged only once `status = 'sent'`);
+  - SMS;
+  - WhatsApp;
+  - CC threads on a shipper load (internal notes are skipped);
+  - live chat (bot, staff and visitor);
+  - **staff phone calls** (`dialer_calls`): who called, the duration, whether it was recorded, and the outcome. The row is updated as the call ends. Voice cannot be content-checked, so this is the trail.
+- `rate_flag` on an inbound row = the shipper raised a rate, so the reply must not discuss it.
+- Refused attempts are **not** logged. The 0499 exception rolls back the transaction, and the DB has no dblink or pg_background.
+- The logging is done by AFTER triggers. A logging error raises a warning and never blocks a send. The backfill covers the last 90 days.
+- CC → Shipper 360 → Comms → **"LoadBoot contact"** tab (`cc_partner_360.comms.contact_log`). The tab is hidden until 0500 is applied, so prod does not show a false "no contact".
+- Not covered: Riley/Retell AI calls, and dmail mailboxes unless they write `mail_messages`.
+- Staging tests, all inside rolled-back transactions:
+  - a draft is not logged; a sent mail is logged with the staff name;
+  - a shipper's rate mail is flagged;
+  - a staff rate mail is blocked and not logged;
+  - a call is logged as "3m 5s · recorded";
+  - 360 returns the rows.
+- Bug caught by the test: `cc_partner_360` has a PL/pgSQL variable `pr`, so the join alias is `xs`.
+- **0500b:** the CC partner journey told staff to publish `broker_shipper` for shippers (the owner's screenshot). It now checks `shipper_platform`, and counts it done only when the shipper signed the latest published version. Verified: a v1 signer shows to-do, and after signing v2 it shows done.
+- Anon SECDEF on staging: 35, names md5 unchanged (`b862e7e2…`).
+
 ## 6. Prod rollout (only on "prod pe chalao")
 
 1. Read the anon baseline (must be 36, names per `docs/audit-2026-09/anon-secdef-baseline.md`).
-2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c → 0499d (same files).
+2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c → 0499d → 0500 → 0500b (same files).
 3. Deploy domain-check v6 **and dmail** (with the 0499 guard). Compare each deployed version to repo HEAD first. Deploy dmail only after 0499 is applied.
 4. Re-read the anon baseline: still 36, same names.
-5. Publish the agreements with the SQL in `claude/agreements/README.md`, then check the SHA-256 against the README: `SHIPPER-CARRIER-TERMS-v1.md` (approved 29 Sep, published on staging) and **Platform Terms v2** (`SHIPPER-PLATFORM-TERMS-v2.md`, once the owner approves it and it is published on staging first). Leave the prod `shipper_platform` v1 row unpublished. If v2 is still unapproved on rollout day, publish v1 as before and v2 later — every shipper then re-signs.
+5. Publish the agreements with the SQL in `claude/agreements/README.md`, then check the SHA-256 against the README: `SHIPPER-CARRIER-TERMS-v1.md` (`5ca65f64…`) and **Platform Terms v2** (`SHIPPER-PLATFORM-TERMS-v2.md`, `b0398a76…`, owner-approved 29 Sep). Leave the prod `shipper_platform` v1 row unpublished.
 6. Test account `yuayui788@gmail.com`:
    - it signs up as a shipper;
    - staff set `organizations.is_demo = true` so it never reaches real carriers;
