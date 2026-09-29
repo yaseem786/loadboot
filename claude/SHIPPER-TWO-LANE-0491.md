@@ -140,6 +140,48 @@ Verified live: the MII case returns `budget_host`, and SEC hits "Victoria's Secr
 - The anon-executable SECURITY DEFINER surface on staging is unchanged: **35**, same names md5 `b862e7e2…`.
 - **Not done:** a real-browser click-through of the portal against staging. It needs a staging login. Do it before prod.
 
+## 3b. Staging browser walkthrough — 29 Sep 2026
+
+I used a local staging-bound build (`CONTEXT=dev` + staging anon key) in Chromium. The test accounts are Resend test sinks:
+- `delivered+lb-shipper-0499@resend.dev` — shipper org "Claude Test Shipping LLC";
+- `delivered+lb-carrier-0499@resend.dev` — "Claude Test Carrier 0499";
+- `delivered+lb-staff-0499@resend.dev` — `operations_admin`;
+- dummy mailbox `claude-test-0499@loadboot.test`, with SMTP at `smtp.invalid`, now `paused`.
+
+They are staging only. Their passwords were never stored in the repo. Create fresh ones the same way next time.
+
+**Passed:**
+- Shipper signup and the kind picker.
+- The dashboard lane card.
+- The Verification tab (sections A–G, lane progress).
+- Both agreements signed in the UI. Each ESIGN row has the name, title, IP, UA, and a SHA-256 equal to the published text.
+- 13 forms saved through `cc_shipper_item_save`, with server validation.
+- Location saved.
+- Staff verified the 3 identity items. The shipper reached `direct_ready`.
+- Post wizard: cargo value is required (0496). The load was submitted, then staff posted it.
+- The carrier sees the load. "Request to book" returns `SHIPPER_TERMS` (403), the Terms dialog appears, the carrier signs, and the request retries on its own. It then stops at the next, unrelated gate: the test carrier has no driver.
+- dmail v9: a rate mail to the shipper (including rate text in the subject with the shipper on cc) is refused before SMTP. A clean mail passes the guard.
+
+**Shortcuts (said plainly):** `phone_verify` and `independent_callback` were set to verified by SQL. Both place real Retell calls, and I did not call a real number. The shipper never approved the carrier (no driver). The test load was cancelled afterwards.
+
+**Fixed from the walkthrough (in this commit):**
+- `0499c`: `cc_decide_partner_load('post')` calls `cc_offer_send` for the shipper's own chosen carrier, and 0499 would have broken that. It is now let through only for that load, at the load's own rate.
+- Post wizard copy for shippers. The old text said "settlement runs through LoadBoot", "LoadBoot dispatch is the day-of contact", "goes to dispatch" and "our dispatch team will review it". It now says: you pay the carrier directly, LoadBoot only records it, and LoadBoot checks for fraud and safety but never changes your rate or picks the carrier. The broker text no longer claims that settlement runs through LoadBoot either.
+- The shipper no longer sees the "sell-side guide (+15%)" broker margin line. The lumper line says "you pay" for a shipper.
+- Carrier request modal: "The shipper or broker who posted it reviews…" (it used to say "The broker").
+- Agreements rendered as raw Markdown. `app/shared/ui/mdLite.js` now renders them as formatted text using text nodes only.
+- Test `tests/app_modules_parse_test.mjs` makes every app module parse as ESM (see the partner outage below).
+
+**Found — still open, owner's call:**
+1. **Marketplace accessorial standards on shipper loads:** detention $60/hr, layover $250, TONU $250, and "You cannot post BELOW standard". LoadBoot is setting minimum price terms on a shipper's freight, which sits badly with "LoadBoot never sets the rate". Suggestion: for shippers, show them as suggested defaults the shipper can edit, or drop the floor.
+2. The **Emergency Rescheduling Policy** says "Dispatch verification". On shipper loads that puts LoadBoot inside the transaction.
+3. The carrier board card still says "🏢 Broker packet" on a shipper's load.
+4. The shipper dashboard banner says "Finish onboarding to start posting" while the shipper is `direct_ready` with a live load.
+5. The welcome feed says "…then you can request quotes right away", but the lanes are gated.
+6. The staff "post" step: a shipper's load waits in `submitted` until staff post it. That is a review gate, not allocation, but it should be written into the Platform Terms (§4.3).
+
+**Partner portal outage (production):** since `d8bf908`, `app/partner/app.js:4574` had a mid-line `//` comment that swallowed a closing brace. The whole Partner portal (brokers and shippers) rendered blank on loadboot.com. It was fixed and pushed to `main` as `06536c4` on 29 Sep.
+
 ## 4. Handoff corrections (verified in code/DB)
 
 1. **"`cc_shipper_post_load` has no gate" was wrong.** A trigger gated it. The gate was simply weak (email MX + website).
@@ -160,7 +202,7 @@ Verified live: the MII case returns `budget_host`, and SEC hits "Victoria's Secr
 ## 6. Prod rollout (only on "prod pe chalao")
 
 1. Read the anon baseline (must be 36, names per `docs/audit-2026-09/anon-secdef-baseline.md`).
-2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b (same files).
+2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c (same files).
 3. Deploy domain-check v6 **and dmail** (with the 0499 guard). Compare each deployed version to repo HEAD first. Deploy dmail only after 0499 is applied.
 4. Re-read the anon baseline: still 36, same names.
 5. Publish the agreements. The owner approved them on 29 Sep 2026, and they are already published on staging. Use the exact files `claude/agreements/SHIPPER-PLATFORM-TERMS-v1.md` and `SHIPPER-CARRIER-TERMS-v1.md` with the SQL in `claude/agreements/README.md`, then check the SHA-256 against the README.

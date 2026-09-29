@@ -2381,7 +2381,7 @@ async function brokerDash(user, ov) {
                 wrap9.appendChild(h('div', { style: 'margin-top:7px;padding-top:7px;border-top:1px dashed #bfdbfe;display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [
                   h('b', null, '\ud83d\udcc8 Lane rate ' + (L9.o_state || '') + '\u2192' + (L9.d_state || '') + ' (' + L9.confidence + '):'),
                   ...(['low', 'avg', 'high'].map(k9 => L9.buy['flat_' + k9] ? h('button', { type: 'button', class: 'cp-btn cp-btn-sm ' + (k9 === 'avg' ? '' : 'ghost'), style: 'padding:3px 11px;font-size:.72rem', onClick: () => { w.rate = String(L9.buy['flat_' + k9]); renderStep(); } }, k9.toUpperCase() + ' $' + Number(L9.buy['flat_' + k9]).toLocaleString()) : null).filter(Boolean)),
-                  h('span', { class: 'cp-sub' }, 'sell-side guide $' + L9.sell.avg + '/mi (+' + L9.margin_pct + '%)'),
+                  ...(window.__lbKindLabel === 'Shipper' ? [] : [h('span', { class: 'cp-sub' }, 'sell-side guide $' + L9.sell.avg + '/mi (+' + L9.margin_pct + '%)')]),  // bl_ship_0499: no broker margin guide for a shipper
                 ]));
               } else if (w.o_state && w.d_state && !w.__laneP) {
                 w.__laneP = true;
@@ -2543,7 +2543,7 @@ async function brokerDash(user, ov) {
         ]);
         const lsel = h('select', { class: 'cp-in' }, ['Reimbursed with receipt', 'Broker pays lumper directly', 'Included in rate', 'Not covered'].map(o => h('option', { value: o }, o)));
         lsel.value = w.acc_lumper_policy || 'Reimbursed with receipt'; lsel.onchange = () => { w.acc_lumper_policy = lsel.value; renderStep(); };
-        const lump = h('div', { style: 'background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 13px;margin-top:9px' }, [h('b', null, 'Lumper policy'), h('div', { class: 'cp-sub', style: 'margin:2px 0 6px' }, 'Who pays third-party dock labor. LoadBoot standard: broker pays direct or reimburses with receipt — never the carrier.'), lsel]);
+        const lump = h('div', { style: 'background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 13px;margin-top:9px' }, [h('b', null, 'Lumper policy'), h('div', { class: 'cp-sub', style: 'margin:2px 0 6px' }, 'Who pays third-party dock labor. LoadBoot standard: ' + (window.__lbKindLabel === 'Shipper' ? 'you pay' : 'broker pays') + ' direct or reimburse with receipt — never the carrier.'), lsel]);
         const agCb = h('input', { type: 'checkbox' }); agCb.checked = !!w.acc_agreed; agCb.onchange = () => { w.acc_agreed = agCb.checked; };
         const li = (label, val, href) => h('div', { style: 'display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed #bbf7d0;font-size:.82rem;color:#065f46' }, [
           href ? h('a', { href: href, target: '_blank', rel: 'noopener', style: 'font-weight:700;color:#047857' }, label) : h('b', { style: 'color:#047857' }, label),
@@ -2674,8 +2674,10 @@ async function brokerDash(user, ov) {
             w.reference ? ['Reference', w.reference] : null,
           ]),
         ]),
-        h('div', { style: 'margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 13px;font-size:.8rem;color:#166534' }, '\ud83d\udcb3 Payment & contact on the rate confirmation: settlement runs through LoadBoot (documented terms, no games), and LoadBoot dispatch is the 24/7 day-of contact \u2014 the carrier never needs to chase anyone by phone.'),
-        h('div', { class: 'cp-sub', style: 'margin-top:8px' }, 'On submit, a required-document checklist (rate con, pickup/delivery #, appointment, billing) is created for our dispatch team.'),
+        h('div', { style: 'margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 13px;font-size:.8rem;color:#166534' }, (window.__lbKindLabel === 'Shipper'
+          ? '\ud83d\udcb3 Payment on the rate confirmation: you pay the carrier (or its factoring company) directly on your stated terms. LoadBoot never holds freight money \u2014 the portal only records sent and received. Your pickup and delivery contacts go to the carrier you accept.'
+          : '\ud83d\udcb3 Payment & contact on the rate confirmation: you pay the carrier (or its factor) directly on documented terms \u2014 LoadBoot records sent and received, it never holds freight money \u2014 and LoadBoot dispatch is the 24/7 day-of contact for the carrier.')),
+        h('div', { class: 'cp-sub', style: 'margin-top:8px' }, (window.__lbKindLabel === 'Shipper' ? 'On submit, LoadBoot checks the posting for fraud and safety before it goes live. LoadBoot never changes your rate or picks the carrier \u2014 you accept the carrier.' : 'On submit, a required-document checklist (rate con, pickup/delivery #, appointment, billing) is created for our dispatch team.')),
       ]);
       // duplicate radar — warn BEFORE submitting if an open load already covers this lane+date
       (async () => {
@@ -2942,7 +2944,7 @@ async function brokerDash(user, ov) {
         if (w.agent_parent_id) payload.details.agent_parent_id = w.agent_parent_id;  // bl_bp_0318
         delete payload.agent_parent_id;
         await partnerSubmitLoad(payload);
-        err.className = 'cp-err ok'; err.textContent = '✓ Load submitted' + (directCarrier ? ' \u2014 \ud83c\udfaf direct offer to ' + directCarrier.name + ' fires automatically when dispatch posts it' : '') + ' \u2014 our dispatch team will review it and generate the document checklist.'; directCarrier = null;
+        err.className = 'cp-err ok'; err.textContent = '✓ Load submitted' + (directCarrier ? ' \u2014 \ud83c\udfaf direct offer to ' + directCarrier.name + ' fires automatically when dispatch posts it' : '') + (window.__lbKindLabel === 'Shipper' ? ' \u2014 LoadBoot checks it for fraud and safety, then it goes live to verified carriers at your rate. You accept the carrier.' : ' \u2014 our dispatch team will review it and generate the document checklist.'); directCarrier = null;
         for (const k in w) delete w[k]; w.appointment_required = false; w.tracking_required = false; step = 0; confirmDup = false; try { localStorage.removeItem('lb_pl_draft'); } catch (_) {} renderStep(); loadList(); try { pToast('\u2713 Load submitted \u2014 dispatch reviews it and posts it to carriers', 'ok'); haptic('success'); } catch (_) {}
       } catch (e) {
         const msg = (e && e.message) || 'Could not submit the load.';
@@ -2986,7 +2988,7 @@ async function brokerDash(user, ov) {
               ringWrap,
               h('div', null, [
                 h('h3', { style: 'margin:0' }, 'Step ' + (step + 1) + ' of ' + STEPS.length + ' \u2014 ' + STEPS[step]),
-                h('div', { class: 'cp-sub', style: 'margin-top:2px' }, ['Exact facility addresses \u2014 real miles calculate automatically.', 'Windows & dock hours \u2014 the carrier plans the whole day around these.', 'Equipment & freight \u2014 what the truck must be able to carry.', 'Your rate card \u2014 a carrier books without a single phone call.', 'One last look \u2014 then it goes to dispatch.'][step] || ''),
+                h('div', { class: 'cp-sub', style: 'margin-top:2px' }, ['Exact facility addresses \u2014 real miles calculate automatically.', 'Windows & dock hours \u2014 the carrier plans the whole day around these.', 'Equipment & freight \u2014 what the truck must be able to carry.', 'Your rate card \u2014 a carrier books without a single phone call.', (window.__lbKindLabel === 'Shipper' ? 'One last look \u2014 then it goes to verified carriers at your rate.' : 'One last look \u2014 then it goes to dispatch.')][step] || ''),
               ]),
             ]),
             step > 0 ? h('span', { class: 'cp-row-s', style: 'white-space:nowrap' }, STEPS[step - 1] + ' \u2713') : null,

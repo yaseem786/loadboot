@@ -46,7 +46,7 @@ async function load(apiOverrides) {
       shipperFacilityArchive: () => assert.fail(), shipperPhoneCodeSend: () => assert.fail('must not call on render'), shipperCodeVerify: () => assert.fail(),
       shipperBrokers: async () => ({ available: false, lane_open: false, brokers: [], message: 'We are onboarding licensed, bonded freight brokers on LoadBoot right now. Please check back in 2–3 days.' }),
       shipperPostLoad: () => assert.fail(), partnerShipperCompanyEmail: () => assert.fail(), partnerVerifyCode: () => assert.fail(), onboardingSubmitItem: () => assert.fail(),
-    }, apiOverrides || {}) : { uploadDocument: () => assert.fail('no upload on render') };
+    }, apiOverrides || {}) : spec.endsWith('mdLite.js') ? { mdToNodes: () => assert.fail('no agreement text on render') } : { uploadDocument: () => assert.fail('no upload on render') };
     return new vm.SyntheticModule(Object.keys(exports), function () { for (const [k, v] of Object.entries(exports)) this.setExport(k, v); }, { context });
   });
   await mod.evaluate();

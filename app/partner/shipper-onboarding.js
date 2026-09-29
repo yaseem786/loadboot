@@ -13,6 +13,7 @@ import {
   partnerShipperCompanyEmail, partnerVerifyCode, onboardingSubmitItem,
 } from '../shared/api.js';
 import { uploadDocument } from '../shared/storage.js';
+import { mdToNodes } from '../shared/ui/mdLite.js';  // bl_ship_0499: agreements render as formatted text, not raw Markdown
 
 const h = (tag, attrs, kids) => {
   const e = document.createElement(tag);
@@ -296,7 +297,7 @@ async function openAgreement(it, ctx, signerData) {
   const kind = it.key === 'platform_terms' ? 'shipper_platform' : 'shipper_carrier';
   let ag; try { ag = await shipperAgreement(kind); } catch (e) { ctx.toast((e && e.message) || 'Could not load the agreement.', true); return; }
   if (!ag || !ag.available) { ctx.openModal(it.label, [h('div', { class: 'so-note' }, (ag && ag.message) || 'This agreement is being finalised.')]); return; }
-  if (ag.signed) { ctx.openModal(ag.title + ' (v' + ag.version + ')', [h('div', { class: 'so-ok' }, 'Signed by ' + ag.signer_name + ', ' + ag.signer_title + ' on ' + String(ag.signed_at || '').slice(0, 10) + ' ✓'), h('div', { class: 'so-agree', style: 'margin-top:10px' }, ag.body_md || '')]); return; }
+  if (ag.signed) { ctx.openModal(ag.title + ' (v' + ag.version + ')', [h('div', { class: 'so-ok' }, 'Signed by ' + ag.signer_name + ', ' + ag.signer_title + ' on ' + String(ag.signed_at || '').slice(0, 10) + ' ✓'), h('div', { class: 'so-agree', style: 'margin-top:10px' }, mdToNodes(ag.body_md))]); return; }
   const f = h('div', { class: 'so-f' });
   const nm = h('input', { value: (signerData && signerData.name) || '' }), tt = h('input', { value: (signerData && signerData.title) || '' });
   f.append(h('label', null, 'Your full name (this is your signature)'), nm, h('label', null, 'Your title'), tt);
@@ -311,7 +312,7 @@ async function openAgreement(it, ctx, signerData) {
     catch (e) { mount(msg, h('div', { class: 'so-err' }, (e && e.message) || 'Could not sign.')); }
     go.disabled = false;
   };
-  const close = ctx.openModal(ag.title + ' (v' + ag.version + ')', [h('div', { class: 'so-agree' }, ag.body_md || ''), f, cb, msg, go], { wide: true });
+  const close = ctx.openModal(ag.title + ' (v' + ag.version + ')', [h('div', { class: 'so-agree' }, mdToNodes(ag.body_md)), f, cb, msg, go], { wide: true });
 }
 
 function openEmailVerify(it, ctx) {

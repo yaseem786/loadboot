@@ -93,6 +93,7 @@ function fpWatch(formKey, target) {
   }
 }
 import { brandLogo } from '../shared/ui/components.js';
+import { mdToNodes } from '../shared/ui/mdLite.js';  // bl_ship_0499
 import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collapsible sidebar
 import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.js';
 import { geocodePlace } from '../shared/addr-suggest.js';
@@ -379,7 +380,7 @@ function openShipperTerms() {
     let signed = false;
     const done = () => resolve(signed);
     if (!ag || !ag.available) { openModal('Shipper–Carrier Terms', [h('p', null, (ag && ag.message) || 'These Terms are being finalised.')], { onClose: done }); return; }
-    const body = h('div', { style: 'white-space:pre-wrap;max-height:45vh;overflow:auto;font-size:.85rem;line-height:1.55;border:1px solid rgba(148,163,184,.35);border-radius:10px;padding:12px;margin:10px 0' }, ag.body_md || '');
+    const body = h('div', { style: 'max-height:45vh;overflow:auto;font-size:.85rem;line-height:1.55;border:1px solid rgba(148,163,184,.35);border-radius:10px;padding:12px;margin:10px 0' }, mdToNodes(ag.body_md));
     const intro = h('p', { style: 'font-size:.9rem;line-height:1.5;margin:0' }, 'This load is posted by the shipper itself. Your contract for it is with the shipper, under these standard Terms — you accept them once for every shipper load. LoadBoot is not a party.');
     if (!ag.can_sign) {
       openModal(ag.title + ' (v' + ag.version + ')', [intro, body, h('p', { style: 'font-weight:700;margin:8px 0 0' }, 'Only the carrier’s owner or office staff can accept these Terms. Ask them to open any shipper load in their app and accept once.')], { onClose: done });
@@ -4775,7 +4776,7 @@ async function appView(user) {
           (l.accessorials && (l.accessorials.detention_per_hr || l.accessorials.tonu)) ? h('div', { style: 'background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:10px 13px;font-size:.8rem;color:#0f766e;font-weight:700;margin-bottom:12px' },
             '\ud83d\udee1 Protected in writing: detention $' + (l.accessorials.detention_per_hr || '60') + '/hr after ' + (l.accessorials.detention_free_hours || '2') + 'h · TONU $' + (l.accessorials.tonu || '250') + ' · layover $' + (l.accessorials.layover_per_day || '250') + '/day') : null,
           lbLaneRateCard(l),
-          h('div', { class: 'cp-row-s', style: 'margin-bottom:12px' }, 'The broker reviews your verified trust profile and approves or declines. Nothing moves and you\u2019re not committed until approved — first acceptance wins the load.'),
+          h('div', { class: 'cp-row-s', style: 'margin-bottom:12px' }, 'The shipper or broker who posted it reviews your verified trust profile and approves or declines. Nothing moves and you\u2019re not committed until approved — first acceptance wins the load.'),
           err9,
           h('div', { style: 'display:flex;gap:10px' }, [go9, h('button', { class: 'cp-btn ghost', style: 'flex:0 0 auto', onClick: () => closeB9() }, 'Cancel')]),
         ]);
