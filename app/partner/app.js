@@ -21,6 +21,9 @@ import { mountBrokerTrust, kickoffScreening } from './broker-trust.js';
 import { mountBrokerAgents } from './broker-agents.js';
 import { mountShipperTrust, shipperBadge } from './shipper-trust.js';  // bl_bp_0319
 import { shipperVerificationPage, shipperBrokersPage, shipperLaneCard } from './shipper-onboarding.js';  // bl_ship_0491
+// bl_ship_0499: the two-lane shipper UI shows only when the database has the 0491+ shipper functions (cc_partner_overview then
+// returns shipper_stage). On a database without them (prod before the rollout) a shipper keeps the previous UI instead of errors.
+const shipV2 = (ov) => !!(ov && ov.kind === 'shipper' && ov.shipper_stage);
 import { partnerTrustStatus } from '../shared/api.js';
 import { renderMarketWidget } from '../shared/market-widget.js';
 import {
@@ -1012,7 +1015,12 @@ function invoicesCard() {
   async function load() {
     let instructions = '';
     try { instructions = await getPaymentInstructions(); } catch (_) {}
-    mount(payInfo, instructions ? h('div', { class: 'cp-payinfo' }, [h('div', { class: 'cp-payinfo-h' }, 'How to pay'), h('div', { class: 'cp-payinfo-b' }, instructions)]) : null);
+    // bl_ship_0499: LoadBoot never bills a shipper (Platform Terms §7.3) and never takes freight money (§7.1) — a shipper
+    // must never see "PAY TO — LoadBoot" or LoadBoot's bank details. Freight is paid to each carrier directly (Payables).
+    if (window.__lbKindLabel === 'Shipper') instructions = '';
+    mount(payInfo, window.__lbKindLabel === 'Shipper'
+      ? h('div', { class: 'cp-payinfo' }, [h('div', { class: 'cp-payinfo-h' }, 'LoadBoot does not bill shippers'), h('div', { class: 'cp-payinfo-b' }, 'There is no LoadBoot fee for shippers, and LoadBoot never collects freight money. You pay each carrier (or its factoring company) directly, on your own payment terms \u2014 see Payables above. Before paying new or changed bank details, confirm them by phone on a number you already know. If anyone asks you to pay freight to LoadBoot, it is fraud \u2014 tell us at hello@loadboot.com.')])
+      : (instructions ? h('div', { class: 'cp-payinfo' }, [h('div', { class: 'cp-payinfo-h' }, 'How to pay'), h('div', { class: 'cp-payinfo-b' }, instructions)]) : null));
     try {
       const rows = await partnerMyInvoices(100);
       if (!rows || !rows.length) { mount(host, h('div', { class: 'lb-state' }, 'No invoices yet.')); return; }
@@ -2491,7 +2499,9 @@ async function brokerDash(user, ov) {
       ]);
     }
     else if (step === 3) body = h('div', null, [
-      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'These are LoadBoot marketplace standards — pre-agreed on every load, so a carrier can book without a single phone call. You cannot post BELOW standard; you may offer ABOVE to attract carriers on a tough lane.'),
+      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, window.__lbKindLabel === 'Shipper'
+        ? 'Your rate card. These are suggested industry defaults — you set the numbers. They go on the rate confirmation between you and the carrier you accept, and carriers see them before they request. LoadBoot does not set them.'  // bl_ship_0499: shipper sets its own terms
+        : 'These are LoadBoot marketplace standards — pre-agreed on every load, so a carrier can book without a single phone call. You cannot post BELOW standard; you may offer ABOVE to attract carriers on a tough lane.'),
       (() => {
         // ---- LoadBoot standard accessorials: fixed floor, broker may raise ABOVE (never below) ----
         const STD = { acc_detention_per_hr: 60, acc_detention_free_hours: 2, acc_layover_per_day: 250, acc_tonu: 250, acc_driver_assist: 75, acc_extra_stop: 100 };
@@ -2499,21 +2509,27 @@ async function brokerDash(user, ov) {
         const sv = (k) => { const s = (w.__stds && Number(w.__stds[KEYMAP[k]])) || STD[k]; return s; };
         if (!w.__stds && !w.__stds_p3) { w.__stds_p3 = true; (async () => { try { const m = {}; ((await rateStandards()) || []).forEach(r => { m[r.key] = r.value; }); w.__stds = w.__stds || m; } catch (_) {} try { renderStep(); } catch (_) {} })(); }
         // auto-init always-on protections to standard so nothing is ever blank or below floor
-        ['acc_detention_per_hr', 'acc_detention_free_hours', 'acc_layover_per_day', 'acc_tonu'].forEach(k => { if (w[k] === undefined || w[k] === '' || Number(w[k]) < sv(k)) w[k] = String(sv(k)); });
+        const SHIP = window.__lbKindLabel === 'Shipper';  // bl_ship_0499: for a shipper the standards are editable defaults, not a floor
+        const low = (k) => w[k] === undefined || w[k] === '' || (!SHIP && Number(w[k]) < sv(k));
+        ['acc_detention_per_hr', 'acc_detention_free_hours', 'acc_layover_per_day', 'acc_tonu'].forEach(k => { if (low(k)) w[k] = String(sv(k)); });
         if (w.acc_lumper_policy === undefined) w.acc_lumper_policy = 'Reimbursed with receipt';
-        if (w.driver_assist_required && (w.acc_driver_assist === undefined || w.acc_driver_assist === '' || Number(w.acc_driver_assist) < sv('acc_driver_assist'))) w.acc_driver_assist = String(sv('acc_driver_assist'));
-        if (w.svc_extra_stop && (w.acc_extra_stop === undefined || w.acc_extra_stop === '' || Number(w.acc_extra_stop) < sv('acc_extra_stop'))) w.acc_extra_stop = String(sv('acc_extra_stop'));
+        if (w.driver_assist_required && low('acc_driver_assist')) w.acc_driver_assist = String(sv('acc_driver_assist'));
+        if (w.svc_extra_stop && low('acc_extra_stop')) w.acc_extra_stop = String(sv('acc_extra_stop'));
         const row = (title, key, std, unit, extra) => {
-          const cur = Number(w[key]) || std; const above = cur > std; const rk = '__raise_' + key;
-          const valTxt = h('b', { style: 'color:#0f766e;white-space:nowrap' }, '$' + std + unit + (above ? ' → $' + cur + unit + ' (above)' : ''));
-          const raiseBtn = h('a', { style: 'font-size:.74rem;font-weight:800;color:#0883F7;cursor:pointer;white-space:nowrap', onClick: () => { w[rk] = !w[rk]; renderStep(); } }, w[rk] ? 'Cancel' : (above ? 'Edit' : 'Offer above ▸'));
+          const cur = w[key] === '' || w[key] === undefined ? std : Number(w[key]); const above = cur > std; const rk = '__raise_' + key;
+          const valTxt = SHIP
+            ? h('b', { style: 'color:#0f766e;white-space:nowrap' }, '$' + cur + unit + (cur !== std ? ' (suggested $' + std + unit + ')' : ''))
+            : h('b', { style: 'color:#0f766e;white-space:nowrap' }, '$' + std + unit + (above ? ' → $' + cur + unit + ' (above)' : ''));
+          const raiseBtn = h('a', { style: 'font-size:.74rem;font-weight:800;color:#0883F7;cursor:pointer;white-space:nowrap', onClick: () => { w[rk] = !w[rk]; renderStep(); } }, w[rk] ? 'Done' : (SHIP ? 'Change ▸' : (above ? 'Edit' : 'Offer above ▸')));
           const parts = [h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap' }, [h('span', null, [h('b', null, title), extra ? h('span', { class: 'cp-sub' }, ' · ' + extra) : null]), h('span', { style: 'display:flex;gap:12px;align-items:center' }, [valTxt, raiseBtn])])];
           if (w[rk]) {
-            const inpx = h('input', { class: 'cp-in', type: 'number', style: 'margin-top:6px', value: String(cur), min: String(std) });
-            inpx.oninput = () => { const n = Number(inpx.value); w[key] = (n >= std ? String(n) : String(std)); };
-            inpx.onblur = () => { if (Number(w[key]) < std) w[key] = String(std); renderStep(); };
+            const inpx = h('input', { class: 'cp-in', type: 'number', style: 'margin-top:6px', value: String(cur), min: SHIP ? '0' : String(std) });
+            inpx.oninput = () => { const n = Number(inpx.value); w[key] = SHIP ? String(Math.max(0, isFinite(n) ? n : 0)) : (n >= std ? String(n) : String(std)); };
+            inpx.onblur = () => { if (!SHIP && Number(w[key]) < std) w[key] = String(std); renderStep(); };
             parts.push(inpx);
-            parts.push(h('div', { class: 'cp-sub', style: 'color:#b45309;margin-top:3px' }, 'Minimum is the LoadBoot standard $' + std + unit + ' — you can only go higher.'));
+            parts.push(h('div', { class: 'cp-sub', style: 'color:#b45309;margin-top:3px' }, SHIP
+              ? 'Suggested default $' + std + unit + ' — your choice. Terms below the usual market level mean fewer carriers will request the load.'
+              : 'Minimum is the LoadBoot standard $' + std + unit + ' — you can only go higher.'));
           }
           return h('div', { style: 'background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 13px' }, parts);
         };
@@ -2558,14 +2574,14 @@ async function brokerDash(user, ov) {
         if (w.svc_extra_stop) { const nst9 = (Array.isArray(w.stops) ? w.stops.filter((z9) => z9 && z9.lat) : []).length; const rt9 = Number(w.acc_extra_stop) || sv('acc_extra_stop'); items.push(li('Extra stop' + (nst9 ? 's ×' + nst9 : ''), '$' + rt9 + '/stop' + (nst9 ? ' = $' + (nst9 * rt9) + ' total' : ''), null)); }
         if (w.team_required) items.push(li('Team drivers', 'priced in linehaul (+20–30%)', null));
         const agree = h('div', { style: 'margin-top:14px;background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:14px;padding:14px 16px' }, [
-          h('div', { style: 'font-weight:800;color:#065f46;font-size:.92rem;margin-bottom:3px' }, [icon('clipboard',15),' Standard marketplace terms — please review before continuing']),
+          h('div', { style: 'font-weight:800;color:#065f46;font-size:.92rem;margin-bottom:3px' }, [icon('clipboard',15), window.__lbKindLabel === 'Shipper' ? ' Your terms for this load — please review before continuing' : ' Standard marketplace terms — please review before continuing']),
           h('div', { class: 'cp-sub', style: 'color:#047857;margin-bottom:9px;line-height:1.55' }, 'These are industry-standard protections agreed between YOU and the carrier — LoadBoot does not charge, add, or take any of them. They only apply IF the situation happens, and the carrier must prove it. Showing them upfront keeps every load transparent and dispute-proof.'),
           h('div', null, items),
           h('label', { style: 'display:flex;gap:9px;align-items:flex-start;margin-top:11px;cursor:pointer;font-size:12.5px;line-height:1.6;color:#065f46' }, [agCb,
-            h('span', null, ['I have reviewed the above and ', h('b', null, 'agree these standard rates & policies apply'), ' to this load’s rate confirmation, claimable by the carrier with proof.'])]),
+            h('span', null, ['I have reviewed the above and ', h('b', null, window.__lbKindLabel === 'Shipper' ? 'agree these terms apply' : 'agree these standard rates & policies apply'), ' to this load’s rate confirmation, claimable by the carrier with proof.'])]),
         ]);
         return h('div', null, [
-          h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B;margin:2px 0 8px' }, [icon('shield',15),' Carrier protections — standard on every load']),
+          h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B;margin:2px 0 8px' }, [icon('shield',15), window.__lbKindLabel === 'Shipper' ? ' Carrier protections — you set them for this load' : ' Carrier protections — standard on every load']),
           h('div', { class: 'cp-sub', style: 'margin:-4px 0 8px' }, 'These apply at EVERY stop — pickup, delivery and any stop in between.'),
           protections,
           h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B;margin:14px 0 4px' }, 'Optional services for this load'),
@@ -2607,7 +2623,9 @@ async function brokerDash(user, ov) {
         h('a', { href: '/fcfs-policy.html', target: '_blank', rel: 'noopener' }, 'FCFS')]),
       (() => { const cb = h('input', { type: 'checkbox' }); cb.checked = !!w.emg_policy_ok; cb.onchange = () => { w.emg_policy_ok = cb.checked; };
         return h('label', { style: 'display:flex;gap:9px;align-items:flex-start;margin-top:8px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.6;cursor:pointer' }, [cb,
-          h('span', null, ['I accept the ', h('a', { href: '/emergency-rescheduling-policy.html', target: '_blank', rel: 'noopener' }, 'Emergency Rescheduling Policy'), ' — a VERIFIED on-road emergency (proof + live GPS + Dispatch verification) may reschedule the delivery window; response window 2 hours, then policy auto-reschedule; no carrier penalty/TONU on verified emergencies. Required to post.'])]);
+          h('span', null, ['I accept the ', h('a', { href: '/emergency-rescheduling-policy.html', target: '_blank', rel: 'noopener' }, 'Emergency Rescheduling Policy'), (window.__lbKindLabel === 'Shipper'
+            ? ' — if the carrier has a real on-road emergency, it shows you the proof and live GPS in the portal and may move the delivery window; you have 2 hours to confirm a new window, otherwise it moves automatically; no carrier penalty/TONU for a proven emergency. LoadBoot does not decide it. Required to post.'
+            : ' — a VERIFIED on-road emergency (proof + live GPS + Dispatch verification) may reschedule the delivery window; response window 2 hours, then policy auto-reschedule; no carrier penalty/TONU on verified emergencies. Required to post.')])]);
       })(),
       wi('Notes / special instructions', 'notes'),
     ]);
@@ -2892,7 +2910,7 @@ async function brokerDash(user, ov) {
             w.hazmat_info = 'UN' + w.hz_un + ' \u00b7 Class ' + w.hz_class + (w.hz_pg ? ' \u00b7 PG ' + w.hz_pg : '') + ' \u00b7 ' + w.hz_name.trim();
         }
 
-        if (!w.acc_agreed) missing.push('agree to the LoadBoot standard accessorial rates (checkbox)');
+        if (!w.acc_agreed) missing.push(window.__lbKindLabel === 'Shipper' ? 'agree the accessorial terms apply (checkbox)' : 'agree to the LoadBoot standard accessorial rates (checkbox)');
         if (!w.emg_policy_ok) missing.push('Emergency Rescheduling Policy acceptance (required)');
         if (w.hazmat_sel === 'yes' && directCarrier) {
           const c9 = await dirCarrierInfo(directCarrier.id);
@@ -4679,11 +4697,11 @@ function packetAgreementCards(skipPacket) {
     ['claims', 'Claims', 'alert'],
     ['requests', 'Requests', 'clock'],
     ['carriers', 'Carriers', 'truck'],
-    ...(ov.kind === 'shipper' ? [['brokers', 'Brokers', 'building']] : []),  // bl_ship_0491: shipper chooses a verified broker
+    ...(shipV2(ov) ? [['brokers', 'Brokers', 'building']] : []),  // bl_ship_0491: shipper chooses a verified broker
     ['rates', 'Market Rates', 'tag'],
     ['network', 'Network', 'building'],
     ...(ov.kind === 'broker' ? [['agents', 'Agents & team', 'users']] : []),
-    ['onboarding', ov.kind === 'shipper' ? 'Verification' : 'Documents', 'docs'],
+    ['onboarding', shipV2(ov) ? 'Verification' : 'Documents', 'docs'],
     ['invoices', 'Invoices', 'receipt'],
     ['developers', 'API & Keys', 'zap'],
     ['account', 'Account', 'user'],
@@ -4714,6 +4732,9 @@ function packetAgreementCards(skipPacket) {
       ].filter(Boolean))),
     ]));
     else if (pk.complete) mount(obHero, mk('#16a34a', '🎉', '#e7f9ee', '#12a150', 'Approved — load posting is unlocked', '#12a150', 'Your packet is fully verified. Post loads, offer them to carriers, and track everything with GPS proof.', 'View packet'));
+    // bl_ship_0499: a shipper's banner follows its lane gates (0491), not the old broker packet.
+    else if (ov.kind === 'shipper' && ov.shipper_stage && (ov.direct_ok || ov.broker_ok)) mount(obHero, mk('#16a34a', '\u2705', '#e7f9ee', '#12a150', 'Verified \u2014 ' + (ov.direct_ok && ov.broker_ok ? 'both lanes are open' : ov.direct_ok ? 'you can post to carriers' : 'you can tender to brokers'), '#12a150', 'Post a load at your own rate and choose the carrier yourself, or tender it to a verified broker of your choice.', 'View verification'));
+    else if (ov.kind === 'shipper' && ov.shipper_stage) mount(obHero, mk('#d97706', '\ud83d\udccb', '#fef3c7', '#b45309', 'Verify your company to start shipping', '#b45309', 'Finish the Verification steps \u2014 nothing reaches carriers or brokers until a lane opens.', 'Open verification \u2192'));
     // bl_bp_0343: a broker paused on authority must never see "post your first load in minutes".
     else if (ov.kind === 'broker' && __trustSt && __trustSt.tier === 'authority_fail') mount(obHero, mk('#dc2626', '⛔', '#fdecec', '#c62828', 'New posting is paused — FMCSA authority', '#c62828', (__trustSt.reason || 'FMCSA no longer shows active broker authority for this MC.') + ' Nothing already booked was cancelled.', 'See details →'));
     else if (ov.kind === 'broker' && __trustSt && __trustSt.tier === 'authority_stale') mount(obHero, mk('#d97706', '🕐', '#fef3c7', '#b45309', 'We could not re-confirm your authority', '#b45309', (__trustSt.reason || 'Our FMCSA lookup has not succeeded recently.') + ' This is usually our side, not yours — ask us to verify it by hand.', 'See details →'));
@@ -4868,8 +4889,8 @@ function packetAgreementCards(skipPacket) {
     network: [approvedPartnersCard(), ratingCard(), referralCard()],
     agents: ov.kind === 'broker' ? [h('div', { id: 'bd-agents' })] : [],  // mounted lazily on first visit (see brender)
     // bl_ship_0491: shippers get the sectioned verification (A–G, per-lane progress); brokers keep their wizard
-    onboarding: [ov.kind === 'shipper' ? shipperVerificationPage({ openModal, toast: (m, bad) => pToast(m, { kind: bad ? 'error' : 'ok' }), onChange: () => { partnerOverview().then((o) => { if (o) { ov.onboarded = o.onboarded; } }).catch(() => {}); } }) : brokerOnboardingWizard()],
-    brokers: ov.kind === 'shipper' ? [shipperBrokersPage({ openModal, toast: (m, bad) => pToast(m, { kind: bad ? 'error' : 'ok' }), onPost: () => { bgo('dashboard'); } })] : [],
+    onboarding: [shipV2(ov) ? shipperVerificationPage({ openModal, toast: (m, bad) => pToast(m, { kind: bad ? 'error' : 'ok' }), onChange: () => { partnerOverview().then((o) => { if (o) { ov.onboarded = o.onboarded; } }).catch(() => {}); } }) : brokerOnboardingWizard()],
+    brokers: shipV2(ov) ? [shipperBrokersPage({ openModal, toast: (m, bad) => pToast(m, { kind: bad ? 'error' : 'ok' }), onPost: () => { bgo('dashboard'); } })] : [],
     invoices: [carrierInvoicesCard(), payablesCard(), invoicesCard()],
     account: [accountCard(), securityCard(), pnotifCard(), phelpCard(), plegalCard(), pdeleteCard()],
   };
@@ -5257,7 +5278,7 @@ function packetAgreementCards(skipPacket) {
         try { window.scrollTo(0, 0); } catch (_) {}
         return;
       }
-      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(true), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { __postFocus = false; postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : ov.kind === 'shipper' ? shipperLaneCard({ goVerify: () => bgo('onboarding'), goBrokers: () => bgo('brokers'), onPost: () => bgo('onboarding') }) : verifyGateCard(ov))]), h('div', { class: 'bd-peek' }, [myLoadsCard, h('button', { class: 'cp-btn cp-btn-sm ghost bd-peek-all', onClick: () => bgo('loads') }, 'View all loads \u2192')]), bdNetwork(), bdActivity()]));
+      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(true), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { __postFocus = false; postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : shipV2(ov) ? shipperLaneCard({ goVerify: () => bgo('onboarding'), goBrokers: () => bgo('brokers'), onPost: () => bgo('onboarding') }) : verifyGateCard(ov))]), h('div', { class: 'bd-peek' }, [myLoadsCard, h('button', { class: 'cp-btn cp-btn-sm ghost bd-peek-all', onClick: () => bgo('loads') }, 'View all loads \u2192')]), bdNetwork(), bdActivity()]));
       return;
     }
     mount(bContent, h('div', null, PAGES[btab] || []));

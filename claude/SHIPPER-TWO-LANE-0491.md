@@ -172,13 +172,17 @@ They are staging only. Their passwords were never stored in the repo. Create fre
 - Agreements rendered as raw Markdown. `app/shared/ui/mdLite.js` now renders them as formatted text using text nodes only.
 - Test `tests/app_modules_parse_test.mjs` makes every app module parse as ESM (see the partner outage below).
 
-**Found — still open, owner's call:**
-1. **Marketplace accessorial standards on shipper loads:** detention $60/hr, layover $250, TONU $250, and "You cannot post BELOW standard". LoadBoot is setting minimum price terms on a shipper's freight, which sits badly with "LoadBoot never sets the rate". Suggestion: for shippers, show them as suggested defaults the shipper can edit, or drop the floor.
-2. The **Emergency Rescheduling Policy** says "Dispatch verification". On shipper loads that puts LoadBoot inside the transaction.
-3. The carrier board card still says "🏢 Broker packet" on a shipper's load.
-4. The shipper dashboard banner says "Finish onboarding to start posting" while the shipper is `direct_ready` with a live load.
-5. The welcome feed says "…then you can request quotes right away", but the lanes are gated.
-6. The staff "post" step: a shipper's load waits in `submitted` until staff post it. That is a review gate, not allocation, but it should be written into the Platform Terms (§4.3).
+**Found and fixed on 29 Sep (owner: "suggest and implement the best"), verified in the browser:**
+1. **Accessorials on shipper loads are suggested defaults, not a floor.** For shippers the wizard says "Your rate card. These are suggested industry defaults — you set the numbers… LoadBoot does not set them". "Change ▸" can go up or down, and the test set detention to $40 against a suggested $60. The DB never enforced a floor (`enforce_load_ready` only needs a number, and `claim_rate` uses the load's own value), so no migration was needed. Brokers keep the standards floor.
+2. **Emergency Rescheduling Policy text for shippers:** "the carrier shows you the proof and live GPS in the portal and may move the delivery window; you have 2 hours to confirm… LoadBoot does not decide it". There is no "Dispatch verification" any more.
+3. **Carrier board:** a shipper's own load says "📦 Shipper's own load — you contract with the shipper". `0499d` adds `details.poster_kind`.
+4. **Shipper dashboard banner** follows the lane gates: "Verified — you can post to carriers" / "Verify your company to start shipping".
+5. **Welcome text** (`cc_partner_register`, `0499d`) no longer promises quotes; it points to Verification.
+6. **Shipper Invoices tab (owner screenshot):** it showed "PAY TO — LoadBoot", Payoneer and bank details. It now shows "LoadBoot does not bill shippers — you pay each carrier directly (Payables)" plus the fraud warning. Prod has zero LoadBoot invoices to shippers (only 2 broker invoices), so nothing legitimate is hidden.
+7. **Prod safety (`shipV2`):** the two-lane shipper UI (Verification, Brokers, lane card) shows only when `cc_partner_overview` returns `shipper_stage`, which happens only with 0493+. On prod before the rollout, shippers keep the previous UI instead of calling functions that do not exist. When the rollout lands, the new UI switches on by itself.
+
+**Still open:**
+1. The staff "post" step: a shipper's load waits in `submitted` until staff post it. That is a review gate, not allocation, but it should be written into the Platform Terms (§4.3).
 
 **Partner portal outage (production):** since `d8bf908`, `app/partner/app.js:4574` had a mid-line `//` comment that swallowed a closing brace. The whole Partner portal (brokers and shippers) rendered blank on loadboot.com. It was fixed and pushed to `main` as `06536c4` on 29 Sep.
 
@@ -202,7 +206,7 @@ They are staging only. Their passwords were never stored in the repo. Create fre
 ## 6. Prod rollout (only on "prod pe chalao")
 
 1. Read the anon baseline (must be 36, names per `docs/audit-2026-09/anon-secdef-baseline.md`).
-2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c (same files).
+2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c → 0499d (same files).
 3. Deploy domain-check v6 **and dmail** (with the 0499 guard). Compare each deployed version to repo HEAD first. Deploy dmail only after 0499 is applied.
 4. Re-read the anon baseline: still 36, same names.
 5. Publish the agreements. The owner approved them on 29 Sep 2026, and they are already published on staging. Use the exact files `claude/agreements/SHIPPER-PLATFORM-TERMS-v1.md` and `SHIPPER-CARRIER-TERMS-v1.md` with the SQL in `claude/agreements/README.md`, then check the SHA-256 against the README.

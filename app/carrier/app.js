@@ -5154,7 +5154,7 @@ async function appView(user) {
         ]),
         meta.length ? h('div', { class: 'cp-load-meta' }, meta.join(' · ')) : null,
         l.requirements ? h('div', { class: 'cp-row-s' }, l.requirements) : null,
-        h('div', { style: 'margin:4px 0' }, h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'font-size:.74rem;padding:5px 12px', onClick: (ev9) => { ev9.stopPropagation(); openBrokerPacketPreview(); } }, '\ud83c\udfe2 Broker packet \ud83d\udd12 \u2014 what you get on booking')),
+        h('div', { style: 'margin:4px 0' }, h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'font-size:.74rem;padding:5px 12px', onClick: (ev9) => { ev9.stopPropagation(); openBrokerPacketPreview(); } }, (l.details && l.details.poster_kind === 'shipper' ? '\ud83d\udce6 Shipper\u2019s own load \u2014 you contract with the shipper \ud83d\udd12 what you get on booking' : '\ud83c\udfe2 Broker packet \ud83d\udd12 \u2014 what you get on booking'))),
         (l.accessorials && (l.accessorials.detention_per_hr || l.accessorials.tonu)) ? h('div', { class: 'cp-row-s', style: 'color:#0f766e' },
           '\ud83e\uddfe Rate card: ' + ['detention $' + (l.accessorials.detention_per_hr || '60') + '/hr after ' + (l.accessorials.detention_free_hours || '2') + 'h',
             'layover $' + (l.accessorials.layover_per_day || '250') + '/day', 'TONU $' + (l.accessorials.tonu || '250'),
