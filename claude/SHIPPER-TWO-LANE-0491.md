@@ -236,7 +236,14 @@ They are staging only. Their passwords were never stored in the repo. Create fre
 
 ## 6. Prod rollout (only on "prod pe chalao")
 
-> **Status 29 Sep 2026 — rollout PAUSED after step 2 partway.** Owner said "prod pe chalao". Applied on prod: **0491, 0492** only (stored text md5 = repo file body: `b1eef6f1…`, `eacc4b58…`). Anon after: 36, names md5 `06f779f7…` (unchanged). Not yet applied: 0493 → 0500c; domain-check v6 + dmail not deployed; agreements not published (0 shipper agreements published, so no shipper lane can open); `yuayui788` not yet `is_demo`. Resume at 0493. Staging text check: 0491/0492 differ from staging's record only in trailing comments; 0500 differs only by the `xs` alias fix that staging runs live.
+> **Status 29 Sep 2026 — PROD ROLLOUT DONE (steps 1–6).**
+> - Anon before and after: 36, names md5 `06f779f7…` (unchanged).
+> - Migrations 0491 → 0500c applied on prod. The stored text md5 of each one equals the repo file body (header comments stripped). 0491 `b1eef6f1` · 0492 `eacc4b58` · 0493 `ce5b78d4` · 0494 `a6f2562a` · 0495 `ad40586a` · 0496 `edf1c2f7` · 0497 `5e33094c` · 0498 `ab2efb69` · 0499 `1a8749a6` · 0499b `153e637a` · 0499c `cc35a249` · 0499d `c3578457` · 0500 `7348c1fa` · 0500b `97a84657` · 0500c `6eeff042`. Before each full-body replace, the prod function was checked against the base it was written for.
+> - 0500 backfill: 224 contact-log rows.
+> - Edge functions: prod dmail was `d49ee9a`, now **v9** = HEAD (adds the rate guard, verify_jwt off). Prod domain-check was `e870f01` (v5), now **v10** = HEAD (v6 signals, verify_jwt on). Each deploy failed once with a Supabase internal error and succeeded on retry. Six dmail mailboxes, four synced within 3 min after the deploy; one shows "Login failed" (a mailbox password issue, not code).
+> - Agreements published on prod, both inside a DO block that refused on a hash mismatch: `shipper_carrier` v1 `5ca65f64…` and `shipper_platform` **v2** `b0398a76…`. The prod `shipper_platform` v1 placeholder stays unpublished. All 5 prod shippers now show Platform Terms and Carrier Terms as `pending`, so the portal offers them to sign.
+> - `The Shipper` (`yuayui788@gmail.com`, org `a0af7d3d-805f-47d2-9e50-589bb78b8a0a`) is now `is_demo = true`. The same user also owns a carrier org `yuayui788` (`6be76ec6…`); it was left unchanged.
+> - Still open: pair the demo shipper with the internal test carrier (`bl_sec_0490`) when the owner tests. MII stays on hold (step 7).
 
 1. Read the anon baseline (must be 36, names per `docs/audit-2026-09/anon-secdef-baseline.md`).
 2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c → 0499d → 0500 → 0500b → 0500c (same files).
