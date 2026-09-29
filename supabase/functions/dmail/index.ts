@@ -132,6 +132,11 @@ async function actSend(svc: SupabaseClient, acc: Any, uid: string, b: Any) {
   const to = norm(b.to), cc = norm(b.cc), bcc = norm(b.bcc);
   if (!to.length && !cc.length && !bcc.length) return { error: "Add at least one recipient" };
   if (to.length + cc.length + bcc.length > 25) return { error: "Too many recipients (max 25 per email)" };
+  // bl_ship_0499: LoadBoot never talks rates with a shipper. Checked before SMTP (the DB only sees a dmail send after it
+  // left). Fails closed, except when the guard is not installed yet on this database (PGRST202 → migration 0499 missing).
+  { const { data: block, error: gErr } = await svc.rpc("svc_shipper_rate_guard", { p_to: [...to, ...cc, ...bcc].map((x: Any) => x.email), p_body: String(b.subject || "") + "\n" + String(b.html || "") });
+    if (gErr && gErr.code !== "PGRST202") return { error: "Could not run the shipper rate check — try again in a minute." };
+    if (block) return { error: String(block) }; }
   let answered: Any = null, fwd: Any = null;
   if (b.reply_to || b.forward_of) { const { data } = await svc.rpc("dmail_msg_refs", { p_account: acc.id, p_ids: [b.reply_to || b.forward_of] }); const r = (data || [])[0]; if (b.reply_to) answered = r; else fwd = r; }
   const attachments: Any[] = []; let total = 0;

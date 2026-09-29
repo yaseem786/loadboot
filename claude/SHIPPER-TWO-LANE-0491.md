@@ -84,6 +84,15 @@ A shipper's load is **never instant-booked**. Every carrier is accepted by the s
   - Without that signature, `trg_bookreq_shipper_terms` refuses the book request and `cc_offer_respond` refuses the accept (`SHIPPER_TERMS:` prefix). The carrier app catches that error, shows the Terms, and retries after signing.
   - Dispatch guard: on a shipper load a LoadBoot dispatcher cannot put a note on a book request (it is replaced with "Requested at your posted rate by the carrier's LoadBoot dispatcher") and cannot counter an offer. The carrier's own users can still counter.
   - Rollback test on staging, all passing: gate before and after signing, dispatcher cannot sign, bad sha refused, dispatcher note and counter refused, carrier's own counter allowed, non-shipper load untouched. The anon surface is unchanged: 35, md5 `b862e7e2…`.
+- **0499 + 0499b (29 Sep, owner: "hum shipper se rate ki baat nahi karenge"):** only the carrier or broker the shipper offered the load to may counter.
+  - `cc_offer_send` (staff offer at a staff-chosen rate) refuses a shipper's own load.
+  - `trg_no_shipper_rate_talk` guards `mail_messages`, `dialer_messages` (SMS), `wa_messages`, `comm_messages` (thread on a shipper load) and `lc_messages` (live chat). A staff message is refused. The AI brain's reply is replaced with a neutral line.
+  - The dmail mailboxes (hello@, dispatch@ and the rest) call `svc_shipper_rate_guard` before SMTP (edge function `dmail`). It fails closed, except with PGRST202 (guard not installed).
+  - A "shipper contact" is: a member's email or phone, the company email, the call-back phone, a facility phone, an email or phone in the onboarding answers, or a live-chat `visitor_role = 'shipper'`.
+  - The detector (`rate_talk_reason`) is a pattern filter, not proof. It catches money + rate words, per-mile/rpm, counter-offers, a number next to "all in/flat/rate", and "raise/lower the rate". It ignores "rate confirmation" and quoted mail.
+  - Other pieces: brain rule `rule.no_shipper_rate_talk` (live), and dispatcher conduct terms **v2-2026-09-29** with a no-rate-talk line (re-accepted at the next carrier choice).
+  - Staging rollback tests are all passing. The anon surface is still 35, same md5.
+  - **Not covered:** phone calls, including Riley voice. Put the same rule in Riley's prompt.
 - **0497:** `shipper_badge` tells the broker who is behind a tender: stage, identity verified, call-back confirmed, payment terms, whether credit references were given, and platform terms signed. Never the EIN, bank or reference details. The broker inbox shows it (`shipper-trust.js` `shipperBadge`). The fallback itself already existed (inbound-mail v6, 27 Sep).
 
 ### Edge function
@@ -142,7 +151,7 @@ Verified live: the MII case returns `budget_host`, and SEC hits "Victoria's Secr
 ## 5. Risks and open items for the owner
 
 1. **Agreements.** Owner review done on 29 Sep: Texas law and courts; liability cap = greater of 12 months' fees or $100, plus a consequential-damages exclusion; the fee wording is honest; boilerplate added (see `claude/agreements/README.md`). The only blank left is the publication date. An attorney review is still recommended. **Until they are published, no shipper can open a lane on either environment.** For a staging walkthrough before approval, the drafts can be published on staging only as a clearly marked test copy (ask first).
-2. **LoadBoot dispatchers talking rates with shippers.** *Closed in code by 0498* (book-request note and counter-offer on shipper loads). Staff email or SMS threads (`cc_create_thread`, `cc_post_message`) are policy, not code. This still needs a line in the dispatcher conduct terms. Original note: FMCSA 2023 guidance (IV.F) lists "interacts with or negotiates any shipment of freight directly with the shipper" as an indicator that a dispatch service needs broker authority. On direct loads the shipper sets the rate and carriers request at it. Dispatchers should **not** counter-offer to shippers. This is not yet enforced in code (counter-offer paths were not audited). The marketing copy no longer claims dispatchers negotiate with shippers.
+2. **LoadBoot dispatchers talking rates with shippers.** *Closed in code by 0498 and 0499/0499b*: book-request note, counter-offer, staff offers, and every text channel (mail, dmail, SMS, WhatsApp, CC threads, live chat and the AI brain). The conduct terms are v2. Voice calls are still policy only. Original note: FMCSA 2023 guidance (IV.F) lists "interacts with or negotiates any shipment of freight directly with the shipper" as an indicator that a dispatch service needs broker authority. On direct loads the shipper sets the rate and carriers request at it. Dispatchers should **not** counter-offer to shippers. This is not yet enforced in code (counter-offer paths were not audited). The marketing copy no longer claims dispatchers negotiate with shippers.
 3. **Existing shippers on prod (4).** After prod rollout they fall back to `new` until they complete the new verification. They are told by the portal. A draft message to them is for the owner to send.
 4. **Staff approving carriers on broker loads** is still allowed (unchanged). This is the owner's call.
 5. **Phone codes use the Retell verify agent** (real calls). Staging has it configured. Tests inserted code rows directly and placed no calls.
@@ -151,8 +160,8 @@ Verified live: the MII case returns `budget_host`, and SEC hits "Victoria's Secr
 ## 6. Prod rollout (only on "prod pe chalao")
 
 1. Read the anon baseline (must be 36, names per `docs/audit-2026-09/anon-secdef-baseline.md`).
-2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 (same files).
-3. Deploy domain-check v6 (compare the deployed version to repo HEAD first).
+2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b (same files).
+3. Deploy domain-check v6 **and dmail** (with the 0499 guard). Compare each deployed version to repo HEAD first. Deploy dmail only after 0499 is applied.
 4. Re-read the anon baseline: still 36, same names.
 5. Publish the agreements. The owner approved them on 29 Sep 2026, and they are already published on staging. Use the exact files `claude/agreements/SHIPPER-PLATFORM-TERMS-v1.md` and `SHIPPER-CARRIER-TERMS-v1.md` with the SQL in `claude/agreements/README.md`, then check the SHA-256 against the README.
 6. Test account `yuayui788@gmail.com`:
