@@ -5,7 +5,8 @@
 >
 > This is a **template the shipper and the carrier sign between themselves**:
 > - the shipper signs it once in the LoadBoot portal;
-> - a carrier accepts it for each load when it accepts that load's Rate Agreement.
+> - a carrier accepts it **once** in its own LoadBoot app (owner or office user only; `bl_ship_0498`). Without that
+>   signature the carrier cannot request or accept any shipper load. A LoadBoot dispatcher cannot accept it for the carrier.
 >
 > **LoadBoot is not a party.** It only supplies the software that shows, signs and stores the document
 > (FMCSA 2023 guidance: being a "named party on the shipping contract" points to broker status — so
@@ -20,9 +21,9 @@
 
 1.1 These Terms are between:
 - the **Shipper**, who signed them in the LoadBoot portal; and
-- each **Carrier**, an FMCSA-authorized motor carrier that accepts a Rate Agreement for one of the Shipper's loads.
+- each **Carrier**, an FMCSA-authorized motor carrier that has accepted these Terms in its LoadBoot app and is accepted by the Shipper for one of the Shipper's loads.
 
-1.2 A contract for a load is formed when **the Shipper accepts the Carrier** for that load **and the Carrier accepts the Rate Agreement**. The Rate Agreement is generated in the LoadBoot portal from the Shipper's posting.
+1.2 A contract for a load is formed when **the Shipper accepts the Carrier** for that load **and the Carrier signs the Rate Agreement**. The "Rate Agreement" is the rate confirmation for that load: the Shipper issues it from its posting, and the Carrier signs it and stores it in the LoadBoot portal. Both parties accept these Terms before any load is agreed. The Carrier's acceptance covers every Shipper load it is accepted for, until a newer version is published.
 
 1.3 Order of precedence:
 1. the Rate Agreement;
@@ -37,6 +38,8 @@ The bill of lading serves as the receipt for the goods. Carrier tariffs, rules c
 - does not select the Carrier;
 - does not handle freight charges;
 - has no liability under these Terms.
+
+1.5 If the Carrier uses LoadBoot's dispatch service, the LoadBoot dispatcher acts only as the Carrier's agent under the Carrier's own agreement with LoadBoot. The dispatcher may ask to book a load at the Shipper's posted rate. The dispatcher does not negotiate with the Shipper, and does not accept these Terms for the Carrier. The Carrier is bound only by what the Carrier itself signs.
 
 ## 2. Carrier's status and promises
 
@@ -150,9 +153,19 @@ These Terms apply to every load the parties agree through the portal. The Shippe
 
 ## 16. Law and disputes
 
-16.1 Federal law governs where it applies. Otherwise the law of **[STATE — owner/attorney to decide]** applies.
+16.1 Federal law governs where it applies. Otherwise the laws of the State of Texas apply, without regard to its conflict-of-law rules.
 
-16.2 Disputes: **[COURTS / ARBITRATION — owner/attorney to decide]**.
+16.2 Disputes go to the state and federal courts located in Texas, and each party consents to them. **Except:** a claim for loss of or damage to cargo may be brought in any court that 49 U.S.C. 14706(d) allows, unless both parties have expressly waived that right in a signed Rate Agreement (49 U.S.C. 14101(b)).
+
+## 18. General
+
+18.1 If a court holds any part of these Terms unenforceable, that part is enforced as far as the law allows and the rest stays in effect.
+
+18.2 A delay or failure to enforce a right is not a waiver of it.
+
+18.3 Neither party may assign a load or these Terms without the other's written consent. Section 3 (no re-brokering) still applies.
+
+18.4 Neither party is liable for a delay or failure caused by events beyond its reasonable control. This does not excuse a payment that is owed.
 
 ## 17. Electronic signature
 
@@ -161,8 +174,8 @@ Each party agrees to sign electronically. A typed name, together with the record
 ---
 
 ### Items the owner or attorney must decide before publishing
-1. Governing law and dispute forum (Sections 13 and 16).
-2. Liability cap wording in the Platform Terms (Section 10.3).
+1. ~~Governing law and dispute forum~~ — **decided 29 Sep 2026:** Texas law, Texas courts (Platform §13, this §16).
+2. ~~Liability cap~~ — **decided 29 Sep 2026:** greater of 12 months' fees or US$100, plus a consequential-damages exclusion (Platform §10.3–10.4).
 3. Whether shipper-load-and-count language (Section 5.2) fits every shipper, or should be chosen per location.
 4. **UNVERIFIED from the research pass:**
    - the circuit-specific released-rate test for Carmack limits;

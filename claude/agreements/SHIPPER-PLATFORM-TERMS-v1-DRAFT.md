@@ -9,7 +9,7 @@
 ---
 
 **Effective date:** [DATE OF PUBLICATION]
-**Between:** LoadBoot LLC ("**LoadBoot**", "we") and the company named in your LoadBoot shipper account ("**Shipper**", "you").
+**Between:** LoadBoot LLC, a Wyoming limited liability company ("**LoadBoot**", "we") and the company named in your LoadBoot shipper account ("**Shipper**", "you").
 
 ## 1. Accepting these Terms
 
@@ -29,11 +29,16 @@
 - (a) set, suggest as binding, or negotiate the rate for your freight;
 - (b) choose, assign or approve a carrier or a broker for your freight;
 - (c) collect, hold, pay or pass along freight charges;
-- (d) take a share of the freight charge.
+- (d) receive any part of the freight charge from you. (Carriers that choose LoadBoot's dispatch service pay LoadBoot a separate service fee under their own agreement. See Section 7.4.)
 
 LoadBoot staff may **block** a load, a shipper, a carrier or a broker to prevent fraud or for safety. That is the only decision LoadBoot makes about a shipment.
 
 2.4 Rate estimates and "recommended carriers" are **information only**. You decide.
+
+2.5 **LoadBoot dispatch acts only for carriers.** Some carriers use LoadBoot's dispatch service. A LoadBoot dispatcher then acts only as that carrier's agent, under the carrier's own agreement with LoadBoot, never for you. On your loads a LoadBoot dispatcher:
+- may ask to book your load **at the rate you posted**;
+- does **not** negotiate the rate with you, counter your offers, or message you about the rate;
+- cannot accept the Master Shipper–Carrier Transportation Terms for a carrier. The carrier accepts them itself.
 
 ## 3. Two ways to ship
 
@@ -102,7 +107,7 @@ LoadBoot staff may **block** a load, a shipper, a carrier or a broker to prevent
 
 7.3 **Fees.** LoadBoot currently charges shippers **no fee**. We may introduce a flat platform or subscription fee for shippers in future, with at least 30 days' written notice. Any shipper fee will **never** be a percentage of your freight charges.
 
-7.4 **Disclosure.** Carriers who use LoadBoot's dispatch service pay LoadBoot a dispatch/platform service fee under their own agreement with LoadBoot. That fee:
+7.4 **Disclosure.** Carriers who use LoadBoot's dispatch service pay LoadBoot a dispatch/platform service fee under their own agreement with LoadBoot. It is currently a percentage of the carrier's revenue for the load. That fee:
 - is paid by the carrier;
 - is not added to your freight charge;
 - does not make LoadBoot a party to your shipment.
@@ -141,9 +146,11 @@ You may not:
 
 Cargo loss and damage are governed by your contract with the carrier or the broker. For carriers this includes 49 U.S.C. 14706.
 
-10.3 LoadBoot's total liability to you under these Terms is limited to **[AMOUNT — owner to decide; e.g. the fees you paid LoadBoot in the 12 months before the claim, or $100 if none]**.
+10.3 LoadBoot's total liability to you under these Terms is limited to the **greater of** (a) the fees you paid LoadBoot in the 12 months before the event giving rise to the claim, and (b) **US$100**.
 
-10.4 You will indemnify LoadBoot against third-party claims caused by:
+10.4 To the extent the law allows, neither party is liable to the other under these Terms for indirect, incidental, special, consequential or punitive damages, or for lost profits or revenue. This does not limit your indemnity in Section 10.5, or liability for fraud or wilful misconduct.
+
+10.5 You will indemnify LoadBoot against third-party claims caused by:
 - your false declarations;
 - your breach of Section 5;
 - your breach of Section 9.
@@ -160,11 +167,27 @@ We may update these Terms. We will show you the new version in the portal and yo
 
 ## 13. Law and disputes
 
-13.1 Governing law: **[STATE — owner to confirm LoadBoot LLC's state]**.
+13.1 **Governing law.** These Terms are governed by the laws of the State of Texas, without regard to its conflict-of-law rules, except where federal law applies.
 
-13.2 Disputes: **[COURTS / ARBITRATION — owner to decide]**.
+13.2 **Disputes.** Before filing any claim, you agree to contact us at hello@loadboot.com and give us thirty (30) days to resolve it. After that, the state and federal courts located in Texas have exclusive jurisdiction over any dispute arising from these Terms, and each party consents to them. Each party waives trial by jury to the extent the law allows.
 
 13.3 Nothing in these Terms limits rights that federal transportation law gives you against a carrier or a broker.
+
+## 14. General
+
+14.1 **Entire agreement.** These Terms, together with the Privacy Policy, are the whole agreement between you and LoadBoot about your use of LoadBoot. They replace any earlier discussion about it.
+
+14.2 **Severability.** If a court holds any part of these Terms unenforceable, that part is enforced as far as the law allows and the rest stays in effect.
+
+14.3 **No waiver.** A delay or failure to enforce a right is not a waiver of it.
+
+14.4 **Assignment.** You may not transfer these Terms without our written consent. We may transfer them to a successor to our business, with notice to you.
+
+14.5 **Notices.** We send notices to the email address on your account and show them in the portal. You send notices to hello@loadboot.com.
+
+14.6 **Force majeure.** Neither party is liable for a delay or failure caused by events beyond its reasonable control. This does not excuse a payment you owe.
+
+14.7 **Survival.** Sections 7, 10, 13 and 14 survive the end of these Terms.
 
 ---
 

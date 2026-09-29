@@ -38,6 +38,16 @@ Never edit a published version. Insert `version = 2`. Every shipper is then aske
 Every signature is kept in `app_private.agreement_signatures`, together with the SHA-256 of the exact text
 the shipper saw.
 
+## Owner review — 29 Sep 2026 (`bl_ship_0498`)
+
+- **Governing law and forum:** Texas law and Texas courts, with a 30-day talk-first step, the same as the carrier Terms draft. LoadBoot LLC itself is a Wyoming LLC.
+- **Liability cap:** the greater of 12 months' fees or US$100, plus a mutual consequential-damages exclusion.
+- **Carrier side:** a carrier accepts the Shipper–Carrier Terms once, in its own app, and only an owner or office user can sign. It is enforced in the DB: `trg_bookreq_shipper_terms` blocks book requests and `cc_offer_respond` blocks accepts. A dispatcher can never sign for the carrier.
+- **Dispatch guard:** on a shipper load, a LoadBoot dispatcher cannot add a note to a book request and cannot counter an offer. FMCSA 2023 guidance, IV.F. Clauses: Platform §2.5 and Shipper–Carrier §1.5.
+- **Fee wording:** §2.3(d) now says LoadBoot receives no part of the freight charge *from the shipper*. §7.4 discloses that the carrier's fee is a percentage of the carrier's revenue for the load.
+- **Boilerplate added:** entire agreement, severability, no waiver, assignment, notices, force majeure and survival.
+- **Blanks left:** only `[DATE OF PUBLICATION]`, filled in when it is published.
+
 ## Broker–Shipper terms
 
 In the broker lane the broker's own contract governs. A LoadBoot standard template already exists as

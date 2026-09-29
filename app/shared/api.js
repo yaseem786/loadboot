@@ -237,6 +237,9 @@ export const shipperOnboarding = () => rpc('cc_shipper_onboarding');
 export const shipperItemSave = (key, data, confirm) => rpc('cc_shipper_item_save', { p_key: key, p_data: data || {}, p_confirm: !!confirm });
 export const shipperAgreement = (kind) => rpc('cc_shipper_agreement', { p_kind: kind });
 export const shipperAgreementSign = (kind, version, sha, name, title, consent) => rpc('cc_shipper_agreement_sign', { p_kind: kind, p_version: version, p_body_sha256: sha, p_signer_name: name, p_signer_title: title, p_consent: !!consent });
+// bl_ship_0498: carrier accepts the Master Shipper–Carrier Terms once (owner/office user only)
+export const carrierShipperTerms = () => rpc('cc_carrier_shipper_terms', {});
+export const carrierShipperTermsSign = (version, sha, name, title, consent) => rpc('cc_carrier_shipper_terms_sign', { p_version: version, p_body_sha256: sha, p_signer_name: name, p_signer_title: title, p_consent: !!consent });
 export const shipperFacilities = () => rpc('cc_shipper_facilities');
 export const shipperFacilitySave = (p) => rpc('cc_shipper_facility_save', { p });
 export const shipperFacilityArchive = (id) => rpc('cc_shipper_facility_archive', { p_id: id });

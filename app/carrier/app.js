@@ -21,7 +21,7 @@ import {
   emergencyContacts, emergencyContactAdd, emergencyContactDelete, reportTripIncident, myTripIncidents,
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
-  pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
+  pocketAvailableLoads, pocketBookLoad, requestBookLoad as _requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond as _offerRespond, carrierShipperTerms, carrierShipperTermsSign,
   isFlagEnabled, myReferral, claimReferral, claimPendingReferral, agentReferralOptIn, agentSetIntent, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentReferralActivity, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline, dispatcherApply, dispatcherMyStatus, dispatcherReapply, dispatcherSubmitId,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
@@ -339,9 +339,9 @@ function lbToast(msg, tone, title) {
 // fix is the standard one: while any modal is open the body is position:fixed at its current scroll offset, and
 // the offset is restored on close. Ref-counted so nested dialogs (confirm inside a form) unlock only at the end.
 // bl_ui_0413: the lock now lives in app/shared/ui/scrollLock.js (lockPage/unlockPage) and is shared by every sheet in every portal.
-function openModal(title, children) {
+function openModal(title, children, opts = {}) {
   let closed = false;
-  const realClose = () => { if (closed) return; closed = true; ov.remove(); document.removeEventListener('keydown', onEsc); unlockPage(ov); };
+  const realClose = () => { if (closed) return; closed = true; ov.remove(); document.removeEventListener('keydown', onEsc); unlockPage(ov); if (opts.onClose) opts.onClose(); };
   const guard = () => realClose();                              // back gesture → just close
   const close = () => { if (closed) return; realClose(); popLayer(guard); };  // ✕/backdrop/Esc/after-save → close + unwind history
   const onEsc = (e) => { if (e.key === 'Escape') close(); };
@@ -369,6 +369,48 @@ function openModal(title, children) {
   return close;
 }
 const money = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+// bl_ship_0498: a shipper's own load needs the carrier to accept the Master Shipper–Carrier Terms once (owner/office
+// user only — a dispatcher or driver cannot sign for the carrier). The server refuses with "SHIPPER_TERMS: …"; we show
+// the Terms, and after signing retry the same request. LoadBoot is not a party to these Terms.
+function openShipperTerms() {
+  return new Promise(async (resolve) => {
+    let ag; try { ag = await carrierShipperTerms(); } catch (e) { lbToast((e && e.message) || 'Could not load the Terms.', 'urgent', 'Terms'); resolve(false); return; }
+    let signed = false;
+    const done = () => resolve(signed);
+    if (!ag || !ag.available) { openModal('Shipper–Carrier Terms', [h('p', null, (ag && ag.message) || 'These Terms are being finalised.')], { onClose: done }); return; }
+    const body = h('div', { style: 'white-space:pre-wrap;max-height:45vh;overflow:auto;font-size:.85rem;line-height:1.55;border:1px solid rgba(148,163,184,.35);border-radius:10px;padding:12px;margin:10px 0' }, ag.body_md || '');
+    const intro = h('p', { style: 'font-size:.9rem;line-height:1.5;margin:0' }, 'This load is posted by the shipper itself. Your contract for it is with the shipper, under these standard Terms — you accept them once for every shipper load. LoadBoot is not a party.');
+    if (!ag.can_sign) {
+      openModal(ag.title + ' (v' + ag.version + ')', [intro, body, h('p', { style: 'font-weight:700;margin:8px 0 0' }, 'Only the carrier’s owner or office staff can accept these Terms. Ask them to open any shipper load in their app and accept once.')], { onClose: done });
+      return;
+    }
+    const nm = h('input', { class: 'cp-in', placeholder: 'Your full name (this is your signature)', style: 'width:100%;margin-top:6px' });
+    const tt = h('input', { class: 'cp-in', placeholder: 'Your title (e.g. Owner)', style: 'width:100%;margin-top:6px' });
+    const cb = h('input', { type: 'checkbox', id: 'sct-consent' });
+    const cons = h('label', { for: 'sct-consent', style: 'display:flex;gap:8px;align-items:flex-start;font-size:.85rem;margin-top:10px' }, [cb, h('span', null, 'I agree to sign electronically, I have authority to bind my company, and my typed name is my signature.')]);
+    const msg = h('div', { style: 'color:#f87171;font-size:.85rem;margin-top:6px' });
+    const go = h('button', { class: 'cp-btn', style: 'width:100%;margin-top:12px' }, 'Accept the Terms');
+    const close = openModal(ag.title + ' (v' + ag.version + ')', [intro, body, nm, tt, cons, msg, go], { onClose: done });
+    go.onclick = async () => {
+      go.disabled = true; msg.textContent = '';
+      try { await carrierShipperTermsSign(ag.version, ag.body_sha256, nm.value.trim(), tt.value.trim(), cb.checked); signed = true; lbToast('Terms accepted ✓ — a copy stays in your account.', 'success', 'Signed'); close(); return; }
+      catch (e) { msg.textContent = (e && e.message) || 'Could not sign.'; }
+      go.disabled = false;
+    };
+  });
+}
+async function withShipperTerms(run) {
+  try { return await run(); }
+  catch (e) {
+    const m = (e && e.message) || '';
+    if (!/^SHIPPER_TERMS:/.test(m)) throw e;
+    if (!(await openShipperTerms())) throw new Error(m.replace(/^SHIPPER_TERMS:\s*/, ''));
+    return run();
+  }
+}
+const requestBookLoad = (load, note) => withShipperTerms(() => _requestBookLoad(load, note));
+const offerRespond = (id, action, o) => action === 'accept' ? withShipperTerms(() => _offerRespond(id, action, o)) : _offerRespond(id, action, o);
 const havMi = (a, b, c, d) => { const R = 3959, t = Math.PI / 180, dLat = (c - a) * t, dLng = (d - b) * t;
   const x = Math.sin(dLat / 2) ** 2 + Math.cos(a * t) * Math.cos(c * t) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.asin(Math.min(1, Math.sqrt(x))); };

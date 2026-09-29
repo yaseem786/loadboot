@@ -79,6 +79,11 @@ A shipper's load is **never instant-booked**. Every carrier is accepted by the s
 - **0494:** the book-requests queue carries `owner_kind`.
 - **0496:** a shipper's direct load must carry a cargo value, so the value cap and the high-value check always run. The post wizard marks the field required for shippers.
 - **0495:** a "[loads@ unparsed]" mailbox item raises a staff alert.
+- **0498 (29 Sep, owner agreement review):**
+  - The carrier accepts the Master Shipper–Carrier Terms **once**, in its own app: `cc_carrier_shipper_terms` and `cc_carrier_shipper_terms_sign`. Only an owner or office user can sign (`my_carrier_signer_org`). A dispatcher or driver never can.
+  - Without that signature, `trg_bookreq_shipper_terms` refuses the book request and `cc_offer_respond` refuses the accept (`SHIPPER_TERMS:` prefix). The carrier app catches that error, shows the Terms, and retries after signing.
+  - Dispatch guard: on a shipper load a LoadBoot dispatcher cannot put a note on a book request (it is replaced with "Requested at your posted rate by the carrier's LoadBoot dispatcher") and cannot counter an offer. The carrier's own users can still counter.
+  - Rollback test on staging, all passing: gate before and after signing, dispatcher cannot sign, bad sha refused, dispatcher note and counter refused, carrier's own counter allowed, non-shipper load untouched. The anon surface is unchanged: 35, md5 `b862e7e2…`.
 - **0497:** `shipper_badge` tells the broker who is behind a tender: stage, identity verified, call-back confirmed, payment terms, whether credit references were given, and platform terms signed. Never the EIN, bank or reference details. The broker inbox shows it (`shipper-trust.js` `shipperBadge`). The fallback itself already existed (inbound-mail v6, 27 Sep).
 
 ### Edge function
@@ -136,8 +141,8 @@ Verified live: the MII case returns `budget_host`, and SEC hits "Victoria's Secr
 
 ## 5. Risks and open items for the owner
 
-1. **Agreements.** The drafts are in `claude/agreements/`. Blanks to fill: governing state, dispute forum, liability cap. **Until they are published, no shipper can open a lane on either environment.** For a staging walkthrough before approval, the drafts can be published on staging only as a clearly marked test copy (ask first).
-2. **LoadBoot dispatchers talking rates with shippers.** FMCSA 2023 guidance (IV.F) lists "interacts with or negotiates any shipment of freight directly with the shipper" as an indicator that a dispatch service needs broker authority. On direct loads the shipper sets the rate and carriers request at it. Dispatchers should **not** counter-offer to shippers. This is not yet enforced in code (counter-offer paths were not audited). The marketing copy no longer claims dispatchers negotiate with shippers.
+1. **Agreements.** Owner review done on 29 Sep: Texas law and courts; liability cap = greater of 12 months' fees or $100, plus a consequential-damages exclusion; the fee wording is honest; boilerplate added (see `claude/agreements/README.md`). The only blank left is the publication date. An attorney review is still recommended. **Until they are published, no shipper can open a lane on either environment.** For a staging walkthrough before approval, the drafts can be published on staging only as a clearly marked test copy (ask first).
+2. **LoadBoot dispatchers talking rates with shippers.** *Closed in code by 0498* (book-request note and counter-offer on shipper loads). Staff email or SMS threads (`cc_create_thread`, `cc_post_message`) are policy, not code. This still needs a line in the dispatcher conduct terms. Original note: FMCSA 2023 guidance (IV.F) lists "interacts with or negotiates any shipment of freight directly with the shipper" as an indicator that a dispatch service needs broker authority. On direct loads the shipper sets the rate and carriers request at it. Dispatchers should **not** counter-offer to shippers. This is not yet enforced in code (counter-offer paths were not audited). The marketing copy no longer claims dispatchers negotiate with shippers.
 3. **Existing shippers on prod (4).** After prod rollout they fall back to `new` until they complete the new verification. They are told by the portal. A draft message to them is for the owner to send.
 4. **Staff approving carriers on broker loads** is still allowed (unchanged). This is the owner's call.
 5. **Phone codes use the Retell verify agent** (real calls). Staging has it configured. Tests inserted code rows directly and placed no calls.
@@ -146,7 +151,7 @@ Verified live: the MII case returns `budget_host`, and SEC hits "Victoria's Secr
 ## 6. Prod rollout (only on "prod pe chalao")
 
 1. Read the anon baseline (must be 36, names per `docs/audit-2026-09/anon-secdef-baseline.md`).
-2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 (same files).
+2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 (same files).
 3. Deploy domain-check v6 (compare the deployed version to repo HEAD first).
 4. Re-read the anon baseline: still 36, same names.
 5. Publish the agreements only after the owner approves the text.
