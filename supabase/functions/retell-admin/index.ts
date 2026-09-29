@@ -14,6 +14,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 //
 // OPS (POST { op, ... }):
 //   status              phone-number mapping, our two agents (published version + llm version), prompt rows
+//                       (0500: POST /v2/list-agents + /list-agent-versions + /get-agent?version=; GET /list-agents is gone)
 //   set_phone_agents    { inbound_agent_id?, outbound_agent_id? }  -> PATCH update-phone-number  (write)
 //   get_llm             { key }  -> the live retell-llm draft for the inbound|outbound agent (read)
 //   publish             { key }  -> read app_private.riley_prompts[key], PATCH the retell-llm draft, point the
@@ -82,6 +83,22 @@ async function retell(cfg: Cfg, method: string, path: string, body?: unknown): P
   return { ok: r.ok, status: r.status, body: b };
 }
 
+// bl_voice_0500: Retell removed GET /list-agents on 31 Jul 2026. Its v2 list endpoints (/v2/list-agents,
+// /list-agent-versions) return { items, has_more, pagination_key }; this walks every page. ok=false if any page fails.
+async function retellAll(cfg: Cfg, method: string, path: string, body?: unknown): Promise<{ ok: boolean; status: number; items: any[] }> {
+  const items: any[] = [];
+  let key: string | null = null;
+  for (let page = 0; page < 20; page++) {
+    const q = `limit=1000${key ? `&pagination_key=${encodeURIComponent(key)}` : ""}`;
+    const r = await retell(cfg, method, `${path}${path.includes("?") ? "&" : "?"}${q}`, body);
+    if (!r.ok || !Array.isArray(r.body?.items)) return { ok: false, status: r.status, items };
+    items.push(...r.body.items);
+    if (!r.body.has_more || !r.body.pagination_key || r.body.pagination_key === key) return { ok: true, status: r.status, items };
+    key = r.body.pagination_key;
+  }
+  return { ok: true, status: 200, items };
+}
+
 // What every Riley call is graded on afterwards. Same list on both agents so CC shows one shape.
 // Mirrors what the inbound agent already carried in the dashboard (Sep 2026), plus next_step.
 const POST_CALL_ANALYSIS = [
@@ -134,26 +151,34 @@ Deno.serve(async (req: Request) => {
       const out = cfg.outbound_from_number && cfg.outbound_from_number !== cfg.from_number ? cfg.outbound_from_number : null;
       const [phone, agents, rows, outPhone] = await Promise.all([
         retell(cfg, "GET", `/get-phone-number/${encodeURIComponent(cfg.from_number)}`),
-        retell(cfg, "GET", `/list-agents`),
+        retellAll(cfg, "POST", `/v2/list-agents`, { filter_criteria: { channel: { type: "string", op: "eq", value: "voice" } } }),
         svcRpc("riley_prompts_admin_get", {}),
         out ? retell(cfg, "GET", `/get-phone-number/${encodeURIComponent(out)}`) : Promise.resolve(null),
       ]);
+      // v2 list is one row per agent (no version/engine fields): it only says whether our agent exists. The
+      // version rows come from /list-agent-versions, the config of the version we report from /get-agent?version=.
       const ours: Record<string, any> = {};
-      if (agents.ok && Array.isArray(agents.body)) {
-        for (const key of ["inbound", "outbound"]) {
+      if (agents.ok) {
+        const top = (vs: any[]) => vs.reduce((m: any, v: any) => (m === null || (v.version ?? 0) > (m.version ?? 0) ? v : m), null);
+        await Promise.all(["inbound", "outbound"].map(async (key) => {
           const id = agentIdFor(cfg, key);
-          if (!id) continue;
-          const vs = agents.body.filter((a: any) => a.agent_id === id);
-          const pub = vs.filter((a: any) => a.is_published).sort((a: any, b: any) => (b.version ?? 0) - (a.version ?? 0))[0];
-          const draft = vs.sort((a: any, b: any) => (b.version ?? 0) - (a.version ?? 0))[0];
-          ours[key] = pub || draft ? {
-            agent_id: id, agent_name: (pub || draft).agent_name,
-            published_version: pub?.version ?? null, published_llm_version: pub?.response_engine?.version ?? null,
-            draft_version: draft?.version ?? null, llm_id: (pub || draft)?.response_engine?.llm_id ?? null,
-            voice_id: (pub || draft)?.voice_id ?? null, webhook_url: (pub || draft)?.webhook_url ?? null,
-            last_modified: (pub || draft)?.last_modification_timestamp ?? null,
-          } : { agent_id: id, missing: true };
-        }
+          if (!id) return;
+          if (!agents.items.some((a: any) => a.agent_id === id)) { ours[key] = { agent_id: id, missing: true }; return; }
+          const vs = await retellAll(cfg, "GET", `/list-agent-versions/${encodeURIComponent(id)}`);
+          if (!vs.ok) { ours[key] = { agent_id: id, error: `retell ${vs.status}` }; return; }
+          const pub = top(vs.items.filter((v: any) => v.is_published)), draft = top(vs.items);
+          const pick = pub || draft;
+          const a = await retell(cfg, "GET", `/get-agent/${encodeURIComponent(id)}${pick ? `?version=${pick.version}` : ""}`);
+          const d = a.ok ? a.body : null;
+          const name = agents.items.find((x: any) => x.agent_id === id)?.agent_name ?? null;
+          ours[key] = {
+            agent_id: id, agent_name: d?.agent_name ?? name,
+            published_version: pub?.version ?? null, published_llm_version: pub ? (d?.response_engine?.version ?? null) : null,
+            draft_version: draft?.version ?? null, llm_id: d?.response_engine?.llm_id ?? null,
+            voice_id: d?.voice_id ?? null, webhook_url: d?.webhook_url ?? null,
+            last_modified: pick?.last_modification_timestamp ?? d?.last_modification_timestamp ?? null,
+          };
+        }));
       }
       const p = phone.ok ? phone.body : null;
       return json({
