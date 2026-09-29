@@ -232,11 +232,12 @@ They are staging only. Their passwords were never stored in the repo. Create fre
 - Bug caught by the test: `cc_partner_360` has a PL/pgSQL variable `pr`, so the join alias is `xs`.
 - **0500b:** the CC partner journey told staff to publish `broker_shipper` for shippers (the owner's screenshot). It now checks `shipper_platform`, and counts it done only when the shipper signed the latest published version. Verified: a v1 signer shows to-do, and after signing v2 it shows done.
 - Anon SECDEF on staging: 35, names md5 unchanged (`b862e7e2…`).
+- **0500c:** the journey's "Business confirmed" step for shippers now reads the 0491 identity gate (`shipper_lane_gate(org,'identity')` / `shipper_stage`) instead of the old domain check: hold → blocked with the reason; gate ok → done with the stage; a rejected identity item → blocked; otherwise todo listing what is open. The separate "Company email verified" step is gone (email_verify is an identity item). The "Can request" sentence names the open lane. Carrier/broker/agent steps untouched. Staging tests (hold and rejected inside rolled-back blocks): all 29 orgs still build a journey. Anon 35, names md5 `b862e7e2…`.
 
 ## 6. Prod rollout (only on "prod pe chalao")
 
 1. Read the anon baseline (must be 36, names per `docs/audit-2026-09/anon-secdef-baseline.md`).
-2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c → 0499d → 0500 → 0500b (same files).
+2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c → 0499d → 0500 → 0500b → 0500c (same files).
 3. Deploy domain-check v6 **and dmail** (with the 0499 guard). Compare each deployed version to repo HEAD first. Deploy dmail only after 0499 is applied.
 4. Re-read the anon baseline: still 36, same names.
 5. Publish the agreements with the SQL in `claude/agreements/README.md`, then check the SHA-256 against the README: `SHIPPER-CARRIER-TERMS-v1.md` (`5ca65f64…`) and **Platform Terms v2** (`SHIPPER-PLATFORM-TERMS-v2.md`, `b0398a76…`, owner-approved 29 Sep). Leave the prod `shipper_platform` v1 row unpublished.
