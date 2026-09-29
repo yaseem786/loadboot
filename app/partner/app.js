@@ -4890,7 +4890,7 @@ function packetAgreementCards(skipPacket) {
     agents: ov.kind === 'broker' ? [h('div', { id: 'bd-agents' })] : [],  // mounted lazily on first visit (see brender)
     // bl_ship_0491: shippers get the sectioned verification (A–G, per-lane progress); brokers keep their wizard
     onboarding: [shipV2(ov) ? shipperVerificationPage({ openModal, toast: (m, bad) => pToast(m, { kind: bad ? 'error' : 'ok' }), onChange: () => { partnerOverview().then((o) => { if (o) { ov.onboarded = o.onboarded; } }).catch(() => {}); } }) : brokerOnboardingWizard()],
-    brokers: shipV2(ov) ? [shipperBrokersPage({ openModal, toast: (m, bad) => pToast(m, { kind: bad ? 'error' : 'ok' }), onPost: () => { bgo('dashboard'); } })] : [],
+    brokers: shipV2(ov) ? [shipperBrokersPage({ openModal, toast: (m, bad) => pToast(m, { kind: bad ? 'error' : 'ok' }), onPost: () => { if (window.__lbOpenPost) window.__lbOpenPost(); else bgo('dashboard'); } })] : [],
     invoices: [carrierInvoicesCard(), payablesCard(), invoicesCard()],
     account: [accountCard(), securityCard(), pnotifCard(), phelpCard(), plegalCard(), pdeleteCard()],
   };
@@ -5155,6 +5155,11 @@ function packetAgreementCards(skipPacket) {
   // payables, KPIs and loads (and async cards kept pushing it down mid-scroll). It now opens the
   // wizard on its own, top of the page, with a Close — the Uber "one task on screen" pattern.
   function openPostFromBar() {
+    // Owner test 29 Sep: a shipper with no open lane was sent to the dashboard with no word of why. Say it and open Verification.
+    if (shipV2(ov) && !ov.onboarded) {
+      pToast('Verify your company first — posting to carriers opens once your Verification items are done.', { kind: 'info' });
+      bgo('onboarding'); return;
+    }
     __postFocus = true;
     postFoldOpen = true;
     if (btab !== 'dashboard') bgo('dashboard'); else brender();
