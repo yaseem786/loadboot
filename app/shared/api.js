@@ -1622,6 +1622,7 @@ export const ccDmailAccountSave = (p) => rpc('cc_dmail_account_save', { p: p ?? 
 export const ccDmailAssign = (account, user, name) => rpc('cc_dmail_assign', { p_account: account, p_user: user ?? null, p_name: name ?? null });   // bl_dmail_0359: assigning also sets From name + brand signature
 export const ccDmailIdentityApply = (account, name) => rpc('cc_dmail_identity_apply', { p_account: account, p_name: name ?? null });
 export const ccDmailSetStatus = (account, status) => rpc('cc_dmail_set_status', { p_account: account, p_status: status });
+export const ccDmailDelete = (account, address) => rpc('cc_dmail_delete', { p_account: account, p_confirm: address });   // bl_dmail_0501: paused + unassigned + no aliases only
 
 // --- Email catalog (bl_comm_0391-0394): one registry for every email we can send ---
 export const emailCatalog = (status, q) => rpc('cc_email_catalog', { p_status: status || null, p_q: q || null });

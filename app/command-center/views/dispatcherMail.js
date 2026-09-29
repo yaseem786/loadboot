@@ -11,7 +11,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, askConfirm } from '../../shared/ui/components.js';
-import { ccDmailOverview, ccDmailActivity, ccDmailAccountSave, ccDmailAssign, ccDmailIdentityApply, ccDmailSetStatus, dmailAct } from '../../shared/api.js';
+import { ccDmailOverview, ccDmailActivity, ccDmailAccountSave, ccDmailAssign, ccDmailIdentityApply, ccDmailSetStatus, ccDmailDelete, dmailAct } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { mountDispatcherMail, sigFrame } from '../../shared/dmail.js';
 
@@ -112,7 +112,9 @@ export function renderDispatcherMail(host) {
       el('div', { class: 'dmc-kp' }, [el('span', null, [el('b', null, String(a.unread)), 'unread']), el('span', null, [el('b', null, String(a.received_7d)), 'received 7d']), el('span', null, [el('b', null, String(a.sent_7d)), 'sent 7d'])]),
       el('div', { class: 'dmc-row', style: a.alias_count > 0 ? 'display:none' : null }, [sel, nm, (() => { const b = btn('Assign', 'check', () => run(b, () => ccDmailAssign(a.id, sel.value || null, nm.value.trim() || null), (r) => !sel.value ? 'Unassigned — access removed' : ((r && r.display_name ? 'Sends as “' + r.display_name + '”. ' : '') + (r && r.welcome_email ? 'Email tab is live and the welcome email (features + rules) is on its way.' : 'Saved.'))), 'pri'); return b; })()]),
       el('div', { class: 'dmc-row' }, [btn('Open inbox', 'inbox', () => { inbox = a; paint(); }), btn('Edit', 'pen', () => { editing = a; paint(); window.scrollTo({ top: 0, behavior: 'smooth' }); }), testB,
-        (() => { const pausing = a.status !== 'paused'; const b = btn(pausing ? 'Pause' : 'Resume', pausing ? 'pause' : 'play', async () => { if (pausing && !(await askConfirm('Pause ' + a.address + '?', { message: 'The dispatcher loses access immediately. Mail keeps arriving at Namecheap and syncs again when you resume.', confirmLabel: 'Pause mailbox' }))) return; run(b, () => ccDmailSetStatus(a.id, pausing ? 'paused' : 'active'), pausing ? 'Paused' : 'Resumed'); }); return b; })()]),
+        (() => { const pausing = a.status !== 'paused'; const b = btn(pausing ? 'Pause' : 'Resume', pausing ? 'pause' : 'play', async () => { if (pausing && !(await askConfirm('Pause ' + a.address + '?', { message: 'The dispatcher loses access immediately. Mail keeps arriving at Namecheap and syncs again when you resume.', confirmLabel: 'Pause mailbox' }))) return; run(b, () => ccDmailSetStatus(a.id, pausing ? 'paused' : 'active'), pausing ? 'Paused' : 'Resumed'); }); return b; })(),
+        // bl_dmail_0501: delete only a paused, unassigned mailbox with no aliases (the RPC enforces the same)
+        a.status === 'paused' && !a.assigned_name && !(a.alias_count > 0) ? (() => { const b = btn('Delete', 'x', async () => { if (!(await askConfirm('Delete ' + a.address + '?', { message: 'Removes this mailbox from LoadBoot: its saved password and the copies of its emails synced here. The mailbox and its mail stay at Namecheap until you delete it there. This cannot be undone.', confirmLabel: 'Delete mailbox', danger: true }))) return; run(b, () => ccDmailDelete(a.id, a.address), (r) => 'Deleted ' + a.address + (r && r.messages_removed ? ' · ' + r.messages_removed + ' synced email(s) removed' : '')); }); return b; })() : null]),
     ]);
   }
   function form(a) {

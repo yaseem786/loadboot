@@ -243,7 +243,9 @@ They are staging only. Their passwords were never stored in the repo. Create fre
 > - Edge functions: prod dmail was `d49ee9a`, now **v9** = HEAD (adds the rate guard, verify_jwt off). Prod domain-check was `e870f01` (v5), now **v10** = HEAD (v6 signals, verify_jwt on). Each deploy failed once with a Supabase internal error and succeeded on retry. Six dmail mailboxes, four synced within 3 min after the deploy; one shows "Login failed" (a mailbox password issue, not code).
 > - Agreements published on prod, both inside a DO block that refused on a hash mismatch: `shipper_carrier` v1 `5ca65f64…` and `shipper_platform` **v2** `b0398a76…`. The prod `shipper_platform` v1 placeholder stays unpublished. All 5 prod shippers now show Platform Terms and Carrier Terms as `pending`, so the portal offers them to sign.
 > - `The Shipper` (`yuayui788@gmail.com`, org `a0af7d3d-805f-47d2-9e50-589bb78b8a0a`) is now `is_demo = true`. The same user also owns a carrier org `yuayui788` (`6be76ec6…`); it was left unchanged.
-> - Still open: pair the demo shipper with the internal test carrier (`bl_sec_0490`) when the owner tests. MII stays on hold (step 7).
+> - Pairing: `LOADBOOT TEST CARRIER (internal)` (`409c9701…`, member hello@loadboot.com, owner) and `The Shipper` are both `is_demo`, so the symmetric demo isolation lets them see each other and nobody real. Before it can request a shipper load, the carrier must accept the Shipper–Carrier Terms once (Carrier app → Loads, signed as hello@). Not signed yet.
+> - MII stays on hold (step 7).
+> - Same day: `bl_dmail_0501` — CC → Dispatcher mailboxes → **Delete**. Only for a paused, unassigned mailbox with no aliases; the address is the confirmation. It removes the row, its synced copies (cascade) and the Vault password; the mail stays at Namecheap. Staging tests passed (active, wrong address, assigned and non-staff all refused; ok deletes). Applied on staging and prod; anon 36 unchanged.
 
 1. Read the anon baseline (must be 36, names per `docs/audit-2026-09/anon-secdef-baseline.md`).
 2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c → 0499d → 0500 → 0500b → 0500c (same files).
