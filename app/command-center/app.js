@@ -62,6 +62,7 @@ import { renderSmartMatch } from './views/smartMatch.js';
 import { renderAnalytics } from './views/analytics.js';
 import { renderContent } from './views/content.js';
 import { renderIntegrations } from './views/integrations.js';
+import { renderApi360 } from './views/api360.js';
 import { renderRadar } from './views/radar.js';
 import { renderAgents } from './views/agents.js';
 import { renderDispatchers } from './views/dispatchers.js';
@@ -478,6 +479,7 @@ async function boot() {
     '/automations': tabbed('automation', 'rules'),
     '/content': tabbed('web', 'content'),
     '/integrations': () => { setActive('/integrations'); if (integrationsEnabled && can('integrations.view')) renderIntegrations(content); else denied(); },
+    '/api360': ({ query }) => { setActive('/api360'); if (integrationsEnabled && can('integrations.view')) renderApi360(content, query.get('id')); else denied(); },
     '/staff': tabbed('settings', 'staff'),
     '/audit': tabbed('settings', 'audit'),
     '/flags': tabbed('settings', 'flags'),

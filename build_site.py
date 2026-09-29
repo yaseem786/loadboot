@@ -6034,8 +6034,11 @@ API_PAGE += ('<section class="bg-soft"><div class="wrap prose reveal" style="max
   '<li>Open the <a href="/app/partner/">Partner Portal</a> and generate an API key.</li>'
   '<li>Give the key the <code>write</code> scope to post loads, <code>read</code> to pull them.</li>'
   '</ol>'
-  '<p style="margin-top:14px">Keys look like <code>lb_&hellip;</code> and are shown once. If you are a network or TMS vendor and want a sandbox key before wiring anything up, email '
-  '<a href="mailto:hello@loadboot.com">hello@loadboot.com</a> and say what you are integrating &mdash; we will set one up.</p>'
+  '<p style="margin-top:14px">Keys look like <code>lb_&hellip;</code> and are shown once.</p>'
+  # bl_dev_0502: read-side integrators (TMS, load networks, apps) now self-serve in the Developer Portal.
+  '<p><b>Building an integration that reads loads</b> &mdash; a TMS, a load network or an app? Create a free account in the '
+  '<a href="/app/developer/#signup">Developer Portal</a>. Sandbox keys are self-serve and return fixed test loads, so you can build before touching the real board; '
+  'production read access follows a quick review. Questions: <a href="mailto:hello@loadboot.com">hello@loadboot.com</a>.</p>'
   '</div></section>')
 
 _API_BASE = 'https://' + APP_REF + '.supabase.co/functions/v1/dev-api'
@@ -6134,10 +6137,11 @@ API_PAGE += ('<section class="bg-soft"><div class="wrap prose reveal" style="max
 
 _API_ERRS = [
   ('401', 'Missing, invalid or revoked API key.'),
-  ('403', 'Key lacks the scope &mdash; <code>write</code> to post, <code>read</code> to fetch.'),
+  ('403', 'Key lacks the scope &mdash; <code>write</code> to post, <code>read</code> to fetch &mdash; or the account is suspended.'),
   ('400', 'Body was not JSON, the batch was empty, or every load failed validation.'),
   ('207', 'Partial batch &mdash; read <code>results</code> to see which loads landed.'),
   ('404', 'Unknown <code>resource</code>, or a POST to something other than <code>loads</code>.'),
+  ('429', 'Too many requests for this key this minute &mdash; wait the seconds in the <code>Retry-After</code> header.'),
 ]
 API_PAGE += ('<section><div class="wrap prose reveal" style="max-width:860px">'
   '<h2>Responses</h2><ul style="line-height:2.1">'
@@ -6145,7 +6149,8 @@ API_PAGE += ('<section><div class="wrap prose reveal" style="max-width:860px">'
   + '</ul>'
   '<p>Validation errors come back as plain sentences, not codes &mdash; the message tells you what to fix. The most common ones on a first integration are a missing <code>hazmat</code> declaration, a pickup date in the past, and a key whose broker account has not finished document verification.</p>'
   '<h2 style="margin-top:26px">Reading loads</h2>'
-  '<p><code>GET ' + _API_BASE + '?resource=loads&amp;limit=25</code> &middot; scope <code>read</code> &mdash; returns public load opportunities. <code>GET ?resource=me</code> confirms which account a key belongs to and what scopes it has, which is the quickest way to check your setup.</p>'
+  '<p><code>GET ' + _API_BASE + '?resource=loads&amp;limit=25</code> &middot; scope <code>read</code> &mdash; returns public load opportunities. Optional filters: <code>equipment</code>, <code>origin_state</code>, <code>dest_state</code>. <code>GET ?resource=me</code> confirms which account a key belongs to and what scopes it has, which is the quickest way to check your setup.</p>'
+  '<p>Every load comes with a <code>url</code> &mdash; its link back to LoadBoot. Show &ldquo;via LoadBoot&rdquo; on loads whose ref came from this API, and link each one to its <code>url</code>.</p>'
   '</div></section>')
 
 API_PAGE += ('<section class="bg-soft"><div class="wrap prose reveal center" style="max-width:760px;text-align:center">'

@@ -1759,3 +1759,12 @@ export const dieselPullNow = () => rpc('cc_diesel_pull_now');
 export const dieselSet = (region, usdGal, asOf) => rpc('cc_diesel_set', { p_region: region, p_usd_gal: usdGal, p_as_of: asOf || null });
 export const dieselConfigSet = (url, anon, token) => rpc('cc_diesel_config_set', { p_function_url: url || null, p_anon_key: anon || null, p_worker_token: token || null });
 export const dieselWorkerToken = () => rpc('cc_diesel_worker_token');
+// API 360 (developer accounts, keys, usage) — cc_api360_*; integrations.view to read, integrations.manage to write
+export const api360List = (status, search) => rpc('cc_api360_list', { p_status: status || null, p_search: search || null });
+export const api360Get = (userId) => rpc('cc_api360_get', { p_user: userId });
+export const api360SetStatus = (userId, status, note) => rpc('cc_api360_set_status', { p_user: userId, p_status: status, p_note: note ?? null });
+export const api360RevokeKey = (keyId, reason) => rpc('cc_api360_revoke_key', { p_key: keyId, p_reason: reason });
+export const api360IssueKey = (ownerId, name, scopes, partnerSlug, rateLimit) => rpc('cc_api360_issue_key', { p_owner: ownerId, p_name: name, p_scopes: scopes, p_partner_slug: partnerSlug || null, p_rate_limit_per_min: rateLimit ?? null });
+export const api360SaveProfile = (userId, p) => rpc('cc_api360_save_profile', { p_user: userId, p: p || {} });
+export const api360SettingsSave = (p) => rpc('cc_api360_settings_save', { p: p || {} });
+export const api360Reclassify = (email, note) => rpc('cc_api360_reclassify', { p_email: email, p_note: note ?? null });
