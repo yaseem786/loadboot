@@ -53,7 +53,11 @@ the shipper saw.
 - **Boilerplate added:** entire agreement, severability, no waiver, assignment, notices, force majeure and survival.
 - **Blanks left:** only `[DATE OF PUBLICATION]`, filled in when it is published.
 
-## Platform Terms v2 — staff review step (29 Sep 2026, DRAFT, owner approval pending)
+## Platform Terms v2 — staff review step (29 Sep 2026)
+
+**Owner approved v2 on 29 Sep 2026 ("v2 hi upload karo"). Published on STAGING 29 Sep 2026.**
+Final text: `SHIPPER-PLATFORM-TERMS-v2.md`, SHA-256 `b0398a76668ce6eabce7baba91549b4e869c34f92846b5517c184548c1ada7e0`
+(effective date 29 September 2026, the same on both databases so the hash matches).
 
 `SHIPPER-PLATFORM-TERMS-v2.md` adds the one gap the staging walkthrough found: a shipper's load waits in
 `submitted` until staff post it (`cc_decide_partner_load`: `post` / `decline` only; no staff RPC can change a
@@ -66,13 +70,13 @@ Changes from v1 (nothing else moved):
   shipper's rate); staff may decline (shows as declined in the portal; the shipper may submit a corrected load); the
   review is not a check of the carrier, rate or lawfulness and promises no review time.
 - Old §4.4 → §4.5, old §4.5 → §4.6. No cross-reference pointed at them.
-- Effective date back to `[DATE OF PUBLICATION]` — fill it when publishing, then re-hash (the hash changes with the date).
+- Effective date: 29 September 2026.
 
-**Rollout once approved:**
-- Staging: `insert into app_private.master_agreements(kind, version, title, body_md, legal_approved, published, published_at)
+**Rollout:**
+- Staging (done 29 Sep; the DO block refused to insert unless the hash matched): `insert into app_private.master_agreements(kind, version, title, body_md, legal_approved, published, published_at)
   values ('shipper_platform', 2, 'LoadBoot Platform Terms for Shippers', $body$…v2 text…$body$, true, true, now());`
-  The staging test shipper then shows Platform Terms as `pending` (it signed v1) — that is the re-sign path working.
-- Prod: publish **v2 only** for `shipper_platform` (leave the prod v1 row unpublished; no real shipper ever saw v1), plus
+  Verified: the staging test shipper (signed v1) now shows Platform Terms `pending` and its direct lane closed — the re-sign path works.
+- Prod: publish **v2 only** for `shipper_platform` (leave the prod v1 row unpublished; no prod shipper ever had any agreement — owner, 29 Sep), plus
   `SHIPPER-CARRIER-TERMS-v1.md` unchanged. `shipper_item_status` and `cc_shipper_agreement` read the highest
   published+approved version, so no code change is needed.
 
