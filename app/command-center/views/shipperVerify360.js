@@ -9,6 +9,7 @@ import { card, openDrawer } from '../../shared/ui/components.js';
 import { shipperVerification, shipperCallbackStart, shipperCallbackFail, shipperLimitsLift, onboardingReviewItem } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { pill } from './partner360-kit.js';
+import { registryBlock, openDocVerify, emailDomainBlock } from './shipperRegistry360.js';  // bl_ship_0502
 
 const SEC = { identity: 'A · Identity', billing: 'B · Billing & credit', agreements: 'C · Agreements', cargo: 'D · Cargo & liability', special: 'E · Special freight', facilities: 'F · Locations', acks: 'G · Acknowledgements' };
 const stTone = (s) => (s === 'verified' || s === 'waived') ? 'green' : s === 'submitted' ? 'amber' : s === 'rejected' ? 'red' : s === 'unavailable' ? 'blue' : 'gray';
@@ -77,10 +78,12 @@ export function shipperVerifyCard(ctx) {
       ...bySec[k].map((i) => el('div', { style: 'border-top:1px solid #f1f5f9;padding:8px 0' }, [
         el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [el('b', null, i.label), pill(stTone(i.status), i.status), i.file_path ? el('span', { class: 'cc-sub' }, '📎 ' + i.file_path.split('/').pop()) : null,
           (ctx.manage && ['form', 'upload'].includes(i.type) && i.status === 'submitted') ? el('span', { style: 'margin-left:auto;display:flex;gap:6px' }, [
-            el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async () => { try { await onboardingReviewItem(orgId, i.key, 'verify', null); toast(i.label + ' verified.', 'success'); load(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Verify'),
+            ['ein_letter', 'address_proof'].includes(i.key)
+              ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => openDocVerify(ctx, v, i, load) }, 'Verify vs registry')
+              : el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async () => { try { await onboardingReviewItem(orgId, i.key, 'verify', null); toast(i.label + ' verified.', 'success'); load(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Verify'),
             el('button', { class: 'lb-btn lb-btn-sm', onClick: () => ask('Reject — ' + i.label, [{ label: 'What must the shipper fix? (they read this)', area: true }], async ([n]) => { await onboardingReviewItem(orgId, i.key, 'reject', n); toast('Rejected — shipper notified.', 'success'); load(); }) }, 'Reject'),
           ]) : null]),
-        i.key === 'legal_entity' && i.data ? el('div', { class: 'cc-sub', style: 'margin-top:4px' }, 'Check the Secretary of State record for ' + (i.data.state_of_formation || '?') + ' — name, entity number, status "active", registered address.') : null,
+        i.key === 'legal_entity' && i.data ? el('div', { class: 'cc-sub', style: 'margin-top:4px' }, 'Compared with the state record on the State registry check card above.') : null,
         dataTable(i.data),
         i.note ? el('div', { class: 'cc-sub', style: 'color:#b91c1c' }, 'Note: ' + i.note) : null,
       ])),
@@ -89,7 +92,7 @@ export function shipperVerifyCard(ctx) {
     host.replaceChildren(
       el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [el('h3', { style: 'margin:0' }, 'Two-lane verification'), pill(v.stage === 'hold' ? 'red' : v.stage === 'new' ? 'gray' : 'green', 'stage: ' + String(v.stage).replace('_', ' '))]),
       el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-top:10px' }, [lane('Carriers (direct)', v.direct || {}), lane('Brokers (tender)', v.broker || {})]),
-      signals, reasons, cbBlock, limits, ...secNodes, sigs,
+      signals, reasons, registryBlock(ctx, v, load), emailDomainBlock(ctx, v, load), cbBlock, limits, ...secNodes, sigs,
       el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'Staff never choose or approve a carrier or broker for a shipper — the shipper does. Staff can decline or block for fraud or safety.'),
     );
   };
