@@ -81,7 +81,7 @@ async function loadCard() {
   await root.link(async (spec) => {
     if (spec.endsWith('dom.js')) return cache[files.dom.href] || mk(files.dom).then(async (m) => { await m.link(() => {}); return m; });
     if (spec.endsWith('registry-prefill.js')) return cache[files.prefill.href] || mk(files.prefill).then(async (m) => { await m.link(() => {}); return m; });
-    if (spec.endsWith('api.js')) return stub({ shipperRegistryCheck: () => assert.fail('no save on render'), shipperDocVerify: () => assert.fail(), shipperEmailDomainApprove: () => assert.fail(), onboardingReviewItem: () => assert.fail() });
+    if (spec.endsWith('api.js')) return stub({ shipperRegistryCheck: () => assert.fail('no save on render'), shipperDocVerify: () => assert.fail(), shipperEmailDomainApprove: () => assert.fail(), shipperPlacesLookup: () => assert.fail(), onboardingReviewItem: () => assert.fail() });
     if (spec.endsWith('storage.js')) return stub({ uploadDocument: () => assert.fail(), signedDocumentUrl: () => assert.fail() });
     if (spec.endsWith('components.js')) return stub({ openDrawer: () => ({ close() {} }) });
     if (spec.endsWith('errors.js')) return stub({ humanizeError: (e) => String(e), toast: () => {} });

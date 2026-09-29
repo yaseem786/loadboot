@@ -5,7 +5,7 @@
 // shipper whose name matches an SEC company needs its email domain approved here.
 import { el } from '../../shared/ui/dom.js';
 import { openDrawer } from '../../shared/ui/components.js';
-import { shipperRegistryCheck, shipperDocVerify, shipperEmailDomainApprove, onboardingReviewItem } from '../../shared/api.js';
+import { shipperRegistryCheck, shipperDocVerify, shipperEmailDomainApprove, shipperPlacesLookup, onboardingReviewItem } from '../../shared/api.js';
 import { uploadDocument, signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { pill } from './partner360-kit.js';
@@ -174,4 +174,34 @@ export function emailDomainBlock(ctx, v, reload) {
   ]);
 }
 
-export default { registryBlock, openDocVerify, emailDomainBlock };
+// bl_ship_0503 — Google Places suggests a phone for the registry name + address. Staff still judge it: a fraudster can make a
+// Google Business profile too, so trust a listing only when its address is the REGISTRY address and it is not brand new.
+export async function openPlacesLookup(ctx, onUse) {
+  const body = el('div', null, el('div', { class: 'cc-sub' }, 'Asking Google…'));
+  const dlg = openDrawer('Company phone from Google', body, { size: 'lg' });
+  let r;
+  try { r = await shipperPlacesLookup(ctx.orgId); } catch (e) { body.replaceChildren(el('div', { class: 'cc-sub', style: 'color:#b91c1c' }, humanizeError(e))); return; }
+  if (!r || !r.ok) {
+    body.replaceChildren(el('div', { class: 'cc-sub', style: 'color:#b91c1c' }, r && r.error === 'not_configured'
+      ? 'Google Places is not switched on yet. The owner adds the GOOGLE_PLACES_KEY secret to the places-lookup edge function (steps in claude/REGISTRY-CHECK-PLAN.md).'
+      : (r && (r.message || r.error)) || 'Google lookup failed'));
+    return;
+  }
+  const rows = (r.results || []);
+  body.replaceChildren(el('div', null, [
+    el('div', { class: r.basis === 'registry' ? 'cc-sub' : 'p360-warn' }, r.basis === 'registry'
+      ? 'Searched the REGISTRY name and address: "' + r.query + '".'
+      : 'No registry record saved yet, so this searched what the SHIPPER typed ("' + r.query + '"). A fake shipper can match its own fake listing — save the registry record first if you can.'),
+    el('div', { class: 'cc-sub', style: 'margin-top:4px' }, 'Google lookups this month: ' + r.used + ' of ' + r.cap + ' (free tier).'),
+    rows.length ? el('div', null, rows.map((p) => el('div', { style: 'border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;margin-top:10px' }, [
+      el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [el('b', null, p.name || '—'),
+        p.status && p.status !== 'OPERATIONAL' ? pill('red', p.status.toLowerCase().replace(/_/g, ' ')) : pill('green', 'operational')]),
+      el('div', { class: 'cc-sub' }, p.address || '—'),
+      el('div', { class: 'cc-sub' }, ['📞 ', p.phone || 'no phone listed', p.website ? [' · ', link(p.website, p.website.replace(/^https?:\/\//, '').slice(0, 50) + ' ↗')] : null, p.maps_url ? [' · ', link(p.maps_url, 'Google Maps ↗')] : null]),
+      p.phone ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', style: 'margin-top:8px', onClick: () => { dlg.close(); onUse(p); } }, 'Use this number for the call-back') : null,
+    ]))) : el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'Google has no listing for this company at this address. That alone proves nothing — find the number on the company\'s own website or the registry.'),
+    el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'Nothing here is saved except Google\'s place id. The number you call is recorded with the call-back.'),
+  ]));
+}
+
+export default { registryBlock, openDocVerify, emailDomainBlock, openPlacesLookup };

@@ -116,3 +116,48 @@ Every shipper now needs a registry check before any lane opens.
 3. Re-read: still 36, same md5. Compare the stored statement md5 with the repo file.
 4. Deploy the site: CC files `shipperRegistry360.js`, `registry-prefill.js`, `shipperVerify360.js`, `shared/api.js`.
 5. Optional: re-run domain-check for MII so its SEC signal is stored.
+
+---
+
+## `bl_ship_0503` — Google phone suggestion + specialist playbook (29 Sep 2026, staging)
+
+### Google Places ("Find phone on Google", on the call-back block)
+- Edge function `places-lookup` (staging **v1**, verify_jwt on).
+  - The Google key lives only in its secret `GOOGLE_PLACES_KEY`. Without it the function answers `not_configured` (checked on staging).
+  - It forwards the staff member's own JWT to `cc_places_lookup_start` / `cc_places_lookup_done`.
+- The DB enforces:
+  - staff only (`partners.manage`);
+  - `shipper_config.places_monthly_cap` = **500** a month (Google's free tier is 1,000), so it cannot bill;
+  - 3 lookups per shipper per day;
+  - a log row per lookup (`app_private.places_lookups`). Only Google's place ids are stored, as the Maps Platform terms allow; the phone, name and address are shown, not kept.
+- It searches the **registry** name + address. Before a registry record is saved it falls back to the shipper's answers, and the dialog warns that this is weaker.
+- "Use this number" opens the call-back form pre-filled with source `google_business` and the Maps link.
+- Rollback test `tests/bl_ship_0503_places_lookup_rollback.sql`: 7/7 pass (non-staff, nothing to search, basis, close once, registry preferred, 3/day, monthly cap).
+- Anon on staging: 35, `b862e7e2…`, unchanged. The stored migration text md5 is `4f71daa5…`, which equals the repo file.
+
+**Owner setup (you type the key yourself; ~15 min):**
+1. Go to https://console.cloud.google.com and sign in with the LoadBoot Google account. Create a project named "LoadBoot".
+2. Billing → link a billing account. Google asks for a card, but our cap of 500/month keeps usage inside the free 1,000.
+3. APIs & Services → Library → **Places API (New)** → Enable.
+4. APIs & Services → Credentials → Create credentials → **API key**. Edit it → API restrictions → **Restrict key** → tick only "Places API (New)" → Save. Leave the application restriction at None: the key only lives on the server.
+5. Extra safety:
+   - APIs & Services → Places API (New) → Quotas → set "Text Search requests per day" to **30**;
+   - Billing → Budgets & alerts → a **$1** budget with an email alert.
+6. Supabase → **staging** project → Edge Functions → Secrets → add `GOOGLE_PLACES_KEY` = the key.
+7. Tell Claude "key laga di". Claude tests it on a throwaway record on staging. Prod gets the same secret after "prod pe chalao".
+
+### Specialist playbook (top of Shipper 360 → Two-lane verification)
+`views/shipperPlaybook360.js` is read-only. It shows:
+- red flags: hold, SEC name, young domain, young company, shared document, budget host without DMARC, free mail, no website, and "signals never ran";
+- the ordered steps with whose turn each one is (staff or shipper) and one **next move**;
+- with any red flag, the rule "verify nothing until registry + call-back";
+- a ready follow-up message listing what the shipper owes, with the one contact sign (CLAUDE.md §7);
+- a "How to judge a shipper" guide.
+
+Billing, cargo and other review is marked blocked until identity is verified. Test: `tests/shipper_playbook_test.mjs` 4/4.
+
+### Prod rollout adds
+- apply `bl_ship_0503_places_lookup.sql` after 0502;
+- deploy `places-lookup` (verify_jwt on);
+- add the `GOOGLE_PLACES_KEY` secret on prod;
+- deploy the CC files `shipperPlaybook360.js` and `shipperRegistry360.js`, plus `shipperVerify360.js` and `shared/api.js`.
