@@ -154,7 +154,7 @@ Verified live: the MII case returns `budget_host`, and SEC hits "Victoria's Secr
 2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 (same files).
 3. Deploy domain-check v6 (compare the deployed version to repo HEAD first).
 4. Re-read the anon baseline: still 36, same names.
-5. Publish the agreements only after the owner approves the text.
+5. Publish the agreements. The owner approved them on 29 Sep 2026, and they are already published on staging. Use the exact files `claude/agreements/SHIPPER-PLATFORM-TERMS-v1.md` and `SHIPPER-CARRIER-TERMS-v1.md` with the SQL in `claude/agreements/README.md`, then check the SHA-256 against the README.
 6. Test account `yuayui788@gmail.com`:
    - it signs up as a shipper;
    - staff set `organizations.is_demo = true` so it never reaches real carriers;

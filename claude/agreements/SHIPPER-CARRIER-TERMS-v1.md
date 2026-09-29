@@ -1,21 +1,6 @@
-# Master Shipper–Carrier Transportation Terms — v1 (DRAFT)
+# Master Shipper–Carrier Transportation Terms — v1
 
-> **DRAFT — NOT APPROVED — NOT LEGAL ADVICE.** Prepared by Claude on 28 Sep 2026 for the owner's review.
-> In the database: `master_agreements(kind='shipper_carrier', version=1)`, `legal_approved=false, published=false`.
->
-> This is a **template the shipper and the carrier sign between themselves**:
-> - the shipper signs it once in the LoadBoot portal;
-> - a carrier accepts it **once** in its own LoadBoot app (owner or office user only; `bl_ship_0498`). Without that
->   signature the carrier cannot request or accept any shipper load. A LoadBoot dispatcher cannot accept it for the carrier.
->
-> **LoadBoot is not a party.** It only supplies the software that shows, signs and stores the document
-> (FMCSA 2023 guidance: being a "named party on the shipping contract" points to broker status — so
-> LoadBoot must never be one).
->
-> Text in **[square brackets]** is a blank. An attorney review is still recommended, especially for
-> Section 10 (liability) and Section 16 (law/disputes).
-
----
+**Effective date:** 29 September 2026
 
 ## 1. Parties and how these Terms apply
 
@@ -170,14 +155,3 @@ Each party agrees to sign electronically. A typed name, together with the record
 18.3 Neither party may assign a load or these Terms without the other's written consent. Section 3 (no re-brokering) still applies.
 
 18.4 Neither party is liable for a delay or failure caused by events beyond its reasonable control. This does not excuse a payment that is owed.
-
----
-
-### Items the owner or attorney must decide before publishing
-1. ~~Governing law and dispute forum~~ — **decided 29 Sep 2026:** Texas law, Texas courts (Platform §13, this §16).
-2. ~~Liability cap~~ — **decided 29 Sep 2026:** greater of 12 months' fees or US$100, plus a consequential-damages exclusion (Platform §10.3–10.4).
-3. Whether shipper-load-and-count language (Section 5.2) fits every shipper, or should be chosen per location.
-4. **UNVERIFIED from the research pass:**
-   - the circuit-specific released-rate test for Carmack limits;
-   - the current inflation-adjusted FSMA "non-covered business" threshold;
-   - hazmat shipping-paper retention for non-waste materials.

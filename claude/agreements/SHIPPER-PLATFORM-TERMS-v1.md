@@ -1,12 +1,4 @@
-# LoadBoot Platform Terms for Shippers — v1 (DRAFT)
-
-> **DRAFT — NOT APPROVED — NOT LEGAL ADVICE.** Prepared by Claude on 28 Sep 2026 from primary sources
-> (listed at the end) for the owner's review. Nothing here is live: in the database this agreement is
-> `master_agreements(kind='shipper_platform', version=1)` with `legal_approved=false, published=false`,
-> and no shipper can sign it until the owner approves and publishes it. Text in **[square brackets]** is
-> a blank the owner must fill. A review by a US transportation attorney is still recommended.
-
----
+# LoadBoot Platform Terms for Shippers — v1
 
 **Effective date:** 29 September 2026
 **Between:** LoadBoot LLC, a Wyoming limited liability company ("**LoadBoot**", "we") and the company named in your LoadBoot shipper account ("**Shipper**", "you").
@@ -188,20 +180,3 @@ We may update these Terms. We will show you the new version in the portal and yo
 14.6 **Force majeure.** Neither party is liable for a delay or failure caused by events beyond its reasonable control. This does not excuse a payment you owe.
 
 14.7 **Survival.** Sections 7, 10, 13 and 14 survive the end of these Terms.
-
----
-
-### Sources relied on (primary)
-- **Broker definition and platform/dispatch guidance.** 49 U.S.C. 13102(2) and 49 CFR 371.2. FMCSA, *Definitions of Broker and Bona Fide Agents*, final guidance, **88 FR 39368, 16 June 2023** (FR Doc 2023-13080). The guidance says:
-  - a platform that only makes load information available is not a broker as long as it is "not otherwise involved in any transaction";
-  - handling the money "strongly suggests" broker authority is needed;
-  - being a "named party on the shipping contract" is an indicator that authority is required.
-- **Broker security.** 49 U.S.C. 13906(b) and 49 CFR 387.307 ($75,000 BMC-84/85).
-- **Unlawful brokerage.** 49 U.S.C. 14916 (penalties).
-- **Cargo liability and claims.** 49 U.S.C. 14706 (Carmack) and 49 CFR Part 370.
-- **Driver coercion.** 49 CFR 390.6.
-- **Loading and unloading.** 49 U.S.C. 14103.
-- **Hazmat.** 49 CFR 172.200–.205, 172.604, 172.704 and 107.601.
-- **Food transport.** 21 CFR 1.900–1.934, in particular 1.908(b).
-- **Electronic signatures.** 15 U.S.C. 7001, 7006.
-- **Fraud.** FBI IC3 PSA I-043026-PSA (30 Apr 2026) recommends independent verification by secondary methods.

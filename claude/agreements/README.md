@@ -5,8 +5,13 @@
 | `SHIPPER-PLATFORM-TERMS-v1-DRAFT.md` | `app_private.master_agreements (kind='shipper_platform', version=1)` | Shipper ↔ LoadBoot |
 | `SHIPPER-CARRIER-TERMS-v1-DRAFT.md` | `app_private.master_agreements (kind='shipper_carrier', version=1)` | Shipper and each carrier. **LoadBoot is not a party.** |
 
-**Current state:** both rows exist with placeholder text, `legal_approved=false` and `published=false`.
-While they stay that way:
+**Current state (29 Sep 2026):** the owner approved the text, and it was **published on STAGING** on 29 Sep 2026.
+- Final published text: `SHIPPER-PLATFORM-TERMS-v1.md`, SHA-256 `b8ddaed3cb26a3ed5c9e4de1b748990a776a54468d807285d85f103caac27af3`.
+- Final published text: `SHIPPER-CARRIER-TERMS-v1.md`, SHA-256 `5ca65f64ac11c57b4c6a3a80f7a730d8ee851b4a3315aabf6cec05b0b63fa167`.
+- `-DRAFT.md` files: the review copies, with sources.
+- **Prod:** not yet. On "prod pe chalao", after 0491–0498, publish the same two files and check that `encode(extensions.digest(body_md,'sha256'),'hex')` equals the hashes above.
+
+Before publication (and on any database where the rows are still unpublished):
 - the portal shows "This agreement is being finalised";
 - no shipper can sign;
 - **no shipper can open a lane.**
