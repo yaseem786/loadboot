@@ -53,6 +53,29 @@ the shipper saw.
 - **Boilerplate added:** entire agreement, severability, no waiver, assignment, notices, force majeure and survival.
 - **Blanks left:** only `[DATE OF PUBLICATION]`, filled in when it is published.
 
+## Platform Terms v2 — staff review step (29 Sep 2026, DRAFT, owner approval pending)
+
+`SHIPPER-PLATFORM-TERMS-v2.md` adds the one gap the staging walkthrough found: a shipper's load waits in
+`submitted` until staff post it (`cc_decide_partner_load`: `post` / `decline` only; no staff RPC can change a
+shipper load's rate — checked on staging, 29 Sep). v1 said blocking was "the only decision LoadBoot makes".
+
+Changes from v1 (nothing else moved):
+- §2.3 last paragraph: staff **review** each load before it is posted (§4.4); reviewing and blocking are the only decisions.
+- New §4.4 "Staff review before a load is posted": fraud/safety/completeness only; posted exactly as submitted (no rate,
+  rate-card or term change; no choosing, ranking or suggesting a carrier; a named direct-offer carrier gets it at the
+  shipper's rate); staff may decline (shows as declined in the portal; the shipper may submit a corrected load); the
+  review is not a check of the carrier, rate or lawfulness and promises no review time.
+- Old §4.4 → §4.5, old §4.5 → §4.6. No cross-reference pointed at them.
+- Effective date back to `[DATE OF PUBLICATION]` — fill it when publishing, then re-hash (the hash changes with the date).
+
+**Rollout once approved:**
+- Staging: `insert into app_private.master_agreements(kind, version, title, body_md, legal_approved, published, published_at)
+  values ('shipper_platform', 2, 'LoadBoot Platform Terms for Shippers', $body$…v2 text…$body$, true, true, now());`
+  The staging test shipper then shows Platform Terms as `pending` (it signed v1) — that is the re-sign path working.
+- Prod: publish **v2 only** for `shipper_platform` (leave the prod v1 row unpublished; no real shipper ever saw v1), plus
+  `SHIPPER-CARRIER-TERMS-v1.md` unchanged. `shipper_item_status` and `cc_shipper_agreement` read the highest
+  published+approved version, so no code change is needed.
+
 ## Broker–Shipper terms
 
 In the broker lane the broker's own contract governs. A LoadBoot standard template already exists as

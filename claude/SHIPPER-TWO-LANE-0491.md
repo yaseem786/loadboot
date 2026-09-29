@@ -182,7 +182,7 @@ They are staging only. Their passwords were never stored in the repo. Create fre
 7. **Prod safety (`shipV2`):** the two-lane shipper UI (Verification, Brokers, lane card) shows only when `cc_partner_overview` returns `shipper_stage`, which happens only with 0493+. On prod before the rollout, shippers keep the previous UI instead of calling functions that do not exist. When the rollout lands, the new UI switches on by itself.
 
 **Still open:**
-1. The staff "post" step: a shipper's load waits in `submitted` until staff post it. That is a review gate, not allocation, but it should be written into the Platform Terms (§4.3).
+1. The staff "post" step: a shipper's load waits in `submitted` until staff post it. That is a review gate, not allocation. **Drafted 29 Sep as Platform Terms v2** (`claude/agreements/SHIPPER-PLATFORM-TERMS-v2.md`, new §4.4 + §2.3 wording; details in `claude/agreements/README.md`). Waits for owner approval, then staging publish.
 
 **Partner portal outage (production):** since `d8bf908`, `app/partner/app.js:4574` had a mid-line `//` comment that swallowed a closing brace. The whole Partner portal (brokers and shippers) rendered blank on loadboot.com. It was fixed and pushed to `main` as `06536c4` on 29 Sep.
 
@@ -209,7 +209,7 @@ They are staging only. Their passwords were never stored in the repo. Create fre
 2. Apply 0491 → 0492 → 0493 → 0494 → 0495 → 0496 → 0497 → 0498 → 0499 → 0499b → 0499c → 0499d (same files).
 3. Deploy domain-check v6 **and dmail** (with the 0499 guard). Compare each deployed version to repo HEAD first. Deploy dmail only after 0499 is applied.
 4. Re-read the anon baseline: still 36, same names.
-5. Publish the agreements. The owner approved them on 29 Sep 2026, and they are already published on staging. Use the exact files `claude/agreements/SHIPPER-PLATFORM-TERMS-v1.md` and `SHIPPER-CARRIER-TERMS-v1.md` with the SQL in `claude/agreements/README.md`, then check the SHA-256 against the README.
+5. Publish the agreements with the SQL in `claude/agreements/README.md`, then check the SHA-256 against the README: `SHIPPER-CARRIER-TERMS-v1.md` (approved 29 Sep, published on staging) and **Platform Terms v2** (`SHIPPER-PLATFORM-TERMS-v2.md`, once the owner approves it and it is published on staging first). Leave the prod `shipper_platform` v1 row unpublished. If v2 is still unapproved on rollout day, publish v1 as before and v2 later — every shipper then re-signs.
 6. Test account `yuayui788@gmail.com`:
    - it signs up as a shipper;
    - staff set `organizations.is_demo = true` so it never reaches real carriers;
