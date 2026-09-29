@@ -1,6 +1,6 @@
 # LoadBoot Platform Terms for Shippers — v2
 
-**Effective date:** [DATE OF PUBLICATION]
+**Effective date:** 29 September 2026
 **Between:** LoadBoot LLC, a Wyoming limited liability company ("**LoadBoot**", "we") and the company named in your LoadBoot shipper account ("**Shipper**", "you").
 
 ## 1. Accepting these Terms

@@ -537,8 +537,10 @@ export function invoicesBlock(ctx) {
 // ------------------------------------------------------------------------------------------------
 export function commsCard(ctx) {
   const c = ctx.d.comms || {}; const emails = c.emails || [], notices = c.notices || [], blocked = c.blocked || [], staff = c.staff_notices || [];
+  const isShipper = (ctx.d.org || {}).kind === 'shipper'; const contact = c.contact_log || [];  // bl_ship_0500
   const host = el('div');
   const tabs = [['emails', 'Emails ' + emails.length], ['notices', 'In-app ' + notices.length + (n0(c.unread_notices) ? ' (' + c.unread_notices + ' unread)' : '')], ['blocked', 'Blocked ' + blocked.length], ['staff', 'Staff alerts ' + staff.length]];
+  if (isShipper && Array.isArray(c.contact_log)) tabs.splice(1, 0, ['contact', 'LoadBoot contact ' + n0(c.contact_log_total ?? contact.length)]);
   let cur = blocked.length ? 'blocked' : 'emails';
   const tabBar = el('div', { class: 'p360-tabs' }, tabs.map(([k, l]) => el('button', { class: k === cur ? 'on' : '', dataset: { k }, onClick: (e) => { cur = k; tabBar.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.k === k)); draw(); } }, l)));
   const stTone = (s) => ({ sent: 'green', delivered: 'green', opened: 'green', claimed: 'blue', queued: 'amber', scheduled: 'amber', failed: 'red', blocked: 'red', bounced: 'red' }[s] || 'gray');
@@ -555,11 +557,31 @@ export function commsCard(ctx) {
       el('div', { style: 'flex:1;min-width:240px' }, [el('b', { style: 'font-size:.86rem' }, (n.read_at ? '' : '● ') + n.title), el('div', { class: 'cc-sub', style: 'white-space:pre-wrap' }, n.body || ''), el('div', { class: 'cc-sub' }, 'links to ' + dash(n.url))]),
       el('div', { style: 'text-align:right' }, [pill(n.kind === 'urgent' ? 'red' : n.kind === 'success' ? 'green' : 'gray', dash(n.kind)), el('div', { class: 'cc-sub' }, fmtDateTime(n.created_at)), el('div', { class: 'cc-sub' }, n.read_at ? 'read ' + ago(n.read_at) : 'unread')]),
     ]))) : el('div', { class: 'p360-empty' }, 'No in-app notices yet.'));
+    else if (cur === 'contact') mount(host, contactLog(contact, n0(c.contact_log_total)));
     else if (cur === 'blocked') mount(host, blocked.length ? el('div', null, [el('div', { class: 'p360-warn', style: 'margin-bottom:8px' }, 'These sends were refused by the unsubscribe engine (bl_comm_0446). Do not route around them — the reason names what the person asked for.'), ...blocked.map((b) => el('div', { class: 'p360-row' }, [el('div', null, [el('b', null, b.key), el('div', { class: 'cc-sub' }, b.reason)]), el('div', { class: 'cc-sub' }, fmtDateTime(b.created_at))]))]) : el('div', { class: 'p360-empty' }, 'Nothing blocked — every email to this account was allowed to send.'));
     else mount(host, staff.length ? el('div', null, staff.map((n) => el('div', { class: 'p360-row' }, [el('div', { style: 'flex:1' }, [el('b', { style: 'font-size:.86rem' }, dash(n.title)), el('div', { class: 'cc-sub' }, n.body || ''), el('div', { class: 'cc-sub' }, n.key)]), el('div', { class: 'cc-sub' }, fmtDateTime(n.created_at))]))) : el('div', { class: 'p360-empty' }, 'No staff alerts mention this account in the last 120 days.'));
   }
   draw();
   return card([head('Communications', el('span', { class: 'cc-sub' }, 'everything that left the system for this account, and what was refused')), tabBar, host]);
+}
+
+// bl_ship_0500: every message/call between LoadBoot and this shipper (app_private.shipper_contact_log)
+const CH_LABEL = { mail: '✉ Mail', sms: '💬 SMS', whatsapp: '🟢 WhatsApp', thread: '🧵 Load thread', live_chat: '🗨 Live chat', call: '📞 Call' };
+function contactLog(rows, total) {
+  if (!rows.length) return el('div', { class: 'p360-empty' }, 'No LoadBoot contact with this shipper on record.');
+  return el('div', null, [
+    el('div', { class: 'p360-warn', style: 'margin-bottom:8px' }, 'Audit trail: what LoadBoot staff, the bot and this shipper said to each other. LoadBoot never discusses a rate with a shipper (0499) — refused attempts never reach this list. ⚠ marks a shipper message that raised a rate: the reply must not discuss it.'),
+    el('table', { class: 'p360-table' }, [
+      el('thead', null, el('tr', null, ['When', 'Channel', 'Who', 'What'].map((h) => el('th', null, h)))),
+      el('tbody', null, rows.map((x) => el('tr', null, [
+        el('td', null, fmtDateTime(x.at)),
+        el('td', null, [CH_LABEL[x.channel] || dash(x.channel), el('div', { class: 'cc-sub' }, x.direction === 'in' ? '← from shipper' : '→ to shipper')]),
+        el('td', null, [x.actor === 'staff' ? dash(x.staff) : pill(x.actor === 'shipper' ? 'blue' : 'gray', x.actor), el('div', { class: 'cc-sub' }, dash(x.counterparty))]),
+        el('td', { style: 'max-width:460px' }, [x.rate_flag ? pill('amber', '⚠ rate raised', x.rate_flag) : null, el('div', { class: 'cc-sub', style: 'white-space:pre-wrap' }, dash(x.summary))]),
+      ]))),
+    ]),
+    total > rows.length ? el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Showing the latest ' + rows.length + ' of ' + total + '.') : null,
+  ]);
 }
 
 // ------------------------------------------------------------------------------------------------
