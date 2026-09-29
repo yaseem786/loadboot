@@ -7,6 +7,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { ccDispatcherDelaySet, ccCarrierLoginStatus } from '../../shared/api.js';   // bl_disp_0410 · bl_ux_0486
 import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
+import { dispatchHoldPanel } from './dispatchHold.js';   // bl_disp_0501 — hold from dispatchers
 import { icon } from '../../shared/ui/icons.js';
 
 import { showError } from '../../shared/loading.js';
@@ -601,6 +602,7 @@ export function renderCarrier360(host, orgId) {
             ]),
         availBlock,
         fieldSourcesPanel(orgId),   // bl_disp_0459
+        dispatchHoldPanel(orgId),   // bl_disp_0501
         trailers.length ? el('div', { style: 'margin-top:12px' }, [
           el('div', { style: 'font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;margin-bottom:4px' }, 'Trailers'),
           el('div', { class: 'cc-sub' }, trailers.map((x) => [x.unit_no, x.type, x.status].filter(Boolean).join(' · ')).join('  |  ')),

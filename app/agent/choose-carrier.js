@@ -406,15 +406,17 @@ function pendingCard(o, reload) {
 
 function carrierCard(b, idx, onChoose) {
   const org = b.org || {};
-  return h('div', { class: 'cyc-card' + (b.match_kind === 'exact' ? ' exact' : '') }, [
+  const held = !!b.held;   // bl_disp_0501 — LoadBoot has paused this carrier for new dispatchers: visible, not choosable
+  return h('div', { class: 'cyc-card' + (b.match_kind === 'exact' && !held ? ' exact' : ''), style: held ? 'opacity:.72' : null }, [
     h('div', { class: 'cyc-head', style: 'display:flex;gap:10px;align-items:flex-start' }, [
       h('div', { style: 'flex:1;min-width:0' }, [
         h('div', { class: 'cyc-idx' }, 'CARRIER ' + pad2(idx + 1)),
         h('div', { class: 'cyc-name' }, org.label || org.name || 'Carrier'),
         h('div', { class: 'cyc-line' }, org.summary || ''),
       ]),
-      matchPill(b.match_kind),
+      held ? h('span', { style: 'flex:none;font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px;border:1px solid rgba(252,83,5,.55);color:#fdba74;white-space:nowrap' }, 'Not available yet') : matchPill(b.match_kind),
     ]),
+    held ? h('div', { class: 'cyc-line', style: 'margin-top:-6px' }, 'LoadBoot has paused this carrier for new dispatchers. It opens again when the carrier is ready — you can read its fleet book meanwhile.') : null,
     b.match_kind === 'partial' || b.match_kind === 'related' || b.match_kind === 'none' ? h('div', { class: 'cyc-line', style: 'margin-top:-6px' }, [
       b.match_common && b.match_common.length ? 'You know: ' + b.match_common.join(', ') + '. ' : '',
       b.match_missing && b.match_missing.length ? 'Also runs: ' + b.match_missing.join(', ') + '.' : '',
@@ -422,8 +424,9 @@ function carrierCard(b, idx, onChoose) {
     kpiTiles(b), badges(b),
     b.gaps && b.gaps.length ? h('div', { class: 'cyc-gaps' }, '⚠ ' + b.gaps[0] + (b.gaps.length > 1 ? ' (+' + (b.gaps.length - 1) + ' more in the book)' : '')) : null,
     h('div', { class: 'cyc-acts' }, [
-      h('button', { class: 'cyc-btn g', onClick: () => openBook(b, idx, () => onChoose(b)) }, '📖 Fleet book'),
-      h('button', { class: 'cyc-btn p', onClick: () => onChoose(b) }, 'Choose this carrier'),
+      h('button', { class: 'cyc-btn g', onClick: () => openBook(b, idx, held ? null : () => onChoose(b)) }, '📖 Fleet book'),
+      held ? h('button', { class: 'cyc-btn', disabled: true, style: 'opacity:.6;cursor:not-allowed' }, 'Not available yet')
+           : h('button', { class: 'cyc-btn p', onClick: () => onChoose(b) }, 'Choose this carrier'),
     ]),
   ]);
 }
@@ -481,14 +484,15 @@ export async function mountChooseCarrier(host, opts = {}) {
       hero(o, 'Your carrier choice is with LoadBoot', 'You chose a carrier. LoadBoot confirms it, sets your trial terms and opens your workspace — you get an e-mail the moment it is done.'),
       pendingCard(o, reload), capacityCard(cap), historyBlock(o),
     ]);
-  } else if (!o.carriers || !o.carriers.length) {
+  } else if (!(o.carriers || []).some((c) => !c.held)) {   // bl_disp_0501 — held carriers alone do not count as open
     mount(body, [
       hero(o, 'No carrier is open right now', 'You passed the skills test — this tab is where you choose the carrier you will dispatch for. Every approved carrier has a dedicated dispatcher at the moment. LoadBoot onboards carriers every week; we e-mail you the moment one opens, and it appears here.'),
       h('div', { class: 'cyc-banner info' }, [h('div', null, 'ℹ️'), h('div', null, [h('b', null, 'Nothing is needed from you. '), 'Keep this inbox checked. When a carrier opens you will see its full fleet book here — truck, preferences, authority, lanes — and choose it in one tap.'])]),
+      (o.carriers || []).length ? h('div', { class: 'cyc-grid' }, o.carriers.map((b, i) => carrierCard(b, i, onChoose))) : null,
       historyBlock(o),
     ]);
   } else {
-    const exact = Number(o.exact_count || 0);
+    const exact = (o.carriers || []).filter((c) => !c.held && c.match_kind === 'exact').length;   // bl_disp_0501
     mount(body, [
       hero(o, 'Choose your carrier', 'You passed the skills test' + (o.passed_at ? ' on ' + fmtD(o.passed_at) : '') + '. These carriers are approved by LoadBoot and waiting for a dedicated dispatcher. Read each fleet book — every truck, every preference, every constraint, the age of each authority — then choose the one you will dispatch for. LoadBoot confirms it and your paid trial starts.'),
       exact > 0

@@ -509,6 +509,8 @@ export const dispatcherSetAvailability = (truck, p) => rpc('dispatcher_set_avail
 export const dispatcherCarrierGaps = (assignment) => rpc('dispatcher_carrier_gaps', { p_assignment: assignment });
 export const dispatcherCarrierFill = (assignment, tbl, field, value, truck) => rpc('dispatcher_carrier_fill', { p_assignment: assignment, p_tbl: tbl, p_field: field, p_value: value, p_truck: truck || null });
 export const ccCarrierFieldSources = (orgId) => rpc('cc_carrier_field_sources', { p_org: orgId });
+// bl_disp_0501 — hold a carrier from the dispatcher "Choose your carrier" list (visible, locked). on: true/false, null = read
+export const ccCarrierDispatchHold = (orgId, on, reason) => rpc('cc_carrier_dispatch_hold', { p_org: orgId, p_on: on === undefined ? null : on, p_reason: reason || null });
 export const dispatcherLogBooking = (p) => rpc('dispatcher_log_booking', { p: p ?? {} });
 export const dispatcherBookingUpdate = (id, p) => rpc('dispatcher_booking_update', { p_id: id, p: p ?? {} });
 export const dispatcherBookingEvent = (booking, kind, note, location, eta) => rpc('dispatcher_booking_event', { p_booking: booking, p_kind: kind, p_note: note ?? null, p_location: location ?? null, p_eta: eta ?? null });
