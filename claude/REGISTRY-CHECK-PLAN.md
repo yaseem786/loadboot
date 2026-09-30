@@ -161,3 +161,62 @@ Billing, cargo and other review is marked blocked until identity is verified. Te
 - deploy `places-lookup` (verify_jwt on);
 - add the `GOOGLE_PLACES_KEY` secret on prod;
 - deploy the CC files `shipperPlaybook360.js` and `shipperRegistry360.js`, plus `shipperVerify360.js` and `shared/api.js`.
+
+---
+
+## `bl_ship_0504` — old-packet guard + fixes (30 Sep 2026, staging)
+
+### Fixed
+1. **"null" on Shipper 360 → Two-lane verification.**
+   - `host.replaceChildren(...)` got null children (`reasons`, `sigs`, `emailDomainBlock`, `registryBlock`, `playbookCard`), and a real DOM prints each one as the text "null".
+   - Fix: the array is `.filter(Boolean)`-ed before the spread.
+2. **Shipper Agreement card read `broker_shipper`.**
+   - `shipper360.js` now reads `shipper_platform`.
+   - `cc_partner_360` (patched in 0504):
+     - `agreements_published` lists `shipper_platform` only when it is published AND `legal_approved`;
+     - `agreements` also lists the shipper's e-signatures (`agreement_signatures`, `shipper_platform` / `shipper_carrier`). Shippers sign there, not in `org_agreement_acceptances`.
+   - `agreementBlock` shows "signed vN · vM not signed" when a newer version is published.
+3. **Old packet (submitted before 0491: `data` null, answers only in `ref`; MII has 9 such items).**
+   - (a) The section card shows `i.ref` under the pill "Old packet — answers not in the new form".
+   - (b) There is no Verify button on such a form item. Reject stays.
+   - The playbook adds a red flag listing the old-packet answers.
+   - (c) Server: `cc_onboarding_review_item` refuses `verify` on a shipper **form** item whose data is null / `{}` / missing (22023). Reject and waive are unchanged.
+   - MII's 3 "files" are really Load Tender PDFs in the wrong slots. Staff should **reject** them. That notifies MII, so it is the owner's call, together with the hold decision.
+
+### Tests
+- `tests/bl_ship_0504_old_packet_guard_rollback.sql` on staging: **7/7 pass**, rolled back. Cases:
+  - null data refused;
+  - `{}` refused;
+  - no row refused;
+  - real data verifies;
+  - reject still works;
+  - `shipper_platform` is in the published list and `broker_shipper` is not;
+  - the e-signature is listed.
+- The 0502 / 0503 rollback tests verify only upload and staff items, so the guard does not touch them.
+- `tests/shipper_verify_render_test.mjs`: 2/2. Both tests fail on the old code: 5 bare "null" nodes, and a Verify button on the old-packet item.
+- `tests/shipper_playbook_test.mjs`: 5/5.
+- The vm-based render tests need `node --experimental-vm-modules --test …`. Without the flag they fail with "SourceTextModule is not a constructor", which is not a code bug.
+- `npm run check`: pass.
+- Anon on staging: **35, `b862e7e2…`, unchanged**. The stored migration text md5 is `645c78fe…`, which equals the repo file with the trailing newline stripped.
+
+### Prod rollout (only on "prod pe chalao")
+- Apply after 0502 and 0503: `bl_ship_0504_old_packet_guard.sql`. It raises by itself if the anon names change. Then re-read: prod still 36, `06f779f7…`.
+- Deploy the CC files:
+  - `shipperVerify360.js`;
+  - `shipperPlaybook360.js`;
+  - `partner360-kit.js`;
+  - `shipper360.js`.
+
+### Domain-check v6 re-run for MII / SoftBank / Sourcing Advisory — NOT run (waits for the owner's yes)
+Read-only check on prod, 30 Sep:
+- All 3 have `check_outcome = pass`, `verified_at` set, `request_id` null, and the v6 columns null.
+
+What a re-run does:
+- CC → Shipper 360 → "↻ Re-check domain", which is `cc_shipper_trust_set(org, 'recheck')`, sets `request_id = null`.
+- `app_private.shipper_check_collect()` then runs domain-check again and writes the trust row.
+- **Correction to the handoff:** it is not rows-only.
+  - On `pass`, the collector also calls `notify_partner` → **one in-app bell notice to the shipper**: "✅ Company email checked — next, verify your company".
+  - On an error, the notice is "We could not run the business check yet".
+  - `partner_notifications` has no trigger, and no edge function reads it, so **no email and no push** go out.
+  - `verified_at` stays as it is (`coalesce`).
+- MII (under review for impersonation) would see that bell notice too.

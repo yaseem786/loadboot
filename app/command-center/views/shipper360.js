@@ -67,7 +67,7 @@ export function shipperSections(ctx) {
       facts([['Company email', t.company_email], ['Verified', when(t.email_verified_at)], ['Live code', t.code_live ? 'yes — waiting for them to type it' : 'no']]),
       (t.free_mail && !t.email_verified_at) ? el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'They signed up with ' + dash(t.domain) + '. The portal asks for a company address and emails a 6-digit code (shipper.company_email); the domain check re-runs on that domain. If they have no company domain at all, verify by hand above.') : null,
     ]),
-    agreementBlock(ctx, 'broker_shipper', 'Shipper Agreement'),
+    agreementBlock(ctx, 'shipper_platform', 'Shipper Agreement (LoadBoot Platform Terms)'),  // bl_ship_0504 (was broker_shipper)
     block('Quote allowance', t.can_post ? pill('green', 'can request quotes') : pill('amber', 'blocked'), [
       facts([['Allowed now', t.can_post ? 'yes' : 'no'], ['Rule', 'Quotes open on business_verified · first booking needs the 3-item packet (billing, claims contact, agreement)']]),
       (!t.can_post && t.reason) ? el('div', { class: 'p360-warn', style: 'margin-top:8px' }, ['Why blocked (the shipper reads the same words): ', el('b', null, t.reason)]) : null,

@@ -9,6 +9,10 @@ const pill = (tone, text) => el('span', { class: 'cc-pill cc-pill-' + (tone || '
 const DONE = (s) => s === 'verified' || s === 'waived';
 const CONTACT = '📞💬 Call or WhatsApp · +1 (815) 365-1168';   // CLAUDE.md §7 — the one contact sign
 
+// bl_ship_0504: a form item submitted before bl_ship_0491 has no structured `data`; its answers sit in `ref` as text.
+// The server refuses Verify on it (cc_onboarding_review_item); staff reject it so the shipper fills the new form.
+export const isOldPacket = (i) => i.type === 'form' && i.status === 'submitted' && (i.data == null || (typeof i.data === 'object' && !Object.keys(i.data).length));
+
 export function riskFlags(v) {
   const t = v.trust || {}; const reg = (v.registry || {}).checks || {}; const f = [];
   if (v.stage === 'hold' || t.hold_reason) f.push({ tone: 'red', text: 'On hold: ' + (t.hold_reason || 'call-back failed') });
@@ -18,6 +22,8 @@ export function riskFlags(v) {
   if ((t.shared_doc_orgs || []).length) f.push({ tone: 'red', text: 'Uploaded a document another LoadBoot account also uploaded' });
   if (t.mx_class === 'budget_host' && (!t.dmarc || t.dmarc === 'none' || t.dmarc === 'p_none')) f.push({ tone: 'amber', text: 'Email on a budget mail host with no DMARC' });
   if (t.domain && !t.domain_created_at && !t.mx_class) f.push({ tone: 'amber', text: 'Fraud signals never ran for this account (domain age, mail host, SEC name unknown) — ask the owner to re-run the domain check before judging it' });
+  const old = (v.items || []).filter((i) => i.active && isOldPacket(i));
+  if (old.length) f.push({ tone: 'red', text: old.length + ' answer(s) came in the old packet (text only, not the new form): ' + old.map((i) => i.label).join(', ') + ' — they cannot be verified; reject them so the shipper fills the new form' });
   if (t.free_mail) f.push({ tone: 'amber', text: 'Signed up with a free email — the manual identity path (EIN letter + address proof) applies' });
   if (!t.site_ok && !t.free_mail) f.push({ tone: 'amber', text: 'No working website on the email domain' });
   return f;

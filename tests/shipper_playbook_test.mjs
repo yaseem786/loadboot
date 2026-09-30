@@ -39,3 +39,15 @@ test('follow-up message lists what the shipper owes and carries the one contact 
   assert.match(m, /^Hi Jason,/); assert.match(m, /• Legal business entity/); assert.match(m, /Confirm the signer's phone/);
   assert.match(m, /Call or WhatsApp · \+1 \(815\) 365-1168/); assert.ok(!/253-7575/.test(m));
 });
+
+// bl_ship_0504 — old-packet items (submitted before 0491: data null, answers only in `ref`)
+test('old packet: detected, flagged red, never counted as form data', async () => {
+  const { isOldPacket } = await import('../app/command-center/views/shipperPlaybook360.js');
+  assert.equal(isOldPacket({ type: 'form', status: 'submitted', data: null, ref: 'Legal name: MII' }), true);
+  assert.equal(isOldPacket({ type: 'form', status: 'submitted', data: {} }), true);
+  assert.equal(isOldPacket({ type: 'form', status: 'submitted', data: { legal_name: 'X' } }), false);
+  assert.equal(isOldPacket({ type: 'upload', status: 'submitted', data: null }), false, 'uploads never carry form data');
+  assert.equal(isOldPacket({ type: 'form', status: 'pending', data: null }), false, 'not answered yet is not an old packet');
+  const v = base(); v.items[0].status = 'submitted'; v.items[0].data = null; v.items[0].ref = 'Legal name: MII';
+  assert.match(riskFlags(v).map((x) => x.text).join(' | '), /answer\(s\) came in the old packet.*Legal business entity/);
+});

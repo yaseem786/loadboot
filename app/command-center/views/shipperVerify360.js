@@ -10,7 +10,7 @@ import { shipperVerification, shipperCallbackStart, shipperCallbackFail, shipper
 import { humanizeError, toast } from '../../shared/errors.js';
 import { pill } from './partner360-kit.js';
 import { registryBlock, openDocVerify, emailDomainBlock, openPlacesLookup } from './shipperRegistry360.js';  // bl_ship_0502/0503
-import { playbookCard } from './shipperPlaybook360.js';  // bl_ship_0503
+import { playbookCard, isOldPacket } from './shipperPlaybook360.js';  // bl_ship_0503 / 0504
 
 const SEC = { identity: 'A · Identity', billing: 'B · Billing & credit', agreements: 'C · Agreements', cargo: 'D · Cargo & liability', special: 'E · Special freight', facilities: 'F · Locations', acks: 'G · Acknowledgements' };
 const stTone = (s) => (s === 'verified' || s === 'waived') ? 'green' : s === 'submitted' ? 'amber' : s === 'rejected' ? 'red' : s === 'unavailable' ? 'blue' : 'gray';
@@ -84,21 +84,28 @@ export function shipperVerifyCard(ctx) {
           (ctx.manage && ['form', 'upload'].includes(i.type) && i.status === 'submitted') ? el('span', { style: 'margin-left:auto;display:flex;gap:6px' }, [
             ['ein_letter', 'address_proof'].includes(i.key)
               ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => openDocVerify(ctx, v, i, load) }, 'Verify vs registry')
+              : isOldPacket(i) ? null  // bl_ship_0504: nothing structured to verify — the server refuses it too; Reject asks for the new form
               : el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async () => { try { await onboardingReviewItem(orgId, i.key, 'verify', null); toast(i.label + ' verified.', 'success'); load(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Verify'),
             el('button', { class: 'lb-btn lb-btn-sm', onClick: () => ask('Reject — ' + i.label, [{ label: 'What must the shipper fix? (they read this)', area: true }], async ([n]) => { await onboardingReviewItem(orgId, i.key, 'reject', n); toast('Rejected — shipper notified.', 'success'); load(); }) }, 'Reject'),
           ]) : null]),
         i.key === 'legal_entity' && i.data ? el('div', { class: 'cc-sub', style: 'margin-top:4px' }, 'Compared with the state record on the State registry check card above.') : null,
         dataTable(i.data),
+        isOldPacket(i) ? el('div', { style: 'margin-top:4px;padding:6px 8px;border:1px dashed #f59e0b;border-radius:8px;background:#fffbeb' }, [
+          pill('amber', 'Old packet — answers not in the new form'),
+          i.ref ? el('div', { class: 'cc-sub', style: 'margin-top:4px;white-space:pre-wrap' }, i.ref) : el('div', { class: 'cc-sub', style: 'margin-top:4px' }, 'No answer text on file.'),
+          el('div', { class: 'cc-sub', style: 'margin-top:4px;font-size:.76rem' }, 'Submitted before the two-lane form (bl_ship_0491). It cannot be verified as-is — reject it so the shipper fills the new form.'),
+        ]) : null,
         i.note ? el('div', { class: 'cc-sub', style: 'color:#b91c1c' }, 'Note: ' + i.note) : null,
       ])),
     ]));
     const sigs = (v.signatures || []).length ? el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'Signed: ' + v.signatures.map((s) => s.kind + ' v' + s.version + ' by ' + s.signer + ' (' + s.title + ') ' + when(s.signed_at) + (s.ip ? ' · IP ' + s.ip : '')).join(' | ')) : null;
-    host.replaceChildren(
+    // replaceChildren() prints a null child as the text "null" — reasons / sigs / emailDomainBlock are often null.
+    host.replaceChildren(...[
       el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [el('h3', { style: 'margin:0' }, 'Two-lane verification'), pill(v.stage === 'hold' ? 'red' : v.stage === 'new' ? 'gray' : 'green', 'stage: ' + String(v.stage).replace('_', ' '))]),
       el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-top:10px' }, [lane('Carriers (direct)', v.direct || {}), lane('Brokers (tender)', v.broker || {})]),
       playbookCard(ctx, v), signals, reasons, registryBlock(ctx, v, load), emailDomainBlock(ctx, v, load), cbBlock, limits, ...secNodes, sigs,
       el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'Staff never choose or approve a carrier or broker for a shipper — the shipper does. Staff can decline or block for fraud or safety.'),
-    );
+    ].filter(Boolean));
   };
   load();
   return host;
