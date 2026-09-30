@@ -89,3 +89,6 @@
   .dev-table td { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 6px 8px; border: 0; padding: 4px 2px; }
   .dev-table td[data-l]::before { content: attr(data-l); margin-right: auto; font-size: .74rem; color: var(--lb-muted, #64748b); font-weight: 600; }
 }
+/* bl_dev_0505: API use terms card */
+.dev-terms-list { margin: 6px 0 10px; padding-left: 18px; font-size: .88rem; line-height: 1.55; color: var(--lb-text, #334155); }
+.dev-terms-list li { margin: 4px 0; }

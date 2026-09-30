@@ -369,7 +369,7 @@ function renderDetail(host, id) {
       a ? null : el('div', { class: 'p360-note', style: 'margin-bottom:10px' }, 'This login is not a developer account (e.g. a partner key issued by staff). Keys, usage and the audit trail are still shown below.'),
       a ? facts([
         ['Use case', a.use_case], ['Expected volume', a.expected_volume], ['Partner slug', a.partner_slug],
-        ['Terms accepted', a.terms_accepted_at ? fmtDate(a.terms_accepted_at) : 'not yet'],
+        ['API use terms', a.terms_version ? 'accepted ' + fmtDate(a.terms_accepted_at) + ' (' + a.terms_version + ')' : (a.terms_accepted_at ? 'old wording only (' + fmtDate(a.terms_accepted_at) + ') - not the current version' : 'not yet')],
         ['Verification note', a.verification_note], ['Staff notes (internal)', a.staff_notes],
         ['Status reason', a.status_reason],
         ['Reviewed', a.reviewed_at ? fmtDateTime(a.reviewed_at) + (a.reviewed_by ? ' by ' + a.reviewed_by : '') + (a.review_note ? ' - ' + a.review_note : '') : 'not yet'],

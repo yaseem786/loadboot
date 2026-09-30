@@ -58,11 +58,11 @@ def terms_page(ctx=None):
 <span class="pv-chip"><b>No</b> forced dispatch</span>
 <span class="pv-chip"><b>No</b> minimum term or cancellation fee</span>
 </div>
-<div class="pv-stamp"><b>These are the LoadBoot Terms of Service.</b> Last updated <b>6 September 2026</b> &middot; a binding agreement between you and LoadBoot LLC &middot; read with our <a href="privacy.html" style="color:#7dd3fc">Privacy Policy</a>, which forms part of it</div>
+<div class="pv-stamp"><b>These are the LoadBoot Terms of Service.</b> Last updated <b>6 September 2026</b> &middot; <a href="#api" style="color:#7dd3fc">API use</a> section added <b>30 September 2026</b> &middot; a binding agreement between you and LoadBoot LLC &middot; read with our <a href="privacy.html" style="color:#7dd3fc">Privacy Policy</a>, which forms part of it</div>
 </div></section>'''
 
     nav = [('deal', 'The deal'), ('fees', 'Fees'), ('roles', 'By your role'), ('market', 'What we promise'),
-           ('terms', 'The full terms'), ('liability', 'Liability &amp; disputes'), ('faq', 'FAQ'), ('contact', 'Contact')]
+           ('terms', 'The full terms'), ('api', 'API use'), ('liability', 'Liability &amp; disputes'), ('faq', 'FAQ'), ('contact', 'Contact')]
     b += '<div class="pv-nav"><div class="wrap"><nav class="pv-nav-in">%s</nav></div></div>' % ''.join(
         '<a href="#%s">%s</a>' % (i, t) for i, t in nav)
 
@@ -204,6 +204,43 @@ def terms_page(ctx=None):
     b += _sec('terms', 'The agreement', 'The full terms, all nineteen clauses',
         'Nothing is summarised away. The green notes beside a clause are our plain-English explanation of it &mdash; helpful, but the clause itself is what binds.',
         ''.join(C))
+
+    # ---------- API USE (added 30 Sep 2026, bl_dev_0505) ----------
+    # Applies only to developer accounts and API keys. Accepted as a versioned fact in the Developer Portal
+    # (app_private.dev_api_terms() 'version' = api-v1-2026-09-30). Change a clause here -> bump that version in a
+    # migration so every developer is asked again. Clauses 1-19 above are untouched.
+    A = []
+    A.append(_clause('A1', 'Who this section applies to', [
+        'This section applies to anyone who creates a LoadBoot developer account or uses a LoadBoot API key (the &ldquo;API&rdquo;). It is part of these Terms: Clauses 1&ndash;19 and our <a href="privacy.html">Privacy Policy</a> apply to your use of the API as well. Where this section and another clause both speak to the API, this section governs.'],
+        'Building on our API? These are the extra rules. Everything else on this page still applies.', anchor='api-1'))
+    A.append(_clause('A2', 'API keys', [
+        'API keys are confidential and belong to your account. Do not share them, sell them, or place them in client-side code, mobile apps, web pages or public repositories. You are responsible for every request made with your keys. If a key may have been exposed, revoke it in the Developer Portal and tell us at <a href="mailto:hello@loadboot.com">hello@loadboot.com</a> promptly.'],
+        'Treat a key like a password. Whatever is done with it is on you.', anchor='api-2'))
+    A.append(_clause('A3', 'Sandbox and production access', [
+        'Sandbox keys return test data. Sandbox loads are not real freight and must not be shown to anyone as real loads. Production access requires LoadBoot&rsquo;s approval, which we may grant, limit to certain scopes, or withdraw. Posting loads through the API (write access) is available only to verified broker accounts, and every load posted that way is subject to Clause 5 exactly as if it were posted in the portal.'],
+        'Test all you like in the sandbox. Real data needs our approval first.', anchor='api-3'))
+    A.append(_clause('A4', 'Attribution and link-back', [
+        'Every load you obtain from the API and show to anyone must be labelled &ldquo;via LoadBoot&rdquo; and link back to LoadBoot using the <code>url</code> field the API returns for that load (it carries the load reference and your partner id). Do not remove, hide or alter that label or link, and do not show &ldquo;via LoadBoot&rdquo; on loads that did not come from the API.'],
+        'Our loads carry our name and a link back to us. That is the price of the data.', anchor='api-4'))
+    A.append(_clause('A5', 'How you may use API data', [
+        'You may use data from the API only to show loads and load status to users of the product you described when you applied. You may not: resell, sublicense or redistribute API data; bulk-download it or store more of it, or for longer, than your product needs; build a competing load board or database from it; scrape the Platform or get around the API; or use API data to move a load, a broker or a shipper off LoadBoot or around its fees. Clause 9 (Acceptable use) applies in full.'],
+        'Show our loads in your product. Do not copy them, sell them, or use them to go around us.', anchor='api-5'))
+    A.append(_clause('A6', 'Rate limits and fair use', [
+        'Every key has a rate limit, shown in the Developer Portal documentation. Do not try to get around a limit, for example by spreading requests across several keys or several accounts. We may lower a limit, or pause a key, to protect the Platform.'],
+        'One product, one account, within the limits. Extra accounts to dodge limits get closed.', anchor='api-6'))
+    A.append(_clause('A7', 'Logging and changes to the API', [
+        'We log every API request (the key used, the endpoint, the result and the time) to run, secure and support the API. Request logs are kept for the period shown in the Developer Portal (currently 90 days). We may change, version or retire endpoints; for a change that breaks existing integrations we will try to give notice in the Developer Portal or by email first. The API is provided under Clauses 14 and 15 (Disclaimers and Limitation of liability) like the rest of the Platform.'],
+        'We keep a record of your calls. If we must break something, we will try to warn you first.', anchor='api-7'))
+    A.append(_clause('A8', 'Suspension and ending API access', [
+        'We may suspend or revoke keys, or a developer account, for a breach of this section, a security risk, misuse of data, or extended inactivity, with notice where practicable. You may stop using the API and close your developer account at any time. When your API access ends, stop showing API data and delete the API data you still hold within 30 days, except where the law requires you to keep it.'],
+        'Break these rules and your keys stop. When you leave, you delete our data.', anchor='api-8'))
+    A.append(_clause('A9', 'Accepting and updating this section', [
+        'You accept this section by ticking the box when you create a developer account, or by pressing &ldquo;Accept&rdquo; in the Developer Portal. When we change this section materially we will change its version, and you will be asked to accept the new version in the Developer Portal; production access cannot be requested until you do. Clause 18 applies to every other change.'],
+        None, anchor='api-9'))
+
+    b += _sec('api', 'For developers', 'API use',
+        'These clauses apply only if you use a LoadBoot API key or have a developer account. Version <b>api-v1</b>, 30 September 2026.',
+        ''.join(A))
 
     # ---------- LIABILITY & DISPUTES, CALLED OUT ----------
     b += _sec('liability', 'The two clauses that matter most in a bad week',

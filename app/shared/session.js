@@ -129,7 +129,7 @@ export async function signUp(email, password, meta = {}) {
   if (meta.ref) data.ref = meta.ref;
   // bl_dev_0502: developer-portal signups (role 'developer') also carry what they are building; handle_new_user()
   // copies these into app_private.developer_accounts. Only these keys are forwarded.
-  ['website', 'use_case', 'expected_volume', 'terms'].forEach((k) => { if (meta[k]) data[k] = String(meta[k]); });
+  ['website', 'use_case', 'expected_volume', 'terms', 'terms_version'].forEach((k) => { if (meta[k]) data[k] = String(meta[k]); });
   const options = { data };
   // optional: where the e-mail confirmation link lands (must be in Supabase's redirect allow-list,
   // otherwise Supabase falls back to the Site URL — harmless).
