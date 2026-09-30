@@ -96,5 +96,37 @@ contact-switch rule is not touched.
 5. Milecount partner slug: **`milecount`** (owner: "suggest and implement"). Set on the staging key `lb_fefba0`
    (`api_keys.partner_slug`). Prod has no Milecount key yet — when one is issued, use API 360 → Issue key with partner slug
    `milecount` (`cc_api360_issue_key(..., p_partner_slug => 'milecount')`).
-6. **Still to do:** push the frontend (portal, CC API 360, `session.js`, `build_site.py`) — DB + API it needs are now live.
-   Open: API rules wording on the signup checkbox (legal wording is the owner's call; links to `/terms.html`).
+6. Frontend pushed and live (30 Sep 2026, owner). Prod anon SECDEF after everything: **36**, md5 `06f779f74423a983253c79ab9d4e1e84`.
+
+## Still open (30 Sep 2026)
+1. **API rules wording** — owner's call. Draft below; nothing changed in `app/developer/app.js` yet.
+2. **CC → API 360 with a real staff login** — only the owner can do this (never tested against a real staff session).
+3. **5 pending developers** — snapshot below (read-only prod query, 30 Sep). Decide per account in API 360.
+
+### Pending developers — prod snapshot (read-only, 30 Sep)
+All 5 are `reclassified`: no name / company / website / use case, `terms_accepted_at` null, confirmed email,
+signed in only once (the day they signed up). `api_request_log` is new, so 0 calls there says nothing about before 30 Sep.
+
+| Account | Created | Keys (all `read`, none revoked) |
+|---|---|---|
+| support@velogriddispatch.com | 8 Sep | `lb_7f2a68` never used; `lb_9ddec9` last used 21 Sep |
+| techcentralnc@gmail.com | 19 Sep | — (also has agent profile "BRIAN NGUYEN") |
+| byteitsolutionsnc@gmail.com | 22 Sep 02:25 UTC | — |
+| nguyenbrian83@gmail.com | 22 Sep 02:33 UTC | `lb_b3e55d` never used |
+| brian.a@lyntex.io | 29 Sep | — |
+
+Pattern (a guess, not verified): 3–4 of these may be one person — "Brian" in 3 addresses, two "…nc" gmail
+accounts, and byteit + nguyenbrian83 signed up 8 minutes apart the same night. Suggested default: keep all 5
+`pending` and ask each to finish the profile (use case + company + website) before approving production.
+Revoking `lb_7f2a68` and `lb_b3e55d` costs nothing (never used). `lb_9ddec9` is the only key in real use.
+
+### API rules — draft wording (owner to approve; not legal advice)
+`/terms.html` has no API section today, so the checkbox links to terms that say nothing about the API.
+Option A — checkbox only (smallest change):
+> I agree to the LoadBoot Terms and the API Rules: I will keep my API keys secret and not share them; I will show
+> "via LoadBoot" on every load that comes from the API and link it back to LoadBoot using the load's url; I will not
+> resell, bulk-copy or re-host LoadBoot load data; and LoadBoot may rate-limit, suspend or revoke my keys at any time.
+
+Option B — add an "API use" section to `/terms.html` with the same four points plus: sandbox data is test data;
+production access needs LoadBoot approval; LoadBoot may change the API with notice; the developer is responsible
+for everything done with their keys. Then the checkbox links to `/terms.html#api`.
