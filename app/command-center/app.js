@@ -390,7 +390,7 @@ async function boot() {
     '/dispatcher-email': tabbed('team', 'dmail'),
     '/carrier-requests': tabbed('team', 'creq'),
     '/carrier-choices': tabbed('team', 'choices'),   // bl_disp_0481
-    '/dispatcher': ({ query }) => { setActive('/dispatchers'); guard(['carriers.approve', 'dispatch.manage'], () => renderDispatcher360(content, query))(); },   // bl_disp_0317
+    '/dispatcher': ({ query }) => { setActive('/dispatchers'); guard(['carriers.approve', 'dispatch.manage', 'dispatch.view'], () => renderDispatcher360(content, query))(); },   // bl_disp_0317; dispatch.view = read-only (bl_sec_0509)
     '/fleet': tabbed('carriers', 'fleet'),
     '/fleet-expiry': tabbed('compliance', 'expiry'),
     '/partner-compliance': tabbed('compliance', 'partners'),
