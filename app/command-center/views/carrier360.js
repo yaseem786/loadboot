@@ -5,7 +5,7 @@
 // timeline — each section linking back into the module it came from. Read-only aggregate
 // via cc_carrier_360 (keyed on the carrier organization id), RBAC-gated on carriers.view.
 import { el, mount } from '../../shared/ui/dom.js';
-import { ccDispatcherDelaySet, ccCarrierLoginStatus } from '../../shared/api.js';   // bl_disp_0410 · bl_ux_0486
+import { ccDispatcherDelaySet, ccCarrierLoginStatus, ccCarrierPhoneStatus } from '../../shared/api.js';   // bl_disp_0410 · bl_ux_0486
 import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
 import { dispatchHoldPanel } from './dispatchHold.js';   // bl_disp_0501 — hold from dispatchers
 import { icon } from '../../shared/ui/icons.js';
@@ -59,6 +59,16 @@ export function renderCarrier360(host, orgId) {
            ls.last_sign_in ? ' \u00b7 last sign-in ' + fmtDate(ls.last_sign_in) + ' (' + agoTxt(ls.last_sign_in) + ')' : ' \u00b7 no sign-in on record',
            ls.devices > 1 ? ' \u00b7 ' + ls.devices + ' devices' : '']);
     }).catch(() => mount(loginEl, ''));
+    // bl_onb_0490: phone verified by voice code? New carriers (from 30 Sep 2026) need it before a dispatcher is assigned.
+    const phoneEl = el('div', { style: 'margin-top:6px;font-size:.82rem;color:#9db4d6;min-height:18px' }, '');
+    ccCarrierPhoneStatus(orgId).then((pv) => {
+      if (!pv || pv.error) return;
+      const pill = (bg, fg, t) => el('span', { style: 'display:inline-block;padding:2px 9px;border-radius:999px;font-weight:700;background:' + bg + ';color:' + fg }, t);
+      mount(phoneEl, pv.verified
+        ? [pill('rgba(34,197,94,.18)', '#4ade80', '\u2713 Phone verified'), ' ' + (pv.verified_at ? fmtDate(pv.verified_at) : '')]
+        : [pill('rgba(245,158,11,.18)', '#fbbf24', 'Phone not verified'),
+           pv.required_for_dispatcher ? ' \u00b7 required before a dispatcher is assigned (carrier does it from their dashboard card)' : ' \u00b7 older account, not required']);
+    }).catch(() => {});
     const head = el('div', { style: 'background:linear-gradient(135deg,#0b1b33,#12294a);border-radius:18px;padding:22px 26px;color:#fff;box-shadow:0 14px 34px -18px rgba(8,30,63,.45)' }, [
       el('div', { style: 'display:flex;gap:18px;align-items:center;flex-wrap:wrap' }, [
         el('div', { style: 'width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#0883F7,#0a6fd6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;flex:none;box-shadow:0 10px 24px -8px rgba(8,131,247,.6)' }, _init),
@@ -71,6 +81,7 @@ export function renderCarrier360(host, orgId) {
           el('div', { style: 'color:#9db4d6;font-size:.86rem;margin-top:6px' },
             ['MC ' + (p.mc || '\u2014'), 'USDOT ' + (p.dot || '\u2014'), p.home_base || null, p.created_at ? 'joined ' + fmtDate(p.created_at) : null].filter(Boolean).join('  \u00b7  ')),
           loginEl,
+          phoneEl,
         ]),
         el('div', { style: 'text-align:right;flex:none' }, [
           el('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.1em;color:#7c8db5;text-transform:uppercase' }, 'Contact (staff only)'),
