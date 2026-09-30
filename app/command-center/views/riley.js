@@ -605,6 +605,7 @@ export async function renderRiley(host, query) {
   // ---------- WhatsApp line
   function paintWa() {
     const legs = data.wa_legs || [], cbs = data.wa_callbacks || [];
+    const CBR = { missed: 'Missed', voicemail: 'Voicemail', forwarded: 'Went to Riley', scheduled: 'Scheduled', riley: 'Riley promised a call back' };
     const LS = { ringing: ['Ringing Riley', 'a'], forwarded: ['Riley answered', 'g'], voicemail: ['Voicemail (Riley did not pick up)', 'r'], missed: ['Missed', 'r'], ended: ['Ended', 'm'], failed: ['Failed', 'r'] };
     mount(bodyEl, el('div', null, [
       el('div', { class: 'ry-card' }, [
@@ -624,9 +625,10 @@ export async function renderRiley(host, query) {
         el('div', { style: 'font-size:12.5px;color:var(--mut,#64748b);margin-top:10px' }, 'One-time Telnyx step (owner): Numbers → ' + pretty(settings.wa_number) + ' → Voice → connection = the “LoadBoot Inbound” Voice API application (the same one the dispatcher lines use). Without it Telnyx never tells us the call exists.'),
       ]),
       el('div', { class: 'ry-card' }, [
-        el('h3', null, 'Open callbacks from the line'), el('p', { class: 'hint' }, 'Callers Riley could not take (voicemail or missed). Nobody else sees these — they belong to this screen.'),
+        el('h3', null, 'Open callbacks from the line'), el('p', { class: 'hint' }, 'Callers Riley could not take (voicemail or missed), and callers Riley promised a person would call back (bl_voice_0506). A carrier with a released dispatcher goes to that dispatcher instead. Nobody else sees these — they belong to this screen.'),
         cbs.length ? el('table', { class: 'ry-t' }, [el('thead', null, el('tr', null, ['When', 'Number', 'Why', ''].map((x) => el('th', null, x)))),
-          el('tbody', null, cbs.map((k) => el('tr', null, [el('td', { style: 'white-space:nowrap' }, et(k.created_at)), el('td', null, pretty(k.number)), el('td', null, k.reason),
+          el('tbody', null, cbs.map((k) => el('tr', null, [el('td', { style: 'white-space:nowrap' }, et(k.created_at)), el('td', null, [k.contact_name ? el('div', null, k.contact_name) : null, pretty(k.number)]),
+            el('td', { style: 'max-width:360px' }, [el('div', null, CBR[k.reason] || k.reason), k.note ? el('div', { style: 'font-size:12px;opacity:.75' }, k.note) : null]),
             el('td', null, el('button', { class: 'ry-btn sm', disabled: !can(), onClick: async () => { try { const r = await ccRileyCallbackDone(k.id, null); if (r && r.error) throw new Error(r.error); toast('Marked done.'); loadAll(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Done'))])))]) : el('div', { style: 'opacity:.7' }, 'Nothing open.'),
       ]),
       el('div', { class: 'ry-card' }, [

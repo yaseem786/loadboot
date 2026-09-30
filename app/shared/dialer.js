@@ -755,7 +755,7 @@ function createDialer() {
       const due = new Date(b.due_at).getTime() <= Date.now();
       return h('div', { class: 'lbd-row' }, [
         h('div', { class: 'd ' + (b.reason === 'scheduled' ? '' : 'miss') }, ic(b.reason === 'voicemail' ? 'vm' : b.reason === 'scheduled' ? 'clock' : 'miss', 16)),
-        h('div', { class: 'm' }, [h('b', null, b.contact_name || pretty(b.number)), h('span', null, [b.reason === 'scheduled' ? (due ? 'Due now' : 'Due ' + whenET(b.due_at)) : ({ missed: 'Missed call', voicemail: 'Left a voicemail', forwarded: 'Riley took the call' }[b.reason]) + ' · ' + ago(b.due_at), b.note ? ' · ' + b.note : ''])]),
+        h('div', { class: 'm' }, [h('b', null, b.contact_name || pretty(b.number)), h('span', null, [b.reason === 'scheduled' ? (due ? 'Due now' : 'Due ' + whenET(b.due_at)) : ({ missed: 'Missed call', voicemail: 'Left a voicemail', forwarded: 'Riley took the call', riley: 'Riley promised a call back' }[b.reason]) + ' · ' + ago(b.due_at), b.note ? ' · ' + b.note : ''])]),
         (b.reason === 'voicemail' && b.call_id) ? h('button', { class: 'lbd-ib' + (isPlaying(b.call_id) ? ' on' : ''), 'aria-label': isPlaying(b.call_id) ? 'Pause voicemail' : 'Play voicemail', onClick: (e) => playRecording(b.call_id, e.currentTarget) }, ic(isPlaying(b.call_id) ? 'pause' : 'play', 16)) : null,
         h('button', { class: 'lbd-ib', 'aria-label': 'Mark done', onClick: async () => { await dialerCallbackSet(b.id, 'done').catch(() => {}); refresh(); } }, ic('check', 17)),
         h('button', { class: 'lbd-btn or sm', onClick: async () => { dialerCallbackSet(b.id, 'done').catch(() => {}); dial(b.number, { source: 'callback', contact_name: b.contact_name || '' }); } }, 'Call back'),

@@ -1,8 +1,27 @@
 // lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // errors.js — translate raw RPC/transport errors into safe, human messages.
 // Never leak SQL text, stack traces, or internal identifiers to the UI.
+// 30 Sep 2026 (owner ask): Command Center is staff-only, and the flattened sentence below kept hiding
+// the real reason ("Something went wrong (code P0001)" when the database had written exactly why it
+// refused). CC calls setErrorAudience('staff') at boot; from then on humanizeError returns the server's
+// own message (+ hint, + code). Carrier / driver / shipper pages never set it, so they are unchanged.
+let STAFF = false;
+export function setErrorAudience(a) { STAFF = a === 'staff'; }
+
+function staffReason(e) {
+  const msg = String(e.message || '').trim();
+  if (!msg || /failed to fetch|networkerror|load failed/i.test(msg)) return null;
+  const extra = [e.hint, e.details]
+    .filter((x) => typeof x === 'string' && x.trim() && x.indexOf('DRIVER_DENIED') !== 0 && x.indexOf('Failing row contains') !== 0)
+    .join(' · ');
+  let s = msg + (extra ? ' — ' + extra : '');
+  if (s.length > 400) s = s.slice(0, 400) + '…';
+  return s + (e.code ? ' (code ' + e.code + ')' : '');
+}
+
 export function humanizeError(e) {
   if (!e) return 'Something went wrong.';
+  if (STAFF) { const r = staffReason(e); if (r) return r; }
   const msg = (e.message || '').toLowerCase();
   if (e.code === '42501' || msg.indexOf('not authorized') >= 0 || msg.indexOf('permission denied') >= 0)
     return 'You do not have permission to do that.';
@@ -80,7 +99,9 @@ export function toast(message, kind = 'info') {
   t.className = 'lb-toast lb-toast-' + kind;
   t.textContent = message;
   host.appendChild(t);
-  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 4200);
+  // longer messages (a real server reason) stay up long enough to read: 4.2 s minimum, 12 s maximum
+  const ms = Math.max(4200, Math.min(12000, String(message || '').length * 60));
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, ms);
 }
 
-export default { humanizeError, rpcMessage, rpcTitle, LB_CODE_TITLES, toast };
+export default { humanizeError, setErrorAudience, rpcMessage, rpcTitle, LB_CODE_TITLES, toast };
