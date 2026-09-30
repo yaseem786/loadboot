@@ -1,6 +1,6 @@
 # Developer Portal + API 360 — build log (bl_dev_0502, 29 Sep 2026)
 
-Spec: `claude/DEVELOPER-PORTAL-API360-HANDOFF.md`. **Staging: done and tested. Prod: NOT applied — waits for Yaseen.**
+Spec: `claude/DEVELOPER-PORTAL-API360-HANDOFF.md`. **Staging: done and tested. Prod: DB + dev-api applied 30 Sep 2026 (see "Prod apply — done" below). Frontend not pushed yet.**
 
 ## What changed
 
@@ -79,3 +79,22 @@ contact-switch rule is not touched.
 - Sandbox: **self-serve right after signup** — switch "Developers can create sandbox keys without review" in Settings.
 - Nav: API 360 sits right after Integrations (the "Insights & Admin" group), behind `integrations.view` + the
   `integrations` flag. Moving it is one line in `views/shell.js`.
+
+## Prod apply — done (30 Sep 2026, Yaseen said go)
+1. Before: anon SECDEF on prod **36**, bare-names md5 `06f779f74423a983253c79ab9d4e1e84`; newest migration `bl_disp_0501b`.
+   The 5 logins re-checked: 0 documents, 0 settlements each.
+2. Applied `bl_dev_0502` → `bl_dev_0502b` → `bl_dev_0502c` (same files). After 0502 and again after 0502c: **36, same md5**.
+   5 accounts now in `developer_accounts` (pending, reclassified); their carrier orgs `active` → `closed` (kept in `legacy_org_status`).
+   All 7 carrier-list/count functions carry `bl_dev_0502`; `resolve_audience_emails(text,jsonb)` delegates to the patched `(text)`.
+   Catalog: 6 `developer.*` rows. Cron `lb-api-log-purge` `17 3 * * *`.
+   Function parity with staging: 20/24 md5-identical; the other 4 (`cc_create_api_key`, `dev_portal_state`, `dev_profile_save`,
+   `cc_api360_list`) differ only by in-body `--` comment lines (staging copy lost them; prod matches the repo file).
+3. `dev-api` v8 deployed (prod function version 14, verify_jwt false). Smoke test: no key → 401, fake key → 401, both in
+   `api_request_log`. No customer key was used. `dev_api_auth` does not look at org status, so velogrid's live read key
+   (`lb_9ddec9`, last used 21 Sep) keeps working even though its mistaken carrier org is closed.
+4. Legacy keys: **left active** (owner decision, 30 Sep). Decide per account from API 360 after review.
+5. Milecount partner slug: **`milecount`** (owner: "suggest and implement"). Set on the staging key `lb_fefba0`
+   (`api_keys.partner_slug`). Prod has no Milecount key yet — when one is issued, use API 360 → Issue key with partner slug
+   `milecount` (`cc_api360_issue_key(..., p_partner_slug => 'milecount')`).
+6. **Still to do:** push the frontend (portal, CC API 360, `session.js`, `build_site.py`) — DB + API it needs are now live.
+   Open: API rules wording on the signup checkbox (legal wording is the owner's call; links to `/terms.html`).
