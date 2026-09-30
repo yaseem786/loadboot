@@ -24,7 +24,7 @@ import { shipperVerificationPage, shipperBrokersPage, shipperLaneCard } from './
 // bl_ship_0499: the two-lane shipper UI shows only when the database has the 0491+ shipper functions (cc_partner_overview then
 // returns shipper_stage). On a database without them (prod before the rollout) a shipper keeps the previous UI instead of errors.
 const shipV2 = (ov) => !!(ov && ov.kind === 'shipper' && ov.shipper_stage);
-import { partnerTrustStatus } from '../shared/api.js';
+import { partnerTrustStatus, partnerShipperStatus } from '../shared/api.js';
 import { renderMarketWidget } from '../shared/market-widget.js';
 import {
   partnerRegister, partnerOverview, fmcsaVerify,
@@ -4732,6 +4732,14 @@ function packetAgreementCards(skipPacket) {
       ].filter(Boolean))),
     ]));
     else if (pk.complete) mount(obHero, mk('#16a34a', '🎉', '#e7f9ee', '#12a150', 'Approved — load posting is unlocked', '#12a150', 'Your packet is fully verified. Post loads, offer them to carriers, and track everything with GPS proof.', 'View packet'));
+    // A held shipper (stage/tier 'hold') must never read "Verify your company" - that invites uploads while nothing can move.
+    else if (ov.kind === 'shipper' && (ov.shipper_stage === 'hold' || ov.trust_tier === 'hold')) {
+      const hb = mk('#dc2626', '\u26d4', '#fdecec', '#c62828', 'Your account is on hold', '#c62828', 'Before your account can go further, our team needs to confirm a few details. Nothing is posted to carriers or brokers meanwhile. Questions: hello@loadboot.com', 'Open verification \u2192');
+      mount(obHero, hb);
+      // A hold set from CC ("Reason — the shipper sees this") replaces the generic line. A failed call-back files what the
+      // company told staff ("independent call-back: ..."); that is internal and never shown to the shipper.
+      try { const s9 = await partnerShipperStatus(); const n9 = s9 && String(s9.hold_reason || '').trim(); if (n9 && !/independent call-back/i.test(n9)) { const sb9 = hb.querySelector('.cp-sub'); if (sb9) sb9.textContent = n9 + (/[.!?]$/.test(n9) ? '' : '.') + ' Questions: hello@loadboot.com'; } } catch (_) {}
+    }
     // bl_ship_0499: a shipper's banner follows its lane gates (0491), not the old broker packet.
     else if (ov.kind === 'shipper' && ov.shipper_stage && (ov.direct_ok || ov.broker_ok)) mount(obHero, mk('#16a34a', '\u2705', '#e7f9ee', '#12a150', 'Verified \u2014 ' + (ov.direct_ok && ov.broker_ok ? 'both lanes are open' : ov.direct_ok ? 'you can post to carriers' : 'you can tender to brokers'), '#12a150', 'Post a load at your own rate and choose the carrier yourself, or tender it to a verified broker of your choice.', 'View verification'));
     else if (ov.kind === 'shipper' && ov.shipper_stage) mount(obHero, mk('#d97706', '\ud83d\udccb', '#fef3c7', '#b45309', 'Verify your company to start shipping', '#b45309', 'Finish the Verification steps \u2014 nothing reaches carriers or brokers until a lane opens.', 'Open verification \u2192'));

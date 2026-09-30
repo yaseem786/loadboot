@@ -52,8 +52,8 @@ export function renderBrokerTrust(host) {
     function srow(r) {
       const [tone, label] = STIER[r.tier] || STIER.new;
       const acts = [];
-      if (r.tier === 'hold') acts.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => sact(r.org_id, 'release', prompt('Note to the shipper (optional):') || null) }, 'Release hold'));
-      else acts.push(el('button', { class: 'cc-btn-sm', onClick: () => { const n = prompt('Reason (the shipper sees this):'); if (n) sact(r.org_id, 'hold', n); } }, 'Hold'));
+      if (r.tier === 'hold') acts.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => sact(r.org_id, 'release', prompt('Note to the shipper (optional — also sent by email):') || null) }, 'Release hold'));
+      else acts.push(el('button', { class: 'cc-btn-sm', onClick: () => { const n = prompt('Reason (the shipper sees this in the portal and by email — keep it neutral):'); if (n) sact(r.org_id, 'hold', n); } }, 'Hold'));
       if (r.tier === 'new') {
         acts.push(el('button', { class: 'cc-btn-sm', onClick: () => sact(r.org_id, 'recheck') }, 'Re-check domain'));
         acts.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => { const n = prompt('How did you verify the business? (called them, EIN letter, invoice… — recorded)'); if (n) sact(r.org_id, 'verify', n); } }, 'Verify by hand'));

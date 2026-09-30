@@ -319,3 +319,51 @@ The section above missed that.
   - Both agreements signed as "Test Signer, Owner". 1 location ("TEST Dallas DC").
   - Not filled: EIN letter / address proof (these need real files); email and phone codes (they send real codes).
   - Stage stays `new` until staff verify the identity items and the call-back is done.
+
+## `bl_ship_0509` / `0509b` — hold & release emails, ".." fix, held-shipper hero (30 Sep 2026, STAGING only)
+Prod waits for "prod pe chalao". Handoff items (1)–(4); (5) `GOOGLE_PLACES_KEY` is still the owner's.
+
+**`migrations/bl_ship_0509_hold_release_email.sql`**
+- Catalog rows `shipper.hold` and `shipper.released`: class T, audience shipper, `account_critical`, `unsub_allowed=false`,
+  deep link `#/partners`, trigger `cc_shipper_trust_set → app_private.shipper_hold_notice`.
+- `app_private.shipper_hold_notice(org, kind, note)` (revoked from public/anon/authenticated) sends the bell + email:
+  - `hold` → bell "⛔ Posting paused" + `shipper.hold` email. Idempotency `shipper.hold:<org>:<held_at>`.
+  - `rehold` (note edited while already held) → bell only.
+  - `release` → bell "✅ Posting restored" + `shipper.released` email.
+  - Email copy uses `{{contact_inline}}` (the contact switch), never a number. Wording: the staff note, "nothing is
+    posted to carriers or brokers… nothing already booked was cancelled", reply / contact line, "Open my portal".
+- `cc_shipper_trust_set` (anchor-patched): release of a shipper that was NOT held now sends nothing (it used to bell
+  "Posting restored").
+- **Not changed:** `cc_shipper_callback_fail` stays silent — its reason is internal. **Not retroactive:** MII gets nothing.
+- The ".." fix: the note's trailing stop is stripped before a stop is added — bell (was also a double space) and both
+  `partner_journey` lines.
+
+**`migrations/bl_ship_0509b_hold_reason_to_shipper.sql`** (found by the 0509 test)
+- `shipper_lane_gate` also handed the note, with its stop, to `shipper_can_post` / `assert_shipper_lane` ("Posting is on
+  hold: …ourselves.. Contact hello@loadboot.com.") — the text the held shipper actually reads. Stripped at the source now.
+- **Leak closed:** a failed call-back files `hold_reason = 'independent call-back: <what the company told staff>'`, and the
+  gate + `partner_shipper_status` returned it verbatim to the shipper. Both now return the neutral line "the independent
+  call-back could not confirm the company". Staff screens still read the full note.
+
+**Front end**
+- Portal dashboard hero (`app/partner/app.js`): a shipper with stage/tier `hold` gets a red "⛔ Your account is on hold"
+  card, with the staff note from `partner_shipper_status` (never a call-back note), instead of "Verify your company".
+- Shipper 360 → Packet: title/explainer rewritten for the A–G model (required opens a lane, conditional, legacy); KPI sub
+  "required A–G items verified".
+- CC hold / release prompts (Shipper 360, Broker trust → shippers) say the words are also sent by email.
+- `tests/shipper_verify_render_test.mjs`: stubs for `agreementCopy.js` / `shipperAgreementCopy` (0508 broke it on main).
+
+**Tests (staging):** `tests/bl_ship_0509_hold_email_rollback.sql` **10/10**, rolled back. Covers:
+- hold → 1 email, clean bell, tokens filled, the 815 contact line, `account_critical`;
+- the journey and can_post each have one stop;
+- rehold → bell only; release → email + bell; release of a not-held shipper → silent;
+- call-back fail → hold, silent, and the note is not shown to the shipper;
+- catalog rows are live.
+
+Render tests 7/7. `npm run check` pass. Anon staging **35 / `b862e7e2`**, unchanged.
+
+**Prod rollout (on "prod pe chalao"):**
+1. Apply `bl_ship_0509` then `0509b`. Both raise by themselves if the anon names move. Re-read prod: 36 / `06f779f7`.
+2. Deploy `app/partner/app.js`, `shipper360.js`, `partner360-kit.js`, `brokerTrust.js`.
+3. MII check: its hold note ("…look up ourselves.") must read with one stop in the portal hero and the CC journey. No email
+   goes to MII.
