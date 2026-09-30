@@ -18,11 +18,22 @@ export function phoneVerifyCard(h, mount) {
     err: 'color:#f87171;font-size:.86rem',
   };
   const btn = (label, onClick, ghost) => h('button', { class: 'cp-btn' + (ghost ? ' ghost' : ''), style: 'margin:0;justify-self:start', onClick }, label);
+  // Owner ask 30 Sep: the green "Phone verified" banner has an ✕ and leaves by itself 2 days after verified_at.
+  // The ✕ is remembered per verification (key carries verified_at), so a later re-verify shows it again.
+  const DONE_MS = 2 * 24 * 3600 * 1000;
+  const doneKey = () => 'lb.phoneVerified.hide.' + ((st && st.verified_at) || '');
+  const doneHidden = () => { try { return localStorage.getItem(doneKey()) === '1'; } catch (_) { return false; } };
+  const doneFresh = () => { const t = st && st.verified_at ? new Date(st.verified_at).getTime() : Date.now(); return Date.now() - t < DONE_MS; };
+  function dismiss() { try { localStorage.setItem(doneKey(), '1'); } catch (_) {} clearInterval(timer); mount(host, []); }
   const secsLeft = () => (st && st.next_call_at) ? Math.max(0, Math.ceil((new Date(st.next_call_at).getTime() - Date.now()) / 1000)) : 0;
 
   async function load() {
     try { st = await carrierPhoneStatus(); } catch (_) { st = null; }
-    if (!st || !st.applies || st.verified) { if (step !== 'done') { mount(host, []); return; } }
+    if (!st || !st.applies) { mount(host, []); return; }
+    if (st.verified) {
+      if (!doneFresh() || doneHidden()) { mount(host, []); return; }
+      step = 'done';
+    }
     if (st && st.pending && step === 'start') { step = 'code'; target = st.pending.to; }
     draw();
   }
@@ -42,7 +53,7 @@ export function phoneVerifyCard(h, mount) {
     if (busy) return; busy = true; err = ''; draw();
     try {
       const r = await carrierPhoneCode(code);
-      if (r && r.ok) { step = 'done'; st = Object.assign({}, st, { phone: r.phone, verified: true }); }
+      if (r && r.ok) { step = 'done'; st = Object.assign({}, st, { phone: r.phone, verified: true, verified_at: r.verified_at || new Date().toISOString() }); }
       else err = (r && r.why) || 'That code doesn’t match.';
     } catch (e) { err = 'Could not check the code. Try again.'; }
     busy = false; draw();
@@ -99,11 +110,13 @@ export function phoneVerifyCard(h, mount) {
       setTimeout(() => { try { inp.focus(); } catch (_) {} }, 0);
     } else {
       body = [
-        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:#34d399' }, '✓ Phone verified'),
+        h('button', { type: 'button', 'aria-label': 'Dismiss', title: 'Dismiss', onClick: dismiss,
+          style: 'position:absolute;top:10px;right:12px;background:none;border:0;color:#94a3b8;font-size:1.2rem;line-height:1;cursor:pointer;padding:4px 6px' }, '✕'),
+        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:#34d399;padding-right:28px' }, '✓ Phone verified'),
         h('div', { class: 'cp-row-s' }, 'Your dispatcher will use ' + fmt(st && st.phone) + ' to reach you. Next: add your trucks and post availability.'),
       ];
     }
-    mount(host, h('div', { class: 'cp-card', style: S.card + (step === 'done' ? ';border-color:rgba(52,211,153,.45);background:linear-gradient(135deg,rgba(52,211,153,.08),transparent)' : '') }, body.filter(Boolean)));
+    mount(host, h('div', { class: 'cp-card', style: S.card + (step === 'done' ? ';position:relative;border-color:rgba(52,211,153,.45);background:linear-gradient(135deg,rgba(52,211,153,.08),transparent)' : '') }, body.filter(Boolean)));
   }
 
   load();
