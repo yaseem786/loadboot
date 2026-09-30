@@ -28,11 +28,12 @@ async function render(v) {
   await root.link(async (spec) => {
     if (spec.endsWith('dom.js')) { const m = new vm.SourceTextModule(await readFile(files.dom, 'utf8'), { context, identifier: files.dom.href }); await m.link(() => {}); return m; }
     if (spec.endsWith('components.js')) return stub({ card: (kids) => { host = new Element(); host.replaceChildren(...kids); return host; }, openDrawer: () => ({ close() {} }) });
-    if (spec.endsWith('api.js')) return stub({ shipperVerification: async () => v, shipperCallbackStart: () => assert.fail(), shipperCallbackFail: () => assert.fail(), shipperLimitsLift: () => assert.fail(), onboardingReviewItem: () => assert.fail('no review on render') });
+    if (spec.endsWith('api.js')) return stub({ shipperVerification: async () => v, shipperCallbackStart: () => assert.fail(), shipperCallbackFail: () => assert.fail(), shipperLimitsLift: () => assert.fail(), onboardingReviewItem: () => assert.fail('no review on render'), shipperAgreementCopy: () => assert.fail('no copy on render') });
     if (spec.endsWith('errors.js')) return stub({ humanizeError: (e) => String(e), toast: () => {} });
     if (spec.endsWith('partner360-kit.js')) return stub({ pill: (tone, text) => { const e = new Element(text); e.className = 'pill-' + tone; return e; } });
     if (spec.endsWith('shipperRegistry360.js')) return stub({ registryBlock: () => null, openDocVerify: () => {}, emailDomainBlock: () => null, openPlacesLookup: () => {} });
     if (spec.endsWith('shipperPlaybook360.js')) return stub({ playbookCard: () => null, isOldPacket });
+    if (spec.endsWith('agreementCopy.js')) return stub({ openAgreementCopy: () => assert.fail('no copy on render') });  // bl_ship_0508
     throw new Error('unexpected import ' + spec);
   });
   await root.evaluate();

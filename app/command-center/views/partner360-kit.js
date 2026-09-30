@@ -299,9 +299,11 @@ export async function shipperTrustAct(ctx, action, opts) {
 export function holdReleaseButtons(ctx, act) {
   const t = ctx.d.trust || {}; const onHold = !!t.hold_reason;
   if (!ctx.manage) return [];
+  // bl_ship_0509: a shipper's hold / release also goes out by email (shipper.hold / shipper.released), so say so.
+  const mail = (ctx.d.org || {}).kind === 'shipper' ? ' — also sent to them by email' : '';
   return onHold
-    ? [el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => act(ctx, 'release', { ask: 'Release the hold — note to the partner (optional):', optional: true, done: 'Hold released — partner notified' }) }, '▶ Release hold')]
-    : [el('button', { class: 'lb-btn lb-btn-sm p360-danger', onClick: () => act(ctx, 'hold', { ask: '⛔ Put this account on hold — reason (the partner reads these words):', done: 'On hold — posting paused, partner notified' }) }, '⛔ Hold account')];
+    ? [el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => act(ctx, 'release', { ask: 'Release the hold — note to the partner (optional' + mail + '):', optional: true, done: 'Hold released — partner notified' }) }, '▶ Release hold')]
+    : [el('button', { class: 'lb-btn lb-btn-sm p360-danger', onClick: () => act(ctx, 'hold', { ask: '⛔ Put this account on hold — reason (the partner reads these words' + mail + '; keep it neutral):', done: 'On hold — posting paused, partner notified' }) }, '⛔ Hold account')];
 }
 
 // ------------------------------------------------------------------------------------------------

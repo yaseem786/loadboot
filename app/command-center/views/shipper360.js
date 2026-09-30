@@ -42,7 +42,7 @@ export function shipperSections(ctx) {
     { icon: 'building', label: 'Verification', value: String(t.tier || 'new').replace('_', ' '), sub: t.hold_reason ? 'on hold' : t.can_post ? 'a lane is open' : 'no lane open yet', accent: t.hold_reason ? 'red' : t.can_post ? 'green' : 'amber', onClick: H.trust },
     { icon: 'package', label: 'Requests (30 d)', value: String(n0(ss.last_30d) + n0(ls.last_30d)), sub: (n0(ss.total) + n0(ls.total)) + ' total · ' + n0(ss.open) + ' open · ' + n0(ss.quoted) + ' quoted', accent: n0(ss.open) ? 'amber' : 'green', onClick: H.activity },
     { icon: 'check', label: 'Booked', value: String(n0(ss.booked) + n0(ls.covered)), sub: 'tendered / booked / covered', accent: 'green', onClick: H.activity },
-    { icon: 'doc', label: 'Packet', value: n0(ps.mandatory_done) + '/' + n0(ps.mandatory_total), sub: n0(ps.awaiting) ? ps.awaiting + ' awaiting your review' : 'billing · claims contact · agreement', accent: n0(ps.awaiting) ? 'amber' : (n0(ps.mandatory_done) >= n0(ps.mandatory_total) && n0(ps.mandatory_total)) ? 'green' : 'amber', onClick: H.packet },
+    { icon: 'doc', label: 'Packet', value: n0(ps.mandatory_done) + '/' + n0(ps.mandatory_total), sub: n0(ps.awaiting) ? ps.awaiting + ' awaiting your review' : 'required A–G items verified', accent: n0(ps.awaiting) ? 'amber' : (n0(ps.mandatory_done) >= n0(ps.mandatory_total) && n0(ps.mandatory_total)) ? 'green' : 'amber', onClick: H.packet },
     { icon: 'shield', label: 'Health', value: String(ah.score ?? '—'), sub: String(ah.tier || '').replace('_', ' '), accent: ah.tier === 'healthy' ? 'green' : ah.tier === 'at_risk' ? 'amber' : ah.tier ? 'red' : 'green', onClick: H.health },
   ]);
 
@@ -50,7 +50,7 @@ export function shipperSections(ctx) {
     section('p360-journey', 'Journey', journeyCard(ctx, H), ctx),
     section('p360-lanes', 'Two-lane verification', shipperVerifyCard(ctx), ctx),  // bl_ship_0491
     section('p360-packet', 'Packet', el('div', null, [
-      packetCard(ctx, { title: 'Shipper packet — billing, claims contact, agreement', explainer: 'Three required items unlock booking; conditional items (payment terms, credit application, special commodity) apply only when relevant; the rest are optional. No FMCSA / bond / BOC-3 — shippers are not carriers or brokers.' }),
+      packetCard(ctx, { title: 'Verification items (A–G) — what the shipper filled', explainer: 'The same items the shipper fills under Verification in the portal: identity, cargo, billing, locations, acknowledgements and the two agreements. REQUIRED items open a lane (carriers direct and/or brokers — lane status and any hold are on Two-lane verification above). CONDITIONAL items (EIN letter, address proof, independent call-back, hazmat / food / high-value) apply only when a check or the cargo calls for them. LEGACY items are answers from the old packet, before the A–G form. No FMCSA / bond / BOC-3 — shippers are not carriers or brokers.' }),
       el('div', { style: 'margin-top:16px' }, bankCard(ctx)),
       el('div', { style: 'margin-top:16px' }, gateRow(ctx, { approveBody: 'Approve this shipper? Booking goes live and they are notified.' })),
     ]), ctx),
