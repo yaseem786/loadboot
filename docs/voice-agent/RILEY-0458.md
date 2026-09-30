@@ -129,3 +129,13 @@ CC → Riley → WhatsApp line → "Open callbacks from the line", each row now 
   `Outcome <time ET>: …` via `cc_riley_callback_done(p_id, p_note)` — the note keeps what Riley promised and what happened.
 - DB: only `cc_riley_calls.wa_callbacks` gained `lc_call_id` (anchor patch, ACL unchanged). anon SECDEF 36 prod / 35 staging,
   names unchanged. Tested on staging with a throwaway row (rolled back).
+
+## 0512 — released carriers go straight to Riley (30 Sep 2026, owner rule, staging + prod)
+
+A carrier whose dedicated dispatcher has been released no longer rings that dispatcher when they call the contact line;
+Riley answers, like every other caller. `dialer_config.riley_route_to_dispatcher` = **false** (and the column default is
+now false), which `dialer_hook_event` reads on every call, for every carrier — nothing per-carrier to remember. The CC
+switch (Riley → WhatsApp line → "Known carrier → their dispatcher first") is the one place to change it back.
+Unchanged: Riley's briefing still names the dispatcher; a needs_human callback for a released carrier still goes to
+that dispatcher's dock (0506). Prod had 1 released carrier with a line at the time of the flip.
+
