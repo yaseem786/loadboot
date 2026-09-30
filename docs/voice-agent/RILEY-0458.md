@@ -101,3 +101,19 @@ staging + prod via MCP (edge fn v2 on both); no SQL change.
 - Prompts say Riley is the AI assistant in the opener (Retell handbook `ai_disclosure` is also on). Owner decision to keep or soften; several states require it for AI voice calls.
 - Compliance note (not legal advice): outbound calls are only placed to people who asked (website/chat form) or whom the team is already talking to (`cc` source). Keep it that way; TCPA.
 - `lc_calls` has no per-call cost. `retell-admin get_call` returns Retell's `call_cost` if the owner wants a spend column later.
+
+## 0506 — Riley promises a follow-up → a real callback (30 Sep 2026, staging + prod)
+
+Owner decision (A): Riley handles as much as she can; no human ring first. When SHE says a person follows up,
+a callback exists. Before this the prompt promised "our team follows up within the hour" but only `hot` leads got a task.
+
+- `app_private.riley_needs_human_callback(call_id)`, called by `retell_webhook` on call_ended / call_analyzed:
+  `needs_human = true`, not voicemail, not a verify call, 10-digit phone → one `dialer_callbacks` row, reason **`riley`**,
+  due now, note = "Riley: " + next_step (else summary). Idempotent per call (`lc_call_id` + partial unique index).
+- Caller's carrier has a **released** dedicated dispatcher → the callback is theirs (dock → Callbacks, in-app alert).
+  Everyone else → dispatcher NULL → CC → Riley → WhatsApp line → "Open callbacks from the line" (+ staff in-app alert).
+- `cc_riley_calls.wa_callbacks` now carries `contact_name` + `note`; the Riley screen and the dock label the reason.
+- Tests (staging, rolled back): needs_human → row + notification; replay → no 2nd row; needs_human false / voicemail /
+  verify / bad phone / unknown call → nothing; full `retell_webhook` call_analyzed payload (service_role) → one row.
+  Prod read-only dry run: a released carrier's phone resolves to its dispatcher. anon SECDEF 36 prod / 35 staging,
+  names unchanged; helper not executable by anon/authenticated.
