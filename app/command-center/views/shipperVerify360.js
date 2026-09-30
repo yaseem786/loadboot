@@ -10,21 +10,11 @@ import { shipperVerification, shipperAgreementCopy, shipperCallbackStart, shippe
 import { humanizeError, toast } from '../../shared/errors.js';
 import { pill } from './partner360-kit.js';
 import { registryBlock, openDocVerify, emailDomainBlock, openPlacesLookup } from './shipperRegistry360.js';  // bl_ship_0502/0503
-import { playbookCard, isOldPacket } from './shipperPlaybook360.js';  // bl_ship_0503 / 0504
+import { playbookCard } from './shipperPlaybook360.js';  // bl_ship_0503 / 0504
+import { itemsPanel } from './shipperItems360.js';  // A–G review layout
 import { openAgreementCopy } from '../../shared/ui/agreementCopy.js';  // bl_ship_0508
 
-const SEC = { identity: 'A · Identity', billing: 'B · Billing & credit', agreements: 'C · Agreements', cargo: 'D · Cargo & liability', special: 'E · Special freight', facilities: 'F · Locations', acks: 'G · Acknowledgements' };
-const stTone = (s) => (s === 'verified' || s === 'waived') ? 'green' : s === 'submitted' ? 'amber' : s === 'rejected' ? 'red' : s === 'unavailable' ? 'blue' : 'gray';
 const when = (t) => t ? String(t).slice(0, 16).replace('T', ' ') : '—';
-const show = (v) => v == null || v === '' ? '—' : Array.isArray(v) ? (v.length ? v.map((x) => typeof x === 'object' ? Object.values(x).filter(Boolean).join(' / ') : x).join(', ') : '—') : typeof v === 'object' ? JSON.stringify(v) : String(v);
-
-function dataTable(d) {
-  if (!d || typeof d !== 'object') return null;
-  const rows = Object.keys(d).filter((k) => k !== 'confirmed' && k !== 'text');
-  const conf = Array.isArray(d.confirmed) && d.confirmed.length ? el('div', { class: 'cc-sub', style: 'margin-top:4px;color:#92400e' }, '⚠ Shipper confirmed after a warning: ' + d.confirmed.join(' | ')) : null;
-  return el('div', null, [el('table', { class: 'cc-table', style: 'font-size:.8rem' }, el('tbody', null, rows.map((k) => el('tr', null, [el('td', { style: 'color:#64748b;width:38%' }, k.replace(/_/g, ' ')), el('td', null, show(d[k]))])))), conf]);
-}
-
 function ask(title, fields, onOk) {
   const inputs = fields.map((f) => f.options
     ? el('select', { class: 'lb-input' }, f.options.map(([v, t]) => el('option', { value: v }, t)))
@@ -76,29 +66,13 @@ export function shipperVerifyCard(ctx) {
       v.graduated ? '✓ New-shipper limits lifted.' : 'New-shipper limits apply (open loads + cargo value cap) until 3 carrier-confirmed paid loads. ',
       (!v.graduated && ctx.manage) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: () => ask('Lift new-shipper limits', [{ label: 'Why (recorded)', area: true }], async ([why]) => { await shipperLimitsLift(orgId, why); toast('Limits lifted.', 'success'); load(); }) }, 'Lift limits') : null,
     ]);
-    const bySec = {};
-    (v.items || []).filter((i) => i.active).forEach((i) => { (bySec[i.section] = bySec[i.section] || []).push(i); });
-    const secNodes = Object.keys(SEC).filter((k) => bySec[k]).map((k) => el('details', { style: 'margin-top:10px;border:1px solid #e2e8f0;border-radius:12px;padding:8px 12px' }, [
-      el('summary', { style: 'cursor:pointer;font-weight:800' }, SEC[k] + ' — ' + bySec[k].filter((i) => i.status === 'verified' || i.status === 'waived').length + '/' + bySec[k].length),
-      ...bySec[k].map((i) => el('div', { style: 'border-top:1px solid #f1f5f9;padding:8px 0' }, [
-        el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [el('b', null, i.label), pill(stTone(i.status), i.status), i.file_path ? el('span', { class: 'cc-sub' }, '📎 ' + i.file_path.split('/').pop()) : null,
-          (ctx.manage && ['form', 'upload'].includes(i.type) && i.status === 'submitted') ? el('span', { style: 'margin-left:auto;display:flex;gap:6px' }, [
-            ['ein_letter', 'address_proof'].includes(i.key)
-              ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => openDocVerify(ctx, v, i, load) }, 'Verify vs registry')
-              : isOldPacket(i) ? null  // bl_ship_0504: nothing structured to verify — the server refuses it too; Reject asks for the new form
-              : el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async () => { try { await onboardingReviewItem(orgId, i.key, 'verify', null); toast(i.label + ' verified.', 'success'); load(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Verify'),
-            el('button', { class: 'lb-btn lb-btn-sm', onClick: () => ask('Reject — ' + i.label, [{ label: 'What must the shipper fix? (they read this)', area: true }], async ([n]) => { await onboardingReviewItem(orgId, i.key, 'reject', n); toast('Rejected — shipper notified.', 'success'); load(); }) }, 'Reject'),
-          ]) : null]),
-        i.key === 'legal_entity' && i.data ? el('div', { class: 'cc-sub', style: 'margin-top:4px' }, 'Compared with the state record on the State registry check card above.') : null,
-        dataTable(i.data),
-        isOldPacket(i) ? el('div', { style: 'margin-top:4px;padding:6px 8px;border:1px dashed #f59e0b;border-radius:8px;background:#fffbeb' }, [
-          pill('amber', 'Old packet — answers not in the new form'),
-          i.ref ? el('div', { class: 'cc-sub', style: 'margin-top:4px;white-space:pre-wrap' }, i.ref) : el('div', { class: 'cc-sub', style: 'margin-top:4px' }, 'No answer text on file.'),
-          el('div', { class: 'cc-sub', style: 'margin-top:4px;font-size:.76rem' }, 'Submitted before the two-lane form (bl_ship_0491). It cannot be verified as-is — reject it so the shipper fills the new form.'),
-        ]) : null,
-        i.note ? el('div', { class: 'cc-sub', style: 'color:#b91c1c' }, 'Note: ' + i.note) : null,
-      ])),
-    ]));
+    // A–G items: premium review layout (shipperItems360.js); the RPCs and dialogs stay here.
+    const items = itemsPanel(v.items, {
+      manage: ctx.manage,
+      verify: async (i) => { try { await onboardingReviewItem(orgId, i.key, 'verify', null); toast(i.label + ' verified.', 'success'); load(); } catch (e) { toast(humanizeError(e), 'error'); } },
+      reject: (i) => ask('Reject — ' + i.label, [{ label: 'What must the shipper fix? (they read this)', area: true }], async ([n]) => { await onboardingReviewItem(orgId, i.key, 'reject', n); toast('Rejected — shipper notified.', 'success'); load(); }),
+      docVerify: (i) => openDocVerify(ctx, v, i, load),
+    });
     // bl_ship_0508: each signature opens the executed copy (LoadBoot pre-signed, same date) to preview, print or download
     const sigs = (v.signatures || []).length ? el('div', { style: 'margin-top:12px;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px' }, [
       el('b', null, 'Signatures'),
@@ -112,7 +86,7 @@ export function shipperVerifyCard(ctx) {
     host.replaceChildren(...[
       el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [el('h3', { style: 'margin:0' }, 'Two-lane verification'), pill(v.stage === 'hold' ? 'red' : v.stage === 'new' ? 'gray' : 'green', 'stage: ' + String(v.stage).replace('_', ' '))]),
       el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-top:10px' }, [lane('Carriers (direct)', v.direct || {}), lane('Brokers (tender)', v.broker || {})]),
-      playbookCard(ctx, v), signals, reasons, registryBlock(ctx, v, load), emailDomainBlock(ctx, v, load), cbBlock, limits, ...secNodes, sigs,
+      playbookCard(ctx, v), signals, reasons, registryBlock(ctx, v, load), emailDomainBlock(ctx, v, load), cbBlock, limits, items, sigs,
       el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'Staff never choose or approve a carrier or broker for a shipper — the shipper does. Staff can decline or block for fraud or safety.'),
     ].filter(Boolean));
   };
