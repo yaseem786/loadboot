@@ -8,12 +8,13 @@
 // Server truth lives in bl_ship_0491–0493 (shipper_lane_gate). This file only renders it; it decides nothing.
 // Self-contained (own h/mount + scoped .so-* styles) like shipper-trust.js.
 import {
-  shipperOnboarding, shipperItemSave, shipperAgreement, shipperAgreementSign, shipperFacilities, shipperFacilitySave,
+  shipperOnboarding, shipperItemSave, shipperAgreement, shipperAgreementSign, shipperAgreementCopy, shipperFacilities, shipperFacilitySave,
   shipperFacilityArchive, shipperPhoneCodeSend, shipperCodeVerify, shipperBrokers, shipperPostLoad,
   partnerShipperCompanyEmail, partnerVerifyCode, onboardingSubmitItem,
 } from '../shared/api.js';
 import { uploadDocument } from '../shared/storage.js';
 import { mdToNodes } from '../shared/ui/mdLite.js';  // bl_ship_0499: agreements render as formatted text, not raw Markdown
+import { openAgreementCopy } from '../shared/ui/agreementCopy.js';  // bl_ship_0508
 
 const h = (tag, attrs, kids) => {
   const e = document.createElement(tag);
@@ -297,7 +298,9 @@ async function openAgreement(it, ctx, signerData) {
   const kind = it.key === 'platform_terms' ? 'shipper_platform' : 'shipper_carrier';
   let ag; try { ag = await shipperAgreement(kind); } catch (e) { ctx.toast((e && e.message) || 'Could not load the agreement.', true); return; }
   if (!ag || !ag.available) { ctx.openModal(it.label, [h('div', { class: 'so-note' }, (ag && ag.message) || 'This agreement is being finalised.')]); return; }
-  if (ag.signed) { ctx.openModal(ag.title + ' (v' + ag.version + ')', [h('div', { class: 'so-ok' }, 'Signed by ' + ag.signer_name + ', ' + ag.signer_title + ' on ' + String(ag.signed_at || '').slice(0, 10) + ' ✓'), h('div', { class: 'so-agree', style: 'margin-top:10px' }, mdToNodes(ag.body_md))]); return; }
+  if (ag.signed) { ctx.openModal(ag.title + ' (v' + ag.version + ')', [h('div', { class: 'so-ok' }, 'Signed by ' + ag.signer_name + ', ' + ag.signer_title + ' on ' + String(ag.signed_at || '').slice(0, 10) + ' ✓'),
+    h('button', { class: 'so-btn orange', style: 'margin-top:10px', onClick: async () => { if (!(await openAgreementCopy(() => shipperAgreementCopy(kind, ag.version)))) ctx.toast('Allow pop-ups for loadboot.com to open your signed copy.', true); } }, '📄 Signed copy — download / print'),  // bl_ship_0508
+    h('div', { class: 'so-agree', style: 'margin-top:10px' }, mdToNodes(ag.body_md))]); return; }
   const f = h('div', { class: 'so-f' });
   const nm = h('input', { value: (signerData && signerData.name) || '' }), tt = h('input', { value: (signerData && signerData.title) || '' });
   f.append(h('label', null, 'Your full name (this is your signature)'), nm, h('label', null, 'Your title'), tt);

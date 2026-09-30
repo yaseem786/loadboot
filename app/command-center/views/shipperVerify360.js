@@ -6,11 +6,12 @@
 // for a shipper — that choice is the shipper's (bl_ship_0492).
 import { el } from '../../shared/ui/dom.js';
 import { card, openDrawer } from '../../shared/ui/components.js';
-import { shipperVerification, shipperCallbackStart, shipperCallbackFail, shipperLimitsLift, onboardingReviewItem } from '../../shared/api.js';
+import { shipperVerification, shipperAgreementCopy, shipperCallbackStart, shipperCallbackFail, shipperLimitsLift, onboardingReviewItem } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { pill } from './partner360-kit.js';
 import { registryBlock, openDocVerify, emailDomainBlock, openPlacesLookup } from './shipperRegistry360.js';  // bl_ship_0502/0503
 import { playbookCard, isOldPacket } from './shipperPlaybook360.js';  // bl_ship_0503 / 0504
+import { openAgreementCopy } from '../../shared/ui/agreementCopy.js';  // bl_ship_0508
 
 const SEC = { identity: 'A · Identity', billing: 'B · Billing & credit', agreements: 'C · Agreements', cargo: 'D · Cargo & liability', special: 'E · Special freight', facilities: 'F · Locations', acks: 'G · Acknowledgements' };
 const stTone = (s) => (s === 'verified' || s === 'waived') ? 'green' : s === 'submitted' ? 'amber' : s === 'rejected' ? 'red' : s === 'unavailable' ? 'blue' : 'gray';
@@ -98,7 +99,15 @@ export function shipperVerifyCard(ctx) {
         i.note ? el('div', { class: 'cc-sub', style: 'color:#b91c1c' }, 'Note: ' + i.note) : null,
       ])),
     ]));
-    const sigs = (v.signatures || []).length ? el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'Signed: ' + v.signatures.map((s) => s.kind + ' v' + s.version + ' by ' + s.signer + ' (' + s.title + ') ' + when(s.signed_at) + (s.ip ? ' · IP ' + s.ip : '')).join(' | ')) : null;
+    // bl_ship_0508: each signature opens the executed copy (LoadBoot pre-signed, same date) to preview, print or download
+    const sigs = (v.signatures || []).length ? el('div', { style: 'margin-top:12px;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px' }, [
+      el('b', null, 'Signatures'),
+      ...v.signatures.map((s) => el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid #f1f5f9;padding:6px 0;margin-top:6px' }, [
+        pill('green', (s.kind === 'shipper_platform' ? 'Platform Terms' : s.kind === 'shipper_carrier' ? 'Shipper–Carrier Terms' : s.kind) + ' v' + s.version),
+        el('span', { class: 'cc-sub' }, s.signer + ' (' + s.title + ') · ' + when(s.signed_at) + (s.ip ? ' · IP ' + s.ip : '')),
+        el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:auto', onClick: async () => { if (!(await openAgreementCopy(() => shipperAgreementCopy(s.kind, s.version, orgId)))) toast('Allow pop-ups to open the signed copy.', 'error'); } }, '📄 Preview / download'),
+      ])),
+    ]) : null;
     // replaceChildren() prints a null child as the text "null" — reasons / sigs / emailDomainBlock are often null.
     host.replaceChildren(...[
       el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [el('h3', { style: 'margin:0' }, 'Two-lane verification'), pill(v.stage === 'hold' ? 'red' : v.stage === 'new' ? 'gray' : 'green', 'stage: ' + String(v.stage).replace('_', ' '))]),
