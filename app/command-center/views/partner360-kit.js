@@ -454,12 +454,15 @@ export function bankCard(ctx) {
 // agreements
 // ------------------------------------------------------------------------------------------------
 export function agreementBlock(ctx, kind, label) {
+  // bl_ship_0504: shippers sign shipper_platform (agreement_signatures); cc_partner_360 lists it only when published + legal_approved.
   const acc = (ctx.d.agreements || []).find((a) => a.kind === kind);
   const pub = (ctx.d.agreements_published || []).find((a) => a.kind === kind);
-  return block(label, acc ? pill('green', 'accepted v' + acc.version) : pub ? pill('amber', 'not accepted yet') : pill('red', 'NOT PUBLISHED'), [
+  const stale = acc && pub && Number(acc.version) < Number(pub.version);
+  return block(label, stale ? pill('amber', 'signed v' + acc.version + ' · v' + pub.version + ' not signed') : acc ? pill('green', 'accepted v' + acc.version) : pub ? pill('amber', 'not accepted yet') : pill('red', 'NOT PUBLISHED'), [
     acc ? el('div', { class: 'cc-sub' }, 'Accepted ' + fmtDateTime(acc.accepted_at) + (acc.accepted_by ? ' by ' + acc.accepted_by : '')) : null,
+    stale ? el('div', { class: 'p360-warn', style: 'margin-top:6px' }, 'v' + pub.version + ' was published ' + fmtDate(pub.published_at) + ' — the partner must sign the latest version in the portal before this step counts again.') : null,
     (!acc && pub) ? el('div', { class: 'cc-sub' }, 'One click in the portal. Published v' + pub.version + ' · ' + fmtDate(pub.published_at) + '. Posting is gated on it.') : null,
-    (!acc && !pub) ? el('div', { class: 'p360-warn', style: 'margin-top:6px' }, 'No published ' + kind + ' agreement exists — the partner cannot accept it and this step stays blocked. Publish it under Command Center → Legal / agreements.') : null,
+    (!acc && !pub) ? el('div', { class: 'p360-warn', style: 'margin-top:6px' }, 'No published ' + kind + ' agreement exists' + (kind.startsWith('shipper_') ? ' (published AND legal-approved)' : '') + ' — the partner cannot accept it and this step stays blocked. Publish it under Command Center → Legal / agreements.') : null,
   ]);
 }
 
