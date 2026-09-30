@@ -25,7 +25,8 @@ async function render(v) {
   const stub = (exports) => new vm.SyntheticModule(Object.keys(exports), function () { for (const [k, x] of Object.entries(exports)) this.setExport(k, x); }, { context });
   const root = new vm.SourceTextModule(await readFile(files.card, 'utf8'), { context, identifier: files.card.href });
   let host;
-  await root.link(async (spec) => {
+  const linker = async (spec) => {
+    if (spec.endsWith('shipperItems360.js')) { const u = new URL('../app/command-center/views/shipperItems360.js', import.meta.url); const m = new vm.SourceTextModule(await readFile(u, 'utf8'), { context, identifier: u.href }); await m.link(linker); return m; }
     if (spec.endsWith('dom.js')) { const m = new vm.SourceTextModule(await readFile(files.dom, 'utf8'), { context, identifier: files.dom.href }); await m.link(() => {}); return m; }
     if (spec.endsWith('components.js')) return stub({ card: (kids) => { host = new Element(); host.replaceChildren(...kids); return host; }, openDrawer: () => ({ close() {} }) });
     if (spec.endsWith('api.js')) return stub({ shipperVerification: async () => v, shipperCallbackStart: () => assert.fail(), shipperCallbackFail: () => assert.fail(), shipperLimitsLift: () => assert.fail(), onboardingReviewItem: () => assert.fail('no review on render'), shipperAgreementCopy: () => assert.fail('no copy on render') });
@@ -35,7 +36,8 @@ async function render(v) {
     if (spec.endsWith('shipperPlaybook360.js')) return stub({ playbookCard: () => null, isOldPacket });
     if (spec.endsWith('agreementCopy.js')) return stub({ openAgreementCopy: () => assert.fail('no copy on render') });  // bl_ship_0508
     throw new Error('unexpected import ' + spec);
-  });
+  };
+  await root.link(linker);
   await root.evaluate();
   root.namespace.shipperVerifyCard({ orgId: 'o1', manage: true });
   await new Promise((r) => setTimeout(r, 0));
