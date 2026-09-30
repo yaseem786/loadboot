@@ -138,4 +138,8 @@ now false), which `dialer_hook_event` reads on every call, for every carrier —
 switch (Riley → WhatsApp line → "Known carrier → their dispatcher first") is the one place to change it back.
 Unchanged: Riley's briefing still names the dispatcher; a needs_human callback for a released carrier still goes to
 that dispatcher's dock (0506). Prod had 1 released carrier with a line at the time of the flip.
+- `0512b`: Riley's briefing (`retell_inbound_verified`) read "they reached you because that dispatcher did not pick up"
+  for a released carrier. It now follows the same switch — OFF: "their calls come straight to you… if they need the
+  dispatcher personally, tell them the dispatcher will call them back" (→ needs_human → dispatcher's dock callback).
+  Anchor patch, ACL unchanged (postgres + service_role), anon SECDEF 36 prod / 35 staging.
 
