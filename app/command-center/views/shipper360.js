@@ -8,7 +8,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { card } from '../../shared/ui/components.js';
 import {
   hero, nextActionBanner, kpiRow, sectionNav, section, head, pill, tierPill, dash, n0,
-  journeyCard, shipperTrustAct, holdReleaseButtons, gateRow, packetCard, bankCard, loadsCard, shipmentsCard, claimsCard, invoicesBlock,
+  journeyCard, shipperTrustAct, holdReleaseButtons, gateRow, bankCard, loadsCard, shipmentsCard, claimsCard, invoicesBlock,
   commsCard, healthCard, membersCard, timelineCard, copyLinkButton, jumpHandlers,
 } from './partner360-kit.js';
 import { shipperVerifyCard } from './shipperVerify360.js';  // bl_ship_0491
@@ -18,7 +18,8 @@ export function shipperSections(ctx) {
   const H = jumpHandlers();
   // bl_ship_0508: the old domain-check "Verification" card is gone; "Open trust" lands on Two-lane verification
   H.trust = () => { const x = document.getElementById('p360-lanes'); if (x) x.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
-  H.labels = Object.assign({}, H.labels, { trust: 'Open verification' });
+  H.packet = H.trust;  // the A–G items are on Two-lane verification now
+  H.labels = Object.assign({}, H.labels, { trust: 'Open verification', packet: 'Review A–G items' });
 
   const heroNode = hero(ctx, {
     sub: [
@@ -42,16 +43,17 @@ export function shipperSections(ctx) {
     { icon: 'building', label: 'Verification', value: String(t.tier || 'new').replace('_', ' '), sub: t.hold_reason ? 'on hold' : t.can_post ? 'a lane is open' : 'no lane open yet', accent: t.hold_reason ? 'red' : t.can_post ? 'green' : 'amber', onClick: H.trust },
     { icon: 'package', label: 'Requests (30 d)', value: String(n0(ss.last_30d) + n0(ls.last_30d)), sub: (n0(ss.total) + n0(ls.total)) + ' total · ' + n0(ss.open) + ' open · ' + n0(ss.quoted) + ' quoted', accent: n0(ss.open) ? 'amber' : 'green', onClick: H.activity },
     { icon: 'check', label: 'Booked', value: String(n0(ss.booked) + n0(ls.covered)), sub: 'tendered / booked / covered', accent: 'green', onClick: H.activity },
-    { icon: 'doc', label: 'Packet', value: n0(ps.mandatory_done) + '/' + n0(ps.mandatory_total), sub: n0(ps.awaiting) ? ps.awaiting + ' awaiting your review' : 'required A–G items verified', accent: n0(ps.awaiting) ? 'amber' : (n0(ps.mandatory_done) >= n0(ps.mandatory_total) && n0(ps.mandatory_total)) ? 'green' : 'amber', onClick: H.packet },
+    { icon: 'doc', label: 'A–G items', value: n0(ps.mandatory_done) + '/' + n0(ps.mandatory_total), sub: n0(ps.awaiting) ? ps.awaiting + ' awaiting your review' : 'required A–G items verified', accent: n0(ps.awaiting) ? 'amber' : (n0(ps.mandatory_done) >= n0(ps.mandatory_total) && n0(ps.mandatory_total)) ? 'green' : 'amber', onClick: H.trust },
     { icon: 'shield', label: 'Health', value: String(ah.score ?? '—'), sub: String(ah.tier || '').replace('_', ' '), accent: ah.tier === 'healthy' ? 'green' : ah.tier === 'at_risk' ? 'amber' : ah.tier ? 'red' : 'green', onClick: H.health },
   ]);
 
   const sections = [
     section('p360-journey', 'Journey', journeyCard(ctx, H), ctx),
     section('p360-lanes', 'Two-lane verification', shipperVerifyCard(ctx), ctx),  // bl_ship_0491
-    section('p360-packet', 'Packet', el('div', null, [
-      packetCard(ctx, { title: 'Verification items (A–G) — what the shipper filled', explainer: 'The same items the shipper fills under Verification in the portal: identity, cargo, billing, locations, acknowledgements and the two agreements. REQUIRED items open a lane (carriers direct and/or brokers — lane status and any hold are on Two-lane verification above). CONDITIONAL items (EIN letter, address proof, independent call-back, hazmat / food / high-value) apply only when a check or the cargo calls for them. LEGACY items are answers from the old packet, before the A–G form. No FMCSA / bond / BOC-3 — shippers are not carriers or brokers.' }),
-      el('div', { style: 'margin-top:16px' }, bankCard(ctx)),
+    // The A–G items live on Two-lane verification (shipperItems360.js). The old generic packet list here was a duplicate,
+    // and its Verify could mark phone_verify / independent_callback done without the code or the call — removed.
+    section('p360-packet', 'Bank & approval', el('div', null, [
+      bankCard(ctx),
       el('div', { style: 'margin-top:16px' }, gateRow(ctx, { approveBody: 'Approve this shipper? Booking goes live and they are notified.' })),
     ]), ctx),
     section('p360-activity', 'Activity', el('div', null, [shipmentsCard(ctx), n0(ls.total) ? el('div', { style: 'margin-top:16px' }, loadsCard(ctx, 'Loads this shipper posted directly')) : null, el('div', { class: 'p360-grid2' }, [claimsCard(ctx), card([head('Money'), invoicesBlock(ctx)])])]), ctx),
