@@ -220,3 +220,16 @@ What a re-run does:
   - `partner_notifications` has no trigger, and no edge function reads it, so **no email and no push** go out.
   - `verified_at` stays as it is (`coalesce`).
 - MII (under review for impersonation) would see that bell notice too.
+
+## PROD — 30 Sep 2026: 0502 / 0503 / 0504 live ("prod pe chalao")
+- Pre-check: every function 0502/0503 writes in full (`cc_shipper_registry_check`, `cc_shipper_doc_verify`,
+  `cc_shipper_email_domain_approve`, `cc_places_lookup_*`, the `reg_norm_*` / `shipper_registry_*` helpers) did not exist on
+  prod, so nothing another session built was overwritten. The anchor-patched ones kept their prod bodies around the anchor.
+- Applied in order; anon after each: **36, `06f779f74423a983253c79ab9d4e1e84`** (same names). Stored statement md5s equal
+  staging: 0502 `57b4fd9d…`, 0503 `4f71daa5…`, 0504 `645c78fe…`.
+- Smoke (throwaway org id, no customer touched): `shipper_item_status` → pending / pending, `shipper_registry_eval({})` → 9
+  blockers, 14 `sos_registries` rows, `registry_check` template = staff.
+- Edge function `places-lookup` v1 on prod, verify_jwt on. **`GOOGLE_PLACES_KEY` is NOT set on prod** → it answers
+  `not_configured` until the owner adds the key (steps above) to BOTH projects.
+- Site: branch merged into `main` (`07ff08f`), pushed → Netlify auto-build.
+- Still waiting on the owner: domain-check v6 re-run (MII / SoftBank / Sourcing Advisory), MII hold + reject of the 3 PDFs.

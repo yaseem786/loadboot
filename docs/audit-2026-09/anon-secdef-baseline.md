@@ -226,3 +226,9 @@ lc_chat_request_call, lc_history, lc_identify, lc_ob_get, lc_ob_save, lc_ob_uplo
 lc_request_call, lc_send, lc_start, newsletter_confirm, newsletter_request, outreach_unsubscribe, partner_agent_confirm,
 partner_agent_confirm_get, partner_claim_confirm, partner_claim_get, retell_inbound, retell_webhook, submit_web_form,
 track_web_event.
+
+## 30 Sep 2026 — bl_ship_0502 / 0503 / 0504 on prod: 36 → 36, names identical
+Applied in that order; each file snapshots the anon names and raises on any difference. Read after each:
+36, md5 `06f779f74423a983253c79ab9d4e1e84` (bare proname, comma-joined, sorted). New public functions
+(`cc_shipper_registry_check`, `cc_shipper_doc_verify`, `cc_shipper_email_domain_approve`, `cc_places_lookup_start`,
+`cc_places_lookup_done`) are authenticated-only.
