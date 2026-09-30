@@ -251,6 +251,17 @@ export const shipperVerification = (org) => rpc('cc_shipper_verification', { p_o
 export const shipperCallbackStart = (org, phone, source, url) => rpc('cc_shipper_callback_start', { p_org: org, p_phone: phone, p_source: source, p_source_url: url ?? null });
 export const shipperCallbackFail = (org, note) => rpc('cc_shipper_callback_fail', { p_org: org, p_note: note });
 export const shipperLimitsLift = (org, reason) => rpc('cc_shipper_limits_lift', { p_org: org, p_reason: reason });
+// bl_ship_0502 — registry check (staff): save/verify the state record, verify EIN/address proof against it, SEC-name email domain
+export const shipperRegistryCheck = (org, data, verify) => rpc('cc_shipper_registry_check', { p_org: org, p_data: data || {}, p_verify: !!verify });
+export const shipperDocVerify = (org, key, nameOk, addressOk) => rpc('cc_shipper_doc_verify', { p_org: org, p_key: key, p_name_matches: !!nameOk, p_address_matches: !!addressOk });
+// bl_ship_0503 — Google Places phone suggestion (edge function holds the key; the DB enforces staff + the free-tier cap)
+export const shipperPlacesLookup = async (org) => {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('places-lookup', { body: { org_id: org } });
+  if (error) throw new Error((error && error.message) || 'Google lookup failed');
+  return data;
+};
+export const shipperEmailDomainApprove = (org, domain, source, url, note) => rpc('cc_shipper_email_domain_approve', { p_org: org, p_domain: domain ?? null, p_source: source ?? null, p_source_url: url ?? null, p_note: note ?? null });
 export const brokerClaimShipment = (id) => rpc('cc_broker_claim_shipment', { p_id: id });
 export const brokerTenderShipment = (id, rate, acc) => rpc('cc_broker_tender_shipment', { p_id: id, p_rate: rate, p_accessorials: acc });
 export const shipperMyShipments = () => rpc('cc_shipper_my_shipments');
