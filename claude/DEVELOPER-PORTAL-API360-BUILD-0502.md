@@ -99,7 +99,7 @@ contact-switch rule is not touched.
 6. Frontend pushed and live (30 Sep 2026, owner). Prod anon SECDEF after everything: **36**, md5 `06f779f74423a983253c79ab9d4e1e84`.
 
 ## Still open (30 Sep 2026)
-1. **API rules wording** — owner's call. Draft below; nothing changed in `app/developer/app.js` yet.
+1. ~~API rules wording~~ — **done 30 Sep, option B** (`bl_dev_0505`, see the section at the end).
 2. **CC → API 360 with a real staff login** — only the owner can do this (never tested against a real staff session).
 3. **5 pending developers** — snapshot below (read-only prod query, 30 Sep). Decide per account in API 360.
 
@@ -130,3 +130,29 @@ Option A — checkbox only (smallest change):
 Option B — add an "API use" section to `/terms.html` with the same four points plus: sandbox data is test data;
 production access needs LoadBoot approval; LoadBoot may change the API with notice; the developer is responsible
 for everything done with their keys. Then the checkbox links to `/terms.html#api`.
+
+## bl_dev_0505 — API use terms (30 Sep 2026, owner chose option B)
+- **Terms page:** new "API use" section, clauses A1–A9, anchor `/terms.html#api` (built by `terms_module.py`; nav chip
+  + stamp "API use section added 30 September 2026"). Clauses 1–19 untouched. A1 applies; A2 keys; A3 sandbox/production
+  (write = verified brokers, Clause 5 applies); A4 "via LoadBoot" + link-back; A5 no resale/bulk copy/competing board/
+  going around LoadBoot; A6 rate limits, no extra keys/accounts to dodge them; A7 logs (90 days) + API changes;
+  A8 suspension, delete API data within 30 days after access ends; A9 how acceptance and re-acceptance work.
+  **Wording is a draft by Claude, not legal advice** — have it read before relying on it in a dispute.
+- **DB** (`migrations/bl_dev_0505_api_terms_accept.sql`, staging + prod 30 Sep): `developer_accounts.terms_version`;
+  `app_private.dev_api_terms()` = version `api-v1-2026-09-30` + 5 short points; `public.dev_accept_api_terms(p_version)`
+  (authenticated only, audited `developer.terms_accepted`); `dev_portal_state` returns `terms{…, needs_accept}`;
+  signup records the version only if the screen sent the current one; `dev_request_production` refuses until accepted.
+  Existing keys keep working. Staff approval in API 360 is not blocked; API 360 shows "API use terms: accepted … (version)"
+  or "old wording only".
+- **Portal:** a "Please accept the API use terms" card on top of every tab (5 points, link to `#api`, tick + Accept)
+  until accepted; the production-request card says "accept first"; Account tab shows what was accepted. Signup +
+  profile-setup consent text now names the API use section and send `terms_version` (`session.js` whitelist).
+- **Tests:** staging, rolled back: new-screen signup → version stamped; old-screen signup → null → needs_accept;
+  production request refused before accept, allowed after; stale version refused; second accept = no second audit row.
+  Chromium 390/1280 (mocked RPCs): terms page 9 clauses, no overflow; card → untick error → accept sends
+  `p_version` → card gone → request form back; Account line correct.
+- **Prod after apply:** anon SECDEF **36**, md5 `06f779f74423a983253c79ab9d4e1e84` (unchanged); the 5 functions are md5-identical to
+  staging (comments stripped); `dev_accept_api_terms` anon=false / authenticated=true; **5 of 5 developers must accept**
+  (all reclassified, none accepted before). No email sent — the prompt appears when they next open the portal.
+- To change the terms later: edit `terms_module.py` AND bump `version` in `dev_api_terms()` in a new migration → everyone
+  is asked again.

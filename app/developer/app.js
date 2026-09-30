@@ -23,6 +23,10 @@ const root = document.getElementById('lb-app');
 const API_BASE = ENV.supabaseUrl + '/functions/v1/dev-api';
 const PORTAL_URL = location.origin + '/app/developer/';
 const SUPPORT_EMAIL = 'hello@loadboot.com';
+// The API use terms live in the Terms page (#api). The version is the one the signup screen shows; Postgres records it
+// only if it matches app_private.dev_api_terms() (bl_dev_0505), so a stale screen leads to a re-accept, never a false yes.
+const API_TERMS_VERSION = 'api-v1-2026-09-30';
+const API_TERMS_URL = '/terms.html#api';
 
 async function rpc(name, args) {
   const sb = await getClient();
@@ -98,7 +102,8 @@ function authScreen(initial) {
         lbl('Work email'), f.email, lbl('Password'), f.pass,
         h('label', { class: 'dev-check', for: 'dev-terms' }, [f.terms, h('span', null, [
           'I agree to the ', h('a', { href: '/terms.html', target: '_blank', rel: 'noopener' }, 'LoadBoot Terms'),
-          ' and the API rules: keys stay secret, and every load shown from the API carries "via LoadBoot" and links back to LoadBoot.',
+          ', including the ', h('a', { href: API_TERMS_URL, target: '_blank', rel: 'noopener' }, 'API use section'),
+          ': keys stay secret, every load shown from the API carries "via LoadBoot" and links back, and API data is not resold or copied.',
         ])]),
       ]);
       btn.textContent = 'Create account';
@@ -148,14 +153,14 @@ function authScreen(initial) {
       if (!f.name.value.trim() || !f.company.value.trim()) { say('Add your name and company.'); return; }
       if (!f.use_case.value.trim()) { say('Tell us in a line what you are building.'); return; }
       if (pw.length < 8) { say('Password must be at least 8 characters.'); return; }
-      if (!f.terms.checked) { say('Please accept the terms and API rules.'); return; }
+      if (!f.terms.checked) { say('Please accept the Terms and the API use section.'); return; }
     }
     btn.disabled = true; btn.textContent = mode === 'signup' ? 'Creating…' : 'Signing in…';
     try {
       if (mode === 'signup') {
         const { data, error } = await signUp(em, pw, {
           role: 'developer', name: f.name.value.trim(), company: f.company.value.trim(), website: f.website.value.trim(),
-          use_case: f.use_case.value.trim(), expected_volume: f.volume.value, terms: 'yes', redirectTo: PORTAL_URL,
+          use_case: f.use_case.value.trim(), expected_volume: f.volume.value, terms: 'yes', terms_version: API_TERMS_VERSION, redirectTo: PORTAL_URL,
         });
         if (error) throw error;
         // Supabase returns success with an empty identities array when the address is already registered —
@@ -240,9 +245,33 @@ function render() {
   let content;
   if (!isDev() && S.st && S.st.can_create_profile && S.tab !== 'account' && S.tab !== 'docs') content = [profileSetupCard()];
   else content = (views[S.tab] || overviewView)();
+  if (termsOwed()) content = [termsCard()].concat(content);
   mount(root, shell(content));
   root.setAttribute('aria-busy', 'false');
   try { if (window.__lbTourHelp) window.__lbTourHelp.onRoute(S.tab); } catch (_) {}
+}
+
+// API use terms (bl_dev_0505). Shown on top of every tab until the developer accepts the version Postgres serves.
+// Existing keys keep working meanwhile; production access cannot be requested until it is accepted.
+const termsOwed = () => !!(isDev() && S.st && S.st.terms && S.st.terms.needs_accept);
+function termsCard() {
+  const t = S.st.terms || {};
+  const tick = h('input', { type: 'checkbox', id: 'dev-api-terms' });
+  const err = h('div', { class: 'cp-err' });
+  const btn = h('button', { class: 'cp-btn', type: 'button', onClick: async () => {
+    err.textContent = '';
+    if (!tick.checked) { err.textContent = 'Tick the box to accept the API use terms.'; return; }
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try { S.st = await rpc('dev_accept_api_terms', { p_version: t.version }); render(); }
+    catch (e) { err.textContent = errMsg(e); btn.disabled = false; btn.textContent = 'Accept'; }
+  } }, 'Accept');
+  return card(t.accepted_version ? 'The API use terms were updated' : 'Please accept the API use terms', [
+    h('p', { class: 'dev-p' }, 'The LoadBoot Terms now have an API use section. The short version:'),
+    h('ul', { class: 'dev-terms-list' }, (t.points || []).map(p => h('li', null, p))),
+    h('p', { class: 'dev-p' }, ['Read the full text: ', h('a', { href: t.url || API_TERMS_URL, target: '_blank', rel: 'noopener' }, 'Terms → API use'), ' (version ' + (t.version || '') + ').']),
+    h('label', { class: 'dev-check', for: 'dev-api-terms' }, [tick, h('span', null, 'I have read and accept the API use section of the LoadBoot Terms.')]),
+    err, btn,
+  ], { 'data-tour': 'dev-terms' });
 }
 
 // A bare login that reached the portal without a developer profile (older signup) completes it once.
@@ -258,14 +287,14 @@ function profileSetupCard() {
     if (!f.name.value.trim() || !f.company.value.trim() || !f.use_case.value.trim()) { err.textContent = 'Name, company and what you are building are required.'; return; }
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
-      S.st = await rpc('dev_profile_save', { p: { name: f.name.value.trim(), company: f.company.value.trim(), website: f.website.value.trim(), use_case: f.use_case.value.trim(), expected_volume: f.volume.value } });
+      S.st = await rpc('dev_profile_save', { p: { name: f.name.value.trim(), company: f.company.value.trim(), website: f.website.value.trim(), use_case: f.use_case.value.trim(), expected_volume: f.volume.value, terms_version: API_TERMS_VERSION } });
       go('overview');
     } catch (e) { err.textContent = errMsg(e); btn.disabled = false; btn.textContent = 'Save and continue'; }
   } }, 'Save and continue');
   return card('Complete your developer profile', [
     h('p', { class: 'dev-p' }, 'Tell us who you are so we can open your sandbox and review production access.'),
     h('div', { class: 'dev-grid2' }, [f.name, f.company]), f.website, f.use_case, f.volume,
-    h('p', { class: 'dev-p' }, ['By continuing you accept the ', h('a', { href: '/terms.html', target: '_blank', rel: 'noopener' }, 'LoadBoot Terms'), ' and the API rules (keys stay secret; "via LoadBoot" + link-back on every load from the API).']),
+    h('p', { class: 'dev-p' }, ['By continuing you accept the ', h('a', { href: '/terms.html', target: '_blank', rel: 'noopener' }, 'LoadBoot Terms'), ', including the ', h('a', { href: API_TERMS_URL, target: '_blank', rel: 'noopener' }, 'API use section'), ' (keys stay secret; "via LoadBoot" + link-back on every load; no reselling or copying API data).']),
     err, btn,
   ]);
 }
@@ -310,6 +339,7 @@ function overviewView() {
 function productionRequestCard(openReq, lastReq) {
   const a = acct();
   if (openReq) return card('Production access', [h('p', { class: 'dev-p' }, 'Request sent ' + fmtD(openReq.created_at) + '. We review every request by hand and email you the answer.')]);
+  if (termsOwed()) return card('Request production access', [h('div', { class: 'dev-note' }, 'Accept the API use terms above first — then you can request production access.')]);
   const f = {
     use_case: h('textarea', { class: 'cp-in', rows: '3' }), volume: h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'Expected volume…')].concat(VOLUMES.map(v => h('option', { value: v }, v)))),
     url: h('input', { class: 'cp-in', type: 'url', placeholder: 'Where the loads will show (URL or app name)' }),
@@ -563,6 +593,9 @@ function accountView() {
       h('label', { class: 'cp-lbl' }, 'Website'), f.website, h('label', { class: 'cp-lbl' }, 'What you are building'), f.use_case,
       h('label', { class: 'cp-lbl' }, 'Expected volume'), f.volume,
       h('p', { class: 'dev-p' }, ['Partner id in your link-back: ', h('code', null, partner()), ' (set by LoadBoot).']),
+      h('p', { class: 'dev-p' }, ['API use terms: ', (S.st.terms && !S.st.terms.needs_accept)
+        ? 'accepted ' + fmtD(S.st.terms.accepted_at) + ' (version ' + S.st.terms.accepted_version + ')' : 'not accepted yet',
+        ' · ', h('a', { href: API_TERMS_URL, target: '_blank', rel: 'noopener' }, 'read')]),
       err, btn,
     ]));
   }
