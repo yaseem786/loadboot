@@ -156,3 +156,34 @@ for everything done with their keys. Then the checkbox links to `/terms.html#api
   (all reclassified, none accepted before). No email sent — the prompt appears when they next open the portal.
 - To change the terms later: edit `terms_module.py` AND bump `version` in `dev_api_terms()` in a new migration → everyone
   is asked again.
+
+## bl_dev_0506 + follow-ups (30 Sep 2026, owner: "ye sub kuch khud kar de")
+
+**1. API 360 check (backend, as the owner's staff uid; no password used).** `cc_api360_list` / `cc_api360_get` run
+clean: kpis pending 5, approved 0, active keys 4, open requests 0; the account view carries `terms_version` /
+`terms_accepted_at`. The 2 "errors today" are the build's own smoke tests (`lb_000000`, missing key), no developer.
+Live bundle `loadboot.com/app/command-center/app.js` contains the "API use terms" row; `loadboot.com/app/developer/app.js`
+has the accept card; `/terms.html` has `#api`. `ops.loadboot.com` is blocked from the cloud session, so the screen itself
+was not opened in a browser.
+
+**Bug found and fixed — `bl_dev_0506_h_esc_prod.sql` (prod only).** `app_private.h_esc()` existed on staging but never
+on prod, so `bl_dev_0502c` broke on prod: `dev_send_email` (→ `cc_api360_revoke_key`, `cc_api360_set_status`
+approve/deny/suspend) and `dev_request_production` all raised 42883 and rolled back the whole action. Nobody had hit it
+(0 approved, 0 requests). Created with the staging body (prosrc md5 `f05b0ded…` on both), revoked from public/anon/
+authenticated. Anon after: **36**, bare-names md5 `06f779f74423a983253c79ab9d4e1e84` (unchanged).
+
+**2. Keys revoked through `cc_api360_revoke_key`** (audited `apikey.revoke`, `revoked_by` = owner uid, done by Claude
+on the owner's instruction), 21:22 UTC. Both had `last_used_at` null and 0 log rows:
+- `lb_7f2a68` (VeloGrid Dispatch, support@velogriddispatch.com) — `lb_9ddec9` (VeloGrid Loads) left active.
+- `lb_b3e55d` (Tbnb, nguyenbrian83@gmail.com).
+`developer.key_revoked` emails (account_critical) delivered by Resend 21:23 UTC, none blocked. Production approval for
+the 5 pending accounts: nothing to do until each accepts api-v1 and fills use case / company / website.
+
+**3. A1–A9 review (Claude, not a lawyer).** Checked against what the system does: A4 (`url` + `?src=` on every load),
+A6 (60/min, shown in portal docs), A7 (log holds key/endpoint/status/time only — no IP; 90 days = setting), A3 (write
+scope staff-issued, posting runs the partner-portal validation), cross-refs to Clauses 5/9/10/14/15/16/18 all correct.
+No factual error found. Two optional hardening lines, NOT applied (binding text, owner to decide):
+(a) A5: "LoadBoot grants you a limited, non-exclusive, non-transferable, revocable licence…" (Clause 10's "no rights
+except as stated" already limits it, so the gap is small); (b) Clause 16 indemnity does not name claims from the
+developer's own application → "Clause 16 also covers claims arising from your application or its use of API data".
+Changing either = edit `terms_module.py` + bump `dev_api_terms()` version. Cheapest now: 0 of 5 have accepted api-v1.
