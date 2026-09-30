@@ -233,3 +233,58 @@ What a re-run does:
   `not_configured` until the owner adds the key (steps above) to BOTH projects.
 - Site: branch merged into `main` (`07ff08f`), pushed → Netlify auto-build.
 - Still waiting on the owner: domain-check v6 re-run (MII / SoftBank / Sourcing Advisory), MII hold + reject of the 3 PDFs.
+
+## `bl_ship_0507` + owner go — 30 Sep 2026 (staging → prod, same day)
+**Finding:** the v6 re-run above could never have happened. `shipper_business_start` returned `already` as soon as
+`verified_at` was set, so CC "↻ Re-check domain" was a no-op for every verified shipper (all 3 here).
+The section above missed that.
+
+`migrations/bl_ship_0507_recheck_quiet.sql` (anchor-patched, 3 functions, no new public function):
+- A staff re-check (`cc_shipper_trust_set 'recheck'`) sets the txn-local flag `app.shipper_recheck = org`. `business_start`
+  then runs the check even when the shipper is verified. Signup and portal callers are unchanged.
+- The collector sends the shipper's bell notices (pass / error / no-mail) only when `verified_at` was null AND there is no
+  hold. The business_start free-mail notice follows the same rule. The staff notice always goes. On a re-check or a held
+  shipper its title reads `🔁 Shipper re-check: <outcome> — <name>`, never `🟢 Shipper business confirmed`.
+- `verified_at` is untouched (coalesce), so no tier is lost.
+- Test: `tests/bl_ship_0507_recheck_quiet_rollback.sql` on staging, **8/8**. It covers:
+  - verified + portal path → already;
+  - staff re-check queues;
+  - re-check: no bell, 🔁 title, verified_at kept, signals stored;
+  - new shipper: bell + 🟢 (unchanged);
+  - held: no bell.
+- Anon unchanged: prod **36 / `06f779f7`**, staging 35 / `b862e7e2` (bare-name md5).
+- The 3 function md5s are identical on both envs: trust_set `5bf20b34`, business_start `bb332c14`, collect `a9f72f99`.
+
+**Done on prod (owner said "suggest and implement"):**
+1. **MII hold**, the same statements as `cc_shipper_trust_set 'hold'`.
+   - Shipper-visible note (neutral, no accusation): "Before your account can go further, our team needs to confirm your
+     company by phone on a number we look up ourselves."
+   - One bell went to MII: "⛔ Posting paused". No email.
+   - The internal reason is in the audit log only. Tier = `hold`.
+2. **v6 re-run** for MII, SoftBank and Sourcing Advisory. It used the same statements as the re-check RPC, and each run
+   has an audit row. Request ids: 285568 / 285569 / 285570. Under 0507 **none of the three gets a bell**; staff get the
+   🔁 notice.
+3. **The 3 MII PDFs were NOT rejected. This changes the earlier recommendation.**
+   - Every reject sends a real email (`onboarding.item_reject`) plus an urgent bell. That would be 3 emails to a domain
+     registered 4 days before signup, asking the suspect to upload again.
+   - With the hold in place nothing moves anyway, and the playbook says "verify nothing until registry + call-back".
+   - Reject only if the call-back proves MII is real. Then the emails help a real customer.
+4. **`GOOGLE_PLACES_KEY`**: still owner-only (steps above). Nothing to do until "key laga di".
+
+**Results (collector ran 21:28 UTC, prod):**
+- All 3: `check_outcome = pass`, `verified_at` unchanged, v6 columns filled.
+  - Staff got 🔁 notices.
+  - Shipper bells in the window: SoftBank 0, Sourcing Advisory 0, MII 1 (the hold notice only).
+- **MII:**
+  - `name_collision = true`, `domain_created_at = 2026-09-24`, `mx_class = budget_host`, DMARC none.
+  - `needs_human = true`. Reasons: domain only 6 days old; budget mail host without DMARC; SEC name match whose
+    domain/email does not look like that company's.
+  - Tier `hold`.
+- **SoftBank:** no collision. Domain from 2014, corporate MX, DMARC quarantine. `needs_human = false`.
+- **Sourcing Advisory:** no collision. Domain from 2021, corporate MX, DMARC p=none. `needs_human = false`.
+
+**Next for MII (owner):**
+- Make an independent call-back to Victoria's Secret & Co. / Mast Global corporate, on a number from their own official
+  site. Never use the +1 614 568 6177 number from miibrandimport.com.
+- If they deny it: leave the hold and stop.
+- If they confirm it: release the hold, then reject the 3 misfiled PDFs so MII re-uploads.
