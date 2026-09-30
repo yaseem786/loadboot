@@ -3916,7 +3916,10 @@ async function appView(user) {
     // bl_ui_0411 (23 Sep 2026): the dashboard is a flex column with one gap. Cards that live inside async host divs
     // (availability, NOA, dispatcher, break-even) never matched the `.cp-card + .cp-card` sibling rule, so on phones
     // three cards sat flush with their rounded corners touching — read as overlapping. Empty hosts collapse to no gap.
-    mount(content, h('div', { class: 'cp-dash' }, [tripHero9, rateCard9, onbHero, noaDash9, ...topBanners, kpis, availHostD, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    // bl_comp_0504: "Insurance approved → post the trucks on your certificate" (server decides show/hide).
+    const coiHost9 = h('div');
+    import('./coi-trucks-banner.js').then((m9) => m9.mountCoiTrucksBanner(coiHost9, { h, go, openAvail: (typeof openAvailFromBar === 'function') ? openAvailFromBar : null })).catch(() => {});
+    mount(content, h('div', { class: 'cp-dash' }, [tripHero9, rateCard9, onbHero, noaDash9, coiHost9, ...topBanners, kpis, availHostD, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     const econHost = h('div', null); prefsHost.parentNode.insertBefore(econHost, prefsHost.nextSibling);
     try { import('./economics.js').then((m) => m.mountBreakevenCard(econHost)).catch(() => {}); } catch (_) {}
     // Dispatcher card (bl_disp_0409): compact "Meet your dispatcher" + status; the full desk is the Dispatcher tab.
