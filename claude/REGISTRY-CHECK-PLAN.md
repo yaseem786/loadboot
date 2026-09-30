@@ -288,3 +288,34 @@ The section above missed that.
   site. Never use the +1 614 568 6177 number from miibrandimport.com.
 - If they deny it: leave the hold and stop.
 - If they confirm it: release the hold, then reject the 3 misfiled PDFs so MII re-uploads.
+
+## 30 Sep 2026 (late) — Shipper 360 scroll fix, old Verification card removed, executed agreement copy (`bl_ship_0508`)
+- **Scroll jump (CC, all partner 360 screens):** `partner360-kit.js` rebuilt the whole page every 30 s. The async two-lane
+  and playbook cards refilled, the page shrank, the browser clamped the scroll, and open `<details>` closed.
+  - Now a silent refresh with unchanged data only moves the "updated" stamp.
+  - When the data did change, the old height is held for 5 s while the async cards refill.
+- **Old "Verification" card removed** from Shipper 360 (the bl_bp_0319 domain-check card, its "Verify business by hand",
+  and the stale "Quote allowance" text). Its signals are already on the Two-lane card.
+  - The "Business check" KPI is now "Verification" (tier / hold / lane open).
+  - The banner button "Open trust" is now "Open verification" and lands on Two-lane verification.
+- **`bl_ship_0508` — `public.cc_shipper_agreement_copy(p_kind, p_version, p_org)`**, read-only, SECURITY DEFINER.
+  - Revoked from public + anon; granted to authenticated.
+  - A shipper reads only its own org. Staff (partners/dispatch/carriers.manage) may pass `p_org`.
+  - Returns the text of the version that was signed, plus `text_matches` (stored SHA-256 = text).
+  - Staging test `tests/bl_ship_0508_agreement_copy_rollback.sql`: **6/6**.
+  - Applied on staging and prod. Anon: prod 36 / `06f779f7`, staging 35 / `b862e7e2`, unchanged.
+- **Renderer `app/shared/ui/agreementCopy.js`:**
+  - Letterhead, parties line, agreement text (mdLite, text nodes only).
+  - Shipper e-signature block, plus **LoadBoot LLC pre-signed, "By: Authorized Signatory", dated the day the shipper
+    signed**.
+  - ESIGN record: UTC time, IP, consent, SHA-256. Then a "TEXT VERIFIED" stamp, or a red mismatch stamp.
+  - Buttons: Download copy (.html) and Print / Save as PDF. Headless check passed (escaping, download name).
+  - Portal: Verification → signed agreement → "📄 Signed copy — download / print".
+  - CC: Shipper 360 → Two-lane verification → **Signatures** → "📄 Preview / download" on each signature.
+- **Test shipper `The Shipper` (`a0af7d3d…`, is_demo) filled A–G on prod** through the portal RPCs, as its own user.
+  - Staff got in-app notices only; no email goes out from these RPCs.
+  - `legal_entity` uses EIN `27-9999991`, because the validator correctly refused 12-3456789.
+  - Identity items (legal entity, address, signer) are `submitted` for staff review. The rest auto-verified.
+  - Both agreements signed as "Test Signer, Owner". 1 location ("TEST Dallas DC").
+  - Not filled: EIN letter / address proof (these need real files); email and phone codes (they send real codes).
+  - Stage stays `new` until staff verify the identity items and the call-back is done.

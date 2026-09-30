@@ -136,7 +136,7 @@ export function mountPartner360(host, orgId, renderers) {
   ]));
   const body = host.querySelector('#p360-body');
   if (!orgId) { mount(body, el('div', { class: 'cc-sub' }, 'No partner selected.')); return; }
-  let timer = null, lastAt = null, alive = true, refreshing = false;
+  let timer = null, lastAt = null, alive = true, refreshing = false, lastSig = null, stampEl = null, unlockT = null;
   const stop = () => { alive = false; if (timer) clearInterval(timer); document.removeEventListener('visibilitychange', onVis); };
   const onVis = () => { if (document.visibilityState === 'visible' && lastAt && Date.now() - lastAt > 25000) load(true); };
   document.addEventListener('visibilitychange', onVis);
@@ -150,6 +150,11 @@ export function mountPartner360(host, orgId, renderers) {
     try { d = await partner360(orgId); }
     catch (e) { refreshing = false; if (!silent) mount(body, el('div', { class: 'lb-state lb-error', style: 'margin:20px' }, [humanizeError(e), ' ', el('button', { class: 'lb-btn lb-btn-sm', onClick: () => load(false) }, 'Retry')])); return; }
     refreshing = false; lastAt = Date.now();
+    // A silent 30 s refresh with nothing new must not rebuild the page: a rebuild reloads the async cards (two-lane,
+    // playbook), the page shrinks for a moment, the browser clamps the scroll and open <details> close. Only the stamp moves.
+    const sig = JSON.stringify(d);
+    if (silent && sig === lastSig && stampEl && body.contains(stampEl)) { stampEl.textContent = 'live · updated ' + new Date(lastAt).toLocaleTimeString(); return; }
+    lastSig = sig;
     const role = d.role || (d.org && d.org.kind) || 'broker';
     // canonical hash for this role (a stale #/broker?id= link for an agent lands here, then the URL is fixed)
     const want = '#' + partnerRoute(role) + '?id=' + (d.org && d.org.id || orgId);
@@ -158,10 +163,13 @@ export function mountPartner360(host, orgId, renderers) {
     const fn = renderers[role] || renderers.broker;
     const y = window.scrollY;
     let nodes; try { nodes = fn(ctx); } catch (e) { console.error(e); mount(body, el('div', { class: 'lb-state lb-error', style: 'margin:20px' }, 'Render failed: ' + (e && e.message))); return; }
+    stampEl = el('span', { title: 'This screen re-reads the account every 30 s while the tab is visible' }, 'live · updated ' + new Date(lastAt).toLocaleTimeString());
     const refreshBar = el('div', { class: 'p360-refresh', style: 'justify-content:flex-end;margin-top:8px' }, [
-      el('span', { title: 'This screen re-reads the account every 30 s while the tab is visible' }, 'live · updated ' + new Date(lastAt).toLocaleTimeString()),
+      stampEl,
       el('button', { onClick: () => load(false) }, '↻ refresh now'),
     ]);
+    // something changed: hold the old height while the async cards refill, so the scroll position survives
+    if (silent) { body.style.minHeight = body.offsetHeight + 'px'; clearTimeout(unlockT); unlockT = setTimeout(() => { body.style.minHeight = ''; }, 5000); }
     mount(body, [refreshBar, ...nodes]);
     if (silent) window.scrollTo(0, y);
     if (!timer) timer = setInterval(() => { if (document.visibilityState === 'visible') load(true); }, 30000);
