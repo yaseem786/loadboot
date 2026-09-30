@@ -12,6 +12,8 @@ import { getSession, getUser, onAuthChange } from '../shared/session.js';
 import { isFlagEnabled, claimStaffInvite } from '../shared/api.js';
 import { loadStaffContext, isStaff, can, clearStaffContext } from '../shared/permissions.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
+import { setErrorAudience } from '../shared/errors.js';
+setErrorAudience('staff');   // 30 Sep 2026: CC shows the server's real reason, not "Something went wrong"
 import { createRouter } from '../shared/router.js';
 import { renderShell, registerSearchIndex } from './views/shell.js';
 import { renderTabbed } from './views/_tabbed.js';
