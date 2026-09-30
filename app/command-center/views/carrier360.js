@@ -16,6 +16,7 @@ import { signedDocumentUrl } from '../../shared/storage.js';
 import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccFleetTruckRemind, ccFleetTruckReminderStatus, ccCarrierBackoffice, ccCarrierPrefs, ccCarrierFleet360, reminderCarrier, reminderSendCarrier } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
+import { approveAgentCopy, agentCopyReceived, agentCopyList } from '../../shared/agent-copy.js';   // bl_comp_0503
 // 29 Aug 2026 — equipment_detail and notes used to be flattened into two 150px grid cells.
 // Same renderer the carrier portal can import, so both sides read one version of the truth.
 import { equipmentDetailCard, carrierNotesCard } from '../../shared/ui/carrierDetail.js';
@@ -964,12 +965,23 @@ export function renderCarrier360(host, orgId) {
             ntCount.style.fontWeight = over ? '800' : '';
           };
           nt.addEventListener('input', ntSync); ntSync();
+          // bl_comp_0503: a COI the carrier forwarded can go live now while the AGENT e-mails hello@ within 14 days.
+          const isCoi9 = /coi|insurance/i.test(String(r.key || '') + ' ' + String(r.name || ''));
+          const ag9 = isCoi9 ? el('input', { class: 'cc-input', placeholder: 'e.g. Protectgo Services \u2014 coi@protectgoservices.com' }) : null;
+          const agBtn9 = isCoi9 ? el('button', { class: 'lb-btn lb-btn-secondary', style: 'margin-left:8px', title: 'Approve now; the carrier is asked to have the agent e-mail the certificate to hello@ within 14 days (reminders day 5 + 12, hold on day 14).', onClick: async (ev) => { const b2 = ev.currentTarget;
+            if (!ex.value) { toast('Enter the policy expiry date from the certificate first.'); return; }
+            if (!await askConfirm('Approve this certificate now and ask the carrier to have ' + ((ag9.value || '').trim() || 'their insurance agent') + ' e-mail a copy to hello@loadboot.com within 14 days?\n\nReminders go on day 5 and day 12. With no copy by day 14 the certificate goes back to pending, bookings stop and the carrier is unpublished from brokers.')) return;
+            b2.disabled = true;
+            try { const r2 = await approveAgentCopy({ carrier: orgId, requirement: r.key, expiry: ex.value, agent: (ag9.value || '').trim() || null, note: (nt.value || '').trim() || null }); toast('Approved \u2014 agent copy due ' + (r2 && r2.due) + ' (' + ((r2 && r2.mails) || 0) + ' e-mail sent)'); dr.close(); loadComp(); }
+            catch (e2) { toast(humanizeError(e2)); b2.disabled = false; } } }, '\u2713 Approve \u00b7 agent copy pending (14d)') : null;
           const dr = openDrawer('Verify: ' + r.name, el('div', { class: 'cc-form' }, [
             el('div', { class: 'cc-field' }, [el('span', null, 'Status'), st]),
             el('div', { class: 'cc-field' }, [el('span', null, 'Expiry date (from the document)'), ex]),
             el('div', { class: 'cc-field' }, [el('span', null, 'Note'), nt, ntCount]),
+            isCoi9 ? el('div', { class: 'cc-field' }, [el('span', null, 'Insurance agent (only for "agent copy pending")'), ag9]) : null,
             el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => { const b1 = ev.currentTarget; if (st.value === 'rejected' && !nt.value.trim()) { toast('Rejection needs a written reason — the carrier sees it.'); return; } if (nt.value.length > NT_MAX) { toast('Note is ' + (nt.value.length - NT_MAX) + ' characters over the ' + NT_MAX + ' limit — trim it and save again.'); return; } b1.disabled = true; try { await setCompliance({ carrier: orgId, requirement: r.key, status: st.value, expiry: ex.value || null, note: nt.value || null }); dr.close(); loadComp(); } catch (e) { toast(humanizeError(e)); b1.disabled = false; } } }, 'Save decision'),
-          ]));
+            agBtn9,
+          ].filter(Boolean)));
         } }, 'Verify') : '';
         const DOC_HINT = {
           coi: 'Check: certificate holder = LoadBoot, auto liability $1M, cargo $100k, dates current, agent-issued (not carrier-typed).',
@@ -1080,7 +1092,19 @@ export function renderCarrier360(host, orgId) {
         return el('div', { style: 'margin-top:16px;padding-top:14px;border-top:1px solid #eef2f7' },
           staffUploadCard({ id: owner9, name: d.name }, () => { load(); }));
       })();
-      mount(compCard, [el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Onboarding & compliance'), el('span', { class: 'cc-pill cc-pill-' + (allOk ? 'green' : 'amber') }, allOk ? 'all mandatory valid' : 'action needed')]), pipeline, remindWrap9, el('div', null, rows.length ? rows : el('div', { class: 'cc-sub' }, 'No requirements found.')), gate, upload9]);
+      // bl_comp_0503: items approved while the insurance agent's own copy is still owed to hello@.
+      const agentWrap9 = el('div');
+      (async () => { let l9 = []; try { l9 = (await agentCopyList(orgId)) || []; } catch (_) { return; }
+        if (!l9.length) return;
+        mount(agentWrap9, l9.map((a9) => el('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff7e6;border:1px solid #fcd9a5;border-radius:10px;padding:9px 12px;margin:0 0 10px;font-size:.84rem;color:#7c4a03' }, [
+          el('b', null, '\u23f3 Agent copy pending'),
+          el('span', null, (a9.agent || 'Insurance agent') + ' must e-mail the certificate to hello@ by ' + a9.due + ' \u00b7 ' + a9.days_left + ' day(s) left \u00b7 ' + a9.reminders + ' reminder(s) sent. No copy by then \u2192 back to pending + unpublished.'),
+          can('compliance.verify') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', style: 'margin-left:auto', onClick: async (ev) => { const b3 = ev.currentTarget;
+            if (!await askConfirm('Mark the agent copy as received? Attach the e-mailed certificate with the staff upload card (source = Email) as the record.')) return;
+            b3.disabled = true; try { await agentCopyReceived(orgId, a9.requirement); toast('Agent copy recorded \u2713'); loadComp(); } catch (e3) { toast(humanizeError(e3)); b3.disabled = false; } } }, '\u2713 Agent copy received') : null,
+        ].filter(Boolean))));
+      })();
+      mount(compCard, [el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Onboarding & compliance'), el('span', { class: 'cc-pill cc-pill-' + (allOk ? 'green' : 'amber') }, allOk ? 'all mandatory valid' : 'action needed')]), pipeline, remindWrap9, agentWrap9, el('div', null, rows.length ? rows : el('div', { class: 'cc-sub' }, 'No requirements found.')), gate, upload9]);
     }
     loadComp();
 
