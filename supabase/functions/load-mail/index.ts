@@ -11,6 +11,7 @@
 // Bearer header is now REQUIRED (cc_mail_ingest already carried it). No other change.
 // Source was not in the repo before 2026-09-05 (v7 lived only in the Supabase deploy) — this
 // file is the canonical copy from now on. Deploy order on prod: v8 FIRST, then bl_sec_0320.
+// v11.1 (30 Sep): schema fields are plain strings ("" = unknown) — the nullable version hit Claude's union-type limit.
 // v11 — CLAUDE FIRST, Gemini fallback (bl_brain_0505, 30 Sep 2026, owner ask). Every loads@ email is parsed by the
 //   Claude brain when public.brain_loads_gate() allows it (CC -> AI Brain: kill switch, source.loads_email on/live,
 //   its $ and job caps, the brain-wide $ cap; model + effort from brain_config ->> 'loads_email'). Structured JSON
@@ -51,7 +52,11 @@ async function gem(key: string, prompt: string): Promise<{ text: string | null; 
 }
 // v11: the shape load-mail already asks Gemini for, as a JSON schema for Claude's structured output.
 // reply_fields / confirm_fields are always objects (all-null when unused): the code below only reads non-null keys.
-const S_ = { type: ["string", "null"] };
+// v11.1: plain strings, "" = unknown. A ["string","null"] union on all 37 fields was rejected (400 "too many
+// parameters with union types"); denull() turns "" back into null so everything downstream is unchanged.
+const S_ = { type: "string" };
+const denull = (v: any): any => v === "" ? null : Array.isArray(v) ? v.map(denull)
+  : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, denull(x)])) : v;
 const obj = (props: string[], extra: Record<string, unknown> = {}) => ({
   type: "object", additionalProperties: false, required: [...props, ...Object.keys(extra)],
   properties: { ...Object.fromEntries(props.map((k) => [k, S_])), ...extra },
@@ -74,7 +79,7 @@ async function claudeParse(key: string, model: string, effort: string, prompt: s
     try {
       const res: any = await client.messages.create({
         model, max_tokens: 8000,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: useFormat ? prompt + "\n(Where the rules above say null, return an empty string.)" : prompt }],
         output_config: useFormat ? { effort, format: { type: "json_schema", schema: LOAD_SCHEMA } } : { effort },
       } as any);
       const u = res.usage ?? {};
@@ -83,11 +88,11 @@ async function claudeParse(key: string, model: string, effort: string, prompt: s
       if (res.stop_reason === "refusal") return { parsed: null, err: "refusal:" + (res.stop_details?.category ?? ""), usage, model: res.model ?? model };
       if (res.stop_reason === "max_tokens") return { parsed: null, err: "max_tokens", usage, model: res.model ?? model };
       const text = (res.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("");
-      try { return { parsed: JSON.parse(text.replace(/```json|```/g, "").trim()), err: "", usage, model: res.model ?? model }; }
+      try { return { parsed: denull(JSON.parse(text.replace(/```json|```/g, "").trim())), err: "", usage, model: res.model ?? model }; }
       catch { return { parsed: null, err: "bad_json", usage, model: res.model ?? model }; }
     } catch (e: any) {
       // Structured output rejected for this model/account? One retry without the format, parsed leniently (as brain does).
-      if (useFormat && e instanceof Anthropic.BadRequestError && /output_config|format|json_schema/i.test(String(e.message))) { useFormat = false; continue; }
+      if (useFormat && e instanceof Anthropic.BadRequestError && /output_config|format|json_schema|schema/i.test(String(e.message))) { useFormat = false; continue; }
       return { parsed: null, err: String(e?.status ?? "") + ":" + String(e?.message ?? e).slice(0, 160), usage, model };
     }
   }
