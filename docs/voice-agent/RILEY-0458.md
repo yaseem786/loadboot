@@ -117,3 +117,29 @@ a callback exists. Before this the prompt promised "our team follows up within t
   verify / bad phone / unknown call → nothing; full `retell_webhook` call_analyzed payload (service_role) → one row.
   Prod read-only dry run: a released carrier's phone resolves to its dispatcher. anon SECDEF 36 prod / 35 staging,
   names unchanged; helper not executable by anon/authenticated.
+
+## 0511 — callback rows you can act on (30 Sep 2026, staging + prod)
+
+CC → Riley → WhatsApp line → "Open callbacks from the line", each row now has:
+- **Call** (`tel:+1…`) and **WhatsApp** (`wa.me/1…`) for the caller's number.
+- **Open call** → the same Riley call drawer as the Calls tab (recording, transcript, analysis, next step). Matched by
+  `lc_call_id` (Retell call id, reason `riley`) or, for missed/voicemail rows, via the Telnyx leg's Riley call. Greyed
+  when the call is older than the calls loaded on the screen (find it under Calls by number).
+- **Done** asks for the outcome (quick picks + free text, required). It is appended under Riley's note as
+  `Outcome <time ET>: …` via `cc_riley_callback_done(p_id, p_note)` — the note keeps what Riley promised and what happened.
+- DB: only `cc_riley_calls.wa_callbacks` gained `lc_call_id` (anchor patch, ACL unchanged). anon SECDEF 36 prod / 35 staging,
+  names unchanged. Tested on staging with a throwaway row (rolled back).
+
+## 0512 — released carriers go straight to Riley (30 Sep 2026, owner rule, staging + prod)
+
+A carrier whose dedicated dispatcher has been released no longer rings that dispatcher when they call the contact line;
+Riley answers, like every other caller. `dialer_config.riley_route_to_dispatcher` = **false** (and the column default is
+now false), which `dialer_hook_event` reads on every call, for every carrier — nothing per-carrier to remember. The CC
+switch (Riley → WhatsApp line → "Known carrier → their dispatcher first") is the one place to change it back.
+Unchanged: Riley's briefing still names the dispatcher; a needs_human callback for a released carrier still goes to
+that dispatcher's dock (0506). Prod had 1 released carrier with a line at the time of the flip.
+- `0512b`: Riley's briefing (`retell_inbound_verified`) read "they reached you because that dispatcher did not pick up"
+  for a released carrier. It now follows the same switch — OFF: "their calls come straight to you… if they need the
+  dispatcher personally, tell them the dispatcher will call them back" (→ needs_human → dispatcher's dock callback).
+  Anchor patch, ACL unchanged (postgres + service_role), anon SECDEF 36 prod / 35 staging.
+
