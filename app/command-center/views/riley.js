@@ -602,6 +602,29 @@ export async function renderRiley(host, query) {
     mount(bodyEl, el('div', null, cards));
   }
 
+  // bl_voice_0511 — Done asks what happened. The outcome is appended under Riley's note (the row keeps both).
+  function closeCallback(k) {
+    const QUICK = ['Reached — sorted', 'Reached — follow-up booked', 'No answer', 'Left voicemail / WhatsApp message', 'Wrong number'];
+    const ta = el('textarea', { class: 'cc-input', rows: '3', placeholder: 'What happened on the call?' });
+    const err = el('div', { class: 'cc-sub', style: 'color:#dc2626;min-height:18px;margin-top:4px' });
+    let busyDone = false;
+    const submit = el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
+      const v = ta.value.trim();
+      if (!v) { err.textContent = 'Write the outcome (or tap one above) — it stays on this callback.'; return; }
+      if (busyDone) return; busyDone = true; submit.disabled = true;
+      const note = (k.note ? k.note + '\n' : '') + 'Outcome ' + et(new Date().toISOString()) + ': ' + v;
+      try { const r = await ccRileyCallbackDone(k.id, note); if (r && r.error) throw new Error(r.error); dr.close(); toast('Marked done.'); loadAll(); }
+      catch (e) { err.textContent = humanizeError(e); busyDone = false; submit.disabled = false; }
+    } }, 'Mark done');
+    const dr = openDrawer('Close callback — ' + (k.contact_name || pretty(k.number)), el('div', { class: 'cc-form' }, [
+      k.note ? el('div', { class: 'cc-sub', style: 'margin-bottom:8px;white-space:pre-line' }, k.note) : '',
+      el('div', { class: 'ry-row', style: 'gap:6px;margin-bottom:8px' }, QUICK.map((q) => el('button', { class: 'ry-btn sm', onClick: () => { ta.value = ta.value.trim() ? ta.value.trim() + ' · ' + q : q; err.textContent = ''; ta.focus(); } }, q))),
+      ta, err,
+      el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [submit, el('button', { class: 'lb-btn', onClick: () => dr.close() }, 'Cancel')]),
+    ]), { subtitle: 'Saved on the callback row for the record', size: 'sm' });
+    setTimeout(() => { try { ta.focus(); } catch (_) {} }, 60);
+  }
+
   // ---------- WhatsApp line
   function paintWa() {
     const legs = data.wa_legs || [], cbs = data.wa_callbacks || [];
@@ -621,15 +644,28 @@ export async function renderRiley(host, query) {
           try { const r = await ccRileySettingsSet({ riley_route_to_dispatcher: on }); if (r && r.error) throw new Error(r.error); settings = r; toast(on ? 'Known carriers ring their own dispatcher first; Riley if unanswered.' : 'Everyone goes straight to Riley.'); paintWa(); }
           catch (err) { toast(humanizeError(err), 'error'); e.target.checked = !on; }
         } }), 'Known carrier → their dispatcher first']),
-        el('div', { style: 'font-size:12.5px;color:var(--mut,#64748b);margin-top:8px' }, 'A carrier we recognise by phone number, whose dispatcher contact has been released (' + (settings.released_carriers ?? 0) + ' today), rings that dispatcher\u2019s LoadBoot line: browser \u2192 their mobile \u2192 Riley \u2192 voicemail. Riley\u2019s briefing names the dispatcher either way.' + (settings.fallback_is_riley ? '' : ' Note: the dialer fallback number is not the Riley line, so unanswered dispatcher calls do not reach Riley.')),
+        el('div', { style: 'font-size:12.5px;color:var(--mut,#64748b);margin-top:8px' }, (settings.riley_route_to_dispatcher === false ? 'OFF (owner rule, bl_voice_0512): every caller \u2014 released carriers too \u2014 goes straight to Riley; the dispatcher\u2019s line never rings from this number. Switch ON only to change that rule. ' : '') + 'When ON: a carrier we recognise by phone number, whose dispatcher contact has been released (' + (settings.released_carriers ?? 0) + ' today), rings that dispatcher\u2019s LoadBoot line: browser \u2192 their mobile \u2192 Riley \u2192 voicemail. Riley\u2019s briefing names the dispatcher either way.' + (settings.fallback_is_riley ? '' : ' Note: the dialer fallback number is not the Riley line, so unanswered dispatcher calls do not reach Riley.')),
         el('div', { style: 'font-size:12.5px;color:var(--mut,#64748b);margin-top:10px' }, 'One-time Telnyx step (owner): Numbers → ' + pretty(settings.wa_number) + ' → Voice → connection = the “LoadBoot Inbound” Voice API application (the same one the dispatcher lines use). Without it Telnyx never tells us the call exists.'),
       ]),
       el('div', { class: 'ry-card' }, [
         el('h3', null, 'Open callbacks from the line'), el('p', { class: 'hint' }, 'Callers Riley could not take (voicemail or missed), and callers Riley promised a person would call back (bl_voice_0506). A carrier with a released dispatcher goes to that dispatcher instead. Nobody else sees these — they belong to this screen.'),
-        cbs.length ? el('table', { class: 'ry-t' }, [el('thead', null, el('tr', null, ['When', 'Number', 'Why', ''].map((x) => el('th', null, x)))),
-          el('tbody', null, cbs.map((k) => el('tr', null, [el('td', { style: 'white-space:nowrap' }, et(k.created_at)), el('td', null, [k.contact_name ? el('div', null, k.contact_name) : null, pretty(k.number)]),
-            el('td', { style: 'max-width:360px' }, [el('div', null, CBR[k.reason] || k.reason), k.note ? el('div', { style: 'font-size:12px;opacity:.75' }, k.note) : null]),
-            el('td', null, el('button', { class: 'ry-btn sm', disabled: !can(), onClick: async () => { try { const r = await ccRileyCallbackDone(k.id, null); if (r && r.error) throw new Error(r.error); toast('Marked done.'); loadAll(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Done'))])))]) : el('div', { style: 'opacity:.7' }, 'Nothing open.'),
+        cbs.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ry-t' }, [el('thead', null, el('tr', null, ['When', 'Caller', 'Why', ''].map((x) => el('th', null, x)))),
+          el('tbody', null, cbs.map((k) => {
+            // bl_voice_0511 — act on the row: call / WhatsApp the caller, open the Riley call it came from, close it with an outcome
+            const d10 = (() => { const d = digits(k.number); return d.length === 11 && d[0] === '1' ? d.slice(1) : d; })();
+            const leg = k.call_id ? legs.find((g) => g.id === k.call_id) : null;
+            const full = (data.calls || []).find((c) => (k.lc_call_id && c.call_id === k.lc_call_id) || (leg && leg.lc_call_id && c.id === leg.lc_call_id));
+            const hasCall = !!(k.lc_call_id || (leg && leg.lc_call_id));
+            return el('tr', null, [el('td', { style: 'white-space:nowrap' }, [et(k.created_at), el('div', { style: 'font-size:11.5px;opacity:.65' }, ago(k.created_at))]),
+              el('td', null, [k.contact_name ? el('div', null, k.contact_name) : null, pretty(k.number)]),
+              el('td', { style: 'max-width:360px' }, [el('div', null, CBR[k.reason] || k.reason), k.note ? el('div', { style: 'font-size:12px;opacity:.75;white-space:pre-line' }, k.note) : null]),
+              el('td', null, el('div', { class: 'ry-row', style: 'gap:6px;flex-wrap:nowrap' }, [
+                d10.length === 10 ? el('a', { class: 'ry-btn sm p', style: 'text-decoration:none', href: 'tel:+1' + d10, title: 'Call ' + pretty(k.number) }, 'Call') : null,
+                d10.length === 10 ? el('a', { class: 'ry-btn sm', style: 'text-decoration:none', href: 'https://wa.me/1' + d10, target: '_blank', rel: 'noopener' }, 'WhatsApp') : null,
+                full ? el('button', { class: 'ry-btn sm', title: 'Recording, transcript and what Riley promised', onClick: () => openCall(full) }, 'Open call')
+                  : hasCall ? el('button', { class: 'ry-btn sm', disabled: true, title: 'This call is older than the calls loaded on this screen — find it under Calls by number.' }, 'Open call') : null,
+                el('button', { class: 'ry-btn sm', disabled: !can(), onClick: () => closeCallback(k) }, 'Done')]))]);
+          }))])) : el('div', { style: 'opacity:.7' }, 'Nothing open.'),
       ]),
       el('div', { class: 'ry-card' }, [
         el('h3', null, 'Telnyx legs on the line'), el('p', { class: 'hint' }, 'Every call to the WhatsApp number as Telnyx saw it, matched to Riley\u2019s recording of the same call. Play here, or open the transcript and analysis.'),
