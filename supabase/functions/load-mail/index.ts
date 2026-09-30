@@ -11,8 +11,15 @@
 // Bearer header is now REQUIRED (cc_mail_ingest already carried it). No other change.
 // Source was not in the repo before 2026-09-05 (v7 lived only in the Supabase deploy) — this
 // file is the canonical copy from now on. Deploy order on prod: v8 FIRST, then bl_sec_0320.
+// v11 — CLAUDE FIRST, Gemini fallback (bl_brain_0505, 30 Sep 2026, owner ask). Every loads@ email is parsed by the
+//   Claude brain when public.brain_loads_gate() allows it (CC -> AI Brain: kill switch, source.loads_email on/live,
+//   its $ and job caps, the brain-wide $ cap; model + effort from brain_config ->> 'loads_email'). Structured JSON
+//   output, no tools. Claude off / capped / failing / refusing -> the Gemini chain below, unchanged. Every Claude
+//   attempt is written to brain_jobs via public.brain_loads_record() so its cost and failures show in CC.
+//   Why: 28-29 Sep, Gemini 429 + 503 turned 36 of 41 loads@ emails into "[loads@ unparsed]".
 // v10 — Gemini 5xx moves to the next model + one retry pass (27 Sep 2026). v7 — v6 + BOOKING-CONFIRM reply path (broker replies to booking-ping → confirms/declines the hold).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import Anthropic from "npm:@anthropic-ai/sdk";
 const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-flash-latest"];
 let WM: string | null = null;
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
@@ -41,6 +48,50 @@ async function gem(key: string, prompt: string): Promise<{ text: string | null; 
     if (pass === 0) { WM = null; await new Promise((res) => setTimeout(res, 1500)); }
   }
   return { text: null, err };
+}
+// v11: the shape load-mail already asks Gemini for, as a JSON schema for Claude's structured output.
+// reply_fields / confirm_fields are always objects (all-null when unused): the code below only reads non-null keys.
+const S_ = { type: ["string", "null"] };
+const obj = (props: string[], extra: Record<string, unknown> = {}) => ({
+  type: "object", additionalProperties: false, required: [...props, ...Object.keys(extra)],
+  properties: { ...Object.fromEntries(props.map((k) => [k, S_])), ...extra },
+});
+const LOAD_SCHEMA = obj([], {
+  intent: { type: "string", enum: ["loads", "reply_details", "booking_confirm", "question", "interest", "unsubscribe", "spam", "other"] },
+  broker: obj(["company", "mc", "phone", "contact_name"]),
+  reply_fields: obj(["rate", "pickup_date", "equipment", "weight", "origin", "destination"]),
+  confirm_fields: obj(["pickup_address", "delivery_address", "reference", "contact_phone", "note", "declined"]),
+  loads: { type: "array", items: obj(["origin", "origin_address", "destination", "destination_address", "equipment", "weight",
+    "commodity", "rate", "rate_type", "miles", "pickup_date", "pickup_time", "delivery_date", "delivery_time", "requirements",
+    "temp", "hazmat", "reference", "contact_name", "contact_phone", "notes"]) },
+});
+type ClaudeOut = { parsed: any; err: string; usage: any; model: string };
+async function claudeParse(key: string, model: string, effort: string, prompt: string): Promise<ClaudeOut> {
+  const client = new Anthropic({ apiKey: key, timeout: 60_000, maxRetries: 1 });
+  const usage = { input_tokens: 0, cache_read: 0, cache_write: 0, output_tokens: 0 };
+  let useFormat = true;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res: any = await client.messages.create({
+        model, max_tokens: 8000,
+        messages: [{ role: "user", content: prompt }],
+        output_config: useFormat ? { effort, format: { type: "json_schema", schema: LOAD_SCHEMA } } : { effort },
+      } as any);
+      const u = res.usage ?? {};
+      usage.input_tokens += u.input_tokens ?? 0; usage.output_tokens += u.output_tokens ?? 0;
+      usage.cache_read += u.cache_read_input_tokens ?? 0; usage.cache_write += u.cache_creation_input_tokens ?? 0;
+      if (res.stop_reason === "refusal") return { parsed: null, err: "refusal:" + (res.stop_details?.category ?? ""), usage, model: res.model ?? model };
+      if (res.stop_reason === "max_tokens") return { parsed: null, err: "max_tokens", usage, model: res.model ?? model };
+      const text = (res.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("");
+      try { return { parsed: JSON.parse(text.replace(/```json|```/g, "").trim()), err: "", usage, model: res.model ?? model }; }
+      catch { return { parsed: null, err: "bad_json", usage, model: res.model ?? model }; }
+    } catch (e: any) {
+      // Structured output rejected for this model/account? One retry without the format, parsed leniently (as brain does).
+      if (useFormat && e instanceof Anthropic.BadRequestError && /output_config|format|json_schema/i.test(String(e.message))) { useFormat = false; continue; }
+      return { parsed: null, err: String(e?.status ?? "") + ":" + String(e?.message ?? e).slice(0, 160), usage, model };
+    }
+  }
+  return { parsed: null, err: "no_attempt", usage, model };
 }
 async function geocode(place: string): Promise<[number, number] | null> {
   try { const r = await fetch("https://photon.komoot.io/api/?limit=1&q=" + encodeURIComponent(place + ", USA")); const d = await r.json(); const c = d?.features?.[0]?.geometry?.coordinates; return Array.isArray(c) ? [c[0], c[1]] : null; } catch { return null; }
@@ -84,12 +135,31 @@ Deno.serve(async (req) => {
     const b = await req.json().catch(() => ({}));
     const from = String(b.from || ""), subject = String(b.subject || ""), text = String(b.text || "").slice(0, 8000);
     if (!from || !text) return json({ error: "need from + text" }, 400);
-    if (!KEY) return json({ error: "no_gemini_key" }, 500);
+    const CLAUDE_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
+    if (!KEY && !CLAUDE_KEY) return json({ error: "no_ai_key" }, 500);
     const prompt = `You are the inbox brain for loads@loadboot.com (US trucking platform). Classify this email and extract data. Respond ONLY minified JSON:\n{"intent":"loads"|"reply_details"|"booking_confirm"|"question"|"interest"|"unsubscribe"|"spam"|"other","broker":{"company":string|null,"mc":string|null,"phone":string|null,"contact_name":string|null},"reply_fields":{"rate":string|null,"pickup_date":string|null,"equipment":string|null,"weight":string|null,"origin":string|null,"destination":string|null}|null,"confirm_fields":{"pickup_address":string|null,"delivery_address":string|null,"reference":string|null,"contact_phone":string|null,"note":string|null,"declined":"yes"|null}|null,"loads":[{"origin":string|null,"origin_address":string|null,"destination":string|null,"destination_address":string|null,"equipment":string|null,"weight":string|null,"commodity":string|null,"rate":string|null,"rate_type":"all-in"|"per-mile"|null,"miles":string|null,"pickup_date":string|null,"pickup_time":string|null,"delivery_date":string|null,"delivery_time":string|null,"requirements":string|null,"temp":string|null,"hazmat":"yes"|null,"reference":string|null,"contact_name":string|null,"contact_phone":string|null,"notes":string|null}]}\nRules: intent="loads" ONLY if the email offers full freight loads. intent="booking_confirm" when the email is a reply CONFIRMING (or declining) a booking / that a load is still available — e.g. \"Confirmed\", \"yes still open, pickup at 123 Dock St\", \"sorry, it's covered\" — put the pickup/delivery address and details in confirm_fields (declined=\"yes\" if the load is gone/covered). intent="reply_details" when it is a SHORT reply supplying missing detail(s) for an earlier load (e.g. \"rate is $2,100\", \"pickup Tuesday 9am\") — put those values in reply_fields. Greetings/questions/marketing = their own intent. Never invent anything. origin/destination \"City, ST\"; equipment normalized (Dry Van/Reefer/Flatbed/Step Deck/Hotshot/Power Only/Box Truck); \"TBD\"/\"call\" = null.\n---EMAIL---\nFROM: ${from}\nSUBJECT: ${subject}\n${text}`;
-    const g = await gem(KEY, prompt);
-    let parsed: any = null;
-    if (g.text) { try { parsed = JSON.parse(g.text.replace(/```json|```/g, "").trim()); } catch { /* noop */ } }
-    if (!parsed) return json({ error: "parse_failed", detail: g.err }, 502);
+    // v11: Claude first (when the brain gate allows), Gemini as the fallback.
+    let parsed: any = null, via = "", claudeErr = "";
+    let gate: any = null;
+    try { const r = await fetch(`${URL_}/rest/v1/rpc/brain_loads_gate`, { method: "POST", headers: RPC_HEADERS, body: "{}" }); gate = r.ok ? await r.json() : null; } catch { gate = null; }
+    if (CLAUDE_KEY && gate && gate.use_claude) {
+      const t0 = Date.now();
+      const c = await claudeParse(CLAUDE_KEY, String(gate.model || "claude-sonnet-5"), String(gate.effort || "low"), prompt);
+      if (c.parsed) { parsed = c.parsed; via = "claude"; } else claudeErr = "claude " + c.err;
+      try {
+        await fetch(`${URL_}/rest/v1/rpc/brain_loads_record`, { method: "POST", headers: RPC_HEADERS, body: JSON.stringify({ p: {
+          ok: !!c.parsed, ref: from, subject, model: c.model, effort: gate.effort, ms: Date.now() - t0, ...c.usage,
+          error: c.parsed ? null : c.err,
+          result: c.parsed ? { intent: c.parsed.intent, loads: (c.parsed.loads || []).length } : null } }) });
+      } catch { /* the ledger never blocks a load */ }
+    } else if (gate && !gate.use_claude) claudeErr = "claude skipped: " + gate.reason;
+    let gErr = "";
+    if (!parsed && KEY) {
+      const g = await gem(KEY, prompt);
+      gErr = g.err;
+      if (g.text) { try { parsed = JSON.parse(g.text.replace(/```json|```/g, "").trim()); via = "gemini"; } catch { /* noop */ } }
+    }
+    if (!parsed) return json({ error: "parse_failed", detail: [claudeErr, gErr].filter(Boolean).join(" | ") }, 502);
 
     if (parsed.intent === "booking_confirm") {
       const cf: any = {};
@@ -141,7 +211,7 @@ Deno.serve(async (req) => {
       const r = await fetch(`${URL_}/rest/v1/rpc/lb_email_load_ingest`, { method: "POST", headers: RPC_HEADERS, body: JSON.stringify({ p: { from_email: from, subject, raw_body: text.slice(0, 4000), company: parsed.broker?.company, mc: parsed.broker?.mc, phone: parsed.broker?.phone, parsed: L } }) });
       results.push({ load: L, ingest: await r.json().catch(() => null) });
     }
-    return json({ ok: true, intent: "loads", broker: parsed.broker, count: results.length, results });
+    return json({ ok: true, intent: "loads", via, broker: parsed.broker, count: results.length, results });
   } catch (e) {
     return json({ error: String(e instanceof Error ? e.message : e).slice(0, 200) }, 500);
   }
