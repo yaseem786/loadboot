@@ -44,6 +44,7 @@ import { formProgressPing, formProgressDone } from '../shared/api.js';
 // bl_dial_0390 — lifts the signup SMS checkbox into the dispatcher-side consent registry, so a
 // dispatcher can text a carrier who already agreed without logging anything by hand. Idempotent.
 import { smsConsentSelfSync } from '../shared/api.js';
+import { phoneVerifyCard } from './phone-verify.js';   // bl_onb_0490
 import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute, payRequestReminder, ccLoadStops } from '../shared/api.js';
 import { enablePush, isPushEnabled, pushSupported, ensurePushHealthy } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
@@ -3735,6 +3736,7 @@ async function appView(user) {
       } catch (_) {}
     })();
     topBanners.push(h('div', { id: 'lb-recv-banner' }));
+    if (!DRV) topBanners.push(phoneVerifyCard(h, mount));   // bl_onb_0490: owner-only; hides itself when verified or not applicable
     const activeTrip9 = (window.__dashTrips || []).find(t9 => ['planned', 'dispatched', 'in_transit'].indexOf(String(t9.status || '')) >= 0);
     if (activeTrip9) { try { ensureLiveLoc(activeTrip9.id); } catch (_) {} }
     const tripHero9 = activeTrip9 ? (() => {

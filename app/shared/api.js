@@ -599,6 +599,11 @@ export const ccRileyPlans = (status, limit, org) => rpc('cc_riley_plans', { p_st
 export const ccRileyPlan = (id) => rpc('cc_riley_plan', { p_id: id });
 export const ccRileyPlanSet = (id, action, note) => rpc('cc_riley_plan_set', { p_id: id, p_action: action, p_note: note ?? null });
 export const ccCarrierLoginStatus = (org) => rpc('cc_carrier_login_status', { p_org: org });   // bl_ux_0486 — Carrier 360 live / last seen
+// bl_onb_0490 — carrier phone verification by voice code (carrier app card + Carrier 360 pill)
+export const carrierPhoneStatus = () => rpc('carrier_phone_status', {});
+export const carrierPhoneCall = (phone) => rpc('carrier_phone_call', { p_phone: phone || null });
+export const carrierPhoneCode = (code) => rpc('carrier_phone_code', { p_code: code });
+export const ccCarrierPhoneStatus = (org) => rpc('cc_carrier_phone_status', { p_org: org });
 export const ccRileyPlanBook = (id, when, force) => rpc('cc_riley_plan_book', { p_id: id, p_when: when ?? null, p_force: !!force });   // bl_voice_0485
 export const ccRileyFollowupAct = (id, action, payload) => rpc('cc_riley_followup_act', { p_id: id, p_action: action, p_payload: payload || {} });
 export const rileyAdmin = async (op, body = {}) => {
