@@ -117,3 +117,15 @@ a callback exists. Before this the prompt promised "our team follows up within t
   verify / bad phone / unknown call → nothing; full `retell_webhook` call_analyzed payload (service_role) → one row.
   Prod read-only dry run: a released carrier's phone resolves to its dispatcher. anon SECDEF 36 prod / 35 staging,
   names unchanged; helper not executable by anon/authenticated.
+
+## 0511 — callback rows you can act on (30 Sep 2026, staging + prod)
+
+CC → Riley → WhatsApp line → "Open callbacks from the line", each row now has:
+- **Call** (`tel:+1…`) and **WhatsApp** (`wa.me/1…`) for the caller's number.
+- **Open call** → the same Riley call drawer as the Calls tab (recording, transcript, analysis, next step). Matched by
+  `lc_call_id` (Retell call id, reason `riley`) or, for missed/voicemail rows, via the Telnyx leg's Riley call. Greyed
+  when the call is older than the calls loaded on the screen (find it under Calls by number).
+- **Done** asks for the outcome (quick picks + free text, required). It is appended under Riley's note as
+  `Outcome <time ET>: …` via `cc_riley_callback_done(p_id, p_note)` — the note keeps what Riley promised and what happened.
+- DB: only `cc_riley_calls.wa_callbacks` gained `lc_call_id` (anchor patch, ACL unchanged). anon SECDEF 36 prod / 35 staging,
+  names unchanged. Tested on staging with a throwaway row (rolled back).
