@@ -26,6 +26,7 @@ import { ccDispatcherTrialReports, ccDispatcherTrialAck } from '../../shared/api
 import { REASONS } from '../../agent/dispatcher-gaps.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { renderTestPanel } from './dispatcher-test.js';
+import { can } from '../../shared/permissions.js';   // bl_sec_0509 — dispatch.view opens this page read-only
 
 const ET = 'America/New_York';
 const et = (v) => { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleString('en-US', { timeZone: ET, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET'; };
@@ -72,6 +73,7 @@ function style() {
 .d3-url{margin-left:12px;display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:5px 10px;font:600 11.5px ui-monospace,monospace;color:var(--mut);cursor:pointer}
 .d3-url em{font-style:normal;color:var(--b)}.d3-url .cc-ico{color:var(--faint)}
 .d3-top .sp{margin-left:auto;display:flex;gap:8px;align-items:center}
+.d3-ro{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:#fff4e2;color:#b86e00;font-size:12px;font-weight:700}
 .d3-hero{background:linear-gradient(120deg,#0b1a2e 0%,#10223B 50%,#152d4c 100%);color:#fff;padding:20px 22px 0;position:relative;overflow:hidden}
 .d3-hero:after{content:"";position:absolute;right:-120px;top:-160px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(8,131,247,.26),transparent 60%);pointer-events:none}
 .d3-hrow{display:flex;gap:18px;align-items:flex-start;position:relative;z-index:2}
@@ -369,6 +371,8 @@ export async function renderDispatcher360(host, query) {
   let tab = (query && query.get('tab')) || 'overview';
   if (!id) { mount(host, el('div', { class: 'cc-deny' }, [el('h2', null, 'No dispatcher selected'), el('p', null, [el('a', { href: '#/dispatchers' }, '← Back to the roster')])])); return; }
 
+  // bl_sec_0509: dispatch.view without carriers.approve / dispatch.manage = read-only, redacted by the server
+  const viewOnly = !can('carriers.approve') && !can('dispatch.manage');
   const root = el('div', { class: 'd3' }, el('div', { class: 'd3-empty' }, 'Loading dispatcher…'));
   mount(host, root);
 
@@ -1014,7 +1018,7 @@ export async function renderDispatcher360(host, query) {
     return el('div', { class: 'd3-top' }, [
       el('div', { class: 'd3-crumb' }, [icon('users', 15), el('a', { href: '#/dispatchers' }, 'Dispatchers'), icon('chev', 13), el('a', { href: '#/dispatchers' }, 'Roster'), icon('chev', 13), el('b', null, pp.full_name || '—')]),
       el('div', { class: 'd3-url', onClick: () => { try { navigator.clipboard.writeText(location.origin + location.pathname + href); toast('Link copied'); } catch (_) {} } }, [icon('link', 12), 'command-center/', el('em', null, href), icon('copy', 12)]),
-      el('div', { class: 'sp' }, [el('a', { class: 'd3-btn sm g', href: '#/dispatchers' }, [icon('back', 14), 'Roster', kbd('Esc')])]),
+      el('div', { class: 'sp' }, [viewOnly ? el('span', { class: 'd3-ro', title: 'Your role can look, not change. Phone, e-mail, CV/ID and broker contacts are hidden; every action is refused by the server.' }, [icon('lock', 13), 'View-only']) : '', el('a', { class: 'd3-btn sm g', href: '#/dispatchers' }, [icon('back', 14), 'Roster', kbd('Esc')])]),
     ]);
   }
   function paint() {
