@@ -207,7 +207,7 @@ def terms_page(ctx=None):
 
     # ---------- API USE (added 30 Sep 2026, bl_dev_0505) ----------
     # Applies only to developer accounts and API keys. Accepted as a versioned fact in the Developer Portal
-    # (app_private.dev_api_terms() 'version' = api-v1-2026-09-30). Change a clause here -> bump that version in a
+    # (app_private.dev_api_terms() 'version' = api-v1.1-2026-09-30, bl_dev_0511: A5 licence + Clause 16 in A7). Change a clause here -> bump that version in a
     # migration so every developer is asked again. Clauses 1-19 above are untouched.
     A = []
     A.append(_clause('A1', 'Who this section applies to', [
@@ -223,13 +223,13 @@ def terms_page(ctx=None):
         'Every load you obtain from the API and show to anyone must be labelled &ldquo;via LoadBoot&rdquo; and link back to LoadBoot using the <code>url</code> field the API returns for that load (it carries the load reference and your partner id). Do not remove, hide or alter that label or link, and do not show &ldquo;via LoadBoot&rdquo; on loads that did not come from the API.'],
         'Our loads carry our name and a link back to us. That is the price of the data.', anchor='api-4'))
     A.append(_clause('A5', 'How you may use API data', [
-        'You may use data from the API only to show loads and load status to users of the product you described when you applied. You may not: resell, sublicense or redistribute API data; bulk-download it or store more of it, or for longer, than your product needs; build a competing load board or database from it; scrape the Platform or get around the API; or use API data to move a load, a broker or a shipper off LoadBoot or around its fees. Clause 9 (Acceptable use) applies in full.'],
+        'Subject to these Terms, LoadBoot grants you a limited, non-exclusive, non-transferable, revocable licence to use the API and API data for the product you described when you applied. You may use data from the API only to show loads and load status to users of the product you described when you applied. You may not: resell, sublicense or redistribute API data; bulk-download it or store more of it, or for longer, than your product needs; build a competing load board or database from it; scrape the Platform or get around the API; or use API data to move a load, a broker or a shipper off LoadBoot or around its fees. Clause 9 (Acceptable use) applies in full.'],
         'Show our loads in your product. Do not copy them, sell them, or use them to go around us.', anchor='api-5'))
     A.append(_clause('A6', 'Rate limits and fair use', [
         'Every key has a rate limit, shown in the Developer Portal documentation. Do not try to get around a limit, for example by spreading requests across several keys or several accounts. We may lower a limit, or pause a key, to protect the Platform.'],
         'One product, one account, within the limits. Extra accounts to dodge limits get closed.', anchor='api-6'))
     A.append(_clause('A7', 'Logging and changes to the API', [
-        'We log every API request (the key used, the endpoint, the result and the time) to run, secure and support the API. Request logs are kept for the period shown in the Developer Portal (currently 90 days). We may change, version or retire endpoints; for a change that breaks existing integrations we will try to give notice in the Developer Portal or by email first. The API is provided under Clauses 14 and 15 (Disclaimers and Limitation of liability) like the rest of the Platform.'],
+        'We log every API request (the key used, the endpoint, the result and the time) to run, secure and support the API. Request logs are kept for the period shown in the Developer Portal (currently 90 days). We may change, version or retire endpoints; for a change that breaks existing integrations we will try to give notice in the Developer Portal or by email first. The API is provided under Clauses 14 and 15 (Disclaimers and Limitation of liability) like the rest of the Platform, and Clause 16 (Indemnification) also covers claims arising from your application or its use of API data.'],
         'We keep a record of your calls. If we must break something, we will try to warn you first.', anchor='api-7'))
     A.append(_clause('A8', 'Suspension and ending API access', [
         'We may suspend or revoke keys, or a developer account, for a breach of this section, a security risk, misuse of data, or extended inactivity, with notice where practicable. You may stop using the API and close your developer account at any time. When your API access ends, stop showing API data and delete the API data you still hold within 30 days, except where the law requires you to keep it.'],
@@ -239,7 +239,7 @@ def terms_page(ctx=None):
         None, anchor='api-9'))
 
     b += _sec('api', 'For developers', 'API use',
-        'These clauses apply only if you use a LoadBoot API key or have a developer account. Version <b>api-v1</b>, 30 September 2026.',
+        'These clauses apply only if you use a LoadBoot API key or have a developer account. Version <b>api-v1.1</b>, 30 September 2026.',
         ''.join(A))
 
     # ---------- LIABILITY & DISPUTES, CALLED OUT ----------

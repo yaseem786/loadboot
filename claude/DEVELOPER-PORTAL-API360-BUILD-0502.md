@@ -187,3 +187,18 @@ No factual error found. Two optional hardening lines, NOT applied (binding text,
 except as stated" already limits it, so the gap is small); (b) Clause 16 indemnity does not name claims from the
 developer's own application → "Clause 16 also covers claims arising from your application or its use of API data".
 Changing either = edit `terms_module.py` + bump `dev_api_terms()` version. Cheapest now: 0 of 5 have accepted api-v1.
+
+## bl_dev_0511 — API terms api-v1.1 (30 Sep 2026, owner: "dono")
+
+Both optional lines from the A1–A9 review are now in the Terms:
+- **A5** opens with the grant: "Subject to these Terms, LoadBoot grants you a limited, non-exclusive, non-transferable,
+  revocable licence to use the API and API data for the product you described when you applied."
+- **A7** (the clause that already ties the API to Clauses 14/15) now adds: "…and Clause 16 (Indemnification) also covers
+  claims arising from your application or its use of API data." Clauses 1–19 stay untouched.
+- Version `api-v1-2026-09-30` → **`api-v1.1-2026-09-30`**: `app_private.dev_api_terms()` (+1 summary point, 6 now),
+  `app/developer/app.js` `API_TERMS_VERSION`, and "Version api-v1.1" on `/terms.html#api`.
+- Applied to staging + prod. Before: 0 of 5 prod developer accounts had accepted api-v1, so nobody loses an acceptance.
+  After: anon SECDEF staging 35 / prod **36**, bare-names md5 unchanged (prod `06f779f74423a983253c79ab9d4e1e84`,
+  staging `b862e7e206b44d39503adef7970b89d2`); ACL of `dev_api_terms()` still `{postgres=X/postgres}`.
+- Local `build_site.py` build OK; `site/terms.html` carries both lines. Goes live with the next Netlify deploy of `main`.
+  Until then a signup would send the old version and simply be asked to accept in the portal (harmless).
