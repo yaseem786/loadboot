@@ -25,7 +25,7 @@ const PORTAL_URL = location.origin + '/app/developer/';
 const SUPPORT_EMAIL = 'hello@loadboot.com';
 // The API use terms live in the Terms page (#api). The version is the one the signup screen shows; Postgres records it
 // only if it matches app_private.dev_api_terms() (bl_dev_0505), so a stale screen leads to a re-accept, never a false yes.
-const API_TERMS_VERSION = 'api-v1-2026-09-30';
+const API_TERMS_VERSION = 'api-v1.1-2026-09-30';
 const API_TERMS_URL = '/terms.html#api';
 
 async function rpc(name, args) {
