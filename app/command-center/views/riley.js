@@ -648,7 +648,7 @@ export async function renderRiley(host, query) {
         el('div', { style: 'font-size:12.5px;color:var(--mut,#64748b);margin-top:10px' }, 'One-time Telnyx step (owner): Numbers → ' + pretty(settings.wa_number) + ' → Voice → connection = the “LoadBoot Inbound” Voice API application (the same one the dispatcher lines use). Without it Telnyx never tells us the call exists.'),
       ]),
       el('div', { class: 'ry-card' }, [
-        el('h3', null, 'Open callbacks from the line'), el('p', { class: 'hint' }, 'Callers Riley could not take (voicemail or missed), and callers Riley promised a person would call back (bl_voice_0506). A carrier with a released dispatcher goes to that dispatcher instead. Nobody else sees these — they belong to this screen.'),
+        el('h3', null, 'Open callbacks from the line'), el('p', { class: 'hint' }, 'Callers Riley could not take (voicemail or missed), and callers Riley promised a person would call back (bl_voice_0506). A released carrier's callback lands here too while "Known carrier → their dispatcher first" is off (bl_voice_0513); with it on, it goes to that dispatcher. Nobody else sees these — they belong to this screen.'),
         cbs.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ry-t' }, [el('thead', null, el('tr', null, ['When', 'Caller', 'Why', ''].map((x) => el('th', null, x)))),
           el('tbody', null, cbs.map((k) => {
             // bl_voice_0511 — act on the row: call / WhatsApp the caller, open the Riley call it came from, close it with an outcome

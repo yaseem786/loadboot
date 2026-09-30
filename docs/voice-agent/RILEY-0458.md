@@ -143,3 +143,14 @@ that dispatcher's dock (0506). Prod had 1 released carrier with a line at the ti
   dispatcher personally, tell them the dispatcher will call them back" (→ needs_human → dispatcher's dock callback).
   Anchor patch, ACL unchanged (postgres + service_role), anon SECDEF 36 prod / 35 staging.
 
+## 0513 — a released carrier's callback stays with Riley (30 Sep 2026, owner rule, staging + prod)
+
+Owner: a dispatcher can leave, so a released carrier's needs_human follow-up must not sit in that dispatcher's dock.
+`riley_needs_human_callback` now gives the callback to the released dispatcher **only while**
+`dialer_config.riley_route_to_dispatcher` is ON; OFF (the current setting) → dispatcher NULL → CC → Riley → "Open callbacks
+from the line" + staff alert, like every other caller. Riley's briefing (0512b line) now says "our team will call them
+back", not "the dispatcher". One switch drives routing, briefing and callback owner. Supersedes the 0506 and 0512 notes
+that say a released carrier's callback goes to the dispatcher.
+- Tested on staging with a throwaway released assignment and throwaway calls (rolled back): OFF → dispatcher NULL,
+  ON → the dispatcher. Anchor patches; ACLs unchanged (callback fn postgres only; briefing postgres + service_role);
+  anon SECDEF 36 prod, no public function created.
