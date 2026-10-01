@@ -11,6 +11,7 @@ import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporter
 import { formsOverview, listForms, getForm, convertFormToLead, setFormStatus } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
+import { leadEmailPanel } from './leadEmail.js';   // bl_dmail_0505
 
 const COLS = [
   { key: 'created_at', label: 'Received', fmt: fmtDateTime },
@@ -109,6 +110,7 @@ export function renderForms(host, focusId) {
       f.lead_id ? kv('Linked lead', f.lead_id) : '',
       el('div', { class: 'cc-kv', style: 'align-items:flex-start' }, [el('span', { class: 'cc-kv-k' }, 'Message'), el('span', { class: 'cc-kv-v', style: 'white-space:pre-wrap' }, f.message || '—')]),
       actions.childNodes.length ? el('div', { style: 'margin-top:14px' }, actions) : '',
+      f.email ? leadEmailPanel({ email: f.email, name: f.name, subject: f.form_key === 'contact' ? 'Your message to LoadBoot' : '' }) : '',   // bl_dmail_0505
     ]), { subtitle: 'Form submission' });
   }
 }
