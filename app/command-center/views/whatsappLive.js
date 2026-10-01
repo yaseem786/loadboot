@@ -1007,6 +1007,11 @@ export async function renderWhatsappLive(host) {
   function stick() { if (built && built.stick) built.body.scrollTop = built.body.scrollHeight; }
   function mediaEl(m) {
     const kind = m.media_kind || '', mime = m.mime || '';
+    // bl_wa_0507 — a reaction is not a file: show "👍 reacted to: …" instead of a dead Attachment card.
+    if (kind === 'reaction') return el('div', { class: 'wx-ph', style: 'font-size:13px' }, [
+      el('span', { style: 'font-size:20px;margin-right:6px' }, m.reaction_emoji || '\u2764\ufe0f'),
+      m.reaction_emoji ? 'Reacted to: ' : 'Removed a reaction',
+      m.reaction_to ? el('i', null, '\u201c' + m.reaction_to + '\u201d') : null]);
     if (kind === 'image' || kind === 'sticker' || mime.startsWith('image/')) {
       const img = el('img', { class: 'wx-img', alt: 'Photo', loading: 'lazy', onLoad: stick });
       mediaUrl(m.id).then((u) => { img.src = u; img.onclick = () => waLightbox(u); })

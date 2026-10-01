@@ -134,6 +134,11 @@ export function createWaPanel(ctx) {
   function mediaEl(m) {
     const kind = m.media_kind || '';
     const mime = m.mime || '';
+    // bl_wa_0507 — a reaction is not a file
+    if (kind === 'reaction') return h('div', { style: 'font-size:13px;opacity:.85' }, [
+      h('span', { style: 'font-size:18px;margin-right:6px' }, m.reaction_emoji || '\u2764\ufe0f'),
+      m.reaction_emoji ? 'Reacted to: ' : 'Removed a reaction',
+      m.reaction_to ? h('i', null, '\u201c' + m.reaction_to + '\u201d') : null]);
     if (kind === 'image' || kind === 'sticker' || mime.startsWith('image/')) {
       // bl_wa_0385 - window.open(blobUrl, '_blank', 'noopener') is blocked by Chrome: a blob URL is tied to
       // the document that made it and 'noopener' cuts that tie, so the tab opened blank and the photo
