@@ -60,6 +60,10 @@ export function injectStyles() {
 @media(max-width:1250px){.p360 .cc-kpi-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.p360 .cc-kpi-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:480px){.p360 .cc-kpi-grid{grid-template-columns:1fr}}
+.p360 .cc-kpi-grid.n5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:1250px){.p360 .cc-kpi-grid.n5{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.p360 .cc-kpi-grid.n5{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.p360 .cc-kpi-grid.n5{grid-template-columns:1fr}}
 .p360-hero .cc-pill{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.18)}
 .p360-hero .cc-pill.cc-pill-green{background:rgba(52,211,153,.22);color:#a7f3d0;border-color:rgba(52,211,153,.35)}
 .p360-hero .cc-pill.cc-pill-amber{background:rgba(245,158,11,.22);color:#fde68a;border-color:rgba(245,158,11,.35)}
@@ -232,7 +236,8 @@ export function nextActionBanner(ctx, handlers) {
 }
 
 export function kpiRow(items) {
-  return el('div', { class: 'cc-kpi-grid', style: 'margin:16px 0 0' }, items.filter(Boolean).map((k) => statCard(k)));
+  const list = items.filter(Boolean);
+  return el('div', { class: 'cc-kpi-grid n' + list.length, style: 'margin:16px 0 0' }, list.map((k) => statCard(k)));  // n5: no empty sixth column
 }
 
 export function sectionNav(sections) {
