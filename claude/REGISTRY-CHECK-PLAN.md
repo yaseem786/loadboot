@@ -367,3 +367,22 @@ Render tests 7/7. `npm run check` pass. Anon staging **35 / `b862e7e2`**, unchan
 2. Deploy `app/partner/app.js`, `shipper360.js`, `partner360-kit.js`, `brokerTrust.js`.
 3. MII check: its hold note ("…look up ourselves.") must read with one stop in the portal hero and the CC journey. No email
    goes to MII.
+
+## `bl_ship_0509c` + CC clean-up — 1 Oct 2026 (STAGING only)
+- **`migrations/bl_ship_0509c_no_hand_verify.sql`:** `cc_onboarding_review_item(…, 'verify')` now refuses any shipper item
+  whose template type is system / staff / accept, except `registry_check`, which keeps its card-only gate.
+  - Before this, a staff "Verify" (the old Packet list, or a direct RPC) marked `phone_verify` /
+    `independent_callback` done with no code call.
+  - The real proofs are untouched: `cc_shipper_code_verify` writes those rows itself; locations and signatures are
+    derived live.
+  - `waive` (written reason) and `reject` are unchanged.
+  - Test `tests/bl_ship_0509c_no_hand_verify_rollback.sql`: **10/10** on staging. Anon staging 35 / `b862e7e2`.
+- **Shipper 360 (CC):**
+  - The duplicate generic Packet list is gone. Section renamed "Bank & approval".
+  - The "A–G items" KPI is gone; "Verification" covers it.
+  - `kpiRow` gives a 5-tile row 5 columns.
+- **Portal:** cargo option relabelled "Household goods — new / retail stock (not personal moves)". The key is unchanged.
+- **Prod rollout** (with 0509 / 0509b):
+  1. Apply `0509` → `0509b` → `0509c`. Re-read anon prod: 36 / `06f779f7`.
+  2. Deploy: `shipper360.js`, `partner360-kit.js`, `shipperVerify360.js`, `shipperItems360.js`, `brokerTrust.js`,
+     `app/partner/app.js`, `app/partner/shipper-onboarding.js`.

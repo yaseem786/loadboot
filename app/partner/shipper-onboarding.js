@@ -90,7 +90,7 @@ const COMMODITIES = [
   ['general_merchandise', 'General merchandise'], ['apparel_textiles', 'Apparel & textiles'], ['electronics', 'Electronics'],
   ['appliances', 'Appliances'], ['furniture', 'Furniture'], ['building_materials', 'Building materials'], ['lumber', 'Lumber'],
   ['steel_metals', 'Steel & metals'], ['machinery', 'Machinery'], ['auto_parts', 'Auto parts'], ['paper_packaging', 'Paper & packaging'],
-  ['plastics_rubber', 'Plastics & rubber'], ['chemicals_nonhaz', 'Chemicals (non-hazardous)'], ['household_goods', 'Household goods'],
+  ['plastics_rubber', 'Plastics & rubber'], ['chemicals_nonhaz', 'Chemicals (non-hazardous)'], ['household_goods', 'Household goods — new / retail stock (not personal moves)'],
   ['retail_consumer', 'Retail / consumer goods'], ['beverages', 'Beverages'], ['food_dry', 'Food — dry / shelf-stable'],
   ['food_refrigerated', 'Food — refrigerated'], ['frozen_food', 'Frozen food'], ['produce', 'Fresh produce'],
   ['meat_poultry_seafood', 'Meat, poultry & seafood'], ['dairy', 'Dairy'], ['pharmaceuticals', 'Pharmaceuticals'],

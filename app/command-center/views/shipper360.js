@@ -14,7 +14,7 @@ import {
 import { shipperVerifyCard } from './shipperVerify360.js';  // bl_ship_0491
 
 export function shipperSections(ctx) {
-  const { d, manage } = ctx; const o = d.org || {}; const t = d.trust || {}; const j = d.journey || {}; const ss = d.shipment_stats || {}; const ls = d.load_stats || {}; const ah = d.health || {}; const ps = d.packet_summary || {};
+  const { d, manage } = ctx; const o = d.org || {}; const t = d.trust || {}; const j = d.journey || {}; const ss = d.shipment_stats || {}; const ls = d.load_stats || {}; const ah = d.health || {};
   const H = jumpHandlers();
   // bl_ship_0508: the old domain-check "Verification" card is gone; "Open trust" lands on Two-lane verification
   H.trust = () => { const x = document.getElementById('p360-lanes'); if (x) x.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
@@ -43,7 +43,6 @@ export function shipperSections(ctx) {
     { icon: 'building', label: 'Verification', value: String(t.tier || 'new').replace('_', ' '), sub: t.hold_reason ? 'on hold' : t.can_post ? 'a lane is open' : 'no lane open yet', accent: t.hold_reason ? 'red' : t.can_post ? 'green' : 'amber', onClick: H.trust },
     { icon: 'package', label: 'Requests (30 d)', value: String(n0(ss.last_30d) + n0(ls.last_30d)), sub: (n0(ss.total) + n0(ls.total)) + ' total · ' + n0(ss.open) + ' open · ' + n0(ss.quoted) + ' quoted', accent: n0(ss.open) ? 'amber' : 'green', onClick: H.activity },
     { icon: 'check', label: 'Booked', value: String(n0(ss.booked) + n0(ls.covered)), sub: 'tendered / booked / covered', accent: 'green', onClick: H.activity },
-    { icon: 'doc', label: 'A–G items', value: n0(ps.mandatory_done) + '/' + n0(ps.mandatory_total), sub: n0(ps.awaiting) ? ps.awaiting + ' awaiting your review' : 'required A–G items verified', accent: n0(ps.awaiting) ? 'amber' : (n0(ps.mandatory_done) >= n0(ps.mandatory_total) && n0(ps.mandatory_total)) ? 'green' : 'amber', onClick: H.trust },
     { icon: 'shield', label: 'Health', value: String(ah.score ?? '—'), sub: String(ah.tier || '').replace('_', ' '), accent: ah.tier === 'healthy' ? 'green' : ah.tier === 'at_risk' ? 'amber' : ah.tier ? 'red' : 'green', onClick: H.health },
   ]);
 
