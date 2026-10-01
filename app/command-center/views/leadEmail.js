@@ -28,6 +28,7 @@ const CSS = `
 .le-badge{font-size:10.5px;font-weight:800;background:var(--bx,#10223B);color:#fff;border-radius:6px;padding:1px 6px}
 .le-subj{font-weight:800;font-size:13px;color:#10223B;margin-bottom:3px}
 .le-body{font-size:13.5px;line-height:1.5;color:#1f2937;white-space:pre-wrap;word-break:break-word}
+.le-body.rich{white-space:normal}.le-body.rich p{margin:0 0 8px}.le-body.rich p:last-child{margin-bottom:0}.le-body.rich ul,.le-body.rich ol{margin:4px 0 8px;padding-left:22px}.le-body.rich li{margin:2px 0}.le-body.rich blockquote{margin:6px 0;padding-left:10px;border-left:3px solid #cbd5e1;color:#64748b}.le-body.rich a{color:#0883F7}
 .le-q{border:0;background:none;color:#0883F7;font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:4px 0 0}
 .le-c{padding:12px 14px;display:flex;flex-direction:column;gap:8px;border-top:1px solid #eef2f7}
 .le-row{display:flex;gap:8px;align-items:center}.le-row label{font-size:12px;font-weight:700;color:#64748b;width:52px;flex:none}
@@ -59,7 +60,9 @@ const PREFER = ['hello@', 'loads@', 'dispatch@', 'billing@'];
 const baseSubj = (s) => String(s || '').replace(/^((re|fwd?)\s*:\s*)+/i, '').trim().toLowerCase();
 const safeColor = (c) => (/^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : '#10223B');
 function mailErr(e) { if (e && (e.code === '22023' || e.code === 'P0001') && e.message && e.message.length < 400) return e.message; return humanizeError(e); }
-// Inbound bodies may be raw MIME / HTML: decode, then take TEXT only (never inject their HTML).
+// HTML → allow-listed HTML (inert DOMParser doc, rebuilt by cleanHtml: no attributes except safe href, no scripts/images).
+function safeRich(html) { const doc = new DOMParser().parseFromString('<!doctype html><body>' + String(html || '') + '</body>', 'text/html'); return cleanHtml(doc.body); }
+// Inbound bodies may be raw MIME / HTML: decode, then take TEXT (their HTML is only ever shown through safeRich).
 function msgText(m) {
   const d = decodeMessage(m);
   if (d.text && d.text.trim()) return d.text;
@@ -122,7 +125,11 @@ export function leadEmailPanel(o) {
     if (!ms.length) { mount(list, el('div', { class: 'le-empty' }, 'No emails with ' + (lead.email || 'this address') + ' yet. Your email below goes out from the mailbox you pick, and their answer shows up here.')); return; }
     mount(list, ms.map((m) => {
       const out = m.direction === 'out'; const b = box(m.mailbox); const t = thr(m.thread_key);
-      const [main, quoted] = splitQuote(msgText(m));
+      // Our own sent mail: show it exactly as composed (paragraphs, bullets, line breaks) from body_html.
+      const rich = out && m.body_html ? safeRich(m.body_html) : '';
+      const [main, quoted] = rich ? ['', ''] : splitQuote(msgText(m));
+      const bodyEl = el('div', { class: 'le-body' + (rich ? ' rich' : '') }, rich ? '' : (main || '(no text)'));
+      if (rich) bodyEl.innerHTML = rich;
       const q = el('div', { class: 'le-body', style: 'display:none;color:#64748b;margin-top:6px' }, quoted);
       const at = out && m.sent_at ? m.sent_at : m.created_at;
       const att = Array.isArray(m.attachments) && m.attachments.length;
@@ -133,7 +140,7 @@ export function leadEmailPanel(o) {
           !out && t && t.has_in ? el('button', { class: 'le-rp', type: 'button', onClick: () => pickReply(t) }, 'Reply') : '',
         ]),
         m.subject ? el('div', { class: 'le-subj' }, decodeSubject(m.subject)) : '',
-        el('div', { class: 'le-body' }, main || '(no text)'),
+        bodyEl,
         quoted ? el('button', { class: 'le-q', type: 'button', onClick: (ev) => { const open = q.style.display === 'none'; q.style.display = open ? '' : 'none'; ev.target.textContent = open ? 'Hide quoted text' : 'Show quoted text'; } }, 'Show quoted text') : '',
         q,
       ]);
