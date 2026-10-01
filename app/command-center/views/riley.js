@@ -26,7 +26,8 @@ const STAT = {
   'in-progress': ['On call', 'g'], dialing: ['Ringing…', 'a'], scheduled: ['Scheduled', 'b'], ended: ['Answered', 'g'], analyzed: ['Answered', 'g'],
   'no-answer': ['No answer', 'm'], 'no-result': ['No result', 'm'], cancelled: ['Cancelled', 'm'],
 };
-const INTEREST = { hot: ['🔥 Hot', 'r'], warm: ['Warm', 'a'], cold: ['Cold', 'm'], not_interested: ['Not interested', 'm'], wrong_number: ['Wrong number', 'm'] };
+const INTEREST = { hot: ['🔥 Hot', 'r'], warm: ['Warm', 'a'], cold: ['Cold', 'm'], not_interested: ['Not interested', 'm'], wrong_number: ['Wrong number', 'm'],
+  voicemail: ['Voicemail', 'm'], ivr: ['Phone menu / hold', 'm'] };
 const ROLE = { carrier: 'Carrier', broker: 'Broker', shipper: 'Shipper', dispatcher: 'Dispatcher', agent: 'Agent' };
 const KEYS = { inbound: 'Inbound — answers the line', outbound: 'Outbound — callbacks' };
 
