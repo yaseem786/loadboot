@@ -385,7 +385,7 @@ export function packetCard(ctx, opts) {
     const chips = pairs.length >= 2 ? el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:5px' }, pairs.map((m) => el('span', { class: 'p360-chip' }, [el('b', null, m[1].trim() + ': '), m[2].trim()]))) : null;
     let sd = null; try { sd = it.note && it.note.trim().startsWith('{') ? JSON.parse(it.note) : null; } catch (_) { sd = null; }
     const meta = [
-      '[' + String(it.tag || '').toUpperCase() + (it.mandatory ? ' · required' : '') + ']',
+      '[' + String(it.tag || '').toUpperCase() + (it.mandatory && String(it.tag || '').toLowerCase() !== 'required' ? ' · required' : '') + ']',
       (!chips && refTxt) ? refTxt : null,
       it.submitted_at ? 'submitted ' + fmtDateTime(it.submitted_at) : null,
       it.reviewed_at ? (st + ' ' + fmtDateTime(it.reviewed_at) + (it.reviewed_by ? ' by ' + it.reviewed_by : '')) : null,
