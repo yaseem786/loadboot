@@ -9,6 +9,9 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // MCS-150; the other DOTs are listed in `mcOtherDots`. And QC's rating/OOS fields are merged into the
 // census record only when both describe the SAME DOT - before, a census row for one DOT could be
 // stamped with another DOT's allowedToOperate.
+// v35 also stops labelling every census record "CARRIER": the census has no entity-type field, so the
+// label now comes from L&I (BROKER / CARRIER / CARRIER/BROKER) or, when SAFER is read, its own
+// "Entity Type" line (e.g. SHIPPER/BROKER). Display only - no screen decision reads entityType.
 // v34 — TIMEOUT BUDGET. The chain was sequential and its worst case (~31s) overran the browser
 // client's own 15s cap in app/shared/api.js, so whenever a source HUNG rather than erroring fast
 // the carrier saw "FMCSA is taking too long" even though SAFER would have answered a few seconds
@@ -359,6 +362,7 @@ Deno.serve(async (req: Request) => {
         result.authoritySource = "fmcsa-li";
         result.authority = L.carrierAuthority ? "active" : "inactive";
         result.authorityVerified = true;
+        if (L.brokerAuthority || L.carrierAuthority) result.entityType = L.brokerOnly ? "BROKER" : L.brokerAuthority ? "CARRIER/BROKER" : "CARRIER";
       }
     }
 
@@ -372,6 +376,7 @@ Deno.serve(async (req: Request) => {
         result.saferAuthorityStatus = S.status;
         result.saferAuthorityText = S.statusText;
         result.saferDockets = S.dockets;
+        if (S.entityType) result.entityType = S.entityType;
         // Only a positively parsed AUTHORIZED / NOT AUTHORIZED counts. "unknown" stays unknown —
         // a parse guess must never mint an authority, the same rule the L&I reader follows.
         if (S.status === "authorized" || S.status === "not_authorized") {
