@@ -8,7 +8,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { card } from '../../shared/ui/components.js';
 import {
   hero, nextActionBanner, kpiRow, sectionNav, section, head, pill, tierPill, dash, n0,
-  journeyCard, shipperTrustAct, holdReleaseButtons, gateRow, bankCard, loadsCard, shipmentsCard, claimsCard, invoicesBlock,
+  journeyCard, shipperTrustAct, holdReleaseButtons, gateRow, bankCard, shipperScoreGate, loadsCard, shipmentsCard, claimsCard, invoicesBlock,
   commsCard, healthCard, membersCard, timelineCard, copyLinkButton, jumpHandlers,
 } from './partner360-kit.js';
 import { shipperVerifyCard } from './shipperVerify360.js';  // bl_ship_0491
@@ -38,12 +38,14 @@ export function shipperSections(ctx) {
     ].filter(Boolean),
   });
 
+  const sg = shipperScoreGate(ctx);  // bl_ship_0510: no score for a held / not-yet-verified shipper
   const kpis = kpiRow([
     { icon: 'route', label: 'Journey', value: n0(j.done) + '/' + n0(j.total), sub: j.stage || '', accent: j.stage_tone === 'green' ? 'green' : j.stage_tone === 'red' ? 'red' : 'amber', onClick: H.journey },
     { icon: 'building', label: 'Verification', value: String(t.tier || 'new').replace('_', ' '), sub: t.hold_reason ? 'on hold' : t.can_post ? 'a lane is open' : 'no lane open yet', accent: t.hold_reason ? 'red' : t.can_post ? 'green' : 'amber', onClick: H.trust },
     { icon: 'package', label: 'Requests (30 d)', value: String(n0(ss.last_30d) + n0(ls.last_30d)), sub: (n0(ss.total) + n0(ls.total)) + ' total · ' + n0(ss.open) + ' open · ' + n0(ss.quoted) + ' quoted', accent: n0(ss.open) ? 'amber' : 'green', onClick: H.activity },
     { icon: 'check', label: 'Booked', value: String(n0(ss.booked) + n0(ls.covered)), sub: 'tendered / booked / covered', accent: 'green', onClick: H.activity },
-    { icon: 'shield', label: 'Health', value: String(ah.score ?? '—'), sub: String(ah.tier || '').replace('_', ' '), accent: ah.tier === 'healthy' ? 'green' : ah.tier === 'at_risk' ? 'amber' : ah.tier ? 'red' : 'green', onClick: H.health },
+    sg ? { icon: 'shield', label: 'Health', value: '—', sub: sg.short, accent: sg.tone === 'red' ? 'red' : 'amber', onClick: H.health }
+       : { icon: 'shield', label: 'Health', value: String(ah.score ?? '—'), sub: String(ah.tier || '').replace('_', ' '), accent: ah.tier === 'healthy' ? 'green' : ah.tier === 'at_risk' ? 'amber' : ah.tier ? 'red' : 'green', onClick: H.health },
   ]);
 
   const sections = [

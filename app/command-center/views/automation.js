@@ -73,7 +73,10 @@ export function renderAutomation(host) {
   // UX audit CC2 (24 Sep 2026): the queue fetched 200 tasks and drew every one (phone 15,996px, 200 buttons).
   // The fetch is unchanged; the table shows PAGE rows and grows from the cached list on "Show more".
   const PAGE = 25;
-  let state = { status: 'open', all: [], shown: PAGE };
+  // bl_ship_0510: #/automation?task=<id> (Shipper 360 → Health "Open →") lands on that one task: All statuses, pinned on
+  // top and highlighted, so an auto-closed task still shows where it went.
+  const focusId = (() => { try { return new URLSearchParams(location.hash.split('?')[1] || '').get('task'); } catch (_) { return null; } })();
+  let state = { status: focusId ? '' : 'open', all: [], shown: PAGE };
   const healthHost = el('div');
   const listHost = el('div', { class: 'cc-table-wrap' });
 
@@ -95,8 +98,15 @@ export function renderAutomation(host) {
     try { rows = await listTasks({ status: state.status || null, limit: 200 }); }
     catch (e) { showError(listHost, humanizeError(e), loadTasks); return; }
     if (!rows || !rows.length) { showEmpty(listHost, 'No tasks in this queue.'); return; }
+    if (focusId) {
+      const i = rows.findIndex((r) => r.id === focusId);
+      if (i > 0) rows.unshift(rows.splice(i, 1)[0]);
+      if (i < 0) toast('That task is not in the latest 200 — it may be older.', 'info');
+    }
     state.all = rows; state.shown = PAGE;
     drawTasks();
+    const hit = focusId && listHost.querySelector('tr[data-focus]');
+    if (hit && hit.scrollIntoView) hit.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   function drawTasks() {
@@ -120,7 +130,8 @@ export function renderAutomation(host) {
           try { await completeTask(t.id); toast('Task completed', 'success'); loadTasks(); loadHealth(); }
           catch (e) { toast(humanizeError(e), 'error'); b.disabled = false; b.textContent = '✓ Done'; }
         } }, '✓ Done') : null;
-        return el('tr', { class: 'cc-row' }, [
+        const focus = focusId && t.id === focusId;
+        return el('tr', { class: 'cc-row', 'data-focus': focus ? '1' : null, style: focus ? 'background:rgba(8,131,247,.08);box-shadow:inset 3px 0 0 #0883F7' : null }, [
           el('td', { style: 'min-width:220px;max-width:340px' }, [
             el('b', null, t.title || t.task_type),
             t.requires_approval ? el('span', { class: 'cc-chip-warn', style: 'margin-left:8px' }, 'needs approval') : '',
