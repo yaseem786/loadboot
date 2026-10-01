@@ -19,6 +19,7 @@ import {
   dispatcherBoard, dispatcherLoadDetail, dispatcherRequestBook, dispatcherPostTruck, dispatcherUpdatePosting, dispatcherPostingMatches, dispatcherMyKpis,
   dispatcherTrip, dispatcherTripAction, dispatcherTrialFeedback,
 } from '../shared/api.js';
+import { threadChat } from '../shared/thread-chat.js';   // bl_ui_0502
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { el, mount, clear } from '../shared/ui/dom.js';
 import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
@@ -1180,34 +1181,26 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   }
 
   // ---- MESSAGES (polls every 30 s while open; marks read on open)
-  let threadTimer = null; let threadVisible = false;
-  function stopThreadPoll() { if (threadTimer) { clearInterval(threadTimer); threadTimer = null; } threadVisible = false; }
+  let threadTimer = null; let threadVisible = false; let activeChat = null;
+  function stopThreadPoll() { if (threadTimer) { clearInterval(threadTimer); threadTimer = null; } if (activeChat) { activeChat.destroy(); activeChat = null; } threadVisible = false; }
   function vMessages() {
     const as = A(); if (!as.length) return h('div', { class: 'dw-card' }, [h('h3', null, 'Messages'), h('div', { class: 'dw-muted' }, 'No carrier assigned yet.')]);
-    const wrap = h('div'); let cur = (openThreadId && as.find((a) => a.id === openThreadId)) || as.find((a) => Number(a.unread || 0) > 0) || as[0]; openThreadId = null; let lastId = null;
-    const sel = h('select', { class: 'dw-in', style: 'width:auto', 'aria-label': 'Carrier thread', onChange: () => { cur = as.find((a) => a.id === sel.value); lastId = null; paintThread(true); } }, as.map((a) => h('option', { value: a.id, selected: a.id === cur.id }, ((a.carrier && a.carrier.name) || 'Carrier') + (Number(a.unread || 0) ? ' (' + a.unread + ')' : ''))));
-    const thread = h('div', { class: 'dw-thread', style: 'max-height:52vh;overflow:auto;padding:6px 2px', role: 'log', 'aria-live': 'polite' });
-    const who = h('div', { class: 'dw-muted', style: 'margin-bottom:6px' });
-    const inp = h('textarea', { class: 'dw-in', rows: 2, placeholder: 'Message the carrier + LoadBoot… (everyone in this thread sees it)' });
-    const e = h('div', { class: 'dw-err' });
-    async function paintThread(first) {
-      if (first) mount(thread, h('div', { class: 'dw-muted' }, 'Loading…'));
-      try { const r = await dispatcherThreadList(cur.id); if (r.error) throw new Error(r.error);
-        const msgs = r.messages || []; const newest = msgs.length ? msgs[msgs.length - 1].id : null;
-        if (!first && newest === lastId) return; lastId = newest;
-        const P = r.participants || {}; mount(who, 'In this thread: you (' + (P.dispatcher || 'dispatcher') + ') · ' + (P.carrier || 'carrier') + ' · ' + (P.staff || 'LoadBoot') + '. One shared channel — no side channels.' + (r.status && r.status !== 'active' ? ' Assignment is ' + r.status + '.' : ''));
-        mount(thread, msgs.length ? msgs.map((x) => h('div', { class: 'dw-msg ' + (x.mine ? 'mine' : x.role) }, [x.role !== 'system' ? h('div', { class: 'who' }, (x.mine ? 'you' : (x.by || x.role)) + ' · ' + when(x.at)) : null, h('div', { style: 'white-space:pre-wrap' }, x.body), x.role === 'system' ? h('div', { class: 'who', style: 'margin-top:2px' }, when(x.at)) : null])) : h('div', { class: 'dw-muted' }, 'No messages yet. Introduce yourself — the carrier and LoadBoot both see this.'));
-        thread.scrollTop = thread.scrollHeight;
-        if (Number(cur.unread || 0) > 0 || first) { try { await dispatcherThreadMarkRead(cur.id); cur.unread = 0; } catch (_) {} }
-      } catch (x) { mount(thread, err(x.message)); }
-    }
-    paintThread(true);
-    stopThreadPoll(); threadVisible = true; threadTimer = setInterval(() => { if (!document.body.contains(thread)) { stopThreadPoll(); return; } if (document.visibilityState === 'visible') paintThread(false); }, 30000);
-    const send = async (ev) => { if (!inp.value.trim()) return; ev.target.disabled = true; try { const r = await dispatcherThreadSend(cur.id, inp.value); if (r.error) throw new Error(r.error); try { dwLive.send('message', { assignment: cur.id }); } catch (_) {} inp.value = ''; e.textContent = ''; lastId = null; await paintThread(false); } catch (x) { e.textContent = x.message; } ev.target.disabled = false; };
-    inp.addEventListener('keydown', (ev) => { if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); send({ target: sendBtn }); } });
-    const sendBtn = h('button', { class: 'dw-btn', onClick: send }, 'Send');
-    mount(wrap, h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('chat'), ' Thread with ' + ((cur.carrier && cur.carrier.name) || 'carrier') + ' + LoadBoot']), as.length > 1 ? sel : null]),
-      who, thread, inp, e, h('div', { class: 'dw-row dw-send', style: 'margin-top:8px' }, [sendBtn, h('button', { class: 'dw-btn ghost', 'aria-label': 'Refresh thread', onClick: () => paintThread(false) }, ic('refresh', 14)), h('span', { class: 'dw-muted dw-kbd' }, 'Ctrl+Enter sends · refreshes every 30 s')])]));
+    const wrap = h('div'); let cur = (openThreadId && as.find((a) => a.id === openThreadId)) || as.find((a) => Number(a.unread || 0) > 0) || as[0]; openThreadId = null;
+    // bl_ui_0502 — the shared WhatsApp-style chat (same one the carrier and CC use)
+    const slot = h('div'); const title = h('span');
+    const open = () => {
+      if (activeChat) activeChat.destroy();
+      activeChat = threadChat({ assignmentId: cur.id, theme: 'dark', height: '52vh', placeholder: 'Message the carrier + LoadBoot… (everyone in this thread sees it)',
+        emptyText: 'No messages yet. Introduce yourself — the carrier and LoadBoot both see this.',
+        onSent: () => { try { dwLive.send('message', { assignment: cur.id }); } catch (_) {} },
+        onLoaded: () => { cur.unread = 0; } });
+      slot.replaceChildren(activeChat.el);
+      title.replaceChildren(ic('chat'), document.createTextNode(' Thread with ' + ((cur.carrier && cur.carrier.name) || 'carrier') + ' + LoadBoot'));
+    };
+    const sel = h('select', { class: 'dw-in', style: 'width:auto', 'aria-label': 'Carrier thread', onChange: () => { cur = as.find((a) => a.id === sel.value); open(); } }, as.map((a) => h('option', { value: a.id, selected: a.id === cur.id }, ((a.carrier && a.carrier.name) || 'Carrier') + (Number(a.unread || 0) ? ' (' + a.unread + ')' : ''))));
+    stopThreadPoll(); threadVisible = true;
+    open();
+    mount(wrap, h('div', { class: 'dw-card' }, [h('h3', null, [title, as.length > 1 ? sel : null]), slot]));
     return wrap;
   }
 

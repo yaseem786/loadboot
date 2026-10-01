@@ -7,7 +7,8 @@
 // Backend: public.carrier_dispatcher_desk(), carrier_dispatcher_change_request(),
 //   carrier_dispatcher_pause(), dispatcher_thread_list/send/mark_read (all existing + 0408).
 import { carrierDispatcherDesk, carrierDispatcherChangeRequest, carrierDispatcherPause,
-  dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead, carrierReportDispatcher } from '../shared/api.js';
+  carrierReportDispatcher } from '../shared/api.js';
+import { threadChat } from '../shared/thread-chat.js';   // bl_ui_0502
 import { el, mount } from '../shared/ui/dom.js';
 import { icon } from '../shared/ui/icons.js';
 
@@ -326,20 +327,10 @@ export async function renderDispatcherDesk(host) {
   // ---------- thread + actions ----------
   let thread = null;
   if (a) {
-    const box = h('div', { class: 'dd-thread', role: 'log', 'aria-live': 'polite' });
-    const inp = h('textarea', { class: 'cp-in', rows: 2, placeholder: 'Message ' + (dp.first_name || 'your dispatcher') + ' — LoadBoot sees this too…' });
-    const err = h('div', { class: 'cp-err', style: 'display:none' });
-    const paint = async () => {
-      try {
-        const r = await dispatcherThreadList(a.assignment_id, 120); if (r && r.error) throw new Error(r.error);
-        const ms = (r && r.messages) || [];
-        box.classList.toggle('empty', !ms.length);
-        mount(box, ms.length ? ms.map((m) => h('div', { class: 'dd-msg ' + (m.mine ? 'me' : m.role === 'system' ? 'sys' : 'them') }, [
-          m.role !== 'system' ? h('div', { class: 'who' }, (m.mine ? 'you' : m.role === 'staff' ? 'LoadBoot' : (m.by || dp.first_name || m.role)) + ' · ' + when(m.at)) : null, m.body])) : h('div', { class: 'dd-empty' }, [h('div', null, [h('b', { style: 'color:#eaf1fb' }, 'No messages yet.'), ' Pickup details, availability and rate questions all live here — LoadBoot reads along.']), h('div', { class: 'dd-chips' }, ['My truck is empty from ', 'What is the rate on this load?', 'Call me before booking', 'Driver is off this weekend'].map((t) => h('button', { class: 'dd-chip', type: 'button', onClick: () => { inp.value = t; inp.focus(); } }, t)))]));
-        box.scrollTop = box.scrollHeight; dispatcherThreadMarkRead(a.assignment_id).catch(() => {});
-      } catch (e) { mount(box, h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load messages.')); }
-    };
-    const send = h('button', { class: 'dd-cta', onClick: async () => { const t = (inp.value || '').trim(); if (!t) return; send.disabled = true; err.style.display = 'none'; try { const r = await dispatcherThreadSend(a.assignment_id, t); if (r && r.error) throw new Error(r.error); inp.value = ''; await paint(); } catch (e) { err.textContent = (e && e.message) || 'Could not send.'; err.style.display = 'block'; } send.disabled = false; } }, [icon('send', 15), ' Send']);
+    const chat = threadChat({ assignmentId: a.assignment_id, theme: 'dark', height: '380px',   // bl_ui_0502
+      placeholder: 'Message ' + (dp.first_name || 'your dispatcher') + ' — LoadBoot sees this too…',
+      emptyText: 'No messages yet. Pickup details, availability and rate questions all live here — LoadBoot reads along.',
+      chips: ['My truck is empty from ', 'What is the rate on this load?', 'Call me before booking', 'Driver is off this weekend'] });
     // Pause / resume + change request (owner rule: no confirm step, only these two)
     const pauseBtn = h('button', { class: 'dd-cta ghost', onClick: async () => {
       const pausing = a.status !== 'paused'; const reason = pausing ? prompt('Pause your dispatcher — tell them why (truck down, home time, …):', '') : null; if (pausing && reason === null) return;
@@ -352,11 +343,10 @@ export async function renderDispatcherDesk(host) {
       mount(chgHost, h('div', { style: 'margin-top:10px;padding:12px;border-radius:14px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.06)' }, [h('div', { style: 'font-weight:800;color:#fca5a5;margin-bottom:6px' }, 'Ask LoadBoot for a different dispatcher'), ta, e2, h('div', { class: 'dd-btnrow' }, [go, h('button', { class: 'dd-cta ghost', onClick: () => mount(chgHost, []) }, 'Cancel')])]));
     } }, 'Request a change');
     thread = card('Shared thread', 'You · ' + (dp.first_name || 'your dispatcher') + ' · LoadBoot', h('div', { class: 'dd-body' }, [
-      box, inp, err,
-      h('div', { class: 'dd-btnrow', style: 'justify-content:space-between' }, [send, h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [pauseBtn, chgBtn])]),
+      chat.el,
+      h('div', { class: 'dd-btnrow', style: 'justify-content:flex-end' }, [h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [pauseBtn, chgBtn])]),
       chgHost,
     ]), d.thread && d.thread.unread ? pill(d.thread.unread + ' new', 'blue') : null);
-    paint();
   }
 
   // ---------- what you get + how it works ----------

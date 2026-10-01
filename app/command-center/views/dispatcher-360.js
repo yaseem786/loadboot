@@ -11,6 +11,7 @@
 //
 // ctx contract: renderDispatcher360(host, query)   — query: URLSearchParams (id, tab, booking)
 import { el, mount } from '../../shared/ui/dom.js';
+import { threadChat } from '../../shared/thread-chat.js';   // bl_ui_0502
 import { icon } from '../../shared/ui/icons.js';
 import { money, fmtDate, fmtDateTime, askReason, askConfirm, openDrawer } from '../../shared/ui/components.js';
 import { ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSop, ccDispatcherUnassign,
@@ -969,18 +970,8 @@ export async function renderDispatcher360(host, query) {
     if (!live.length) return card('Shared thread', 'Dispatcher · carrier · LoadBoot', 'chat', el('div', { class: 'd3-empty' }, 'No assignment, so no thread yet.'));
     const wrap = el('div', { class: 'd3-pad', style: 'display:flex;flex-direction:column;gap:16px' });
     live.forEach((a) => {
-      const list = el('div', { class: 'd3-msgs' }, el('span', { class: 'd3-mut' }, 'Loading…'));
-      const inp = el('input', { class: 'd3-in', style: 'flex:1', placeholder: 'Message dispatcher + carrier… (both see it; urgent words e-mail them)' });
-      const send = btn('Send', async () => { if (!inp.value.trim()) return; const r = await dispatcherThreadSend(a.id, inp.value).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } inp.value = ''; paintT(); }, 'p', 'send');
-      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') send.click(); });
-      async function paintT() {
-        try { const r = await dispatcherThreadList(a.id, 100); const ms = (r && r.messages) || []; const P = (r && r.participants) || {};
-          mount(list, [el('div', { class: 'd3-mut', style: 'margin-bottom:4px;font-size:11.5px' }, 'Participants: ' + [P.dispatcher, P.carrier, 'LoadBoot'].filter(Boolean).join(' · ')), ...(ms.length ? ms.map((m) => el('div', { class: 'd3-msg' + (m.role === 'system' ? ' sys' : '') }, [el('span', { class: 'd3-mut' }, (m.role === 'system' ? 'system' : (m.by || m.role)) + ' · ' + et(m.at) + ' — '), m.body])) : [el('span', { class: 'd3-mut' }, 'No messages yet.')])]);
-          list.scrollTop = list.scrollHeight; dispatcherThreadMarkRead(a.id).catch(() => {});
-        } catch (e) { mount(list, el('span', { class: 'd3-mut' }, humanizeError(e))); }
-      }
-      paintT();
-      wrap.appendChild(el('div', null, [el('div', { style: 'font-weight:800;display:flex;gap:8px;align-items:center;margin-bottom:6px' }, [el('div', { class: 'd3-cc', style: 'padding:0;border:0;width:26px;height:26px;border-radius:8px;background:' + hue(a.carrier_org_id) + ';color:#fff;display:grid;place-items:center;font-size:10px' }, initials(a.carrier)), a.carrier || 'carrier', a.status === 'paused' ? pill('paused', 'amber') : '', a.unread ? pill(a.unread + ' unread', 'orange') : '']), list, el('div', { style: 'display:flex;gap:6px;margin-top:8px' }, [inp, send])]));
+      const chat = threadChat({ assignmentId: a.id, theme: 'light', height: '420px', placeholder: 'Message ' + (a.carrier || 'the carrier') + ' + the dispatcher… (both see it)' });   // bl_ui_0502
+      wrap.appendChild(el('div', null, [el('div', { style: 'font-weight:800;display:flex;gap:8px;align-items:center;margin-bottom:8px' }, [el('div', { class: 'd3-cc', style: 'padding:0;border:0;width:26px;height:26px;border-radius:8px;background:' + hue(a.carrier_org_id) + ';color:#fff;display:grid;place-items:center;font-size:10px' }, initials(a.carrier)), a.carrier || 'carrier', a.status === 'paused' ? pill('paused', 'amber') : '', a.unread ? pill(a.unread + ' unread', 'orange') : '']), chat.el]));
     });
     return card('Shared thread', 'Dispatcher · carrier · LoadBoot — both sides see everything you write here', 'chat', wrap, [], 'messages');
   }
