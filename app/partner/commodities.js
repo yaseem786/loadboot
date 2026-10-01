@@ -13,7 +13,9 @@ const _F = ['Steel', 'Steel coils', 'Steel plates', 'Steel beams', 'Steel pipe',
 
 const _S = ['Excavators', 'Bulldozers', 'Backhoes', 'Wheel loaders', 'Skid steers', 'Forklifts', 'Cranes', 'Boom lifts', 'Scissor lifts', 'Farm tractors', 'Combines', 'Harvesters', 'Agricultural machinery', 'Farm equipment', 'Construction equipment', 'Heavy equipment', 'Heavy machinery', 'Paving equipment', 'Road rollers', 'Compactors', 'CNC machines', 'Industrial equipment', 'Graders', 'Trenchers'];
 
-const _B = ['Local delivery', 'Last mile freight', 'Final mile delivery', 'White glove delivery', 'Household moves'];
+const _B = ['Local delivery', 'Last mile freight', 'Final mile delivery', 'White glove delivery'];
+// 'Household moves' removed 1 Oct 2026: a personal move (someone's own belongings) needs FMCSA household-goods
+// authority + 49 CFR 375 paperwork that LoadBoot carriers don't hold. The wizard warns if one is typed (app.js).
 
 const _H = ['Gasoline', 'Diesel fuel', 'Propane', 'Fuel', 'Petroleum products', 'Paint', 'Industrial chemicals', 'Chemicals', 'Cleaning chemicals', 'Solvents', 'Corrosive materials', 'Acids', 'Lithium batteries', 'Car batteries', 'Fertilizer', 'Pesticides', 'Aerosols', 'Compressed gas', 'Flammable liquids', 'Ammunition', 'Fireworks'];
 

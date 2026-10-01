@@ -2337,6 +2337,11 @@ async function brokerDash(user, ov) {
                 h('a', { style: 'font-weight:800;color:#0883F7;cursor:pointer', onClick: () => { w.equipment = 'Reefer'; renderStep(); } }, 'Reefer'),
                 h('span', null, ' — canned, packaged or dry goods are fine on Dry Van.')]));
             }
+            // Personal moves are household-goods (HHG) carriage: FMCSA HHG authority + 49 CFR 375 consumer paperwork. Not on LoadBoot.
+            const HHG = ['household move', 'household moving', 'house move', 'home move', 'moving house', 'moving home', 'residential move', 'apartment move', 'personal belongings', 'personal effects', 'personal items', 'hhg'];
+            if (HHG.some(k => c.indexOf(k) >= 0)) {
+              out.push(h('div', { style: 'grid-column:1/-1;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:12px;padding:9px 13px;font-size:.82rem' }, '⛔ LoadBoot does not book personal household moves (someone’s own furniture and belongings). Those need a mover with FMCSA household-goods authority, and carriers on LoadBoot do not hold it. New or retail stock (boxed furniture, appliances from a store or warehouse) is fine — describe it that way.'));
+            }
             if (looksHz && w.hazmat_sel !== 'yes') {
               out.push(h('div', { style: 'grid-column:1/-1;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:9px 13px;font-size:.82rem' }, '☢ This looks hazmat — you’ll declare it (UN #, hazard class) in the Rate card step, and only hazmat-certified carriers will see it.'));
             }

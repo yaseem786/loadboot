@@ -413,3 +413,23 @@ Render tests 7/7. `npm run check` pass. Anon staging **35 / `b862e7e2`**, unchan
 Test: `tests/bl_ship_0510_partner_review_tasks_rollback.sql` **10/10** on staging. Anon staging 35 / `b862e7e2`.
 
 Prod: apply after 0509 / 0509b / 0509c. Deploy `partner360-kit.js`, `shipper360.js` and `automation.js`.
+
+## PROD rollout of 0509 → 0509b → 0509c → 0510 — 1 Oct 2026 (DONE)
+- Applied on prod (`rwscphuhpjoudvljvmdk`) in order, each through its own anon guard. Anon prod before and after:
+  **36 / `06f779f7`**, same names. All seven function markers present. `lb-pending-partner-alert` (`35 */4 * * *`) still active.
+- Front end was already live: Netlify production deploy `6abdb45b…` = `main` `50cf226` (1 Oct, 01:16 UTC).
+- MII check (read-only, nothing sent):
+  - 0 emails to MII and 0 `shipper.hold` / `shipper.released` sends in the hour after rollout (`message_deliveries`);
+  - CC journey "On hold: …look up ourselves. Release from Trust actions…" — one stop; lane gate hold text has no "..";
+  - both MII review tasks `done` with "[auto-closed 2026-10-01: shipper put on hold]", and the 45-day "M Usman Farooq
+    (Agent)" task `done` with "account put on hold" — the 3 from the dry run.
+
+## "Household moves" — removed from the post-load commodity list (1 Oct 2026)
+- A personal move (someone's own furniture and belongings) is household-goods (HHG) carriage: it needs FMCSA HHG
+  authority and the 49 CFR 375 consumer paperwork. Carriers on LoadBoot hold property authority "except HHG" (e.g. Gabe).
+- `app/partner/commodities.js`: "Household moves" dropped from the Box Truck list.
+- `app/partner/app.js` post-load wizard: typing a personal-move phrase ("household move", "house move", "personal
+  belongings", "HHG", …) shows a red note — LoadBoot does not book personal moves; new / retail stock is fine.
+  Soft warning only, same as the hazmat note; the server does not block the post. "Relocation" is deliberately not a
+  trigger (office relocations are not HHG).
+- Matches the 0509c portal label "Household goods — new / retail stock (not personal moves)".
