@@ -386,3 +386,30 @@ Render tests 7/7. `npm run check` pass. Anon staging **35 / `b862e7e2`**, unchan
   1. Apply `0509` → `0509b` → `0509c`. Re-read anon prod: 36 / `06f779f7`.
   2. Deploy: `shipper360.js`, `partner360-kit.js`, `shipperVerify360.js`, `shipperItems360.js`, `brokerTrust.js`,
      `app/partner/app.js`, `app/partner/shipper-onboarding.js`.
+
+## `bl_ship_0510` — Health section: score gate, review tasks follow the decision (1 Oct 2026, STAGING only)
+1. **No score for a held / not-verified shipper.** `shipperScoreGate()` in `partner360-kit.js`:
+   - The Health card and the Shipper 360 "Health" KPI read "ON HOLD" or "NOT VERIFIED YET" instead of "100 · HEALTHY".
+   - The score itself measures conduct after trading starts, not verification.
+2. **Review tasks close on the decision** (`migrations/bl_ship_0510_partner_review_tasks.sql`).
+   - `automation_task_close_candidates` gets one new branch: a `partner_review` task on a still-pending partner closes as
+     `done` when, after the task was opened, staff:
+     - put a shipper on hold (including a failed call-back), or
+     - put a broker/agent on hold, or
+     - parked the account (`partner.park`).
+   - The every-minute `automation_tasks_reconcile` writes "[auto-closed <date>: shipper put on hold]" and an
+     `automation_task_autoclose_log` row.
+   - Approve already closed these tasks (status leaves `pending`).
+   - Read-only dry run on prod: it would close 3 tasks — MII's two, and the 45-day OVERDUE task for "M Usman Farooq
+     (Agent)", a broker on hold.
+3. **No duplicate.** `cron_pending_partner_alert` was prod-only drift, never in the repo; the full definition is in the
+   migration now.
+   - One open review task per org, from any rule.
+   - It skips held and parked partners: no task and no daily staff bell.
+   - Its schedule `lb-pending-partner-alert` (`35 */4 * * *`) is unchanged on prod. Staging has the function only.
+4. **"Open →" opens that task.** It links to `#/automation?task=<id>`; the queue opens on "All", with the task pinned on
+   top and highlighted.
+
+Test: `tests/bl_ship_0510_partner_review_tasks_rollback.sql` **10/10** on staging. Anon staging 35 / `b862e7e2`.
+
+Prod: apply after 0509 / 0509b / 0509c. Deploy `partner360-kit.js`, `shipper360.js` and `automation.js`.

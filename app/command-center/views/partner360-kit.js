@@ -609,13 +609,25 @@ export function healthCard(ctx) {
   const { d, orgId, manage } = ctx; const ah = d.health || {}; const viol = d.violations || []; const tasks = d.tasks || [];
   const t = ah.tier || '—'; const tone = t === 'healthy' ? 'green' : t === 'building' ? 'blue' : t === 'at_risk' ? 'amber' : 'red';
   const ded = Array.isArray(ah.deductions) ? ah.deductions : [];
+  // bl_ship_0510: the score measures conduct once a shipper trades. A held or not-yet-verified shipper has no conduct
+  // to score — "100 · HEALTHY" on a suspected impersonator read as an all-clear.
+  const gate = shipperScoreGate(ctx);
   return card([
-    head('Health & conduct', pill(tone, String(ah.score ?? '—') + ' · ' + String(t).replace('_', ' ').toUpperCase())),
-    ded.length ? el('div', null, ded.map((x) => el('div', { class: 'p360-row' }, [el('div', null, [el('b', null, '− ' + x.deducted + ' · ' + x.label), el('div', { class: 'cc-sub' }, x.basis || '')]), el('div', { class: 'cc-sub' }, x.improve || '')]))) : el('div', { class: 'p360-empty' }, 'No deductions — clean account.'),
+    head('Health & conduct', gate ? pill(gate.tone, gate.label) : pill(tone, String(ah.score ?? '—') + ' · ' + String(t).replace('_', ' ').toUpperCase())),
+    gate ? el('div', { class: 'p360-empty' }, gate.why) : ded.length ? el('div', null, ded.map((x) => el('div', { class: 'p360-row' }, [el('div', null, [el('b', null, '− ' + x.deducted + ' · ' + x.label), el('div', { class: 'cc-sub' }, x.basis || '')]), el('div', { class: 'cc-sub' }, x.improve || '')]))) : el('div', { class: 'p360-empty' }, 'No deductions — clean account.'),
     viol.length ? block('Warnings & violations', pill(viol.some((v) => !v.resolved_at) ? 'red' : 'gray', viol.filter((v) => !v.resolved_at).length + ' open'), viol.map((v) => el('div', { class: 'p360-row' }, [el('div', null, [el('b', null, String(v.severity || '').toUpperCase() + ' · ' + dash(v.kind) + ' · ' + n0(v.points) + ' pts'), el('div', { class: 'cc-sub' }, v.note || '')]), el('div', { class: 'cc-sub' }, fmtDateTime(v.created_at) + (v.resolved_at ? ' · resolved' : ''))]))) : null,
-    tasks.length ? block('Open automation tasks', pill('amber', tasks.length + ' open'), tasks.map((tk) => el('div', { class: 'p360-row' }, [el('div', null, [el('b', null, tk.title || tk.type), el('div', { class: 'cc-sub' }, dash(tk.type) + ' · ' + dash(tk.priority))]), el('a', { class: 'lb-btn lb-btn-sm lb-btn-ghost', href: '#/automation' }, 'Open →')]))) : null,
+    tasks.length ? block('Open automation tasks', pill('amber', tasks.length + ' open'), tasks.map((tk) => el('div', { class: 'p360-row' }, [el('div', null, [el('b', null, tk.title || tk.type), el('div', { class: 'cc-sub' }, dash(tk.type) + ' · ' + dash(tk.priority))]), el('a', { class: 'lb-btn lb-btn-sm lb-btn-ghost', href: '#/automation?task=' + encodeURIComponent(tk.id) }, 'Open →')]))) : null,
     manage ? el('div', { class: 'p360-actions' }, [el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => { const b = ev.currentTarget; const why = await askReason('⚠ Warn this partner — reason (they see this; points deducted):'); if (!why) return; b.disabled = true; try { await issueViolation(orgId, 'conduct', 'warning', why); toast('Warning issued', 'success'); ctx.reload(); } catch (e) { b.disabled = false; toast(humanizeError(e), 'error'); } } }, [icon('alert', 15), ' Warn account']), el('a', { class: 'lb-btn lb-btn-sm lb-btn-ghost', href: '#/account-health' }, 'Account health desk →')]) : null,
   ].filter(Boolean));
+}
+
+// bl_ship_0510: null when the score applies; otherwise the label that replaces it (used by the card and the KPI tile).
+export function shipperScoreGate(ctx) {
+  const d = ctx.d || {}; const o = d.org || {}; const tr = d.trust || {};
+  if (o.kind !== 'shipper') return null;
+  if (tr.hold_reason || tr.tier === 'hold') return { tone: 'red', label: 'ON HOLD', short: 'On hold', why: 'No conduct score while the account is on hold — see Two-lane verification for the hold and what clears it.' };
+  if (!tr.can_post) return { tone: 'gray', label: 'NOT VERIFIED YET', short: 'Not verified yet', why: 'The conduct score starts once a lane opens. Until then the work is on Two-lane verification.' };
+  return null;
 }
 
 export function membersCard(ctx) {
