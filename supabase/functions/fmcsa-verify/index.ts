@@ -1,5 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
+// v35 — ONE MC, SEVERAL USDOT RECORDS. A lookup by MC asked the census for `$limit=1` and QCMobile's
+// /docket-number for its list, and both took whichever row came FIRST. FMCSA keeps old registrations:
+// MC-322572 (Total Quality Logistics) carries USDOT 739918, an inactive 1998 carrier registration, AND
+// USDOT 2223295, the active broker. The census handed back 739918 first, so TQL's broker screen read a
+// dead carrier record and came back UNKNOWN (1 Oct 2026). Now both readers fetch every row for the
+// docket and prefer the ACTIVE one (census status_code A / QC allowedToOperate Y), then the most recent
+// MCS-150; the other DOTs are listed in `mcOtherDots`. And QC's rating/OOS fields are merged into the
+// census record only when both describe the SAME DOT - before, a census row for one DOT could be
+// stamped with another DOT's allowedToOperate.
 // v34 — TIMEOUT BUDGET. The chain was sequential and its worst case (~31s) overran the browser
 // client's own 15s cap in app/shared/api.js, so whenever a source HUNG rather than erroring fast
 // the carrier saw "FMCSA is taking too long" even though SAFER would have answered a few seconds
@@ -55,12 +64,20 @@ const CARGO: Record<string, string> = { crgo_genfreight: "General freight", crgo
 
 function addr(st?: string, ci?: string, stt?: string, z?: string) { const p = [st, [ci, stt].filter(Boolean).join(", "), z].filter(Boolean); return p.length ? p.join(", ") : null; }
 
+// v35: of several census rows for one docket, the ACTIVE registration wins, then the newest MCS-150.
+function pickCensusRow(rows: any[]): any {
+  const rank = (r: any) => [String(r.status_code || "").toUpperCase() === "A" ? 1 : 0, String(r.mcs150_date || ""), String(r.add_date || "")];
+  return [...rows].sort((a, b) => { const x = rank(a), y = rank(b); for (let i = 0; i < 3; i++) { if (x[i] > y[i]) return -1; if (x[i] < y[i]) return 1; } return 0; })[0] ?? null;
+}
+
 async function fromSocrata(dot: string, mc: string) {
-  const url = dot ? `${SOCRATA}?dot_number=${dot}&$limit=1` : `${SOCRATA}?docket1=${mc}&$limit=1`;
+  const url = dot ? `${SOCRATA}?dot_number=${dot}&$limit=1` : `${SOCRATA}?docket1=${mc}&$limit=20`;
   const res = await fetchJson(url, 5000);
   if (!res.ok) return { ok: false, err: res.err, took: res.took, source: "socrata", status: res.status };
-  const c = Array.isArray(res.data) ? res.data[0] : null;
+  const rows: any[] = Array.isArray(res.data) ? res.data : [];
+  const c = dot ? (rows[0] ?? null) : pickCensusRow(rows);
   if (!c) return { ok: false, err: "not_found", took: res.took, source: "socrata", status: res.status };
+  const otherDots = rows.map((r) => num(r.dot_number)).filter((d) => d != null && d !== num(c.dot_number));
   const registered = String(c.status_code || "").toUpperCase() === "A";
   const cargo: string[] = []; for (const k in CARGO) if (String(c[k] || "").toUpperCase() === "X") cargo.push(CARGO[k]);
   const mcNumber = c.docket1 ? `${c.docket1prefix || "MC"}${c.docket1}` : (mc ? `MC${mc}` : null);
@@ -86,6 +103,7 @@ async function fromSocrata(dot: string, mc: string) {
     mcs150Date: fmtDate(c.mcs150_date), mcs150Mileage: num(c.mcs150_mileage), mcs150MileageYear: c.mcs150_mileage_year ?? null,
     registeredSince: fmtDate(c.add_date), dunsNumber: c.dun_bradstreet_no ?? null,
     cargoCarried: cargo, outOfService: false, oosDate: null,
+    mcOtherDots: otherDots.length ? otherDots : null,
   } };
 }
 
@@ -94,7 +112,10 @@ async function fromQC(webKey: string, dot: string, mc: string) {
   const res = await fetchJson(url, 5000);
   if (!res.ok) return { ok: false, err: res.err, took: res.took, source: "qcmobile", status: res.status };
   const content = (res.data && res.data.content) ?? null;
-  const c: any = Array.isArray(content) ? (content[0]?.carrier ?? content[0] ?? null) : (content?.carrier ?? content ?? null);
+  // v35: /docket-number returns one entry per USDOT on the docket - prefer the one allowed to operate.
+  const list: any[] = (Array.isArray(content) ? content : content ? [content] : []).map((x: any) => x?.carrier ?? x).filter(Boolean);
+  const c: any = list.find((x) => String(x.allowedToOperate || "").toUpperCase() === "Y")
+    ?? list.find((x) => String(x.statusCode || "").toUpperCase() === "A") ?? list[0] ?? null;
   if (!c) return { ok: false, err: "not_found", took: res.took, source: "qcmobile", status: res.status };
   return { ok: true, took: res.took, source: "qcmobile", carrier: {
     legalName: c.legalName ?? c.dbaName ?? null, dbaName: c.dbaName ?? null, dotNumber: c.dotNumber ?? (dot ? Number(dot) : null),
@@ -263,7 +284,9 @@ Deno.serve(async (req: Request) => {
 
     if (s.ok) {
       result = (s as any).carrier; source = "socrata";
-      if (q.ok) { result = mergeCarrier(result, (q as any).carrier); source = "socrata+qcmobile"; }
+      const qDot = q.ok ? Number((q as any).carrier?.dotNumber) || null : null;
+      if (q.ok && (!qDot || !result.dotNumber || qDot === Number(result.dotNumber))) { result = mergeCarrier(result, (q as any).carrier); source = "socrata+qcmobile"; }
+      else if (q.ok) attempts.push({ source: "qcmobile", ok: false, err: `different_dot ${qDot} vs census ${result.dotNumber} - not merged`, role: "rating+oos" });
     } else if (q.ok) {
       result = (q as any).carrier; source = "qcmobile";
     }
