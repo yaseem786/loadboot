@@ -20,6 +20,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 //   publish             { key }  -> read app_private.riley_prompts[key], PATCH the retell-llm draft, point the
 //                                   agent draft at that llm version + shared post-call analysis, publish the
 //                                   agent, mark the row published. (write)
+//                                   0522: outbound also gets press_digit, and ivr_option + voicemail_option cleared.
 //   get_call            { call_id } -> GET v2/get-call (fresh recording_url + transcript + analysis) (read)
 //   recording           { call_id } -> the recording BYTES (read). v2 (0458d): Retell serves recordings from CloudFront as
 //                                   application/octet-stream with no CORS headers, which Safari/iOS will not play in an
@@ -243,6 +244,11 @@ Deno.serve(async (req: Request) => {
         tools.push({ type: "transfer_call", name: "transfer_to_team", description: "Transfer the caller to the LoadBoot team. Use ONLY when the caller explicitly demands a human and the prompt allows it.",
           transfer_destination: { type: "predefined", number: cfg.escalation_number }, transfer_option: { type: "cold_transfer" } });
       }
+      // bl_voice_0522: outbound reaches company switchboards (TQL, 1 Oct). Riley needs a key to get past a phone menu.
+      if (key === "outbound") {
+        tools.push({ type: "press_digit", name: "press_digit", delay_ms: 1500,
+          description: "Press a key on an automated phone menu (IVR). Use ONLY when a recorded menu asks you to press a number, to reach an operator, 'all other calls', or the department the briefing names. Never enter account, payment, PIN or extension numbers you were not given." });
+      }
       const llmPatch: Record<string, unknown> = { general_prompt: row.general_prompt, general_tools: tools };
       // inbound opener is dynamic (the prompt decides known vs unknown caller); outbound keeps a fixed first line.
       llmPatch.begin_message = row.begin_message && String(row.begin_message).trim() ? row.begin_message : null;
@@ -252,6 +258,10 @@ Deno.serve(async (req: Request) => {
 
       const agentPatch: Record<string, unknown> = { post_call_analysis_data: POST_CALL_ANALYSIS };
       if (llmVersion !== null) agentPatch.response_engine = { type: "retell-llm", llm_id: llmId, version: llmVersion };
+      // bl_voice_0522: outbound only. ivr_option {hangup} cut call 407 on TQL's menu ("ivr_reached") before an operator
+      // was reachable; voicemail_option {prompt} carried its own canned line ("... following up with you") that overrode
+      // the CC prompt on call 399. Both cleared, so the published CC prompt alone decides menus and voicemail.
+      if (key === "outbound") { agentPatch.ivr_option = null; agentPatch.voicemail_option = null; }
       const u = await retell(cfg, "PATCH", `/update-agent/${id}`, agentPatch);
       if (!u.ok) return json({ error: `retell agent ${u.status}`, detail: u.body }, 502);
 
