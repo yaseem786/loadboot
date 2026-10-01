@@ -21,6 +21,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 //                                   agent draft at that llm version + shared post-call analysis, publish the
 //                                   agent, mark the row published. (write)
 //                                   0522: outbound also gets press_digit, and ivr_option + voicemail_option cleared.
+//                                   0524: outbound reminder_max_count 0 (no "still there?" on hold); interest_level gains voicemail + ivr.
 //   get_call            { call_id } -> GET v2/get-call (fresh recording_url + transcript + analysis) (read)
 //   recording           { call_id } -> the recording BYTES (read). v2 (0458d): Retell serves recordings from CloudFront as
 //                                   application/octet-stream with no CORS headers, which Safari/iOS will not play in an
@@ -116,8 +117,8 @@ const POST_CALL_ANALYSIS = [
   { name: "equipment_type", type: "enum", choices: ["dry_van", "reefer", "flatbed", "step_deck", "power_only", "box_truck", "hotshot", "mixed", "none"], description: "Equipment the caller runs or needs. none if not a carrier or not discussed." },
   { name: "truck_count", type: "number", description: "How many trucks the caller runs. 1 for a single owner-operator. 0 if not a carrier or unknown." },
   { name: "preferred_lanes", type: "string", description: "Lanes or regions the caller wants, e.g. TX to CA, Southeast regional. Empty if not discussed." },
-  { name: "interest_level", type: "enum", choices: ["hot", "warm", "cold", "not_interested", "wrong_number"],
-    description: "hot = asked to sign up, gave MC, or wants loads right away. warm = interested, thinking / call back. cold = listened, no real interest. not_interested = said no or asked not to be contacted. wrong_number = wrong number, spam, vendor, robocall." },
+  { name: "interest_level", type: "enum", choices: ["hot", "warm", "cold", "not_interested", "wrong_number", "voicemail", "ivr"],
+    description: "hot = asked to sign up, gave MC, or wants loads right away. warm = interested, thinking / call back. cold = listened, no real interest. not_interested = said no or asked not to be contacted. wrong_number = a person said it is the wrong number, or spam, vendor, robocall. voicemail = only a voicemail greeting or answering machine, no live person. ivr = only a company phone menu, recording or hold queue, no live person reached (bl_voice_0524)." },
   { name: "next_step", type: "string", description: "The single next step Riley promised, in one sentence, e.g. 'team emails document checklist', 'dispatcher confirms load within the hour'. Empty if none." },
   { name: "needs_human", type: "boolean", description: "true if the caller raised a specific load, payment, claim, dispute or complaint that a human must follow up, or asked for a person. false otherwise." },
 ];
@@ -247,7 +248,7 @@ Deno.serve(async (req: Request) => {
       // bl_voice_0522: outbound reaches company switchboards (TQL, 1 Oct). Riley needs a key to get past a phone menu.
       if (key === "outbound") {
         tools.push({ type: "press_digit", name: "press_digit", delay_ms: 1500,
-          description: "Press a key on an automated phone menu (IVR). Use ONLY when a recorded menu asks you to press a number, to reach an operator, 'all other calls', or the department the briefing names. Never enter account, payment, PIN or extension numbers you were not given." });
+          description: "Press a key on an automated phone menu (IVR). Use ONLY when a recorded menu asks you to press a number: the key the briefing names, else operator, 'all other calls', customer or client service, else the department the briefing names, else 0. Never the driver, dispatcher, carrier, freight, posting, accounting or 'on a load' options unless the briefing names them. Pressing is your whole turn on a recording: say nothing. Never enter account, payment, PIN or extension numbers you were not given." });
       }
       const llmPatch: Record<string, unknown> = { general_prompt: row.general_prompt, general_tools: tools };
       // inbound opener is dynamic (the prompt decides known vs unknown caller); outbound keeps a fixed first line.
@@ -262,6 +263,9 @@ Deno.serve(async (req: Request) => {
       // was reachable; voicemail_option {prompt} carried its own canned line ("... following up with you") that overrode
       // the CC prompt on call 399. Both cleared, so the published CC prompt alone decides menus and voicemail.
       if (key === "outbound") { agentPatch.ivr_option = null; agentPatch.voicemail_option = null; }
+      // bl_voice_0524: Retell's silence reminder said "Are you still there? No rush" into TQL's hold queue (call 412).
+      // Outbound only: hold music and menus are normal there; the prompt's own warm check covers a live person.
+      if (key === "outbound") agentPatch.reminder_max_count = 0;
       const u = await retell(cfg, "PATCH", `/update-agent/${id}`, agentPatch);
       if (!u.ok) return json({ error: `retell agent ${u.status}`, detail: u.body }, 502);
 
