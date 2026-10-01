@@ -1638,6 +1638,7 @@ export async function dmailAct(body) {
 }
 export const ccDmailOverview = () => rpc('cc_dmail_overview', {});
 export const ccDmailActivity = (p) => rpc('cc_dmail_activity', { p: p ?? {} });   // bl_dmail_0357 — every email in/out across all dispatcher mailboxes
+export const ccDmailContact = (email, limit) => rpc('cc_dmail_contact', { p_email: email || '', p_limit: limit ?? 100 });   // bl_dmail_0505 — Web leads: email history + shared mailboxes
 export const ccDmailAccountSave = (p) => rpc('cc_dmail_account_save', { p: p ?? {} });
 export const ccDmailAssign = (account, user, name) => rpc('cc_dmail_assign', { p_account: account, p_user: user ?? null, p_name: name ?? null });   // bl_dmail_0359: assigning also sets From name + brand signature
 export const ccDmailIdentityApply = (account, name) => rpc('cc_dmail_identity_apply', { p_account: account, p_name: name ?? null });
