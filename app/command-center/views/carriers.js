@@ -6,7 +6,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, toolbar, searchBox, segmented, statusPill, openDrawer, fmtDate, card } from '../../shared/ui/components.js';
-import { getCarriersDirectory, getCarrierDetail, setCarrierStatus , pauseCarrier } from '../../shared/api.js';
+import { getCarriersDirectory, getCarrierDetail, setCarrierStatus , pauseCarrier, ccCarriersLoginStatus } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -39,7 +39,7 @@ export function renderCarriers(host) {
     const table = el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, [
         el('th', null, 'Company'), el('th', null, 'Contact'), el('th', null, 'MC / DOT'),
-        el('th', null, 'Home base'), el('th', null, 'Docs'), el('th', null, 'Status'), el('th', null, ''),
+        el('th', null, 'Home base'), el('th', null, 'Docs'), el('th', null, 'Portal'), el('th', null, 'Status'), el('th', null, ''),
       ])),
       el('tbody', null, rows.map(c => el('tr', { class: 'cc-row', onClick: () => openCarrier(c.id) }, [
         el('td', null, [el('b', null, c.company || '—'), el('div', { class: 'cc-sub' }, c.email || '')]),
@@ -51,11 +51,32 @@ export function renderCarriers(host) {
           : Number(c.doc_approved) > 0
             ? el('span', { style: 'background:#e7f9ee;color:#12a150;font-weight:800;font-size:.74rem;padding:4px 10px;border-radius:99px' }, 'All verified \u2713 (' + c.doc_approved + ')')
             : '—'),
+        presenceCells[c.id] = el('td', { style: 'white-space:nowrap' }, el('span', { class: 'cc-sub' }, '\u2026')),   // bl_ux_0504
         el('td', null, statusPill(c.status)),
         el('td', null, el('span', { class: 'cc-row-go' }, '›')),
       ]))),
     ]);
     mount(listHost, table);
+    paintPresence(rows.map((c) => c.id));
+  }
+
+  // bl_ux_0504: who is using the portal — live now / last seen + device / last sign-in (same facts as Carrier 360).
+  const presenceCells = {};
+  const agoTxt = (v) => { if (!v) return null; const m = Math.round((Date.now() - new Date(v).getTime()) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
+  async function paintPresence(ids) {
+    let map = {};
+    try { map = (await ccCarriersLoginStatus(ids)) || {}; } catch (_) { ids.forEach((id) => presenceCells[id] && mount(presenceCells[id], '\u2014')); return; }
+    ids.forEach((id) => {
+      const td = presenceCells[id]; if (!td) return;
+      const ls = map[id];
+      const dot = (c) => el('span', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;background:' + c + (c === '#22c55e' ? ';box-shadow:0 0 0 3px rgba(34,197,94,.22)' : '') });
+      if (!ls || ls.never) { mount(td, [el('div', null, [dot('#94a3b8'), 'Never logged in'])]); return; }
+      const recent = ls.last_seen && (Date.now() - new Date(ls.last_seen).getTime()) < 7 * 864e5;
+      mount(td, [
+        el('div', { style: 'font-weight:700' }, [dot(ls.live ? '#22c55e' : recent ? '#f59e0b' : '#ef4444'), ls.live ? 'Live now' : 'Seen ' + (agoTxt(ls.last_seen) || 'never')]),
+        el('div', { class: 'cc-sub' }, [ls.device || '', ls.last_sign_in ? (ls.device ? ' \u00b7 ' : '') + 'sign-in ' + agoTxt(ls.last_sign_in) : '', Number(ls.devices) > 1 ? ' \u00b7 ' + ls.devices + ' devices' : ''].join('')),
+      ]);
+    });
   }
 
   async function openCarrier(id) {
