@@ -95,6 +95,50 @@ def _render(path, title, kind, rates, date_s, root, Image, ImageDraw, ImageFont,
     im.save(path, 'PNG', optimize=True)
 
 
+_BLOGCARD = re.compile(r'<a class="blogcard" href="([^"]+)"><div class="bc-thumb">(<svg.*?</svg>)', re.S)
+
+
+def _site_thumbs(out_dir):
+    """The hand-made SVG thumbnails the website itself shows on its article cards (blog.html etc.)."""
+    found = {}
+    for f in sorted(os.listdir(out_dir)):
+        if not f.endswith('.html'): continue
+        try: s = open(os.path.join(out_dir, f), encoding='utf-8').read()
+        except Exception: continue
+        if 'class="blogcard"' not in s: continue
+        for m in _BLOGCARD.finditer(s):
+            found.setdefault(m.group(1), m.group(2))
+    return found
+
+
+def _render_site_thumb(path, svg, root, Image):
+    """Rasterise the website's own card SVG at 1200x627 + the same LoadBoot logo pill the site overlays."""
+    import io, resvg_py
+    from html.entities import name2codepoint
+    # HTML named entities (&middot; &times; …) are not valid XML: turn them into numeric references
+    svg = re.sub(r'&([a-zA-Z][a-zA-Z0-9]*);', lambda m: m.group(0) if m.group(1) in ('amp', 'lt', 'gt', 'quot', 'apos')
+                 else ('&#%d;' % name2codepoint[m.group(1)] if m.group(1) in name2codepoint else ''), svg)
+    svg = re.sub(r'<svg\b', '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d"' % (W, H), svg, count=1) if 'xmlns=' not in svg[:200] \
+        else re.sub(r'<svg\b', '<svg width="%d" height="%d"' % (W, H), svg, count=1)
+    # the site's fonts (Manrope/Arial) are browser fonts; use the bundled sans so the build machine renders the same
+    svg = re.sub(r'font-family="[^"]*"', 'font-family="DejaVu Sans"', svg)
+    svg = re.sub(r'font-family:[^;"]*', 'font-family:DejaVu Sans', svg)
+    png = bytes(resvg_py.svg_to_bytes(svg_string=svg, skip_system_fonts=True, font_dirs=[os.path.join(root, 'assets', 'fonts')], font_family='DejaVu Sans',
+                                      sans_serif_family='DejaVu Sans'))
+    im = Image.open(io.BytesIO(png)).convert('RGBA')
+    if im.size != (W, H): im = im.resize((W, H))
+    logo = os.path.join(root, 'logo-full-dark.png')
+    if os.path.exists(logo):
+        from PIL import ImageDraw
+        lg = Image.open(logo).convert('RGBA'); lh = 28
+        lg = lg.resize((int(lg.width * lh / lg.height), lh))
+        pill = Image.new('RGBA', (lg.width + 36, lh + 24), (0, 0, 0, 0))
+        ImageDraw.Draw(pill).rounded_rectangle([0, 0, pill.width - 1, pill.height - 1], radius=14, fill=(11, 18, 32, 215))
+        pill.paste(lg, (18, 12), lg)
+        im.alpha_composite(pill, (22, 16))
+    im.convert('RGB').save(path, 'PNG', optimize=True)
+
+
 def build_og_cards(out_dir, domain, root=None):
     try:
         from PIL import Image, ImageDraw, ImageFont
@@ -104,7 +148,8 @@ def build_og_cards(out_dir, domain, root=None):
     if not os.path.exists(os.path.join(root, 'assets', 'fonts', 'DejaVuSans-Bold.ttf')):
         return 'skipped (font missing)'
     og_dir = os.path.join(out_dir, 'og'); os.makedirs(og_dir, exist_ok=True)
-    n = 0
+    n = n_site = 0
+    thumbs = _site_thumbs(out_dir)
     for f in sorted(os.listdir(out_dir)):
         if not f.endswith('.html') or f in EXCLUDE: continue
         p = os.path.join(out_dir, f)
@@ -119,8 +164,17 @@ def build_og_cards(out_dir, domain, root=None):
             rates = [(m.group(1).title(), m.group(2)) for m in _RATE.finditer(desc)] if ('report' in f or 'rates-week' in f) else []
             date_s = datetime.strptime(min(pub), '%Y-%m-%d').strftime('%b %d, %Y').replace(' 0', ' ')
             slug = f[:-5]
-            _render(os.path.join(og_dir, slug + '.png'), title, _kind(f, title), rates, date_s, root, Image, ImageDraw, ImageFont, desc)
-            v = hashlib.md5((title + '|' + desc + '|' + str(rates)).encode()).hexdigest()[:8]
+            out_png = os.path.join(og_dir, slug + '.png'); used = 'card'
+            if f in thumbs:   # prefer the thumbnail the website already shows for this article
+                try:
+                    _render_site_thumb(out_png, thumbs[f], root, Image); used = 'site:' + thumbs[f]
+                except Exception as e:
+                    print('OG card: %s site thumbnail failed (%s) - using generated card' % (f, e))
+            if used == 'card':
+                _render(out_png, title, _kind(f, title), rates, date_s, root, Image, ImageDraw, ImageFont, desc)
+            else:
+                n_site += 1
+            v = hashlib.md5((used + '|' + title + '|' + desc + '|' + str(rates)).encode()).hexdigest()[:8]
             url = '%s/og/%s.png?v=%s' % (domain, slug, v)
             # only the 1200x630 card + twitter image + alt; the square og:image stays as a fallback
             s = s.replace('<meta property="og:image" content="%s">' % GENERIC, '<meta property="og:image" content="%s">' % url, 1)
@@ -130,4 +184,4 @@ def build_og_cards(out_dir, domain, root=None):
             n += 1
         except Exception as e:
             print('OG card: %s skipped (%s)' % (f, e))
-    return '%d article cards -> og/' % n
+    return '%d article cards -> og/ (%d from the website\'s own thumbnails)' % (n, n_site)
