@@ -9465,6 +9465,13 @@ with open(os.path.join(OUT,'sitemap.xml'),'w',encoding='utf-8') as f: f.write(si
 with open(os.path.join(OUT,'robots.txt'),'w',encoding='utf-8') as f:
     f.write('User-agent: *\nAllow: /\nDisallow: /dashboard.html\nDisallow: /app/\nSitemap: %s/sitemap.xml\n' % DOMAIN)
 
+# ---------- RSS FEED (feed.xml) — LinkedIn Page RSS source; dates from each page's own datePublished ----------
+try:
+    import rss_module
+    print('RSS: %d items -> feed.xml' % rss_module.build_rss(OUT, DOMAIN))
+except Exception as _rss_e:   # never block a deploy on the feed
+    print('RSS: skipped (%s)' % _rss_e)
+
 # ---------- SECURITY HEADERS (Netlify _headers) ----------
 # Applied to every response. Non-CSP baseline (safe: does not alter page behavior).
 # geolocation=(self) keeps the carrier dashboard's location feature working while
