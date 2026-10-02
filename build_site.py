@@ -9465,6 +9465,13 @@ with open(os.path.join(OUT,'sitemap.xml'),'w',encoding='utf-8') as f: f.write(si
 with open(os.path.join(OUT,'robots.txt'),'w',encoding='utf-8') as f:
     f.write('User-agent: *\nAllow: /\nDisallow: /dashboard.html\nDisallow: /app/\nSitemap: %s/sitemap.xml\n' % DOMAIN)
 
+# ---------- PER-ARTICLE SOCIAL CARDS (og/<slug>.png) — runs before the RSS feed ----------
+try:
+    import og_cards_module
+    print('OG cards: %s' % og_cards_module.build_og_cards(OUT, DOMAIN))
+except Exception as _og_e:   # never block a deploy on social cards
+    print('OG cards: skipped (%s)' % _og_e)
+
 # ---------- RSS FEED (feed.xml) — LinkedIn Page RSS source; dates from each page's own datePublished ----------
 try:
     import rss_module
