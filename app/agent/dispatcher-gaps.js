@@ -10,7 +10,7 @@
 //           typed as a free-text note only) the codes are DERIVED from the answers on the closed
 //           application and labelled "likely" — never presented as the team's words.
 //
-// Exports: REASONS (catalog — shared with the CC reject dialog), deriveReasons(prof), reapplyGate().
+// Exports: REASONS (catalog — shared with the CC reject dialog), noteContradictsBoardRule(), deriveReasons(prof), reapplyGate().
 
 export const REASONS = [
   ['no_own_board', 'Cannot find and book loads independently'],
@@ -25,6 +25,18 @@ export const REASONS = [
   ['other', 'Other — see the note'],
 ];
 export const REASON_LABEL = REASONS.reduce((m, r) => { m[r[0]] = r[1]; return m; }, {});
+
+// bl_disp_0526 — the owner rule (21 Sep 2026): a load-board login does NOT have to be in the candidate's own name, and a
+// board is only one sourcing route. 35 applicants were rejected with a pasted note demanding "their own active load board
+// subscription", which then sat on their portal next to a checklist saying the opposite. The CC reject dialogs run every
+// note through this and make staff confirm before a note that sets the old rule is sent.
+export const BOARD_RULE = 'A load-board login does not have to be in the candidate’s own name — an employer’s or a carrier’s login counts, and so do freight groups, brokers they know and direct shippers, as long as they find and book the load themselves (owner rule, 21 Sep 2026).';
+export function noteContradictsBoardRule(note) {
+  const t = String(note || '').toLowerCase();
+  return /\b(their|your|his|her|an?) own (\w+[ -]){0,3}(subscription|account|login)s?\b/.test(t)
+    || /\b(subscription|login|account)s?\b[^.]{0,30}\bin (their|your|his|her) (own )?name\b/.test(t)
+    || /\bown (active |paid )?load[- ]?boards?\b/.test(t);
+}
 
 // Best-effort read of the CLOSED application. Never invents a reason the answers do not support;
 // capped at 3 so the candidate gets a checklist, not a wall.
@@ -73,6 +85,11 @@ export function reapplyGate({ h, prof, form }) {
   const englishAck = cb();
   const accurateAck = cb();
   const reply = ta('What has changed since your last application? Answer the note above directly.', 120);
+  // ONE container for the two sourcing fields, shared by board_unknown and no_own_board (only one of them is ever
+  // rendered — see the dedupe below). Building a separate h('div', [boardWho, proof]) per row MOVED both inputs into the
+  // second div (appendChild re-parents a node), so a board_unknown row rendered with no fields at all: the gate could
+  // never pass, Submit never reached dispatcher_apply, and the re-application answers were never saved (bl_disp_0526).
+  const srcExtra = h('div', null, [boardWho, proof]);
 
   // shared by board_unknown and no_own_board — one rule, stated once
   const srcPass = () => (typeof form.channelsOk === 'function' ? form.channelsOk() : true)
@@ -88,13 +105,13 @@ export function reapplyGate({ h, prof, form }) {
     board_unknown: {
       title: 'How you find loads — and two you booked yourself',
       what: 'When you applied, our form only asked whether you had a load board in your OWN name, so there was no way to tell us how you really source. Tick every route you actually use in section 2, say where exactly, and name two loads you booked.',
-      extra: h('div', null, [boardWho, proof]), key: 'channels',
+      extra: srcExtra, key: 'channels',
       test: () => srcPass(), fail: () => srcFail(),
     },
     no_own_board: {
       title: 'How you find loads — and two you booked yourself',
       what: 'It does not have to be a load board in your own name. An employer’s or a carrier’s login, Facebook or WhatsApp freight groups, brokers you already know, direct shippers — any route counts, as long as you find the load and book it yourself.',
-      extra: h('div', null, [boardWho, proof]), key: 'channels',
+      extra: srcExtra, key: 'channels',
       test: () => srcPass(), fail: () => srcFail(),
     },
     no_booking_proof: {
