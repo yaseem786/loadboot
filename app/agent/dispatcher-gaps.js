@@ -10,7 +10,7 @@
 //           typed as a free-text note only) the codes are DERIVED from the answers on the closed
 //           application and labelled "likely" — never presented as the team's words.
 //
-// Exports: REASONS (catalog — shared with the CC reject dialog), deriveReasons(prof), reapplyGate().
+// Exports: REASONS (catalog — shared with the CC reject dialog), noteContradictsBoardRule(), deriveReasons(prof), reapplyGate().
 
 export const REASONS = [
   ['no_own_board', 'Cannot find and book loads independently'],
@@ -25,6 +25,18 @@ export const REASONS = [
   ['other', 'Other — see the note'],
 ];
 export const REASON_LABEL = REASONS.reduce((m, r) => { m[r[0]] = r[1]; return m; }, {});
+
+// bl_disp_0526 — the owner rule (21 Sep 2026): a load-board login does NOT have to be in the candidate's own name, and a
+// board is only one sourcing route. 35 applicants were rejected with a pasted note demanding "their own active load board
+// subscription", which then sat on their portal next to a checklist saying the opposite. The CC reject dialogs run every
+// note through this and make staff confirm before a note that sets the old rule is sent.
+export const BOARD_RULE = 'A load-board login does not have to be in the candidate’s own name — an employer’s or a carrier’s login counts, and so do freight groups, brokers they know and direct shippers, as long as they find and book the load themselves (owner rule, 21 Sep 2026).';
+export function noteContradictsBoardRule(note) {
+  const t = String(note || '').toLowerCase();
+  return /\b(their|your|his|her|an?) own (\w+[ -]){0,3}(subscription|account|login)s?\b/.test(t)
+    || /\b(subscription|login|account)s?\b[^.]{0,30}\bin (their|your|his|her) (own )?name\b/.test(t)
+    || /\bown (active |paid )?load[- ]?boards?\b/.test(t);
+}
 
 // Best-effort read of the CLOSED application. Never invents a reason the answers do not support;
 // capped at 3 so the candidate gets a checklist, not a wall.
@@ -76,7 +88,7 @@ export function reapplyGate({ h, prof, form }) {
   // ONE container for the two sourcing fields, shared by board_unknown and no_own_board (only one of them is ever
   // rendered — see the dedupe below). Building a separate h('div', [boardWho, proof]) per row MOVED both inputs into the
   // second div (appendChild re-parents a node), so a board_unknown row rendered with no fields at all: the gate could
-  // never pass, Submit never reached dispatcher_apply, and the re-application answers were never saved (bl_disp_0481).
+  // never pass, Submit never reached dispatcher_apply, and the re-application answers were never saved (bl_disp_0526).
   const srcExtra = h('div', null, [boardWho, proof]);
 
   // shared by board_unknown and no_own_board — one rule, stated once

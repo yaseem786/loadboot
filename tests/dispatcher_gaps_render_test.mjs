@@ -1,10 +1,10 @@
-// bl_disp_0481 — the re-application gate must render the sourcing fields it tests.
+// bl_disp_0526 — the re-application gate must render the sourcing fields it tests.
 // A board_unknown row once rendered with NO inputs (the no_own_board row's div re-parented them), so the gate could
 // never close, Submit never called dispatcher_apply and the re-applicant's answers were never saved.
 // Run: node --test tests/dispatcher_gaps_render_test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { reapplyGate } from '../app/agent/dispatcher-gaps.js';
+import { reapplyGate, noteContradictsBoardRule } from '../app/agent/dispatcher-gaps.js';
 
 // Tiny fake DOM: appendChild RE-PARENTS a node, exactly like the browser does — that is the behaviour that hid the fields.
 const mk = (tag) => {
@@ -52,4 +52,19 @@ test('no_booking_proof on its own renders its proof field', () => {
   const g = reapplyGate({ h, prof: Object.assign({}, legacyProf, { reject_reasons: ['no_booking_proof'] }), form: form() });
   assert.deepEqual(g.codes, ['no_booking_proof']);
   assert.equal(inputsUnder(g.node).length, 1);
+});
+
+// The note 35 applicants were rejected with (21 Sep – 6 Oct 2026) and the wording it was replaced with (bl_disp_0526).
+const OLD_NOTE = 'Thank you for applying to LoadBoot Dispatch. For this role we need dispatchers who already hold their own active load board subscription (DAT, Truckstop or 123Loadboard) and can find and book loads independently from the first week. Based on your application, that requirement is not met at this time, so we are not moving forward. This is not a reflection of your effort — if this changes, you are welcome to reapply.';
+export const NEW_NOTE = 'Thank you for applying to LoadBoot Dispatch. For this role we need dispatchers who can find and book loads on their own from the first week. That does not have to be a load board in your own name: a login you use through an employer or a carrier, Facebook or WhatsApp freight groups, brokers you already know or direct shippers all count, as long as you find the load and book it yourself. Your application did not show this, so we are not moving forward at this time. This is not a reflection of your effort. When you re-apply, tick every route you use to find loads and name two loads you booked yourself.';
+
+test('a reject note that sets the retired "own subscription" rule is caught; rule-consistent wording is not', () => {
+  assert.equal(noteContradictsBoardRule(OLD_NOTE), true);
+  assert.equal(noteContradictsBoardRule('You need your own DAT login.'), true);
+  assert.equal(noteContradictsBoardRule('The subscription must be in your own name.'), true);
+  assert.equal(noteContradictsBoardRule('Candidate needs an own load board.'), true);
+  assert.equal(noteContradictsBoardRule(NEW_NOTE), false);
+  assert.equal(noteContradictsBoardRule('Not enough US dispatch experience, and English was too basic for broker calls.'), false);
+  assert.equal(noteContradictsBoardRule(''), false);
+  assert.equal(noteContradictsBoardRule(null), false);
 });

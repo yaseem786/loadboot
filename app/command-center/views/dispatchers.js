@@ -25,7 +25,7 @@ import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAss
          dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead, ccDispatcherKpis } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { ccDispatcherSetRejectReasons } from '../../shared/api.js';
-import { REASONS } from '../../agent/dispatcher-gaps.js';
+import { REASONS, BOARD_RULE, noteContradictsBoardRule } from '../../agent/dispatcher-gaps.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { dispatchLiveJoin } from '../../shared/dispatch-live.js';
 import { renderRoster } from './dispatchers-roster.js';           // bl_disp_0313 — paged roster
@@ -742,6 +742,8 @@ export function renderDispatchers(host) {
           const r9 = await askReason('Reason for rejecting — this text IS the e-mail the applicant receives', { reasons: REASONS });
           if (!r9) return;
           note = r9.note;
+          // bl_disp_0526 — never again send a note that sets the retired "own subscription" rule.
+          if (noteContradictsBoardRule(note) && !(await askConfirm('This note contradicts the load-board rule', { body: BOARD_RULE + ' The applicant’s portal says exactly that, so this note will read as the opposite. Send it anyway?', danger: true }))) return;
           const sr9 = await ccDispatcherSetRejectReasons(x.user_id, r9.reasons).catch((e) => ({ error: humanizeError(e) }));
           if (sr9 && sr9.error) { toast('Reasons not saved: ' + sr9.error); return; }
         } else if (action === 'suspend') { note = await askReason('Reason for suspending (the dispatcher sees this)'); if (note === null) return; }
