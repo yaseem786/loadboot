@@ -628,6 +628,9 @@ export const ccRileyPromptsGet = () => rpc('cc_riley_prompts_get', {});
 export const ccRileyPromptSave = (key, beginMessage, generalPrompt) => rpc('cc_riley_prompt_save', { p_key: key, p_begin_message: beginMessage ?? null, p_general_prompt: generalPrompt });
 export const ccRileyPromptRestore = (historyId) => rpc('cc_riley_prompt_restore', { p_history_id: historyId });
 export const ccRileyCallbackDone = (id, note) => rpc('cc_riley_callback_done', { p_id: id, p_note: note ?? null });
+// bl_voice_0530 — hand an open callback from the line to a dispatcher (their dialer → Callbacks, alert + e-mail)
+export const ccRileyCallbackDispatchers = () => rpc('cc_riley_callback_dispatchers', {});
+export const ccRileyCallbackAssign = (id, dispatcher, note) => rpc('cc_riley_callback_assign', { p_id: id, p_dispatcher: dispatcher, p_note: note ?? null });
 export const ccRileyPlanCreate = (org, reason, note, lang) => rpc('cc_riley_plan_create', { p_org: org, p_reason: reason, p_note: note ?? null, p_lang: lang || 'en' });   // bl_voice_0483
 export const ccRileyPlans = (status, limit, org) => rpc('cc_riley_plans', { p_status: status ?? null, p_limit: limit ?? 100, p_org: org ?? null });
 export const ccRileyPlan = (id) => rpc('cc_riley_plan', { p_id: id });
