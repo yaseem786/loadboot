@@ -73,6 +73,11 @@ export function reapplyGate({ h, prof, form }) {
   const englishAck = cb();
   const accurateAck = cb();
   const reply = ta('What has changed since your last application? Answer the note above directly.', 120);
+  // ONE container for the two sourcing fields, shared by board_unknown and no_own_board (only one of them is ever
+  // rendered — see the dedupe below). Building a separate h('div', [boardWho, proof]) per row MOVED both inputs into the
+  // second div (appendChild re-parents a node), so a board_unknown row rendered with no fields at all: the gate could
+  // never pass, Submit never reached dispatcher_apply, and the re-application answers were never saved (bl_disp_0481).
+  const srcExtra = h('div', null, [boardWho, proof]);
 
   // shared by board_unknown and no_own_board — one rule, stated once
   const srcPass = () => (typeof form.channelsOk === 'function' ? form.channelsOk() : true)
@@ -88,13 +93,13 @@ export function reapplyGate({ h, prof, form }) {
     board_unknown: {
       title: 'How you find loads — and two you booked yourself',
       what: 'When you applied, our form only asked whether you had a load board in your OWN name, so there was no way to tell us how you really source. Tick every route you actually use in section 2, say where exactly, and name two loads you booked.',
-      extra: h('div', null, [boardWho, proof]), key: 'channels',
+      extra: srcExtra, key: 'channels',
       test: () => srcPass(), fail: () => srcFail(),
     },
     no_own_board: {
       title: 'How you find loads — and two you booked yourself',
       what: 'It does not have to be a load board in your own name. An employer’s or a carrier’s login, Facebook or WhatsApp freight groups, brokers you already know, direct shippers — any route counts, as long as you find the load and book it yourself.',
-      extra: h('div', null, [boardWho, proof]), key: 'channels',
+      extra: srcExtra, key: 'channels',
       test: () => srcPass(), fail: () => srcFail(),
     },
     no_booking_proof: {
