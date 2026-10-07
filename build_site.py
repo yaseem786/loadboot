@@ -485,7 +485,7 @@ def _footer_raw():
 </div>
 <div class="links5">
 <div><div class="foot-h">Dispatch</div><a href="how-loadboot-dispatch-works.html">How Dispatch Works (A to Z)</a><a href="dedicated-truck-dispatcher.html">Dedicated Dispatcher</a><a href="services.html">All Dispatch Services</a><a href="us-truck-dispatcher.html">US Truck Dispatcher</a><a href="ai-dispatch-for-owner-operators.html">AI Dispatch, Honestly</a><a href="truck-dispatcher-vs-dispatch-software.html">Dispatcher vs Software</a></div>
-<div><div class="foot-h">By haul</div><a href="otr-dispatch.html">OTR</a><a href="regional-truck-dispatch.html">Regional</a><a href="local-truck-dispatch.html">Local</a></div><div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
+<div><div class="foot-h">By haul</div><a href="otr-dispatch.html">OTR</a><a href="regional-truck-dispatch.html">Regional</a><a href="local-truck-dispatch.html">Local</a></div><div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a><a href="sprinter-van-dispatch.html">Sprinter Van</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 <div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="freight-shipping-by-industry.html">Freight Shipping by Industry</a><a href="agents.html">Referral Partner Program (Earn 1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a></div>
 <div><div class="foot-h">Compliance</div><a href="compliance.html">Compliance &amp; Verification</a><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
@@ -715,6 +715,7 @@ RELATED = {
  'hotshot-dispatch.html':   [('flatbed-dispatch.html','Flatbed Dispatch'),('box-truck-dispatch.html','Box Truck Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('new-authority-dispatch.html','New Authority'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'power-only-dispatch.html':[('dry-van-dispatch.html','Dry Van Dispatch'),('owner-operator-dispatch.html','Owner-Operators'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('how-it-works.html','How It Works'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'box-truck-dispatch.html': [('hotshot-dispatch.html','Hotshot Dispatch'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
+ 'sprinter-van-dispatch.html': [('box-truck-dispatch.html','Box Truck Dispatch'),('hotshot-dispatch.html','Hotshot Dispatch'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('new-authority-dispatch.html','New Authority'),('us-truck-dispatcher.html','US Truck Dispatch')],
  'new-authority-dispatch.html':[('how-to-get-loads-with-new-authority.html','Getting Loads with New Authority'),('owner-operator-dispatch.html','Owner-Operators'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('carriers.html','For Carriers'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'owner-operator-dispatch.html':[('owner-operator-dispatch-service-guide.html','Owner-Operator Guide'),('new-authority-dispatch.html','New Authority'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('load-score.html','Load Score Tool'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'carriers.html':           [('carrier-application.html','Apply as Carrier'),('services.html','All Services'),('pricing.html','Pricing'),('tools.html','Free Trucking Tools'),('faq.html','FAQ')],
@@ -745,7 +746,7 @@ RELATED = {
 
 RELATED.update(DOS_RELATED)
 _DOS_HUB = [('how-loadboot-dispatch-works.html','How LoadBoot Dispatch Works'),('dedicated-truck-dispatcher.html','Dedicated Truck Dispatcher')]
-for _f in ['dry-van-dispatch.html','reefer-dispatch.html','flatbed-dispatch.html','hotshot-dispatch.html','power-only-dispatch.html','box-truck-dispatch.html',
+for _f in ['dry-van-dispatch.html','reefer-dispatch.html','flatbed-dispatch.html','hotshot-dispatch.html','power-only-dispatch.html','box-truck-dispatch.html','sprinter-van-dispatch.html',
            'new-authority-dispatch.html','owner-operator-dispatch.html','otr-dispatch.html','regional-truck-dispatch.html','local-truck-dispatch.html',
            'carriers.html','services.html','pricing.html','carrier-application.html','case-studies.html','how-much-does-a-truck-dispatcher-cost.html',
            'truck-dispatcher-vs-freight-broker.html','do-new-authority-carriers-need-a-dispatcher.html','owner-operator-dispatch-service-guide.html',
@@ -1280,12 +1281,14 @@ def linkcard(href,emoji,title,text):
     return '<a class="linkcard reveal" href="%s"><div class="icon">%s</div><h3>%s</h3><p>%s</p><span class="arw">Learn more %s</span></a>' % (href,emoji,title,text,ARW)
 
 FREIGHT_CARDS = '''<section id="services" class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Dispatch by Freight Type</div><h2>Specialized dispatch for your equipment</h2></div>
-<div class="grid g3">%s</div></div></section>''' % ''.join([
+<div class="grid g4">%s</div></div></section>''' % ''.join([
  linkcard('reefer-dispatch.html','&#10052;&#65039;','Reefer Dispatch','Temperature-controlled freight that pays &mdash; booked and protected.'),
  linkcard('flatbed-dispatch.html','&#128679;','Flatbed Dispatch','Steel, lumber, machinery &mdash; higher-skill freight, higher rates.'),
  linkcard('dry-van-dispatch.html','&#128230;','Dry Van Dispatch','Consistent, steady van freight to keep you moving.'),
  linkcard('hotshot-dispatch.html','&#9889;','Hotshot Dispatch','Expedited, smaller loads for hotshot operators.'),
  linkcard('power-only-dispatch.html','&#128668;','Power Only','Flexible drop-and-hook freight for your tractor.'),
+ linkcard('box-truck-dispatch.html','&#128666;','Box Truck Dispatch','LTL, final-mile and expedited runs for 16&ndash;26 ft boxes.'),
+ linkcard('sprinter-van-dispatch.html','&#128656;','Sprinter &amp; Cargo Van','Expedited and final-mile freight sized to your van&rsquo;s real payload.'),
  linkcard('new-authority-dispatch.html','&#128640;','New Authority','Just got your MC? We get you set up and loaded.'),
 ])
 
@@ -5064,7 +5067,7 @@ _btfaq_html, _btfaq_sch = faq_block([
     ('Do box trucks need their own MC authority?', 'If your box truck is over 10,001 lbs GVWR and hauls interstate freight for hire, yes &mdash; you generally need operating authority and insurance just like a semi. We can point you to the right compliance steps before you start.'),
     ('What loads suit a 26-ft box truck best?', 'LTL and partial freight, final-mile retail and furniture, expedited hot shots and trade-show or event freight. We match by weight, dock height and liftgate capability so you are not offered freight you cannot load.'),
     ('Is expedited freight really worth it?', 'When it fits your schedule &mdash; often yes. Time-critical loads pay a premium for reliability. The trade-off is strict windows, so we only push expedited runs your schedule can actually make.'),
-    ('Do you dispatch cargo vans and sprinters?', 'Yes, where the freight genuinely fits the vehicle. We are honest about it: van freight is a thinner market than box trucks, and we will tell you what your lanes realistically pay.'),
+    ('Do you dispatch cargo vans and sprinters?', 'Yes, where the freight genuinely fits the vehicle. We are honest about it: van freight is a thinner market than box trucks, and we will tell you what your lanes realistically pay. See <a href="sprinter-van-dispatch.html">Sprinter &amp; cargo van dispatch</a>.'),
 ])
 bt = svc_hero('Box Truck &amp; Expedited Dispatch', 'Dispatch built for box trucks, sprinter vans and expedited freight &mdash; we keep your smaller equipment loaded with the right runs at the right rate.')
 bt += _sec('Box truck dispatch', 'Loads that fit your equipment', _cards([
@@ -5095,6 +5098,45 @@ bt += final_cta()
 page('box-truck-dispatch.html', 'Box Truck &amp; Expedited Dispatch Service | LoadBoot',
      'Box truck, cargo van and expedited freight dispatch. LoadBoot keeps your smaller equipment loaded with LTL, final-mile and hot loads. Flat 5%, no long-term contracts.',
      'services.html', bt, _btfaq_sch)
+
+
+# ---- Sprinter & Cargo Van Dispatch (service page) ----
+_svfaq_html, _svfaq_sch = faq_block([
+    ('Do I need MC authority for a sprinter or cargo van?', 'Interstate for-hire carriers generally need a USDOT number and operating authority, even with a van. Rules for vehicles under 10,001 lbs GVWR differ from heavier trucks in some areas (for example medical cards and some FMCSA safety rules), so confirm your exact requirements with FMCSA. We will point you to the right steps before you start.'),
+    ('How much weight can my van take?', 'It depends on your exact vehicle &mdash; check the payload on your door sticker or spec sheet. Many cargo vans land around 3,000&ndash;3,500 lbs and high-roof sprinters around 3,500&ndash;4,500 lbs. We only offer loads within the payload and cargo length you enter in your profile.'),
+    ('What insurance do brokers usually want for vans?', 'Most brokers ask for auto liability (commonly $1,000,000) and cargo coverage (commonly $100,000), with the broker listed as certificate holder. Requirements vary by broker and freight, and we check them before we book.'),
+    ('Is there enough van freight to stay busy?', 'Van freight is a thinner market than truckload, and we say that up front. It is strongest for expedited, time-critical and final-mile work. We plan your week around your service area so you are not chasing one-off runs.'),
+    ('What does it cost?', 'The same flat 5% of the load we book for you &mdash; no sign-up fee and no long-term contract. If we do not book you, you do not pay.'),
+])
+sv = svc_hero('Sprinter &amp; Cargo Van Dispatch', 'Dispatch for sprinter vans and cargo vans &mdash; expedited, final-mile and partial freight matched to your van&rsquo;s real payload, cargo length and door setup.')
+sv += _sec('Van dispatch', 'Freight sized to your van, not someone else&rsquo;s truck', _cards([
+    ('&#9878;', 'Payload-first matching', 'You enter your van&rsquo;s payload and cargo length once. We only offer freight that fits &mdash; no overweight surprises at pickup.'),
+    ('&#9889;', 'Expedited &amp; hot runs', 'Time-critical freight where a fast, reliable van is the right tool &mdash; and the rate reflects it.'),
+    ('&#128176;', 'Flat 5%, no long-term contract', 'Same honest pricing as our truckload dispatch: you only pay when we book you.'),
+]))
+sv += _sec('Freight we book', 'Sprinter &amp; cargo van freight we dispatch', _cards([
+    ('&#9200;', 'Expedited &amp; time-critical', 'Urgent parts, production-line and same-day freight with hard delivery windows your schedule can genuinely make.'),
+    ('&#127968;', 'Final-mile deliveries', 'Residential and business deliveries &mdash; appointment and inside-delivery requirements captured before you accept.'),
+    ('&#128230;', 'Partials &amp; small LTL', 'A few pallets or boxed freight sized to your cargo area &mdash; not loads built for a 53-ft trailer.'),
+    ('&#127973;', 'Medical &amp; lab', 'Supplies and equipment moves that value careful handling and on-time delivery, when your setup and paperwork allow.'),
+    ('&#128295;', 'Parts &amp; components', 'Automotive and industrial parts runs between suppliers, plants and dealers &mdash; often repeatable.'),
+    ('&#128682;', 'Door-setup aware', 'Rear swing doors, side door, no dock height &mdash; we check how the freight loads so you are not sent somewhere you cannot load.'),
+], 'g3'))
+sv += _sec('What drives van rates', 'How we protect your rate', _cards([
+    ('&#128200;', 'Urgency and reliability', 'Expedited windows pay for a van that shows up on time. We chase freight that values that, not the cheapest board posts.'),
+    ('&#128205;', 'Service area and return trip', 'We plan around where you want to run so a good outbound load does not turn into an empty drive home.'),
+    ('&#9878;', 'Accessorials documented', 'Wait time and inside delivery are recorded with real timestamps and billed, not absorbed.'),
+]), soft=True)
+sv += _sec('How it works', 'From sign-up to your first van load', _cards([
+    ('1', 'Profile &amp; equipment', 'Add your van with payload, cargo length, door type and service area &mdash; about five minutes.'),
+    ('2', 'We find &amp; negotiate', 'Your dispatcher sources expedited and final-mile freight that fits, negotiates the rate and checks the broker.'),
+    ('3', 'You drive, we handle the rest', 'Paperwork, status updates, POD collection and invoice prep &mdash; you focus on the road.'),
+]))
+sv += _svfaq_html
+sv += final_cta()
+page('sprinter-van-dispatch.html', 'Sprinter &amp; Cargo Van Dispatch Service | LoadBoot',
+     'Sprinter van and cargo van dispatch for expedited, final-mile and partial freight matched to your real payload and cargo length. Flat 5%, no long-term contracts.',
+     'services.html', sv, _svfaq_sch)
 
 
 # ================= WEB-3: REAL COMPLIANCE PAGES (each 10+ unique sections, educational, disclaimed) =================
@@ -9431,7 +9473,7 @@ for _p in _ACC_PAGES:
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [
   ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
-  ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('otr-dispatch.html', 'OTR / Over-the-Road'), ('regional-truck-dispatch.html', 'Regional'), ('local-truck-dispatch.html', 'Local & Short-Haul'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
+  ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('otr-dispatch.html', 'OTR / Over-the-Road'), ('regional-truck-dispatch.html', 'Regional'), ('local-truck-dispatch.html', 'Local & Short-Haul'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('sprinter-van-dispatch.html', 'Sprinter &amp; Cargo Van'), ('new-authority-dispatch.html', 'New Authority')]),
   ('Resources', [('resources.html', 'Resources'), ('api.html', 'Developer API'), ('load-score.html', 'Load Score Tool'), ('freight-market-reports.html', 'Weekly Freight Market Reports'), ('dry-van-freight-rates.html', 'Dry Van Rates'), ('reefer-freight-rates.html', 'Reefer Rates'), ('flatbed-freight-rates.html', 'Flatbed Rates'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
   ('Freight by industry', [('freight-shipping-by-industry.html', 'Freight Shipping by Industry'), ('food-and-beverage-freight-shipping.html', 'Food & Beverage'), ('building-materials-freight-shipping.html', 'Building Materials'), ('retail-and-ecommerce-freight-shipping.html', 'Retail & E-commerce'), ('manufacturing-and-industrial-freight-shipping.html', 'Manufacturing & Industrial'), ('agriculture-and-produce-freight-shipping.html', 'Agriculture & Produce'), ('metals-and-steel-freight-shipping.html', 'Metals & Steel'), ('shipper-solutions.html', 'Shipper Solutions')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
@@ -9803,7 +9845,7 @@ if os.path.isdir(APP_SRC) and _APP_FATAL:
 # (1) Required output pages/files must exist in the publish dir.
 REQUIRED_OUTPUT = ['index.html','about.html','services.html','pricing.html','contact.html',
  'tools.html','load-score.html','blog.html','privacy.html','terms.html','dashboard.html',
- 'how-it-works.html','faq.html','box-truck-dispatch.html','careers.html','partners.html',
+ 'how-it-works.html','faq.html','box-truck-dispatch.html','sprinter-van-dispatch.html','careers.html','partners.html',
  'referral.html','resources.html','case-studies.html','security.html','status.html',
  'cookies.html','accessibility.html','login.html','carrier-application.html',
  '404.html','sitemap.xml','robots.txt','_headers','_redirects','styles.css','app.js',

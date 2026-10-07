@@ -1219,7 +1219,7 @@ async function agentPortal(user) {
       const sources = checks(['Load board (DAT / Truckstop / 123Loadboard / Relay)', 'Facebook or WhatsApp freight groups',
         'Brokers I already know (my own network)', 'Direct shipper contacts', 'Broker e-mail blasts', SRC_NONE], SRC_NONE);
       const srcOk9 = () => { const v9 = sources.values(); return v9.length > 0 && !v9.includes(SRC_NONE); };
-      const equip = checks(['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Power Only', 'Hotshot', 'Box Truck']);
+      const equip = checks(['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Power Only', 'Hotshot', 'Box Truck', 'Cargo Van', 'Sprinter Van']);   // bl_ux_0511: vans
       // ---- CV / résumé + optional ID document upload ----
       const ps9 = (prof && prof.skills) || {};
       const docState = { cv: ps9.cv_doc || null, cvName: ps9.cv_name || null, idd: ps9.id_doc || null, iddName: ps9.id_name || null };
@@ -4051,6 +4051,7 @@ async function appView(user) {
           if (t9.pallet_positions) bits.push(t9.pallet_positions + ' pallets');
           if (t9.liftgate) bits.push('liftgate' + (t9.liftgate_cap_lbs ? ' ' + Number(t9.liftgate_cap_lbs).toLocaleString() + ' lb' : ''));
           if (t9.dock_high) bits.push('dock high');
+          if (t9.has_side_door) bits.push('side door');   // bl_fleet_0511
           if (t9.has_pallet_jack) bits.push('pallet jack');
           if (t9.has_ramp) bits.push('ramp');
           if (t9.temp_control && t9.temp_control !== 'none') bits.push(t9.temp_control);
@@ -6260,6 +6261,18 @@ function tripStepper(status) {
       const doorH = numIn('Door opening height (in)', t && t.door_height_in);
       const deckH = numIn('Deck height off ground (in)', t && t.deck_height_in);
       const dockHigh = check('Dock high — backs straight up to a standard dock', t && t.dock_high);
+      // bl_fleet_0511: vans load from the rear (swing doors) AND a sliding side door — door_type holds one,
+      // so the second door is its own box. Dock high does not exist on a van, so it is hidden for vans.
+      const sideDoor = check('Side door too — sliding / side-loading door', t && t.has_side_door);
+      const VAN9 = ['Cargo Van', 'Sprinter Van'];
+      const syncDoors9 = () => {
+        const van9 = VAN9.indexOf(eq.value) >= 0;
+        if (van9 && !doorType.value) doorType.value = 'swing';
+        sideDoor.style.display = ['side', 'none', 'curtain'].indexOf(doorType.value) >= 0 ? 'none' : '';
+        dockHigh.style.display = van9 ? 'none' : '';
+        if (van9) dockHigh._box.checked = false;
+      };
+      eq.addEventListener('change', syncDoors9); doorType.addEventListener('change', syncDoors9); syncDoors9();
 
       // --- loading equipment ---
       const liftgate = check('Liftgate', t && t.liftgate);
@@ -6461,6 +6474,7 @@ function tripStepper(status) {
             domicileCity: dCity.value.trim() || null, domicileState: dState.value.trim().toUpperCase() || null, domicileZip: dZip.value.trim() || null,
             doorType: doorType.value || null, doorWidthIn: numOf(doorW), doorHeightIn: numOf(doorH),
             deckHeightIn: numOf(deckH), dockHigh: dockHigh._box.checked,
+            hasSideDoor: sideDoor.style.display === 'none' ? (doorType.value === 'side') : sideDoor._box.checked,   // bl_fleet_0511
             liftgate: liftgate._box.checked, liftgateCapLbs: numOf(lgCap),
             hasPalletJack: palletJack._box.checked, hasRamp: ramp._box.checked, hasEtrack: etrack._box.checked,
             hasLoadBars: loadBars._box.checked, hasStraps: straps._box.checked, hasBlankets: blankets._box.checked,
@@ -6558,7 +6572,7 @@ function tripStepper(status) {
         sec('Capacity', 'This is what decides which loads we can offer you — and whether two loads fit on one run.'),
         payload, capHint, row3(cLen, cWid, cHgt), row2(wWell, pallets),
         sec('Doors and deck', 'Shippers filter on this. A truck without it gets skipped.'),
-        doorType, row3(doorW, doorH, deckH), dockHigh,
+        doorType, sideDoor, row3(doorW, doorH, deckH), dockHigh,
         sec('On-board loading equipment', 'Every box ticked here is a load someone else cannot take.'),
         h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:0 12px' }, [liftgate, palletJack, ramp, etrack, loadBars, straps, blankets]),
         lgCap,

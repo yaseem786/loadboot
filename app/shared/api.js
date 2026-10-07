@@ -1036,7 +1036,12 @@ export const pocketTripPods = (trip) => rpc('cc_pocket_trip_pods', { p_trip: tri
 export const pocketDrivers = () => rpc('cc_pocket_drivers');
 export const carrierLinkDriver = (fleetDriver, user) => rpc('cc_carrier_link_driver', { p_fleet_driver: fleetDriver, p_user: user });
 export const pocketUpsertDriver = (o = {}) => rpc('cc_pocket_upsert_driver', { p_id: o.id ?? null, p_name: o.name, p_phone: o.phone ?? null, p_email: o.email ?? null, p_license_no: o.licenseNo ?? null, p_license_state: o.licenseState ?? null, p_license_exp: o.licenseExp ?? null, p_medical_exp: o.medicalExp ?? null });
-export const pocketTrucks = () => rpc('cc_pocket_trucks');
+// bl_fleet_0511: has_side_door comes from its own small RPC (cc_pocket_trucks keeps its fixed shape) and is merged in.
+export const pocketTrucks = async () => {
+  const rows = await rpc('cc_pocket_trucks');
+  try { const sd = await rpc('cc_pocket_truck_side_doors'); if (Array.isArray(rows) && sd) rows.forEach((r) => { if (r && sd[r.id] !== undefined) r.has_side_door = sd[r.id]; }); } catch (_) {}
+  return rows;
+};
 export const coiVehicles = () => rpc('cc_coi_vehicles');
 // One jsonb payload instead of 40 positional params. The positional overload still
 // exists server-side for tabs that were open during the deploy; its arg names do not
@@ -1058,6 +1063,7 @@ export const pocketUpsertTruck = (o = {}) => rpc('cc_pocket_upsert_truck', { p: 
   home_time: o.homeTime ?? null, spec_note: o.specNote ?? null,
   trailer_type: o.trailerType ?? null, trailer_len_ft: o.trailerLenFt ?? null, trailer_vin: o.trailerVin ?? null,
   has_tarps: o.hasTarps ?? null, has_chains: o.hasChains ?? null,
+  has_side_door: o.hasSideDoor ?? null,   // bl_fleet_0511
 } });
 // Live VIN <-> certificate-of-insurance match, so the carrier hears about it while
 // they are still typing rather than after they press Save.
