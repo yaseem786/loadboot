@@ -10,7 +10,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm, askReason } from '../../shared/ui/components.js';
-import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, ccRileyPlans, ccRileyPlan, ccRileyPlanSet, ccRileyPlanBook, ccRileyFollowupAct, rileyAdmin, rileyRecordingBlob, ccRetellCallback } from '../../shared/api.js';
+import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, ccRileyCallbackDispatchers, ccRileyCallbackAssign, ccRileyPlans, ccRileyPlan, ccRileyPlanSet, ccRileyPlanBook, ccRileyFollowupAct, rileyAdmin, rileyRecordingBlob, ccRetellCallback } from '../../shared/api.js';
 import { PLAN_STATUS, PLAN_REASON_LABEL, NEXT_ACTION } from './rileyPlanFlow.js';   // bl_voice_0483 — call plans (+0485 booking / next step)
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -626,6 +626,65 @@ export async function renderRiley(host, query) {
     setTimeout(() => { try { ta.focus(); } catch (_) {} }, 60);
   }
 
+  // bl_voice_0530 — hand an open callback to a dispatcher: it lands in their dialer (Callbacks), they get an alert + e-mail
+  async function assignCallback(k) {
+    const who = k.contact_name || pretty(k.number);
+    const err = el('div', { class: 'cc-sub', style: 'color:#dc2626;min-height:18px;margin-top:4px' });
+    const sel = el('select', { class: 'cc-input', disabled: true }, el('option', { value: '' }, 'Loading dispatchers…'));
+    const ta = el('textarea', { class: 'cc-input', rows: '6', placeholder: 'What should the dispatcher know? Who the caller is, what to ask, what not to promise.' }, k.note || '');
+    let busy = false;
+    const submit = el('button', { class: 'lb-btn lb-btn-primary', disabled: true, onClick: async () => {
+      if (!sel.value) { err.textContent = 'Pick a dispatcher.'; return; }
+      if (busy) return; busy = true; submit.disabled = true; err.textContent = '';
+      try {
+        const r = await ccRileyCallbackAssign(k.id, sel.value, ta.value.trim() || null);
+        if (r && r.error) throw new Error(r.error);
+        dr.close(); toast('Assigned to ' + (r.dispatcher || 'the dispatcher') + ' — they got an alert and an e-mail.'); loadAll();
+      } catch (e) { err.textContent = humanizeError(e); busy = false; submit.disabled = false; }
+    } }, 'Assign');
+    const dr = openDrawer('Assign callback — ' + who, el('div', { class: 'cc-form' }, [
+      el('div', { class: 'cc-sub', style: 'margin-bottom:10px' }, pretty(k.number) + ' · it goes to the dispatcher’s dialer (Callbacks), with an in-app alert and an e-mail that carries your brief.'),
+      el('label', { class: 'cc-sub', style: 'display:block;font-weight:600;margin-bottom:4px' }, 'Dispatcher'), sel,
+      el('label', { class: 'cc-sub', style: 'display:block;font-weight:600;margin:12px 0 4px' }, 'Brief for the dispatcher'), ta,
+      el('div', { class: 'cc-sub', style: 'margin-top:4px' }, 'The dialer shows only the first line of this, so the full brief travels in the e-mail.'),
+      err,
+      el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [submit, el('button', { class: 'lb-btn', onClick: () => dr.close() }, 'Cancel')]),
+    ]), { subtitle: 'Any dispatcher with a phone line can take it', size: 'sm' });
+    try {
+      const list = await ccRileyCallbackDispatchers();
+      if (list && list.error) throw new Error(list.error);
+      const rows = Array.isArray(list) ? list : [];
+      mount(sel, [el('option', { value: '' }, rows.length ? 'Choose a dispatcher' : 'No dispatcher in trial / verified / active')].concat(rows.map((d) => el('option', { value: d.user_id, disabled: !d.has_line },
+        d.name + ' · ' + d.status + (d.has_line ? '' : ' · no phone line') + (d.open_callbacks ? ' · ' + d.open_callbacks + ' open' : '') + (d.last_call_at ? ' · last call ' + ago(d.last_call_at) : '')))));
+      sel.disabled = !rows.length; submit.disabled = !rows.some((d) => d.has_line);
+    } catch (e) { err.textContent = humanizeError(e); }
+  }
+
+  // bl_voice_0530 — what was handed to dispatchers (or Riley routed to one), and what came of it
+  function assignedCard() {
+    const rows = data.assigned_callbacks || [];
+    const mmss = (s) => { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+    return el('div', { class: 'ry-card' }, [
+      el('h3', null, 'Given to dispatchers'), el('p', { class: 'hint' }, 'Callbacks from this line that a dispatcher now holds: handed over here, or routed by Riley to a carrier’s own dispatcher. Open ones, and ones closed in the last 7 days. The result is the dispatcher’s latest call to that number since; the recording is under Phones & live calls.'),
+      rows.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ry-t' }, [el('thead', null, el('tr', null, ['Given', 'Caller', 'Dispatcher', 'Result', ''].map((x) => el('th', null, x)))),
+        el('tbody', null, rows.map((k) => {
+          const c = k.last_call;
+          const result = c ? [el('span', { class: 'ry-pill ' + (c.answered ? 'g' : 'a') }, c.answered ? 'Talked ' + mmss(c.duration_sec) : 'Not connected'),
+              c.outcome ? el('div', { style: 'margin-top:4px' }, c.outcome) : null,
+              c.note ? el('div', { style: 'font-size:12px;opacity:.75;white-space:pre-line' }, c.note) : null,
+              el('div', { style: 'font-size:11.5px;opacity:.65' }, et(c.at) + (c.has_recording ? ' · recorded' : ''))]
+            : el('span', { class: 'ry-pill ' + (k.status === 'open' ? 'a' : 'm') }, k.status === 'open' ? 'Not called yet' : 'Closed without a call');
+          return el('tr', null, [
+            el('td', { style: 'white-space:nowrap' }, [et(k.assigned_at || k.created_at), el('div', { style: 'font-size:11.5px;opacity:.65' }, ago(k.assigned_at || k.created_at))]),
+            el('td', null, [k.contact_name ? el('div', null, k.contact_name) : null, pretty(k.number)]),
+            el('td', null, [el('div', null, k.dispatcher), el('span', { class: 'ry-pill ' + (k.status === 'open' ? 'a' : 'g') }, k.status === 'open' ? 'Open' : 'Done')]),
+            el('td', { style: 'max-width:360px' }, result),
+            el('td', null, k.status === 'open' ? el('button', { class: 'ry-btn sm', disabled: !can(), title: 'Give it to another dispatcher', onClick: () => assignCallback(k) }, 'Reassign') : null),
+          ]);
+        }))])) : el('div', { style: 'opacity:.7' }, 'Nothing handed out yet.'),
+    ]);
+  }
+
   // ---------- WhatsApp line
   function paintWa() {
     const legs = data.wa_legs || [], cbs = data.wa_callbacks || [];
@@ -665,9 +724,11 @@ export async function renderRiley(host, query) {
                 d10.length === 10 ? el('a', { class: 'ry-btn sm', style: 'text-decoration:none', href: 'https://wa.me/1' + d10, target: '_blank', rel: 'noopener' }, 'WhatsApp') : null,
                 full ? el('button', { class: 'ry-btn sm', title: 'Recording, transcript and what Riley promised', onClick: () => openCall(full) }, 'Open call')
                   : hasCall ? el('button', { class: 'ry-btn sm', disabled: true, title: 'This call is older than the calls loaded on this screen — find it under Calls by number.' }, 'Open call') : null,
+                el('button', { class: 'ry-btn sm p', disabled: !can(), title: 'Give this callback to a dispatcher', onClick: () => assignCallback(k) }, 'Assign'),
                 el('button', { class: 'ry-btn sm', disabled: !can(), onClick: () => closeCallback(k) }, 'Done')]))]);
           }))])) : el('div', { style: 'opacity:.7' }, 'Nothing open.'),
       ]),
+      assignedCard(),
       el('div', { class: 'ry-card' }, [
         el('h3', null, 'Telnyx legs on the line'), el('p', { class: 'hint' }, 'Every call to the WhatsApp number as Telnyx saw it, matched to Riley\u2019s recording of the same call. Play here, or open the transcript and analysis.'),
         legs.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ry-t' }, [el('thead', null, el('tr', null, ['When', 'Caller', 'Outcome', 'Length', 'Recording', ''].map((x) => el('th', null, x)))),
