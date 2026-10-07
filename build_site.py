@@ -836,7 +836,9 @@ addEventListener('beforeinstallprompt',function(e){e.preventDefault();});addEven
 var lastY=window.pageYOffset||0,shown=true;function show(v){if(v===shown)return;shown=v;b.style.opacity=v?'1':'0';b.style.visibility=v?'visible':'hidden';}function clr(){var f=document.querySelector('footer');var y=window.pageYOffset||0,d=y-lastY;if(Math.abs(d)>4)lastY=y;if(f&&f.getBoundingClientRect().top<innerHeight){show(false);return;}if(y<80){show(true);return;}if(d>4){show(false);}else if(d<-4){show(true);}}addEventListener('scroll',clr,{passive:true});addEventListener('resize',clr,{passive:true});clr();},1200);});})();
 '''
 MANIFEST = '{"name":"LoadBoot","short_name":"LoadBoot","description":"The Operating System for Trucking — sign in to your LoadBoot portal.","start_url":"/app/","scope":"/","display":"standalone","background_color":"#0F172A","theme_color":"#0F172A","icons":[{"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"/icon-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}'
-SW = r'''const CACHE='lb-v7';
+# lb-v8 (7 Oct 2026): bumped so every phone drops the pages lb-v7 cached; one stale how-it-works copy from before
+# 28 Sep was still being served on a flaky connection (the fetch fails -> cached page, however old).
+SW = r'''const CACHE='lb-v8';
 const CORE=['/','/index.html','/styles.css','/app.js','/dashboard.html','/load-score.html','/tools.html','/services.html','/pricing.html','/contact.html','/manifest.webmanifest','/icon-192.png','/icon-512.png','/apple-touch-icon.png'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(CORE).catch(function(){});}));});
 self.addEventListener('message',function(e){if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting();});
@@ -9577,6 +9579,8 @@ SW_NOCACHE_HEADERS = (
   "\n/.well-known/apple-app-site-association\n"
   "  Content-Type: application/json\n"
   "  Cache-Control: public, max-age=3600\n"
+  "\n/sw.js\n"
+  "  Cache-Control: no-cache, no-store, must-revalidate\n"
   "\n/app/sw.js\n"
   "  Cache-Control: no-cache, no-store, must-revalidate\n"
   "\n/app/env-config.js\n"
