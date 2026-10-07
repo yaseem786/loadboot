@@ -919,7 +919,10 @@ const inp = (ph, type) => h('input', { class: 'cp-in', type: type || 'text', pla
 // bl_board_0457d (board audit #7): posting sizes. Trailer lengths a load can need, per equipment
 // (the first is the full size; the rest read "N ft or longer"). Deck height is used only for the
 // over-height estimate: 13'6" is the usual legal height, so freight above 13.5 - deck is flagged.
-const LEN9 = { 'Dry Van': [53, 48], 'Reefer': [53, 48], 'Flatbed': [53, 48], 'Step Deck': [53, 48], 'Conestoga': [53, 48], 'Hotshot': [40, 35, 30], 'Box Truck': [26, 24, 20, 16] };
+const LEN9 = { 'Dry Van': [53, 48], 'Reefer': [53, 48], 'Flatbed': [53, 48], 'Step Deck': [53, 48], 'Conestoga': [53, 48], 'Hotshot': [40, 35, 30], 'Box Truck': [26, 24, 20, 16], 'Sprinter Van': [14, 12], 'Cargo Van': [12, 10] };   // bl_ux_0510: vans = cargo-area length
+// bl_ux_0510: what each small unit usually carries. Above this the post is almost certainly the wrong equipment —
+// warned (never blocked) so the broker can switch before a van carrier requests a load it can't legally haul.
+const PAYLOAD9 = { 'Cargo Van': 3500, 'Sprinter Van': 4500, 'Box Truck': 10000 };
 const DECK9 = { 'Flatbed': 5, 'Conestoga': 5, 'Step Deck': 3.5, 'Hotshot': 3.5 };
 // "8'6\"", "8 ft 6 in", "8.5", "102 in" -> feet (2 dp); null when blank or unreadable
 const parseFt9 = (t) => {
@@ -2287,7 +2290,7 @@ async function brokerDash(user, ov) {
             const ls9 = LEN9[w.equipment];
             const sel9 = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'Any length')].concat(ls9.map((n9, k9) => h('option', { value: String(n9) }, n9 + ' ft' + (k9 ? ' or longer' : '')))));
             sel9.value = ls9.indexOf(Number(w.trailer_length)) >= 0 ? String(w.trailer_length) : ''; sel9.onchange = () => { w.trailer_length = sel9.value; _plSave(); };
-            return field('Trailer length needed (carriers filter on this)', sel9);
+            return field((w.equipment === 'Sprinter Van' || w.equipment === 'Cargo Van' ? 'Cargo length needed' : 'Trailer length needed') + ' (carriers filter on this)', sel9);
           })() : null,
           (directCarrier && w.equipment) ? (() => {
             const hint9 = h('div', { class: 'cp-sub', style: 'grid-column:1/-1' }, '\ud83c\udfaf Checking ' + directCarrier.name + '\u2019s equipment\u2026');
@@ -2347,7 +2350,14 @@ async function brokerDash(user, ov) {
             }
             return out.length ? h('div', { style: 'grid-column:1/-1;display:grid;gap:8px' }, out) : null;
           })(),
-          wi('Weight (lb) *', 'weight', 'number'),
+          wi('Weight (lb) *', 'weight', 'number', true),
+          (() => {   // bl_ux_0510: weight vs what this equipment usually carries
+            const cap9 = PAYLOAD9[w.equipment]; const lb9 = Number(w.weight) || 0;
+            if (!cap9 || lb9 <= cap9) return null;
+            const sug9 = lb9 <= 10000 ? 'Box Truck' : 'Dry Van';
+            return h('div', { style: 'grid-column:1/-1;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:9px 13px;font-size:.82rem' },
+              '\u26a0 ' + lb9.toLocaleString() + ' lb is more than a ' + w.equipment + ' usually carries (about ' + cap9.toLocaleString() + ' lb). Please double-check the weight, or switch the equipment to ' + sug9 + ' so the right carriers see this load.');
+          })(),
           wi('Pallets / pieces', 'pallets'),
           wi('Rate ($) *', 'rate', 'number', true),
           (() => {
