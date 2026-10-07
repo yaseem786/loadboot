@@ -5100,43 +5100,107 @@ page('box-truck-dispatch.html', 'Box Truck &amp; Expedited Dispatch Service | Lo
      'services.html', bt, _btfaq_sch)
 
 
-# ---- Sprinter & Cargo Van Dispatch (service page) ----
+# ---- Sprinter & Cargo Van Dispatch (service page, v2 premium/SEO) ----
 _svfaq_html, _svfaq_sch = faq_block([
-    ('Do I need MC authority for a sprinter or cargo van?', 'Interstate for-hire carriers generally need a USDOT number and operating authority, even with a van. Rules for vehicles under 10,001 lbs GVWR differ from heavier trucks in some areas (for example medical cards and some FMCSA safety rules), so confirm your exact requirements with FMCSA. We will point you to the right steps before you start.'),
-    ('How much weight can my van take?', 'It depends on your exact vehicle &mdash; check the payload on your door sticker or spec sheet. Many cargo vans land around 3,000&ndash;3,500 lbs and high-roof sprinters around 3,500&ndash;4,500 lbs. We only offer loads within the payload and cargo length you enter in your profile.'),
-    ('What insurance do brokers usually want for vans?', 'Most brokers ask for auto liability (commonly $1,000,000) and cargo coverage (commonly $100,000), with the broker listed as certificate holder. Requirements vary by broker and freight, and we check them before we book.'),
-    ('Is there enough van freight to stay busy?', 'Van freight is a thinner market than truckload, and we say that up front. It is strongest for expedited, time-critical and final-mile work. We plan your week around your service area so you are not chasing one-off runs.'),
-    ('What does it cost?', 'The same flat 5% of the load we book for you &mdash; no sign-up fee and no long-term contract. If we do not book you, you do not pay.'),
+    ('Do I need a CDL to run sprinter van or cargo van loads?', 'No. Most sprinter and cargo vans are rated under 10,001 lbs GVWR, which is below the commercial driver&rsquo;s license threshold. You still need the right operating authority and insurance to haul for hire across state lines &mdash; see the requirements section above.'),
+    ('Do I need my own MC authority for a sprinter van?', 'If you want to book freight directly from brokers and shippers as your own business, yes: a USDOT number and interstate operating authority (MC). Some van operators instead lease onto an expedite carrier and run under that carrier&rsquo;s authority. LoadBoot dispatches carriers running under their own authority. If you are still setting up, start with our <a href="authority-dot-setup.html">authority and DOT setup guide</a> and <a href="new-authority-dispatch.html">new authority dispatch</a>.'),
+    ('What is the average rate per mile for a sprinter van?', 'There is no single honest number. Published figures range from around a dollar per loaded mile for general van freight to well above that for dedicated expedited, medical and time-critical runs, and the spread between a good lane and a bad one is bigger than for truckload. That is why we price every load against your cost per mile and the deadhead to reach it, not against a headline average. Work out your own floor with the free <a href="cost-per-mile-calculator.html">cost-per-mile calculator</a>.'),
+    ('How much weight can a sprinter van or cargo van haul?', 'It depends on your exact vehicle: check the payload on the door-jamb sticker or spec sheet. As a guide, many cargo vans and standard high-roof Sprinter 2500 vans carry roughly 3,000&ndash;3,600 lbs, and heavier-rated 3500-series vans considerably more. We only offer loads within the payload and cargo length you enter in your profile, so you are never booked onto freight that puts you overweight.'),
+    ('How do you find sprinter van loads?', 'Four ways, working together: expedited and partial freight posted by brokers and shippers on the LoadBoot <a href="load-board.html">load board</a>, external load boards your dispatcher searches by van class, direct broker and shipper relationships your dispatcher builds for your lanes, and repeat work once your service record earns it. Your truck posting and your profile do the filtering, so the loads offered actually fit your van.'),
+    ('Do you dispatch medical, pharmaceutical and lab loads?', 'Yes, where your van, equipment and paperwork qualify. Medical and lab freight values careful handling, documented chain of custody and on-time delivery, and some shippers require specific training or equipment. We tell you what a given account needs before you commit to it.'),
+    ('How long are typical sprinter van runs?', 'Expedited van freight runs the full range: same-day local and regional runs of a few hundred miles, and cross-country hot loads of a thousand miles or more. You set your radius and home time in your profile and your dispatcher plans within it. Operators willing to run longer, and to team, generally see more of the premium freight.'),
+    ('What insurance do brokers require for a cargo van?', 'Most brokers ask for auto liability of $1,000,000 and cargo coverage of $100,000, with the broker named as certificate holder, and some accounts ask for more. Requirements vary by broker and freight type; we check them against your certificate before we book you.'),
+    ('Is it worth it with a new van and no experience?', 'It can be, if you treat it as a business. Van freight is a thinner market than truckload and the rate spread is wide, so the first weeks are about positioning near freight-dense areas, building a service record and learning which lanes pay. A dispatcher who knows what van freight is worth shortens that learning curve. We are honest about what your lanes realistically pay.'),
+    ('Sprinter van or cargo van: which pays more?', 'A high-roof Sprinter generally fits more freight (taller cargo, more pallet positions, more payload), so it qualifies for more loads. A standard cargo van costs less to run and still fits a large share of expedited and final-mile freight. The better earner is the one that is loaded more often, which depends more on your lanes and availability than on the badge.'),
+    ('What does LoadBoot sprinter van dispatch cost?', 'A flat 5% of the loads we book for you. No sign-up fee, no monthly fee, no long-term contract. If we do not book you, you do not pay. See <a href="pricing.html">pricing</a>.'),
 ])
-sv = svc_hero('Sprinter &amp; Cargo Van Dispatch', 'Dispatch for sprinter vans and cargo vans &mdash; expedited, final-mile and partial freight matched to your van&rsquo;s real payload, cargo length and door setup.')
-sv += _sec('Van dispatch', 'Freight sized to your van, not someone else&rsquo;s truck', _cards([
-    ('&#9878;', 'Payload-first matching', 'You enter your van&rsquo;s payload and cargo length once. We only offer freight that fits &mdash; no overweight surprises at pickup.'),
-    ('&#9889;', 'Expedited &amp; hot runs', 'Time-critical freight where a fast, reliable van is the right tool &mdash; and the rate reflects it.'),
-    ('&#128176;', 'Flat 5%, no long-term contract', 'Same honest pricing as our truckload dispatch: you only pay when we book you.'),
-]))
-sv += _sec('Freight we book', 'Sprinter &amp; cargo van freight we dispatch', _cards([
-    ('&#9200;', 'Expedited &amp; time-critical', 'Urgent parts, production-line and same-day freight with hard delivery windows your schedule can genuinely make.'),
-    ('&#127968;', 'Final-mile deliveries', 'Residential and business deliveries &mdash; appointment and inside-delivery requirements captured before you accept.'),
-    ('&#128230;', 'Partials &amp; small LTL', 'A few pallets or boxed freight sized to your cargo area &mdash; not loads built for a 53-ft trailer.'),
-    ('&#127973;', 'Medical &amp; lab', 'Supplies and equipment moves that value careful handling and on-time delivery, when your setup and paperwork allow.'),
-    ('&#128295;', 'Parts &amp; components', 'Automotive and industrial parts runs between suppliers, plants and dealers &mdash; often repeatable.'),
-    ('&#128682;', 'Door-setup aware', 'Rear swing doors, side door, no dock height &mdash; we check how the freight loads so you are not sent somewhere you cannot load.'),
+sv = svc_hero('Sprinter Van Dispatch Service', 'Expedited, final-mile and partial loads for sprinter van and cargo van owner-operators &mdash; matched to your real payload, cargo length and door setup. Flat 5%, no long-term contract, non-CDL welcome.',
+              cta_href='carrier-application.html', cta_label='Apply as a Carrier ' + ARW, cta2_href='pricing.html', cta2_label='See Pricing')
+sv += ('<section><div class="wrap prose reveal" style="max-width:820px">'
+       '<div class="eyebrow">Sprinter &amp; cargo van dispatch</div><h2>What a sprinter van dispatcher actually does for you</h2>'
+       '<p>Van freight is not small truckload freight. The loads are lighter, the windows are tighter and the rate spread between a good lane and a bad one is wider than anything a 53-ft dry van sees. A load that pays well for a sprinter can be a money-loser for the same van after 150 miles of deadhead. That is the whole job of a sprinter van dispatch service: find the expedited, final-mile and partial freight that genuinely fits your vehicle, price it against your real cost per mile, and keep you positioned where the next load is.</p>'
+       '<p>LoadBoot dispatches sprinter vans and cargo vans the same way we dispatch box trucks and semis: one dedicated dispatcher, a written plan for your lanes, radius and floor rate, and a flat 5% only on loads we book. The difference is in the matching. Your profile carries your payload, cargo length, door type and whether you have a dock-height floor or a liftgate, and we only offer loads that clear every one of those checks.</p>'
+       '<p>We are also honest about the market. Van freight is thinner than truckload, most vans run under 10,001 lbs GVWR with no CDL required, and good weeks come from positioning, speed and reliability rather than from chasing the highest posted rate. If your lanes will not pay, we will tell you before you accept a load, not after.</p>'
+       '</div></section>')
+sv += _sec('Why van operators choose LoadBoot', 'Dispatch built around the van, not the trailer', _cards([
+    ('&#9878;', 'Payload-first matching', 'Payload, cargo length, pallet positions and door setup are entered once and checked on every load. No overweight surprises at pickup.'),
+    ('&#9889;', 'Expedited &amp; time-critical focus', 'We chase the freight that values a fast, reliable van: hot parts, same-day and next-day runs, and dedicated time-critical accounts.'),
+    ('&#128205;', 'Positioning, not just booking', 'A sprinter earns by staying near freight-dense areas. We plan the next load and the return before you deliver the current one.'),
+    ('&#128176;', 'Flat 5%, no contract', 'No sign-up fee, no monthly fee, no long-term commitment. You only pay on loads we book, and you can pause or switch any time.'),
+    ('&#128203;', 'Paperwork handled', 'Rate confirmations, broker setup packets, status updates, POD collection and invoice prep run through the LoadBoot app.'),
+    ('&#128737;', 'Broker vetting on every load', 'Authority, credit and payment history checked before you move, so a premium expedited rate is actually paid.'),
 ], 'g3'))
-sv += _sec('What drives van rates', 'How we protect your rate', _cards([
-    ('&#128200;', 'Urgency and reliability', 'Expedited windows pay for a van that shows up on time. We chase freight that values that, not the cheapest board posts.'),
-    ('&#128205;', 'Service area and return trip', 'We plan around where you want to run so a good outbound load does not turn into an empty drive home.'),
-    ('&#9878;', 'Accessorials documented', 'Wait time and inside delivery are recorded with real timestamps and billed, not absorbed.'),
-]), soft=True)
-sv += _sec('How it works', 'From sign-up to your first van load', _cards([
-    ('1', 'Profile &amp; equipment', 'Add your van with payload, cargo length, door type and service area &mdash; about five minutes.'),
-    ('2', 'We find &amp; negotiate', 'Your dispatcher sources expedited and final-mile freight that fits, negotiates the rate and checks the broker.'),
-    ('3', 'You drive, we handle the rest', 'Paperwork, status updates, POD collection and invoice prep &mdash; you focus on the road.'),
-]))
+sv += _sec('Freight we book', 'Sprinter van and cargo van loads we dispatch', _cards([
+    ('&#9200;', 'Expedited &amp; hot loads', 'Urgent parts, production-line and same-day freight with hard delivery windows your schedule can genuinely make. The core of sprinter van expediting.'),
+    ('&#128295;', 'Automotive &amp; industrial parts', 'Supplier-to-plant, plant-to-dealer and warehouse-to-line runs that recur weekly once a shipper trusts your service.'),
+    ('&#127973;', 'Medical, pharma &amp; lab', 'Supplies, equipment and specimen moves that value careful handling and documented delivery, where your setup and paperwork qualify.'),
+    ('&#127968;', 'Final-mile &amp; white-glove', 'Residential and business deliveries, with appointment, inside-delivery and signature requirements captured before you accept.'),
+    ('&#128230;', 'Partials &amp; small LTL', 'A few pallets or boxed freight sized to your cargo area, not loads built for a 53-ft trailer.'),
+    ('&#127914;', 'Trade show, event &amp; AOG', 'Show freight with strict move-in and move-out windows, and aircraft-on-ground parts runs where speed is the whole value.'),
+], 'g3'))
+_sv_spec = '''<div class="reveal" style="overflow-x:auto"><table class="cmp"><thead><tr><th>Vehicle</th><th>Typical payload</th><th>Typical cargo length</th><th>Standard pallets</th><th>Best suited for</th></tr></thead><tbody>
+<tr><td><b>Cargo van</b> (Transit, ProMaster, Express, standard Sprinter)</td><td>About 3,000&ndash;3,500 lbs</td><td>About 10&ndash;12 ft</td><td>2&ndash;3</td><td>Expedited parts, final-mile, small partials, local and regional runs</td></tr>
+<tr><td><b>High-roof Sprinter 2500</b> (144&quot; or 170&quot; wheelbase)</td><td>About 3,500&ndash;3,600 lbs</td><td>About 11&ndash;14 ft</td><td>3&ndash;4</td><td>Expedited and medical freight, taller cargo, longer regional and OTR runs</td></tr>
+<tr><td><b>Sprinter 3500 / extended</b></td><td>Considerably more, by rating</td><td>Up to about 15 ft</td><td>4&ndash;5</td><td>Heavier partials and multi-pallet expedited loads; check whether your GVWR crosses 10,001 lbs</td></tr>
+<tr><td><b>Box truck</b> (16&ndash;26 ft)</td><td>By rating</td><td>16&ndash;26 ft</td><td>6&ndash;12</td><td>LTL, furniture and dock-height freight &mdash; see <a href="box-truck-dispatch.html">box truck dispatch</a></td></tr>
+</tbody></table></div>
+<p class="reveal" style="max-width:820px;margin:18px auto 0;color:var(--muted);font-size:.95rem">Figures are typical ranges for guidance only. Your exact payload is on the door-jamb sticker and your cargo dimensions depend on wheelbase, roof height and any shelving or liftgate you carry. Enter the real numbers in your LoadBoot profile and we match against those.</p>'''
+sv += _sec('Which vans we dispatch', 'Cargo van, Sprinter 2500 or 3500 &mdash; we match the freight to the vehicle', _sv_spec, soft=True)
+sv += ('<section><div class="wrap prose reveal" style="max-width:820px">'
+       '<div class="eyebrow">Know your numbers</div><h2>What a sprinter van load is actually worth to you</h2>'
+       '<p>Posted rates for van freight are opening offers, not final numbers, and the headline rate per mile is the least useful figure on the screen. What matters is the all-in revenue for the loaded miles <em>plus</em> the deadhead to reach the pickup and to get back to freight afterwards, measured against your cost per mile: fuel, insurance, maintenance, tires, payments and your own time.</p>'
+       '<p>A few rules we dispatch by. Deadhead that climbs past roughly a fifth to a quarter of the loaded miles usually erases the margin on a van load. A run that ends in a freight desert is only a good run if the return is already worked. And a lower rate on a lane that reloads in an hour often beats a higher rate on a lane that sits for a day. We quote every load against those numbers, and we tell you the deadhead and the reload picture before you accept.</p>'
+       '<p>If you have never calculated your own floor rate, do it before your first load. The free <a href="cost-per-mile-calculator.html">LoadBoot cost-per-mile calculator</a> takes a few minutes and gives you the one number that makes every rate negotiation simple.</p>'
+       '</div></section>')
+sv += _sec('What drives van rates', 'How we protect your rate on every load', _cards([
+    ('&#128200;', 'Urgency and reliability', 'Expedited windows pay for a van that shows up on time, every time. Your service record is what unlocks the dedicated accounts that pay best.'),
+    ('&#128205;', 'Lane and reload', 'The same load is worth more when it ends where the next load starts. We price the whole loop, not the one leg.'),
+    ('&#9878;', 'Accessorials documented', 'Wait time, inside delivery and extra stops are recorded with real timestamps in the app and billed, not absorbed.'),
+    ('&#129309;', 'Direct relationships', 'Repeat shippers and brokers who know your van is dependable stop shopping the rate. That is where consistent weeks come from.'),
+], 'g4'), soft=True)
+_sv_req = '''<div class="reveal" style="overflow-x:auto"><table class="cmp"><thead><tr><th>Requirement</th><th>What we need</th><th>Notes</th></tr></thead><tbody>
+<tr><td><b>Operating authority</b></td><td>Active USDOT number and interstate MC authority</td><td>Interstate for-hire carriers generally need both, van or not. New to this? Start with <a href="authority-dot-setup.html">authority &amp; DOT setup</a>.</td></tr>
+<tr><td><b>Driver&rsquo;s license</b></td><td>Standard license for vans under 10,001 lbs GVWR</td><td>No CDL required below that threshold. Confirm medical card and other rules for your vehicle and state with FMCSA.</td></tr>
+<tr><td><b>Insurance</b></td><td>Auto liability and cargo coverage, certificate on file</td><td>Most brokers ask for $1,000,000 auto liability and $100,000 cargo, with the broker as certificate holder. Some accounts require more.</td></tr>
+<tr><td><b>Tax &amp; agreement</b></td><td>Signed W-9 and the LoadBoot dispatch agreement</td><td>Both are completed in the app in a few minutes. The agreement has no term and no exclusivity.</td></tr>
+<tr><td><b>Securement gear</b></td><td>Straps, load bars, blankets; e-track and pallet jack are a plus</td><td>Much expedited and medical freight requires it. We note your gear in your profile so loads that need it find you.</td></tr>
+<tr><td><b>Truck profile</b></td><td>Payload, cargo dimensions, door type, dock height, liftgate</td><td>Entered once in the app. This is what keeps you off loads that do not fit.</td></tr>
+</tbody></table></div>'''
+sv += _sec('Requirements', 'What you need to get dispatched', _sv_req)
+sv += ('<section class="bg-soft"><div class="wrap prose reveal" style="max-width:820px">'
+       '<div class="eyebrow">Where van freight lives</div><h2>Best lanes and markets for sprinter van loads</h2>'
+       '<p>Expedited van freight clusters where time-critical shippers cluster: automotive and manufacturing corridors across the Midwest and the Southeast, the Texas triangle, major air-cargo hubs where AOG and courier freight originates, and metro regions with dense medical, pharmaceutical and lab networks. Final-mile and white-glove work follows population, so large metros produce steady local runs even when lane freight is quiet.</p>'
+       '<p>Your dispatcher works from the service area and radius you set, and we tell you plainly when your home base is far from the freight. Many van operators run regional or OTR for part of the week and local the rest, and we plan each week around the home time you ask for. See how we approach <a href="regional-truck-dispatch.html">regional</a>, <a href="otr-dispatch.html">OTR</a> and <a href="local-truck-dispatch.html">local</a> dispatch.</p>'
+       '</div></section>')
+_sv_steps = [('1','Apply and get verified','Authority, insurance, W-9 and a short dispatch agreement. AI pre-checks every document, a person reviews it, usually within one business day.'),
+             ('2','Build your van profile','Payload, cargo length, door type, dock height, liftgate, securement gear, radius and home time. About five minutes in the app.'),
+             ('3','Post your van, we source','Post your availability each morning. Your dedicated dispatcher sources expedited, final-mile and partial loads that fit, negotiates the rate and vets the broker.'),
+             ('4','You approve, you drive, you get paid','You approve every load. Status updates, POD and invoice prep run in the app; the broker or your factor pays you directly. One 5% invoice at delivery.')]
+sv += '<section><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">How it works</div><h2>From sign-up to your first van load</h2></div><div class="grid g4">%s</div></div></section>' % ''.join('<div class="step reveal"><div class="num">%s</div><h3>%s</h3><p>%s</p></div>' % x for x in _sv_steps)
+_sv_cmp = '''<div class="reveal" style="overflow-x:auto"><table class="cmp"><thead><tr><th>What matters to a van operator</th><th>Dispatching yourself</th><th>Load board subscription only</th><th class="us">LoadBoot sprinter van dispatch</th></tr></thead><tbody>
+<tr><td>Finding loads that fit the van</td><td>Hours a day filtering by weight and size</td><td>Filters help; still your time</td><td class="us">Matched to your payload, length and doors automatically</td></tr>
+<tr><td>Rate negotiation</td><td>You, between loads, often from the cab</td><td>Not included</td><td class="us">Dedicated dispatcher negotiates to your floor</td></tr>
+<tr><td>Deadhead and reload planning</td><td>Easy to miss until you are sitting</td><td>Not included</td><td class="us">Return worked before you deliver</td></tr>
+<tr><td>Broker vetting and paperwork</td><td>Your risk, your evenings</td><td>Credit data on some boards</td><td class="us">Vetted on every load; packets and PODs in the app</td></tr>
+<tr><td>Cost</td><td>Your time</td><td>Monthly fee, loaded or not</td><td class="us">Flat 5% of loads we book, nothing otherwise</td></tr>
+</tbody></table></div>'''
+sv += _sec('Compare', 'Self-dispatch, a load board, or a sprinter van dispatcher', _sv_cmp, soft=True)
+sv += STATS
 sv += _svfaq_html
+sv += _sec('Related', 'More for small-equipment carriers', _cards([
+    ('&#128666;', '<a href="box-truck-dispatch.html">Box truck dispatch</a>', 'LTL, final-mile and expedited runs for 16&ndash;26 ft boxes, with liftgate and dock-height matching.'),
+    ('&#9889;', '<a href="hotshot-dispatch.html">Hotshot dispatch</a>', 'Expedited flatbed and gooseneck freight for pickup-and-trailer operators.'),
+    ('&#128640;', '<a href="new-authority-dispatch.html">New authority dispatch</a>', 'Just got your MC? How we get a new van or truck set up with brokers and loaded.'),
+], 'g3'))
 sv += final_cta()
-page('sprinter-van-dispatch.html', 'Sprinter &amp; Cargo Van Dispatch Service | LoadBoot',
-     'Sprinter van and cargo van dispatch for expedited, final-mile and partial freight matched to your real payload and cargo length. Flat 5%, no long-term contracts.',
-     'services.html', sv, _svfaq_sch)
+_sv_svc_sch = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","name":"Sprinter Van Dispatch Service","serviceType":"Truck dispatch service for sprinter vans and cargo vans",'
+               '"provider":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/"},"areaServed":{"@type":"Country","name":"United States"},'
+               '"audience":{"@type":"Audience","audienceType":"Sprinter van and cargo van owner-operators"},'
+               '"offers":{"@type":"Offer","description":"Flat 5% of booked loads, no sign-up fee, no long-term contract","priceCurrency":"USD"},'
+               '"url":"https://loadboot.com/sprinter-van-dispatch.html"}</script>')
+page('sprinter-van-dispatch.html', 'Sprinter Van Dispatch Service &mdash; Expedited &amp; Cargo Van Loads | LoadBoot',
+     'Sprinter van and cargo van dispatch service for owner-operators. Expedited, final-mile, medical and partial loads matched to your payload and cargo length. Non-CDL welcome. Flat 5%, no contract.',
+     'services.html', sv, _svfaq_sch + _sv_svc_sch)
 
 
 # ================= WEB-3: REAL COMPLIANCE PAGES (each 10+ unique sections, educational, disclaimed) =================
