@@ -143,8 +143,8 @@ export async function renderPremiumAccount(host, ctx) {
       : '<div class="vpill" style="background:linear-gradient(90deg,rgba(217,119,6,.28),rgba(217,119,6,.12));color:#fcd34d;border-color:rgba(217,119,6,.4)"><span class="gdot" style="background:#fbbf24;box-shadow:0 0 0 4px rgba(251,191,36,.25)"></span> PENDING VERIFICATION</div>';
 
   const dp = (await getDispatchPrefs().catch(() => ({}))) || {};
-  const EQ_IC = { 'Dry Van': '🚚', 'Reefer': '❄️', 'Flatbed': '🛻', 'Power Only': '🔌', 'Step Deck': '📐', 'Box Truck': '📦', 'Hotshot': '⚡' };
-  const eqSel = () => ['Dry Van', 'Reefer', 'Flatbed', 'Power Only', 'Step Deck', 'Box Truck', 'Hotshot'].map((o) => {
+  const EQ_IC = { 'Dry Van': '🚚', 'Reefer': '❄️', 'Flatbed': '🛻', 'Power Only': '🔌', 'Step Deck': '📐', 'Box Truck': '📦', 'Hotshot': '⚡', 'Cargo Van': '🚐', 'Sprinter Van': '🚐' };   // bl_ux_0509
+  const eqSel = () => ['Dry Van', 'Reefer', 'Flatbed', 'Power Only', 'Step Deck', 'Box Truck', 'Hotshot', 'Cargo Van', 'Sprinter Van'].map((o) => {
     const on = (dp.preferred_equipment || []).indexOf(o) >= 0;
     return '<label class="acx-eqp' + (on ? ' on' : '') + '"><input type="checkbox" class="acx-eqc" value="' + o + '"' + (on ? ' checked' : '') + ' style="position:absolute;opacity:0;pointer-events:none"><span class="ic">' + (EQ_IC[o] || '🚛') + '</span>' + o + '<span class="ck">✓</span></label>';
   }).join('');

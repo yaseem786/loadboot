@@ -21,7 +21,7 @@ const SEC = {
   boards:     { icon: '🖥️', title: 'Load board access', sub: 'Optional — if you run DAT or Truckstop, your dedicated dispatcher can work those boards for you too.', pct: 10 },
 };
 const ORDER = ['lanes', 'home_base', 'equipment', 'rate_floor', 'home_time', 'load_size', 'facility', 'weekends', 'boards'];
-const EQUIP = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Power Only', 'Hotshot', 'Box Truck'];
+const EQUIP = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Power Only', 'Hotshot', 'Box Truck', 'Cargo Van', 'Sprinter Van'];   // bl_ux_0509: vans were missing here (onboarding + Fleet already had them)
 const FAC_LIKES = ['Drop & hook', 'Fast loading', 'Overnight parking', 'Flexible appointment', 'Driver restrooms'];
 const FAC_DISLIKES = ['Long detention', 'No parking', 'Strict appointments', 'Heavy lumper use', 'No overnight'];
 
