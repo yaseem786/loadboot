@@ -43,7 +43,7 @@ export function fieldSourcesPanel(orgId, compact) {
             mount(box, [el('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [el('b', { style: 'color:#0f172a' }, 'Field suggestions'), el('span', { style: PILL + ';color:' + (pend ? '#6d28d9' : '#64748b') }, pend ? pend + ' waiting on the carrier' : 'none pending')]),
               el('div', { style: 'margin-top:4px;display:grid;gap:3px' }, srows.map((x) => {
                 const decide = async (ok, b) => { b.disabled = true; try { const r2 = await ccFieldSuggestionDecide(x.id, ok, null); if (!r2 || r2.error) throw new Error((r2 && (r2.message || r2.error)) || 'failed'); Object.assign(x, r2.suggestion || { status: ok ? 'accepted' : 'rejected' }); paintS(); } catch (e) { b.disabled = false; alert(e.message || e); } };
-                const btn = (t, ok) => el('button', { class: 'cc-btn sm' + (ok ? '' : ' ghost'), style: 'padding:2px 8px;font-size:11.5px', onClick: (ev) => decide(ok, ev.currentTarget) }, t);
+                const btn = (t, ok) => el('button', { class: 'cc-btn-sm' + (ok ? ' cc-btn-green' : ''), style: 'padding:2px 8px;font-size:11.5px' + (ok ? '' : ';background:transparent;border:1px solid #cbd5e1;color:#475569'), onClick: (ev) => decide(ok, ev.currentTarget) }, t);
                 return el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:4px 0;border-top:1px solid #eef2f7' }, [
                   el('span', { style: 'font-weight:700;color:#0f172a' }, (x.label || x.field) + (x.unit_no ? ' · unit ' + x.unit_no : '')),
                   el('span', { style: 'color:#334155' }, x.old_text + ' → ' + x.new_text),

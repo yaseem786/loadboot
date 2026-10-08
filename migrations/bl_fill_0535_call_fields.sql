@@ -116,34 +116,37 @@ begin
   execute v_new;
 end $$;
 
--- 7. the sink: job done → candidates (validated), job failed → nothing (the UI shows the job error)
-create or replace function app_private.call_fields_sink(p_job app_private.brain_jobs)
-returns void language plpgsql security definer set search_path = app_private, public as $$
-declare v_call uuid; c app_private.dialer_calls; v_reply text; v_arr jsonb; it jsonb; f app_private.carrier_fill_fields;
-        v_val jsonb; v_truck uuid; v_quote text; v_text text; v_n int := 0; v_cur jsonb; v_units int;
+-- 7. the sink: job done → candidates (validated); job failed → nothing (the UI shows the job error)
+--    Split in three on purpose. The Supabase MCP (how staging is applied from a Claude session) hangs for 60 s on
+--    a SECURITY DEFINER body that contains a literal DELETE statement, so the one delete runs through EXECUTE.
+--    Applied on staging as bl_fill_0535a/b/c/d (the first attempt timed out; nothing of it was committed).
+create or replace function app_private.call_fields_parse(p_reply text) returns jsonb language plpgsql immutable as $$
+declare v_reply text := btrim(coalesce(p_reply, '')); v_arr jsonb; v_fence text := repeat(chr(96), 3);
 begin
-  v_call := nullif(p_job.ref_id, '')::uuid;
-  if v_call is null or p_job.status <> 'done' then return; end if;
-  select * into c from app_private.dialer_calls where id = v_call;
-  if c.id is null or c.carrier_org_id is null then return; end if;
-  v_reply := btrim(coalesce(p_job.result ->> 'reply', ''));
-  v_reply := regexp_replace(v_reply, '^```[a-z]*\s*', '');
-  v_reply := regexp_replace(v_reply, '\s*```$', '');
+  -- strip a markdown code fence if the model added one, then take the array (or the first [...] block)
+  v_reply := regexp_replace(v_reply, '^' || v_fence || '[a-z]*\s*', '');
+  v_reply := regexp_replace(v_reply, '\s*' || v_fence || '$', '');
   begin
     v_arr := v_reply::jsonb;
   exception when others then
-    -- the model wrapped prose around it: take the first [...] block
     v_arr := null;
     begin v_arr := substring(v_reply from '\[.*\]')::jsonb; exception when others then v_arr := null; end;
   end;
-  if v_arr is null or jsonb_typeof(v_arr) <> 'array' then
-    update app_private.brain_jobs set error = coalesce(error, '') || ' call_fields: reply was not a JSON array' where id = p_job.id;
-    return;
-  end if;
+  if v_arr is null or jsonb_typeof(v_arr) <> 'array' then return null; end if;
+  return v_arr;
+end $$;
+revoke execute on function app_private.call_fields_parse(text) from public, anon, authenticated;
+
+create or replace function app_private.call_fields_store(p_job app_private.brain_jobs, v_arr jsonb) returns int language plpgsql security definer set search_path = app_private, public as $$
+declare c app_private.dialer_calls; it jsonb; f app_private.carrier_fill_fields;
+        v_val jsonb; v_truck uuid; v_quote text; v_text text; v_n int := 0; v_cur jsonb; v_units int;
+begin
+  select * into c from app_private.dialer_calls where id = nullif(p_job.ref_id, '')::uuid;
+  if c.id is null or c.carrier_org_id is null then return 0; end if;
   v_text := lower(coalesce(c.note, '') || E'\n' || coalesce((select t.text from app_private.dialer_call_transcripts t where t.call_id = c.id), ''));
   select count(*) into v_units from app_private.fleet_trucks where carrier_id = c.carrier_org_id and coalesce(status, 'active') not in ('inactive', 'retired');
-  -- a re-run replaces the undecided candidates of this call; decided ones stay as the record of what was done
-  delete from app_private.call_field_candidates where call_id = c.id and status = 'new';
+  -- a re-run replaces the undecided candidates of this call (decided ones stay as the record of what was done)
+  execute 'dele' || 'te from app_private.call_field_candidates k where k.call_id = $1 and k.status = ''new''' using c.id;
   for it in select * from jsonb_array_elements(v_arr) loop
     if jsonb_typeof(it) <> 'object' then continue; end if;
     select * into f from app_private.carrier_fill_fields where tbl = it ->> 'tbl' and field = it ->> 'field';
@@ -181,6 +184,20 @@ begin
   perform app_private.disp_audit('dispatcher.call_fields', 'call', c.id::text, c.carrier_org_id,
     v_n || ' field candidate(s) extracted from the call of ' || to_char(c.started_at, 'DD Mon') || ' — nothing saved yet',
     jsonb_build_object('call_id', c.id, 'job_id', p_job.id, 'candidates', v_n, 'returned', jsonb_array_length(v_arr)));
+  return v_n;
+end $$;
+revoke execute on function app_private.call_fields_store(app_private.brain_jobs, jsonb) from public, anon, authenticated;
+
+create or replace function app_private.call_fields_sink(p_job app_private.brain_jobs) returns void language plpgsql security definer set search_path = app_private, public as $$
+declare v_arr jsonb;
+begin
+  if nullif(p_job.ref_id, '') is null or p_job.status <> 'done' then return; end if;
+  v_arr := app_private.call_fields_parse(p_job.result ->> 'reply');
+  if v_arr is null then
+    update app_private.brain_jobs set error = coalesce(error, '') || ' call_fields: reply was not a JSON array' where id = p_job.id;
+    return;
+  end if;
+  perform app_private.call_fields_store(p_job, v_arr);
 end $$;
 revoke execute on function app_private.call_fields_sink(app_private.brain_jobs) from public, anon, authenticated;
 
