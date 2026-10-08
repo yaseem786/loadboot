@@ -265,7 +265,7 @@ export async function renderDialerLive(host) {
           el('td', null, el('span', { class: 'dl-pill ' + s[1] }, s[0])), el('td', null, c.duration_sec ? mmss(c.duration_sec) : '—'),
           el('td', null, c.outcome ? el('span', { class: 'dl-pill b' }, c.outcome) : (c.answered_at ? el('span', { class: 'dl-pill a' }, 'untagged') : '—')),
           el('td', { style: 'max-width:280px' }, c.note || ''),
-          el('td', null, c.has_recording ? el('button', { class: 'dl-btn sm', 'data-rec': c.id, 'aria-label': isPlaying(c.id) ? 'Pause recording' : 'Play recording', onClick: (e) => play(c.id, e.currentTarget) }, [icon(isPlaying(c.id) ? 'pause' : 'play', 14), isPlaying(c.id) ? 'Pause' : 'Play']) : null),
+          el('td', { style: 'white-space:nowrap' }, [c.has_recording ? el('button', { class: 'dl-btn sm', 'data-rec': c.id, 'aria-label': isPlaying(c.id) ? 'Pause recording' : 'Play recording', onClick: (e) => play(c.id, e.currentTarget) }, [icon(isPlaying(c.id) ? 'pause' : 'play', 14), isPlaying(c.id) ? 'Pause' : 'Play']) : null, c.has_recording ? el('button', { class: 'dl-btn sm', style: 'margin-left:6px', 'aria-label': 'Download recording', title: 'Download recording (mp3)', onClick: (e) => download(c, e.currentTarget) }, [icon('download', 14), 'Download']) : null]),
         ]); })),
       ])) : el('div', { style: 'opacity:.7;padding:8px 0' }, 'No calls match these filters.'),
     ]));
@@ -287,6 +287,17 @@ export async function renderDialerLive(host) {
       a.onended = () => { try { URL.revokeObjectURL(u); } catch (_) {} if (playing && playing.a === a) playing = null; syncPlayBtns(); };
       await a.play();
     } catch (e) { toast(humanizeError(e), 'error'); } finally { btn.disabled = false; syncPlayBtns(); }
+  }
+
+  // bl_dial_0513: save a recording as an mp3 file (the Play button only streams it from memory)
+  async function download(c, btn) {
+    try {
+      btn.disabled = true; const blob = await dialerRecordingBlob(c.id);
+      const u = URL.createObjectURL(blob); const d = String(c.started_at || '').slice(0, 10);
+      const who = String(c.contact_name || c.number || 'call').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+      const a = document.createElement('a'); a.href = u; a.download = 'loadboot-call-' + d + '-' + who + '.mp3';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => { try { URL.revokeObjectURL(u); } catch (_) {} }, 60000);
+    } catch (e) { toast(humanizeError(e), 'error'); } finally { btn.disabled = false; }
   }
 
   function assign(d) {
