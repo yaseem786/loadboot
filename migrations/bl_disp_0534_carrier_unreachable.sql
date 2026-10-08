@@ -62,11 +62,16 @@ revoke all on function app_private.disp_carrier_numbers(uuid) from public, anon,
 -- the newest moment the carrier side reached LoadBoot, on any channel, at or after p_since (null = never)
 create or replace function app_private.disp_carrier_contact_at(p_assignment uuid, p_since timestamptz) returns timestamptz
 language plpgsql stable security definer set search_path to 'app_private', 'public' as $$
-declare a record; nums text[]; v_owner uuid; v_at timestamptz;
+declare a record; nums text[]; v_owner uuid; v_at timestamptz; v_wa timestamptz;
 begin
   select * into a from app_private.dispatcher_assignments where id = p_assignment;
   if a.id is null then return null; end if;
   nums := app_private.disp_carrier_numbers(a.carrier_org_id);
+  if to_regclass('app_private.wa_messages') is not null then
+    execute 'select max(m.created_at) from app_private.wa_messages m join app_private.wa_threads t on t.id = m.thread_id
+              where m.direction = $1 and (t.carrier_org_id = $2 or app_private.disp_ph10(t.counterparty) = any($3))'
+       into v_wa using 'inbound', a.carrier_org_id, nums;
+  end if;
   select owner_user_id into v_owner from public.organizations where id = a.carrier_org_id;
   select max(ts) into v_at from (
     select c.answered_at ts from app_private.dialer_calls c
@@ -76,8 +81,7 @@ begin
     select c.started_at from app_private.dialer_calls c
      where c.direction = 'inbound' and (c.carrier_org_id = a.carrier_org_id or app_private.disp_ph10(c.counterparty) = any(nums))
     union all
-    select m.created_at from app_private.wa_messages m join app_private.wa_threads t on t.id = m.thread_id
-     where m.direction = 'inbound' and (t.carrier_org_id = a.carrier_org_id or app_private.disp_ph10(t.counterparty) = any(nums))
+    select v_wa
     union all
     select m.created_at from app_private.dialer_messages m
      where m.direction = 'inbound' and (m.carrier_org_id = a.carrier_org_id or app_private.disp_ph10(m.counterparty) = any(nums))
@@ -318,8 +322,13 @@ create or replace function app_private.disp_trial_stats(p_user uuid, p_from time
 returns jsonb language plpgsql stable security definer set search_path to 'app_private', 'public' as $fn$
 declare
   v_orgs uuid[]; v_drv text[]; v_car text[]; v_acct uuid[]; v_carmail text[];
-  w jsonb; cu jsonb; v_loads jsonb; v_pending jsonb; v_trucks int; ef jsonb;
+  w jsonb; cu jsonb; v_loads jsonb; v_pending jsonb; v_trucks int; ef jsonb; v_wa_msgs int := 0;
 begin
+  -- WhatsApp is staging-only today (bl_wa_0367 chain); on a database without the tables this stays 0 instead of failing
+  if to_regclass('app_private.wa_messages') is not null then
+    execute 'select count(*)::int from app_private.wa_messages m where m.direction = $1 and m.sender_user_id = $2 and m.created_at >= $3 and m.created_at < $4'
+       into v_wa_msgs using 'outbound', p_user, p_from, p_to;
+  end if;
   select coalesce(array_agg(distinct carrier_org_id), '{}') into v_orgs
     from app_private.dispatcher_assignments where dispatcher_user_id = p_user and status in ('active','paused');
   select coalesce(array_agg(distinct app_private.disp_ph10(phone)) filter (where app_private.disp_ph10(phone) is not null), '{}') into v_drv
@@ -380,7 +389,7 @@ begin
                      and (c.status = 'voicemail' or coalesce(c.outcome,'') ilike '%voicemail%')),
     'messages', (select count(*) from app_private.dispatcher_messages dm join app_private.dispatcher_assignments a on a.id = dm.assignment_id
                    where a.dispatcher_user_id = p_user and dm.sender_role = 'dispatcher' and dm.created_at >= p_from and dm.created_at < p_to)
-              + (select count(*) from app_private.wa_messages m where m.direction = 'outbound' and m.sender_user_id = p_user and m.created_at >= p_from and m.created_at < p_to)
+              + v_wa_msgs
               + (select count(*) from app_private.dialer_messages m where m.direction = 'outbound' and coalesce(m.sender_user_id, m.dispatcher_user_id) = p_user and m.created_at >= p_from and m.created_at < p_to),
     'availability_posts', (select count(*) from app_private.truck_availability av join app_private.fleet_trucks t on t.id = av.truck_id
                              where t.carrier_id = any(v_orgs) and av.updated_at >= p_from and av.updated_at < p_to),
@@ -682,11 +691,17 @@ end $mig$;
 -- somewhere LoadBoot cannot see (a personal phone, a text to the owner), Command Center clears the flag by hand.
 create or replace function app_private.disp_carrier_contact_at(p_assignment uuid, p_since timestamptz) returns timestamptz
 language plpgsql stable security definer set search_path to 'app_private', 'public' as $$
-declare a record; nums text[]; v_owner uuid; v_mail text; v_at timestamptz;
+declare a record; nums text[]; v_owner uuid; v_mail text; v_at timestamptz; v_wa timestamptz;
 begin
   select * into a from app_private.dispatcher_assignments where id = p_assignment;
   if a.id is null then return null; end if;
   nums := app_private.disp_carrier_numbers(a.carrier_org_id);
+  -- WhatsApp (staging-only today): the newest inbound from this carrier, or null where the tables do not exist
+  if to_regclass('app_private.wa_messages') is not null then
+    execute 'select max(m.created_at) from app_private.wa_messages m join app_private.wa_threads t on t.id = m.thread_id
+              where m.direction = $1 and (t.carrier_org_id = $2 or app_private.disp_ph10(t.counterparty) = any($3))'
+       into v_wa using 'inbound', a.carrier_org_id, nums;
+  end if;
   select owner_user_id into v_owner from public.organizations where id = a.carrier_org_id;
   select lower(u.email) into v_mail from auth.users u where u.id = v_owner;
   select max(ts) into v_at from (
@@ -697,8 +712,7 @@ begin
     select c.started_at from app_private.dialer_calls c
      where c.direction = 'inbound' and (c.carrier_org_id = a.carrier_org_id or app_private.disp_ph10(c.counterparty) = any(nums))
     union all
-    select m.created_at from app_private.wa_messages m join app_private.wa_threads t on t.id = m.thread_id
-     where m.direction = 'inbound' and (t.carrier_org_id = a.carrier_org_id or app_private.disp_ph10(t.counterparty) = any(nums))
+    select v_wa
     union all
     select m.created_at from app_private.dialer_messages m
      where m.direction = 'inbound' and (m.carrier_org_id = a.carrier_org_id or app_private.disp_ph10(m.counterparty) = any(nums))

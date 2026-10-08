@@ -76,7 +76,27 @@ delete from app_private.message_deliveries where idempotency_key like 'disp.tria
 drop table app_private.zz_0534_test_backup;
 ```
 
-## 4. Prod — in this order
+## 4. PROD — APPLIED 8 Oct 2026 (owner's instruction, same session)
+
+Prod had the full WhatsApp chain (0367→0507, `wa_enabled` true, 178 messages) — `docs/WHATSAPP-0377-NEXT-SESSION.md` was stale.
+Applied on rwscphuhpjoudvljvmdk, in this order, all anchors asserted: `bl_wa_0532_wa_reply_quote`, `bl_sms_0533_sms_inbox_rules`,
+`bl_disp_0534a` (core + e-mail-reply contact + manual clear), `0534b` (report split), `0534c` (counter + W-9). Edge functions
+`telnyx-whatsapp` (prod v5 = our v3) and `telnyx-sms` (prod v7 = our v2) deployed. Verified after: anon SECURITY DEFINER names
+= the 36 baseline exactly; THE WAY HOME "Signed 30 Sep 2026", SPRINT SHIFT "Signed 6 Oct 2026"; `dispatcher.trial.daily`
+44 / 44 after the one-off sync; crons `lb-disp-unreachable` (:23) and `lb-email-catalog-sync` (03:40 UTC) in; the new report
+builds for a live trial dispatcher. `sms_enabled` still false, `sms_broker_enabled` false, `dispatcher.carrier.unreachable`
+send_mode **test**.
+
+**Heads-up for the first hour:** `disp_unreachable_eval` already qualifies ONE live assignment — GABE LOGISTICS LLC / Gursewak
+Singh (7 unanswered attempts on 3 days, 3 voicemails, no contact). The :23 run will flag it: carrier e-mail goes to hello@ as
+`[TEST → owner]` (test mode), staff copy to hello@, Gursewak gets the in-portal notice and a system line in the GABE thread.
+To hold it: `select cron.unschedule('lb-disp-unreachable');` — re-schedule with the line in the migration.
+
+**Still to do by the owner:** flip `dispatcher.carrier.unreachable` to live in CC → Email catalog once the render is approved;
+merge/deploy the branch so the CC buttons, the dock Texts tab, the WhatsApp Reply UI and the silent-update worker reach the
+portals (until then the DB side is live and the old UI simply does not show the new fields).
+
+## 4b. Prod — the original order (kept for reference)
 
 1. Apply `migrations/bl_disp_0534_carrier_unreachable.PROD.sql` in the prod SQL editor (all anchors assert; it ends with one
    `email_catalog_sync()` run, the slow step). Check the anon SECURITY DEFINER **names** (36).
