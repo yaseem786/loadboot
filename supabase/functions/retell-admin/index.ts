@@ -1,6 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 // retell-admin v2 (bl_voice_0458, 2026-09-26) — the ONE staff-gated door from Command Center to Retell.
+// bl_voice_0525 (2026-10-08): post-call analysis — equipment_type gains sprinter_van + cargo_van (a Sprinter was
+// tagged "hotshot", a cargo van "box_truck"); contact_email no longer requires a confirmed read-back (it was left
+// empty on 4 of 6 calls where an email was given, so the promised follow-up email never went out).
 //
 // WHY. Riley's prompts, agent wiring and phone-number mapping lived only in the Retell dashboard, and on
 // 7 Sep the inbound line was left pointing at a one-off "Broker Outbound" script by hand. Postgres cannot
@@ -111,10 +114,10 @@ const POST_CALL_ANALYSIS = [
   { name: "mc_number", type: "string", required: false, examples: ["123456"],
     description: "The caller's MC or DOT number, digits only. Empty if not given.",
     conditional_prompt: "Populate only when the caller said an MC or DOT number out loud or typed it. Leave empty on voicemail, no-response, wrong-number and spam calls." },
-  { name: "contact_email", type: "string", required: false,
-    description: "The caller's email, lowercase, only if it was read back and confirmed. Empty otherwise.",
-    conditional_prompt: "Populate only when the caller gave an email and confirmed it back correctly." },
-  { name: "equipment_type", type: "enum", choices: ["dry_van", "reefer", "flatbed", "step_deck", "power_only", "box_truck", "hotshot", "mixed", "none"], description: "Equipment the caller runs or needs. none if not a carrier or not discussed." },
+  { name: "contact_email", type: "string", required: false, examples: ["dispatch@smithtrucking.com"],
+    description: "The caller's email address written as a normal address in lowercase: join spelled letters, 'at' becomes @, 'dot' becomes a period (e.g. 'dispatch at S M I T H dot com' -> dispatch@smith.com). If the caller corrected it, use the final version Riley read back. Empty only if no email was given.",
+    conditional_prompt: "Populate whenever the caller gave an email address during the call, even if Riley read it back more than once." },
+  { name: "equipment_type", type: "enum", choices: ["dry_van", "reefer", "flatbed", "step_deck", "power_only", "box_truck", "hotshot", "sprinter_van", "cargo_van", "mixed", "none"], description: "Equipment the caller runs or needs. sprinter_van = a Sprinter or high-roof van. cargo_van = any other cargo van (Transit, ProMaster, Express). hotshot = a pickup truck pulling a trailer. box_truck = a straight truck with a box. none if not a carrier or not discussed." },
   { name: "truck_count", type: "number", description: "How many trucks the caller runs. 1 for a single owner-operator. 0 if not a carrier or unknown." },
   { name: "preferred_lanes", type: "string", description: "Lanes or regions the caller wants, e.g. TX to CA, Southeast regional. Empty if not discussed." },
   { name: "interest_level", type: "enum", choices: ["hot", "warm", "cold", "not_interested", "wrong_number", "voicemail", "ivr"],
