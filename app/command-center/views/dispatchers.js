@@ -17,7 +17,7 @@ import { threadChat } from '../../shared/thread-chat.js';   // bl_ui_0502
 import { icon } from '../../shared/ui/icons.js';
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm, openDrawer } from '../../shared/ui/components.js';
 import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSop,
-         ccDispatcherUnassign, getCarriersDirectory, ccCarrierPrefs,
+         ccDispatcherUnassign, ccDispatcherUnreachableClear, getCarriersDirectory, ccCarrierPrefs,
          ccDispatcherSetTerms, ccDispatcherBookings, ccDispatcherBookingDecide, ccDispatcherCommissionStatus, ccDispatcherCommissionList,
          ccDispatcherCommissionPay, ccDispatcherQueue, ccDispatcherResendIntro,
          ccDispatcherTestInvite, ccDispatcherTestReview, ccDispatcherTestScore,
@@ -797,6 +797,13 @@ export function renderDispatchers(host) {
         a.status === 'paused' ? el('span', { class: 'cc-pill cc-pill-amber' }, 'paused — resume by re-assigning or reinstating') : '',
         // bl_disp_0534 — carrier unreachable: the flag, and after 48 h the one-click end (reason prefilled; nothing ends by itself)
         a.flagged_at ? el('span', { class: 'lb-pill', style: 'background:#fff4e2;color:#b86e00;border:1px solid #f5d9a8;margin-right:6px', title: 'Flagged ' + new Date(a.flagged_at).toLocaleString() + (a.flag_stats ? ' · ' + (a.flag_stats.attempts || 0) + ' attempts on ' + (a.flag_stats.days || 0) + ' days, none answered' : '') }, 'Carrier unreachable' + (a.unreachable_end_ready ? ' · 48 h' : '')) : '',
+        a.flagged_at && a.status === 'active' ? el('button', { class: 'lb-btn lb-btn-ghost', style: 'margin-right:6px', title: 'They called / texted / e-mailed somewhere LoadBoot cannot see — clear the flag by hand', onClick: async () => {
+          const note = await askReason('Carrier made contact — clear the flag', { optional: true, rows: 3, submitLabel: 'Clear flag', placeholder: 'How did they reach us? (optional)', note: 'Answered calls, inbound calls, WhatsApp/SMS replies, thread messages, e-mail replies and portal logins clear it by themselves within the hour. Use this for anything else.' });
+          if (note === null) return;
+          const r = await ccDispatcherUnreachableClear(a.id, note || null).catch((e) => ({ error: humanizeError(e) }));
+          if (r && r.error) { toast(r.error); return; }
+          toast('✓ flag cleared'); rerender();
+        } }, 'Carrier made contact') : '',
         a.flagged_at && a.unreachable_end_ready && a.status === 'active' ? el('button', { class: 'lb-btn lb-btn-danger', style: 'margin-right:6px', onClick: async () => {
           const st = a.flag_stats || {};
           const pre = 'Carrier unresponsive: ' + (st.attempts || 0) + ' call attempts on ' + (st.days || 0) + ' days with none answered, no reply on any channel, e-mailed ' + (a.flagged_at ? new Date(a.flagged_at).toLocaleDateString() : '') + ', no contact in 48 hours. Assignment ended so the dispatcher can take another carrier; the carrier can restart from their portal.';

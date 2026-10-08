@@ -510,6 +510,8 @@ export const ccDispatcherSetRejectReasons = (user, reasons) => rpc('cc_dispatche
 export const ccDispatcherAssign = (dispatcher, carrierOrg, sop) => rpc('cc_dispatcher_assign', { p_dispatcher: dispatcher, p_carrier_org: carrierOrg, p_sop: sop ?? {} });
 export const ccDispatcherSop = (assignment, sop) => rpc('cc_dispatcher_sop', { p_assignment: assignment, p_sop: sop ?? {} });
 export const ccDispatcherUnassign = (assignment, reason, pause) => rpc('cc_dispatcher_unassign', { p_assignment: assignment, p_reason: reason ?? null, p_pause: !!pause });
+// bl_disp_0534 — staff clear the carrier-unreachable flag by hand (the carrier reached LoadBoot somewhere the rule cannot see)
+export const ccDispatcherUnreachableClear = (assignment, note) => rpc('cc_dispatcher_unreachable_clear', { p_assignment: assignment, p_note: note ?? null });
 export const ccDispatcherSalarySet = (user, base, perTruck, currency) => rpc('cc_dispatcher_salary_set', { p_user: user, p_base: base, p_per_truck: perTruck, p_currency: currency ?? 'PKR' });
 export const ccDispatcherSalaryRun = (user, period, bonus, kpi, note) => rpc('cc_dispatcher_salary_run', { p_user: user, p_period: period, p_bonus: bonus ?? 0, p_kpi: kpi ?? {}, p_note: note ?? null });
 export const ccDispatcherSalaryStatus = (id, status) => rpc('cc_dispatcher_salary_status', { p_id: id, p_status: status });

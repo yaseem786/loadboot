@@ -18,6 +18,18 @@ Reads with `migrations/bl_disp_0484_trial_daily_report.sql` and CLAUDE.md §6.
 
 Anon-executable SECURITY DEFINER surface on staging after everything: **35, same names**.
 
+## 1b. How the e-mail stops (it never repeats on its own)
+
+- The carrier e-mail goes out **once, at the moment the flag is set** (idempotency key per assignment per day; the flag
+  function only runs while `flagged_at is null`). There is no reminder, no second send, nothing to "stop".
+- **Contact anywhere clears the flag within the hour** (cron :23): answered call > 20 s, inbound call, inbound WhatsApp, inbound
+  SMS, carrier message in the thread, **a reply to the e-mail** (inbound dmail from the owner's address — added 8 Oct, follow-up
+  0534d), owner portal login. The dispatcher gets "<carrier> is back", paused days stop, the CC 48-hour button disappears.
+- **Heard from them somewhere LoadBoot cannot see** (personal phone, a text to the owner)? CC → the assignment → **Carrier made
+  contact** clears it by hand (`cc_dispatcher_unreachable_clear`, note goes to the thread + audit).
+- A second e-mail can only ever happen if the flag was cleared and the carrier goes quiet **again** afterwards (the rule only
+  counts attempts after `flag_cleared_at`).
+
 ## 2. Decisions worth knowing
 
 - **The flag is two columns, not a status.** The spec said the assignment "becomes carrier_unreachable"; `status` keeps its

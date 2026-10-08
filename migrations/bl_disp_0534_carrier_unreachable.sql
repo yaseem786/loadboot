@@ -675,4 +675,61 @@ begin
   execute d;
 end $mig$;
 
+
+-- ───────────────────────── 2e. (follow-up, same day) an e-mail reply counts as contact + a manual clear for CC ─────────────────────────
+-- The e-mail says "reply to this e-mail". A reply lands in the LoadBoot mailbox (dispatch@ / the dispatcher's dmail account),
+-- so an inbound dmail from the owner's address now counts as carrier contact. And when the owner hears from the carrier
+-- somewhere LoadBoot cannot see (a personal phone, a text to the owner), Command Center clears the flag by hand.
+create or replace function app_private.disp_carrier_contact_at(p_assignment uuid, p_since timestamptz) returns timestamptz
+language plpgsql stable security definer set search_path to 'app_private', 'public' as $$
+declare a record; nums text[]; v_owner uuid; v_mail text; v_at timestamptz;
+begin
+  select * into a from app_private.dispatcher_assignments where id = p_assignment;
+  if a.id is null then return null; end if;
+  nums := app_private.disp_carrier_numbers(a.carrier_org_id);
+  select owner_user_id into v_owner from public.organizations where id = a.carrier_org_id;
+  select lower(u.email) into v_mail from auth.users u where u.id = v_owner;
+  select max(ts) into v_at from (
+    select c.answered_at ts from app_private.dialer_calls c
+     where c.dispatcher_user_id = a.dispatcher_user_id and c.direction = 'outbound' and c.answered_at is not null and coalesce(c.duration_sec,0) > 20
+       and (c.carrier_org_id = a.carrier_org_id or app_private.disp_ph10(c.counterparty) = any(nums))
+    union all
+    select c.started_at from app_private.dialer_calls c
+     where c.direction = 'inbound' and (c.carrier_org_id = a.carrier_org_id or app_private.disp_ph10(c.counterparty) = any(nums))
+    union all
+    select m.created_at from app_private.wa_messages m join app_private.wa_threads t on t.id = m.thread_id
+     where m.direction = 'inbound' and (t.carrier_org_id = a.carrier_org_id or app_private.disp_ph10(t.counterparty) = any(nums))
+    union all
+    select m.created_at from app_private.dialer_messages m
+     where m.direction = 'inbound' and (m.carrier_org_id = a.carrier_org_id or app_private.disp_ph10(m.counterparty) = any(nums))
+    union all
+    select dm.created_at from app_private.dispatcher_messages dm where dm.assignment_id = a.id and dm.sender_role = 'carrier'
+    union all
+    select mm.msg_date from app_private.dmail_messages mm
+     where mm.folder = 'inbox' and v_mail is not null and lower(mm.from_email) = v_mail
+    union all
+    select u.last_sign_in_at from auth.users u where u.id = v_owner
+  ) x where ts >= p_since;
+  return v_at;
+end $$;
+revoke all on function app_private.disp_carrier_contact_at(uuid, timestamptz) from public, anon, authenticated;
+
+-- staff: "the carrier made contact" (heard elsewhere) — clears the flag now, with a note in the audit + the thread
+create or replace function public.cc_dispatcher_unreachable_clear(p_assignment uuid, p_note text default null) returns jsonb
+language plpgsql security definer set search_path to 'app_private', 'public' as $$
+declare a record; r jsonb;
+begin
+  if not app_private.disp_is_staff() then return jsonb_build_object('error','not authorized'); end if;
+  select * into a from app_private.dispatcher_assignments where id = p_assignment;
+  if a.id is null then return jsonb_build_object('error','assignment not found'); end if;
+  if a.flagged_at is null then return jsonb_build_object('ok', true, 'already', true); end if;
+  r := app_private.disp_unreachable_clear(a.id, now());
+  insert into app_private.dispatcher_messages (assignment_id, carrier_org_id, sender_role, body)
+  values (a.id, a.carrier_org_id, 'system', 'Command Center: the carrier made contact' || coalesce(' — ' || left(btrim(p_note), 300), '') || '. The unreachable flag is cleared.');
+  perform app_private.disp_audit('dispatcher.carrier_reachable.manual', 'assignment', a.id::text, a.carrier_org_id, coalesce(nullif(btrim(p_note),''), 'cleared by staff'), '{}'::jsonb);
+  return jsonb_build_object('ok', true) || r;
+end $$;
+revoke all on function public.cc_dispatcher_unreachable_clear(uuid, text) from public, anon;
+grant execute on function public.cc_dispatcher_unreachable_clear(uuid, text) to authenticated;
+
 -- CHECK after applying (names, not just the count — docs/audit-2026-09/anon-secdef-baseline.md): 35 staging / 36 prod.
