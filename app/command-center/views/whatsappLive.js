@@ -90,6 +90,7 @@ const G = {
   check: 'M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z',
   eyeoff: 'M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7M2 4.27l2.28 2.28.46.46A11.8 11.8 0 0 0 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2m4.31-.78 3.15 3.15.02-.16c0-1.66-1.34-3-3-3z',
   eye: 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5M12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5m0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3',
+  reply: 'M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z',
   copy: 'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m0 16H8V7h11z',
 };
 const sv = (n, s, cls) => el('span', { class: 'wx-i' + (cls ? ' ' + cls : ''), 'aria-hidden': 'true',
@@ -385,6 +386,15 @@ const CSS = `
   .wx-srch input,.wx-in{font-size:16px}
 }
 html.wx-lock,html.wx-lock body{overflow:hidden !important}
+/* bl_wa_0532 — quoted replies */
+.wx-quote{display:block;width:100%;box-sizing:border-box;text-align:left;border:0;border-left:4px solid #06cf9c;background:rgba(0,0,0,.055);border-radius:8px;padding:6px 10px;margin:0 0 6px;font:inherit;font-size:13px;line-height:1.35;cursor:pointer;color:#111b21}
+.wx-mr.out .wx-quote{background:rgba(0,0,0,.07)}
+.wx-quote b{display:block;font-size:12px;color:#06cf9c;margin-bottom:1px}.wx-mr.out .wx-quote b{color:#1fa855}
+.wx-quote span{display:block;color:#667781;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wx-quote.na span{font-style:italic}
+.wx-mr.hl .wx-bub{box-shadow:0 0 0 3px #53bdeb;transition:box-shadow .3s}
+.wx-rbar{display:flex;align-items:center;gap:10px;margin:0 0 6px;padding:8px 10px;background:#fff;border-radius:10px;border-left:4px solid #06cf9c;font-size:13px;color:#111b21;box-shadow:0 1px 2px rgba(11,20,26,.12)}
+.wx-rbar .t{flex:1;min-width:0}.wx-rbar b{display:block;font-size:12px;color:#06cf9c}.wx-rbar span{display:block;color:#667781;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* floating menus + dialogs live on <body>, outside .wx */
 .wx-menu{position:fixed;z-index:100000;background:#fff;border-radius:16px;box-shadow:0 2px 5px rgba(11,20,26,.26),0 2px 10px rgba(11,20,26,.16);padding:10px;min-width:232px;font-family:${FONT};color:#111b21;animation:wxm .12s ease-out}
 @keyframes wxm{from{opacity:0;transform:scale(.96)}}
@@ -528,6 +538,7 @@ export async function renderWhatsappLive(host) {
 
   // ---- floating menus (WhatsApp's rounded white menu, with fly-out sub-menus) ----
   let menuEl = null, menuRow = null;
+  let reply = null;   // bl_wa_0532 — the message being quoted in the composer
   const canHover = () => { try { return window.matchMedia('(hover: hover)').matches; } catch (_) { return true; } };
   const isPhone = () => window.innerWidth <= 860;
   function closeMenu() {
@@ -934,7 +945,7 @@ export async function renderWhatsappLive(host) {
     B.msgs = el('div', { class: 'wx-msgs' });
     B.down = el('button', { class: 'wx-down', type: 'button', 'aria-label': 'Scroll to latest', onClick: () => { B.body.scrollTo({ top: B.body.scrollHeight, behavior: 'smooth' }); } }, sv('down', 26));
     B.body = el('div', { class: 'wx-body', onScroll: () => { B.down.classList.toggle('show', B.body.scrollHeight - B.body.scrollTop - B.body.clientHeight > 300); } }, B.msgs);
-    B.pend = el('div'); B.tray = el('div'); B.emo = el('div');
+    B.pend = el('div'); B.tray = el('div'); B.emo = el('div'); B.rbar = el('div');   // rbar: the reply bar (bl_wa_0532)
     B.ta = el('textarea', { class: 'wx-ta', rows: '1', maxlength: '3000', 'aria-label': 'Message',
       onInput: (e) => { drafts[open] = e.target.value; grow(); syncComp(); },
       onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } } });
@@ -945,13 +956,13 @@ export async function renderWhatsappLive(host) {
     B.recd = el('span', { class: 'wx-recd', style: 'display:none' }, 'Recording…');
     B.send = el('button', { class: 'wx-sendb', type: 'button', onClick: () => { if (hasText() || pend) submit(); else toggleRec(); } });
     B.box = el('div', { class: 'wx-box' }, [el('div', { class: 'wx-pill' }, [B.emoB, B.ta, B.clip, B.qr, B.recd]), B.send]);
-    B.comp = el('footer', { class: 'wx-comp' }, [B.pend, B.emo, B.tray, B.box]);
+    B.comp = el('footer', { class: 'wx-comp' }, [B.pend, B.rbar, B.emo, B.tray, B.box]);
     B.info = el('div');
     B.sig = '';
     built = B;
     mount(mainEl, [B.head, B.find, B.body, B.down, B.comp, B.info]);
     if (t) { paintHead(); paintFind(); }
-    grow(); syncComp(); paintTrays();
+    grow(); syncComp(); paintTrays(); paintReply();
   }
   const hasText = () => !!(built && built.ta.value.trim());
   function grow() { const ta = built && built.ta; if (!ta) return; try { ta.style.height = 'auto'; ta.style.height = Math.min(170, Math.max(37, ta.scrollHeight)) + 'px'; } catch (_) {} }
@@ -1061,10 +1072,56 @@ export async function renderWhatsappLive(host) {
       paintMsgs(true); await loadThread(open, true); load(true);
     } catch (e) { toast(humanizeError(e)); }
   }
+  // bl_wa_0532 — quoted replies: Reply is the first menu item, double-click or a swipe to the right does the same.
+  // The quote inside a bubble is a button: click = scroll to the original and flash it; if the original is not in
+  // this view it says so; a message hidden from the dispatcher (bl_wa_0487) is only ever "Message hidden" to him.
+  function whoOf(m) { const t = cur(); return m.direction === 'outbound' ? 'You' : ((t && (t.contact_name || pretty(t.number))) || 'Them'); }
+  function quoteText(q) { return q.hidden ? 'Message hidden' : q.missing ? 'Original message not available' : (q.body || (q.media_kind ? '[' + q.media_kind + ']' : '') || (q.kind === 'template' ? 'Template' : '')); }
+  function quoteEl(m) {
+    const q = m.quote; if (!q) return null;
+    const na = !!(q.hidden || q.missing);
+    return el('button', { class: 'wx-quote' + (na ? ' na' : ''), type: 'button', title: na ? null : 'Go to the original message',
+      onClick: (e) => { e.stopPropagation(); jumpTo(q); } }, [na ? null : el('b', null, whoOf(q)), el('span', null, quoteText(q))]);
+  }
+  function jumpTo(q) {
+    if (q.hidden) { toast('Message hidden'); return; }
+    const row = !q.missing && built ? built.msgs.querySelector('[data-mid="' + q.id + '"]') : null;
+    if (!row) { toast('Original message not available'); return; }
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    row.classList.add('hl'); setTimeout(() => row.classList.remove('hl'), 1800);
+  }
+  function escReply(e) { if (e.key === 'Escape' && reply) { e.preventDefault(); clearReply(); } }
+  function setReply(m) {
+    const t = cur(); if (!t || !built || !m) return;
+    reply = m; paintReply();
+    document.addEventListener('keydown', escReply, true);
+    if (!isPhone()) built.ta.focus();
+  }
+  function clearReply() { reply = null; document.removeEventListener('keydown', escReply, true); paintReply(); }
+  function paintReply() {
+    if (!built) return;
+    mount(built.rbar, reply ? el('div', { class: 'wx-rbar', role: 'status' }, [
+      sv('reply', 18),
+      el('div', { class: 't' }, [el('b', null, 'Replying to ' + whoOf(reply)), el('span', null, quoteText({ body: reply.body, media_kind: reply.media_kind, kind: reply.kind }))]),
+      el('button', { class: 'wx-ib', type: 'button', 'aria-label': 'Cancel reply (Esc)', title: 'Cancel reply (Esc)', onClick: clearReply }, sv('close', 20)),
+    ]) : null);
+  }
+  function swipeReply(node, m) {      // touch: drag a bubble to the right = reply, like WhatsApp
+    let x0 = 0, y0 = 0, dx = 0, on = false;
+    node.addEventListener('touchstart', (e) => { const p = e.touches[0]; x0 = p.clientX; y0 = p.clientY; dx = 0; on = true; }, { passive: true });
+    node.addEventListener('touchmove', (e) => {
+      if (!on) return; const p = e.touches[0]; const dy = p.clientY - y0; dx = p.clientX - x0;
+      if (Math.abs(dy) > 30 || dx < 0) { dx = 0; on = false; node.style.transform = ''; return; }
+      node.style.transform = 'translateX(' + Math.min(dx, 72) + 'px)';
+    }, { passive: true });
+    const end = () => { const go = on && dx > 56; on = false; node.style.transform = ''; if (go) setReply(m); };
+    node.addEventListener('touchend', end); node.addEventListener('touchcancel', end);
+  }
   function msgItems(m) {
     const t = cur();
     const who = t && t.owner ? t.owner : 'the dispatcher';
     return [
+      { ic: 'reply', label: 'Reply', on: () => setReply(m) },
       m.body ? { ic: 'copy', label: 'Copy', on: async () => { try { await navigator.clipboard.writeText(m.body); toast('Copied'); } catch (_) { toast('Could not copy'); } } } : null,
       m.hidden
         ? { ic: 'eye', label: 'Show to dispatcher', on: () => hideMsg(m, false) }
@@ -1105,9 +1162,11 @@ export async function renderWhatsappLive(host) {
       prev = m;
       const media = m.has_media ? mediaEl(m) : null;
       const bub = el('div', { class: 'wx-bub' + (fail ? ' fail' : '') + (media ? ' med' : '') + (m.hidden ? ' hid' : ''),
+        onDblclick: () => setReply(m),
         onContextmenu: (e) => { e.preventDefault(); showMenu(msgItems(m), e.clientX, e.clientY, bub); } }, [
         el('button', { class: 'wx-bchev', type: 'button', 'aria-label': 'Message options', onClick: (e) => { e.stopPropagation(); const b = e.currentTarget.getBoundingClientRect(); showMenu(msgItems(m), b.right - 232, b.bottom + 2, bub); } }, sv('down', 20)),
         m.hidden ? el('div', { class: 'wx-hidl', title: m.hidden_at ? 'Hidden ' + et(m.hidden_at) : null }, [sv('eyeoff', 14), 'Hidden from dispatcher · only Command Center sees this']) : null,
+        quoteEl(m),
         media,
         m.body ? el('span', { class: 'wx-txt' }, hl(m.body, q)) : null,
         el('span', { class: 'wx-meta', title: et(m.at) }, [
@@ -1117,7 +1176,8 @@ export async function renderWhatsappLive(host) {
         fail ? el('div', { class: 'wx-err' }, [sv('alert', 14), 'Not delivered' + (m.error ? ' · ' + m.error : '')]) : null,
       ]);
       longPress(bub, (x, y) => showMenu(msgItems(m), x, y, bub));
-      rows.push(el('div', { class: 'wx-mr ' + (out ? 'out' : 'in') + (tail ? ' tail' : '') }, bub));
+      swipeReply(bub, m);
+      rows.push(el('div', { class: 'wx-mr ' + (out ? 'out' : 'in') + (tail ? ' tail' : ''), 'data-mid': m.id }, bub));
     });
     if (!list.length) rows.push(el('div', { class: 'wx-day', style: 'position:static;text-transform:none' }, q ? 'No messages found' : 'No messages yet'));
     mount(built.msgs, rows);
@@ -1230,12 +1290,14 @@ export async function renderWhatsappLive(host) {
   async function send(payload) {
     if (sending) return;
     const id = open;
+    if (reply && !payload.reply_to) payload.reply_to = reply.id;   // bl_wa_0532
     sending = true; syncComp(); paintTrays();
     try {
       const r = await waSend(payload);
       if (!r || !r.ok) throw new Error((r && r.error) || 'Could not send that message.');
       if (payload.template) { tplVars = []; tplName = ''; trayOpen = false; }
       else { drafts[id] = ''; if (built && built.id === id) { built.ta.value = ''; grow(); } }
+      if (payload.reply_to) { clearReply(); if (r.quote_local) toast('Sent. The quote shows in LoadBoot only — WhatsApp could not attach it to your own earlier message.'); }
       sending = false;
       if (built) built.stick = true;
       await loadThread(id, true); await load(true);
@@ -1249,9 +1311,10 @@ export async function renderWhatsappLive(host) {
     sending = true; syncComp();
     try {
       const up = await waUploadMedia(id, file);
-      const r = await waSend({ thread_id: id, media: { ...up, voice: !!voice, caption: voice ? '' : (drafts[id] || '') } });
+      const r = await waSend({ thread_id: id, reply_to: reply ? reply.id : undefined, media: { ...up, voice: !!voice, caption: voice ? '' : (drafts[id] || '') } });
       if (!r || !r.ok) throw new Error((r && r.error) || 'That attachment could not be sent.');
       if (!voice) { drafts[id] = ''; if (built && built.id === id) { built.ta.value = ''; grow(); } clearPend(); }
+      if (reply) { clearReply(); if (r.quote_local) toast('Sent. The quote shows in LoadBoot only — WhatsApp could not attach it to your own earlier message.'); }
       sending = false;
       if (built) built.stick = true;
       await loadThread(id, true); await load(true);
@@ -1373,7 +1436,7 @@ export async function renderWhatsappLive(host) {
     if (open === id && built) { built.ta.focus(); return; }
     if (rec) { try { rec.stop(); } catch (_) {} }
     clearPend();
-    open = id; thr = null; findQ = null; infoOpen = false; trayOpen = false; emoOpen = false; tplName = ''; tplVars = [];
+    open = id; thr = null; findQ = null; infoOpen = false; trayOpen = false; emoOpen = false; tplName = ''; tplVars = []; clearReply();
     delete U.unr[id]; uSave(); markSeen(byId(id));
     paintSide(); paintRail();
     buildChat();
@@ -1382,7 +1445,7 @@ export async function renderWhatsappLive(host) {
     // on a phone the keyboard stays down until they tap the box, like WhatsApp
     if (open === id && built) { const c = cur(); if (c && !c.window_open) { trayOpen = true; paintTrays(); } else if (!isPhone()) built.ta.focus(); }
   }
-  function closeChat() { if (rec) { try { rec.stop(); } catch (_) {} } clearPend(); open = null; thr = null; findQ = null; infoOpen = false; paintMain(); paintSide(); }
+  function closeChat() { if (rec) { try { rec.stop(); } catch (_) {} } clearPend(); clearReply(); open = null; thr = null; findQ = null; infoOpen = false; paintMain(); paintSide(); }
 
   async function loadThread(id, quiet) {
     try {

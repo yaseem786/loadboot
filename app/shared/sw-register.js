@@ -1,9 +1,14 @@
 // lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
-// sw-register.js — register the app service worker (scope /app/) and surface an
-// instant "update available" prompt so installed PWAs (mobile home-screen app)
-// pick up new deploys immediately instead of only on a cold reopen.
+// sw-register.js — register the app service worker (scope /app/) and keep installed PWAs
+// (mobile home-screen app) on the newest deploy.
 // The SW is network-first for the app shell and NEVER caches API/document/money/
 // location/profile data (those are cross-origin Supabase calls).
+//
+// 8 Oct 2026 (owner): NO "A new version of LoadBoot is available" banner in any portal. Big-brand apps
+// update by themselves; so does LoadBoot now. A newly installed worker is told to take over at once
+// (SKIP_WAITING) and the page is NEVER reloaded under the user's hands — nothing they are typing is
+// lost. The next navigation or reopen simply runs the new build. The shell is network-first anyway,
+// so a fresh load is always the latest deploy even before the worker switches.
 export function registerAppSW() {
   if (!('serviceWorker' in navigator)) return;
   // DEV HOSTS: never register the service worker on localhost / LAN IPs — its
@@ -18,48 +23,25 @@ export function registerAppSW() {
     // updateViaCache:'none' — ALWAYS revalidate sw.js against the network when checking
     // for updates, so a new deploy is detected even if the browser cached the old sw.js.
     // Without this, installed PWAs can serve a stale build until the user clears data.
-    let updateApproved = false;
     navigator.serviceWorker.register('/app/sw.js', { scope: '/app/', updateViaCache: 'none' }).then((reg) => {
       // Actively look for a newer SW: right now, and every 60s while the app is open,
       // so an installed PWA picks up new deploys without a manual reinstall.
       reg.update().catch(() => {});
       setInterval(() => reg.update().catch(() => {}), 60000);
-      function promptReload(worker) {
-        if (document.getElementById('lb-sw-update')) return;
-        const bar = document.createElement('div');
-        bar.id = 'lb-sw-update';
-        bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:99999;background:#0883F7;color:#fff;padding:12px 16px;border-radius:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;font:600 14px system-ui,sans-serif;box-shadow:0 12px 30px -8px rgba(8,131,247,.6)';
-        const msg = document.createElement('span');
-        msg.textContent = 'A new version of LoadBoot is available.';
-        const btn = document.createElement('button');
-        btn.textContent = 'Update';
-        btn.style.cssText = 'background:#fff;color:#0883F7;border:none;border-radius:9px;padding:8px 16px;font-weight:800;cursor:pointer;flex:none';
-        btn.onclick = () => {
-          if (!window.confirm('Update and reload this tab? Save any unfinished work first.')) return;
-          updateApproved = true; btn.textContent = 'Updating...';
-          if (!worker || worker.state === 'activated') location.reload();
-          else worker.postMessage({ type: 'SKIP_WAITING' });
-        };
-        bar.appendChild(msg); bar.appendChild(btn);
-        document.body.appendChild(bar);
-        try { document.body.classList.add('lb-sw-bar'); } catch (_) {}   // bl_ui_0460 — dialer dock + tour ? lift above the bar
-      }
-      if (reg.waiting && navigator.serviceWorker.controller) promptReload(reg.waiting);
+      // a worker that finished installing takes over silently — no banner, no question
+      const adopt = (worker) => { try { if (worker) worker.postMessage({ type: 'SKIP_WAITING' }); } catch (_) {} };
+      if (reg.waiting && navigator.serviceWorker.controller) adopt(reg.waiting);
       reg.addEventListener('updatefound', () => {
         const nw = reg.installing;
         if (!nw) return;
         nw.addEventListener('statechange', () => {
-          if (nw.state === 'installed' && navigator.serviceWorker.controller) promptReload(nw);
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) adopt(nw);
         });
       });
       // check for updates when the app regains focus (mobile: reopened from home screen)
       document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
-      let reloaded = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloaded) return;
-        if (!updateApproved) { promptReload(null); return; }
-        reloaded = true; location.reload();
-      });
+      // controllerchange: the new worker now serves this tab's requests. Deliberately NO reload here —
+      // the user keeps whatever they were doing; the new build appears on their next open.
     }).catch(() => {});
   });
 }
