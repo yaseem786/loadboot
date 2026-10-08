@@ -41,6 +41,7 @@ import {
 import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } from '../shared/storage.js';
 import { setPostingHos } from '../shared/api.js';
 import { formProgressPing, formProgressDone } from '../shared/api.js';
+import { pocketFieldSuggestions, pocketFieldSuggestionDecide } from '../shared/api.js';   // bl_fill_0534 — dispatcher suggestions on locked fields
 // bl_dial_0390 — lifts the signup SMS checkbox into the dispatcher-side consent registry, so a
 // dispatcher can text a carrier who already agreed without logging anything by hand. Idempotent.
 import { smsConsentSelfSync } from '../shared/api.js';
@@ -3595,6 +3596,23 @@ async function appView(user) {
         h('span', { class: 'cp-go', style: 'color:' + t.c }, '›')]); })),
     ]) : null;
 
+    // bl_fill_0534 — the dispatcher may SUGGEST a value for a field the carrier set (weekends, haul type, equipment…).
+    // Accept writes it as the carrier's own answer (stamped carrier · 'accepted suggestion #id'); Keep mine closes it.
+    const sugHost = h('div', { 'data-lb': 'suggestions' });
+    (async () => { try {
+      const r = await pocketFieldSuggestions(); const rows = (r && r.rows) || []; if (!rows.length) return;
+      const decide = async (x, ok, btn) => { btn.disabled = true; try { const r2 = await pocketFieldSuggestionDecide(x.id, ok); if (!r2 || r2.error) throw new Error((r2 && (r2.message || r2.error)) || 'failed'); x.status = ok ? 'accepted' : 'rejected'; lbToast(ok ? (x.label || x.field) + ' is now ' + x.new_text : 'Kept your value for ' + (x.label || x.field), ok ? 'success' : 'info', 'Dispatcher suggestion'); paint(); } catch (e) { btn.disabled = false; lbToast((e && e.message) || 'Could not save.', 'urgent', 'Not saved'); } };
+      const paint = () => { const left = rows.filter((x) => x.status === 'pending'); if (!left.length) { sugHost.innerHTML = ''; return; }
+        mount(sugHost, h('div', { class: 'cp-card' }, [cardHead('Your dispatcher suggests', left.length + ' change' + (left.length > 1 ? 's' : '') + ' waiting for your OK \u2014 nothing changes until you accept'),
+          h('div', { style: 'display:flex;flex-direction:column;gap:8px' }, left.map((x) => h('div', { class: 'cp-row cp-row-col', style: 'border-left:4px solid #3b9dff;padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:6px' }, [
+            h('div', { class: 'cp-row-t' }, (x.label || x.field) + (x.unit_no ? ' (unit ' + x.unit_no + ')' : '') + ': ' + x.old_text + ' \u2192 ' + x.new_text),
+            h('div', { class: 'cp-row-s' }, (x.reason ? '\u201c' + x.reason + '\u201d' : '') + (x.suggested_by_name ? ' \u2014 ' + x.suggested_by_name : '') + (x.source === 'call_ai' ? ' \u00b7 from your call' : '')),
+            h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+              h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0', onClick: (ev) => decide(x, true, ev.currentTarget) }, 'Accept'),
+              h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0', onClick: (ev) => decide(x, false, ev.currentTarget) }, 'Keep mine')])])))])); };
+      paint();
+    } catch (_) {} })();
+
     // 2) Notifications from Command Center — global tone colours, unread markers, mark-read.
     const nd = d.notifications || {}; const notes = (Array.isArray(nd.recent) ? nd.recent : []).filter(n => !n.read_at); const unread = nd.unread || 0;
     const notifCard = h('div', { class: 'cp-card' }, [
@@ -3932,7 +3950,7 @@ async function appView(user) {
     // bl_comp_0504: "Insurance approved → post the trucks on your certificate" (server decides show/hide).
     const coiHost9 = h('div');
     import('./coi-trucks-banner.js').then((m9) => m9.mountCoiTrucksBanner(coiHost9, { h, go, openAvail: (typeof openAvailFromBar === 'function') ? openAvailFromBar : null })).catch(() => {});
-    mount(content, h('div', { class: 'cp-dash' }, [tripHero9, rateCard9, onbHero, noaDash9, coiHost9, ...topBanners, kpis, availHostD, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    mount(content, h('div', { class: 'cp-dash' }, [tripHero9, rateCard9, onbHero, noaDash9, coiHost9, ...topBanners, kpis, availHostD, acctStrip, setupCard, sugHost, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     const econHost = h('div', null); prefsHost.parentNode.insertBefore(econHost, prefsHost.nextSibling);
     try { import('./economics.js').then((m) => m.mountBreakevenCard(econHost)).catch(() => {}); } catch (_) {}
     // Dispatcher card (bl_disp_0409): compact "Meet your dispatcher" + status; the full desk is the Dispatcher tab.

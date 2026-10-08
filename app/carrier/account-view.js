@@ -8,6 +8,7 @@ import { attachAddressSuggest } from '../shared/addr-suggest.js';
 import { uploadDocument } from '../shared/storage.js';
 import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile, myHazmatReadiness, carrierRequestReverify, carrierAgreementSignature, setMyAvatar, myAvatar, requestAccountAction } from '../shared/api.js';
 import { payAutopayStatus, payAutopayDisable, payAutopayStart } from '../shared/api.js';
+import { pocketFieldSuggestions, pocketFieldSuggestionDecide } from '../shared/api.js';   // bl_fill_0534
 import { getClient } from '../shared/supabaseClient.js';
 
 function sic(n) {
@@ -536,6 +537,32 @@ export async function renderPremiumAccount(host, ctx) {
     root.appendChild(f);
     var fb = f.querySelector('#acx-foot-signout');
     fb.addEventListener('click', async function () { fb.disabled = true; fb.textContent = 'Signing out…'; try { if (ctx.signOut) await ctx.signOut(); location.reload(); } catch (_) { location.reload(); } });
+  })();
+  // bl_fill_0534 — a dispatcher suggestion is shown ON the field it is about: "Your dispatcher suggests: Runs weekends → No [Accept] [Keep mine]"
+  (async function () {
+    var rows = []; try { var r = await pocketFieldSuggestions(); rows = (r && r.rows) || []; } catch (_) { return; }
+    rows = rows.filter(function (x) { return x.status === 'pending' && x.tbl === 'prefs'; }); if (!rows.length) return;
+    var ANCHOR = { weekend_ok: '#acx-wkwrap', haul_types: '#acx-haul', preferred_equipment: '#acx-eq' };
+    rows.forEach(function (x) {
+      var near = ANCHOR[x.field] ? root.querySelector(ANCHOR[x.field]) : null;
+      var box = document.createElement('div');
+      box.setAttribute('data-sug', String(x.id));
+      box.style.cssText = 'margin-top:8px;padding:9px 12px;border-radius:11px;border:1px solid rgba(59,157,255,.45);background:rgba(8,131,247,.10);color:#dbe6fb;font-size:.8rem;line-height:1.5';
+      box.innerHTML = '<b style="color:#fff">Your dispatcher suggests:</b> ' + esc(x.label || x.field) + ' ' + esc(x.old_text) + ' \u2192 <b style="color:#fff">' + esc(x.new_text) + '</b>'
+        + (x.reason ? ' <span style="opacity:.85">\u2014 \u201c' + esc(x.reason) + '\u201d</span>' : '') + (x.suggested_by_name ? ' <span style="opacity:.7">(' + esc(x.suggested_by_name) + ')</span>' : '')
+        + '<div style="display:flex;gap:8px;margin-top:7px;flex-wrap:wrap"><button type="button" class="btn sm" data-ok="1">Accept</button><button type="button" class="btn sm" data-ok="0" style="background:transparent;border:1px solid rgba(255,255,255,.3);color:#dbe6fb">Keep mine</button></div>';
+      if (near) near.insertAdjacentElement('afterend', box);
+      else { var sec = root.querySelector('#s-disp .sec-s'); if (!sec) return; sec.insertAdjacentElement('afterend', box); }
+      box.querySelectorAll('button[data-ok]').forEach(function (b) {
+        b.addEventListener('click', async function () {
+          var ok = b.getAttribute('data-ok') === '1'; b.disabled = true;
+          try { var r2 = await pocketFieldSuggestionDecide(x.id, ok); if (!r2 || r2.error) throw new Error((r2 && (r2.message || r2.error)) || 'failed');
+            toast(ok ? (x.label || x.field) + ' is now ' + x.new_text : 'Kept your value'); box.remove();
+            if (ok) setTimeout(function () { try { renderPremiumAccount(host, ctx); } catch (_) { location.reload(); } }, 500);
+          } catch (e) { b.disabled = false; toast((e && e.message) || 'Could not save.'); }
+        });
+      });
+    });
   })();
 }
 
