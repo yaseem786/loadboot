@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// telnyx-transcribe v2 (bl_dial_0514) — speech-to-text for one dialer call recording, shown in CC → Dialer calls.
+// telnyx-transcribe v3 (bl_dial_0514) — speech-to-text for one dialer call recording, shown in CC → Dialer calls.
 // verify_jwt = true. Access is decided in Postgres AS THE CALLER (public.dialer_recording_ref: own call or CC staff).
 // Uses the existing TELNYX_API_KEY: Telnyx AI /ai/audio/transcriptions. v2: the audio is downloaded here and uploaded as
 // `file` (Telnyx rejected the S3 file_url: "file_url content-length not found"). Telnyx limit: 100 MB per file.
@@ -38,7 +38,7 @@ function normalise(j: any): { text: string; segments: Seg[] } {
   if (Array.isArray(utt) && utt.length) {
     for (const u of utt) segs.push({ start: u.start, end: u.end, speaker: u.channel != null ? "ch" + u.channel : (u.speaker != null ? "s" + u.speaker : undefined), text: String(u.transcript || u.text || "").trim() });
   } else if (Array.isArray(j?.segments)) {
-    for (const s of j.segments) segs.push({ start: s.start, end: s.end, speaker: s.speaker != null ? "s" + s.speaker : (s.channel != null ? "ch" + s.channel : undefined), text: String(s.text || s.transcript || "").trim() });
+    for (const s of j.segments) { const sp = s.speaker ?? s.speaker_id ?? s.speaker_label; segs.push({ start: s.start, end: s.end, speaker: s.channel != null ? "ch" + s.channel : (sp != null ? "s" + sp : undefined), text: String(s.text || s.transcript || "").trim() }); }
   }
   let text = typeof j?.text === "string" ? j.text : "";
   if (!text) { const ch = j?.results?.channels; if (Array.isArray(ch)) text = ch.map((c: any) => c?.alternatives?.[0]?.transcript || "").join("\n\n"); }
@@ -53,11 +53,12 @@ async function transcribe(url: string): Promise<{ model: string; language: strin
   if (audio.size > 100 * 1024 * 1024) throw new Error("recording is larger than 100 MB (" + Math.round(audio.size / 1048576) + " MB)");
   const kind = (dl.headers.get("Content-Type") || "").includes("wav") ? "wav" : "mp3";
   const attempts: Array<{ model: string; language?: string; cfg?: Record<string, unknown>; verbose?: boolean }> = [
-    { model: "deepgram/nova-3", language: "multi", cfg: { smart_format: true, punctuate: true, utterances: true, multichannel: true } },
-    { model: "deepgram/nova-3", language: "multi", cfg: { smart_format: true, punctuate: true, utterances: true, diarize: true } },
+    { model: "deepgram/nova-3", language: "multi", cfg: { smart_format: true, punctuate: true, utterances: true, diarize: true, multichannel: true }, verbose: true },
+    { model: "deepgram/nova-3", language: "multi", cfg: { smart_format: true, punctuate: true, diarize: true }, verbose: true },
+    { model: "deepgram/nova-3", language: "multi", verbose: true },
     { model: "openai/whisper-large-v3-turbo", verbose: true },
   ];
-  let last = "";
+  let last = ""; let keep: { model: string; language: string; out: any } | null = null;
   for (const a of attempts) {
     const f = new FormData();
     f.append("model", a.model); f.append("file", new File([audio], "call." + kind, { type: kind === "wav" ? "audio/wav" : "audio/mpeg" }));
@@ -66,9 +67,10 @@ async function transcribe(url: string): Promise<{ model: string; language: strin
     if (a.verbose) { f.append("response_format", "verbose_json"); f.append("timestamp_granularities[]", "segment"); }
     const r = await fetch(TX + "/ai/audio/transcriptions", { method: "POST", headers: { Authorization: `Bearer ${TELNYX_KEY}` }, body: f });
     const body = await r.text();
-    if (r.ok) { try { return { model: a.model, language: a.language || "auto", out: JSON.parse(body) }; } catch { last = "bad json"; continue; } }
+    if (r.ok) { try { const out = JSON.parse(body); if (Array.isArray(out?.segments) && out.segments.length) return { model: a.model, language: a.language || "auto", out }; if (!keep) keep = { model: a.model, language: a.language || "auto", out }; last += (last ? " | " : "") + a.model + ": no segments"; continue; } catch { last = "bad json"; continue; } }
     last += (last ? " | " : "") + a.model + ": " + r.status + " " + body.slice(0, 200);
   }
+  if (keep) return keep; // text only, no timestamps
   throw new Error("transcription failed: " + last);
 }
 

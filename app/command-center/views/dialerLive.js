@@ -317,8 +317,17 @@ export async function renderDialerLive(host) {
     function render(t) {
       const segs = Array.isArray(t.segments) ? t.segments : []; const map = {};
       if (segs.length) {
-        plain = segs.map((g) => '[' + ts(g.start) + '] ' + (who(g.speaker, map) ? who(g.speaker, map) + ': ' : '') + g.text).join('\n');
-        mount(body, segs.map((g) => el('div', null, [el('span', { style: 'font-size:12px;opacity:.6;margin-right:6px' }, ts(g.start)), g.speaker ? el('b', { style: 'margin-right:6px' }, who(g.speaker, map) + ':') : null, g.text])));
+        // paragraphs: a new one when the speaker changes, or (no speaker info) after ~30 s or a pause
+        const paras = [];
+        segs.forEach((g) => { const p = paras[paras.length - 1]; const gap = p ? (Number(g.start) || 0) - (Number(p.end) || 0) : 0;
+          if (p && (g.speaker ? g.speaker === p.speaker : ((Number(g.start) || 0) - (Number(p.start) || 0) < 30 && gap < 2))) { p.parts.push(g); p.end = g.end; }
+          else paras.push({ speaker: g.speaker, start: g.start, end: g.end, parts: [g] }); });
+        plain = paras.map((p) => '(' + ts(p.start) + ') ' + (who(p.speaker, map) ? who(p.speaker, map) + ': ' : '') + p.parts.map((g) => g.text).join(' ')).join('\n\n');
+        const tstyle = 'font-size:12px;color:var(--muted,#64748b);margin-right:4px';
+        mount(body, paras.map((p) => el('p', { style: 'margin:0 0 14px;line-height:1.7' }, [
+          p.speaker ? el('b', { style: 'display:block;font-size:13px;margin-bottom:2px' }, who(p.speaker, map)) : null,
+          ...p.parts.flatMap((g) => [el('span', { style: tstyle }, '(' + ts(g.start) + ')'), g.text + ' ']),
+        ])));
       } else { plain = t.text || ''; mount(body, el('div', { style: 'white-space:pre-wrap' }, plain || 'The transcript came back empty.')); }
       mount(status, 'Transcript · ' + (t.model || '') + (t.language ? ' · ' + t.language : '') + ' · machine-generated, may contain mistakes.');
       copyBtn.style.display = ''; redo.style.display = '';
