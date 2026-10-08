@@ -372,6 +372,9 @@ function openModal(title, children, opts = {}) {
   document.addEventListener('keydown', onEsc);
   pushLayer(guard);
   lockPage(ov);   // after pushLayer: history.back() on close restores the scroll saved at pushState time, which reads 0 while locked
+  // bl_ui_0532 — Android/TWA: a touch-drag on the dim area, or on a card that has nothing to scroll, chained into
+  // the page and moved the app behind the sheet. Only the card's own scroll area may move a finger.
+  ov.addEventListener('touchmove', (e) => { try { const card = e.target.closest('.cp-modal-card'); if (!card || card.scrollHeight <= card.clientHeight + 1) e.preventDefault(); } catch (_) {} }, { passive: false });
   const first = card.querySelector('input,select,textarea'); if (first) first.focus();
   return close;
 }
@@ -2601,6 +2604,7 @@ async function appView(user) {
     ]);
     function close() { scrim.classList.remove('show'); drawer.classList.remove('show'); setTimeout(() => { scrim.remove(); drawer.remove(); }, 220); }
     scrim.onclick = close;
+    scrim.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });   // bl_ui_0532 — the dim area never scrolls the page
     document.body.appendChild(scrim); lockPage(scrim); document.body.appendChild(drawer);
     requestAnimationFrame(() => { scrim.classList.add('show'); drawer.classList.add('show'); });
   }
@@ -3569,7 +3573,12 @@ async function appView(user) {
     const d = dash || {}; const k = d.kpis || {}; const acct = d.account || {};
 
     // 1) "Complete your setup" — gaps coloured by the GLOBAL tone tokens, each linking to the exact step.
-    const gaps = Array.isArray(d.setup_gaps) ? d.setup_gaps : [];
+    const gapsAll = Array.isArray(d.setup_gaps) ? d.setup_gaps : [];
+    // bl_ob_0532b — "expires in N days" is a REMINDER, not a setup gap: a banner the carrier can × away (hidden for
+    // 2 days, then back until the renewal is approved — the server stops sending it the moment the new COI is valid).
+    const _dismissed = (g) => { try { const t = Number(localStorage.getItem('lb:dismiss:' + g.key) || 0); return t > 0 && Date.now() - t < 2 * 86400000; } catch (_) { return false; } };
+    const expGaps = gapsAll.filter((g) => /^doc_expiring:/.test(String(g.key || '')) && !_dismissed(g));
+    const gaps = gapsAll.filter((g) => !/^doc_expiring:/.test(String(g.key || '')));
     const setupCard = gaps.length ? h('div', { class: 'cp-card', 'data-tour': 'dash-setup' }, [
       cardHead('Complete your setup', acct.onboarding_complete ? 'Almost there' : 'Action needed'),
       h('div', null, gaps.map(g => { const t = toneOf(g.tone); return h('button', {
@@ -3787,6 +3796,13 @@ async function appView(user) {
     } catch (_) { _obRing.firstChild.textContent = '0%'; } })();
     const _dueAmt = (invs || []).filter(i => i.status === 'sent').reduce((a, i) => a + (Number(i.fee) || 0), 0);
     const topBanners = [
+      ...expGaps.map((g) => { const b = h('div', { class: 'cpx-banner amber', style: 'display:flex;align-items:center;gap:8px;cursor:default' }, [
+        h('span', null, '\u23f3'),
+        h('button', { style: 'flex:1;text-align:left;background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0', onClick: () => {
+          window.__lbDeepEnt = { tab: _obDone ? 'documents' : 'onboarding', id: String(g.doc_type || '') };
+          if (_obDone) { go('documents'); return; } try { sessionStorage.setItem('lb:onb:jump', '4'); } catch (_) {} go('onboarding'); } }, g.label),
+        h('button', { 'aria-label': 'Hide this reminder for 2 days', title: 'Hide for 2 days', style: 'background:none;border:0;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:0 4px', onClick: () => { try { localStorage.setItem('lb:dismiss:' + g.key, String(Date.now())); } catch (_) {} b.remove(); } }, '\u00d7'),
+      ]); return b; }),
       (_obDone && comp && comp.mandatory_ok === false) ? h('button', { class: 'cpx-banner red', onClick: () => go('documents') }, [h('span', null, [icon('alert',15), '']), h('span', null, 'Please verify your compliance documents'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
       _dueAmt > 0 ? h('button', { class: 'cpx-banner amber', onClick: () => go('finance') }, [h('span', null, 'ℹ'), h('span', null, money(_dueAmt) + ' in dispatch fees due — pays off in Finance, clears when LoadBoot confirms your receipt'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
     ].filter(Boolean);
