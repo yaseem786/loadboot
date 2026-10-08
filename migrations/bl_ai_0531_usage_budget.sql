@@ -38,7 +38,12 @@
 -- half-applied): bl_ai_0531a_credit_storage (§1–2), bl_ai_0531b_reserve_patch (§3), bl_ai_0531c_cc_credit_rpc (§4),
 -- bl_ai_0531d_ledger_reprice (§5). Staging result: 5 jobs repriced, brain_jobs $2.23 → $2.91; anon secdef 35, same
 -- names (hash of the sorted signatures unchanged); reserve stop probed on brain_enqueue and brain_loads_gate inside
--- a rolled-back transaction. PROD: not applied yet. Before prod, check that every brain_jobs.model has a price row.
+-- a rolled-back transaction.
+-- Applied to PROD (rwscphuhpjoudvljvmdk) 8 Oct 2026 in the same four parts. Pre-checks: both brain_jobs models
+-- (claude-fable-5-1, claude-sonnet-5) have a price row; each anchor found exactly once. Prod result: 1 job repriced,
+-- brain_jobs $3.68 → $3.85 (+$0.18 only — the open ~$3 Console-vs-ledger gap is NOT a pricing error; prices match
+-- the published rates); anon secdef 36 before and after, names md5 06f779f74423a983253c79ab9d4e1e84 unchanged;
+-- reserve stop probed on brain_loads_gate inside a rolled-back transaction (reason 'Claude credit reserve reached').
 
 -- ── 1. storage ──────────────────────────────────────────────────────────────────────────────────────────────────
 create table if not exists app_private.brain_credit_lots (
