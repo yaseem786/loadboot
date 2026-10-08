@@ -146,7 +146,8 @@ export async function renderPremiumAccount(host, ctx) {
   const EQ_IC = { 'Dry Van': '🚚', 'Reefer': '❄️', 'Flatbed': '🛻', 'Power Only': '🔌', 'Step Deck': '📐', 'Box Truck': '📦', 'Hotshot': '⚡', 'Cargo Van': '🚐', 'Sprinter Van': '🚐' };   // bl_ux_0509
   const eqSel = () => ['Dry Van', 'Reefer', 'Flatbed', 'Power Only', 'Step Deck', 'Box Truck', 'Hotshot', 'Cargo Van', 'Sprinter Van'].map((o) => {
     const on = (dp.preferred_equipment || []).indexOf(o) >= 0;
-    return '<label class="acx-eqp' + (on ? ' on' : '') + '"><input type="checkbox" class="acx-eqc" value="' + o + '"' + (on ? ' checked' : '') + ' style="position:absolute;opacity:0;pointer-events:none"><span class="ic">' + (EQ_IC[o] || '🚛') + '</span>' + o + '<span class="ck">✓</span></label>';
+    const tip = o === 'Hotshot' ? 'Hotshot = a pickup truck pulling a gooseneck or flatbed trailer. A van is not a hotshot.' : o === 'Sprinter Van' ? 'High-roof cargo van (Sprinter / ProMaster / Transit)' : o === 'Cargo Van' ? 'Standard cargo van' : '';   // bl_pref_0533
+    return '<label class="acx-eqp' + (on ? ' on' : '') + '"' + (tip ? ' title="' + tip + '"' : '') + '><input type="checkbox" class="acx-eqc" value="' + o + '"' + (on ? ' checked' : '') + ' style="position:absolute;opacity:0;pointer-events:none"><span class="ic">' + (EQ_IC[o] || '🚛') + '</span>' + o + '<span class="ck">✓</span></label>';
   }).join('');
 
   // 6 Sep 2026 (owner request): how the carrier RUNS, asked directly instead of inferred from
@@ -197,10 +198,11 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<style>.acx .field label.acx-eqp,.acx-eqp{position:relative;display:inline-flex;margin:0;font-size:.82rem;color:inherit;align-items:center;gap:7px;padding:9px 15px;border-radius:999px;border:1.5px solid var(--border,#334155);cursor:pointer;font-size:.82rem;font-weight:800;transition:all .15s;user-select:none}.acx-eqp .ic{font-size:.95rem}.acx-eqp .ck{display:none;color:#0883F7;font-weight:900}.acx-eqp.on{border-color:#0883F7;background:rgba(8,131,247,.16);box-shadow:0 4px 14px -6px rgba(8,131,247,.5)}.acx-eqp.on .ck{display:inline}.acx-sub{display:flex;align-items:center;gap:7px;font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#7f92b3;margin:16px 0 8px}.acx-sub::after{content:"";flex:1;height:1px;background:var(--border,#33415566)}</style>'
     +   '<div class="acx-sub">🚛 Equipment — select all you run</div>'
     +   '<div id="acx-eq" style="display:flex;flex-wrap:wrap;gap:8px">' + eqSel() + '</div>'
+    +   '<div class="rs" style="margin-top:6px">Tick only what you physically run \u2014 brokers and your dispatcher book from this list. \u201cHotshot\u201d means a pickup pulling a gooseneck / flatbed trailer; a Sprinter is \u201cSprinter Van\u201d.</div>'
     +   '<div class="acx-sub">📍 Lanes & distance</div>'
     +   '<div class="field"><label>How do you run? (pick all that apply)</label>'
     +     '<div id="acx-haul" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">' + haulSel() + '</div>'
-    +     '<div class="rs" style="margin-top:6px">Leave all three unticked and we show you everything. Tick one and we stop sending you the rest — that is the point.</div></div>'
+    +     '<div class="rs" style="margin-top:6px">Tick only the ranges you actually want. Leave all three unticked and we show you everything; ticking all three means the same thing \u2014 so tick fewer, not more.</div></div>'
     +   '<div class="grid2"><div class="field"><label>Home base</label><input id="acx-home" value="' + esc(dp.home_base || '') + '"></div><div class="field"><label>Max deadhead (mi)</label><input id="acx-dead" value="' + esc(dp.max_deadhead_miles || '') + '"></div>'
     +   '<div class="field"><label>Shortest trip (mi)</label><input id="acx-tripmin" value="' + esc(dp.min_trip_miles || '') + '"></div><div class="field"><label>Longest trip (mi)</label><input id="acx-tripmax" value="' + esc(dp.max_trip_miles || '') + '"></div></div>'
     +   '<div class="field"><label>Preferred lanes</label><input id="acx-lanes" placeholder="e.g. GA → FL, Southeast" value="' + esc((dp.preferred_lanes || []).join(', ')) + '"></div>'
