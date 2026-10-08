@@ -28,6 +28,7 @@ import { icon as sharedIcon } from '../shared/ui/icons.js';
 import { dispatchLiveJoin } from '../shared/dispatch-live.js';
 import { mountDispatcherMail } from '../shared/dmail.js';   // bl_dmail_0356 — company mailbox assigned from the Command Center; no login here
 import { mountDialer } from '../shared/dialer.js';
+import { prefsCard } from '../shared/ui/prefs-card.js';   // bl_pref_0536 — shared Dispatch preferences tiles
 import { mountCarrierFill } from './carrier-fill.js';   // bl_disp_0459 — guided carrier work sheet (locked vs open fields, call script, provenance)   // bl_dial_0351 — softphone dock; also turns every tel: link into click-to-call
 
 // Line icons (Lucide-style, stroke=currentColor) — shared set + a few extras this module needs.
@@ -791,7 +792,9 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   }
   // bl_disp_0409 — the carrier's real preference set (what the carrier typed in Account → Dispatch), operating prefs only.
   function prefsBlock(pf) {
-    if (!pf) return h('div', { class: 'dw-avail', style: 'margin-top:10px' }, [h('b', { style: 'color:#fbbf24' }, [ic('alert', 16), ' No preferences set by the carrier yet']), h('div', { class: 'dw-muted' }, 'Ask the owner for rate floor, lanes and home time in the thread — do not guess them.'), h('div', { class: 'dw-grid', 'data-fill': 'prefs', style: 'margin-top:8px' })]);
+    // bl_pref_0536: the grid is always printed (empty tiles become "ask" cells for carrier-fill.js); the note stays on top
+    const none9 = !pf; pf = pf || {};
+    const noneNote9 = none9 ? h('div', { class: 'dw-avail', style: 'margin-top:10px' }, [h('b', { style: 'color:#fbbf24' }, [ic('alert', 16), ' No preferences set by the carrier yet']), h('div', { class: 'dw-muted' }, 'Ask the owner for rate floor, lanes and home time in the thread — do not guess them.')]) : null;   // the grid itself now comes from prefsCard (one [data-fill=prefs] per card)
     const arr = (v) => (Array.isArray(v) && v.length ? v.join(', ') : null);
     const money = (v) => (v == null || v === '' ? null : '$' + Number(v).toFixed(2));
     const rows = [
@@ -809,7 +812,8 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     ];
     return h('div', { style: 'margin-top:12px' }, [
       h('div', { class: 'dw-row', style: 'justify-content:space-between;align-items:baseline;margin-bottom:4px' }, [h('b', { style: 'color:#7cc0ff' }, [ic('filter', 16), ' Carrier preferences — set by the owner']), h('span', { class: 'dw-muted', style: 'font-size:.78rem' }, pf.updated_at ? 'updated ' + whenDay(pf.updated_at) : '')]),
-      h('div', { class: 'dw-grid', 'data-fill': 'prefs' }, rows.map((r) => f(r[0], r[1]))),
+      noneNote9,
+      prefsCard(pf, { bare: true, viewer: 'dispatcher', fillCompat: true }),   // bl_pref_0536 — same tiles as CC + carrier portal
       pf.notes ? h('div', { class: 'dw-muted', style: 'margin-top:6px;white-space:pre-wrap' }, ['Owner note: ', pf.notes]) : null,
     ]);
   }

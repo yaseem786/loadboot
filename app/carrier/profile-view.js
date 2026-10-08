@@ -2,6 +2,7 @@
 // My Profile — the carrier's own profile exactly as brokers see it (contact hidden),
 // plus the full live FMCSA record (7 tabs). Self-contained, scoped-dark styling so it
 // renders correctly regardless of the surrounding portal theme. Read-only.
+import { prefsCard } from '../shared/ui/prefs-card.js';   // bl_pref_0536 — compact Dispatch preferences card
 import { pocketGetProfile, pocketOverview, getDispatchPrefs, pocketCompliance, myPaymentProfile, myAvatar, setMyAvatar } from '../shared/api.js';
 import { uploadDocument } from '../shared/storage.js';
 // 29 Aug 2026 — the same renderer the Command Center uses for Carrier 360, so the carrier
@@ -214,10 +215,13 @@ export async function renderMyProfile(host){
       +'<div class="sec-h">Equipment</div><div class="chips">'+(equip.length?equip.map(function(e){return '<span class="chip">'+esc(e)+'</span>';}).join(''):'<span class="chip" style="opacity:.55">Not set yet \u2014 add equipment in onboarding</span>')+'</div>'
       +'<div class="sec-h">Lanes</div><div class="chips">'+(lanes.length?lanes.map(function(e){return '<span class="chip">'+esc(e)+'</span>';}).join(''):'<span class="chip" style="opacity:.55">Not set yet \u2014 add lanes in dispatch preferences</span>')+'</div>'
       +'<div id="lbmp-truckdetail"></div>'
+      +'<div id="lbmp-prefs" style="margin:12px 0"></div>'
       +'<div class="sec-h">Compliance <span class="verified">on file</span></div><div class="chips">'+badge(cCoi,'COI')+badge(cW9,'W-9')+badge(cAgr,'Signed Agreement')+badge(cAuth,'FMCSA Authority')+(isFactoring?badge(true,'Factoring'):'')+(cBankPending?'<span class="badge b-rev" style="background:rgba(217,119,6,.16);color:#fbbf24">&#9203; Banking &mdash; in review</span>':((cBank||!isFactoring)?badge(cBank,'Banking'):''))+'</div>'
       +'</div>'
       +'<div class="card">'+fmcsa+'</div>'
       +'</div>';
+    // bl_pref_0536 — the same Dispatch preferences card the dispatcher and CC see, compact; Edit → Account → Dispatch
+    try { var ph9 = host.querySelector('#lbmp-prefs'); if (ph9) { ph9.innerHTML = ''; ph9.appendChild(prefsCard(dp || {}, { compact: true, viewer: 'carrier', sub: 'What your dispatcher and brokers match on', onEdit: function () { try { location.hash = '#account'; } catch (_) {} } })); } } catch (_) {}
     // wire tabs
     // Truck + operating detail, rendered from the same module as Carrier 360 so there is
     // one version of the truth. Everything is read-only here; the amber panel turns whatever

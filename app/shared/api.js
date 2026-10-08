@@ -559,6 +559,7 @@ export const dispatcherFieldSuggest = (assignment, tbl, field, value, reason, tr
 export const dispatcherFieldSuggestions = (assignment) => rpc('dispatcher_field_suggestions', { p_assignment: assignment });
 export const pocketFieldSuggestions = () => rpc('cc_pocket_field_suggestions', {});
 export const pocketFieldSuggestionDecide = (id, accept) => rpc('cc_pocket_field_suggestion_decide', { p_id: id, p_accept: !!accept });
+export const pocketFieldSources = () => rpc('cc_pocket_field_sources', {});   // bl_pref_0536 — who set my fields (role + date, dispatcher name)
 export const ccFieldSuggestions = (orgId) => rpc('cc_field_suggestions', { p_org: orgId });
 export const ccFieldSuggestionDecide = (id, accept, note) => rpc('cc_field_suggestion_decide', { p_id: id, p_accept: !!accept, p_note: note ?? null });
 // bl_fill_0535 — field candidates extracted from a dialer call (nothing saves without a click)

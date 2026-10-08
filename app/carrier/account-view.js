@@ -8,7 +8,8 @@ import { attachAddressSuggest } from '../shared/addr-suggest.js';
 import { uploadDocument } from '../shared/storage.js';
 import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile, myHazmatReadiness, carrierRequestReverify, carrierAgreementSignature, setMyAvatar, myAvatar, requestAccountAction } from '../shared/api.js';
 import { payAutopayStatus, payAutopayDisable, payAutopayStart } from '../shared/api.js';
-import { pocketFieldSuggestions, pocketFieldSuggestionDecide } from '../shared/api.js';   // bl_fill_0534
+import { pocketFieldSuggestions, pocketFieldSuggestionDecide, pocketFieldSources } from '../shared/api.js';   // bl_fill_0534 · bl_pref_0536
+import { prefsCard, prefsSourcesMap, PREF_LABELS } from '../shared/ui/prefs-card.js';   // bl_pref_0536 — the shared Dispatch preferences card
 import { getClient } from '../shared/supabaseClient.js';
 
 function sic(n) {
@@ -196,6 +197,7 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div id="acx-bizmsg" class="cp-row-s" style="margin-top:8px"></div>'
     +   '<div style="margin-top:10px;display:flex;gap:8px">' + (!compliant && _stageRev ? '<button class="btn ghost sm" disabled style="opacity:.55;cursor:default">&#9203; In review \u2014 editing locked</button>' : '<button class="btn ghost sm" id="acx-bizchange">Change verified details</button>') + '<button class="btn sm" id="acx-bizsave">Save</button></div></div>'
     + '<div class="card" id="s-disp"><div class="sec-h"><div class="sec-ico ic-orange">' + sic('truck') + '</div><div class="sec-t">Dispatch preferences</div></div><div class="sec-s">Drives the load-matching engine — better in, better loads.</div>'
+    +   '<div id="acx-prefscard" style="margin:6px 0 12px"></div><div id="acx-prefsform" hidden>'
     +   '<style>.acx .field label.acx-eqp,.acx-eqp{position:relative;display:inline-flex;margin:0;font-size:.82rem;color:inherit;align-items:center;gap:7px;padding:9px 15px;border-radius:999px;border:1.5px solid var(--border,#334155);cursor:pointer;font-size:.82rem;font-weight:800;transition:all .15s;user-select:none}.acx-eqp .ic{font-size:.95rem}.acx-eqp .ck{display:none;color:#0883F7;font-weight:900}.acx-eqp.on{border-color:#0883F7;background:rgba(8,131,247,.16);box-shadow:0 4px 14px -6px rgba(8,131,247,.5)}.acx-eqp.on .ck{display:inline}.acx-sub{display:flex;align-items:center;gap:7px;font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#7f92b3;margin:16px 0 8px}.acx-sub::after{content:"";flex:1;height:1px;background:var(--border,#33415566)}</style>'
     +   '<div class="acx-sub">🚛 Equipment — select all you run</div>'
     +   '<div id="acx-eq" style="display:flex;flex-wrap:wrap;gap:8px">' + eqSel() + '</div>'
@@ -208,7 +210,11 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div class="field"><label>Shortest trip (mi)</label><input id="acx-tripmin" value="' + esc(dp.min_trip_miles || '') + '"></div><div class="field"><label>Longest trip (mi)</label><input id="acx-tripmax" value="' + esc(dp.max_trip_miles || '') + '"></div></div>'
     +   '<div class="field"><label>Preferred lanes</label><input id="acx-lanes" placeholder="e.g. GA → FL, Southeast" value="' + esc((dp.preferred_lanes || []).join(', ')) + '"></div>'
     +   '<div class="field"><label>Avoid states</label><input id="acx-avoid" placeholder="e.g. NY, CA" value="' + esc((dp.avoid_states || []).join(', ')) + '"></div>'
+    // bl_pref_0536 — home time + round trips: the table's own codes (cdp_home_time_chk / cdp_round_trip_pref_ck), human labels
+    +   '<div class="grid2"><div class="field"><label>Home time</label><select id="acx-hometime"><option value="">Not set</option>' + [['weekly', 'Home weekly'], ['2_weeks', 'Every 2 weeks'], ['biweekly', 'Every 2 weeks (biweekly)'], ['flexible', 'Flexible'], ['daily', 'Home daily'], ['local', 'Local \u2014 home every night'], ['regional_daily', 'Regional, home daily'], ['weekends', 'Home on weekends'], ['otr', 'OTR \u2014 out as long as it pays']].map(function (o) { return '<option value="' + o[0] + '"' + (dp.home_time === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>'
+    +   '<div class="field"><label>Round trips</label><select id="acx-roundtrip"><option value="">Not set</option>' + [['any', 'One-way is fine'], ['prefer', 'Round trips preferred'], ['only', 'Round trips only']].map(function (o) { return '<option value="' + o[0] + '"' + (dp.round_trip_pref === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div></div>'
     +   '<div class="acx-sub">💰 Money & load limits</div>'
+    +   '<div class="field"><label>Your cost per mile ($/mi) \u2014 fuel, insurance, truck, you</label><input id="acx-cpm" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 1.85" value="' + esc(dp.cost_per_mile || '') + '"><div class="rs">Only you and your dispatcher see this. A rate floor below it loses money.</div></div>'
     +   '<div class="grid2"><div class="field"><label>Min rate ($/mi)</label><input id="acx-minrpm" value="' + esc(dp.min_rpm || '') + '"></div><div class="field"><label>Target rate ($/mi)</label><input id="acx-target" value="' + esc(dp.target_rpm || '') + '"></div>'
     +   '<div class="field"><label>Max weight capacity (lbs)</label><input id="acx-weight" type="number" placeholder="e.g. 12000" value="' + esc(dp.max_weight_lbs || '') + '"></div><div class="field"><label>Min notice (hrs)</label><input id="acx-notice" value="' + esc(dp.min_notice_hours || '') + '"></div></div>'
     +   '<div class="grid2"><div class="field"><label>Your min rate counts…</label><select id="acx-rpmbasis"><option value="">Not set</option><option value="loaded"' + (dp.min_rpm_basis === 'loaded' ? ' selected' : '') + '>Loaded miles only</option><option value="all"' + (dp.min_rpm_basis === 'all' ? ' selected' : '') + '>All miles (deadhead included)</option></select></div>'
@@ -230,7 +236,7 @@ export async function renderPremiumAccount(host, ctx) {
     +     '<div id="acx-wkhint" class="rs" style="margin-top:7px"></div>'
     +   '</div></div>'
     +   '<div class="hint" style="margin-top:10px;background:#f0f7ff;border:1px solid #d6e8ff;color:#2b5f93;border-radius:11px;padding:9px 12px;font-size:.75rem">More detail = sharper, better-paying matches. Blank fields never hurt your account \u2014 they just mean broader matching.</div>'
-    +   '<div style="margin-top:12px"><button class="btn sm" id="acx-savedisp">Save preferences</button></div></div>'
+    +   '<div style="margin-top:12px"><button class="btn sm" id="acx-savedisp">Save preferences</button></div></div></div>'
     + '<div class="card" id="s-sec"><div class="sec-h"><div class="sec-ico ic-violet">' + sic('lock') + '</div><div class="sec-t">Security &amp; sign-in</div></div><div class="sec-s">Protect your account and your money.</div>'
     +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Email address</div><div class="rs" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(email) + '</div></div><button class="btn ghost sm" style="flex:none" data-toast="To change your sign-in email, contact support — it protects your payouts">Change</button></div>'
     +   '<div class="row"><div><div class="rt">Password</div><div class="rs">Keep it strong and private</div></div><button class="btn ghost sm" id="acx-pw">Reset</button></div>'
@@ -500,6 +506,9 @@ export async function renderPremiumAccount(host, ctx) {
         min_trip_miles: (root.querySelector('#acx-tripmin').value || '').trim() || null,
         max_trip_miles: (root.querySelector('#acx-tripmax').value || '').trim() || null,
         min_notice_hours: (root.querySelector('#acx-notice').value || '').trim() || null,
+        home_time: (root.querySelector('#acx-hometime') && root.querySelector('#acx-hometime').value) || null,              // bl_pref_0536
+        round_trip_pref: (root.querySelector('#acx-roundtrip') && root.querySelector('#acx-roundtrip').value) || null,
+        cost_per_mile: (root.querySelector('#acx-cpm') && (root.querySelector('#acx-cpm').value || '').trim()) || null,
         avoid_states: (root.querySelector('#acx-avoid').value || '').split(',').map((x) => x.trim()).filter(Boolean),
         haul_types: Array.from(root.querySelectorAll('.acx-hlc:checked')).map((c9) => c9.value),
         hazmat: hazEl ? hazEl.classList.contains('on') : false,
@@ -538,31 +547,22 @@ export async function renderPremiumAccount(host, ctx) {
     var fb = f.querySelector('#acx-foot-signout');
     fb.addEventListener('click', async function () { fb.disabled = true; fb.textContent = 'Signing out…'; try { if (ctx.signOut) await ctx.signOut(); location.reload(); } catch (_) { location.reload(); } });
   })();
-  // bl_fill_0534 — a dispatcher suggestion is shown ON the field it is about: "Your dispatcher suggests: Runs weekends → No [Accept] [Keep mine]"
+  // bl_pref_0536 — the shared Dispatch preferences card on top of Account → Dispatch (read view, provenance line,
+  // pending dispatcher suggestions with Accept / Keep mine); "Edit" reveals the existing form, whose save path is unchanged.
   (async function () {
-    var rows = []; try { var r = await pocketFieldSuggestions(); rows = (r && r.rows) || []; } catch (_) { return; }
-    rows = rows.filter(function (x) { return x.status === 'pending' && x.tbl === 'prefs'; }); if (!rows.length) return;
-    var ANCHOR = { weekend_ok: '#acx-wkwrap', haul_types: '#acx-haul', preferred_equipment: '#acx-eq' };
-    rows.forEach(function (x) {
-      var near = ANCHOR[x.field] ? root.querySelector(ANCHOR[x.field]) : null;
-      var box = document.createElement('div');
-      box.setAttribute('data-sug', String(x.id));
-      box.style.cssText = 'margin-top:8px;padding:9px 12px;border-radius:11px;border:1px solid rgba(59,157,255,.45);background:rgba(8,131,247,.10);color:#dbe6fb;font-size:.8rem;line-height:1.5';
-      box.innerHTML = '<b style="color:#fff">Your dispatcher suggests:</b> ' + esc(x.label || x.field) + ' ' + esc(x.old_text) + ' \u2192 <b style="color:#fff">' + esc(x.new_text) + '</b>'
-        + (x.reason ? ' <span style="opacity:.85">\u2014 \u201c' + esc(x.reason) + '\u201d</span>' : '') + (x.suggested_by_name ? ' <span style="opacity:.7">(' + esc(x.suggested_by_name) + ')</span>' : '')
-        + '<div style="display:flex;gap:8px;margin-top:7px;flex-wrap:wrap"><button type="button" class="btn sm" data-ok="1">Accept</button><button type="button" class="btn sm" data-ok="0" style="background:transparent;border:1px solid rgba(255,255,255,.3);color:#dbe6fb">Keep mine</button></div>';
-      if (near) near.insertAdjacentElement('afterend', box);
-      else { var sec = root.querySelector('#s-disp .sec-s'); if (!sec) return; sec.insertAdjacentElement('afterend', box); }
-      box.querySelectorAll('button[data-ok]').forEach(function (b) {
-        b.addEventListener('click', async function () {
-          var ok = b.getAttribute('data-ok') === '1'; b.disabled = true;
-          try { var r2 = await pocketFieldSuggestionDecide(x.id, ok); if (!r2 || r2.error) throw new Error((r2 && (r2.message || r2.error)) || 'failed');
-            toast(ok ? (x.label || x.field) + ' is now ' + x.new_text : 'Kept your value'); box.remove();
-            if (ok) setTimeout(function () { try { renderPremiumAccount(host, ctx); } catch (_) { location.reload(); } }, 500);
-          } catch (e) { b.disabled = false; toast((e && e.message) || 'Could not save.'); }
-        });
-      });
-    });
+    var cardHost = root.querySelector('#acx-prefscard'); var form = root.querySelector('#acx-prefsform'); if (!cardHost || !form) return;
+    var srcRows = [], sugRows = [];
+    try { var s9 = await pocketFieldSources(); srcRows = (s9 && s9.rows) || []; } catch (_) {}
+    try { var g9 = await pocketFieldSuggestions(); sugRows = (g9 && g9.rows) || []; } catch (_) {}
+    var openForm = function () { form.hidden = false; try { form.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} };
+    var card = prefsCard(dp, { viewer: 'carrier', sources: prefsSourcesMap(srcRows), suggestions: sugRows,
+      sub: (dp.updated_at ? 'Last saved ' + new Date(dp.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' \u00b7 ' : '') + 'what your dispatcher and brokers match on',
+      onEdit: openForm,
+      onDecide: async function (x, ok) { var r2 = await pocketFieldSuggestionDecide(x.id, ok); if (!r2 || r2.error) throw new Error((r2 && (r2.message || r2.error)) || 'failed'); toast(ok ? (x.label || x.field) + ' is now ' + x.new_text : 'Kept your value'); if (ok) setTimeout(function () { try { renderPremiumAccount(host, ctx); } catch (_) { location.reload(); } }, 900); } });
+    cardHost.innerHTML = ''; cardHost.appendChild(card);
+    // nothing set yet, or a deep link into the form (#account/<field>) → the form is what they came for
+    var answered = Object.keys(dp || {}).some(function (k) { var v = dp[k]; return ['min_rpm', 'preferred_equipment', 'home_base', 'haul_types', 'preferred_lanes', 'target_rpm'].indexOf(k) >= 0 && v != null && v !== '' && !(Array.isArray(v) && !v.length); });
+    if (!answered || /#account\/./.test(location.hash || '')) form.hidden = false;
   })();
 }
 
