@@ -15,7 +15,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, openDrawer, askConfirm, fmtDateTime, ago } from '../../shared/ui/components.js';
-import { ccBrainOverview, ccBrainJobs, ccBrainJob, ccBrainChats, ccBrainConfigSet, ccBrainPermSet, ccBrainPermAdd, ccBrainPermDelete,
+import { ccBrainOverview, ccBrainJobs, ccBrainJob, ccBrainChats, ccBrainConfigSet, ccBrainCreditSet, ccBrainPermSet, ccBrainPermAdd, ccBrainPermDelete,
          ccBrainPermLog, ccBrainFindings, ccBrainFindingSet, ccBrainFacts, ccBrainFactSet, ccBrainTest } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
@@ -153,6 +153,7 @@ function renderOverview(host) {
       pill(st.enabled ? 'Brain on' : 'Brain off', st.enabled ? 'green' : 'red'),
       pill(keyOk ? 'Function key set' : 'Function key missing', keyOk ? 'green' : 'red'),
       st.over_cap ? pill('Over daily cap', 'amber') : null,
+      o.credit && o.credit.below_reserve ? pill('Below Claude credit reserve', 'red') : null,
       st.spot_check ? pill('Spot-check window', 'blue') : null,
       lastFail ? pill(lastFail + ' failed today', 'red') : null,
       el('span', { class: 'cc-brain-model' }, [el('u', null, 'Model'), el('b', null, st.model || cfg.model || '—'), el('u', null, 'Gate'), el('b', null, cfg.gate_model || '—')]),
@@ -243,12 +244,54 @@ function renderOverview(host) {
       el('div', { class: 'cc-brain-lines' }, tokLines),
       el('div', { class: 'cc-brain-sphead sub' }, [el('span', null, 'Limits'), el('b', null, (today.jobs || 0) + ' jobs today')]),
       el('div', { class: 'cc-brain-lims' }, lims),
+      o.credit ? creditBlock(o.credit, line) : null,
       el('div', { class: 'cc-brain-sphead sub' }, [el('span', null, 'Last 7 days'), el('b', null, usd(week) + ' · ' + weekJobs + ' jobs')]),
       el('div', { class: 'cc-brain-days' }, days.map(d => {
         const h = week > 0 ? Math.max(4, n0(d.usd) / Math.max(...days.map(x => n0(x.usd)), 0.01) * 100) : 4;
         return el('div', { class: 'cc-brain-day', title: d.day + ' · ' + usd(d.usd) + ' · ' + (d.jobs || 0) + ' jobs' }, [el('i', { style: 'height:' + h + '%' }), el('small', null, String(d.day || '').slice(5))]);
       })),
     ]));
+  }
+
+  /* ---- Claude credit (bl_ai_0531): prepaid Console balance, each credit's expiry, the reserve stop */
+  function creditBlock(cr, line) {
+    const est = cr.est_balance, res = n0(cr.reserve_usd);
+    const save = async (patch, msg) => {
+      try { await ccBrainCreditSet(Object.assign({ reason: 'CC → AI Brain → Overview' }, patch)); toast(msg); load(true); }
+      catch (e) { toast(humanizeError(e), 'error'); }
+    };
+    const balInput = el('input', { class: 'lb-input cc-brain-cap', type: 'number', min: '0', step: '0.01', placeholder: 'Console' });
+    const balBtn = el('button', { class: 'lb-btn lb-btn-sm', onClick: () => {
+      const v = Number(balInput.value);
+      if (balInput.value === '' || !(v >= 0)) { toast('Type the balance shown in Console → Billing → Credits', 'error'); return; }
+      save({ balance_usd: v }, 'Claude balance set to ' + usd(v));
+    } }, 'Set');
+    const resInput = el('input', { class: 'lb-input cc-brain-cap', type: 'number', min: '0', step: '1', value: String(res) });
+    const resBtn = el('button', { class: 'lb-btn lb-btn-sm', onClick: () => {
+      const v = Number(resInput.value);
+      if (!(v >= 0)) { toast('Reserve must be a number', 'error'); return; }
+      save({ reserve_usd: v }, 'Reserve is now ' + usd(v, 0));
+    } }, 'Save');
+    const lots = (cr.lots || []).map(l => line(l.expired ? '#e5e7eb' : (n0(l.days_left) <= 14 ? '#f59e0b' : '#10b981'), l.label, usd(l.usd),
+      l.expired ? 'expired ' + l.expires_on : l.days_left + 'd left · ' + l.expires_on, l.expired ? 'muted' : ''));
+    const soon = (cr.expiring_soon || []).map(l => usd(l.usd, 0) + ' expires ' + l.expires_on + ' (' + l.days_left + 'd)').join(' · ');
+    const asOf = cr.balance_at ? String(cr.balance_at).slice(0, 10) : null;
+    return el('div', null, [
+      el('div', { class: 'cc-brain-sphead sub' }, [el('span', null, 'Claude credit'),
+        el('b', null, est == null ? 'balance not set' : '~' + usd(est) + ' left' + (cr.below_reserve ? ' · below reserve' : ''))]),
+      el('div', { class: 'cc-brain-lines' }, [
+        line(null, 'Console balance' + (asOf ? ' (typed ' + asOf + ')' : ''), cr.balance_usd == null ? '—' : usd(cr.balance_usd), ''),
+        line(null, 'Spent since then (this database)', usd(cr.spent_since), ''),
+        n0(cr.lots_expired) ? line(null, 'Credits expired since then', '−' + usd(cr.lots_expired), '', 'muted') : null,
+        n0(cr.lots_added) ? line(null, 'Credits added since then', '+' + usd(cr.lots_added), '') : null,
+        line(null, 'This month (UTC)', usd(cr.month_to_date), ''),
+      ].filter(Boolean).concat(lots)),
+      soon ? el('small', { class: 'cc-brain-muted' }, 'Use it or lose it: ' + soon + '. After an expiry, re-type the Console balance.') : null,
+      el('div', { class: 'cc-brain-ctl' }, [el('div', null, [el('b', null, 'Console balance'), el('small', null, 'Copy it from Console → Billing. Prepaid: no billing cycle.')]),
+        el('div', { class: 'cc-brain-capbox' }, [el('span', null, '$'), balInput, balBtn])]),
+      el('div', { class: 'cc-brain-ctl' }, [el('div', null, [el('b', null, 'Reserve'), el('small', null, 'At or below it every Claude job stops: chat → Gemini, load-mail → its non-Claude path.')]),
+        el('div', { class: 'cc-brain-capbox' }, [el('span', null, '$'), resInput, resBtn])]),
+    ]);
   }
 
   /* ---- right column: KPIs, live jobs, recent actions */

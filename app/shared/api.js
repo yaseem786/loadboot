@@ -674,6 +674,7 @@ export const ccBrainJobs = (limit, source, status) => rpc('cc_brain_jobs', { p_l
 export const ccBrainJob = (id) => rpc('cc_brain_job', { p_id: id });
 export const ccBrainChats = (limit) => rpc('cc_brain_chats', { p_limit: limit ?? 100 });   // bl_brain_0479: live-chat jobs joined to their conversation
 export const ccBrainConfigSet = (patch) => rpc('cc_brain_config_set', { p_patch: patch || {} });
+export const ccBrainCreditSet = (patch) => rpc('cc_brain_credit_set', { p: patch || {} });   // bl_ai_0531: Console balance, reserve, credit rows
 export const ccBrainPermSet = (key, patch) => rpc('cc_brain_perm_set', { p_key: key, p_patch: patch || {} });
 export const ccBrainPermAdd = (kind, name, label, description, patch) => rpc('cc_brain_perm_add', { p_kind: kind, p_name: name, p_label: label, p_description: description ?? null, p_patch: patch || {} });
 export const ccBrainPermDelete = (key) => rpc('cc_brain_perm_delete', { p_key: key });
