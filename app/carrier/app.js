@@ -4025,6 +4025,9 @@ async function appView(user) {
       return;
     }
     posts9 = Array.isArray(posts9) ? posts9 : ((posts9 && posts9.rows) || []);
+    // Owner rule (8 Oct 2026): the FIRST post ever asks everything once (the full form), so the carrier's answers are
+    // saved; from then on the daily post is the quick screen, and "More details" is how a saved answer gets changed.
+    if (!posts9.length) { lbToast('First post: tell us everything once \u2014 from tomorrow it is three taps.', 'action', 'Post your truck'); openPostingForm(null, 'empty'); return; }
     const lastOf = (tid) => posts9.filter(p9 => !tid || p9.truck_id === tid).sort((a9, b9) => String(b9.created_at || '').localeCompare(String(a9.created_at || '')))[0] || null;
     let truck = fleet9.length === 1 ? fleet9[0] : (lastOf(null) && fleet9.find(t9 => t9.id === lastOf(null).truck_id)) || null;
     const todayISO = new Date().toISOString().slice(0, 10);
