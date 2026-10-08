@@ -1517,6 +1517,15 @@ export async function dialerRecordingBlob(callId) {
   if (!(data instanceof Blob)) throw new Error((data && data.error) || 'Recording not available');
   return new Blob([data], { type: 'audio/mpeg' });
 }
+// bl_dial_0514 — call transcript (Telnyx speech-to-text). Start runs in the background; poll dialerTranscriptGet.
+export async function dialerTranscribe(callId, force) {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('telnyx-transcribe', { body: { call_id: callId, force: !!force } });
+  if (error) throw await _fnError(error, 'Transcript not available');
+  if (data && data.error) throw new Error(data.error);
+  return data || {};
+}
+export const dialerTranscriptGet = (callId) => rpc('dialer_transcript_get', { p_call: callId });
 // 0458d — Riley (Retell) recording bytes through retell-admin; the CloudFront link itself does not play on iOS.
 export async function rileyRecordingBlob(callId) {
   const sb = await getClient();

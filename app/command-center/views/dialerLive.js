@@ -9,7 +9,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm } from '../../shared/ui/components.js';
-import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerNumbers, ccDialerNumberAdd, ccDialerNumberRemove, ccDialerConfigSet, dialerRecordingBlob, ccDialerSms } from '../../shared/api.js';
+import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerNumbers, ccDialerNumberAdd, ccDialerNumberRemove, ccDialerConfigSet, dialerRecordingBlob, ccDialerSms, dialerTranscribe, dialerTranscriptGet } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { getClient } from '../../shared/supabaseClient.js';
 
@@ -265,7 +265,7 @@ export async function renderDialerLive(host) {
           el('td', null, el('span', { class: 'dl-pill ' + s[1] }, s[0])), el('td', null, c.duration_sec ? mmss(c.duration_sec) : '—'),
           el('td', null, c.outcome ? el('span', { class: 'dl-pill b' }, c.outcome) : (c.answered_at ? el('span', { class: 'dl-pill a' }, 'untagged') : '—')),
           el('td', { style: 'max-width:280px' }, c.note || ''),
-          el('td', { style: 'white-space:nowrap' }, [c.has_recording ? el('button', { class: 'dl-btn sm', 'data-rec': c.id, 'aria-label': isPlaying(c.id) ? 'Pause recording' : 'Play recording', onClick: (e) => play(c.id, e.currentTarget) }, [icon(isPlaying(c.id) ? 'pause' : 'play', 14), isPlaying(c.id) ? 'Pause' : 'Play']) : null, c.has_recording ? el('button', { class: 'dl-btn sm', style: 'margin-left:6px', 'aria-label': 'Download recording', title: 'Download recording (mp3)', onClick: (e) => download(c, e.currentTarget) }, [icon('download', 14), 'Download']) : null]),
+          el('td', { style: 'white-space:nowrap' }, [c.has_recording ? el('button', { class: 'dl-btn sm', 'data-rec': c.id, 'aria-label': isPlaying(c.id) ? 'Pause recording' : 'Play recording', onClick: (e) => play(c.id, e.currentTarget) }, [icon(isPlaying(c.id) ? 'pause' : 'play', 14), isPlaying(c.id) ? 'Pause' : 'Play']) : null, c.has_recording ? el('button', { class: 'dl-btn sm', style: 'margin-left:6px', 'aria-label': 'Download recording', title: 'Download recording (mp3)', onClick: (e) => download(c, e.currentTarget) }, [icon('download', 14), 'Download']) : null, c.has_recording ? el('button', { class: 'dl-btn sm', style: 'margin-left:6px', 'aria-label': 'Call transcript', title: 'Read the call as text', onClick: () => showTranscript(c) }, [icon('doc', 14), 'Transcript']) : null]),
         ]); })),
       ])) : el('div', { style: 'opacity:.7;padding:8px 0' }, 'No calls match these filters.'),
     ]));
@@ -292,12 +292,55 @@ export async function renderDialerLive(host) {
   // bl_dial_0513: save a recording as an mp3 file (the Play button only streams it from memory)
   async function download(c, btn) {
     try {
-      btn.disabled = true; const blob = await dialerRecordingBlob(c.id);
+      btn.disabled = true; mount(btn, [icon('download', 14), 'Preparing…']); toast('Preparing the recording — this can take a few seconds for long calls…');
+      const blob = await dialerRecordingBlob(c.id);
       const u = URL.createObjectURL(blob); const d = String(c.started_at || '').slice(0, 10);
       const who = String(c.contact_name || c.number || 'call').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
       const a = document.createElement('a'); a.href = u; a.download = 'loadboot-call-' + d + '-' + who + '.mp3';
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => { try { URL.revokeObjectURL(u); } catch (_) {} }, 60000);
-    } catch (e) { toast(humanizeError(e), 'error'); } finally { btn.disabled = false; }
+      const mb = (blob.size / 1048576).toFixed(1); toast('Recording downloaded ✓ ' + a.download + ' (' + mb + ' MB) — check your Downloads folder (Ctrl+J).', 'success');
+    } catch (e) { toast(humanizeError(e), 'error'); } finally { btn.disabled = false; mount(btn, [icon('download', 14), 'Download']); }
+  }
+
+  // bl_dial_0514: call transcript (Telnyx speech-to-text), generated on first open and kept for next time
+  function showTranscript(c) {
+    const status = el('div', { style: 'font-size:13px;opacity:.75;margin-bottom:10px' }, 'Checking for a transcript…');
+    const body = el('div', { style: 'display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.5' });
+    const copyBtn = el('button', { class: 'dl-btn sm', style: 'display:none' }, [icon('copy', 14), 'Copy text']);
+    const redo = el('button', { class: 'dl-btn sm', style: 'display:none;margin-left:6px' }, 'Re-run');
+    const head = el('div', { style: 'font-size:13px;margin-bottom:8px' }, [el('b', null, c.contact_name || pretty(c.number)), ' · ' + (c.dispatcher || '') + ' · ' + et(c.started_at) + (c.duration_sec ? ' · ' + mmss(c.duration_sec) : '')]);
+    const dr = openDrawer('Call transcript', el('div', null, [head, el('div', { style: 'margin-bottom:10px' }, [copyBtn, redo]), status, body]), { size: 'lg' });
+    let open = true, timer = null, started = Date.now(), plain = '';
+    const stop = () => { open = false; if (timer) clearTimeout(timer); };
+    const ts = (x) => { const n = Math.max(0, Math.floor(Number(x) || 0)); return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0'); };
+    const who = (k, map) => { if (!k) return ''; if (!(k in map)) map[k] = (k.startsWith('ch') ? 'Channel ' : 'Speaker ') + (Object.keys(map).length + 1); return map[k]; };
+    function render(t) {
+      const segs = Array.isArray(t.segments) ? t.segments : []; const map = {};
+      if (segs.length) {
+        plain = segs.map((g) => '[' + ts(g.start) + '] ' + (who(g.speaker, map) ? who(g.speaker, map) + ': ' : '') + g.text).join('\n');
+        mount(body, segs.map((g) => el('div', null, [el('span', { style: 'font-size:12px;opacity:.6;margin-right:6px' }, ts(g.start)), g.speaker ? el('b', { style: 'margin-right:6px' }, who(g.speaker, map) + ':') : null, g.text])));
+      } else { plain = t.text || ''; mount(body, el('div', { style: 'white-space:pre-wrap' }, plain || 'The transcript came back empty.')); }
+      mount(status, 'Transcript · ' + (t.model || '') + (t.language ? ' · ' + t.language : '') + ' · machine-generated, may contain mistakes.');
+      copyBtn.style.display = ''; redo.style.display = '';
+    }
+    async function poll() {
+      if (!open || !document.body.contains(status)) return;
+      let t; try { t = await dialerTranscriptGet(c.id); } catch (e) { mount(status, humanizeError(e)); return; }
+      if (t && t.exists && t.model === 'error') { mount(status, 'Transcript failed: ' + (t.error || 'unknown error')); redo.style.display = ''; return; }
+      if (t && t.exists && t.model !== 'pending') { render(t); return; }
+      if (Date.now() - started > 9 * 60 * 1000) { mount(status, 'Still working — close this and open it again in a few minutes.'); return; }
+      mount(status, 'Transcribing the recording… long calls can take a few minutes. You can close this and come back.');
+      timer = setTimeout(poll, 5000);
+    }
+    async function start(force) {
+      mount(body, []); copyBtn.style.display = 'none'; redo.style.display = 'none'; started = Date.now();
+      mount(status, force ? 'Starting a fresh transcript…' : 'Checking for a transcript…');
+      try { await dialerTranscribe(c.id, force); } catch (e) { mount(status, humanizeError(e)); redo.style.display = ''; return; }
+      poll();
+    }
+    copyBtn.onclick = async () => { try { await navigator.clipboard.writeText(plain); toast('Transcript copied'); } catch (_) { toast('Could not copy — select the text instead', 'error'); } };
+    redo.onclick = () => start(true);
+    start(false);
   }
 
   function assign(d) {
