@@ -205,8 +205,12 @@ const LB_DEEP = {
     insurance: '[data-lb="doc-insurance"]', coi: '[data-lb="doc-insurance"]',
     authority: '[data-lb="doc-authority"]', mc: '[data-lb="doc-authority"]',
     bank: '[data-lb="doc-bank_check"]', mcs150: '[data-lb="doc-mcs150"]',
+    // bl_ob_0532 — Home gaps name the doc_type straight from compliance_requirements
+    bank_check: '[data-lb="doc-bank_check"]', dispatch_agreement: '[data-lb="doc-dispatch_agreement"]', safety: '[data-lb="doc-safety"]', noa: '[data-lb="doc-noa"]',
+    hazmat_reg: '[data-lb="doc-hazmat_reg"]', hazmat_h: '[data-lb="doc-hazmat_h"]', hazmat_coi: '[data-lb="doc-hazmat_coi"]', cargo_insurance: '[data-lb="doc-cargo_insurance"]',
   },
 };
+LB_DEEP.onboarding = LB_DEEP.documents;   // bl_ob_0532 — the onboarding Documents step prints the same data-lb="doc-<type>" rows
 function lbRunDeepLink(tab) {
   let de; try { de = window.__lbDeepEnt; } catch (_) { return; }
   if (!de || !de.id || de.tab !== tab) return;
@@ -3570,10 +3574,17 @@ async function appView(user) {
       h('div', null, gaps.map(g => { const t = toneOf(g.tone); return h('button', {
         class: 'cp-rowbtn', style: 'border-left:4px solid ' + t.c + ';background:' + t.bg,
         onClick: () => {
-          const _r = (g.route || '/account').replace('/', '');
-          const _isDocs = _r === 'documents' || g.key === 'compliance';
+          const _r = (g.route || '/account').replace(/^\//, '').split('/')[0];
+          const _isDocs = _r === 'documents' || g.key === 'compliance' || /^doc(_expiring)?:/.test(String(g.key || ''));
           const _isOnb = /onboard/i.test(String(g.label || '') + String(g.key || ''));
-          if (_isDocs) { try { sessionStorage.setItem('lb:onb:jump', '4'); } catch (_) {} go('onboarding'); return; } // straight to the Documents step
+          // bl_ob_0532: the server names the exact requirement (doc_type) — land on THAT row. An approved
+          // carrier goes to the Documents tab; one still in onboarding goes to its Documents step (same anchors).
+          if (_isDocs) {
+            const _dt = g.doc_type || ((g.route || '').split('/')[2]) || null;
+            if (_dt) window.__lbDeepEnt = { tab: _obDone ? 'documents' : 'onboarding', id: String(_dt) };
+            if (_obDone) { go('documents'); return; }
+            try { sessionStorage.setItem('lb:onb:jump', '4'); } catch (_) {} go('onboarding'); return;
+          }
           if (_isOnb) {
             try { const _rej3 = ((comp && comp.requirements) || []).some(r => ['rejected', 'expired'].indexOf(String(r.status || '').toLowerCase()) >= 0); if (_rej3) sessionStorage.setItem('lb:onb:jump', '4'); } catch (_) {}
             go('onboarding'); return;
@@ -8117,7 +8128,7 @@ function tripStepper(status) {
       const isW9 = (r.doc_type === 'w9') || r.requirement_key === 'w9' || /\bw-?9\b/i.test(r.name || '');
       const startW9 = () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'W-9') }, { carrier: _agrCarrier }, () => loadDocuments()));
       const dlW9 = async () => { let w = {}; try { w = (await carrierW9()) || {}; } catch (_) {} const m = await import('./w9-form.js'); m.printExecutedW9(Object.assign({}, w, { approved: r.status === 'valid' })); };
-      return h('div', { class: 'cp-row cp-row-col', style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
+      return h('div', { class: 'cp-row cp-row-col', 'data-lb': 'doc-' + (r.doc_type || reqDocType(r.name) || r.requirement_key || 'other'), style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap' }, [
           h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required' : 'Optional') + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why))]),
           h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
