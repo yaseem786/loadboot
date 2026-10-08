@@ -927,3 +927,9 @@ input[type="file"]:not([hidden])::file-selector-button:hover{background:#e2e8f2}
 .dm-kicker{text-transform:uppercase;letter-spacing:.06em;font-size:.68rem;font-weight:800;color:#7cc0ff}
 .dm-lane{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:1.02rem;margin:4px 0}
 .dm-lane span{color:#5f708a}
+
+/* bl_ui_0532 — sheets: only the card scrolls; the dim area and the page never move under a finger (Android/TWA) */
+.cp-modal { touch-action: none; }
+.cp-modal-card { touch-action: pan-y; overscroll-behavior: contain; }
+.cpx-scrim { touch-action: none; }
+.cpx-drawer { overscroll-behavior: contain; touch-action: pan-y; }

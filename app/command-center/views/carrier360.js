@@ -7,6 +7,8 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { ccDispatcherDelaySet, ccCarrierLoginStatus, ccCarrierPhoneStatus } from '../../shared/api.js';   // bl_disp_0410 · bl_ux_0486
 import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
+import { prefsCard, prefsSourcesMap } from '../../shared/ui/prefs-card.js';   // bl_pref_0536 — the shared Dispatch preferences card
+import { ccCarrierFieldSources, ccFieldSuggestions, ccFieldSuggestionDecide } from '../../shared/api.js';
 import { dispatchHoldPanel } from './dispatchHold.js';   // bl_disp_0501 — hold from dispatchers
 import { icon } from '../../shared/ui/icons.js';
 
@@ -117,30 +119,23 @@ export function renderCarrier360(host, orgId) {
       if (!pr || pr.none) { mount(prefsCard, [el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '\ud83c\udfaf Carrier dispatch preferences')]), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'The carrier has not set dispatch preferences yet.')]); return; }
       const rpm = (v) => v != null ? ('$' + Number(v).toFixed(2) + '/mi') : null;
       const yn = (v) => v ? 'Yes' : 'No';
+      // bl_pref_0536 — the shared card (same tiles as the dispatcher sheet and the carrier portal), with who-set-it and
+      // pending suggestions (Accept / Reject here = staff decision, written through the normal path)
+      const prefsHost9 = el('div');
+      (async () => {
+        let srcRows = [], sugRows = [];
+        try { const s9 = await ccCarrierFieldSources(orgId); srcRows = (s9 && s9.rows) || []; } catch (_) {}
+        try { const g9 = await ccFieldSuggestions(orgId); sugRows = (g9 && g9.rows) || []; } catch (_) {}
+        mount(prefsHost9, prefsCard(pr, { bare: false, viewer: 'staff', title: 'Dispatch preferences', sources: prefsSourcesMap(srcRows), suggestions: sugRows,
+          onDecide: async (x, ok) => { const r9 = await ccFieldSuggestionDecide(x.id, ok, null); if (!r9 || r9.error) throw new Error((r9 && (r9.message || r9.error)) || 'failed'); } }));
+      })();
       mount(prefsCard, el('div', null, [
         el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '\ud83c\udfaf Carrier dispatch preferences'),
           el('span', { class: 'cc-pill cc-pill-' + (pr.available ? 'green' : 'amber') }, pr.available ? 'available for loads' : 'paused')]),
         el('div', { class: 'cc-sub', style: 'margin:2px 0 8px' }, pr.updated_at ? 'set by the carrier \u00b7 ' + fmtDate(pr.updated_at) : 'set by the carrier'),
-        el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 18px' }, [
-          Fc('Preferred equipment', pr.preferred_equipment),
-          Fc('Preferred lanes', pr.preferred_lanes),
-          F('Home base', pr.home_base),
-          F('Min rate/mile', rpm(pr.min_rpm)), F('Target rate/mile', rpm(pr.target_rpm)),
-          F('Max deadhead', pr.max_deadhead_miles ? pr.max_deadhead_miles + ' mi' : null),
-          F('Trip length', (pr.min_trip_miles || pr.max_trip_miles) ? ((pr.min_trip_miles || '0') + '\u2013' + (pr.max_trip_miles || '\u221e') + ' mi') : null),
-          F('Max weight', pr.max_weight_lbs ? pr.max_weight_lbs + ' lbs' : null),
-          F('Hazmat', yn(pr.hazmat)), F('Team drivers', yn(pr.team_drivers)), F('Weekends', pr.weekend_ok ? 'Available' : 'No'),
-          F('Min notice', pr.min_notice_hours ? pr.min_notice_hours + ' h' : null),
-          Fc('Avoid states', pr.avoid_states),
-          F('Cost/mile', rpm(pr.cost_per_mile)),
-          F('Operating radius', pr.operating_radius_miles ? pr.operating_radius_miles + ' mi from home' : null),
-          F('Home time', pr.home_time || null),
-          // bl_haul_0323 — what the carrier told us about how they run; the matcher enforces it.
-          F('Haul types', (pr.haul_types && pr.haul_types.length) ? pr.haul_types.map(function (x) { return ({ local: 'Local (\u2264250 mi)', regional: 'Regional (250\u2013800 mi)', otr: 'OTR (800+ mi)' })[x] || x; }).join(' \u00b7 ') : 'Any length'),
-          F('Load size', pr.load_size || null),
+        prefsHost9,
+        el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 18px;margin-top:12px' }, [
           F('Min total rate', pr.min_total_rate != null ? ('$' + Number(pr.min_total_rate).toLocaleString()) : null),
-          Fc('Facility likes', pr.facility_likes),
-          Fc('Facility dislikes', pr.facility_dislikes),
           F('DAT access', pr.external_boards && pr.external_boards.dat ? pr.external_boards.dat : null),
           F('Truckstop access', pr.external_boards && pr.external_boards.truckstop ? pr.external_boards.truckstop : null),
         ]),

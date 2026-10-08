@@ -21,6 +21,7 @@ import {
  dialerForwardSet, dialerWaAlertSet, dialerSmsThreads, dialerSmsThread, dialerSmsSend,
  dialerSmsConsentState, dialerSmsConsentRecord,
   waInbox, waThread, waClaim, waStart, waSend, waMediaBlob, waUploadMedia,
+  dispatcherCallFieldsRequest, dispatcherCallFields, dispatcherCallFieldApply,   // bl_fill_0535 — field candidates from a call
 } from './api.js';
 import { createWaPanel } from './dialer-wa.js';
 import { guideView, guideSeen } from './dialer-guide.js';   // bl_dial_0461 — in-phone guide (auto once, then the ? in the header)
@@ -226,6 +227,7 @@ function createDialer() {
   const solo = () => { try { const f = document.getElementById('lbc-fab'); S.solo = !f || f.classList.contains('lbc-docked') || getComputedStyle(f).display === 'none'; root.classList.toggle('lbd-solo', !!S.solo); } catch (_) {} };
   setTimeout(solo, 0); setTimeout(solo, 3000); setTimeout(solo, 9000);
 
+  try { window.__lbBusy = () => !!(S.call || S.wrap || S.cf); } catch (_) {}   // bl_pwa_0532b — silent app updates wait for the phone
   const S = {
     boot: null, open: false, tab: 'keypad', conn: 'idle',            // idle | connecting | ready | offline | error | elsewhere
     connMsg: '', number: '', look: null, lookSeq: 0,
@@ -389,7 +391,7 @@ function createDialer() {
     const answered = !!c.since; const dur = answered ? Math.round((Date.now() - c.since) / 1000) : 0;
     S.call = null; clearTitle();
     if (c.row && c.row.id && (answered || c.dir === 'out')) {
-      S.wrap = { id: c.row.id, number: c.number, name: c.name, dur, answered, dir: c.dir, outcome: answered ? '' : (c.dir === 'out' ? 'no answer' : ''), note: c.note || '', known: !!(c.row.broker_contact_id || (c.ctx && c.ctx.broker_contact_id) || (c.match && ['carrier', 'driver'].includes(c.match.kind))), broker: '', rep: '', save: false, cb: '' };
+      S.wrap = { org: c.row && c.row.carrier_org_id, id: c.row.id, number: c.number, name: c.name, dur, answered, dir: c.dir, outcome: answered ? '' : (c.dir === 'out' ? 'no answer' : ''), note: c.note || '', known: !!(c.row.broker_contact_id || (c.ctx && c.ctx.broker_contact_id) || (c.match && ['carrier', 'driver'].includes(c.match.kind))), broker: '', rep: '', save: false, cb: '' };
       S.open = true;
     }
     say('Call ended'); refresh(); if (S.conn !== 'ready') scheduleRetry();
@@ -473,6 +475,85 @@ function createDialer() {
     if (w.cb) p.callback_at = new Date(Date.now() + Number(w.cb) * 60000).toISOString();
     try { const r = await dialerCallTag(w.id, p); if (r && r.error) toast(r.error); else toast('Call saved'); } catch (_) { toast('Could not save the call note.'); }
     refresh();
+    if (w.org && !skip && (w.note || '').trim()) cfOpen(w.id, true);   // bl_fill_0535 — carrier call with a note → "From this call"
+  }
+
+  // ------------------------------------------------------------ bl_fill_0535 — "From this call": candidate field values
+  // The brain reads THIS call's note + transcript and lists carrier-sheet fields it heard, each with the exact quote.
+  // Nothing is saved until the dispatcher clicks: Save on an empty field = the normal fill path; Save on a locked
+  // field = a suggestion the carrier (or LoadBoot) confirms. Skip drops it. Edit changes the value before saving.
+  let cfTimer = null;
+  async function cfOpen(callId, requestFirst) {
+    clearTimeout(cfTimer);
+    S.cf = { id: callId, data: null, busy: false, err: '', edit: {}, chk: {} }; S.open = true; S.showSettings = false; paint();
+    if (requestFirst) await cfRequest();
+    cfLoad();
+  }
+  async function cfRequest() {
+    const c = S.cf; if (!c) return; c.busy = true; c.err = ''; paint();
+    try { const r = await dispatcherCallFieldsRequest(c.id); if (!r || r.error) throw new Error((r && r.error) || 'could not start'); }
+    catch (e) { c.err = (e && e.message) || String(e); }
+    c.busy = false; paint();
+  }
+  async function cfLoad() {
+    const c = S.cf; if (!c) return;
+    try { const d = await dispatcherCallFields(c.id); if (S.cf !== c) return; if (!d || d.error) c.err = (d && d.error) || 'could not load'; else { c.data = d; if (!c.busy) c.err = ''; } }
+    catch (e) { c.err = (e && e.message) || String(e); }
+    paint();
+    const j = c.data && c.data.job; clearTimeout(cfTimer);
+    if (j && (j.status === 'queued' || j.status === 'running')) cfTimer = setTimeout(() => { if (S.cf === c) cfLoad(); }, 3000);
+  }
+  async function cfApply(k, action, value) {
+    const c = S.cf; if (!c) return;
+    try {
+      const r = await dispatcherCallFieldApply(k.id, action, value == null ? null : String(value));
+      if (!r || r.error) throw new Error((r && (r.message || r.error)) || 'failed');
+      k.status = r.status;
+      if (r.status === 'saved' && r.value != null) { k.value = r.value; k.value_text = Array.isArray(r.value) ? r.value.join(', ') : String(r.value); }
+      toast(r.status === 'saved' ? k.label + ' saved' : r.status === 'suggested' ? k.label + ' \u2014 suggested; the carrier confirms it' : 'Skipped');
+    } catch (e) { toast((e && e.message) || 'Could not save.'); }
+    delete c.edit[k.id]; delete c.chk[k.id]; paint();
+  }
+  function vCallFields() {
+    const c = S.cf; const d = c.data; const j = d && d.job; const rows = (d && d.candidates) || [];
+    const open = rows.filter((k) => k.status === 'new');
+    const back = h('button', { class: 'lbd-btn ghost sm', onClick: () => { clearTimeout(cfTimer); S.cf = null; S.tab = 'recent'; S.history = null; paint(); } }, '\u2039 Back');
+    const status = c.busy ? 'Asking the brain to read the call\u2026'
+      : !d ? (c.err || 'Loading\u2026')
+      : j ? (j.status === 'queued' || j.status === 'running' ? 'Reading the note + transcript\u2026'
+          : j.status === 'done' ? (rows.length ? rows.length + ' candidate' + (rows.length > 1 ? 's' : '') + ' \u2014 nothing is saved until you click' : 'Nothing was said clearly enough \u2014 no candidates')
+          : 'Could not read the call (' + j.status + (j.error ? ': ' + j.error : '') + ')')
+      : 'Not read yet.';
+    const row = (k) => {
+      const isNew = k.status === 'new'; const ed = c.edit[k.id];
+      const where = k.empty ? 'Empty on file \u2192 Save fills it in as you.'
+        : k.locked ? 'On file: ' + k.current_text + ' (set by the ' + (k.source_role === 'carrier' || !k.source_role ? 'carrier' : 'LoadBoot team') + ') \u2192 Save sends a suggestion; the carrier confirms it.'
+        : 'On file: ' + k.current_text + ' (yours) \u2192 Save overwrites your entry.';
+      return h('div', { class: 'lbd-row', style: 'flex-direction:column;align-items:stretch;gap:4px' }, [
+        h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
+          isNew ? h('input', { type: 'checkbox', 'aria-label': 'Include in Save all', checked: c.chk[k.id] !== false, onChange: (e) => { c.chk[k.id] = e.target.checked; } }) : null,
+          h('b', { style: 'flex:1' }, k.label + (k.unit_no ? ' (unit ' + k.unit_no + ')' : '')),
+          h('span', { class: 'lbd-pill' }, isNew ? (k.empty ? 'empty' : k.locked ? 'locked' : 'yours') : k.status),
+        ]),
+        ed != null ? h('input', { class: 'lbd-in', value: ed, 'aria-label': 'Edit value', onInput: (e) => { c.edit[k.id] = e.target.value; } }) : h('div', { style: 'font-weight:700;color:#fff' }, k.value_text),
+        h('div', { style: 'font-size:12px;color:#9fb3c8' }, '\u201c' + k.quote + '\u201d' + (k.note ? ' \u2014 ' + k.note : '')),
+        isNew ? h('div', { style: 'font-size:11.5px;color:#7f93ad' }, where) : null,
+        isNew ? h('div', { style: 'display:flex;gap:6px;margin-top:2px;flex-wrap:wrap' }, [
+          h('button', { class: 'lbd-btn sm', onClick: () => cfApply(k, 'save', ed != null ? ed : null) }, 'Save'),
+          h('button', { class: 'lbd-btn ghost sm', onClick: () => { if (ed == null) c.edit[k.id] = k.value_text; else delete c.edit[k.id]; paint(); } }, ed == null ? 'Edit' : 'Undo'),
+          h('button', { class: 'lbd-btn ghost sm', onClick: () => cfApply(k, 'skip') }, 'Skip'),
+        ]) : null,
+      ]);
+    };
+    return h('div', null, [
+      h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' }, [back,
+        h('button', { class: 'lbd-btn ghost sm', disabled: c.busy ? '' : undefined, onClick: async () => { await cfRequest(); cfLoad(); } }, j ? 'Read again' : 'Suggest fields from this call')]),
+      h('div', { class: 'lbd-stage', style: 'padding-top:6px' }, [h('h3', null, 'From this call'), h('div', { class: 'n' }, status)]),
+      c.err && d ? h('div', { class: 'lbd-note bad' }, c.err) : null,
+      d && !d.has_note && !d.has_transcript ? h('div', { class: 'lbd-note bad' }, 'No note and no transcript on this call yet \u2014 add a note (Save call) first.') : null,
+      rows.length ? h('div', { style: 'margin-top:6px;display:flex;flex-direction:column;gap:8px' }, rows.map(row)) : null,
+      open.length > 1 ? h('button', { class: 'lbd-btn', style: 'margin-top:10px;width:100%', onClick: async () => { for (const k of open.filter((x) => c.chk[x.id] !== false)) await cfApply(k, 'save', c.edit[k.id] != null ? c.edit[k.id] : null); } }, 'Save all checked') : null,
+    ]);
   }
 
   // ------------------------------------------------------------ attention (incoming call while the tab is hidden)
@@ -585,7 +666,8 @@ function createDialer() {
     return h('div', { class: 'lbd-row' }, [
       h('div', { class: 'd' + (missed ? ' miss' : c.direction === 'inbound' ? ' in' : ''), title: c.direction }, ic(missed ? 'miss' : c.direction === 'inbound' ? 'inc' : 'out', 16)),
       h('div', { class: 'm' }, [h('b', null, c.contact_name || pretty(c.number)), h('span', null, sub)]),
-      c.outcome ? h('span', { class: 'lbd-pill' }, c.outcome) : (c.answered_at ? h('button', { class: 'lbd-btn ghost sm', onClick: () => { S.wrap = { id: c.id, number: c.number, name: c.contact_name, dur: c.duration_sec, answered: true, dir: c.direction, outcome: '', note: c.note || '', known: !!c.broker_contact_id || ['carrier', 'driver'].includes(c.contact_kind), broker: '', rep: '', save: false, cb: '' }; paint(); } }, 'Tag') : null),
+      c.outcome ? h('span', { class: 'lbd-pill' }, c.outcome) : (c.answered_at ? h('button', { class: 'lbd-btn ghost sm', onClick: () => { S.wrap = { org: c.carrier_org_id, id: c.id, number: c.number, name: c.contact_name, dur: c.duration_sec, answered: true, dir: c.direction, outcome: '', note: c.note || '', known: !!c.broker_contact_id || ['carrier', 'driver'].includes(c.contact_kind), broker: '', rep: '', save: false, cb: '' }; paint(); } }, 'Tag') : null),
+      (c.carrier_org_id && c.answered_at) ? h('button', { class: 'lbd-btn ghost sm', title: 'Suggest carrier fields from this call (nothing saves without a click)', 'aria-label': 'Fields from this call', onClick: () => cfOpen(c.id, false) }, 'Fields') : null,   // bl_fill_0535
       c.has_recording ? h('button', { class: 'lbd-ib' + (isPlaying(c.id) ? ' on' : ''), 'aria-label': isPlaying(c.id) ? 'Pause recording' : 'Play recording', onClick: (e) => playRecording(c.id, e.currentTarget) }, ic(isPlaying(c.id) ? 'pause' : 'play', 16)) : null,
       h('button', { class: 'lbd-ib', 'aria-label': 'Text ' + pretty(c.number), onClick: () => openThread(c.number, c.contact_name || '') }, ic('msg', 16)),
       h('button', { class: 'lbd-ib', 'aria-label': 'Call ' + pretty(c.number), onClick: () => dial(c.number, { source: 'history', contact_name: c.contact_name || '' }) }, ic('phone', 17)),
@@ -894,9 +976,9 @@ function createDialer() {
     else if (S.connMsg && /icrophone/.test(S.connMsg)) note = h('div', { class: 'lbd-note bad' }, S.connMsg);
     const gate = S.conn === 'terms' && !c;
     // bl_dial_0461 — first time the phone opens with a line and no call: show the guide once (per browser)
-    if (!gate && b.line && S.open && !c && !S.wrap && !S.guideAuto) { S.guideAuto = true; if (!guideSeen()) S.showGuide = true; }
-    const body = gate ? vTerms() : S.showSettings ? vSettings() : c ? vCall() : S.wrap ? vWrap() : S.showGuide && b.line ? guideView({ h, ic, pretty, line: b.line, terms: S.terms, onClose: () => { S.showGuide = false; S.tab = 'keypad'; paint(); } }) : !b.line ? h('div', { class: 'lbd-empty' }, 'No phone line yet.') : S.tab === 'recent' ? vRecent() : S.tab === 'texts' ? vTexts() : S.tab === 'callbacks' ? vCallbacks() : vKeypad();
-    const showChrome = !gate && !c && !S.wrap && !S.showSettings && !S.showGuide && b.line;
+    if (!gate && b.line && S.open && !c && !S.wrap && !S.cf && !S.guideAuto) { S.guideAuto = true; if (!guideSeen()) S.showGuide = true; }
+    const body = gate ? vTerms() : S.showSettings ? vSettings() : c ? vCall() : S.cf ? vCallFields() : S.wrap ? vWrap() : S.showGuide && b.line ? guideView({ h, ic, pretty, line: b.line, terms: S.terms, onClose: () => { S.showGuide = false; S.tab = 'keypad'; paint(); } }) : !b.line ? h('div', { class: 'lbd-empty' }, 'No phone line yet.') : S.tab === 'recent' ? vRecent() : S.tab === 'texts' ? vTexts() : S.tab === 'callbacks' ? vCallbacks() : vKeypad();
+    const showChrome = !gate && !c && !S.wrap && !S.cf && !S.showSettings && !S.showGuide && b.line;
     mount(root, [live, h('div', { class: 'lbd-panel' + (justOpened ? ' in' : ''), role: 'dialog', 'aria-label': 'LoadBoot phone' }, [
       head, note,
       showChrome ? h('div', { class: 'lbd-stats' }, [['calls', 'Calls'], ['connected', 'Connected'], ['talk_sec', 'Talk'], ['missed', 'Missed']].map(([k, l]) => h('div', null, [h('b', null, k === 'talk_sec' ? talk(t[k]) : String(t[k] || 0)), h('span', null, l)]))) : null,

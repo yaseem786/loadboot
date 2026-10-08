@@ -41,6 +41,7 @@ import {
 import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } from '../shared/storage.js';
 import { setPostingHos } from '../shared/api.js';
 import { formProgressPing, formProgressDone } from '../shared/api.js';
+import { pocketFieldSuggestions, pocketFieldSuggestionDecide } from '../shared/api.js';   // bl_fill_0534 — dispatcher suggestions on locked fields
 // bl_dial_0390 — lifts the signup SMS checkbox into the dispatcher-side consent registry, so a
 // dispatcher can text a carrier who already agreed without logging anything by hand. Idempotent.
 import { smsConsentSelfSync } from '../shared/api.js';
@@ -205,8 +206,12 @@ const LB_DEEP = {
     insurance: '[data-lb="doc-insurance"]', coi: '[data-lb="doc-insurance"]',
     authority: '[data-lb="doc-authority"]', mc: '[data-lb="doc-authority"]',
     bank: '[data-lb="doc-bank_check"]', mcs150: '[data-lb="doc-mcs150"]',
+    // bl_ob_0532 — Home gaps name the doc_type straight from compliance_requirements
+    bank_check: '[data-lb="doc-bank_check"]', dispatch_agreement: '[data-lb="doc-dispatch_agreement"]', safety: '[data-lb="doc-safety"]', noa: '[data-lb="doc-noa"]',
+    hazmat_reg: '[data-lb="doc-hazmat_reg"]', hazmat_h: '[data-lb="doc-hazmat_h"]', hazmat_coi: '[data-lb="doc-hazmat_coi"]', cargo_insurance: '[data-lb="doc-cargo_insurance"]',
   },
 };
+LB_DEEP.onboarding = LB_DEEP.documents;   // bl_ob_0532 — the onboarding Documents step prints the same data-lb="doc-<type>" rows
 function lbRunDeepLink(tab) {
   let de; try { de = window.__lbDeepEnt; } catch (_) { return; }
   if (!de || !de.id || de.tab !== tab) return;
@@ -367,6 +372,9 @@ function openModal(title, children, opts = {}) {
   document.addEventListener('keydown', onEsc);
   pushLayer(guard);
   lockPage(ov);   // after pushLayer: history.back() on close restores the scroll saved at pushState time, which reads 0 while locked
+  // bl_ui_0532 — Android/TWA: a touch-drag on the dim area, or on a card that has nothing to scroll, chained into
+  // the page and moved the app behind the sheet. Only the card's own scroll area may move a finger.
+  ov.addEventListener('touchmove', (e) => { try { const card = e.target.closest('.cp-modal-card'); if (!card || card.scrollHeight <= card.clientHeight + 1) e.preventDefault(); } catch (_) {} }, { passive: false });
   const first = card.querySelector('input,select,textarea'); if (first) first.focus();
   return close;
 }
@@ -2596,6 +2604,7 @@ async function appView(user) {
     ]);
     function close() { scrim.classList.remove('show'); drawer.classList.remove('show'); setTimeout(() => { scrim.remove(); drawer.remove(); }, 220); }
     scrim.onclick = close;
+    scrim.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });   // bl_ui_0532 — the dim area never scrolls the page
     document.body.appendChild(scrim); lockPage(scrim); document.body.appendChild(drawer);
     requestAnimationFrame(() => { scrim.classList.add('show'); drawer.classList.add('show'); });
   }
@@ -3564,16 +3573,28 @@ async function appView(user) {
     const d = dash || {}; const k = d.kpis || {}; const acct = d.account || {};
 
     // 1) "Complete your setup" — gaps coloured by the GLOBAL tone tokens, each linking to the exact step.
-    const gaps = Array.isArray(d.setup_gaps) ? d.setup_gaps : [];
+    const gapsAll = Array.isArray(d.setup_gaps) ? d.setup_gaps : [];
+    // bl_ob_0532b — "expires in N days" is a REMINDER, not a setup gap: a banner the carrier can × away (hidden for
+    // 2 days, then back until the renewal is approved — the server stops sending it the moment the new COI is valid).
+    const _dismissed = (g) => { try { const t = Number(localStorage.getItem('lb:dismiss:' + g.key) || 0); return t > 0 && Date.now() - t < 2 * 86400000; } catch (_) { return false; } };
+    const expGaps = gapsAll.filter((g) => /^doc_expiring:/.test(String(g.key || '')) && !_dismissed(g));
+    const gaps = gapsAll.filter((g) => !/^doc_expiring:/.test(String(g.key || '')));
     const setupCard = gaps.length ? h('div', { class: 'cp-card', 'data-tour': 'dash-setup' }, [
       cardHead('Complete your setup', acct.onboarding_complete ? 'Almost there' : 'Action needed'),
       h('div', null, gaps.map(g => { const t = toneOf(g.tone); return h('button', {
         class: 'cp-rowbtn', style: 'border-left:4px solid ' + t.c + ';background:' + t.bg,
         onClick: () => {
-          const _r = (g.route || '/account').replace('/', '');
-          const _isDocs = _r === 'documents' || g.key === 'compliance';
+          const _r = (g.route || '/account').replace(/^\//, '').split('/')[0];
+          const _isDocs = _r === 'documents' || g.key === 'compliance' || /^doc(_expiring)?:/.test(String(g.key || ''));
           const _isOnb = /onboard/i.test(String(g.label || '') + String(g.key || ''));
-          if (_isDocs) { try { sessionStorage.setItem('lb:onb:jump', '4'); } catch (_) {} go('onboarding'); return; } // straight to the Documents step
+          // bl_ob_0532: the server names the exact requirement (doc_type) — land on THAT row. An approved
+          // carrier goes to the Documents tab; one still in onboarding goes to its Documents step (same anchors).
+          if (_isDocs) {
+            const _dt = g.doc_type || ((g.route || '').split('/')[2]) || null;
+            if (_dt) window.__lbDeepEnt = { tab: _obDone ? 'documents' : 'onboarding', id: String(_dt) };
+            if (_obDone) { go('documents'); return; }
+            try { sessionStorage.setItem('lb:onb:jump', '4'); } catch (_) {} go('onboarding'); return;
+          }
           if (_isOnb) {
             try { const _rej3 = ((comp && comp.requirements) || []).some(r => ['rejected', 'expired'].indexOf(String(r.status || '').toLowerCase()) >= 0); if (_rej3) sessionStorage.setItem('lb:onb:jump', '4'); } catch (_) {}
             go('onboarding'); return;
@@ -3583,6 +3604,23 @@ async function appView(user) {
         h('span', null, [h('span', { style: 'color:' + t.c + ';font-weight:700;margin-right:8px' }, t.label), g.label]),
         h('span', { class: 'cp-go', style: 'color:' + t.c }, '›')]); })),
     ]) : null;
+
+    // bl_fill_0534 — the dispatcher may SUGGEST a value for a field the carrier set (weekends, haul type, equipment…).
+    // Accept writes it as the carrier's own answer (stamped carrier · 'accepted suggestion #id'); Keep mine closes it.
+    const sugHost = h('div', { 'data-lb': 'suggestions' });
+    (async () => { try {
+      const r = await pocketFieldSuggestions(); const rows = (r && r.rows) || []; if (!rows.length) return;
+      const decide = async (x, ok, btn) => { btn.disabled = true; try { const r2 = await pocketFieldSuggestionDecide(x.id, ok); if (!r2 || r2.error) throw new Error((r2 && (r2.message || r2.error)) || 'failed'); x.status = ok ? 'accepted' : 'rejected'; lbToast(ok ? (x.label || x.field) + ' is now ' + x.new_text : 'Kept your value for ' + (x.label || x.field), ok ? 'success' : 'info', 'Dispatcher suggestion'); paint(); } catch (e) { btn.disabled = false; lbToast((e && e.message) || 'Could not save.', 'urgent', 'Not saved'); } };
+      const paint = () => { const left = rows.filter((x) => x.status === 'pending'); if (!left.length) { sugHost.innerHTML = ''; return; }
+        mount(sugHost, h('div', { class: 'cp-card' }, [cardHead('Your dispatcher suggests', left.length + ' change' + (left.length > 1 ? 's' : '') + ' waiting for your OK \u2014 nothing changes until you accept'),
+          h('div', { style: 'display:flex;flex-direction:column;gap:8px' }, left.map((x) => h('div', { class: 'cp-row cp-row-col', style: 'border-left:4px solid #3b9dff;padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:6px' }, [
+            h('div', { class: 'cp-row-t' }, (x.label || x.field) + (x.unit_no ? ' (unit ' + x.unit_no + ')' : '') + ': ' + x.old_text + ' \u2192 ' + x.new_text),
+            h('div', { class: 'cp-row-s' }, (x.reason ? '\u201c' + x.reason + '\u201d' : '') + (x.suggested_by_name ? ' \u2014 ' + x.suggested_by_name : '') + (x.source === 'call_ai' ? ' \u00b7 from your call' : '')),
+            h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+              h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0', onClick: (ev) => decide(x, true, ev.currentTarget) }, 'Accept'),
+              h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0', onClick: (ev) => decide(x, false, ev.currentTarget) }, 'Keep mine')])])))])); };
+      paint();
+    } catch (_) {} })();
 
     // 2) Notifications from Command Center — global tone colours, unread markers, mark-read.
     const nd = d.notifications || {}; const notes = (Array.isArray(nd.recent) ? nd.recent : []).filter(n => !n.read_at); const unread = nd.unread || 0;
@@ -3657,7 +3695,7 @@ async function appView(user) {
       ]),
       h('button', { class: 'cp-btn', style: 'margin:0;background:linear-gradient(135deg,#16a34a,#34d399)', onClick: () => go('loads') }, 'Start booking loads \u2192'),
     ]);
-    const _rejReqs = ((comp && comp.requirements) || []).filter(r => ['rejected', 'expired'].indexOf(String(r.status || '').toLowerCase()) >= 0);
+    const _rejReqs = ((comp && comp.requirements) || []).filter(r => r.mandatory && ['rejected', 'expired'].indexOf(String(r.status || '').toLowerCase()) >= 0);   // bl_ob_0532b — optional never counts
     const _fixHero = _rejReqs.length ? h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(239,68,68,.45);margin-bottom:14px;background:linear-gradient(135deg,rgba(239,68,68,.08),transparent)' }, [
       h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(239,68,68,.14);color:#f87171;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u26a0'),
       h('div', { style: 'flex:1;min-width:220px' }, [
@@ -3758,6 +3796,13 @@ async function appView(user) {
     } catch (_) { _obRing.firstChild.textContent = '0%'; } })();
     const _dueAmt = (invs || []).filter(i => i.status === 'sent').reduce((a, i) => a + (Number(i.fee) || 0), 0);
     const topBanners = [
+      ...expGaps.map((g) => { const b = h('div', { class: 'cpx-banner amber', style: 'display:flex;align-items:center;gap:8px;cursor:default' }, [
+        h('span', null, '\u23f3'),
+        h('button', { style: 'flex:1;text-align:left;background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0', onClick: () => {
+          window.__lbDeepEnt = { tab: _obDone ? 'documents' : 'onboarding', id: String(g.doc_type || '') };
+          if (_obDone) { go('documents'); return; } try { sessionStorage.setItem('lb:onb:jump', '4'); } catch (_) {} go('onboarding'); } }, g.label),
+        h('button', { 'aria-label': 'Hide this reminder for 2 days', title: 'Hide for 2 days', style: 'background:none;border:0;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:0 4px', onClick: () => { try { localStorage.setItem('lb:dismiss:' + g.key, String(Date.now())); } catch (_) {} b.remove(); } }, '\u00d7'),
+      ]); return b; }),
       (_obDone && comp && comp.mandatory_ok === false) ? h('button', { class: 'cpx-banner red', onClick: () => go('documents') }, [h('span', null, [icon('alert',15), '']), h('span', null, 'Please verify your compliance documents'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
       _dueAmt > 0 ? h('button', { class: 'cpx-banner amber', onClick: () => go('finance') }, [h('span', null, 'ℹ'), h('span', null, money(_dueAmt) + ' in dispatch fees due — pays off in Finance, clears when LoadBoot confirms your receipt'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
     ].filter(Boolean);
@@ -3921,7 +3966,7 @@ async function appView(user) {
     // bl_comp_0504: "Insurance approved → post the trucks on your certificate" (server decides show/hide).
     const coiHost9 = h('div');
     import('./coi-trucks-banner.js').then((m9) => m9.mountCoiTrucksBanner(coiHost9, { h, go, openAvail: (typeof openAvailFromBar === 'function') ? openAvailFromBar : null })).catch(() => {});
-    mount(content, h('div', { class: 'cp-dash' }, [tripHero9, rateCard9, onbHero, noaDash9, coiHost9, ...topBanners, kpis, availHostD, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    mount(content, h('div', { class: 'cp-dash' }, [tripHero9, rateCard9, onbHero, noaDash9, coiHost9, ...topBanners, kpis, availHostD, acctStrip, setupCard, sugHost, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     const econHost = h('div', null); prefsHost.parentNode.insertBefore(econHost, prefsHost.nextSibling);
     try { import('./economics.js').then((m) => m.mountBreakevenCard(econHost)).catch(() => {}); } catch (_) {}
     // Dispatcher card (bl_disp_0409): compact "Meet your dispatcher" + status; the full desk is the Dispatcher tab.
@@ -7951,14 +7996,22 @@ function tripStepper(status) {
       if (st === 'valid') return { t: 'success', why: r.expiry_date ? 'valid until ' + r.expiry_date : 'on file' };
       if (r.mandatory && (st === 'missing' || st === 'expired' || st === 'rejected')) return { t: 'urgent', why: st === 'missing' ? 'required — not on file' : 'required — ' + st };
       if (r.mandatory) return { t: 'action', why: 'under review' };
-      return { t: 'warning', why: st || 'recommended' };
+      if (st === 'missing' || !st) return { t: 'info', why: 'optional' };   // bl_ob_0532b — optional + not on file is not a warning
+      return { t: 'warning', why: st };
+    };
+    // bl_ob_0532b — what an OPTIONAL requirement means, in the carrier's words (owner text for the MCS-150)
+    const optionalHelp = (r) => {
+      const k = String(r.requirement_key || r.doc_type || '').toLowerCase(); const n = String(r.name || '').toLowerCase();
+      if (k === 'mcs150' || /mcs-?150/.test(n)) return 'Optional \u2014 your latest MCS-150 (biennial update). Not required to get loads.';
+      return 'Optional \u2014 not required to get loads.';
     };
     const needAttention = reqs.filter(r => reqTone(r).t === 'urgent').length;
     // Clicking a requirement opens the upload dialog with the right document type pre-selected.
     const reqDocType = (name) => {
       const n = (name || '').toLowerCase();
       if (n.includes('insurance') || n.includes('liability') || n.includes('coi')) return 'insurance';
-      if (n.includes('authority') || n.includes('mc/dot') || n.includes('mcs-150')) return 'authority';
+      if (n.includes('mcs-150') || n.includes('mcs150')) return 'mcs150';   // bl_ob_0532b — was filed as 'authority'
+      if (n.includes('authority') || n.includes('mc/dot')) return 'authority';
       if (n.includes('w-9') || n.includes('w9')) return 'w9';
       if (n.includes('assignment') || n.includes('noa')) return 'noa';
       if (n.includes('agreement')) return 'agreement';
@@ -8117,9 +8170,9 @@ function tripStepper(status) {
       const isW9 = (r.doc_type === 'w9') || r.requirement_key === 'w9' || /\bw-?9\b/i.test(r.name || '');
       const startW9 = () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'W-9') }, { carrier: _agrCarrier }, () => loadDocuments()));
       const dlW9 = async () => { let w = {}; try { w = (await carrierW9()) || {}; } catch (_) {} const m = await import('./w9-form.js'); m.printExecutedW9(Object.assign({}, w, { approved: r.status === 'valid' })); };
-      return h('div', { class: 'cp-row cp-row-col', style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
+      return h('div', { class: 'cp-row cp-row-col', 'data-lb': 'doc-' + (r.doc_type || reqDocType(r.name) || r.requirement_key || 'other'), style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap' }, [
-          h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required' : 'Optional') + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why))]),
+          h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, r.mandatory ? ('Required' + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why)) : (d ? 'Optional · ' + (d.file_name || '') : optionalHelp(r)))]),
           h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
             h('span', { class: 'cp-pill', style: 'background:' + (rejected ? 'rgba(220,38,38,.1)' : tone.bg) + ';color:' + (rejected ? '#b91c1c' : tone.c) }, rejected ? 'Rejected' : r.status === 'valid' ? 'Approved ✓' : stateIdx >= 2 ? 'In review' : tone.label),
             isAgr
@@ -8141,7 +8194,7 @@ function tripStepper(status) {
           status: nd9 ? (nd9.status === 'approved' ? 'valid' : nd9.status === 'rejected' ? 'rejected' : 'pending') : 'missing' });
       }
     } catch (_) {}
-    const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
+    const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3, info: 4 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3, info: 4 }[reqTone(b).t]));
     mount(content, h('div', null, [shareBanner9, noaBanner9, scanCard, 
       h('div', { class: 'cp-card', 'data-tour': 'docs-list' }, [cardHead('What LoadBoot needs from you',
           c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
@@ -8343,7 +8396,7 @@ function tripStepper(status) {
     const EQUIP = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck', 'Cargo Van', 'Sprinter Van', 'Conestoga', 'Tanker', 'Car Hauler'];
     const STEPS = ['Company & authority', 'Operation & equipment', 'Factoring & payment', 'Dispatch preferences', 'Documents', 'Review & submit'];
     let prof = {}; try { prof = await pocketGetProfile(); } catch (_) { prof = {}; }
-    const f = Object.assign({ company: '', contact_name: '', phone: '', mc: '', dot: '', home_base: '', radius_miles: '', equipment_types: [], truck_count: '', owner_drives: '', hazmat: false, weekend_ok: false, factoring_status: '', factoring_company: '', contact_method: '', whatsapp: '', bank_name: '', account_title: '', account_number: '', routing_number: '', fr_title: '', fr_bank: '', fr_account: '', fr_routing: '', fr_email: '', fr_advance: '', fr_fee: '', fr_days: '30' }, prof || {});
+    const f = Object.assign({ company: '', contact_name: '', phone: '', mc: '', dot: '', home_base: '', radius_miles: '', equipment_types: [], truck_count: '', owner_drives: '', hazmat: false, weekend_ok: null, factoring_status: '', factoring_company: '', contact_method: '', whatsapp: '', bank_name: '', account_title: '', account_number: '', routing_number: '', fr_title: '', fr_bank: '', fr_account: '', fr_routing: '', fr_email: '', fr_advance: '', fr_fee: '', fr_days: '30' }, prof || {});
     if (!Array.isArray(f.equipment_types)) f.equipment_types = [];
     let st = 0; let fmcsaRes = null;
     // Compliance drives part of the progress figure, so the wizard needs it too — and it
@@ -8426,8 +8479,12 @@ function tripStepper(status) {
     const field = (label, key, ph, type) => { const i = h('input', { class: 'cp-in', type: type || 'text', placeholder: ph || '', value: f[key] == null ? '' : f[key] }); if (key === 'home_base') i.setAttribute('list', 'lb-uscities'); if (key === 'factoring_company' && String(f.factoring_status || '') === 'interested') i.setAttribute('list', 'lb-factors'); i.oninput = () => { f[key] = i.value; }; return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), i]); };
     const selectField = (label, key, opts) => { const s = h('select', { class: 'cp-in' }, opts.map(([v, l]) => h('option', { value: v, selected: f[key] === v ? 'selected' : null }, l))); s.onchange = () => { f[key] = s.value; if (key === 'factoring_status') draw(); }; return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), s]); };
     const toggle = (label, key) => { const b = h('button', { class: 'cp-chip2' + (f[key] ? ' on' : ''), onClick: () => { f[key] = !f[key]; b.classList.toggle('on'); if (key === 'hazmat' && f[key]) lbToast('You will need 3 documents at the Documents step: PHMSA Hazmat Registration \u00b7 Driver CDL Hazmat (H) Endorsement \u00b7 Hazmat Liability Insurance COI. Hazmat loads unlock after the Command Center approves all three.', 'action', 'Hazmat \u2014 3 documents required'); } }, label); return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), b]); };
+    // bl_pref_0533 — a yes/no the carrier has not answered stays UNANSWERED (null). The old on/off chip
+    // silently sent "No" for everyone who never touched it, and the prefs row's DEFAULT then said "Yes".
+    const yesno = (label, key, sub) => { const mk = (v, txt) => { const b = h('button', { class: 'cp-chip2' + (f[key] === v ? ' on' : ''), onClick: () => { f[key] = (f[key] === v ? null : v); b.parentNode.querySelectorAll('.cp-chip2').forEach((x) => x.classList.remove('on')); if (f[key] === v) b.classList.add('on'); } }, txt); return b; };
+      return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, [label, sub ? h('div', { class: 'cp-row-s' }, sub) : null].filter(Boolean)), h('div', { style: 'display:flex;gap:6px' }, [mk(true, 'Yes'), mk(false, 'No')])]); };
     function save() {
-      return pocketSaveProfile({ company: f.company, contactName: f.contact_name, phone: f.phone, mc: f.mc, dot: f.dot, homeBase: f.home_base, radiusMiles: f.radius_miles ? Number(f.radius_miles) : null, equipmentTypes: (f.equipment_types && f.equipment_types.length) ? f.equipment_types : null, truckCount: f.truck_count, ownerDrives: f.owner_drives || null, hazmat: !!f.hazmat, weekendOk: !!f.weekend_ok, factoringStatus: f.factoring_status, factoringCompany: f.factoring_company, contactMethod: f.contact_method, whatsapp: f.whatsapp });
+      return pocketSaveProfile({ company: f.company, contactName: f.contact_name, phone: f.phone, mc: f.mc, dot: f.dot, homeBase: f.home_base, radiusMiles: f.radius_miles ? Number(f.radius_miles) : null, equipmentTypes: (f.equipment_types && f.equipment_types.length) ? f.equipment_types : null, truckCount: f.truck_count, ownerDrives: f.owner_drives || null, hazmat: !!f.hazmat, weekendOk: (f.weekend_ok === true || f.weekend_ok === false) ? f.weekend_ok : null, factoringStatus: f.factoring_status, factoringCompany: f.factoring_company, contactMethod: f.contact_method, whatsapp: f.whatsapp });
     }
     function docStep() {
       const types = [['w9', 'W-9'], ['authority', 'Operating authority'], ['insurance', 'Insurance / COI'], ['mcs150', 'MCS-150 (Biennial Update)'], ['safety', 'FMCSA Safety Rating'], ['noa', 'Notice of assignment (factoring)'], ['agreement', 'Signed agreement']].concat(f.hazmat ? [['hazmat_reg', 'PHMSA Hazmat Registration'], ['hazmat_h', 'CDL Hazmat (H) Endorsement'], ['hazmat_coi', 'Hazmat Insurance COI']] : []).concat([['bank_check', 'Bank verification (voided check / letter)'], ['other', 'Other']]);
@@ -8441,8 +8498,9 @@ function tripStepper(status) {
       typeSel.onchange = renderGuideW; renderGuideW();
       const reqHost = h('div');
       const hazHost = h('div');
-      const loadReqs = async () => { try { const c = await pocketCompliance(); const rs = (c && c.requirements) || [];
-        mount(reqHost, h('div', { style: 'margin-bottom:10px', 'data-lb': 'doc-checklist' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Required documents checklist'), ...rs.map((r) => { const st = String(r.status || 'missing').toLowerCase(); const okd = st === 'valid'; const rev = st === 'pending' || st === 'in_review' || st === 'review' || st === 'submitted'; const bad = st === 'rejected' || st === 'expired'; const col = okd ? '#34d399' : rev ? '#3b9dff' : (bad || r.mandatory ? '#f87171' : '#fbbf24');
+      const loadReqs = async () => { try { const c = await pocketCompliance(); const rs = ((c && c.requirements) || []).slice().sort((a, b) => (b.mandatory ? 1 : 0) - (a.mandatory ? 1 : 0));   // bl_ob_0532b — required first, optional last
+        const optHelp = (r) => (/mcs-?150/i.test(String(r.requirement_key || r.doc_type || r.name || '')) ? 'Optional \u2014 your latest MCS-150 (biennial update). Not required to get loads.' : 'Optional \u2014 not required to get loads.');
+        mount(reqHost, h('div', { style: 'margin-bottom:10px', 'data-lb': 'doc-checklist' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Documents checklist'), h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'Required ones first. Optional items are marked \u201cOptional\u201d and never hold up your approval.'), ...rs.map((r) => { const st = String(r.status || 'missing').toLowerCase(); const okd = st === 'valid'; const rev = st === 'pending' || st === 'in_review' || st === 'review' || st === 'submitted'; const bad = st === 'rejected' || st === 'expired'; const col = okd ? '#34d399' : rev ? '#3b9dff' : (bad && r.mandatory) ? '#f87171' : r.mandatory ? '#f87171' : '#94a3b8';
           let dt0 = r.doc_type || (/w-?9/i.test(r.name || '') ? 'w9' : /agreement/i.test(r.name || '') ? 'agreement' : ''); if (/agreement/i.test(dt0)) dt0 = 'agreement'; if (/^w-?9$/i.test(dt0)) dt0 = 'w9';
           const goUp = () => {
             if (dt0 === 'w9') { w9Btn.click(); return; }
@@ -8466,7 +8524,7 @@ function tripStepper(status) {
           // deep-link anchor: #documents/w9, /agreement, /insurance, /authority, /bank land on THIS row.
           try { const _b9 = (act && act.tagName === 'BUTTON') ? act : (act && act.querySelector ? act.querySelector('button') : null); const _k9 = r.doc_type || dt0; if (_b9 && _k9) _b9.setAttribute('data-lb', 'docbtn-' + _k9); } catch (_) {}
           const why = bad && r.note ? h('div', { style: 'margin-top:6px;border-radius:10px;padding:9px 12px;background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.28)' }, [h('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#f87171;margin-bottom:3px' }, 'Why it was ' + (st === 'expired' ? 'expired' : 'rejected') + (r.reviewed_at ? ' \u00b7 ' + new Date(r.reviewed_at).toLocaleDateString() : '')), h('div', { class: 'cp-row-s', style: 'color:#fca5a5;white-space:pre-wrap' }, r.note)]) : null;
-          const row9 = h('div', { class: 'cp-row', 'data-lb': (r.doc_type || dt0) ? 'doc-' + (r.doc_type || dt0) : null, style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' : rev ? 'Submitted \u00b7 in review' : bad ? (st === 'expired' ? '\u2715 Expired \u2014 send a current one' : '\u2715 Rejected \u2014 fix it and re-upload') : (r.mandatory ? 'Required \u2014 not on file' : 'Optional')), why].filter(Boolean)), act]);
+          const row9 = h('div', { class: 'cp-row', 'data-lb': (r.doc_type || dt0) ? 'doc-' + (r.doc_type || dt0) : null, style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' + (r.mandatory ? '' : ' \u00b7 Optional') : rev ? 'Submitted \u00b7 in review' : bad ? (st === 'expired' ? '\u2715 Expired \u2014 send a current one' : '\u2715 Rejected \u2014 fix it and re-upload') + (r.mandatory ? '' : ' (optional)') : (r.mandatory ? 'Required \u2014 not on file' : optHelp(r))), why].filter(Boolean)), act]);
           // The holder block rides with the row while the item is still open — not once it is
           // approved or already in review, where it would only be noise.
           const isCoi9 = (r.doc_type === 'insurance' || r.doc_type === 'hazmat_coi' || /certificate of insurance/i.test(r.name || ''));
@@ -8530,7 +8588,7 @@ function tripStepper(status) {
             b.classList.add('on');
           } }, lbl); return b; })),
       ]),
-      toggle('Haul hazmat', 'hazmat'), toggle('Available weekends', 'weekend_ok')]); }
+      toggle('Haul hazmat', 'hazmat'), yesno('Available weekends', 'weekend_ok', 'Saturday pickups / Sunday deliveries')]); }
       else if (st === 2) body = h('div', null, [h('p', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'We don\u2019t manage your factoring \u2014 we only need to know where money flows: after delivery we route your invoice/BOL paperwork to the right place, and your dispatch fee is collected the right way.'), (String(f.factoring_status || '') === 'interested' ? h('div', { class: 'cp-ann', style: 'margin-bottom:10px' }, [h('div', { class: 'cp-ann-t' }, 'We\u2019ll connect you \u2713'), h('div', { class: 'cp-ann-b' }, 'After you submit, our team reaches out with 2\u20133 recommended factoring partners \u2014 you sign with them directly. Until your factoring is live, add your bank below so settlements can reach you.')]) : null), h('div', { class: 'cp-wiz-grid' }, [selectField('Factoring', 'factoring_status', [['', '—'], ['yes', 'I use factoring'], ['no', 'No factoring \u2014 pay me direct'], ['interested', 'Recommend me a factoring partner']]), field(String(f.factoring_status || '') === 'interested' ? 'Pick a recommended factoring partner' : 'Factoring company', 'factoring_company', String(f.factoring_status || '') === 'interested' ? 'Tap to see our recommended list' : 'Your factoring company\u2019s name'), selectField('Preferred contact', 'contact_method', [['', '—'], ['phone', 'Phone'], ['sms', 'SMS'], ['whatsapp', 'WhatsApp'], ['email', 'Email']]), field('WhatsApp number', 'whatsapp'), h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Bank account for settlement payouts'), h('span', { class: 'cp-row-s' }, 'Encrypted & tokenized. Factoring carriers: optional but RECOMMENDED \u2014 direct-pay / quick-pay brokers and your dispatch fee can settle here while factored loads pay via your factor. No factoring: required. The account title MUST match your legal company name (sole proprietors: the owner\u2019s name on the W-9) \u2014 mismatched titles fail verification.')]), h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Who the IRS has on file'), h('span', { class: 'cp-row-s' }, 'On a W-9 this is Line 1, and for most owner-operators it is a person, not the company. If your LLC is single-member and files on your SSN, put YOUR name here and the LLC goes on Line 2. Getting this one line wrong is the most common reason a W-9 comes back.')]), field('Legal owner name \u2014 exactly as on your tax records', 'legal_owner_name', 'e.g. Rosa Linda Gonzalez'), field('Bank name', 'bank_name', 'e.g. Chase'), field('Account holder / title \u2014 must match your LEGAL company name', 'account_title', 'Exactly as on your W-9 / authority'), field('Account number', 'account_number'), field('Routing number (ABA)', 'routing_number', '9 digits')]),
         (String(f.factoring_status || '') === 'yes' ? h('div', { style: 'margin-top:12px;border:1.5px solid rgba(139,92,246,.4);background:rgba(139,92,246,.07);border-radius:14px;padding:12px 14px' }, [
           h('div', { class: 'cp-row-t', style: 'margin-bottom:2px' }, [icon('bank',15),' Your factor\u2019s REMIT-TO — exactly what brokers need to pay them']),

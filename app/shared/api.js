@@ -554,6 +554,18 @@ export const ccDispatcherResendIntro = (assignment) => rpc('cc_dispatcher_resend
 // bl_disp_0442 — "Choose your carrier": the Carrier Fleet Book inside the dispatcher portal.
 // Candidate side (eligibility is decided server-side: passed test released, or trial/verified with no carrier).
 export const dispatcherCarrierOptions = () => rpc('dispatcher_carrier_options', {});
+// bl_fill_0534 — "Suggest change" on a locked carrier field (dispatcher → carrier / staff confirms)
+export const dispatcherFieldSuggest = (assignment, tbl, field, value, reason, truck) => rpc('dispatcher_field_suggest', { p_assignment: assignment, p_tbl: tbl, p_field: field, p_value: value, p_reason: reason, p_truck: truck ?? null });
+export const dispatcherFieldSuggestions = (assignment) => rpc('dispatcher_field_suggestions', { p_assignment: assignment });
+export const pocketFieldSuggestions = () => rpc('cc_pocket_field_suggestions', {});
+export const pocketFieldSuggestionDecide = (id, accept) => rpc('cc_pocket_field_suggestion_decide', { p_id: id, p_accept: !!accept });
+export const pocketFieldSources = () => rpc('cc_pocket_field_sources', {});   // bl_pref_0536 — who set my fields (role + date, dispatcher name)
+export const ccFieldSuggestions = (orgId) => rpc('cc_field_suggestions', { p_org: orgId });
+export const ccFieldSuggestionDecide = (id, accept, note) => rpc('cc_field_suggestion_decide', { p_id: id, p_accept: !!accept, p_note: note ?? null });
+// bl_fill_0535 — field candidates extracted from a dialer call (nothing saves without a click)
+export const dispatcherCallFieldsRequest = (callId) => rpc('dispatcher_call_fields_request', { p_call: callId });
+export const dispatcherCallFields = (callId) => rpc('dispatcher_call_fields', { p_call: callId });
+export const dispatcherCallFieldApply = (candidateId, action, value) => rpc('dispatcher_call_field_apply', { p_candidate: candidateId, p_action: action, p_value: value ?? null });
 export const dispatcherChooseCarrier = (org, note) => rpc('dispatcher_choose_carrier', { p_org: org, p_note: note ?? null });
 export const dispatcherWithdrawChoice = () => rpc('dispatcher_withdraw_choice', {});
 // Staff side: the queue of choices and the one-step decision (accept = trial + assign; decline = candidate chooses again).

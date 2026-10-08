@@ -15,7 +15,7 @@
 //   mountCarrierFill(root, assignments, { reload, toast })   after the tab is built
 // Server: public.dispatcher_carrier_gaps(p_assignment) → fields + provenance; public.dispatcher_carrier_fill(...) → one field.
 
-import { dispatcherCarrierGaps, dispatcherCarrierFill } from '../shared/api.js';
+import { dispatcherCarrierGaps, dispatcherCarrierFill, dispatcherFieldSuggest, dispatcherFieldSuggestions } from '../shared/api.js';   // bl_fill_0534 — suggest a change on a locked field
 import { el, mount } from '../shared/ui/dom.js';
 import { icon as sharedIcon } from '../shared/ui/icons.js';
 
@@ -44,6 +44,9 @@ const CSS = `
 .cf-ask{font-size:.74rem;color:#9fb3c8;line-height:1.4;margin:2px 0 4px;font-weight:500}
 .cf-row{display:flex;gap:6px;align-items:center}.cf-row .dw-in{flex:1;min-width:0;padding:6px 8px;font-size:.86rem}.cf-row textarea.dw-in{min-height:48px}
 .cf-row .dw-btn.sm{padding:6px 10px}
+.cf-pill.sug{color:#c4b5fd}
+.cf-sug{font-size:.74rem;color:#c4b5fd;margin:2px 0 4px;font-weight:600}
+.cf-row.cf-sugrow{flex-wrap:wrap}.cf-row.cf-sugrow .dw-in.cf-why{flex:1 1 100%}
 `;
 let cssDone = false;
 function ensureCss() { if (cssDone) return; cssDone = true; document.head.appendChild(h('style', { id: 'cf-css' }, CSS)); }
@@ -126,6 +129,10 @@ export function mountCarrierFill(root, assignments, opts) {
     catch (e) { const g = h('div', { class: 'dw-muted', style: 'font-size:.78rem;margin-top:4px' }, [ic('alert', 12), ' Carrier work sheet unavailable right now (' + (e.message || e) + ').']); const t = card.querySelector('h3'); if (t) t.after(g); return; }
     if (!card.isConnected) return;   // the tab re-rendered while we were loading
     const fields = d.fields || [];
+    // bl_fill_0534 — pending suggestions on locked fields, keyed like the fields
+    const sugs = {};
+    try { const sr = await dispatcherFieldSuggestions(a.id); ((sr && sr.rows) || []).forEach((x) => { if (x.status === 'pending') sugs[x.tbl + '|' + x.field + '|' + (x.truck_id || '')] = x; }); } catch (_) {}
+    const sugOf = (f) => sugs[f.tbl + '|' + f.field + '|' + (f.truck_id || '')] || null;
     // progress + click-to-call strip under the carrier title
     const strip = h('div', { class: 'cf-strip' });
     const title = card.querySelector('h3'); if (title) title.after(strip);
@@ -186,6 +193,11 @@ export function mountCarrierFill(root, assignments, opts) {
       if (f.empty) { cell.classList.add('cf-edit'); cell.classList.remove('empty'); k.appendChild(pill(f)); mount(v, editor(f, cell, false)); return; }
       cell.classList.remove('cf-edit'); k.appendChild(pill(f));
       if (!f.locked) k.appendChild(h('button', { class: 'cf-pen', title: 'Correct your own entry', onClick: () => { cell.classList.add('cf-edit'); mount(v, editor(f, cell, true)); } }, ic('pen', 11)));
+      else {   // bl_fill_0534 — locked: you cannot overwrite it, but you can SUGGEST the right value; the carrier or LoadBoot confirms
+        const sg = sugOf(f);
+        if (sg) k.appendChild(h('span', { class: 'cf-pill sug', title: 'Waiting for the carrier / LoadBoot to confirm: ' + sg.new_text + (sg.reason ? ' — ' + sg.reason : '') }, 'Suggested \u00b7 pending'));
+        else k.appendChild(h('button', { class: 'cf-pen', title: 'Wrong on file? Suggest the correct value — the carrier (or LoadBoot) confirms it before it changes', onClick: () => { cell.classList.add('cf-edit'); mount(v, suggestEditor(f, cell)); } }, [ic('pen', 11), ' suggest']));
+      }
       if (f.source && f.source.role === 'dispatcher') { const s = show(f); if (s != null && v.textContent.trim() === '—') v.textContent = s; }
     }
 
@@ -202,6 +214,33 @@ export function mountCarrierFill(root, assignments, opts) {
       const btn = h('button', { class: 'dw-btn sm', onClick: () => { const val = read(); if (val == null && !editing) { toast('Type the answer first', true); node.focus(); return; } save(f, val, cell, btn); } }, editing ? 'Update' : 'Save');
       node.addEventListener('keydown', (e) => { if (e.key === 'Enter' && f.kind !== 'textarea') { e.preventDefault(); btn.click(); } });
       return [h('div', { class: 'cf-ask' }, 'Ask: ' + (f.why || f.label)), h('div', { class: 'cf-row' }, [node, listId ? h('datalist', { id: listId }, f.options.map((o) => h('option', { value: o }))) : null, btn])];
+    }
+
+    // bl_fill_0534 — same input as the editor, plus a reason; nothing changes until the carrier or LoadBoot accepts
+    function suggestEditor(f, cell) {
+      const cur = f.value; const curS = cur == null ? '' : Array.isArray(cur) ? cur.join(', ') : String(cur);
+      const listId = f.options && f.options.length ? 'cf-sdl-' + f.tbl + '-' + f.field : null;
+      let node;
+      if (f.kind === 'bool') node = h('select', { class: 'dw-in' }, [h('option', { value: '' }, 'Yes / No?'), h('option', { value: 'true' }, 'Yes'), h('option', { value: 'false' }, 'No')]);
+      else if (f.kind === 'textarea') node = h('textarea', { class: 'dw-in', placeholder: 'What the owner said…' }, curS);
+      else if (f.kind === 'number' || f.kind === 'money') node = h('input', { class: 'dw-in', type: 'number', inputmode: 'decimal', step: f.kind === 'money' ? '0.01' : '1', min: '0', placeholder: f.kind === 'money' ? '$ per mile' : f.label, value: curS });
+      else node = h('input', { class: 'dw-in', type: 'text', value: curS, list: listId, placeholder: f.kind === 'list' ? 'comma-separated' : f.label });
+      const why = h('input', { class: 'dw-in cf-why', type: 'text', placeholder: 'Why? e.g. Said on call ' + new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ': no weekends', maxlength: '300' });
+      const read = () => { const x = node.value; if (x == null || String(x).trim() === '') return null; if (f.kind === 'bool') return x === 'true'; if (f.kind === 'number' || f.kind === 'money') return Number(x); if (f.kind === 'list') return String(x).split(',').map((s) => s.trim()).filter(Boolean); return String(x).trim(); };
+      const cancel = () => { cell.classList.remove('cf-edit'); const v = cell.querySelector('.v'); mount(v, show(f) == null ? '—' : show(f)); paintCell(cell, f); };
+      const btn = h('button', { class: 'dw-btn sm', onClick: async () => {
+        const val = read(); if (val == null) { toast('Type the suggested value first', true); node.focus(); return; }
+        if (!why.value.trim()) { toast('Say why — the carrier reads this line', true); why.focus(); return; }
+        btn.disabled = true; btn.textContent = 'Sending…';
+        try {
+          const r = await dispatcherFieldSuggest(a.id, f.tbl, f.field, val, why.value.trim(), f.truck_id || null);
+          if (!r || r.error) throw new Error((r && (r.message || r.error)) || 'could not send');
+          sugs[f.tbl + '|' + f.field + '|' + (f.truck_id || '')] = r.suggestion;
+          toast('Suggested — the carrier sees it on their Home screen and in Account; LoadBoot can confirm it too'); cancel();
+        } catch (e) { toast(e.message || String(e), true); btn.disabled = false; btn.textContent = 'Send suggestion'; }
+      } }, 'Send suggestion');
+      return [h('div', { class: 'cf-sug' }, 'On file: ' + (show(f) == null ? '—' : show(f)) + ' (set by the ' + ((f.source && f.source.role === 'carrier') || !f.source ? 'carrier' : 'LoadBoot team') + '). Suggest the correct value:'),
+        h('div', { class: 'cf-row cf-sugrow' }, [node, listId ? h('datalist', { id: listId }, f.options.map((o) => h('option', { value: o }))) : null, why, btn, h('button', { class: 'dw-btn sm ghost', onClick: cancel }, 'Cancel')])];
     }
 
     async function save(f, val, cell, btn) {

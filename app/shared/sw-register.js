@@ -18,47 +18,48 @@ export function registerAppSW() {
     // updateViaCache:'none' — ALWAYS revalidate sw.js against the network when checking
     // for updates, so a new deploy is detected even if the browser cached the old sw.js.
     // Without this, installed PWAs can serve a stale build until the user clears data.
-    let updateApproved = false;
     navigator.serviceWorker.register('/app/sw.js', { scope: '/app/', updateViaCache: 'none' }).then((reg) => {
       // Actively look for a newer SW: right now, and every 60s while the app is open,
       // so an installed PWA picks up new deploys without a manual reinstall.
       reg.update().catch(() => {});
       setInterval(() => reg.update().catch(() => {}), 60000);
-      function promptReload(worker) {
-        if (document.getElementById('lb-sw-update')) return;
-        const bar = document.createElement('div');
-        bar.id = 'lb-sw-update';
-        bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:99999;background:#0883F7;color:#fff;padding:12px 16px;border-radius:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;font:600 14px system-ui,sans-serif;box-shadow:0 12px 30px -8px rgba(8,131,247,.6)';
-        const msg = document.createElement('span');
-        msg.textContent = 'A new version of LoadBoot is available.';
-        const btn = document.createElement('button');
-        btn.textContent = 'Update';
-        btn.style.cssText = 'background:#fff;color:#0883F7;border:none;border-radius:9px;padding:8px 16px;font-weight:800;cursor:pointer;flex:none';
-        btn.onclick = () => {
-          if (!window.confirm('Update and reload this tab? Save any unfinished work first.')) return;
-          updateApproved = true; btn.textContent = 'Updating...';
-          if (!worker || worker.state === 'activated') location.reload();
-          else worker.postMessage({ type: 'SKIP_WAITING' });
-        };
-        bar.appendChild(msg); bar.appendChild(btn);
-        document.body.appendChild(bar);
-        try { document.body.classList.add('lb-sw-bar'); } catch (_) {}   // bl_ui_0460 — dialer dock + tour ? lift above the bar
-      }
-      if (reg.waiting && navigator.serviceWorker.controller) promptReload(reg.waiting);
+      // bl_pwa_0532b (8 Oct 2026, owner) — SILENT updates, the way a store app behaves. LoadBoot deploys daily, so a bar
+      // asking the carrier to tap "Update" every day was the wrong design (and inside the Play Store TWA the tap did not
+      // even work: window.confirm + a stale worker). Now: a new worker is activated the moment it is installed, and the
+      // page swaps to it with ONE reload only when that cannot interrupt anyone — the app is in the background, or
+      // nothing is being typed, no sheet / drawer / dialog is open, no call is live (window.__lbBusy from the dialer),
+      // and the last touch was >20 s ago. Otherwise the swap waits: the next time the app is reopened it is already
+      // the new version. No prompt, no tap, no loop. (The Play Store listing's own "Update" is the Android shell —
+      // a different thing, not touched here.)
+      let pending = false; let lastInput = 0; let swapping = false;
+      ['keydown', 'touchstart', 'pointerdown'].forEach((ev) => document.addEventListener(ev, () => { lastInput = Date.now(); }, { passive: true, capture: true }));
+      const busy = () => {
+        try {
+          if (typeof window.__lbBusy === 'function' && window.__lbBusy()) return true;
+          const a = document.activeElement;
+          if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return true;
+          if (document.querySelector('.cp-modal, .cpx-drawer, .cpx-scrim, [role="dialog"], .lb-sheet')) return true;
+          if (Date.now() - lastInput < 20000) return true;
+        } catch (_) {}
+        return false;
+      };
+      const activate = (w) => { try { if (w && w.state !== 'activated' && w.state !== 'redundant') w.postMessage({ type: 'SKIP_WAITING' }); } catch (_) {} };
+      const swap = () => {
+        if (!pending || swapping) return;
+        if (document.hidden || !busy()) { swapping = true; try { sessionStorage.setItem('lb:sw:updated', String(Date.now())); } catch (_) {} location.reload(); }
+      };
+      if (reg.waiting && navigator.serviceWorker.controller) activate(reg.waiting);
       reg.addEventListener('updatefound', () => {
-        const nw = reg.installing;
-        if (!nw) return;
-        nw.addEventListener('statechange', () => {
-          if (nw.state === 'installed' && navigator.serviceWorker.controller) promptReload(nw);
-        });
+        const nw = reg.installing; if (!nw) return;
+        nw.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) activate(nw); });
       });
-      // check for updates when the app regains focus (mobile: reopened from home screen)
-      document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
-      let reloaded = false;
+      // check for updates when the app regains focus (mobile: reopened from home screen); swap then if one is waiting
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); swap(); });
+      setInterval(swap, 15000);
+      let hadController = !!navigator.serviceWorker.controller;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloaded) return;
-        if (!updateApproved) { promptReload(null); return; }
-        reloaded = true; location.reload();
+        if (!hadController) { hadController = true; return; }   // very first install: this page already is the new version
+        pending = true; swap();
       });
     }).catch(() => {});
   });
