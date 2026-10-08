@@ -84,12 +84,13 @@ Applied on rwscphuhpjoudvljvmdk, in this order, all anchors asserted: `bl_wa_053
 `telnyx-whatsapp` (prod v5 = our v3) and `telnyx-sms` (prod v7 = our v2) deployed. Verified after: anon SECURITY DEFINER names
 = the 36 baseline exactly; THE WAY HOME "Signed 30 Sep 2026", SPRINT SHIFT "Signed 6 Oct 2026"; `dispatcher.trial.daily`
 44 / 44 after the one-off sync; crons `lb-disp-unreachable` (:23) and `lb-email-catalog-sync` (03:40 UTC) in; the new report
-builds for a live trial dispatcher. `sms_enabled` still false, `sms_broker_enabled` false, `dispatcher.carrier.unreachable`
-send_mode **test**.
+builds for a live trial dispatcher. `sms_enabled` still false, `sms_broker_enabled` false. `dispatcher.carrier.unreachable`
+flipped to send_mode **live** on prod at 17:53 ET, 8 Oct 2026 (owner call; staging row stays `test`).
 
 **Heads-up for the first hour:** `disp_unreachable_eval` already qualifies ONE live assignment — GABE LOGISTICS LLC / Gursewak
-Singh (7 unanswered attempts on 3 days, 3 voicemails, no contact). The :23 run will flag it: carrier e-mail goes to hello@ as
-`[TEST → owner]` (test mode), staff copy to hello@, Gursewak gets the in-portal notice and a system line in the GABE thread.
+Singh (7 unanswered attempts on 3 days, 3 voicemails, no contact). The :23 run will flag it: the carrier e-mail goes to the
+GABE owner for real (live since 17:53 ET), staff copy to hello@, Gursewak gets the in-portal notice and a system line in the
+GABE thread. To hold it: `select cron.unschedule('lb-disp-unreachable');`.
 To hold it: `select cron.unschedule('lb-disp-unreachable');` — re-schedule with the line in the migration.
 
 **Still to do by the owner:** flip `dispatcher.carrier.unreachable` to live in CC → Email catalog once the render is approved;
@@ -100,8 +101,7 @@ portals (until then the DB side is live and the old UI simply does not show the 
 
 1. Apply `migrations/bl_disp_0534_carrier_unreachable.PROD.sql` in the prod SQL editor (all anchors assert; it ends with one
    `email_catalog_sync()` run, the slow step). Check the anon SECURITY DEFINER **names** (36).
-2. `dispatcher.carrier.unreachable` is `send_mode = 'test'` — the first real flag e-mails `[TEST → owner]` to hello@. Flip it to
-   live in CC → Email catalog when the staging render is approved.
+2. ~~`dispatcher.carrier.unreachable` is `send_mode = 'test'`~~ — flipped to **live** on prod 8 Oct 2026 17:53 ET.
 3. Andrew's W-9 rows: THE WAY HOME and SPRINT SHIFT read "Signed 30 Sep 2026" / "Signed 6 Oct 2026" the moment the function is in.
 4. The next 8 AM report is already EFFORT/OUTCOME; the next Sync (or 03:40 UTC) fills `sends_30d` for every key.
 5. Deploy the three JS files with the next site build (CC + agent portal).
