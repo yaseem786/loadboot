@@ -1,11 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// telnyx-transcribe v3 (bl_dial_0514) — speech-to-text for one dialer call recording, shown in CC → Dialer calls.
+// telnyx-transcribe v4 (bl_dial_0514) — speech-to-text for one dialer call recording, shown in CC → Dialer calls.
 // verify_jwt = true. Access is decided in Postgres AS THE CALLER (public.dialer_recording_ref: own call or CC staff).
 // Uses the existing TELNYX_API_KEY: Telnyx AI /ai/audio/transcriptions. v2: the audio is downloaded here and uploaded as
 // `file` (Telnyx rejected the S3 file_url: "file_url content-length not found"). Telnyx limit: 100 MB per file.
 // Long calls take a while, so the work runs in the background (EdgeRuntime.waitUntil) and the result is saved through
 // public.dialer_transcript_save (service_role only). The browser polls public.dialer_transcript_get.
+// v4: the first SUCCESSFUL answer is kept (a 71-min call takes ~1-2 min per pass; retrying for timestamps
+// exceeded the edge wall-clock and the job died as 'pending'). Only HTTP errors fall through to the next config.
 // Body: { call_id, force? }  →  { ok, status: 'ready' | 'processing' }
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
@@ -67,7 +69,7 @@ async function transcribe(url: string): Promise<{ model: string; language: strin
     if (a.verbose) { f.append("response_format", "verbose_json"); f.append("timestamp_granularities[]", "segment"); }
     const r = await fetch(TX + "/ai/audio/transcriptions", { method: "POST", headers: { Authorization: `Bearer ${TELNYX_KEY}` }, body: f });
     const body = await r.text();
-    if (r.ok) { try { const out = JSON.parse(body); if (Array.isArray(out?.segments) && out.segments.length) return { model: a.model, language: a.language || "auto", out }; if (!keep) keep = { model: a.model, language: a.language || "auto", out }; last += (last ? " | " : "") + a.model + ": no segments"; continue; } catch { last = "bad json"; continue; } }
+    if (r.ok) { try { const out = JSON.parse(body); return { model: a.model, language: a.language || "auto", out }; } catch { last = "bad json"; continue; } }
     last += (last ? " | " : "") + a.model + ": " + r.status + " " + body.slice(0, 200);
   }
   if (keep) return keep; // text only, no timestamps

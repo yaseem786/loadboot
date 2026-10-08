@@ -45,6 +45,14 @@ const CSS = `
 .dl-t th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--mut,#64748b);padding:8px 10px;border-bottom:1px solid var(--line,#e5e9f2);white-space:nowrap}
 .dl-t td{padding:10px;border-bottom:1px solid var(--line,#eef1f6);vertical-align:middle}
 .dl-t tr:last-child td{border-bottom:0}
+.dl-t td.dl-notec{min-width:240px;max-width:440px}
+.dl-note{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.45}
+.dl-note.open{display:block;-webkit-line-clamp:unset;white-space:pre-wrap}
+.dl-more{background:none;border:0;color:var(--b,#0883F7);font:inherit;font-size:12px;font-weight:700;padding:2px 0 0;cursor:pointer}
+.dl-act{display:inline-flex;border:1px solid var(--line,#d8dee9);border-radius:10px;overflow:hidden;background:var(--card,#fff)}
+.dl-act button{border:0;border-right:1px solid var(--line,#e5e9f2);background:transparent;color:inherit;padding:7px 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:36px}
+.dl-act button:last-child{border-right:0}.dl-act button:hover{background:rgba(8,131,247,.08)}
+.dl-act button.on{background:var(--b,#0883F7);color:#fff}.dl-act button[disabled]{opacity:.55;cursor:progress}
 .dl-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#94a3b8;margin-right:6px}.dl-dot.on{background:var(--g,#22c55e);box-shadow:0 0 6px rgba(34,197,94,.7)}
 .dl-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
 .dl-pill.g{background:rgba(34,197,94,.14);color:#15803d}.dl-pill.r{background:rgba(239,68,68,.13);color:#b91c1c}.dl-pill.a{background:rgba(245,158,11,.16);color:#b45309}.dl-pill.b{background:rgba(8,131,247,.13);color:#0369a1}.dl-pill.m{background:rgba(100,116,139,.15);color:#475569}
@@ -261,21 +269,32 @@ export async function renderDialerLive(host) {
         el('thead', null, el('tr', null, ['When', 'Dispatcher', '', 'Who', 'Result', 'Talk', 'Outcome', 'Note', ''].map((x) => el('th', null, x)))),
         el('tbody', null, rows.map((c) => { const s = STAT[c.status] || [c.status, 'm']; return el('tr', null, [
           el('td', { style: 'white-space:nowrap' }, et(c.started_at)), el('td', null, c.dispatcher || '—'), el('td', { title: c.direction }, c.direction === 'inbound' ? '↙' : '↗'),
-          el('td', null, [el('b', null, c.contact_name || pretty(c.number)), el('div', { style: 'font-size:12px;opacity:.7' }, [c.contact_name ? pretty(c.number) + ' ' : '', c.contact_kind ? el('span', { class: 'dl-pill ' + (c.contact_kind === 'broker' ? 'b' : 'g') }, c.contact_kind) : null])]),
+          el('td', { style: 'white-space:nowrap' }, [el('b', null, c.contact_name || pretty(c.number)), el('div', { style: 'font-size:12px;opacity:.7' }, [c.contact_name ? pretty(c.number) + ' ' : '', c.contact_kind ? el('span', { class: 'dl-pill ' + (c.contact_kind === 'broker' ? 'b' : 'g') }, c.contact_kind) : null])]),
           el('td', null, el('span', { class: 'dl-pill ' + s[1] }, s[0])), el('td', null, c.duration_sec ? mmss(c.duration_sec) : '—'),
           el('td', null, c.outcome ? el('span', { class: 'dl-pill b' }, c.outcome) : (c.answered_at ? el('span', { class: 'dl-pill a' }, 'untagged') : '—')),
-          el('td', { style: 'max-width:280px' }, c.note || ''),
-          el('td', { style: 'white-space:nowrap' }, [c.has_recording ? el('button', { class: 'dl-btn sm', 'data-rec': c.id, 'aria-label': isPlaying(c.id) ? 'Pause recording' : 'Play recording', onClick: (e) => play(c.id, e.currentTarget) }, [icon(isPlaying(c.id) ? 'pause' : 'play', 14), isPlaying(c.id) ? 'Pause' : 'Play']) : null, c.has_recording ? el('button', { class: 'dl-btn sm', style: 'margin-left:6px', 'aria-label': 'Download recording', title: 'Download recording (mp3)', onClick: (e) => download(c, e.currentTarget) }, [icon('download', 14), 'Download']) : null, c.has_recording ? el('button', { class: 'dl-btn sm', style: 'margin-left:6px', 'aria-label': 'Call transcript', title: 'Read the call as text', onClick: () => showTranscript(c) }, [icon('doc', 14), 'Transcript']) : null]),
+          el('td', { class: 'dl-notec' }, c.note ? noteCell(c.note) : el('span', { style: 'opacity:.5' }, '—')),
+          el('td', { style: 'white-space:nowrap;text-align:right' }, c.has_recording ? el('div', { class: 'dl-act', role: 'group', 'aria-label': 'Recording' }, [
+            el('button', { 'data-rec': c.id, class: isPlaying(c.id) ? 'on' : '', title: isPlaying(c.id) ? 'Pause' : 'Play recording', 'aria-label': isPlaying(c.id) ? 'Pause recording' : 'Play recording', onClick: (e) => play(c.id, e.currentTarget) }, icon(isPlaying(c.id) ? 'pause' : 'play', 15)),
+            el('button', { title: 'Download recording (mp3)', 'aria-label': 'Download recording', onClick: (e) => download(c, e.currentTarget) }, icon('download', 15)),
+            el('button', { title: 'Read the call as text', 'aria-label': 'Call transcript', onClick: () => showTranscript(c) }, icon('doc', 15)),
+          ]) : el('span', { style: 'opacity:.45;font-size:12px' }, 'no recording')),
         ]); })),
       ])) : el('div', { style: 'opacity:.7;padding:8px 0' }, 'No calls match these filters.'),
     ]));
+  }
+
+  function noteCell(txt) {
+    const t = String(txt); const d = el('div', { class: 'dl-note', title: t.length > 400 ? '' : t }, t);
+    if (t.length <= 110) return d;
+    const b = el('button', { class: 'dl-more', type: 'button', onClick: () => { const o = d.classList.toggle('open'); b.textContent = o ? 'Show less' : 'Show more'; } }, 'Show more');
+    return el('div', null, [d, b]);
   }
 
   let playing = null;
   const isPlaying = (id) => !!(playing && playing.id === id && !playing.a.paused);
   function stopPlaying() { if (!playing) return; try { playing.a.pause(); URL.revokeObjectURL(playing.u); } catch (_) {} playing = null; }
   function syncPlayBtns() {
-    root.querySelectorAll('[data-rec]').forEach((b) => { const on = isPlaying(b.getAttribute('data-rec')); b.setAttribute('aria-label', on ? 'Pause recording' : 'Play recording'); mount(b, [icon(on ? 'pause' : 'play', 14), on ? 'Pause' : 'Play']); });
+    root.querySelectorAll('[data-rec]').forEach((b) => { const on = isPlaying(b.getAttribute('data-rec')); b.setAttribute('aria-label', on ? 'Pause recording' : 'Play recording'); b.title = on ? 'Pause' : 'Play recording'; b.className = on ? 'on' : ''; mount(b, icon(on ? 'pause' : 'play', 15)); });
   }
   // one recording at a time: the same row toggles pause / resume, another row stops the first and starts its own
   async function play(id, btn) {
@@ -292,14 +311,14 @@ export async function renderDialerLive(host) {
   // bl_dial_0513: save a recording as an mp3 file (the Play button only streams it from memory)
   async function download(c, btn) {
     try {
-      btn.disabled = true; mount(btn, [icon('download', 14), 'Preparing…']); toast('Preparing the recording — this can take a few seconds for long calls…');
+      btn.disabled = true; mount(btn, icon('clock', 15)); btn.title = 'Preparing…'; toast('Preparing the recording — this can take a few seconds for long calls…');
       const blob = await dialerRecordingBlob(c.id);
       const u = URL.createObjectURL(blob); const d = String(c.started_at || '').slice(0, 10);
       const who = String(c.contact_name || c.number || 'call').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
       const a = document.createElement('a'); a.href = u; a.download = 'loadboot-call-' + d + '-' + who + '.mp3';
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => { try { URL.revokeObjectURL(u); } catch (_) {} }, 60000);
       const mb = (blob.size / 1048576).toFixed(1); toast('Recording downloaded ✓ ' + a.download + ' (' + mb + ' MB) — check your Downloads folder (Ctrl+J).', 'success');
-    } catch (e) { toast(humanizeError(e), 'error'); } finally { btn.disabled = false; mount(btn, [icon('download', 14), 'Download']); }
+    } catch (e) { toast(humanizeError(e), 'error'); } finally { btn.disabled = false; mount(btn, icon('download', 15)); btn.title = 'Download recording (mp3)'; }
   }
 
   // bl_dial_0514: call transcript (Telnyx speech-to-text), generated on first open and kept for next time
