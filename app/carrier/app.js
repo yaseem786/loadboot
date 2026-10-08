@@ -3668,7 +3668,7 @@ async function appView(user) {
       ]),
       h('button', { class: 'cp-btn', style: 'margin:0;background:linear-gradient(135deg,#16a34a,#34d399)', onClick: () => go('loads') }, 'Start booking loads \u2192'),
     ]);
-    const _rejReqs = ((comp && comp.requirements) || []).filter(r => ['rejected', 'expired'].indexOf(String(r.status || '').toLowerCase()) >= 0);
+    const _rejReqs = ((comp && comp.requirements) || []).filter(r => r.mandatory && ['rejected', 'expired'].indexOf(String(r.status || '').toLowerCase()) >= 0);   // bl_ob_0532b — optional never counts
     const _fixHero = _rejReqs.length ? h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(239,68,68,.45);margin-bottom:14px;background:linear-gradient(135deg,rgba(239,68,68,.08),transparent)' }, [
       h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(239,68,68,.14);color:#f87171;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u26a0'),
       h('div', { style: 'flex:1;min-width:220px' }, [
@@ -7962,14 +7962,22 @@ function tripStepper(status) {
       if (st === 'valid') return { t: 'success', why: r.expiry_date ? 'valid until ' + r.expiry_date : 'on file' };
       if (r.mandatory && (st === 'missing' || st === 'expired' || st === 'rejected')) return { t: 'urgent', why: st === 'missing' ? 'required — not on file' : 'required — ' + st };
       if (r.mandatory) return { t: 'action', why: 'under review' };
-      return { t: 'warning', why: st || 'recommended' };
+      if (st === 'missing' || !st) return { t: 'info', why: 'optional' };   // bl_ob_0532b — optional + not on file is not a warning
+      return { t: 'warning', why: st };
+    };
+    // bl_ob_0532b — what an OPTIONAL requirement means, in the carrier's words (owner text for the MCS-150)
+    const optionalHelp = (r) => {
+      const k = String(r.requirement_key || r.doc_type || '').toLowerCase(); const n = String(r.name || '').toLowerCase();
+      if (k === 'mcs150' || /mcs-?150/.test(n)) return 'Optional \u2014 your latest MCS-150 (biennial update). Not required to get loads.';
+      return 'Optional \u2014 not required to get loads.';
     };
     const needAttention = reqs.filter(r => reqTone(r).t === 'urgent').length;
     // Clicking a requirement opens the upload dialog with the right document type pre-selected.
     const reqDocType = (name) => {
       const n = (name || '').toLowerCase();
       if (n.includes('insurance') || n.includes('liability') || n.includes('coi')) return 'insurance';
-      if (n.includes('authority') || n.includes('mc/dot') || n.includes('mcs-150')) return 'authority';
+      if (n.includes('mcs-150') || n.includes('mcs150')) return 'mcs150';   // bl_ob_0532b — was filed as 'authority'
+      if (n.includes('authority') || n.includes('mc/dot')) return 'authority';
       if (n.includes('w-9') || n.includes('w9')) return 'w9';
       if (n.includes('assignment') || n.includes('noa')) return 'noa';
       if (n.includes('agreement')) return 'agreement';
@@ -8130,7 +8138,7 @@ function tripStepper(status) {
       const dlW9 = async () => { let w = {}; try { w = (await carrierW9()) || {}; } catch (_) {} const m = await import('./w9-form.js'); m.printExecutedW9(Object.assign({}, w, { approved: r.status === 'valid' })); };
       return h('div', { class: 'cp-row cp-row-col', 'data-lb': 'doc-' + (r.doc_type || reqDocType(r.name) || r.requirement_key || 'other'), style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap' }, [
-          h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required' : 'Optional') + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why))]),
+          h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, r.mandatory ? ('Required' + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why)) : (d ? 'Optional · ' + (d.file_name || '') : optionalHelp(r)))]),
           h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
             h('span', { class: 'cp-pill', style: 'background:' + (rejected ? 'rgba(220,38,38,.1)' : tone.bg) + ';color:' + (rejected ? '#b91c1c' : tone.c) }, rejected ? 'Rejected' : r.status === 'valid' ? 'Approved ✓' : stateIdx >= 2 ? 'In review' : tone.label),
             isAgr
@@ -8152,7 +8160,7 @@ function tripStepper(status) {
           status: nd9 ? (nd9.status === 'approved' ? 'valid' : nd9.status === 'rejected' ? 'rejected' : 'pending') : 'missing' });
       }
     } catch (_) {}
-    const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
+    const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3, info: 4 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3, info: 4 }[reqTone(b).t]));
     mount(content, h('div', null, [shareBanner9, noaBanner9, scanCard, 
       h('div', { class: 'cp-card', 'data-tour': 'docs-list' }, [cardHead('What LoadBoot needs from you',
           c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
@@ -8452,8 +8460,9 @@ function tripStepper(status) {
       typeSel.onchange = renderGuideW; renderGuideW();
       const reqHost = h('div');
       const hazHost = h('div');
-      const loadReqs = async () => { try { const c = await pocketCompliance(); const rs = (c && c.requirements) || [];
-        mount(reqHost, h('div', { style: 'margin-bottom:10px', 'data-lb': 'doc-checklist' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Required documents checklist'), ...rs.map((r) => { const st = String(r.status || 'missing').toLowerCase(); const okd = st === 'valid'; const rev = st === 'pending' || st === 'in_review' || st === 'review' || st === 'submitted'; const bad = st === 'rejected' || st === 'expired'; const col = okd ? '#34d399' : rev ? '#3b9dff' : (bad || r.mandatory ? '#f87171' : '#fbbf24');
+      const loadReqs = async () => { try { const c = await pocketCompliance(); const rs = ((c && c.requirements) || []).slice().sort((a, b) => (b.mandatory ? 1 : 0) - (a.mandatory ? 1 : 0));   // bl_ob_0532b — required first, optional last
+        const optHelp = (r) => (/mcs-?150/i.test(String(r.requirement_key || r.doc_type || r.name || '')) ? 'Optional \u2014 your latest MCS-150 (biennial update). Not required to get loads.' : 'Optional \u2014 not required to get loads.');
+        mount(reqHost, h('div', { style: 'margin-bottom:10px', 'data-lb': 'doc-checklist' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Documents checklist'), h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'Required ones first. Optional items are marked \u201cOptional\u201d and never hold up your approval.'), ...rs.map((r) => { const st = String(r.status || 'missing').toLowerCase(); const okd = st === 'valid'; const rev = st === 'pending' || st === 'in_review' || st === 'review' || st === 'submitted'; const bad = st === 'rejected' || st === 'expired'; const col = okd ? '#34d399' : rev ? '#3b9dff' : (bad && r.mandatory) ? '#f87171' : r.mandatory ? '#f87171' : '#94a3b8';
           let dt0 = r.doc_type || (/w-?9/i.test(r.name || '') ? 'w9' : /agreement/i.test(r.name || '') ? 'agreement' : ''); if (/agreement/i.test(dt0)) dt0 = 'agreement'; if (/^w-?9$/i.test(dt0)) dt0 = 'w9';
           const goUp = () => {
             if (dt0 === 'w9') { w9Btn.click(); return; }
@@ -8477,7 +8486,7 @@ function tripStepper(status) {
           // deep-link anchor: #documents/w9, /agreement, /insurance, /authority, /bank land on THIS row.
           try { const _b9 = (act && act.tagName === 'BUTTON') ? act : (act && act.querySelector ? act.querySelector('button') : null); const _k9 = r.doc_type || dt0; if (_b9 && _k9) _b9.setAttribute('data-lb', 'docbtn-' + _k9); } catch (_) {}
           const why = bad && r.note ? h('div', { style: 'margin-top:6px;border-radius:10px;padding:9px 12px;background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.28)' }, [h('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#f87171;margin-bottom:3px' }, 'Why it was ' + (st === 'expired' ? 'expired' : 'rejected') + (r.reviewed_at ? ' \u00b7 ' + new Date(r.reviewed_at).toLocaleDateString() : '')), h('div', { class: 'cp-row-s', style: 'color:#fca5a5;white-space:pre-wrap' }, r.note)]) : null;
-          const row9 = h('div', { class: 'cp-row', 'data-lb': (r.doc_type || dt0) ? 'doc-' + (r.doc_type || dt0) : null, style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' : rev ? 'Submitted \u00b7 in review' : bad ? (st === 'expired' ? '\u2715 Expired \u2014 send a current one' : '\u2715 Rejected \u2014 fix it and re-upload') : (r.mandatory ? 'Required \u2014 not on file' : 'Optional')), why].filter(Boolean)), act]);
+          const row9 = h('div', { class: 'cp-row', 'data-lb': (r.doc_type || dt0) ? 'doc-' + (r.doc_type || dt0) : null, style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' + (r.mandatory ? '' : ' \u00b7 Optional') : rev ? 'Submitted \u00b7 in review' : bad ? (st === 'expired' ? '\u2715 Expired \u2014 send a current one' : '\u2715 Rejected \u2014 fix it and re-upload') + (r.mandatory ? '' : ' (optional)') : (r.mandatory ? 'Required \u2014 not on file' : optHelp(r))), why].filter(Boolean)), act]);
           // The holder block rides with the row while the item is still open — not once it is
           // approved or already in review, where it would only be noise.
           const isCoi9 = (r.doc_type === 'insurance' || r.doc_type === 'hazmat_coi' || /certificate of insurance/i.test(r.name || ''));
