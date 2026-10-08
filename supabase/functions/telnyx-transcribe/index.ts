@@ -1,8 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// telnyx-transcribe v1 (bl_dial_0514) — speech-to-text for one dialer call recording, shown in CC → Dialer calls.
+// telnyx-transcribe v2 (bl_dial_0514) — speech-to-text for one dialer call recording, shown in CC → Dialer calls.
 // verify_jwt = true. Access is decided in Postgres AS THE CALLER (public.dialer_recording_ref: own call or CC staff).
-// Uses the existing TELNYX_API_KEY: Telnyx AI /ai/audio/transcriptions with the recording's short-lived file_url.
+// Uses the existing TELNYX_API_KEY: Telnyx AI /ai/audio/transcriptions. v2: the audio is downloaded here and uploaded as
+// `file` (Telnyx rejected the S3 file_url: "file_url content-length not found"). Telnyx limit: 100 MB per file.
 // Long calls take a while, so the work runs in the background (EdgeRuntime.waitUntil) and the result is saved through
 // public.dialer_transcript_save (service_role only). The browser polls public.dialer_transcript_get.
 // Body: { call_id, force? }  →  { ok, status: 'ready' | 'processing' }
@@ -46,6 +47,11 @@ function normalise(j: any): { text: string; segments: Seg[] } {
 }
 
 async function transcribe(url: string): Promise<{ model: string; language: string; out: any }> {
+  const dl = await fetch(url);
+  if (!dl.ok) throw new Error("recording download " + dl.status);
+  const audio = await dl.blob();
+  if (audio.size > 100 * 1024 * 1024) throw new Error("recording is larger than 100 MB (" + Math.round(audio.size / 1048576) + " MB)");
+  const kind = (dl.headers.get("Content-Type") || "").includes("wav") ? "wav" : "mp3";
   const attempts: Array<{ model: string; language?: string; cfg?: Record<string, unknown>; verbose?: boolean }> = [
     { model: "deepgram/nova-3", language: "multi", cfg: { smart_format: true, punctuate: true, utterances: true, multichannel: true } },
     { model: "deepgram/nova-3", language: "multi", cfg: { smart_format: true, punctuate: true, utterances: true, diarize: true } },
@@ -54,14 +60,14 @@ async function transcribe(url: string): Promise<{ model: string; language: strin
   let last = "";
   for (const a of attempts) {
     const f = new FormData();
-    f.append("model", a.model); f.append("file_url", url);
+    f.append("model", a.model); f.append("file", new File([audio], "call." + kind, { type: kind === "wav" ? "audio/wav" : "audio/mpeg" }));
     if (a.language) f.append("language", a.language);
     if (a.cfg) f.append("model_config", JSON.stringify(a.cfg));
     if (a.verbose) { f.append("response_format", "verbose_json"); f.append("timestamp_granularities[]", "segment"); }
     const r = await fetch(TX + "/ai/audio/transcriptions", { method: "POST", headers: { Authorization: `Bearer ${TELNYX_KEY}` }, body: f });
     const body = await r.text();
     if (r.ok) { try { return { model: a.model, language: a.language || "auto", out: JSON.parse(body) }; } catch { last = "bad json"; continue; } }
-    last = r.status + " " + body.slice(0, 300);
+    last += (last ? " | " : "") + a.model + ": " + r.status + " " + body.slice(0, 200);
   }
   throw new Error("transcription failed: " + last);
 }
