@@ -24,6 +24,21 @@ export function registerAppSW() {
       // so an installed PWA picks up new deploys without a manual reinstall.
       reg.update().catch(() => {});
       setInterval(() => reg.update().catch(() => {}), 60000);
+      // bl_pwa_0532 (8 Oct 2026) — "Update" did nothing inside the Play Store app (TWA). Two causes:
+      //   1. the handler opened window.confirm() first; inside a TWA / standalone Android shell that dialog is
+      //      unreliable (suppressed or auto-dismissed → returns false → nothing happens, no error);
+      //   2. the worker captured when the bar was shown is stale after a later deploy — reg.update() runs every
+      //      60 s, a newer sw.js makes the captured worker `redundant`, and postMessage to it goes nowhere.
+      // Now: no confirm; the worker is resolved at tap time (reg.waiting); the tap always ends in a reload — on
+      // controllerchange, on the worker's own 'activated', or after 5 s with a plain "close and reopen" line.
+      let reloaded = false; let fallbackTimer = null;
+      function doReload() {
+        if (reloaded) return; reloaded = true;
+        if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+        try { sessionStorage.setItem('lb:sw:updated', String(Date.now())); } catch (_) {}
+        location.reload();
+      }
+      const newest = () => reg.waiting || reg.installing || null;
       function promptReload(worker) {
         if (document.getElementById('lb-sw-update')) return;
         const bar = document.createElement('div');
@@ -32,14 +47,24 @@ export function registerAppSW() {
         const msg = document.createElement('span');
         msg.textContent = 'A new version of LoadBoot is available.';
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.textContent = 'Update';
         btn.style.cssText = 'background:#fff;color:#0883F7;border:none;border-radius:9px;padding:8px 16px;font-weight:800;cursor:pointer;flex:none';
-        btn.onclick = () => {
-          if (!window.confirm('Update and reload this tab? Save any unfinished work first.')) return;
-          updateApproved = true; btn.textContent = 'Updating...';
-          if (!worker || worker.state === 'activated') location.reload();
-          else worker.postMessage({ type: 'SKIP_WAITING' });
-        };
+        btn.addEventListener('click', () => {
+          if (btn.disabled) return;
+          updateApproved = true; btn.disabled = true; btn.textContent = 'Updating\u2026';
+          const w = newest() || worker;
+          if (!w || w.state === 'activated' || w.state === 'redundant') { doReload(); return; }
+          try { w.addEventListener('statechange', () => { if (w.state === 'activated') setTimeout(doReload, 150); }); } catch (_) {}
+          try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (_) { doReload(); return; }
+          fallbackTimer = setTimeout(() => {
+            if (reloaded) return;
+            if (navigator.serviceWorker.controller && !newest()) { doReload(); return; }   // it activated without telling us
+            msg.textContent = 'The update is taking longer than usual \u2014 close the app completely and open it again.';
+            btn.disabled = false; btn.textContent = 'Reload now';
+            btn.addEventListener('click', doReload, { once: true });
+          }, 5000);
+        });
         bar.appendChild(msg); bar.appendChild(btn);
         document.body.appendChild(bar);
         try { document.body.classList.add('lb-sw-bar'); } catch (_) {}   // bl_ui_0460 — dialer dock + tour ? lift above the bar
@@ -54,11 +79,10 @@ export function registerAppSW() {
       });
       // check for updates when the app regains focus (mobile: reopened from home screen)
       document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
-      let reloaded = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (reloaded) return;
-        if (!updateApproved) { promptReload(null); return; }
-        reloaded = true; location.reload();
+        if (!updateApproved) { promptReload(null); return; }   // another tab updated — offer the reload, never force it mid-work
+        doReload();
       });
     }).catch(() => {});
   });
