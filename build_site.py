@@ -496,7 +496,7 @@ def _footer_raw():
 <div style="border-top:1px solid #1e293b;padding-top:18px;margin-bottom:20px;font-size:.86rem;line-height:1.8;color:#94a3b8"><b style="color:#e2e8f0">Security notice.</b> LoadBoot never asks for your password by email, and never asks you to &ldquo;confirm&rdquo; or &ldquo;reactivate&rdquo; one. Our mail only ever comes from <b style="color:#e2e8f0">@loadboot.com</b> &mdash; if a message wants you to log in from a link, ignore it and open loadboot.com yourself. <a href="security.html" style="display:inline">How we contact you &rarr;</a></div>
 <div style="border-top:1px solid #1e293b;padding-top:18px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap"><a href="https://play.google.com/store/apps/details?id=com.loadboot.app" rel="noopener" target="_blank" aria-label="Get the LoadBoot app on Google Play" style="display:inline-block;margin:0"><img src="/google-play-badge.svg" alt="Get it on Google Play" width="150" height="45" style="display:block;height:45px;width:auto"></a><span style="font-size:.86rem;color:#94a3b8">The LoadBoot app &mdash; carrier, broker, shipper and agent portals in one install. iPhone: <a href="apps.html" style="display:inline">add to Home Screen</a>.</span></div>
 <div class="foot-bottom"><span>&copy; 2026 LoadBoot LLC &middot; 30 N Gould St Ste N, Sheridan, WY 82801 &middot; D-U-N-S&reg; 149880967 &middot; Serving carriers in all 48 states.</span>
-<span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="delete-account.html" style="display:inline">Delete account</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="sms.html" style="display:inline">Text messages</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
+<span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="delete-account.html" style="display:inline">Delete account</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="sms.html" style="display:inline">Text messages</a> &middot; <a href="sms-brokers.html" style="display:inline">Text messages (brokers)</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
 </div>''' + (AI_RESEARCH_JS if AI_RESEARCH_FOOTER_ENABLED else '') + '''</footer>
 <div class="mcta"><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="contact.html#create" class="btn btn-primary">Get Started</a></div>
 '''
@@ -5654,6 +5654,16 @@ _sms, _sms_schema = _smm.sms_page({'SRC': SRC, 'OUT': OUT})
 page('sms.html', 'Text Messages from LoadBoot \u2014 SMS Opt-In, Keywords and Disclosures | LoadBoot',
  'How carriers opt in to LoadBoot dispatch texts (an optional, unchecked box on the registration form), what we send, message frequency, rates, and how to reply STOP or HELP.',
  'contact.html', _sms, _sms_schema)
+
+# ---- SMS program page for BROKERS (the broker 10DLC campaign; 8 Oct 2026) ----
+# Same shape as sms.html, different opt-in: verbal consent on a recorded dispatch call (the exact script, which must
+# equal app_private.dialer_config.sms_verbal_script word for word) or the broker texting first. The sending number is
+# ONE constant, sms_brokers_module.SMS_BROKER_NUMBER, empty until the owner assigns it. Does not touch sms.html.
+import sms_brokers_module as _smb
+_smb_body, _smb_schema = _smb.sms_brokers_page({'SRC': SRC, 'OUT': OUT})
+page('sms-brokers.html', 'Text Messages from LoadBoot to Freight Brokers \u2014 SMS Opt-In, Keywords and Disclosures | LoadBoot',
+ 'How freight brokers opt in to LoadBoot dispatch texts (verbal consent on a call, or by texting first), what we send, message frequency, rates, and how to reply STOP or HELP.',
+ 'contact.html', _smb_body, _smb_schema)
 
 # ---- Partner Program ----
 pp = svc_hero('LoadBoot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.', tert_label='How it works', tert_href='how-it-works.html', cta_href='/app/partner/', cta_label='Open the Partner Portal &rarr;', cta2_href='create-broker-account.html', cta2_label='Create a broker account')

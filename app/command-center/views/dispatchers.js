@@ -17,7 +17,7 @@ import { threadChat } from '../../shared/thread-chat.js';   // bl_ui_0502
 import { icon } from '../../shared/ui/icons.js';
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm, openDrawer } from '../../shared/ui/components.js';
 import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSop,
-         ccDispatcherUnassign, getCarriersDirectory, ccCarrierPrefs,
+         ccDispatcherUnassign, ccDispatcherUnreachableClear, getCarriersDirectory, ccCarrierPrefs,
          ccDispatcherSetTerms, ccDispatcherBookings, ccDispatcherBookingDecide, ccDispatcherCommissionStatus, ccDispatcherCommissionList,
          ccDispatcherCommissionPay, ccDispatcherQueue, ccDispatcherResendIntro,
          ccDispatcherTestInvite, ccDispatcherTestReview, ccDispatcherTestScore,
@@ -795,6 +795,24 @@ export function renderDispatchers(host) {
         el('button', { class: 'lb-btn lb-btn-ghost', title: 'Re-send the branded "meet your dispatcher" e-mail (what they can see, how a load moves, one-tap confirm)', onClick: async () => { if (!(await askConfirm('Send the intro e-mail to ' + (a.carrier || 'the carrier') + '?', { body: 'Branded e-mail to the owner: what the dispatcher can and cannot see, how a load moves, the one-channel rule, the SOP rules, and a one-tap "Got it" link. Nothing to sign — it runs under their Dispatch Service Agreement.' }))) return; const r = await ccDispatcherResendIntro(a.id).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ intro sent to ' + r.to); rerender(); } }, a.carrier_notified_at ? 'Re-send intro' : 'Send intro e-mail'),
         a.status === 'active' ? el('button', { class: 'lb-btn lb-btn-ghost', onClick: async () => { const reason = await askReason('Pause this assignment — why? (dispatcher + carrier see it)'); if (reason === null) return; const r = await ccDispatcherUnassign(a.id, reason, true).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ paused'); rerender(); } }, 'Pause') : '',
         a.status === 'paused' ? el('span', { class: 'cc-pill cc-pill-amber' }, 'paused — resume by re-assigning or reinstating') : '',
+        // bl_disp_0534 — carrier unreachable: the flag, and after 48 h the one-click end (reason prefilled; nothing ends by itself)
+        a.flagged_at ? el('span', { class: 'lb-pill', style: 'background:#fff4e2;color:#b86e00;border:1px solid #f5d9a8;margin-right:6px', title: 'Flagged ' + new Date(a.flagged_at).toLocaleString() + (a.flag_stats ? ' · ' + (a.flag_stats.attempts || 0) + ' attempts on ' + (a.flag_stats.days || 0) + ' days, none answered' : '') }, 'Carrier unreachable' + (a.unreachable_end_ready ? ' · 48 h' : '')) : '',
+        a.flagged_at && a.status === 'active' ? el('button', { class: 'lb-btn lb-btn-ghost', style: 'margin-right:6px', title: 'They called / texted / e-mailed somewhere LoadBoot cannot see — clear the flag by hand', onClick: async () => {
+          const note = await askReason('Carrier made contact — clear the flag', { optional: true, rows: 3, submitLabel: 'Clear flag', placeholder: 'How did they reach us? (optional)', note: 'Answered calls, inbound calls, WhatsApp/SMS replies, thread messages, e-mail replies and portal logins clear it by themselves within the hour. Use this for anything else.' });
+          if (note === null) return;
+          const r = await ccDispatcherUnreachableClear(a.id, note || null).catch((e) => ({ error: humanizeError(e) }));
+          if (r && r.error) { toast(r.error); return; }
+          toast('✓ flag cleared'); rerender();
+        } }, 'Carrier made contact') : '',
+        a.flagged_at && a.unreachable_end_ready && a.status === 'active' ? el('button', { class: 'lb-btn lb-btn-danger', style: 'margin-right:6px', onClick: async () => {
+          const st = a.flag_stats || {};
+          const pre = 'Carrier unresponsive: ' + (st.attempts || 0) + ' call attempts on ' + (st.days || 0) + ' days with none answered, no reply on any channel, e-mailed ' + (a.flagged_at ? new Date(a.flagged_at).toLocaleDateString() : '') + ', no contact in 48 hours. Assignment ended so the dispatcher can take another carrier; the carrier can restart from their portal.';
+          const reason = await askReason('End assignment — carrier unresponsive', { value: pre, rows: 6, submitLabel: 'End assignment', note: 'Reason is prefilled from the call record; edit if you like. Dispatcher + carrier see it.' });
+          if (reason === null) return;
+          const r = await ccDispatcherUnassign(a.id, reason, false).catch((e) => ({ error: humanizeError(e) }));
+          if (r && r.error) { toast(r.error); return; }
+          toast('✓ ended — carrier unresponsive'); rerender();
+        } }, 'End assignment — carrier unresponsive') : '',
         el('button', { class: 'lb-btn lb-btn-danger', onClick: async () => { if (!(await askConfirm('End this assignment?', { body: 'The carrier frees up for reassignment and is told LoadBoot dispatch covers the truck. Blocked while loads are moving unless you add "force".', danger: true }))) return; const reason = await askReason('Reason (dispatcher + carrier see it)'); if (reason === null) return; const r = await ccDispatcherUnassign(a.id, reason, false).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ ended'); rerender(); } }, 'End'),
       ])) : [el('div', { class: 'cc-sub' }, 'No active carriers assigned.')];
       let picker = '';

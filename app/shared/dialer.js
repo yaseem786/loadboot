@@ -19,7 +19,7 @@ import {
   dialerBootstrap, dialerHeartbeat, dialerLookup, dialerCallStart, dialerCallUpdate, dialerCallTag,
   dialerCallbackSet, dialerHistory, dialerToken, dialerClaimWaiting, dialerRecordingBlob,
  dialerForwardSet, dialerWaAlertSet, dialerSmsThreads, dialerSmsThread, dialerSmsSend,
- dialerSmsConsentState, dialerSmsConsentRecord,
+ dialerSmsConsentState, dialerSmsConsentRecord, dialerSmsClaim,
   waInbox, waThread, waClaim, waStart, waSend, waMediaBlob, waUploadMedia,
   dispatcherCallFieldsRequest, dispatcherCallFields, dispatcherCallFieldApply,   // bl_fill_0535 — field candidates from a call
 } from './api.js';
@@ -98,7 +98,17 @@ function ringStop() { if (ringTimer) { clearInterval(ringTimer); ringTimer = nul
 
 // ---------------------------------------------------------------- styles
 const CSS = `
-body.lb-sw-bar{--lb-lift:72px}   /* bl_ui_0460 — the SW 'new version' bar is 60px tall at the bottom: dock + tour ? move up while it shows */
+body.lb-sw-bar{--lb-lift:72px}
+/* bl_sms_0533 — quoted replies + the branded preview in the Texts tab */
+.lbd-q{display:block;width:100%;box-sizing:border-box;text-align:left;border:0;border-left:3px solid var(--bl,#0883F7);background:rgba(255,255,255,.08);border-radius:6px;padding:5px 8px;margin:0 0 6px;font:inherit;font-size:12.5px;line-height:1.35;color:#fff;cursor:pointer}
+.lbd-q b{display:block;font-size:11px;color:#7dd3fc}.lbd-q span{display:block;color:#cbd7ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lbd-q.na span{font-style:italic}
+.lbd-bub.lbd-hl{outline:2px solid #53bdeb;outline-offset:2px}
+.lbd-rbar{display:flex;align-items:center;gap:8px;padding:6px 8px;margin:6px 0 0;background:rgba(255,255,255,.07);border-left:3px solid var(--bl,#0883F7);border-radius:6px;font-size:12.5px;color:#fff}
+.lbd-rbar .t{flex:1;min-width:0}.lbd-rbar b{display:block;font-size:11px;color:#7dd3fc}.lbd-rbar span{display:block;color:#cbd7ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lbd-pv{margin:6px 0 0;padding:7px 9px;border-radius:8px;background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.14);font-size:12.5px;line-height:1.45;color:#fff;white-space:pre-wrap;word-break:break-word}
+.lbd-pv i{font-style:normal;color:#8ea2c6}.lbd-pvm{font-size:11px;color:var(--mu);margin-top:4px}
+.lbd-menu{position:fixed;z-index:100001;background:#0b1526;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:6px;box-shadow:0 12px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;min-width:150px}
+.lbd-menu button{background:none;border:none;color:#fff;text-align:left;padding:8px 10px;border-radius:6px;font:600 13px Inter,system-ui,sans-serif;cursor:pointer}.lbd-menu button:hover{background:rgba(255,255,255,.1)}   /* bl_ui_0460 — the SW 'new version' bar is 60px tall at the bottom: dock + tour ? move up while it shows */
 .lbd,.lbd *{box-sizing:border-box}
 .lbd{--nv:#10223B;--nv2:#0b1830;--bl:#0883F7;--or:#FC5305;--ok:#22c55e;--bad:#ef4444;--tx:#e8eefc;--mu:#93a4c3;--ln:rgba(255,255,255,.09);
  position:fixed;right:104px;bottom:calc(18px + var(--lb-lift,0px) + env(safe-area-inset-bottom));z-index:2147483000;font:14px/1.4 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--tx)}
@@ -234,7 +244,7 @@ function createDialer() {
     call: null,                                                      // { sdk, row, dir, state, muted, held, pad, since, note, name, number, ctx }
     wrap: null,                                                      // after-call disposition { row, outcome, note, … }
     terms: null, termsTick: false, termsBusy: false,                 // bl_dial_0362: LoadBoot Phone Terms gate { version, required, accepted, points, consent }
-    history: null, histQ: '', micId: localStorage.getItem('lbd_mic') || '', mics: [], showSettings: false, showGuide: false, guideAuto: false, pushOn: null, sms: null, smsTo: null, smsThread: null, smsDraft: '', smsBusy: false, smsConsent: null, smsConsentBusy: false, smsConsentMethod: 'verbal', smsEvidence: '',
+    history: null, histQ: '', micId: localStorage.getItem('lbd_mic') || '', mics: [], showSettings: false, showGuide: false, guideAuto: false, pushOn: null, sms: null, smsTo: null, smsThread: null, smsDraft: '', smsBusy: false, smsConsent: null, smsConsentBusy: false, smsConsentMethod: 'verbal', smsEvidence: '', smsReply: null, smsErr: null,   // bl_sms_0533
     chan: 'sms', wa: null, waId: null, waThread: null, waDraft: '', waBusy: false, waTpl: null, waVars: [],   // bl_wa_0367
   };
   let client = null, SDK = null, hbTimer = null, tickTimer = null, retry = 0, retryTimer = null, lockRelease = null;
@@ -681,15 +691,21 @@ function createDialer() {
       rows.length ? h('div', { style: 'margin-top:6px' }, rows.map(callRow)) : h('div', { class: 'lbd-empty' }, S.histQ ? 'No calls match that search.' : 'No calls yet. Your call log builds itself as you dial.'),
     ]);
   }
-  // ------------------------------------------------------------ text messages (bl_dial_0352)
+  // ------------------------------------------------------------ text messages (bl_dial_0352 → bl_sms_0533)
+  // bl_sms_0533: the Texts tab follows the WhatsApp inbox's rules. A conversation has an OWNER; a dispatcher sees his
+  // own carriers (and their drivers) and nothing else, cannot start a conversation, and every text leaves BRANDED
+  // ("LoadBoot: " … "Reply STOP to opt out.") — the server adds that, this screen only previews it. Quoted replies
+  // work like the WhatsApp ones (menu / double-click / swipe right, Esc cancels).
   const SMS_TPL = ['Hi, this is LoadBoot dispatch following up on our call.', 'Please send the rate confirmation when you can. Thank you!', 'Can you share the pickup number and address?', 'Driver is on the way — I will send an ETA shortly.', 'Delivered. Please confirm and send the signed POD. Thank you!'];
-  let smsTimer = null;
-  function closeThread() { if (smsTimer) { clearInterval(smsTimer); smsTimer = null; } S.smsTo = null; S.smsThread = null; }
+  let smsTimer = null, smsMenu = null;
+  function closeThread() { if (smsTimer) { clearInterval(smsTimer); smsTimer = null; } S.smsTo = null; S.smsThread = null; S.smsErr = null; dropSmsReply(); killSmsMenu(); }
   async function loadThread(quiet) {
     if (!S.smsTo) return;
     try {
       const t = await dialerSmsThread(S.smsTo);
-      if (!t || t.error || !S.smsTo) return;
+      if (!t || !S.smsTo) return;
+      if (t.error) { S.smsErr = t.error; S.smsThread = null; if (!quiet) paint(); return; }
+      S.smsErr = null;
       const had = S.smsThread && S.smsThread.messages ? S.smsThread.messages.length : -1;
       const sig = (x) => (x && x.messages ? x.messages.map((m) => m.id + m.status).join() : '');
       const changed = sig(t) !== sig(S.smsThread);
@@ -706,6 +722,12 @@ function createDialer() {
     dialerSmsConsentState(number).then((r) => { if (S.smsTo === number) { S.smsConsent = r || null; paint(); } }).catch(() => {});
     paint(); loadThread(false);
     smsTimer = setInterval(() => { if (S.open && S.tab === 'texts' && S.smsTo && document.visibilityState === 'visible') loadThread(true); }, 8000);
+  }
+  async function claimSms(id) {
+    const r = await dialerSmsClaim(id);
+    if (!r || r.error) { toast((r && r.error) || 'Could not take that conversation.'); return; }
+    try { const t = await dialerSmsThreads(); if (t && !t.error) S.sms = t; } catch (_) {}
+    if (S.smsTo) loadThread(false); else paint();
   }
   // bl_dial_0390 — shown INSTEAD of the composer when a number has no consent on file. The reason is
   // spelled out, because the usual mistake is assuming a number off a load board is fair game.
@@ -754,23 +776,114 @@ function createDialer() {
       ]),
     ]);
   }
+  // ---- quoted replies (bl_sms_0533, same shape as the WhatsApp ones in dialer-wa.js)
+  function smsWho(m) { const t = S.smsThread; const nm = (t && ((t.thread && t.thread.contact_name) || (t.match && t.match.contact_name))) || S.smsName; return m.direction === 'outbound' ? 'You' : (nm || (S.smsTo ? pretty(S.smsTo) : 'Them')); }
+  function smsQuoteText(q) { return q.missing ? 'Original message not available' : (q.body || '[picture]'); }
+  function smsQuoteEl(m) {
+    const q = m.quote; if (!q) return null;
+    return h('button', { class: 'lbd-q' + (q.missing ? ' na' : ''), type: 'button', title: q.missing ? null : 'Go to the original message',
+      onClick: (e) => { e.stopPropagation(); smsJump(q); } }, [q.missing ? null : h('b', null, smsWho(q)), h('span', null, smsQuoteText(q))]);
+  }
+  function smsJump(q) {
+    const el2 = !q.missing ? root.querySelector('[data-smslist] [data-mid="' + q.id + '"]') : null;
+    if (!el2) { toast('Original message not available'); return; }
+    el2.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el2.classList.add('lbd-hl'); setTimeout(() => el2.classList.remove('lbd-hl'), 1800);
+  }
+  function escSmsReply(e) { if (e.key === 'Escape' && S.smsReply) { e.preventDefault(); clearSmsReply(); } }
+  function dropSmsReply() { S.smsReply = null; document.removeEventListener('keydown', escSmsReply, true); }
+  function setSmsReply(m) {
+    if (!m || !S.smsTo) return;
+    killSmsMenu();
+    S.smsReply = m; document.addEventListener('keydown', escSmsReply, true);
+    paint();
+    const ta = root.querySelector('#lbd-sms'); if (ta) ta.focus();
+  }
+  function clearSmsReply() { dropSmsReply(); paint(); }
+  function smsReplyStrip() {
+    const m = S.smsReply; if (!m) return null;
+    return h('div', { class: 'lbd-rbar', role: 'status' }, [
+      h('div', { class: 't' }, [h('b', null, 'Replying to ' + smsWho(m)), h('span', null, m.body || '[picture]')]),
+      h('button', { class: 'lbd-ib', type: 'button', 'aria-label': 'Cancel reply (Esc)', title: 'Cancel reply (Esc)', onClick: clearSmsReply, style: 'font-size:18px;line-height:1' }, '×'),
+    ]);
+  }
+  function killSmsMenu() { if (smsMenu) { smsMenu.remove(); smsMenu = null; document.removeEventListener('mousedown', smsMenuOutside, true); } }
+  function smsMenuOutside(e) { if (smsMenu && !smsMenu.contains(e.target)) killSmsMenu(); }
+  function showSmsMenu(m, x, y) {
+    killSmsMenu();
+    smsMenu = h('div', { class: 'lbd-menu', role: 'menu' }, [
+      h('button', { type: 'button', role: 'menuitem', onClick: () => setSmsReply(m) }, '↩ Reply'),
+      m.body ? h('button', { type: 'button', role: 'menuitem', onClick: async () => { killSmsMenu(); try { await navigator.clipboard.writeText(m.body); toast('Copied'); } catch (_) { toast('Could not copy'); } } }, 'Copy') : null,
+    ]);
+    document.body.appendChild(smsMenu);
+    const r = smsMenu.getBoundingClientRect();
+    smsMenu.style.left = Math.max(4, Math.min(x, window.innerWidth - r.width - 4)) + 'px';
+    smsMenu.style.top = Math.max(4, Math.min(y, window.innerHeight - r.height - 4)) + 'px';
+    setTimeout(() => document.addEventListener('mousedown', smsMenuOutside, true), 0);
+  }
+  function smsSwipe(node, m) {      // touch: drag a bubble to the right = reply
+    let x0 = 0, y0 = 0, dx = 0, on = false;
+    node.addEventListener('touchstart', (e) => { const p = e.touches[0]; x0 = p.clientX; y0 = p.clientY; dx = 0; on = true; }, { passive: true });
+    node.addEventListener('touchmove', (e) => {
+      if (!on) return; const p = e.touches[0]; const dy = p.clientY - y0; dx = p.clientX - x0;
+      if (Math.abs(dy) > 30 || dx < 0) { dx = 0; on = false; node.style.transform = ''; return; }
+      node.style.transform = 'translateX(' + Math.min(dx, 72) + 'px)';
+    }, { passive: true });
+    const end = () => { const go = on && dx > 56; on = false; node.style.transform = ''; if (go) setSmsReply(m); };
+    node.addEventListener('touchend', end); node.addEventListener('touchcancel', end);
+  }
   function bubble(m) {
     const st = m.direction === 'outbound' ? ({ queued: 'Sending…', sent: 'Sent', delivered: 'Delivered', failed: 'Not sent' + (m.error ? ' — ' + m.error : '') })[m.status] || '' : '';
-    return h('div', { class: 'lbd-bub' + (m.direction === 'outbound' ? ' out' : '') + (m.status === 'failed' ? ' fail' : '') }, [m.body || (m.media ? '[picture]' : ''), h('small', null, [ago(m.at), st ? ' · ' + st : ''].join(''))]);
+    const b = h('div', { class: 'lbd-bub' + (m.direction === 'outbound' ? ' out' : '') + (m.status === 'failed' ? ' fail' : ''), 'data-mid': m.id,
+      onDblclick: () => setSmsReply(m), onContextmenu: (e) => { e.preventDefault(); showSmsMenu(m, e.clientX, e.clientY); } }, [
+      smsQuoteEl(m), m.body || (m.media ? '[picture]' : ''), h('small', null, [ago(m.at), st ? ' · ' + st : ''].join(''))]);
+    smsSwipe(b, m);
+    return b;
   }
   function paintMsgs(toEnd) {
     const box = root.querySelector('[data-smslist]'); if (!box) return;
     const ms = (S.smsThread && S.smsThread.messages) || [];
     const near = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
-    mount(box, ms.length ? ms.map(bubble) : h('div', { class: 'lbd-empty' }, S.smsThread ? 'No messages yet. Say hello.' : 'Loading…'));
+    mount(box, ms.length ? ms.map(bubble) : h('div', { class: 'lbd-empty' }, S.smsThread ? 'No messages yet.' : 'Loading…'));
     if (toEnd || near) box.scrollTop = box.scrollHeight;
+  }
+  // ---- the branded text, exactly as the server will send it (app_private.sms_compose), and its segment count
+  const GSM = /^[ -~\n\r@£$¥èéùìòÇØøÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ¤¡ÄÖÑÜ§¿äöñüà€]*$/;
+  function smsFinal(draft) {
+    const t = S.smsThread; const c = (t && t.compose) || { prefix: 'LoadBoot: ', suffix: ' Reply STOP to opt out.', first: false };
+    const d = (draft || '').trim();
+    const pre = /^\s*loadboot\b/i.test(d) ? '' : (c.prefix || 'LoadBoot: ');
+    const sfx = c.suffix || '';
+    const has = c.first ? (sfx && d.includes(sfx.trim())) : /reply\s+stop/i.test(d);
+    return { pre, body: d, suf: has ? '' : sfx, first: !!c.first };
+  }
+  function smsSegments(text) {
+    const gsm = GSM.test(text);
+    const len = gsm ? text.replace(/[\^{}\\\[\]~|€]/g, 'xx').length : text.length;
+    const one = gsm ? 160 : 70, many = gsm ? 153 : 67;
+    const n = len <= one ? 1 : Math.ceil(len / many);
+    return { n, len, gsm, cap: n === 1 ? one : many * n };
+  }
+  function paintSmsPreview() {
+    const pv = root.querySelector('[data-smspv]'); if (!pv) return;
+    const f = smsFinal(S.smsDraft);
+    const full = f.pre + f.body + f.suf;
+    const seg = smsSegments(full);
+    mount(pv, [h('i', null, f.pre), f.body || h('i', null, '…'), h('i', null, f.suf)]);
+    const m = root.querySelector('[data-smsseg]');
+    if (m) m.textContent = (f.body ? seg.n + (seg.n === 1 ? ' segment' : ' segments') + ' · ' + seg.len + '/' + seg.cap + ' ' + (seg.gsm ? '(GSM-7, 160/153)' : '(Unicode, 70/67)') : 'What goes out, word for word') + (f.first ? ' · first text to this number carries the full disclosure' : '');
   }
   async function sendText() {
     const body = (S.smsDraft || '').trim(); if (!body || S.smsBusy || !S.smsTo) return;
+    const t = S.smsThread;
     S.smsBusy = true; paint();
     try {
-      const r = await dialerSmsSend(S.smsTo, body);
-      if (r && r.ok) { S.smsDraft = ''; } else toast((r && r.error) || 'Could not send that text.');
+      const r = await dialerSmsSend(S.smsTo, body, { thread_id: t && t.thread ? t.thread.id : null, reply_to: S.smsReply ? S.smsReply.id : null });
+      if (r && r.ok) { S.smsDraft = ''; dropSmsReply(); }
+      else {
+        toast((r && r.error) || 'Could not send that text.');
+        if (r && r.needs_consent) S.smsConsent = await dialerSmsConsentState(S.smsTo).catch(() => S.smsConsent);
+      }
     } catch (e) { toast((e && e.message) || 'Could not send that text.'); }
     S.smsBusy = false; await loadThread(false);
     const ta = root.querySelector('#lbd-sms'); if (ta) ta.focus();
@@ -787,13 +900,24 @@ function createDialer() {
         title: waPanel.isMax() ? 'Shrink' : 'Full screen',
         onClick: () => { waPanel.setMax(!waPanel.isMax()); paint(); } }, waPanel.isMax() ? 'Shrink' : 'Full screen')]));
   }
+  function smsRow(r, waiting) {
+    return h('div', { class: 'lbd-row', style: 'cursor:pointer', role: 'button', tabindex: '0', onClick: () => openThread(r.number, r.contact_name || ''), onKeydown: (e) => { if (e.key === 'Enter') openThread(r.number, r.contact_name || ''); } }, [
+      h('div', { class: 'd' + (r.last_direction === 'inbound' ? ' in' : '') }, ic('msg', 16)),
+      h('div', { class: 'm' }, [h('b', null, r.contact_name || pretty(r.number)), h('span', null, (r.last_direction === 'outbound' ? 'You: ' : '') + (r.last_body || '[picture]'))]),
+      h('span', { style: 'font-size:11px;color:var(--mu);flex:none' }, ago(r.last_at)),
+      waiting ? h('button', { class: 'lbd-btn ghost sm', type: 'button', onClick: (e) => { e.stopPropagation(); claimSms(r.id); } }, 'Take it') : null,
+      r.unread ? h('span', { class: 'lbd-badge' }, String(r.unread)) : null,
+    ]);
+  }
   function vTexts() {
     if (S.chan === 'wa') return h('div', null, [vChan(), waPanel.view()]);
-    const sm = S.sms || { enabled: false, threads: [] };
+    const sm = S.sms || { enabled: false, threads: [], unassigned: [] };
     const off = !sm.enabled ? h('div', { class: 'lbd-note', style: 'margin:0 0 10px' }, 'Text messaging switches on once LoadBoot’s carrier registration (10DLC) is approved. Texts people send you still arrive here.') : null;
     if (S.smsTo) {
-      const t = S.smsThread; const name = (t && t.match && t.match.contact_name) || S.smsName || '';
-      const out = t && t.opted_out;
+      const t = S.smsThread; const th = (t && t.thread) || null;
+      const name = (th && th.contact_name) || (t && t.match && t.match.contact_name) || S.smsName || '';
+      const out = (t && t.opted_out) || (th && th.opted_out);
+      const canSend = sm.enabled && !S.smsBusy && !!(S.smsDraft || '').trim();
       const view = h('div', null, [
         h('div', { class: 'lbd-th' }, [
           h('button', { class: 'lbd-ib', 'aria-label': 'Back to all texts', onClick: () => { closeThread(); refresh(); } }, ic('back', 18)),
@@ -801,31 +925,38 @@ function createDialer() {
           h('button', { class: 'lbd-ib', 'aria-label': 'Call ' + pretty(S.smsTo), onClick: () => dial(S.smsTo, { source: 'texts', contact_name: name }) }, ic('phone', 17)),
         ]),
         off,
+        S.smsErr ? h('div', { class: 'lbd-note', style: 'margin:0 0 8px' }, S.smsErr) : null,
+        th && !th.owner_user_id ? h('div', { class: 'lbd-note', style: 'margin:0 0 8px' }, ['Nobody has taken this carrier’s conversation yet. ', h('button', { class: 'lbd-btn ghost sm', onClick: () => claimSms(th.id) }, 'Take it')]) : null,
         h('div', { class: 'lbd-msgs', 'data-smslist': '1', role: 'log', 'aria-live': 'polite' }),
-        out ? h('div', { class: 'lbd-note', style: 'margin:6px 0 0' }, 'This number replied STOP. It cannot be texted until it sends START.')
+        S.smsErr ? null
+        : out ? h('div', { class: 'lbd-note', style: 'margin:6px 0 0' }, 'This number replied STOP. It cannot be texted until it sends START.')
+        : th && th.broker_blocked ? h('div', { class: 'lbd-note', style: 'margin:6px 0 0' }, [h('b', null, 'Broker texting not enabled yet.'), ' Brokers can be texted once LoadBoot’s broker messaging campaign is approved. Call or email them for now.'])
         : !(S.smsConsent && S.smsConsent.consented) ? vConsent() : [
-          h('div', { class: 'lbd-tpl' }, SMS_TPL.map((x) => h('button', { type: 'button', onClick: () => { S.smsDraft = (S.smsDraft ? S.smsDraft.replace(/\s*$/, ' ') : '') + x; const ta = root.querySelector('#lbd-sms'); if (ta) { ta.value = S.smsDraft; ta.focus(); } paintSend(); } }, x.length > 34 ? x.slice(0, 32) + '…' : x))),
+          smsReplyStrip(),
+          h('div', { class: 'lbd-tpl' }, SMS_TPL.map((x) => h('button', { type: 'button', onClick: () => { S.smsDraft = (S.smsDraft ? S.smsDraft.replace(/\s*$/, ' ') : '') + x; const ta = root.querySelector('#lbd-sms'); if (ta) { ta.value = S.smsDraft; ta.focus(); } paintSend(); paintSmsPreview(); } }, x.length > 34 ? x.slice(0, 32) + '…' : x))),
           h('div', { class: 'lbd-comp' }, [
-            h('textarea', { class: 'lbd-in lbd-ta-grow', id: 'lbd-sms', rows: '1', maxlength: '1000', placeholder: 'Write a text… (Shift+Enter = new line)', 'aria-label': 'Message', onInput: (e) => { S.smsDraft = e.target.value; growTa(e.target); paintSend(); }, onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } } }, S.smsDraft),
-            h('button', { class: 'lbd-send', 'data-smssend': '1', 'aria-label': 'Send text', disabled: S.smsBusy || !(S.smsDraft || '').trim() || !sm.enabled, onClick: sendText }, ic('send', 17)),
+            h('textarea', { class: 'lbd-in lbd-ta-grow', id: 'lbd-sms', rows: '1', maxlength: '1000', placeholder: 'Write a text… (Shift+Enter = new line)', 'aria-label': 'Message',
+              onInput: (e) => { S.smsDraft = e.target.value; growTa(e.target); paintSend(); paintSmsPreview(); },
+              onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } else if (e.key === 'Escape' && S.smsReply) { e.preventDefault(); clearSmsReply(); } } }, S.smsDraft),
+            h('button', { class: 'lbd-send', 'data-smssend': '1', 'aria-label': 'Send text', disabled: !canSend, onClick: sendText }, ic('send', 17)),
           ]),
+          // what actually leaves: the LoadBoot wording greyed around the dispatcher's words, and the segment count
+          h('div', { class: 'lbd-pv', 'data-smspv': '1', 'aria-label': 'Text as it will be sent' }),
+          h('div', { class: 'lbd-pvm', 'data-smsseg': '1' }),
         ],
       ]);
-      setTimeout(() => paintMsgs(true), 0);
+      setTimeout(() => { paintMsgs(true); paintSmsPreview(); }, 0);
       return view;
     }
-    const rows = sm.threads || [];
-    const start = h('div', { class: 'lbd-comp', style: 'margin:0 0 8px' }, [
-      h('input', { class: 'lbd-in', id: 'lbd-smsnew', type: 'tel', inputmode: 'tel', placeholder: 'Text a new number…', 'aria-label': 'Number to text', onKeydown: (e) => { if (e.key === 'Enter') { const v = digits(e.target.value); if (v.length >= 10) openThread(e.target.value, ''); } } }),
+    const rows = sm.threads || [], pool = sm.unassigned || [];
+    const start = sm.role === 'staff' ? h('div', { class: 'lbd-comp', style: 'margin:0 0 8px' }, [
+      h('input', { class: 'lbd-in', id: 'lbd-smsnew', type: 'tel', inputmode: 'tel', placeholder: 'Text a number (Command Center only)…', 'aria-label': 'Number to text', onKeydown: (e) => { if (e.key === 'Enter') { const v = digits(e.target.value); if (v.length >= 10) openThread(e.target.value, ''); } } }),
       h('button', { class: 'lbd-send', 'aria-label': 'Start text', onClick: () => { const el2 = root.querySelector('#lbd-smsnew'); const v = el2 ? el2.value : ''; if (digits(v).length >= 10) openThread(v, ''); else toast('Enter a 10-digit US number.'); } }, ic('msg', 17)),
-    ]);
+    ]) : h('div', { class: 'lbd-note', style: 'margin:0 0 8px' }, 'Texts from your carriers and their drivers land here. Brokers and unknown numbers go to Command Center, who can hand a conversation to you.');
     return h('div', null, [vChan(), off, start,
-      rows.length ? h('div', null, rows.map((r) => h('div', { class: 'lbd-row', style: 'cursor:pointer', role: 'button', tabindex: '0', onClick: () => openThread(r.number, r.contact_name || ''), onKeydown: (e) => { if (e.key === 'Enter') openThread(r.number, r.contact_name || ''); } }, [
-        h('div', { class: 'd' + (r.direction === 'inbound' ? ' in' : '') }, ic('msg', 16)),
-        h('div', { class: 'm' }, [h('b', null, r.contact_name || pretty(r.number)), h('span', null, (r.direction === 'outbound' ? 'You: ' : '') + (r.body || '[picture]'))]),
-        h('span', { style: 'font-size:11px;color:var(--mu);flex:none' }, ago(r.at)),
-        r.unread ? h('span', { class: 'lbd-badge' }, String(r.unread)) : null,
-      ]))) : h('div', { class: 'lbd-empty' }, 'No texts yet. Brokers, carriers and drivers you text show up here, one thread each.'),
+      pool.length ? h('div', null, [h('div', { style: 'font:700 11px Inter,system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--mu);margin:12px 0 4px' }, 'Your carriers · waiting · ' + pool.length), ...pool.map((r) => smsRow(r, true))]) : null,
+      rows.length ? h('div', null, [pool.length ? h('div', { style: 'font:700 11px Inter,system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--mu);margin:12px 0 4px' }, 'Yours') : null, ...rows.map((r) => smsRow(r, false))])
+        : (!pool.length ? h('div', { class: 'lbd-empty' }, 'No texts yet. Your carriers and their drivers reach you here, one thread each.') : null),
     ]);
   }
   function paintSend() { const b = root.querySelector('[data-smssend]'); if (b) b.disabled = S.smsBusy || !(S.smsDraft || '').trim() || !(S.sms && S.sms.enabled); }

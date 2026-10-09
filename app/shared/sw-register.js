@@ -1,9 +1,14 @@
 // lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
-// sw-register.js — register the app service worker (scope /app/) and surface an
-// instant "update available" prompt so installed PWAs (mobile home-screen app)
-// pick up new deploys immediately instead of only on a cold reopen.
+// sw-register.js — register the app service worker (scope /app/) and keep installed PWAs
+// (mobile home-screen app) on the newest deploy.
 // The SW is network-first for the app shell and NEVER caches API/document/money/
 // location/profile data (those are cross-origin Supabase calls).
+//
+// 8 Oct 2026 (owner): NO "A new version of LoadBoot is available" banner in any portal. Big-brand apps
+// update by themselves; so does LoadBoot now. A newly installed worker is told to take over at once
+// (SKIP_WAITING) and the page is NEVER reloaded under the user's hands — nothing they are typing is
+// lost. The next navigation or reopen simply runs the new build. The shell is network-first anyway,
+// so a fresh load is always the latest deploy even before the worker switches.
 export function registerAppSW() {
   if (!('serviceWorker' in navigator)) return;
   // DEV HOSTS: never register the service worker on localhost / LAN IPs — its

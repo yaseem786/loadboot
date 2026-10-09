@@ -510,6 +510,8 @@ export const ccDispatcherSetRejectReasons = (user, reasons) => rpc('cc_dispatche
 export const ccDispatcherAssign = (dispatcher, carrierOrg, sop) => rpc('cc_dispatcher_assign', { p_dispatcher: dispatcher, p_carrier_org: carrierOrg, p_sop: sop ?? {} });
 export const ccDispatcherSop = (assignment, sop) => rpc('cc_dispatcher_sop', { p_assignment: assignment, p_sop: sop ?? {} });
 export const ccDispatcherUnassign = (assignment, reason, pause) => rpc('cc_dispatcher_unassign', { p_assignment: assignment, p_reason: reason ?? null, p_pause: !!pause });
+// bl_disp_0534 — staff clear the carrier-unreachable flag by hand (the carrier reached LoadBoot somewhere the rule cannot see)
+export const ccDispatcherUnreachableClear = (assignment, note) => rpc('cc_dispatcher_unreachable_clear', { p_assignment: assignment, p_note: note ?? null });
 export const ccDispatcherSalarySet = (user, base, perTruck, currency) => rpc('cc_dispatcher_salary_set', { p_user: user, p_base: base, p_per_truck: perTruck, p_currency: currency ?? 'PKR' });
 export const ccDispatcherSalaryRun = (user, period, bonus, kpi, note) => rpc('cc_dispatcher_salary_run', { p_user: user, p_period: period, p_bonus: bonus ?? 0, p_kpi: kpi ?? {}, p_note: note ?? null });
 export const ccDispatcherSalaryStatus = (id, status) => rpc('cc_dispatcher_salary_status', { p_id: id, p_status: status });
@@ -1552,12 +1554,18 @@ export const ccDialerCalls = (p) => rpc('cc_dialer_calls', { p: p ?? {} });
 // bl_dial_0352 — dispatcher text messages (same line as their calls). Sending goes through the telnyx-sms edge function.
 export const dialerSmsThreads = () => rpc('dialer_sms_threads', {});
 export const dialerSmsThread = (number, before) => rpc('dialer_sms_thread', { p_number: number, p_before: before ?? null });
-export async function dialerSmsSend(to, body) {
+// bl_sms_0533 — the conversation has an owner: pass thread_id (and reply_to for a quoted reply). The server brands the
+// text ("LoadBoot: " … "Reply STOP to opt out.") and picks the line + messaging profile; the browser never decides those.
+export async function dialerSmsSend(to, body, opts) {
   const sb = await getClient();
-  const { data, error } = await sb.functions.invoke('telnyx-sms', { body: { to, body } });
+  const o = opts || {};
+  const { data, error } = await sb.functions.invoke('telnyx-sms', { body: { to, body, thread_id: o.thread_id || null, reply_to: o.reply_to || null } });
   if (error) throw await _fnError(error, 'Could not send that text');
   return data;
 }
+export const dialerSmsClaim = (id) => rpc('dialer_sms_claim', { p_id: id });
+export const ccSmsThreads = (p) => rpc('cc_sms_threads', { p: p ?? {} });
+export const ccSmsAssign = (id, userId) => rpc('cc_sms_assign', { p_id: id, p_user: userId ?? null });
 export const ccDialerSms = (p) => rpc('cc_dialer_sms', { p: p ?? {} });
 // bl_dial_0390 — SMS consent registry. A number cannot be texted until it has a live consent row;
 // the rule is a trigger on dialer_messages, so these RPCs are the UI's way to see and create one.
@@ -1575,7 +1583,7 @@ export const waInbox = () => rpc('wa_inbox', {});
 export const waThread = (id, before) => rpc('wa_thread', { p_id: id, p_before: before ?? null });
 export const waClaim = (id) => rpc('wa_claim', { p_id: id });
 export const waStart = (number, name) => rpc('wa_start', { p_number: number, p_contact_name: name ?? null });
-export async function waSend(body) {                       // { thread_id | to, body } or { thread_id | to, template: { name, vars } }
+export async function waSend(body) {                       // { thread_id | to, body } or { thread_id | to, template: { name, vars } }; + reply_to (bl_wa_0532, any kind)
   const sb = await getClient();
   const { data, error } = await sb.functions.invoke('telnyx-whatsapp', { body: body || {} });
   if (error) throw await _fnError(error, 'Could not send that WhatsApp message');

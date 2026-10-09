@@ -9,7 +9,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm } from '../../shared/ui/components.js';
-import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerNumbers, ccDialerNumberAdd, ccDialerNumberRemove, ccDialerConfigSet, dialerRecordingBlob, ccDialerSms, dialerTranscribe, dialerTranscriptGet } from '../../shared/api.js';
+import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerNumbers, ccDialerNumberAdd, ccDialerNumberRemove, ccDialerConfigSet, dialerRecordingBlob, ccDialerSms, dialerTranscribe, dialerTranscriptGet, ccSmsThreads, ccSmsAssign } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { getClient } from '../../shared/supabaseClient.js';
 
@@ -106,16 +106,52 @@ export async function renderDialerLive(host) {
   }
 
   // ---- text messages log (bl_dial_0352): every text a dispatcher sent or received, newest first
-  let smsRows = [], smsQ = '', smsT = null;
+  let smsRows = [], smsQ = '', smsT = null, smsThreads = [], smsUn = 0;
   async function loadSms() {
     try { const r = await ccDialerSms({ dispatcher: F.dispatcher, q: smsQ, limit: 100 }); if (r && r.error) throw new Error(r.error); smsRows = (r && r.messages) || []; }
     catch (e) { smsRows = []; }
+    // bl_sms_0533 — the conversations and who owns them; an owner-less one is Command Center's to answer or hand out
+    try { const r = await ccSmsThreads({ dispatcher: F.dispatcher, q: smsQ, limit: 200 }); if (r && r.error) throw new Error(r.error); smsThreads = (r && r.threads) || []; smsUn = (r && r.unassigned) || 0; }
+    catch (e) { smsThreads = []; smsUn = 0; }
     paintSms();
+  }
+  async function assignSms(t, userId) {
+    try {
+      const r = await ccSmsAssign(t.id, userId || null);
+      if (r && r.error) throw new Error(r.error);
+      toast(userId ? 'Conversation handed to ' + ((r.thread && r.thread.owner) || 'them') : 'Conversation back in the Command Center queue');
+      await loadSms();
+    } catch (e) { toast(humanizeError(e), 'error'); }
+  }
+  function smsThreadRows() {
+    const ds = ov && ov.dispatchers ? ov.dispatchers : [];
+    const dname = (d) => d.full_name || d.name || d.contact_name || d.email || d.user_id;
+    return el('div', { style: 'overflow-x:auto' }, el('table', { class: 'dl-tbl' }, [
+      el('thead', null, el('tr', null, ['Last', 'Who', 'Owner', 'Last message', 'Consent', 'Hand to'].map((x) => el('th', null, x)))),
+      el('tbody', null, smsThreads.map((t) => el('tr', null, [
+        el('td', { style: 'white-space:nowrap' }, et(t.last_at)),
+        el('td', null, [el('b', null, t.contact_name || pretty(t.number)), el('div', { style: 'font-size:12px;opacity:.7' }, [t.contact_name ? pretty(t.number) : '', t.contact_kind ? ' · ' + t.contact_kind : '', t.carrier ? ' · ' + t.carrier : ''].join(''))]),
+        el('td', null, t.owner_user_id ? el('span', { class: 'dl-pill g' }, t.owner || 'assigned') : el('span', { class: 'dl-pill r', title: 'Nobody sees this but Command Center' }, 'Unassigned')),
+        el('td', { style: 'max-width:380px;white-space:pre-wrap' }, [(t.last_direction === 'outbound' ? 'LoadBoot: ' : ''), t.last_body || '', t.unread ? el('span', { class: 'dl-pill b', style: 'margin-left:6px' }, t.unread + ' new') : null]),
+        el('td', null, t.opted_out ? el('span', { class: 'dl-pill r' }, 'STOP') : t.consented ? el('span', { class: 'dl-pill g', title: t.consent_method || '' }, 'yes') : el('span', { class: 'dl-pill m' }, 'none')),
+        el('td', null, el('select', { class: 'dl-in', 'aria-label': 'Hand this conversation to', onChange: (e) => { const v = e.target.value; if (v !== (t.owner_user_id || '')) assignSms(t, v || null); } }, [
+          el('option', { value: '', selected: !t.owner_user_id }, 'Command Center (unassigned)'),
+          ...ds.map((d) => el('option', { value: d.user_id, selected: d.user_id === t.owner_user_id }, dname(d))),
+        ])),
+      ]))),
+    ]));
   }
   function paintSms() {
     const SS = { queued: ['sending', 'a'], sent: ['sent', 'b'], delivered: ['delivered', 'g'], failed: ['not sent', 'r'], received: ['received', 'm'] };
     const keep = document.activeElement && document.activeElement.id === 'dl-smsq';
-    mount(smsEl, el('div', { class: 'dl-card', style: 'margin-top:14px' }, [
+    mount(smsEl, [el('div', { class: 'dl-card', style: 'margin-top:14px' }, [
+      el('div', { class: 'dl-filters' }, [
+        el('b', { style: 'align-self:center;margin-right:6px' }, 'Text conversations'),
+        smsUn ? el('span', { class: 'dl-pill r' }, smsUn + ' unassigned') : null,
+        el('span', { class: 'hint', style: 'align-self:center;opacity:.75' }, 'Carriers and their drivers route to their dispatcher by themselves; brokers and unknown numbers wait here until you hand them to someone.'),
+      ]),
+      smsThreads.length ? smsThreadRows() : el('div', { style: 'opacity:.7;padding:8px 0' }, 'No text conversations yet.'),
+    ]), el('div', { class: 'dl-card', style: 'margin-top:14px' }, [
       el('div', { class: 'dl-filters' }, [
         el('b', { style: 'align-self:center;margin-right:6px' }, 'Text messages'),
         el('input', { class: 'dl-in', id: 'dl-smsq', type: 'search', placeholder: 'Search number, name or text', 'aria-label': 'Search texts', value: smsQ, style: 'flex:1;min-width:180px', onInput: (e) => { smsQ = e.target.value; clearTimeout(smsT); smsT = setTimeout(loadSms, 350); } }),
@@ -129,7 +165,7 @@ export async function renderDialerLive(host) {
           el('td', null, [el('span', { class: 'dl-pill ' + st[1] }, st[0]), m.error ? el('div', { style: 'font-size:12px;opacity:.75;max-width:220px' }, m.error) : null]),
         ]); })),
       ])) : el('div', { style: 'opacity:.7;padding:8px 0' }, smsQ ? 'No texts match that search.' : 'No text messages yet.'),
-    ]));
+    ])]);
     if (keep) { const i = smsEl.querySelector('#dl-smsq'); if (i) { i.focus(); try { i.setSelectionRange(i.value.length, i.value.length); } catch (_) {} } }
   }
 
@@ -418,11 +454,14 @@ export async function renderDialerLive(host) {
       ['off', 'Off — no WhatsApp call alerts'],
     ].map(([v, t]) => el('option', { value: v, selected: v === waMode }, t)));
     const mprof = el('input', { class: 'dl-in', value: c.telnyx_messaging_profile_id || '', placeholder: 'optional — Telnyx messaging profile id' });
+    // bl_sms_0533 — broker texts ride their own 10DLC campaign / messaging profile, and stay blocked until it is approved
+    const bprof = el('input', { class: 'dl-in', value: c.telnyx_broker_messaging_profile_id || '', placeholder: 'empty until the broker campaign is approved' });
+    const bsms = chk(c.sms_broker_enabled);
     const err = el('div', { style: 'color:#b91c1c;font-size:13px' });
     const save = el('button', { class: 'dl-btn p', onClick: async () => {
       save.disabled = true; err.textContent = '';
       try {
-        const r = await ccDialerConfigSet({ sms_enabled: sms.checked, telnyx_messaging_profile_id: mprof.value, enabled: en.checked, telnyx_connection_id: conn.value, record_calls: rec.checked, recording_notice: beep.checked, ring_timeout_secs: Number(ring.value) || 25, fallback_number: fb.value, voicemail_greeting: vm.value, max_calls_per_hour: Number(cap.value) || 60, allow_international: intl.checked, wa_call_alerts: waAlerts.value });
+        const r = await ccDialerConfigSet({ sms_enabled: sms.checked, telnyx_messaging_profile_id: mprof.value, telnyx_broker_messaging_profile_id: bprof.value, sms_broker_enabled: bsms.checked, enabled: en.checked, telnyx_connection_id: conn.value, record_calls: rec.checked, recording_notice: beep.checked, ring_timeout_secs: Number(ring.value) || 25, fallback_number: fb.value, voicemail_greeting: vm.value, max_calls_per_hour: Number(cap.value) || 60, allow_international: intl.checked, wa_call_alerts: waAlerts.value });
         if (r && r.error) throw new Error(r.error); dr.close(); toast('Phone settings saved'); await load();
       } catch (e) { err.textContent = humanizeError(e); save.disabled = false; }
     } }, 'Save settings');
@@ -434,6 +473,8 @@ export async function renderDialerLive(host) {
       el('label', null, ['Ring the dispatcher for (seconds)', ring]),
       el('label', { class: 'row' }, [sms, el('span', null, ['Text messages (SMS) switched on ', el('small', null, '— only after the 10DLC campaign is APPROVED and every dispatcher number is attached to it; before that carriers block the texts')])]),
       el('label', null, ['Telnyx messaging profile id', mprof, el('small', null, 'Telnyx portal → Messaging → Messaging Profiles → “LoadBoot Dispatch” → its id. Not a secret. Its inbound webhook must point to the same telnyx-hook URL as the voice apps.')]),
+      el('label', null, ['Telnyx messaging profile id — brokers', bprof, el('small', null, 'The profile attached to the BROKER 10DLC campaign (see /sms-brokers.html). Texts to a broker go out on this one; carriers and drivers use the profile above.')]),
+      el('label', { class: 'row' }, [bsms, el('span', null, ['Broker texting switched on ', el('small', null, '— only after the broker campaign is APPROVED. Until then every text to a broker is refused with “Broker texting not enabled yet”.')])]),
       el('label', null, ['WhatsApp call alerts to dispatchers', waAlerts, el('small', null, 'Sent to each dispatcher’s own WhatsApp (any country) so they know about calls even when signed out. The missed-call message carries Riley’s summary when she answered. Nothing goes out until Meta approves the two templates (WhatsApp → Templates). A dispatcher can change their number or switch it off in the phone’s Settings.')]),
       el('label', null, ['If the dispatcher does not answer, send the caller to', fb, el('small', null, 'Leave empty for voicemail. Either way the dispatcher gets a callback task.')]),
       el('label', null, ['Voicemail greeting (spoken)', vm]),
