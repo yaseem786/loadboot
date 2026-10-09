@@ -105,3 +105,16 @@ portals (until then the DB side is live and the old UI simply does not show the 
 3. Andrew's W-9 rows: THE WAY HOME and SPRINT SHIFT read "Signed 30 Sep 2026" / "Signed 6 Oct 2026" the moment the function is in.
 4. The next 8 AM report is already EFFORT/OUTCOME; the next Sync (or 03:40 UTC) fills `sends_30d` for every key.
 5. Deploy the three JS files with the next site build (CC + agent portal).
+
+## 5. Prod check — 9 Oct 2026 (next session, read-only)
+
+- GABE LOGISTICS LLC assignment `1618eeb2-d62a-4564-8df2-3ef47d2daaf7` (active since 26 Sep): **flagged 8 Oct 22:23 UTC**,
+  `flag_reason = carrier_unreachable`, `flag_stats` = 7 attempts / 0 answered / 3 voicemails over 3 days, `qualifies = true`,
+  `flag_cleared_at` null. The CC "End assignment — carrier unresponsive" button appears 48 h later → **10 Oct ~22:23 UTC**.
+- Owner e-mail: `message_deliveries` key `disp.trial.alert:carrier_unreachable:1618eeb2…:20261008` → **delivered**.
+  Catalog row `dispatcher.carrier.unreachable`: status live, send_mode live, `sends_30d = 1`, `sends_total = 1`.
+- Crons on prod: `lb-disp-unreachable` (`23 * * * *`) and `lb-email-catalog-sync` (`40 3 * * *`) both active.
+- Anon SECURITY DEFINER names: prod 36 / staging 35, name sets identical to the baseline (+ `retell_inbound` on prod only).
+- Staging cleanup (§3 SQL) is **still pending** — the MCP SQL tool holds DELETEs for a confirmation a cloud session cannot
+  give (timed out again on 9 Oct; row counts unchanged: 13 calls, 2 assignments, 1 message, 1 paused day, 1 notification,
+  1 delivery, backup table present). Run §3 in the staging SQL editor by hand.
