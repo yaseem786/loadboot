@@ -2995,8 +2995,8 @@ async function appView(user) {
         } }
       btn9.disabled = true; btn9.textContent = 'Checking\u2026';
       // bl_doc_0539 (O.1): this path skipped the AI pre-check entirely — the reviewer saw "—" and could not tell why.
-      const pv9 = await lbAiPrecheck(f, typeSel.value);
-      if (!(await lbPrecheckGate(pv9))) { btn9.disabled = false; btn9.textContent = 'Attach'; upMsg.textContent = 'Nothing was submitted — fix it first, then attach the corrected file.'; return; }
+      const pv9 = await lbCheckUpload(f, typeSel);
+      if (pv9 === false) { btn9.disabled = false; btn9.textContent = 'Attach'; upMsg.textContent = 'Nothing was submitted — fix it first, then attach the corrected file.'; return; }
       btn9.textContent = 'Uploading\u2026';
       try {
         const m = await uploadDocument(f, typeSel.value);
@@ -3933,8 +3933,8 @@ async function appView(user) {
               const f9 = bIn9.files && bIn9.files[0]; if (!f9) { bSt9.textContent = 'Choose the NOA PDF first.'; return; }
               b9.disabled = true; b9.textContent = 'Checking\u2026';
               // bl_doc_0539 (O.1): the dashboard NOA card skipped the pre-check (prod 9 Oct 19:54 — no call at all).
-              const pv9 = await lbAiPrecheck(f9, 'noa');
-              if (!(await lbPrecheckGate(pv9))) { b9.disabled = false; b9.textContent = 'Upload NOA'; bSt9.textContent = 'Nothing was submitted — fix it with your factor first.'; return; }
+              const pv9 = await lbCheckUpload(f9, 'noa');
+              if (pv9 === false) { b9.disabled = false; b9.textContent = 'Upload NOA'; bSt9.textContent = 'Nothing was submitted — fix it with your factor first.'; return; }
               b9.textContent = 'Uploading\u2026';
               try {
                 const m9 = await uploadDocument(f9, 'noa');
@@ -7919,11 +7919,20 @@ function tripStepper(status) {
   // saving nothing. Prod had 4 real verdicts on ~28 eligible uploads since 30 Sep: the 45 s abort fired while Gemini
   // was still thinking, and the upload went through looking exactly like "never checked". The server now answers in
   // ≤ 38 s, so 50 s here is only a backstop. Returns null only for slots we never check.
+  // bl_doc_0539 (item O.1): a check that did not run is now RECORDED as one — verdict 'unchecked' + ai_status
+  // (timeout / http_401 / network / too_large / unsupported_type / no_session / …) — instead of returning null and
+  // saving nothing. Prod had 4 real verdicts on ~28 eligible uploads since 30 Sep: the 45 s abort fired while Gemini
+  // was still thinking, and the upload went through looking exactly like "never checked". The server now answers in
+  // ≤ 38 s, so 50 s here is only a backstop.
+  // O.2: slots without a checklist (bank_check, mcs150, hazmat…) get a detect-only call ("what is this file?") so a COI
+  // dropped into the bank-check slot is caught too; a detect-only failure records nothing — there was no check to fail.
+  // Returns null only for slots we never look at.
   async function lbAiPrecheck(f9, t9) {
-    if (!['insurance', 'authority', 'w9', 'noa'].includes(t9)) return null;
+    const full9 = ['insurance', 'authority', 'w9', 'noa'].includes(t9);
+    if (!full9 && ['other', 'rate_con', 'bol', 'pod', 'agreement'].includes(t9)) return null;
     const t09 = Date.now();
-    const failed9 = (st9) => ({ verdict: 'unchecked', ai_failed: true, ai_status: st9, ai_ms: Date.now() - t09, doc_label: String(t9).toUpperCase(), issues: [], fields: {},
-      summary: 'The instant AI check could not run (' + st9 + ') — our compliance team will review this document manually.' });
+    const failed9 = (st9) => full9 ? ({ verdict: 'unchecked', ai_failed: true, ai_status: st9, ai_ms: Date.now() - t09, doc_label: String(t9).toUpperCase(), issues: [], fields: {},
+      summary: 'The instant AI check could not run (' + st9 + ') — our compliance team will review this document manually.' }) : null;
     try {
       if (!f9) return failed9('no_file');
       if (f9.size > 8 * 1024 * 1024) return failed9('too_large');
@@ -7935,13 +7944,13 @@ function tripStepper(status) {
       const sb9 = await getClient(); const { data: { session: ss9 } } = await sb9.auth.getSession();
       if (!ss9) return failed9('no_session');
       const env9 = window.__LB_ENV || {};
-      const ctrl9 = new AbortController(); const tm9 = setTimeout(() => ctrl9.abort(), 50000);
+      const ctrl9 = new AbortController(); const tm9 = setTimeout(() => ctrl9.abort(), full9 ? 50000 : 30000);
       let r9;
       try {
         r9 = await fetch(env9.supabaseUrl + '/functions/v1/doc-precheck', {
           method: 'POST', signal: ctrl9.signal,
           headers: { 'Content-Type': 'application/json', apikey: env9.supabaseAnonKey, Authorization: 'Bearer ' + ss9.access_token },
-          body: JSON.stringify({ doc_type: t9, mime: mime9, data_b64: b64, context: { legal_name: ov.carrier || null } }),
+          body: JSON.stringify({ doc_type: full9 ? t9 : 'other', slot: t9, detect_only: !full9, mime: mime9, data_b64: b64, context: { legal_name: ov.carrier || null } }),
         });
       } catch (e9) { return failed9(ctrl9.signal.aborted ? 'timeout' : 'network'); }
       finally { clearTimeout(tm9); }
@@ -7949,10 +7958,61 @@ function tripStepper(status) {
       const j9 = await r9.json().catch(() => null);
       if (j9 && j9.verdict && typeof j9.verdict === 'object') {
         if (j9.ok && j9.ai) return j9.verdict;
-        return Object.assign(failed9(j9.verdict.ai_status || 'ai_down'), { fields: j9.verdict.fields || {}, issues: j9.verdict.issues || [] });
+        return full9 ? Object.assign(failed9(j9.verdict.ai_status || 'ai_down'), { fields: j9.verdict.fields || {}, issues: j9.verdict.issues || [] }) : null;
       }
       return failed9('bad_response');
     } catch (_) { return failed9('client_error'); }
+  }
+  const lbSlotName = (t9) => String((DOC_TYPES.find((x9) => x9[0] === t9) || [null, ({ mcs150: 'MCS-150', boc3: 'BOC-3' })[t9] || t9])[1]).replace(/^[^A-Za-z]+/, '');
+  const lbArticle = (w9) => (/^[aeiou]/i.test(w9) ? 'an ' : 'a ') + w9;
+  // O.2: the AI says the file is a different document than the slot it is going into. One tap moves it to the right
+  // slot (the check is re-run against THAT slot's checklist); "it's correct" keeps it here and flags it for the reviewer.
+  // Resolves { type, verdict } to continue, or null when the carrier cancels (nothing submitted).
+  function lbSlotGate(v9, slot9, f9, canMove9) {
+    return new Promise((resolve9) => {
+      if (!v9 || !v9.wrong_slot || !v9.detected_type || v9.detected_type === slot9) { resolve9({ type: slot9, verdict: v9 }); return; }
+      const to9 = v9.detected_type;
+      // only offer the move when the file's format is allowed in the target slot (a JPG cannot go to the PDF-only COI slot)
+      const movable9 = canMove9 && DOC_TYPES.some((x9) => x9[0] === to9) && docFmt(to9).exts.includes(extOf(f9));
+      let done9 = false;
+      const probe9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:10px;line-height:1.6' },
+        'This looks like your ' + lbSlotName(to9) + (v9.doc_label ? ' (' + v9.doc_label + ')' : '') + ', not ' + lbArticle(lbSlotName(slot9)) + '.'
+        + (movable9 ? ' Upload it to ' + lbSlotName(to9) + ' instead?' : ''));
+      const finish9 = async (how9) => {
+        if (done9) return; done9 = true; try { close9(); } catch (_) {} clearInterval(iv9);
+        if (how9 === 'cancel') { resolve9(null); return; }
+        if (how9 === 'keep') { resolve9({ type: slot9, verdict: Object.assign({}, v9, { carrier_kept_slot: true }) }); return; }
+        lbToast('Checking it as ' + lbSlotName(to9) + '…', 'info', 'Moving');
+        const nv9 = await lbAiPrecheck(f9, to9);
+        resolve9({ type: to9, verdict: nv9 ? Object.assign({}, nv9, { moved_from: slot9 }) : { verdict: 'detected', detected_type: to9, moved_from: slot9, issues: [], fields: {} } });
+      };
+      const close9 = openModal('🤖 Wrong slot?', [
+        probe9,
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:4px' }, [
+          movable9 ? h('button', { class: 'cp-btn', style: 'flex:1;min-width:190px', onClick: () => finish9('move') }, '↪ Upload to ' + lbSlotName(to9)) : null,
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => finish9('keep') }, 'No — it is ' + lbArticle(lbSlotName(slot9))),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => finish9('cancel') }, 'Cancel'),
+        ].filter(Boolean)),
+      ]);
+      const iv9 = setInterval(() => { if (!document.body.contains(probe9)) finish9('cancel'); }, 400);
+    });
+  }
+  // One entry point for every upload: AI pre-check → wrong-slot gate → reject gate. sel9 is the slot <select> (the
+  // carrier may be moved to another slot — the select is switched so the caller uploads to the new one) or a fixed
+  // slot string (NOA flows: no move, only "it is correct" / cancel). Returns the verdict to store (may be null), or
+  // false when nothing should be submitted.
+  async function lbCheckUpload(f9, sel9) {
+    const fixed9 = typeof sel9 === 'string';
+    const slot9 = fixed9 ? sel9 : sel9.value;
+    const pv9 = await lbAiPrecheck(f9, slot9);
+    const g9 = await lbSlotGate(pv9, slot9, f9, !fixed9);
+    if (!g9) return false;
+    if (!fixed9 && g9.type !== slot9) {
+      if (![...sel9.options].some((o9) => o9.value === g9.type)) sel9.appendChild(h('option', { value: g9.type }, lbSlotName(g9.type)));
+      sel9.value = g9.type; try { sel9.dispatchEvent(new Event('change')); } catch (_) {}
+    }
+    if (!(await lbPrecheckGate(g9.verdict))) return false;
+    return g9.verdict;
   }
   function lbPrecheckGate(v9) {
     // reject → modal listing problems+fixes; resolves TRUE = upload anyway, FALSE = fix first.
@@ -8103,8 +8163,8 @@ function tripStepper(status) {
         }
         // 🤖 instant advisory AI pre-check — catches holder/limits/name problems BEFORE submission
         up.textContent = '🤖 Checking your document…';
-        const pv9 = await lbAiPrecheck(f, typeSel.value);
-        if (!(await lbPrecheckGate(pv9))) {
+        const pv9 = await lbCheckUpload(f, typeSel);
+        if (pv9 === false) {
           up.disabled = false; up.textContent = 'Upload document';
           msg.className = 'cp-err ok'; msg.textContent = 'Nothing was submitted — fix it with your agent, then upload the corrected file here.';
           return;
@@ -8169,8 +8229,8 @@ function tripStepper(status) {
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Submitting…';
         try {
           upBtn.textContent = '🤖 Checking your document…';
-          const pv9 = await lbAiPrecheck(file, typeSel2.value);
-          if (!(await lbPrecheckGate(pv9))) {
+          const pv9 = await lbCheckUpload(file, typeSel2);
+          if (pv9 === false) {
             upBtn.disabled = false; upBtn.textContent = 'Submit for review';
             msg2.className = 'cp-err ok'; msg2.textContent = 'Nothing was submitted — fix it first, then come back and submit the corrected file.';
             return;
@@ -8671,8 +8731,8 @@ function tripStepper(status) {
       } catch (_) {} }; loadReqs();
       const list = h('div'); const refresh = async () => { try { const ds = await carrierListDocuments(); mount(list, (ds && ds.length) ? h('div', null, ds.map(d => h('div', { class: 'cp-row' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t' }, d.file_name), h('div', { class: 'cp-row-s' }, (d.type || 'document') + ' \u00b7 uploaded')]), h('div', { style: 'display:flex;gap:8px;align-items:center' }, [pill(d.status || 'pending'), (String(d.status || 'pending').toLowerCase() === 'pending' ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0', onClick: () => { try { typeSel.value = d.type || 'other'; } catch (_) {} autoUp = true; fileIn.click(); } }, 'Change') : null)].filter(Boolean))]))) : h('div', { class: 'cp-muted' }, 'No documents yet.')); } catch (_) {} };
       const up = h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => { const file = fileIn.files && fileIn.files[0]; msg.textContent = ''; msg.className = 'cp-err'; if (!file) { msg.textContent = 'Choose a file.'; return; } { const rule = docFmt(typeSel.value); const ex = extOf(file); if (rule.exts.indexOf(ex) < 0) { const _m = 'This document must be ' + (rule.exts.length === 1 ? rule.exts[0].toUpperCase() : rule.exts.map((e) => e.toUpperCase()).join('/')) + ' \u2014 ' + rule.label + '.'; msg.textContent = _m; lbToast(_m, 'urgent', 'Wrong file format'); fileIn.value = ''; return; } } up.disabled = true; up.textContent = '🤖 Checking…';
-        const pv9 = await lbAiPrecheck(file, typeSel.value);
-        if (!(await lbPrecheckGate(pv9))) { up.disabled = false; up.textContent = 'Upload'; fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = 'Nothing submitted — fix it first, then upload the corrected file.'; return; }
+        const pv9 = await lbCheckUpload(file, typeSel);
+        if (pv9 === false) { up.disabled = false; up.textContent = 'Upload'; fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = 'Nothing submitted — fix it first, then upload the corrected file.'; return; }
         up.textContent = 'Uploading…'; try { const m = await uploadDocument(file, typeSel.value); await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path, aiVerdict: pv9 }); fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded.'; lbToast('Document uploaded \u2014 sent for review. The checklist above now shows \u201cIn review\u201d.', 'success', 'Uploaded \u2713'); await refresh(); try { loadReqs(); } catch (_) {} } catch (e) { const _um = (e && e.message) || 'Upload failed.'; msg.className = 'cp-err'; msg.textContent = _um; lbToast(_um, 'urgent', 'Upload failed'); } up.disabled = false; up.textContent = 'Upload'; } }, 'Upload');
       fileIn.addEventListener('change', () => { if (autoUp && fileIn.files && fileIn.files[0]) { autoUp = false; up.click(); } });
       refresh();
@@ -8746,8 +8806,8 @@ function tripStepper(status) {
             const up9 = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { const b9 = ev9.currentTarget;
               const f9 = fIn9.files && fIn9.files[0]; if (!f9) { st9.textContent = 'Choose the factor\u2019s NOA PDF first.'; st9.style.color = '#f87171'; return; }
               b9.disabled = true; b9.textContent = '🤖 Checking\u2026';
-              const pv9 = await lbAiPrecheck(f9, 'noa');
-              if (!(await lbPrecheckGate(pv9))) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#94a3b8'; st9.textContent = 'Nothing submitted — attach the corrected NOA when ready.'; return; }
+              const pv9 = await lbCheckUpload(f9, 'noa');
+              if (pv9 === false) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#94a3b8'; st9.textContent = 'Nothing submitted — attach the corrected NOA when ready.'; return; }
               b9.textContent = 'Uploading\u2026';
               try { const m9 = await uploadDocument(f9, 'noa'); await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path, aiVerdict: pv9 }); f.noa_uploaded = true; f.noa_path = m9.path; st9.style.color = '#4ade80'; st9.textContent = '✓ NOA letter attached — LoadBoot verifies it against your remit-to'; b9.textContent = '✓ Uploaded'; }
               catch (e9) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#f87171'; st9.textContent = (e9 && e9.message) || 'Upload failed.'; }

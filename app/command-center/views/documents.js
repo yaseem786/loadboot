@@ -20,7 +20,17 @@ import { staffUploadCard } from './staffUpload.js';
 // FAILED / NOT-RUN check, never in a colour that reads as passed.
 const AI_REAL = ['pass', 'warning', 'reject'];
 const AI_SLOTS = ['insurance', 'authority', 'w9', 'noa'];
-function aiFailed(v) { return !!(v && v.verdict && !AI_REAL.includes(v.verdict)); }
+function aiFailed(v) { return !!(v && v.verdict && !AI_REAL.includes(v.verdict) && v.verdict !== 'detected'); }
+// O.2: the AI read the file as a different document than the slot it sits in (and nobody has moved it since).
+const SLOT_NAMES = { insurance: 'COI', authority: 'MC authority', w9: 'W-9', noa: 'factoring NOA', bank_check: 'bank verification', mcs150: 'MCS-150', boc3: 'BOC-3',
+  hazmat_reg: 'PHMSA registration', hazmat_h: 'CDL', hazmat_coi: 'hazmat COI', agreement: 'agreement', rate_con: 'rate con', bol: 'BOL', pod: 'POD', other: 'other' };
+const slotName = (t) => SLOT_NAMES[t] || t;
+function wrongSlot(v, type) { return !!(v && v.wrong_slot && v.detected_type && v.detected_type !== type); }
+function wrongSlotPill(v, type) {
+  if (!wrongSlot(v, type)) return '';
+  return el('span', { style: 'display:block;font-weight:800;font-size:.74rem;color:#dc2626', title: 'AI read this file as ' + slotName(v.detected_type) + (v.carrier_kept_slot ? ' — the carrier said it is correct and kept it here.' : '') },
+    '⚠ possible wrong slot: looks like ' + slotName(v.detected_type));
+}
 function aiPill(v, type) {
   if (!v || !v.verdict) {
     return AI_SLOTS.includes(type)
@@ -30,12 +40,14 @@ function aiPill(v, type) {
   if (aiFailed(v)) {
     return el('span', { title: v.summary || '', style: 'font-weight:800;font-size:.78rem;color:#b45309' }, 'AI: check failed' + (v.ai_status ? ' (' + v.ai_status + ')' : ''));
   }
+  if (v.verdict === 'detected') return wrongSlotPill(v, type) || el('span', { class: 'cc-sub', style: 'color:#94a3b8' }, '—');
   const tone = v.verdict === 'reject' ? '#ef4444' : v.verdict === 'warning' ? '#f59e0b' : v.verdict === 'pass' ? '#16a34a' : '#64748b';
   const label = v.verdict === 'reject' ? 'AI: reject' : v.verdict === 'warning' ? 'AI: warning' : v.verdict === 'pass' ? 'AI: pass' : 'AI: ' + v.verdict;
   const first = (v.issues && v.issues[0] && v.issues[0].problem) ? String(v.issues[0].problem).slice(0, 70) : '';
   return el('span', { title: (v.summary || '') + (v.overridden ? ' — carrier saw the reject and uploaded anyway.' : ''), style: 'display:inline-flex;flex-direction:column;gap:2px' }, [
     el('span', { style: 'font-weight:800;font-size:.78rem;color:' + tone }, label + (v.overridden ? ' ⚠' : '')),
     first ? el('span', { class: 'cc-sub', style: 'font-size:.72rem;color:#94a3b8' }, first) : '',
+    wrongSlotPill(v, type),
   ]);
 }
 function aiCard(v, d, onDone) {
@@ -68,8 +80,16 @@ function aiCard(v, d, onDone) {
       rerun,
     ], 'cc-fields');
   }
+  const ws = wrongSlot(v, d && d.type)
+    ? el('div', { style: 'border-left:3px solid #dc2626;padding:7px 11px;margin:0 0 8px;border-radius:0 8px 8px 0;background:rgba(220,38,38,.07);font-weight:700;font-size:.85rem' },
+        '⚠ Possible wrong slot — filed as ' + slotName(d.type) + ', the AI read it as ' + slotName(v.detected_type) + (v.doc_label ? ' ("' + v.doc_label + '")' : '') + '.'
+        + (v.carrier_kept_slot ? ' The carrier was asked and said it is correct.' : ''))
+    : '';
+  const moved = v.moved_from ? el('div', { class: 'cc-sub', style: 'font-size:.78rem;margin-bottom:6px' }, 'The carrier first picked ' + slotName(v.moved_from) + ' and moved it here when the AI flagged it.') : '';
+  if (v.verdict === 'detected') return (ws || moved) ? card([ws, moved], 'cc-fields') : '';
   const tone = v.verdict === 'reject' ? '#ef4444' : v.verdict === 'warning' ? '#f59e0b' : '#16a34a';
   return card([
+    ws, moved,
     el('div', { class: 'cc-field' }, [el('span', null, 'AI pre-check'), el('b', { style: 'color:' + tone }, String(v.verdict).toUpperCase() + (v.overridden ? ' — carrier uploaded anyway' : ''))]),
     el('div', { class: 'cc-field' }, [el('span', null, 'Source'), el('b', null, src + (v.recorded_at ? ' · ' + fmtDate(v.recorded_at) : ''))]),
     v.summary ? el('p', { class: 'cc-sub', style: 'margin:6px 0 0' }, v.summary) : '',

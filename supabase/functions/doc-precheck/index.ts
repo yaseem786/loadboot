@@ -17,12 +17,36 @@
 //     truncated and was reported as ai:true + verdict "queued", which CC painted green. Now: thinking off on 2.5 models,
 //     JSON response mode, 20 s per model and a 38 s total budget (answers before the portal gives up), and every
 //     non-answer is an explicit failure: ai:false, verdict "unchecked", ai_status timeout|error|unparseable|no_key.
+//     O.2 (same day): the AI also names what the file IS (detected_type + detected_confidence); when that differs from
+//     the slot it was uploaded to, verdict.wrong_slot=true (T Strick / O&O Murray, 9–10 Oct: an MC certificate in the
+//     COI slot, a COI in the authority and bank-check slots). Slots without a checklist (bank_check, mcs150, hazmat…)
+//     get a cheap detect-only call (b.detect_only) that returns verdict "detected" — never a pass/reject.
 // v3: the holder is quoted as the finished four-line block an agent can retype verbatim.
 // v2: every certificate-holder instruction now carries LoadBoot's FULL legal name and address.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite", "gemini-flash-latest"];
 let WORKING_MODEL: string | null = null;
+// What a file can be. The slot names match documents.type / compliance_requirements.doc_type.
+const KINDS: Record<string, string> = {
+  insurance: "ACORD 25 certificate of insurance (COI)", authority: "FMCSA operating authority (MC certificate / authority grant letter)",
+  w9: "IRS Form W-9", noa: "factoring Notice of Assignment letter", bank_check: "voided check or bank account verification letter",
+  mcs150: "MCS-150 biennial update form", boc3: "BOC-3 process-agent filing", hazmat_reg: "PHMSA hazmat registration certificate",
+  hazmat_h: "driver's licence / CDL", agreement: "signed contract or agreement", rate_con: "rate confirmation", bol: "bill of lading",
+  pod: "proof of delivery", other: "anything else",
+};
+const KIND_LIST = Object.entries(KINDS).map(([k, v]) => `"${k}" = ${v}`).join("; ");
+// a slot that legitimately holds another kind of file
+const SAME_SLOT: Record<string, string[]> = { hazmat_coi: ["insurance"], insurance: [], dispatch_agreement: ["agreement"], safety: ["authority", "mcs150", "other"] };
+function slotCheck(v: any, slot: string) {
+  const dt = String(v?.detected_type || "").toLowerCase().trim();
+  v.detected_type = KINDS[dt] ? dt : (dt ? "other" : null);
+  const conf = String(v?.detected_confidence || "").toLowerCase();
+  v.detected_confidence = ["high", "medium", "low"].includes(conf) ? conf : null;
+  v.slot = slot;
+  v.wrong_slot = !!(v.detected_type && v.detected_type !== "other" && v.detected_type !== slot && slot !== "other"
+    && !(SAME_SLOT[slot] || []).includes(v.detected_type) && v.detected_confidence !== "low");
+}
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 
@@ -147,6 +171,8 @@ Deno.serve(async (req) => {
     const mime = String(b.mime || "");
     const dataB64 = String(b.data_b64 || "");
     const ctx = b.context || {};
+    const slot = /^[a-z0-9_]{1,24}$/.test(String(b.slot || "")) ? String(b.slot) : docType;
+    const detectOnly = b.detect_only === true;
     if (!dataB64) return json({ error: "bad_request" }, 400);
     if (!["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(mime)) return json({ error: "unsupported_type", detail: "PDF, JPG or PNG only" }, 400);
     if (dataB64.length > 11_000_000) return json({ error: "too_large", detail: "Max 8 MB" }, 400);
@@ -159,10 +185,22 @@ Deno.serve(async (req) => {
     let aiStatus = "ok";
     let aiError = "";
     const deadline = t0 + 38_000;
+    if (GEMINI_KEY && detectOnly) {
+      // O.2: a slot without a checklist — only "what is this file?", fast and cheap.
+      const prompt = `A trucking carrier uploaded this file to the "${slot}" document slot. Identify what the document actually is. Kinds: ${KIND_LIST}.\nRespond with ONLY minified JSON: {"detected_type":string,"detected_confidence":"high"|"medium"|"low","doc_label":string}. "doc_label" = a short plain name for what you see (e.g. "MC authority certificate").`;
+      const g = await callGemini(GEMINI_KEY, { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: dataB64 } }] }], generationConfig: { temperature: 0, maxOutputTokens: 256, responseMimeType: "application/json" } }, t0 + 25_000);
+      let d: any = null;
+      if (g.ok) { try { d = JSON.parse(String(g.data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") ?? "").replace(/```json|```/g, "").trim()); } catch { /* */ } }
+      if (!d || typeof d !== "object") return json({ ok: true, ai: false, doc_type: docType, verdict: { verdict: "unchecked", ai_failed: true, ai_status: g.ok ? "unparseable" : (g.timeout ? "timeout" : "error"), detect_only: true, slot, issues: [], fields: {} } });
+      const v: any = { verdict: "detected", detect_only: true, doc_label: String(d.doc_label || "").slice(0, 80), detected_type: d.detected_type, detected_confidence: d.detected_confidence, issues: [], fields: {}, summary: "" };
+      slotCheck(v, slot);
+      v.ai_ms = Date.now() - t0;
+      return json({ ok: true, ai: true, doc_type: docType, verdict: v });
+    }
     if (GEMINI_KEY) {
       const today = new Date().toISOString().slice(0, 10);
       const checklist = CHECKS[docType].replace(/\{TODAY\}/g, today).replace(/\{NAME\}/g, String(ctx.legal_name || "(not provided)")).replace(/\{MC\}/g, String(ctx.mc || "?")).replace(/\{DOT\}/g, String(ctx.dot || "?")).replace(/\{UNITS\}/g, String(ctx.power_units || "an unknown number of"));
-      const prompt = `You are a STRICT broker-compliance document analyst for a US trucking platform. Real money is lost on bad paperwork, so you NEVER give the benefit of the doubt: if a required item is missing, ambiguous, partially cut off, or not clearly readable, that item FAILS — the verdict cannot be "pass". Only what is printed on the document counts; never assume coverage "probably exists".\n${checklist}\nRespond with ONLY minified JSON, no markdown: {"is_expected_type":bool,"verdict":"pass"|"warning"|"reject","doc_label":string,"issues":[{"severity":"reject"|"warning","problem":string,"fix":string}],"fields":{"insured_name":string|null,"expiry_date":string|null,"auto_liability":string|null,"cargo_limit":string|null,"certificate_holder":string|null,"vehicles_listed":string|null,"coverage_basis":string|null,"insurer":string|null},"summary":string}.\nRules: verdict=reject if ANY reject-severity issue exists. verdict=warning for near-expiry, incomplete vehicle schedules with any-auto coverage, or anything you could not fully verify. verdict=pass ONLY when EVERY required item is explicitly verified with values extracted into "fields". Set "coverage_basis" to "any auto" or "scheduled autos" for insurance documents. Every "fix" must tell the user exactly how to get a corrected original (which line their insurance agent must change, what to ask for) — and where a certificate holder is involved it must quote it in full, line for line:\n${HOLDER_BLOCK}\n"summary" = 2 friendly but honest sentences for the carrier — no sugarcoating.`;
+      const prompt = `You are a STRICT broker-compliance document analyst for a US trucking platform. Real money is lost on bad paperwork, so you NEVER give the benefit of the doubt: if a required item is missing, ambiguous, partially cut off, or not clearly readable, that item FAILS — the verdict cannot be "pass". Only what is printed on the document counts; never assume coverage "probably exists".\n${checklist}\nFIRST say what the file actually is — "detected_type" is one of: ${KIND_LIST}. If it is NOT the expected document, set is_expected_type=false, verdict=reject, and say plainly in "summary" what it is instead.\nRespond with ONLY minified JSON, no markdown: {"is_expected_type":bool,"detected_type":string,"detected_confidence":"high"|"medium"|"low","verdict":"pass"|"warning"|"reject","doc_label":string,"issues":[{"severity":"reject"|"warning","problem":string,"fix":string}],"fields":{"insured_name":string|null,"expiry_date":string|null,"auto_liability":string|null,"cargo_limit":string|null,"certificate_holder":string|null,"vehicles_listed":string|null,"coverage_basis":string|null,"insurer":string|null},"summary":string}.\nRules: verdict=reject if ANY reject-severity issue exists. verdict=warning for near-expiry, incomplete vehicle schedules with any-auto coverage, or anything you could not fully verify. verdict=pass ONLY when EVERY required item is explicitly verified with values extracted into "fields". Set "coverage_basis" to "any auto" or "scheduled autos" for insurance documents. Every "fix" must tell the user exactly how to get a corrected original (which line their insurance agent must change, what to ask for) — and where a certificate holder is involved it must quote it in full, line for line:\n${HOLDER_BLOCK}\n"summary" = 2 friendly but honest sentences for the carrier — no sugarcoating.`;
       const g = await callGemini(GEMINI_KEY, { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: dataB64 } }] }], generationConfig: { temperature: 0, maxOutputTokens: 2048, responseMimeType: "application/json" } }, deadline);
       if (g.ok) {
         let raw = g.data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") ?? "";
@@ -193,6 +231,7 @@ Deno.serve(async (req) => {
       verdict = { verdict: "unchecked", ai_failed: true, doc_label: docType.toUpperCase(), issues: [], fields: {},
         summary: "The instant AI check could not run (" + aiStatus + ") — our compliance team will review this document manually." };
     }
+    if (!aiDown) slotCheck(verdict, slot);
     verdict.ai_status = aiStatus;
     if (aiError) verdict.ai_error = aiError;
     verdict.ai_ms = Date.now() - t0;
