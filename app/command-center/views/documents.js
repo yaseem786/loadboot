@@ -5,7 +5,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, toolbar, segmented, statusPill, openDrawer, fmtDate, card } from '../../shared/ui/components.js';
-import { getDocumentsQueue, reviewDocument, ccRerunDocPrecheck } from '../../shared/api.js';
+import { getDocumentsQueue, reviewDocument, ccRerunDocPrecheck, ccReclassifyDocument } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
@@ -115,9 +115,39 @@ function aiCard(v, d, onDone) {
   ], 'cc-fields');
 }
 
+// bl_doc_0539c (item O.5): one click to file a document under the right requirement. The AI's (or the file name's)
+// reading is offered as the one-click choice; any slot can be picked. A superseded file can be restored to pending.
+const MOVE_TYPES = ['insurance', 'authority', 'w9', 'noa', 'bank_check', 'mcs150', 'hazmat_reg', 'hazmat_h', 'hazmat_coi', 'agreement', 'other'];
+function slotCard(d, after) {
+  if (!(can('documents.review') || can('compliance.verify') || can('carriers.manage'))) return '';
+  const v = d.ai_verdict || null;
+  const suggest = v && wrongSlot(v, d.type) ? lookedLike(v, d.type) : null;
+  const go = async (btn, type, label) => {
+    btn.disabled = true; const was = btn.textContent; btn.textContent = 'Moving…';
+    try {
+      const r = await ccReclassifyDocument(d.id, type);
+      toast(r && r.noop ? 'Already filed as ' + slotName(type) + '.'
+        : (type === d.type ? 'Restored to pending as ' + slotName(type) : 'Moved to ' + slotName(type))
+          + (r && r.restored ? ' — the earlier ' + slotName(d.type) + ' it had pushed out is back in review.' : r && r.left_slot === 'missing' ? ' — the ' + slotName(d.type) + ' slot is now empty.' : '.'), 'success');
+      after();
+    } catch (e) { toast(humanizeError(e), 'error'); btn.disabled = false; btn.textContent = was; }
+  };
+  const pick = el('select', { class: 'cc-input', style: 'max-width:220px' }, MOVE_TYPES.filter(t => t !== d.type).map(t => el('option', { value: t, selected: t === suggest ? 'selected' : null }, slotName(t))));
+  return card([
+    el('div', { class: 'cc-field' }, [el('span', null, 'Filed as'), el('b', null, slotName(d.type) + (d.status === 'superseded' ? ' · superseded' : ''))]),
+    el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px' }, [
+      suggest ? el('button', { class: 'lb-btn lb-btn-primary', onClick: (ev) => go(ev.currentTarget, suggest) }, 'Move to ' + slotName(suggest)) : '',
+      pick,
+      el('button', { class: 'lb-btn lb-btn-secondary', onClick: (ev) => go(ev.currentTarget, pick.value) }, 'Move to correct slot'),
+      d.status === 'superseded' ? el('button', { class: 'lb-btn lb-btn-secondary', onClick: (ev) => go(ev.currentTarget, d.type) }, 'Restore to pending') : '',
+    ]),
+    el('p', { class: 'cc-sub', style: 'margin:6px 0 0;font-size:.78rem' }, 'Moving re-points the requirement. The slot it leaves goes back to the file this one had replaced; an approved document in the target slot is never knocked out.'),
+  ], 'cc-fields');
+}
+
 const STATUSES = [
   { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' },
-  { value: 'rejected', label: 'Rejected' }, { value: '', label: 'All' },
+  { value: 'rejected', label: 'Rejected' }, { value: 'superseded', label: 'Superseded' }, { value: '', label: 'All' },
 ];
 
 export function renderDocuments(host) {
@@ -190,6 +220,7 @@ export function renderDocuments(host) {
         el('div', { class: 'cc-field' }, [el('span', null, 'Submitted'), el('b', null, fmtDate(d.created_at))]),
       ], 'cc-fields'),
       aiHost,
+      slotCard(d, () => { drawer.close(); load(); }),
       el('label', { class: 'cc-card-title', style: 'margin-top:16px;display:block' }, 'Document'),
       previewBox,
       el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [openBtn, dlBtn]),

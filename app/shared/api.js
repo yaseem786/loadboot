@@ -126,6 +126,9 @@ export const ccRerunDocPrecheck = async (d) => {
   const saved = await rpc('doc_set_ai_verdict', { p_doc: d.id, p_verdict: verdict, p_source: 'staff-rerun' });
   return { saved, verdict };
 };
+// bl_doc_0539c (item O.5): CC "Move to correct slot" / "Restore to pending". Same type on a superseded document
+// = restore. The server hands the slot it leaves back to the file it had superseded and never knocks out an approved one.
+export const ccReclassifyDocument = (id, type) => rpc('cc_reclassify_document', { p_doc: id, p_type: type });
 export const setCarrierStatus = (carrierId, status, note) =>
   rpc('cc_set_carrier_status', { p_carrier: carrierId, p_status: status, p_note: note ?? null });
 export const createLoad = (o = {}) => rpc('cc_create_load', {
