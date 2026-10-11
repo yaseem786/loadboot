@@ -2993,10 +2993,14 @@ async function appView(user) {
           const _m = 'This document must be ' + (rule.exts.length === 1 ? rule.exts[0].toUpperCase() : rule.exts.map((e) => e.toUpperCase()).join('/')) + ' \u2014 ' + rule.label + '.';
           upMsg.textContent = _m; lbToast(_m, 'urgent', 'Wrong file format'); fileIn.value = ''; return;
         } }
-      btn9.disabled = true; btn9.textContent = 'Uploading\u2026';
+      btn9.disabled = true; btn9.textContent = 'Checking\u2026';
+      // bl_doc_0539 (O.1): this path skipped the AI pre-check entirely — the reviewer saw "—" and could not tell why.
+      const pv9 = await lbAiPrecheck(f, typeSel.value);
+      if (!(await lbPrecheckGate(pv9))) { btn9.disabled = false; btn9.textContent = 'Attach'; upMsg.textContent = 'Nothing was submitted — fix it first, then attach the corrected file.'; return; }
+      btn9.textContent = 'Uploading\u2026';
       try {
         const m = await uploadDocument(f, typeSel.value);
-        await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path });
+        await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path, aiVerdict: pv9 });
         attached.push({ file_name: m.fileName, type: typeSel.value, path: m.path });
         drawAtt(); fileIn.value = '';
         upMsg.textContent = '\u2713 Attached (' + attached.length + ') \u2014 also sent to document review. You can add more.';
@@ -3927,10 +3931,14 @@ async function appView(user) {
             bIn9,
             h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => { const b9 = ev9.currentTarget;
               const f9 = bIn9.files && bIn9.files[0]; if (!f9) { bSt9.textContent = 'Choose the NOA PDF first.'; return; }
-              b9.disabled = true; b9.textContent = 'Uploading\u2026';
+              b9.disabled = true; b9.textContent = 'Checking\u2026';
+              // bl_doc_0539 (O.1): the dashboard NOA card skipped the pre-check (prod 9 Oct 19:54 — no call at all).
+              const pv9 = await lbAiPrecheck(f9, 'noa');
+              if (!(await lbPrecheckGate(pv9))) { b9.disabled = false; b9.textContent = 'Upload NOA'; bSt9.textContent = 'Nothing was submitted — fix it with your factor first.'; return; }
+              b9.textContent = 'Uploading\u2026';
               try {
                 const m9 = await uploadDocument(f9, 'noa');
-                await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path });
+                await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path, aiVerdict: pv9 });
                 mount(noaDash9, h('div', { class: 'cp-card', style: 'border:1.5px solid rgba(34,197,94,.45);background:rgba(34,197,94,.08)' }, [
                   h('div', { style: 'font-weight:900;color:#4ade80' }, '✓ NOA letter uploaded — in review'),
                   h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'LoadBoot verifies it against your remit-to details (usually a few hours). Track it in Documents — this card disappears on your next visit.'),
@@ -7906,35 +7914,52 @@ function tripStepper(status) {
       ]),
     ]);
   }
+  // bl_doc_0539 (item O.1): a check that did not run is now RECORDED as one — verdict 'unchecked' + ai_status
+  // (timeout / http_401 / network / too_large / unsupported_type / no_session / …) — instead of returning null and
+  // saving nothing. Prod had 4 real verdicts on ~28 eligible uploads since 30 Sep: the 45 s abort fired while Gemini
+  // was still thinking, and the upload went through looking exactly like "never checked". The server now answers in
+  // ≤ 38 s, so 50 s here is only a backstop. Returns null only for slots we never check.
   async function lbAiPrecheck(f9, t9) {
+    if (!['insurance', 'authority', 'w9', 'noa'].includes(t9)) return null;
+    const t09 = Date.now();
+    const failed9 = (st9) => ({ verdict: 'unchecked', ai_failed: true, ai_status: st9, ai_ms: Date.now() - t09, doc_label: String(t9).toUpperCase(), issues: [], fields: {},
+      summary: 'The instant AI check could not run (' + st9 + ') — our compliance team will review this document manually.' });
     try {
-      if (!['insurance', 'authority', 'w9', 'noa'].includes(t9)) return null;
-      if (!f9 || f9.size > 8 * 1024 * 1024) return null;
+      if (!f9) return failed9('no_file');
+      if (f9.size > 8 * 1024 * 1024) return failed9('too_large');
       const mime9 = f9.type || 'application/pdf';
-      if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(mime9)) return null;
+      if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(mime9)) return failed9('unsupported_type');
       const b64 = await new Promise((res9, rej9) => { const r9 = new FileReader(); r9.onload = () => res9(String(r9.result).split(',')[1] || ''); r9.onerror = rej9; r9.readAsDataURL(f9); });
-      if (!b64) return null;
+      if (!b64) return failed9('empty_file');
       const { getClient } = await import('../shared/supabaseClient.js');
       const sb9 = await getClient(); const { data: { session: ss9 } } = await sb9.auth.getSession();
-      if (!ss9) return null;
+      if (!ss9) return failed9('no_session');
       const env9 = window.__LB_ENV || {};
-      const ctrl9 = new AbortController(); const tm9 = setTimeout(() => ctrl9.abort(), 45000);
-      const r9 = await fetch(env9.supabaseUrl + '/functions/v1/doc-precheck', {
-        method: 'POST', signal: ctrl9.signal,
-        headers: { 'Content-Type': 'application/json', apikey: env9.supabaseAnonKey, Authorization: 'Bearer ' + ss9.access_token },
-        body: JSON.stringify({ doc_type: t9, mime: mime9, data_b64: b64, context: { legal_name: ov.carrier || null } }),
-      });
-      clearTimeout(tm9);
-      if (!r9.ok) return null;
-      const j9 = await r9.json();
-      return (j9 && j9.ok && j9.ai && j9.verdict) ? j9.verdict : null;
-    } catch (_) { return null; }
+      const ctrl9 = new AbortController(); const tm9 = setTimeout(() => ctrl9.abort(), 50000);
+      let r9;
+      try {
+        r9 = await fetch(env9.supabaseUrl + '/functions/v1/doc-precheck', {
+          method: 'POST', signal: ctrl9.signal,
+          headers: { 'Content-Type': 'application/json', apikey: env9.supabaseAnonKey, Authorization: 'Bearer ' + ss9.access_token },
+          body: JSON.stringify({ doc_type: t9, mime: mime9, data_b64: b64, context: { legal_name: ov.carrier || null } }),
+        });
+      } catch (e9) { return failed9(ctrl9.signal.aborted ? 'timeout' : 'network'); }
+      finally { clearTimeout(tm9); }
+      if (!r9.ok) return failed9('http_' + r9.status);
+      const j9 = await r9.json().catch(() => null);
+      if (j9 && j9.verdict && typeof j9.verdict === 'object') {
+        if (j9.ok && j9.ai) return j9.verdict;
+        return Object.assign(failed9(j9.verdict.ai_status || 'ai_down'), { fields: j9.verdict.fields || {}, issues: j9.verdict.issues || [] });
+      }
+      return failed9('bad_response');
+    } catch (_) { return failed9('client_error'); }
   }
   function lbPrecheckGate(v9) {
     // reject → modal listing problems+fixes; resolves TRUE = upload anyway, FALSE = fix first.
     return new Promise((resolve9) => {
       if (!v9 || v9.verdict !== 'reject') {
         if (v9 && v9.verdict === 'warning' && v9.summary) lbToast(v9.summary, 'action', '⚠ Heads up — check this');
+        if (v9 && v9.verdict === 'unchecked') lbToast('Instant check unavailable right now — your document still goes to our team for review.', 'info', 'Uploading');
         resolve9(true); return;
       }
       let done9 = false;

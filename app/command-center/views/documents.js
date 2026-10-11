@@ -5,7 +5,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, toolbar, segmented, statusPill, openDrawer, fmtDate, card } from '../../shared/ui/components.js';
-import { getDocumentsQueue, reviewDocument } from '../../shared/api.js';
+import { getDocumentsQueue, reviewDocument, ccRerunDocPrecheck } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
@@ -15,8 +15,21 @@ import { staffUploadCard } from './staffUpload.js';
 // audit F31 (bl_cmp_0325): the carrier portal's AI pre-check verdict now rides on the document row. It is ADVISORY —
 // recorded_by='carrier-client' means the carrier's own browser sent it (they can only hurt themselves with it),
 // 'doc-precheck'/'staff' means a server or a reviewer recorded it. Staff decision stays final.
-function aiPill(v) {
-  if (!v || !v.verdict) return el('span', { class: 'cc-sub', style: 'color:#94a3b8' }, '—');
+// bl_doc_0539 (item O.1): only pass / warning / reject are answers from the AI. Anything else — 'unchecked' (the check
+// timed out or errored), the old 'queued' (truncated answer), or no verdict at all on a checked slot — is shown as a
+// FAILED / NOT-RUN check, never in a colour that reads as passed.
+const AI_REAL = ['pass', 'warning', 'reject'];
+const AI_SLOTS = ['insurance', 'authority', 'w9', 'noa'];
+function aiFailed(v) { return !!(v && v.verdict && !AI_REAL.includes(v.verdict)); }
+function aiPill(v, type) {
+  if (!v || !v.verdict) {
+    return AI_SLOTS.includes(type)
+      ? el('span', { class: 'cc-sub', style: 'font-weight:800;font-size:.78rem;color:#b45309', title: 'No AI check is on record for this upload — open it and press "Run AI check".' }, 'AI: not run')
+      : el('span', { class: 'cc-sub', style: 'color:#94a3b8' }, '—');
+  }
+  if (aiFailed(v)) {
+    return el('span', { title: v.summary || '', style: 'font-weight:800;font-size:.78rem;color:#b45309' }, 'AI: check failed' + (v.ai_status ? ' (' + v.ai_status + ')' : ''));
+  }
   const tone = v.verdict === 'reject' ? '#ef4444' : v.verdict === 'warning' ? '#f59e0b' : v.verdict === 'pass' ? '#16a34a' : '#64748b';
   const label = v.verdict === 'reject' ? 'AI: reject' : v.verdict === 'warning' ? 'AI: warning' : v.verdict === 'pass' ? 'AI: pass' : 'AI: ' + v.verdict;
   const first = (v.issues && v.issues[0] && v.issues[0].problem) ? String(v.issues[0].problem).slice(0, 70) : '';
@@ -25,9 +38,36 @@ function aiPill(v) {
     first ? el('span', { class: 'cc-sub', style: 'font-size:.72rem;color:#94a3b8' }, first) : '',
   ]);
 }
-function aiCard(v) {
-  if (!v || !v.verdict) return '';
-  const src = v.recorded_by === 'carrier-client' ? 'carrier-side pre-check (advisory)' : v.recorded_by === 'doc-precheck' ? 'server pre-check' : (v.recorded_by || 'pre-check');
+function aiCard(v, d, onDone) {
+  // bl_doc_0539: a reviewer can (re-)run the check when none ran or it failed; a real verdict stays as recorded.
+  const rerun = (d && d.file_path && can('documents.review') && (!v || !v.verdict || aiFailed(v)))
+    ? el('button', { class: 'lb-btn lb-btn-secondary', style: 'margin-top:8px', onClick: async (ev) => {
+        const b = ev.currentTarget; b.disabled = true; b.textContent = 'Running AI check… (up to 40 s)';
+        try {
+          const r = await ccRerunDocPrecheck(d);
+          d.ai_verdict = r.verdict;
+          toast(r.saved ? (aiFailed(r.verdict) ? 'AI check failed again — recorded as failed.' : 'AI check: ' + r.verdict.verdict) : 'A verdict was already recorded.', r.saved && !aiFailed(r.verdict) ? 'success' : 'info');
+          if (onDone) onDone();
+        } catch (e) { toast(humanizeError(e), 'error'); b.disabled = false; b.textContent = 'Run AI check'; }
+      } }, 'Run AI check')
+    : '';
+  if (!v || !v.verdict) {
+    if (!d || !AI_SLOTS.includes(d.type)) return rerun ? card([el('div', { class: 'cc-field' }, [el('span', null, 'AI pre-check'), el('b', null, 'none on record')]), rerun], 'cc-fields') : '';
+    return card([
+      el('div', { class: 'cc-field' }, [el('span', null, 'AI pre-check'), el('b', { style: 'color:#b45309' }, 'NOT RUN — no check is on record for this upload')]),
+      el('p', { class: 'cc-sub', style: 'margin:6px 0 0' }, 'Uploads before 30 Sep, or a path that skipped the check. Do not read this as passed.'),
+      rerun,
+    ], 'cc-fields');
+  }
+  const src = v.recorded_by === 'carrier-client' ? 'carrier-side pre-check (advisory)' : v.recorded_by === 'doc-precheck' ? 'server pre-check' : v.recorded_by === 'staff-rerun' ? 'staff re-run' : (v.recorded_by || 'pre-check');
+  if (aiFailed(v)) {
+    return card([
+      el('div', { class: 'cc-field' }, [el('span', null, 'AI pre-check'), el('b', { style: 'color:#b45309' }, 'FAILED — the AI did not check this file' + (v.ai_status ? ' (' + v.ai_status + ')' : ''))]),
+      el('div', { class: 'cc-field' }, [el('span', null, 'Source'), el('b', null, src + (v.recorded_at ? ' · ' + fmtDate(v.recorded_at) : ''))]),
+      el('p', { class: 'cc-sub', style: 'margin:6px 0 0' }, 'Review it fully by hand, or run the check now.'),
+      rerun,
+    ], 'cc-fields');
+  }
   const tone = v.verdict === 'reject' ? '#ef4444' : v.verdict === 'warning' ? '#f59e0b' : '#16a34a';
   return card([
     el('div', { class: 'cc-field' }, [el('span', null, 'AI pre-check'), el('b', { style: 'color:' + tone }, String(v.verdict).toUpperCase() + (v.overridden ? ' — carrier uploaded anyway' : ''))]),
@@ -72,7 +112,7 @@ export function renderDocuments(host) {
         el('td', null, d.company || '—'),
         el('td', null, d.type || '—'),
         el('td', null, fmtDate(d.created_at)),
-        el('td', null, aiPill(d.ai_verdict)),
+        el('td', null, aiPill(d.ai_verdict, d.type)),
         el('td', null, statusPill(d.status)),
         el('td', null, el('span', { class: 'cc-row-go' }, '›')),
       ]))),
@@ -111,6 +151,9 @@ export function renderDocuments(host) {
       dlBtn.href = url + (url.indexOf('?') > -1 ? '&' : '?') + 'download=' + encodeURIComponent(d.file_name || 'document');
       dlBtn.style.pointerEvents = 'auto'; dlBtn.style.opacity = '1';
     })();
+    const aiHost = el('div');
+    const paintAi = () => mount(aiHost, aiCard(d.ai_verdict, d, () => { paintAi(); load(); }));
+    paintAi();
     const drawer = openDrawer('Document review', el('div', null, [
       el('div', { class: 'cc-drawer-title' }, [el('h3', null, d.file_name || 'document'), statusPill(d.status)]),
       card([
@@ -118,7 +161,7 @@ export function renderDocuments(host) {
         el('div', { class: 'cc-field' }, [el('span', null, 'Type'), el('b', null, d.type || '—')]),
         el('div', { class: 'cc-field' }, [el('span', null, 'Submitted'), el('b', null, fmtDate(d.created_at))]),
       ], 'cc-fields'),
-      aiCard(d.ai_verdict),
+      aiHost,
       el('label', { class: 'cc-card-title', style: 'margin-top:16px;display:block' }, 'Document'),
       previewBox,
       el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [openBtn, dlBtn]),

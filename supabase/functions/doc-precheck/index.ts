@@ -1,4 +1,4 @@
-// doc-precheck v5 — instant ADVISORY AI pre-check for the carrier portal's document upload.
+// doc-precheck v6 — instant ADVISORY AI pre-check for the carrier portal's document upload.
 // Same strict checklists as lc-doc-check, but authenticated with the carrier's own session JWT
 // (no visitor key, no storage write — the portal's normal upload flow handles storage).
 // Verdict is ADVISORY ONLY: the UI may warn/redirect the carrier, staff verification stays final.
@@ -10,6 +10,13 @@
 //     for insurance/authority/NOA PDFs, add a WARNING issue when the file shows post-issue edits. Never flips a
 //     verdict to reject on forensics alone — a re-saved PDF is suspicious, not proof. The carrier portal now stores
 //     the whole verdict on the documents row (bl_cmp_0325), so the reviewer sees this too.
+// v6 (bl_doc_0539, 11 Oct 2026 — item O.1): prod showed 4 real verdicts on ~28 eligible uploads since the client began
+//     saving them (30 Sep). Proven cause: gemini-2.5-flash with default thinking took 11–35 s per call (every request boots
+//     a fresh worker, so WORKING_MODEL never sticks), the portal aborts at 45 s and then saved NOTHING (three uploads on
+//     10 Oct landed exactly 45 s after their POST booted); and when thinking ate the 1,400-token budget the JSON came back
+//     truncated and was reported as ai:true + verdict "queued", which CC painted green. Now: thinking off on 2.5 models,
+//     JSON response mode, 20 s per model and a 38 s total budget (answers before the portal gives up), and every
+//     non-answer is an explicit failure: ai:false, verdict "unchecked", ai_status timeout|error|unparseable|no_key.
 // v3: the holder is quoted as the finished four-line block an agent can retype verbatim.
 // v2: every certificate-holder instruction now carries LoadBoot's FULL legal name and address.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -36,19 +43,28 @@ const CHECKS: Record<string, string> = {
   other: `Identify what this document is, who issued it, whether it is legible, complete, unexpired, and whether it plausibly belongs to "{NAME}". It was uploaded during trucking-carrier onboarding — flag anything inconsistent.`,
 };
 
-async function callGemini(key: string, payload: unknown): Promise<{ ok: boolean; status: number; data?: any; text?: string }> {
+async function callGemini(key: string, payload: any, deadline: number): Promise<{ ok: boolean; status: number; data?: any; text?: string; timeout?: boolean }> {
   const tryModels = WORKING_MODEL ? [WORKING_MODEL, ...MODELS.filter((m) => m !== WORKING_MODEL)] : MODELS;
   let last = { ok: false, status: 0, text: "" } as any;
   for (const m of tryModels) {
+    const left = deadline - Date.now();
+    if (left < 6000) return { ...last, ok: false, timeout: true, text: last.text || "deadline" };
+    // v6: 2.5 models think by default — slow, and the thinking tokens count against maxOutputTokens.
+    const gc = { ...payload.generationConfig, ...(/2\.5|latest/.test(m) ? { thinkingConfig: { thinkingBudget: 0 } } : {}) };
+    const ctrl = new AbortController();
+    const tm = setTimeout(() => ctrl.abort(), Math.min(20_000, left));
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, generationConfig: gc }), signal: ctrl.signal,
       });
       if (r.ok) { WORKING_MODEL = m; return { ok: true, status: 200, data: await r.json() }; }
-      last = { ok: false, status: r.status, text: (await r.text()).slice(0, 300) };
-      if (r.status !== 404 && r.status !== 429) return last;
+      last = { ok: false, status: r.status, text: (await r.text()).replace(/key=[^&\s)"']+/g, "key=***").slice(0, 300) };
+      if (r.status !== 404 && r.status !== 429 && r.status < 500) return last;
       if (WORKING_MODEL === m) WORKING_MODEL = null;
-    } catch (e) { last = { ok: false, status: 0, text: String(e).slice(0, 200) }; }
+    } catch (e) {
+      // a fetch error names the URL, and the URL carries the key — scrub it before it can reach a verdict
+      last = { ok: false, status: 0, text: String(e).replace(/key=[^&\s)"']+/g, "key=***").slice(0, 200), timeout: ctrl.signal.aborted };
+    } finally { clearTimeout(tm); }
   }
   return last;
 }
@@ -115,6 +131,7 @@ function forensicIssues(f: Record<string, unknown> | null, docType: string): Arr
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const t0 = Date.now();
   try {
     const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY") || "";
     const URL_ = Deno.env.get("SUPABASE_URL")!;
@@ -139,15 +156,22 @@ Deno.serve(async (req) => {
 
     let verdict: any = null;
     let aiDown = false;
+    let aiStatus = "ok";
+    let aiError = "";
+    const deadline = t0 + 38_000;
     if (GEMINI_KEY) {
       const today = new Date().toISOString().slice(0, 10);
       const checklist = CHECKS[docType].replace(/\{TODAY\}/g, today).replace(/\{NAME\}/g, String(ctx.legal_name || "(not provided)")).replace(/\{MC\}/g, String(ctx.mc || "?")).replace(/\{DOT\}/g, String(ctx.dot || "?")).replace(/\{UNITS\}/g, String(ctx.power_units || "an unknown number of"));
       const prompt = `You are a STRICT broker-compliance document analyst for a US trucking platform. Real money is lost on bad paperwork, so you NEVER give the benefit of the doubt: if a required item is missing, ambiguous, partially cut off, or not clearly readable, that item FAILS — the verdict cannot be "pass". Only what is printed on the document counts; never assume coverage "probably exists".\n${checklist}\nRespond with ONLY minified JSON, no markdown: {"is_expected_type":bool,"verdict":"pass"|"warning"|"reject","doc_label":string,"issues":[{"severity":"reject"|"warning","problem":string,"fix":string}],"fields":{"insured_name":string|null,"expiry_date":string|null,"auto_liability":string|null,"cargo_limit":string|null,"certificate_holder":string|null,"vehicles_listed":string|null,"coverage_basis":string|null,"insurer":string|null},"summary":string}.\nRules: verdict=reject if ANY reject-severity issue exists. verdict=warning for near-expiry, incomplete vehicle schedules with any-auto coverage, or anything you could not fully verify. verdict=pass ONLY when EVERY required item is explicitly verified with values extracted into "fields". Set "coverage_basis" to "any auto" or "scheduled autos" for insurance documents. Every "fix" must tell the user exactly how to get a corrected original (which line their insurance agent must change, what to ask for) — and where a certificate holder is involved it must quote it in full, line for line:\n${HOLDER_BLOCK}\n"summary" = 2 friendly but honest sentences for the carrier — no sugarcoating.`;
-      const g = await callGemini(GEMINI_KEY, { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: dataB64 } }] }], generationConfig: { temperature: 0, maxOutputTokens: 1400 } });
+      const g = await callGemini(GEMINI_KEY, { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: dataB64 } }] }], generationConfig: { temperature: 0, maxOutputTokens: 2048, responseMimeType: "application/json" } }, deadline);
       if (g.ok) {
         let raw = g.data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") ?? "";
         raw = raw.replace(/```json|```/g, "").trim();
         try { verdict = JSON.parse(raw); } catch { /* fallthrough */ }
+        if (!verdict || typeof verdict !== "object" || !["pass", "warning", "reject"].includes(verdict.verdict)) {
+          verdict = null; aiDown = true; aiStatus = "unparseable";
+          aiError = "finish=" + String(g.data?.candidates?.[0]?.finishReason || "?") + " len=" + raw.length;
+        }
         if (verdict && verdict.verdict === "pass" && docType === "insurance") {
           const f = verdict.fields || {};
           const holder = String(f.certificate_holder || "").toLowerCase();
@@ -162,14 +186,20 @@ Deno.serve(async (req) => {
             (verdict.issues = verdict.issues || []).push({ severity: "warning", problem: "Certificate holder names LoadBoot but without our registered address", fix: "Next time your certificate is reissued, ask for the holder box to read in full:\n" + HOLDER_BLOCK });
           }
         }
-      } else { aiDown = true; }
-    } else { aiDown = true; }
+      } else { aiDown = true; aiStatus = g.timeout ? "timeout" : "error"; aiError = (g.status ? "http " + g.status + " " : "") + String(g.text || "").slice(0, 160); }
+    } else { aiDown = true; aiStatus = "no_key"; }
     if (!verdict) {
-      verdict = { verdict: "queued", doc_label: docType.toUpperCase(), issues: [], fields: {}, summary: "Document received — our compliance team will review it personally." };
+      // v6: never a soft "queued" — the reviewer must see that NO check ran.
+      verdict = { verdict: "unchecked", ai_failed: true, doc_label: docType.toUpperCase(), issues: [], fields: {},
+        summary: "The instant AI check could not run (" + aiStatus + ") — our compliance team will review this document manually." };
     }
+    verdict.ai_status = aiStatus;
+    if (aiError) verdict.ai_error = aiError;
+    verdict.ai_ms = Date.now() - t0;
+    if (aiDown) console.log("doc-precheck ai_failed", JSON.stringify({ docType, aiStatus, aiError, ms: verdict.ai_ms, model: WORKING_MODEL }));
 
     // v5: attach forensics. Advisory: a pass with edit signals becomes a warning; a reject stays a reject; a
-    // "queued" (AI down) verdict keeps its label but carries the signals for the reviewer.
+    // "unchecked" (AI down) verdict keeps its label but carries the signals for the reviewer.
     if (forensics) {
       verdict.fields = verdict.fields || {};
       verdict.fields.pdf_forensics = forensics;

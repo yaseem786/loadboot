@@ -103,6 +103,29 @@ export const getLoadDetail = (id) => rpc('cc_get_load', { p_load: id });
 export const getDocumentsQueue = (o = {}) => rpc('cc_list_documents', {
   p_status: o.status ?? 'pending', p_limit: o.limit ?? 100,
 });
+// bl_doc_0539 (item O.1): CC → Documents "Run AI check". Downloads the stored file with the reviewer's own signed URL,
+// sends it to doc-precheck with the reviewer's session, and records the answer through doc_set_ai_verdict — which only
+// lets it replace a missing / 'unchecked' / 'queued' verdict (a real one stays write-once). A failed re-run is recorded
+// as 'unchecked' too, so the row never looks checked when it was not.
+export const ccRerunDocPrecheck = async (d) => {
+  const { signedDocumentUrl } = await import('./storage.js');
+  const sb = await getClient();
+  const kind = ['insurance', 'authority', 'w9', 'noa'].includes(d.type) ? d.type : 'other';
+  const url = await signedDocumentUrl(d.file_path, 300);
+  const blob = await (await fetch(url)).blob();
+  if (blob.size > 8 * 1024 * 1024) throw new Error('File is over 8 MB — the AI check cannot read it.');
+  const ext = String(d.file_name || d.file_path || '').split('.').pop().toLowerCase();
+  const mime = blob.type && blob.type !== 'application/octet-stream' ? blob.type
+    : ({ pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' })[ext] || '';
+  const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = rej; r.readAsDataURL(blob); });
+  const { data, error } = await sb.functions.invoke('doc-precheck', { body: { doc_type: kind, mime, data_b64: b64, context: { legal_name: d.company || null } } });
+  let verdict = data && data.verdict;
+  if (error || !verdict) verdict = { verdict: 'unchecked', ai_failed: true, ai_status: error ? 'http_error' : 'bad_response', issues: [], fields: {},
+    summary: 'Staff re-run of the AI check failed (' + ((error && error.message) || 'no answer') + ').' };
+  else if (!(data.ok && data.ai)) verdict = { ...verdict, verdict: 'unchecked', ai_failed: true };
+  const saved = await rpc('doc_set_ai_verdict', { p_doc: d.id, p_verdict: verdict, p_source: 'staff-rerun' });
+  return { saved, verdict };
+};
 export const setCarrierStatus = (carrierId, status, note) =>
   rpc('cc_set_carrier_status', { p_carrier: carrierId, p_status: status, p_note: note ?? null });
 export const createLoad = (o = {}) => rpc('cc_create_load', {
