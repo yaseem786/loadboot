@@ -7997,22 +7997,50 @@ function tripStepper(status) {
       const iv9 = setInterval(() => { if (!document.body.contains(probe9)) finish9('cancel'); }, 400);
     });
   }
-  // One entry point for every upload: AI pre-check → wrong-slot gate → reject gate. sel9 is the slot <select> (the
-  // carrier may be moved to another slot — the select is switched so the caller uploads to the new one) or a fixed
-  // slot string (NOA flows: no move, only "it is correct" / cancel). Returns the verdict to store (may be null), or
-  // false when nothing should be submitted.
+  // O.3: the cheap pre-AI check — the file NAME often says what it is ("MC_Authority.pdf" picked for the COI slot).
+  // Only an unambiguous name counts: exactly one kind may match, otherwise no hint. Runs before the AI, so it still
+  // catches the mistake when the AI is down.
+  const LB_NAME_KINDS = [
+    ['mcs150', /\bmcs ?150\b/], ['boc3', /\bboc ?3\b/], ['w9', /\bw ?9\b/],
+    ['noa', /\bnoa\b|notice of assignment|factoring/],
+    ['bank_check', /\bvoid(ed)?\b|bank (letter|verif\w*|statement)|direct deposit|\bcheque\b|\bcheck\b/],
+    ['insurance', /\bcoi\b|\binsurance\b|\bacord( ?25)?\b|certificate of (liability )?insurance|\bliability\b/],
+    ['authority', /\bauthority\b|\bmc ?\d{4,8}\b|\bmc (cert\w*|letter)\b|operating authority|\bfmcsa\b/],
+  ];
+  const LB_SAME_SLOT = { hazmat_coi: ['insurance'], agreement: [], other: [] };
+  function lbNameSlot(name9) {
+    const n9 = ' ' + String(name9 || '').toLowerCase().replace(/\.[a-z0-9]{2,5}$/, '').replace(/[_\-.()\[\]+]+/g, ' ').replace(/\s+/g, ' ') + ' ';
+    const hits9 = LB_NAME_KINDS.filter(([, re9]) => re9.test(n9)).map(([k9]) => k9);
+    return hits9.length === 1 ? hits9[0] : null;
+  }
+  // One entry point for every upload: file-name hint → AI pre-check → wrong-slot gate → reject gate. sel9 is the slot
+  // <select> (the carrier may be moved to another slot — the select is switched so the caller uploads to the new one)
+  // or a fixed slot string (NOA flows: no move, only "it is correct" / cancel). Returns the verdict to store (may be
+  // null), or false when nothing should be submitted.
   async function lbCheckUpload(f9, sel9) {
     const fixed9 = typeof sel9 === 'string';
-    const slot9 = fixed9 ? sel9 : sel9.value;
-    const pv9 = await lbAiPrecheck(f9, slot9);
+    let slot9 = fixed9 ? sel9 : sel9.value;
+    const switchTo9 = (t9) => {
+      if (fixed9 || t9 === slot9) return;
+      if (![...sel9.options].some((o9) => o9.value === t9)) sel9.appendChild(h('option', { value: t9 }, lbSlotName(t9)));
+      sel9.value = t9; slot9 = t9; try { sel9.dispatchEvent(new Event('change')); } catch (_) {}
+    };
+    let pv9; let ran9 = false; let nameKept9 = null;
+    const nm9 = lbNameSlot(f9 && f9.name);
+    if (nm9 && nm9 !== slot9 && !(LB_SAME_SLOT[slot9] || []).includes(nm9)) {
+      const g09 = await lbSlotGate({ wrong_slot: true, detected_type: nm9, doc_label: 'the file is named \u201c' + f9.name + '\u201d' }, slot9, f9, !fixed9);
+      if (!g09) return false;
+      if (g09.type !== slot9) { switchTo9(g09.type); pv9 = g09.verdict && Object.assign({}, g09.verdict, { moved_by: 'file_name' }); ran9 = true; }
+      else nameKept9 = nm9;
+    }
+    if (!ran9) pv9 = await lbAiPrecheck(f9, slot9);
     const g9 = await lbSlotGate(pv9, slot9, f9, !fixed9);
     if (!g9) return false;
-    if (!fixed9 && g9.type !== slot9) {
-      if (![...sel9.options].some((o9) => o9.value === g9.type)) sel9.appendChild(h('option', { value: g9.type }, lbSlotName(g9.type)));
-      sel9.value = g9.type; try { sel9.dispatchEvent(new Event('change')); } catch (_) {}
-    }
-    if (!(await lbPrecheckGate(g9.verdict))) return false;
-    return g9.verdict;
+    switchTo9(g9.type);
+    let v9 = g9.verdict;
+    if (nameKept9) v9 = Object.assign({ verdict: 'detected', issues: [], fields: {} }, v9 || {}, { name_hint: nameKept9, name_kept: true });
+    if (!(await lbPrecheckGate(v9))) return false;
+    return v9;
   }
   function lbPrecheckGate(v9) {
     // reject → modal listing problems+fixes; resolves TRUE = upload anyway, FALSE = fix first.

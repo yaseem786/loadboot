@@ -25,11 +25,16 @@ function aiFailed(v) { return !!(v && v.verdict && !AI_REAL.includes(v.verdict) 
 const SLOT_NAMES = { insurance: 'COI', authority: 'MC authority', w9: 'W-9', noa: 'factoring NOA', bank_check: 'bank verification', mcs150: 'MCS-150', boc3: 'BOC-3',
   hazmat_reg: 'PHMSA registration', hazmat_h: 'CDL', hazmat_coi: 'hazmat COI', agreement: 'agreement', rate_con: 'rate con', bol: 'BOL', pod: 'POD', other: 'other' };
 const slotName = (t) => SLOT_NAMES[t] || t;
-function wrongSlot(v, type) { return !!(v && v.wrong_slot && v.detected_type && v.detected_type !== type); }
+function wrongSlot(v, type) {
+  return !!(v && ((v.wrong_slot && v.detected_type && v.detected_type !== type) || (v.name_kept && v.name_hint && v.name_hint !== type)));
+}
+// O.3: what it looks like — the AI's reading wins over the file-name hint
+const lookedLike = (v, type) => (v.wrong_slot && v.detected_type && v.detected_type !== type) ? v.detected_type : v.name_hint;
 function wrongSlotPill(v, type) {
   if (!wrongSlot(v, type)) return '';
-  return el('span', { style: 'display:block;font-weight:800;font-size:.74rem;color:#dc2626', title: 'AI read this file as ' + slotName(v.detected_type) + (v.carrier_kept_slot ? ' — the carrier said it is correct and kept it here.' : '') },
-    '⚠ possible wrong slot: looks like ' + slotName(v.detected_type));
+  const like = lookedLike(v, type);
+  return el('span', { style: 'display:block;font-weight:800;font-size:.74rem;color:#dc2626', title: (like === v.detected_type ? 'AI read this file as ' : 'The file name says ') + slotName(like) + (v.carrier_kept_slot || v.name_kept ? ' — the carrier said it is correct and kept it here.' : '') },
+    '⚠ possible wrong slot: looks like ' + slotName(like));
 }
 function aiPill(v, type) {
   if (!v || !v.verdict) {
@@ -38,7 +43,7 @@ function aiPill(v, type) {
       : el('span', { class: 'cc-sub', style: 'color:#94a3b8' }, '—');
   }
   if (aiFailed(v)) {
-    return el('span', { title: v.summary || '', style: 'font-weight:800;font-size:.78rem;color:#b45309' }, 'AI: check failed' + (v.ai_status ? ' (' + v.ai_status + ')' : ''));
+    return el('span', { title: v.summary || '', style: 'display:inline-flex;flex-direction:column;gap:2px;font-weight:800;font-size:.78rem;color:#b45309' }, ['AI: check failed' + (v.ai_status ? ' (' + v.ai_status + ')' : ''), wrongSlotPill(v, type)]);
   }
   if (v.verdict === 'detected') return wrongSlotPill(v, type) || el('span', { class: 'cc-sub', style: 'color:#94a3b8' }, '—');
   const tone = v.verdict === 'reject' ? '#ef4444' : v.verdict === 'warning' ? '#f59e0b' : v.verdict === 'pass' ? '#16a34a' : '#64748b';
@@ -76,16 +81,19 @@ function aiCard(v, d, onDone) {
     return card([
       el('div', { class: 'cc-field' }, [el('span', null, 'AI pre-check'), el('b', { style: 'color:#b45309' }, 'FAILED — the AI did not check this file' + (v.ai_status ? ' (' + v.ai_status + ')' : ''))]),
       el('div', { class: 'cc-field' }, [el('span', null, 'Source'), el('b', null, src + (v.recorded_at ? ' · ' + fmtDate(v.recorded_at) : ''))]),
+      wrongSlot(v, d && d.type) ? el('p', { style: 'margin:6px 0 0;font-weight:700;color:#dc2626' }, '⚠ Possible wrong slot — its file name says ' + slotName(lookedLike(v, d.type)) + '.') : '',
       el('p', { class: 'cc-sub', style: 'margin:6px 0 0' }, 'Review it fully by hand, or run the check now.'),
       rerun,
     ], 'cc-fields');
   }
   const ws = wrongSlot(v, d && d.type)
     ? el('div', { style: 'border-left:3px solid #dc2626;padding:7px 11px;margin:0 0 8px;border-radius:0 8px 8px 0;background:rgba(220,38,38,.07);font-weight:700;font-size:.85rem' },
-        '⚠ Possible wrong slot — filed as ' + slotName(d.type) + ', the AI read it as ' + slotName(v.detected_type) + (v.doc_label ? ' ("' + v.doc_label + '")' : '') + '.'
-        + (v.carrier_kept_slot ? ' The carrier was asked and said it is correct.' : ''))
+        '⚠ Possible wrong slot — filed as ' + slotName(d.type) + (lookedLike(v, d.type) === v.detected_type
+          ? ', the AI read it as ' + slotName(v.detected_type) + (v.doc_label ? ' ("' + v.doc_label + '")' : '')
+          : ', its file name says ' + slotName(v.name_hint)) + '.'
+        + (v.carrier_kept_slot || v.name_kept ? ' The carrier was asked and said it is correct.' : ''))
     : '';
-  const moved = v.moved_from ? el('div', { class: 'cc-sub', style: 'font-size:.78rem;margin-bottom:6px' }, 'The carrier first picked ' + slotName(v.moved_from) + ' and moved it here when the AI flagged it.') : '';
+  const moved = v.moved_from ? el('div', { class: 'cc-sub', style: 'font-size:.78rem;margin-bottom:6px' }, 'The carrier first picked ' + slotName(v.moved_from) + ' and moved it here when ' + (v.moved_by === 'file_name' ? 'the file name' : 'the AI') + ' flagged it.') : '';
   if (v.verdict === 'detected') return (ws || moved) ? card([ws, moved], 'cc-fields') : '';
   const tone = v.verdict === 'reject' ? '#ef4444' : v.verdict === 'warning' ? '#f59e0b' : '#16a34a';
   return card([
