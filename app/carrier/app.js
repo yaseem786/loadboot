@@ -8039,6 +8039,12 @@ function tripStepper(status) {
     switchTo9(g9.type);
     let v9 = g9.verdict;
     if (nameKept9) v9 = Object.assign({ verdict: 'detected', issues: [], fields: {} }, v9 || {}, { name_hint: nameKept9, name_kept: true });
+    // O.4: replacing an APPROVED document is never silent. The server keeps the approved one active until the new one
+    // is approved (bl_doc_0539b) — say so, and let the carrier back out.
+    try {
+      const ap9 = ((await carrierListDocuments()) || []).find((d9) => d9.type === slot9 && d9.status === 'approved');
+      if (ap9 && !confirm('Your ' + lbSlotName(slot9) + ' is already APPROVED (' + (ap9.file_name || 'on file') + ').\n\nA new upload does NOT replace it straight away \u2014 the approved one stays active until our team approves the new one.\n\nUpload this as a replacement?')) return false;
+    } catch (_) {}
     if (!(await lbPrecheckGate(v9))) return false;
     return v9;
   }
