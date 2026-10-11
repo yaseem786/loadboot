@@ -8034,7 +8034,8 @@ function tripStepper(status) {
       else nameKept9 = nm9;
     }
     if (!ran9) pv9 = await lbAiPrecheck(f9, slot9);
-    const g9 = await lbSlotGate(pv9, slot9, f9, !fixed9);
+    // the carrier already answered the file-name question for this same kind — do not ask twice
+    const g9 = (nameKept9 && pv9 && pv9.detected_type === nameKept9) ? { type: slot9, verdict: Object.assign({}, pv9, { carrier_kept_slot: true }) } : await lbSlotGate(pv9, slot9, f9, !fixed9);
     if (!g9) return false;
     switchTo9(g9.type);
     let v9 = g9.verdict;
