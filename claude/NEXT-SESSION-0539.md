@@ -150,7 +150,7 @@ created_at > now() - interval '45 days'` (prod, read-only).
 ##    (Optimization Linx stays pending until staff approve). Staging documents-trigger drift fixed (bl_ops_0542,
 ##    staging only). Email to the 4: onboarding.carrier_next_steps (bl_comm_0544), all delivered 12 Oct 18:53 UTC.
 ##    Premium email standard: shell + app_private.email_kit + tools/email-preview (bl_comm_0543, CLAUDE.md §10).
-##    Next free number: 0546.
+##    Next free number: 0547.
 
 `refresh_carrier_status` counts only `public.documents` rows of type insurance / w9 / authority. An e-signed W-9 (portal
 form → `app_private.carrier_compliance` 'w9' valid, no documents row) is never counted, so fully verified carriers stay

@@ -24,3 +24,12 @@ Email preview: `claude/previews/coi-vins-request-0545.html` (real shell, desktop
 `migrations/PROD-bl_comp_0545.sql` — NOT applied. Anchors verified on prod (read-only). Read-only impact list (12 Oct):
 only **"Carrier Account"** (0 trucks, 0 active posts) becomes pending. T Strick is no longer affected — staff recorded
 scheduled + 1 VIN on 12 Oct 16:19. Apply in 5 parts (MCP hangs on `drop trigger` / literal `delete from`).
+
+## Staging drift fixed — bl_ops_0546 (12 Oct 2026)
+Staging `coi_ingest_from_document` was missing prod's bl_fix_0311 (never committed): if a reviewer already pulled VINs +
+note off THIS certificate and pressed Save coverage, approval must keep it instead of the AI overwriting it.
+`migrations/bl_ops_0546_staging_coi_ingest_parity.sql` = prod's body verbatim; staging md5 now = prod
+(4be84e4f0964dba501719981adf4cd07). Prod untouched. Rolled-back test on staging: same doc → `preserved`, 1 VIN kept;
+a different new certificate with no VINs → AI `unknown`, stored as scheduled + 0 VINs (= VINs pending, bl_comp_0545).
+The reviewer flow (paste → "Pull VINs out of that" → note → Save coverage) is unchanged; "Request VIN schedule" is the
+extra button for when the certificate lists no VINs.
