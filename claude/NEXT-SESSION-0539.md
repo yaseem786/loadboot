@@ -144,10 +144,10 @@ Numbers for proof: `select count(*) filter (where ai_verdict is not null), count
 created_at > now() - interval '45 days'` (prod, read-only).
 
 ---------------------------------------------------------------------------------------------------------------
-## Q. Auto-activation ignores e-signed W-9s (owner, 12 Oct) — DONE on staging 12 Oct (bl_onb_0541); prod =
-##    migrations/PROD-bl_onb_0541.sql (activates T Strick, MEDO, The Way Home, Blessed Road Runner; promote-only,
-##    needs onboarding stage 'approved'; Optimization Linx stays pending until staff approve). Next free number: 0542.
-##    Side finding: staging lacks prod's documents triggers trg_document_change + trg_protect_document_insert (drift).
+## Q. Auto-activation ignores e-signed W-9s — DONE, ON PROD 12 Oct (bl_onb_0541, see migrations/PROD-bl_onb_0541.sql).
+##    T Strick, MEDO, The Way Home, Blessed Road Runner activated; promote-only; needs onboarding stage 'approved'
+##    (Optimization Linx stays pending until staff approve). Staging documents-trigger drift fixed (bl_ops_0542,
+##    staging only). Next free number: 0543.
 
 `refresh_carrier_status` counts only `public.documents` rows of type insurance / w9 / authority. An e-signed W-9 (portal
 form → `app_private.carrier_compliance` 'w9' valid, no documents row) is never counted, so fully verified carriers stay

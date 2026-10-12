@@ -1,4 +1,6 @@
--- PROD — bl_onb_0541 (item Q: auto-activation from compliance truth) — DO NOT RUN until the owner says "laga do"
+-- PROD — bl_onb_0541 (item Q: auto-activation from compliance truth) — APPLIED ON PROD 12 Oct 2026 (owner: "laga do")
+-- Result: T Strick, MEDO, The Way Home, Blessed Road Runner → active; Optimization Linx stays pending; carriers
+-- pending 276→272, active 13→17 (incl. demo); anon SECDEF 36, names md5 unchanged (f89f62f9…); both triggers live.
 -- Project: rwscphuhpjoudvljvmdk. Apply through a Claude session with the Supabase MCP (apply_migration).
 --
 -- What it does (owner approved 12 Oct): a carrier becomes profiles.status='active' when its org has VALID, unexpired
