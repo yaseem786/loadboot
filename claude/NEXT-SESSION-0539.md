@@ -85,7 +85,8 @@ What exists (staging = prod, read 11 Oct):
   cc_riley_plan_create new optional params, outcome.confirmed; prompt text change for the owner (not SQL).
 
 ---------------------------------------------------------------------------------------------------------------
-## N. Document decision SMS (carrier campaign CS3VIAJ) — not started
+## N. Document decision SMS (carrier campaign CS3VIAJ) — DONE on staging 12 Oct (bl_dial_0540, see claude/DOC-SMS-0540.md;
+##    prod = migrations/PROD-bl_dial_0540.sql, pending owner decisions)
 
 Spec (11 Oct): on staff approve/reject in CC, queue ONE SMS per carrier per review session (debounce 10 min after the
 last decision, then a single summary). Send only if (a) carrier ticked the SMS consent box (`app_private.sms_consent`,
@@ -102,7 +103,8 @@ says "fully approved"; build a `doc_sms_queue` (org, due_at, doc_ids[]) + cron s
 `brain_housekeep` cron in bl_brain_0470). Email catalog rule (CLAUDE.md §6) is for e-mails; SMS has its own consent law.
 
 ---------------------------------------------------------------------------------------------------------------
-## O. Wrong-slot uploads (T Strick, O&O Murray, 9–10 Oct) — not started
+## O. Wrong-slot uploads (T Strick, O&O Murray, 9–10 Oct) — 1–5 DONE on staging (bl_doc_0539/b/c, see
+##    claude/O-WRONG-SLOT-0539.md; prod pending) · 6 NOT STARTED (added 12 Oct)
 
 1. AI precheck not saving: only ~6 of ~70 carrier documents in 45 days have `documents.ai_verdict`, 0 of 6 on 10 Oct.
    Start: `lbAiPrecheck` in app/carrier/app.js → edge fn `supabase/functions/doc-precheck/index.ts` (check its logs via
@@ -117,5 +119,36 @@ says "fully approved"; build a `doc_sms_queue` (org, due_at, doc_ids[]) + cron s
    'superseded' status in migrations).
 5. CC: one-click "Move to correct slot" per document → `public.cc_reclassify_document` (already updates documents.type
    AND app_private.carrier_compliance); make sure it can restore a superseded document to pending.
+6. VIN gate when an approved COI has no VINs recorded (owner, 12 Oct). Verified on prod 12 Oct: T Strick has a valid
+   insurance_coi but NO `app_private.coi_coverage` row → vin_coverage_state='no_coi' → truck add AND post/dispatch are
+   allowed (`assert_vin_dispatchable` only blocks 'not_covered'). An approved COI with no readable VINs (no ai_verdict /
+   no vehicles_listed) must never leave coi_coverage empty — that silently disables the VIN gate.
+   a) On COI approval with no VINs read: write coi_coverage mode='scheduled' with an EMPTY VIN list + a CC flag
+      "VINs needed from carrier/agent" (not mode 'unknown' left blank, not no row).
+   b) New state 'coi_vins_pending' (valid COI AND (no coverage row OR mode 'unknown' OR scheduled with 0 VINs)):
+      truck ENTRY is allowed; posting/dispatch (`cc_post_truck`, `cc_update_truck_posting*`, `assert_vin_dispatchable`)
+      is BLOCKED with a clear message until at least one VIN is covered or staff set 'any_auto'. CC shows a
+      "VINs needed" flag on the carrier.
+   c) Carrier truck form (app/carrier/app.js `paintCoi`, state 'no_coi' today): when insurance_coi is valid, do not
+      say "we need your COI first". Say: "Your insurance is approved. Send your insurance ID card or vehicle schedule
+      so we can match this truck's VIN" — upload CTA "Upload your insurance ID cards or vehicle schedule" — and let
+      the save go through.
+   d) CC coverage panel: disable "Save coverage" for 'Scheduled autos' with 0 VINs (it would block every truck — the
+      pending state in (a) is written by the system, not by this button), and offer "Request VIN schedule from
+      carrier" (an email → goes through the email catalog, CLAUDE.md §6; check `cc_email_can_send` first).
+   e) Backfill: list every approved/valid insurance_coi whose org has no coi_coverage row (T Strick is one) — read-only
+      list first, owner decides, then write them as (a). Prod numbers before/after.
 Numbers for proof: `select count(*) filter (where ai_verdict is not null), count(*) from public.documents where
 created_at > now() - interval '45 days'` (prod, read-only).
+
+---------------------------------------------------------------------------------------------------------------
+## Q. Auto-activation ignores e-signed W-9s (owner, 12 Oct) — not started
+
+`refresh_carrier_status` counts only `public.documents` rows of type insurance / w9 / authority. An e-signed W-9 (portal
+form → `app_private.carrier_compliance` 'w9' valid, no documents row) is never counted, so fully verified carriers stay
+'pending' (seen: T Strick, 12 Oct). Fix: base the auto-activation on `app_private.carrier_compliance` VALID rows (not
+expired) for mc_authority + insurance_coi + w9 (+ dispatch_agreement) — i.e. the same truth as `carrier_mandatory_ok` —
+instead of document rows. Then backfill: read-only list first (prod: every carrier with all four valid but status still
+'pending'), owner decides, then activate through the normal path (whatever notifications activation fires must fire once,
+not be skipped and not be doubled). Check every caller/trigger of refresh_carrier_status and anything else that reads
+documents.type for activation. Money/compliance-adjacent → main loop, staging first, prod file for the owner.

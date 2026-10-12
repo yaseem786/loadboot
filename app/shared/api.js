@@ -810,6 +810,7 @@ export const crmAddActivity = (id, kind, body) => rpc('cc_crm_add_activity', { p
 export const complianceOverview = () => rpc('cc_compliance_overview');
 export const listOnboarding = (o = {}) => rpc('cc_list_onboarding', { p_stage: o.stage ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
 export const getCarrierCompliance = (carrierId) => rpc('cc_get_carrier_compliance', { p_carrier: carrierId });
+export const ccDocSmsStatus = (org) => rpc('cc_doc_sms_status', { p_org: org });   // bl_dial_0540 (N): decision texts under each document
 export const startOnboarding = (carrierId) => rpc('cc_start_onboarding', { p_carrier: carrierId });
 export const setCompliance = (o = {}) => rpc('cc_set_compliance', { p_carrier: o.carrier, p_requirement_key: o.requirement, p_status: o.status, p_expiry: o.expiry ?? null, p_note: o.note ?? null });
 export const decideOnboarding = (carrierId, decision, note) => rpc('cc_decide_onboarding', { p_carrier: carrierId, p_decision: decision, p_note: note ?? null });

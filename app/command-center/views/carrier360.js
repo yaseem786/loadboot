@@ -9,6 +9,7 @@ import { ccDispatcherDelaySet, ccCarrierLoginStatus, ccCarrierPhoneStatus } from
 import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
 import { prefsCard, prefsSourcesMap } from '../../shared/ui/prefs-card.js';   // bl_pref_0536 — the shared Dispatch preferences card
 import { ccCarrierFieldSources, ccFieldSuggestions, ccFieldSuggestionDecide } from '../../shared/api.js';
+import { ccDocSmsStatus } from '../../shared/api.js';   // bl_dial_0540 (N)
 import { dispatchHoldPanel } from './dispatchHold.js';   // bl_disp_0501 — hold from dispatchers
 import { icon } from '../../shared/ui/icons.js';
 
@@ -880,6 +881,19 @@ export function renderCarrier360(host, orgId) {
         }
       }
       const reqs = (cc && cc.requirements) || [];
+      // bl_dial_0540 (N): the decision text under each document — "SMS sent 10:42", queued, or why it did not go.
+      let smsRows = []; try { const s9 = await ccDocSmsStatus(orgId); smsRows = (s9 && s9.rows) || []; } catch (_) {}
+      const smsLine = (key) => {
+        const x = smsRows.find((q) => (q.keys || []).indexOf(key) >= 0 && (Date.now() - new Date(q.created_at).getTime()) < 14 * 864e5);
+        if (!x) return null;
+        const hm = (t) => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const txt = x.status === 'sent' ? ('SMS ' + (x.msg_status === 'delivered' ? 'delivered' : 'sent') + ' ' + hm(x.sent_at) + (x.to ? ' to ' + x.to : ''))
+          : x.status === 'collecting' ? ('SMS goes ~' + hm(x.due_at) + (x.reason ? ' \u00b7 ' + x.reason : ' (waits for more decisions, then one summary)'))
+          : (x.status === 'ready' || x.status === 'sending') ? 'SMS sending\u2026'
+          : x.status === 'failed' ? ('SMS failed: ' + (x.reason || 'unknown'))
+          : ('No SMS: ' + (x.reason || 'skipped'));
+        return el('div', { class: 'cc-sub', title: x.body || '', style: 'font-size:.74rem;margin-top:2px;color:' + (x.status === 'failed' ? '#b91c1c' : (x.status === 'sent' ? '#047857' : '#64748b')) }, '\ud83d\udcf1 ' + txt);
+      };
       const stage = (cc && cc.stage) || (d.onboarding && d.onboarding.stage) || 'not started';
       const rows = reqs.map((r) => {
         const tone = r.status === 'valid' ? 'green' : (r.status === 'pending' ? 'blue' : (r.status === 'expired' || r.status === 'rejected' ? 'red' : 'amber'));
@@ -1031,7 +1045,7 @@ export function renderCarrier360(host, orgId) {
           ].filter(Boolean));
         } }, '\u2699 Actions') : '';
         return el('div', { style: 'display:flex;gap:9px;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eef2f7' }, [
-          el('div', { style: 'min-width:0' }, [el('b', { style: 'font-size:.88rem' }, r.name), el('div', { class: 'cc-sub' }, (r.mandatory ? 'Required' : 'Optional') + exp + (r.note ? ' · ' + r.note : ''))]),
+          el('div', { style: 'min-width:0' }, [el('b', { style: 'font-size:.88rem' }, r.name), el('div', { class: 'cc-sub' }, (r.mandatory ? 'Required' : 'Optional') + exp + (r.note ? ' · ' + r.note : '')), smsLine(r.key)]),
           el('div', { style: 'display:flex;gap:6px;align-items:center;flex:none' }, [el('span', { class: 'cc-pill cc-pill-' + tone }, r.status),
             (r.status !== 'valid') ? el('button', { class: 'cc-chip-btn', title: 'Email + in-app reminder for THIS document (6h cooldown)', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
               try { const r9 = await ccOnboardingRemind(orgId, r.name || r.key); b9.textContent = '✓ Sent'; toast('Reminder sent' + (r9 && r9.sent_to ? ' to ' + r9.sent_to : '') + ' — premium email + in-app, for: ' + (r.name || r.key)); }
