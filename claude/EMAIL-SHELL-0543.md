@@ -20,7 +20,7 @@ istemal kare; Amazon/Uber standard; mobile + desktop responsive."
 
 ## Status
 - Staging: `email_kit` live (+ card-icon tweak `bl_comm_0543b`).
-- Prod: `migrations/PROD-bl_comm_0543.sql` — the kit function only (pure, sends nothing).
+- Prod: applied 12 Oct 2026 (same md5 as staging). First use: onboarding.carrier_next_steps (bl_comm_0544).
 - delivery-worker v23 is NOT deployed: production output is identical, so there is no rush; deploy with the next
   worker change (include `_shared/email-shell.ts` in the deploy files).
 - Known limit: the CTA button is not full-width on phones (the shell's `.lb-btn` rule makes the cell block-level but

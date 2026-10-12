@@ -1,4 +1,4 @@
--- PROD — bl_comm_0543 (premium email body kit) — DO NOT RUN until the owner says "laga do"
+-- PROD — bl_comm_0543 (premium email body kit) — APPLIED ON PROD 12 Oct 2026 (owner: "bhej do"); prosrc md5 = staging (f39109a4…), anon 36 unchanged
 -- Project: rwscphuhpjoudvljvmdk. Apply through a Claude session with the Supabase MCP (apply_migration).
 --
 -- 1. apply_migration name 'bl_comm_0543_email_kit' = the WHOLE of migrations/bl_comm_0543_email_kit.sql
