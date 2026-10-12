@@ -7,7 +7,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { ccDispatcherDelaySet, ccCarrierLoginStatus, ccCarrierPhoneStatus } from '../../shared/api.js';   // bl_disp_0410 · bl_ux_0486
 import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
-import { prefsCard, prefsSourcesMap } from '../../shared/ui/prefs-card.js';   // bl_pref_0536 — the shared Dispatch preferences card
+import { prefsCard as sharedPrefsCard, prefsSourcesMap } from '../../shared/ui/prefs-card.js';   // bl_pref_0536 — aliased: `prefsCard` below is the local card() element
 import { ccCarrierFieldSources, ccFieldSuggestions, ccFieldSuggestionDecide } from '../../shared/api.js';
 import { ccDocSmsStatus } from '../../shared/api.js';   // bl_dial_0540 (N)
 import { dispatchHoldPanel } from './dispatchHold.js';   // bl_disp_0501 — hold from dispatchers
@@ -124,11 +124,16 @@ export function renderCarrier360(host, orgId) {
       // pending suggestions (Accept / Reject here = staff decision, written through the normal path)
       const prefsHost9 = el('div');
       (async () => {
-        let srcRows = [], sugRows = [];
-        try { const s9 = await ccCarrierFieldSources(orgId); srcRows = (s9 && s9.rows) || []; } catch (_) {}
-        try { const g9 = await ccFieldSuggestions(orgId); sugRows = (g9 && g9.rows) || []; } catch (_) {}
-        mount(prefsHost9, prefsCard(pr, { bare: false, viewer: 'staff', title: 'Dispatch preferences', sources: prefsSourcesMap(srcRows), suggestions: sugRows,
-          onDecide: async (x, ok) => { const r9 = await ccFieldSuggestionDecide(x.id, ok, null); if (!r9 || r9.error) throw new Error((r9 && (r9.message || r9.error)) || 'failed'); } }));
+        try {
+          let srcRows = [], sugRows = [];
+          try { const s9 = await ccCarrierFieldSources(orgId); srcRows = (s9 && s9.rows) || []; } catch (_) {}
+          try { const g9 = await ccFieldSuggestions(orgId); sugRows = (g9 && g9.rows) || []; } catch (_) {}
+          mount(prefsHost9, sharedPrefsCard(pr, { bare: false, viewer: 'staff', title: 'Dispatch preferences', sources: prefsSourcesMap(srcRows), suggestions: sugRows,
+            onDecide: async (x, ok) => { const r9 = await ccFieldSuggestionDecide(x.id, ok, null); if (!r9 || r9.error) throw new Error((r9 && (r9.message || r9.error)) || 'failed'); } }));
+        } catch (e9) {
+          // Never leave the host silently empty — say what broke.
+          mount(prefsHost9, el('div', { class: 'cc-sub', style: 'color:#b91c1c;margin-top:6px' }, 'Preferences card failed: ' + ((e9 && e9.message) || String(e9))));
+        }
       })();
       mount(prefsCard, el('div', null, [
         el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '\ud83c\udfaf Carrier dispatch preferences'),
