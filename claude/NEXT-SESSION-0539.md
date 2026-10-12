@@ -147,7 +147,9 @@ created_at > now() - interval '45 days'` (prod, read-only).
 ## Q. Auto-activation ignores e-signed W-9s — DONE, ON PROD 12 Oct (bl_onb_0541, see migrations/PROD-bl_onb_0541.sql).
 ##    T Strick, MEDO, The Way Home, Blessed Road Runner activated; promote-only; needs onboarding stage 'approved'
 ##    (Optimization Linx stays pending until staff approve). Staging documents-trigger drift fixed (bl_ops_0542,
-##    staging only). Next free number: 0543.
+##    staging only). Email to the 4: onboarding.carrier_next_steps (bl_comm_0544), all delivered 12 Oct 18:53 UTC.
+##    Premium email standard: shell + app_private.email_kit + tools/email-preview (bl_comm_0543, CLAUDE.md §10).
+##    Next free number: 0545.
 
 `refresh_carrier_status` counts only `public.documents` rows of type insurance / w9 / authority. An e-signed W-9 (portal
 form → `app_private.carrier_compliance` 'w9' valid, no documents row) is never counted, so fully verified carriers stay
