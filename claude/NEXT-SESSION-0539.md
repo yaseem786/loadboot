@@ -136,13 +136,18 @@ says "fully approved"; build a `doc_sms_queue` (org, due_at, doc_ids[]) + cron s
    d) CC coverage panel: disable "Save coverage" for 'Scheduled autos' with 0 VINs (it would block every truck — the
       pending state in (a) is written by the system, not by this button), and offer "Request VIN schedule from
       carrier" (an email → goes through the email catalog, CLAUDE.md §6; check `cc_email_can_send` first).
-   e) Backfill: list every approved/valid insurance_coi whose org has no coi_coverage row (T Strick is one) — read-only
+   e) Backfill — read-only list 12 Oct: only 'Carrier Account' (internal, 0 trucks) has a valid COI and no coverage row;
+      T Strick was fixed by staff 12 Oct (scheduled, 1 VIN). (a)–(d) still needed so it cannot recur.
+      Original: list every approved/valid insurance_coi whose org has no coi_coverage row (T Strick is one) — read-only
       list first, owner decides, then write them as (a). Prod numbers before/after.
 Numbers for proof: `select count(*) filter (where ai_verdict is not null), count(*) from public.documents where
 created_at > now() - interval '45 days'` (prod, read-only).
 
 ---------------------------------------------------------------------------------------------------------------
-## Q. Auto-activation ignores e-signed W-9s (owner, 12 Oct) — not started
+## Q. Auto-activation ignores e-signed W-9s (owner, 12 Oct) — DONE on staging 12 Oct (bl_onb_0541); prod =
+##    migrations/PROD-bl_onb_0541.sql (activates T Strick, MEDO, The Way Home, Blessed Road Runner; promote-only,
+##    needs onboarding stage 'approved'; Optimization Linx stays pending until staff approve). Next free number: 0542.
+##    Side finding: staging lacks prod's documents triggers trg_document_change + trg_protect_document_insert (drift).
 
 `refresh_carrier_status` counts only `public.documents` rows of type insurance / w9 / authority. An e-signed W-9 (portal
 form → `app_private.carrier_compliance` 'w9' valid, no documents row) is never counted, so fully verified carriers stay

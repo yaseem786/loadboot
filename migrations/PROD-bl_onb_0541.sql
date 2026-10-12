@@ -1,0 +1,54 @@
+-- PROD — bl_onb_0541 (item Q: auto-activation from compliance truth) — DO NOT RUN until the owner says "laga do"
+-- Project: rwscphuhpjoudvljvmdk. Apply through a Claude session with the Supabase MCP (apply_migration).
+--
+-- What it does (owner approved 12 Oct): a carrier becomes profiles.status='active' when its org has VALID, unexpired
+-- mc_authority + insurance_coi + w9 + dispatch_agreement in app_private.carrier_compliance AND staff approved
+-- onboarding (carrier_onboarding.stage='approved'). It NEVER demotes (today's function demotes active carriers who have
+-- no approved W-9 *document* the next time any document of theirs changes — Warren's, Munster, Sprint Shift, EZHaul,
+-- Pick N Nett are exposed; Sprint Shift's COI expires 17 Oct, so their renewal upload would have flipped them).
+-- No email/SMS/notification is sent by activation (never was); 'onboarding.decided' is untouched.
+--
+-- ORDER:
+--   0. BEFORE (read-only) — expect these 4 rows, status pending:
+--      T STRICK TRANSPORT LLC · MEDO ENTERPRISE LLC · THE WAY HOME LLC · BLESSED ROAD RUNNER TRANSPORTATION, LLC
+--      (Optimization Linx has all 4 valid but onboarding is still 'compliance_check' → stays pending, by design.)
+--
+--   select p.company, p.status from public.profiles p
+--     join public.organizations o on o.owner_user_id = p.id and o.kind::text = 'carrier'
+--     join app_private.carrier_onboarding ob on ob.carrier_id = o.id and ob.stage = 'approved'
+--    where p.role = 'carrier' and p.status = 'pending'
+--      and (select count(distinct cc.requirement_key) from app_private.carrier_compliance cc
+--            where cc.carrier_id = o.id and cc.status = 'valid'
+--              and (cc.expiry_date is null or cc.expiry_date >= current_date)
+--              and cc.requirement_key in ('mc_authority','insurance_coi','w9','dispatch_agreement')) = 4;
+--
+--   1. apply_migration name 'bl_onb_0541_activation_from_compliance' = the WHOLE of
+--      migrations/bl_onb_0541_activation_from_compliance.sql (env-neutral; applied in one shot on staging 12 Oct).
+--      Do NOT add a drop-if-exists for the triggers — the MCP hangs on that text; the file uses a guarded create.
+--
+--   2. AFTER — the query in step 0 returns 0 rows; those 4 now read 'active':
+--   select company, status from public.profiles where company in ('T STRICK TRANSPORT LLC','MEDO ENTERPRISE LLC',
+--     'THE WAY HOME LLC','BLESSED ROAD RUNNER TRANSPORTATION, LLC','Optimization Linx Logistics, LLC');
+--      and the active count goes 9 → 13 (non-demo carriers):
+--   select status, count(*) from public.profiles where role = 'carrier' group by 1;
+--      anon SECDEF must still read 36 with the baseline names (nothing public was added):
+--   select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+--    where n.nspname = 'public' and p.prosecdef and has_function_privilege('anon', p.oid, 'execute');
+--
+--   3. merge the branch to main (no app/CC code in this item — SQL only).
+--
+-- ROLLBACK (restores the old documents-based rule; the 4 stay active unless set back by hand):
+--   alter table app_private.carrier_compliance disable trigger trg_compliance_refresh_status;
+--   alter table app_private.carrier_onboarding disable trigger trg_onboarding_refresh_status;
+--   and re-create public.refresh_carrier_status from its pre-0541 body:
+--     declare req text[] := array['insurance','w9','authority']; ok_count int;
+--     begin
+--       select count(distinct type) into ok_count from public.documents
+--        where carrier_id = p_carrier and status='approved' and type = any(req);
+--       if ok_count >= array_length(req,1) then
+--         update public.profiles set status='active' where id = p_carrier and status <> 'paused';
+--       else
+--         update public.profiles set status='pending' where id = p_carrier and status <> 'paused';
+--       end if;
+--     end;
+--   (Not recommended: the old body is the one that demotes carriers with an e-signed W-9.)
