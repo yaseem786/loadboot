@@ -211,3 +211,20 @@ The Claude Ops Brain (`bl_brain_0470`/`0472`, plan `docs/livechat/LIVECHAT-CLAUD
   to `live` when the executor ships; never bypass the registry with a hard-coded tool name.
 - Every permission/config change goes through the `cc_brain_*` RPCs or an explicit update + `app_private.brain_log(...)`
   so the CC change log stays complete. Doc: `claude/BRAIN-CONTROL-0472.md`.
+
+## 10. Premium email = the ONE shell + the ONE body kit (set 12 Oct 2026, `bl_comm_0543`)
+
+When the owner says "premium email" (or any email at all), it is built ONE way — never hand-drawn:
+
+- **Shell (header with the real logo, brand bar, call/WhatsApp band, footer)** is added by `delivery-worker` to every
+  email it sends. Source: `supabase/functions/_shared/email-shell.ts` (the worker and the preview tool import the same
+  file). A body must NEVER contain a logo, `<html>`, a header band, a footer, an unsubscribe link or a contact
+  line/number — the shell already adds them (a body that does gets stripped or double-headed).
+- **Body** = `app_private.email_kit(jsonb)`: status chip, title, intro, checklist card (tone: success/info/warning/
+  danger), facts table, "Your next step" card, orange CTA button, secondary link, small print, sign-off. Do not
+  hand-roll body HTML for a new email; if the kit lacks a block, add it to the kit (one place) and preview it.
+- **Preview before showing the owner or sending:** `select app_private.email_kit('{…}')` → save the fragment →
+  `node tools/email-preview/preview.mjs body.html --subject "…" --out preview.html` (desktop + phone frames from the
+  real shell). Show him that page, never a mock-up.
+- Then §6 (catalog key + row), §6.5 (`cc_email_can_send`), §7 (no Riley number) as always.
+Doc: `claude/EMAIL-SHELL-0543.md`.

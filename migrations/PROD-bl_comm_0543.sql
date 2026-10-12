@@ -1,0 +1,13 @@
+-- PROD — bl_comm_0543 (premium email body kit) — DO NOT RUN until the owner says "laga do"
+-- Project: rwscphuhpjoudvljvmdk. Apply through a Claude session with the Supabase MCP (apply_migration).
+--
+-- 1. apply_migration name 'bl_comm_0543_email_kit' = the WHOLE of migrations/bl_comm_0543_email_kit.sql
+--    (already includes the card-icon tweak staging got as bl_comm_0543b). Pure function in app_private: reads nothing,
+--    writes nothing, sends nothing; revoked from public/anon/authenticated.
+-- 2. AFTER: anon SECDEF still 36 with unchanged names (nothing public added):
+--    select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+--     where n.nspname = 'public' and p.prosecdef and has_function_privilege('anon', p.oid, 'execute');
+--    smoke: select length(app_private.email_kit('{"title":"Test","cta":{"label":"Go","url":"https://loadboot.com"}}')) > 0;
+-- 3. delivery-worker v23 (shell moved to supabase/functions/_shared/email-shell.ts) — output byte-identical to v22;
+--    deploy only with the next worker change, and include _shared/email-shell.ts in the deployed files.
+-- ROLLBACK: drop function app_private.email_kit(jsonb);  (nothing depends on it until an email uses it)
