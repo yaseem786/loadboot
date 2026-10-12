@@ -753,6 +753,8 @@ export const setCoiCoverage = (o = {}) => rpc('cc_set_coi_coverage', {
   p_org: o.org, p_mode: o.mode, p_vins: o.vins ?? null,
   p_document: o.document ?? null, p_expiry: o.expiry ?? null, p_note: o.note ?? null,
 });
+// bl_comp_0545 — "Request VIN schedule from carrier" (catalog key document.coi_vins.request)
+export const coiRequestVins = (org) => rpc('cc_coi_request_vins', { p_org: org });
 
 export const assignRole = (o) => rpc('admin_assign_role', {
   p_user: o.userId, p_role_key: o.roleKey, p_scope_type: o.scopeType,

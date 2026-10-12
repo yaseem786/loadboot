@@ -30,12 +30,18 @@ export async function mountCoiTrucksBanner(host, ctx = {}) {
     h('b', { style: 'display:block;font-size:22px;line-height:1.2;color:' + (color || '#fff') }, esc(big)),
     h('span', { style: 'font-size:12px;color:#b8c7dc' }, small)]);
 
-  const title = anyAuto
+  // bl_comp_0545 (O.6): approved COI, no VINs on file — trucks can be added, NOT posted yet. Never say "post now".
+  const pending = !!b.vins_pending;
+  const title = pending
+    ? '✅ Insurance approved — send us your vehicle list'
+    : anyAuto
     ? '✅ Insurance approved — you can post truck availability now'
     : (scheduled && units != null && covered >= units && covered > 0)
       ? '✅ Insurance approved — all ' + covered + ' of your trucks are covered'
       : '✅ Insurance approved — you can post truck availability now';
-  const sub = anyAuto
+  const sub = pending
+    ? 'Your certificate does not list the vehicles it covers. Upload your insurance ID card for each truck or the vehicle schedule from your policy under Documents (or ask your agent to email it to hello@loadboot.com). You can add trucks now; they can be posted as soon as we match the VIN.'
+    : anyAuto
     ? 'Your auto liability covers any auto, so every truck in your fleet can be posted. Just add each truck with its VIN under Fleet.'
     : 'Only trucks whose VIN is on your insurance certificate can be posted and dispatched.'
       + (scheduled && covered ? ' Your policy lists specific vehicles, so these are the trucks we can run for you:' : '');
@@ -67,7 +73,10 @@ export async function mountCoiTrucksBanner(host, ctx = {}) {
     h('p', { style: 'margin:0 0 14px;color:#dbe7f5;font-size:14px;line-height:1.5' }, sub),
     tiles.length ? h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px' }, tiles) : null,
     vinList, note,
-    h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
+    h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, pending ? [
+      btn('Upload ID cards or vehicle schedule →', true, () => { if (ctx.go) ctx.go('documents'); }),
+      btn('Add a truck', false, () => { if (ctx.go) ctx.go('fleet'); }),
+    ] : [
       btn('Post truck availability →', true, () => { if (typeof ctx.openAvail === 'function') ctx.openAvail(); else if (ctx.go) ctx.go('fleet'); }),
       (warn || !anyAuto) ? btn('Upload updated certificate', false, () => { if (ctx.go) ctx.go('documents'); }) : null,
     ].filter(Boolean)),

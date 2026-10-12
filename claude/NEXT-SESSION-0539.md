@@ -119,7 +119,8 @@ says "fully approved"; build a `doc_sms_queue` (org, due_at, doc_ids[]) + cron s
    'superseded' status in migrations).
 5. CC: one-click "Move to correct slot" per document → `public.cc_reclassify_document` (already updates documents.type
    AND app_private.carrier_compliance); make sure it can restore a superseded document to pending.
-6. VIN gate when an approved COI has no VINs recorded (owner, 12 Oct). Verified on prod 12 Oct: T Strick has a valid
+6. [a–d DONE on staging 12 Oct — bl_comp_0545, claude/COI-VINS-0545.md; prod = migrations/PROD-bl_comp_0545.sql; e open]
+   VIN gate when an approved COI has no VINs recorded (owner, 12 Oct). Verified on prod 12 Oct: T Strick has a valid
    insurance_coi but NO `app_private.coi_coverage` row → vin_coverage_state='no_coi' → truck add AND post/dispatch are
    allowed (`assert_vin_dispatchable` only blocks 'not_covered'). An approved COI with no readable VINs (no ai_verdict /
    no vehicles_listed) must never leave coi_coverage empty — that silently disables the VIN gate.
@@ -149,7 +150,7 @@ created_at > now() - interval '45 days'` (prod, read-only).
 ##    (Optimization Linx stays pending until staff approve). Staging documents-trigger drift fixed (bl_ops_0542,
 ##    staging only). Email to the 4: onboarding.carrier_next_steps (bl_comm_0544), all delivered 12 Oct 18:53 UTC.
 ##    Premium email standard: shell + app_private.email_kit + tools/email-preview (bl_comm_0543, CLAUDE.md §10).
-##    Next free number: 0545.
+##    Next free number: 0546.
 
 `refresh_carrier_status` counts only `public.documents` rows of type insurance / w9 / authority. An e-signed W-9 (portal
 form → `app_private.carrier_compliance` 'w9' valid, no documents row) is never counted, so fully verified carriers stay

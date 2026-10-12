@@ -4111,6 +4111,7 @@ async function appView(user) {
         btn.disabled = false; btn.textContent = 'Post availability';
         if (e && e.code === 'LB001') { lbToast('This truck is not on your certificate of insurance, so it cannot be posted for dispatch. Add the VIN to your policy schedule and upload the updated certificate — we verify it the same day.', 'urgent', 'Not on your insurance'); return; }
         if (e && e.code === 'LB002') { lbToast('This truck has no valid VIN on file. Add it under Fleet first — brokers check the VIN before they release a load.', 'urgent', 'VIN required'); return; }
+        if (e && e.code === 'LB006') { lbToast(e.message || 'Upload your insurance ID card or vehicle schedule under Documents so we can match this truck\'s VIN.', 'urgent', 'VIN needed from your insurance'); return; }   // bl_comp_0545
         if (e && (e.code === 'LB003' || e.code === 'LB004')) { try { _close && _close(); } catch (_) {} lbToast(e.message || 'Add your truck and driver under Fleet first.', 'urgent', 'Fleet needed'); setTimeout(() => goFleet(e.code === 'LB003' ? 'truck' : 'driver'), 900); return; }
         msg.textContent = (e && e.message) || 'Could not post.';
       }
@@ -4240,6 +4241,8 @@ async function appView(user) {
             const cv = await vinCoverage(t9.vin);
             if (cv && cv.state === 'not_covered') specHost.appendChild(h('div', { style: 'border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fca5a5' },
               'This truck is not listed on your certificate of insurance, so we cannot dispatch it. Ask your agent to add the VIN and upload the updated certificate — then post it.'));
+            else if (cv && cv.state === 'coi_vins_pending') specHost.appendChild(h('div', { style: 'border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fcd34d' },
+              'Your insurance is approved, but it does not list this truck\'s VIN yet. Upload your insurance ID card or vehicle schedule under Documents — this truck can be posted as soon as we match it.'));   // bl_comp_0545
             else if (cv && cv.state === 'no_coi') specHost.appendChild(h('div', { style: 'border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fcd34d' },
               'We do not have your certificate of insurance yet. You can post, but nothing can be dispatched until it is on file.'));
           } catch (_) {}
@@ -4292,6 +4295,7 @@ async function appView(user) {
             btn.disabled = false; btn.textContent = existing ? (existing.status === 'paused' ? 'Post availability' : 'Save changes') : (bh ? 'Post backhaul' : 'Post availability');
             if (e && e.code === 'LB001') { lbToast('This truck is not on your certificate of insurance, so it cannot be posted for dispatch. Add the VIN to your policy schedule and upload the updated certificate — we verify it the same day.', 'urgent', 'Not on your insurance'); return; }
             if (e && e.code === 'LB002') { lbToast('This truck has no valid VIN on file. Add it under Fleet first — brokers check the VIN before they release a load.', 'urgent', 'VIN required'); return; }
+            if (e && e.code === 'LB006') { lbToast(e.message || 'Upload your insurance ID card or vehicle schedule under Documents so we can match this truck\'s VIN.', 'urgent', 'VIN needed from your insurance'); return; }   // bl_comp_0545
             if (e && (e.code === 'LB003' || e.code === 'LB004')) { _closePT(); lbToast(e.message || 'Add your truck and driver under Fleet first.', 'urgent', 'Fleet needed'); setTimeout(() => goFleet(e.code === 'LB003' ? 'truck' : 'driver'), 900); return; }
             if (e && e.code === 'LB005') { lbToast('Pick which truck you are posting.', 'urgent', 'Truck required'); return; }
             lbToast((e && e.message) || 'Could not post.', 'urgent', 'Not posted');
@@ -6566,6 +6570,15 @@ function tripStepper(status) {
           coiInfo.appendChild(box('#f87171', 'rgba(248,113,113,.07)', '✕ Not on your certificate of insurance',
             (vins.length ? 'It currently lists ' + (vins.length === 1 ? 'one truck: ' : vins.length + ' trucks: ') + vins.join(', ') + '. ' : '')
             + 'Ask your agent to add this VIN to the policy schedule — it is free — then upload the updated certificate under Documents. We verify it the same day.'));
+        } else if (r.state === 'coi_vins_pending') {
+          // bl_comp_0545 (O.6 c): the COI IS approved — it just does not list VINs. The truck saves; posting
+          // waits until we match this VIN (LB006). Never say "we need your COI first" here.
+          const upBtn = h('button', { type: 'button', class: 'cp-btn cp-btn-sm', style: 'margin-top:8px',
+            onClick: () => { try { closeT9(); } catch (_) {} if (typeof go === 'function') go('documents'); else location.hash = '#documents'; } },
+            'Upload your insurance ID cards or vehicle schedule');
+          coiInfo.appendChild(box('#38bdf8', 'rgba(56,189,248,.07)', '✓ Your insurance is approved',
+            'Send your insurance ID card or vehicle schedule so we can match this truck\'s VIN. You can save the truck now — it can be posted for loads as soon as the VIN is matched, usually the same working day.'));
+          coiInfo.appendChild(upBtn);
         } else if (r.state === 'no_coi') {
           // 29 Aug 2026: this used to say 'You can save the truck now'. It cannot —
           // the fleet_truck_coi_gate trigger refuses the insert with LB004 until a
@@ -6659,7 +6672,10 @@ function tripStepper(status) {
           fpDone('truck');
           try { closeT9(); } catch (_) {}
           lbToast('🚛 Truck saved' + (vinInfo.textContent.indexOf('✓') === 0 ? ' — VIN verified with U.S. DOT' : '')
-            + (coiState === 'covered' ? ' and matched to your certificate of insurance' : '') + '. Matching loads unlock on the board.', 'success', 'Fleet updated');
+            + (coiState === 'covered' ? ' and matched to your certificate of insurance' : '')
+            + (coiState === 'coi_vins_pending'   // bl_comp_0545: saved, but not postable until the VIN is matched
+                ? '. Upload your insurance ID card or vehicle schedule under Documents — the truck can be posted once we match its VIN.'
+                : '. Matching loads unlock on the board.'), 'success', 'Fleet updated');
         }
         catch (e) {
           // 29 Aug 2026 — Add truck used to look like it did nothing. Every code the

@@ -60,6 +60,7 @@ export const LB_CODE_TITLES = {
   LB002: 'VIN required',
   LB003: 'Check the payload',
   LB004: 'Certificate of insurance needed first',
+  LB006: 'VIN needed from your insurance',
   LB010: 'W-9 needs a change',
   LB011: 'W-9 needs a change',
   LB012: 'W-9 needs a change',

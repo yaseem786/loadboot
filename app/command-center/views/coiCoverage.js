@@ -10,8 +10,12 @@
 //
 // So the reviewer records it, at the one moment they are already looking at the certificate.
 // Backend: cc_coi_panel / cc_set_coi_coverage — bl_coi_0234.
+// bl_comp_0545 (O.6 d): an approved COI with no VINs is "VINs pending" — trucks can be added, none can be posted.
+// The card flags it, refuses to save "Scheduled autos" with 0 VINs (that row is written by the system, not this
+// button), offers "Request VIN schedule from carrier" (catalog email document.coi_vins.request), and also opens on
+// an "Other" upload while VINs are pending, so the reviewer can paste VINs straight off an ID card.
 import { el, mount } from '../../shared/ui/dom.js';
-import { coiPanel, setCoiCoverage } from '../../shared/api.js';
+import { coiPanel, setCoiCoverage, coiRequestVins } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -32,7 +36,7 @@ export function extractVins(raw) {
 const MODES = [
   ['scheduled', 'Scheduled autos', 'The policy lists specific vehicles. Only those VINs can be dispatched.'],
   ['any_auto', 'Any auto', 'The policy covers any vehicle the carrier operates. Every truck is dispatchable.'],
-  ['unknown', 'Cannot tell from this document', 'Nothing is blocked, but no truck is verified either. Ask the carrier for the schedule.'],
+  ['unknown', 'Cannot tell from this document', 'Trucks can be added, but none can be posted until VINs are recorded or the policy is set to Any auto. Ask the carrier for the schedule.'],
 ];
 
 const S = {
@@ -60,12 +64,14 @@ function modeChip(value, current, onPick) {
  */
 export function coiCoverageCard(doc, onSaved) {
   const host = el('div');
-  if (!doc || doc.type !== 'insurance') return host;
+  if (!doc || (doc.type !== 'insurance' && doc.type !== 'other')) return host;
+  const isOther = doc.type !== 'insurance';
 
   (async () => {
     let p;
     try { p = await coiPanel(doc.id); }
     catch (e) { mount(host, el('div', { style: S.wrap }, el('div', { style: S.sub }, 'Could not load coverage: ' + humanizeError(e)))); return; }
+    if (isOther && !(p && p.ok && p.vins_pending)) return;   // an "Other" upload only matters while VINs are pending
     if (!p || !p.ok) {
       mount(host, el('div', { style: S.wrap }, [
         el('div', { style: S.h }, 'Coverage cannot be recorded'),
@@ -101,7 +107,7 @@ export function coiCoverageCard(doc, onSaved) {
             el('button', {
               type: 'button', title: 'Remove',
               style: 'background:none;border:0;color:#94a3b8;cursor:pointer;font-weight:800;padding:0 0 0 2px',
-              onClick: () => { vins.splice(i, 1); drawVins(); drawFleet(); },
+              onClick: () => { vins.splice(i, 1); drawVins(); drawFleet(); syncSave(); },
             }, '×'),
           ])))
         : el('div', { style: S.sub }, 'No VINs yet — paste the schedule below, or type one in.'));
@@ -117,10 +123,10 @@ export function coiCoverageCard(doc, onSaved) {
       }
       const rows = trucks.map((t) => {
         const covered = mode === 'any_auto' ? true
-          : mode === 'unknown' ? null
+          : (mode === 'unknown' || !vins.length) ? null
           : (t.vin ? vins.indexOf(String(t.vin).toUpperCase()) >= 0 : false);
         const tone = covered === true ? ['#15803d', '✓ dispatchable']
-          : covered === null ? ['#92400e', '— unverified']
+          : covered === null ? ['#92400e', '— VINs needed, not postable']
           : ['#b91c1c', '✕ cannot be dispatched'];
         return el('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid #e2e8f0;font-size:.82rem' }, [
           el('span', { style: 'color:#334155' }, 'Unit ' + (t.unit_no || '—') + ' · ' + (t.vin || 'no VIN on file')),
@@ -134,7 +140,7 @@ export function coiCoverageCard(doc, onSaved) {
     };
 
     const drawMode = () => {
-      mount(modeHost, MODES.map((m) => modeChip(m, mode, (v) => { mode = v; drawMode(); drawSched(); drawFleet(); })));
+      mount(modeHost, MODES.map((m) => modeChip(m, mode, (v) => { mode = v; drawMode(); drawFleet(); syncSave(); })));
       const m = MODES.find((x) => x[0] === mode);
       mount(schedHost, [
         el('div', { style: S.sub + ';margin-top:6px' }, m ? m[2] : ''),
@@ -152,7 +158,7 @@ export function coiCoverageCard(doc, onSaved) {
                 paste.value = '';
                 saveMsg.style.color = '#15803d';
                 saveMsg.textContent = added ? ('Added ' + added + ' VIN' + (added === 1 ? '' : 's') + '.') : 'Already on the list.';
-                drawVins(); drawFleet();
+                drawVins(); drawFleet(); syncSave();
               },
             }, 'Pull VINs out of that'),
           ]),
@@ -163,13 +169,14 @@ export function coiCoverageCard(doc, onSaved) {
     const saveBtn = el('button', {
       class: 'lb-btn lb-btn-primary',
       onClick: async (ev) => {
+        if (mode === 'scheduled' && !vins.length) return;   // guarded by syncSave(); the server refuses it too
         const b = ev.currentTarget; b.disabled = true; b.textContent = 'Saving…';
         saveMsg.textContent = '';
         try {
           const r = await setCoiCoverage({
             org: p.org_id, mode,
             vins: mode === 'scheduled' ? vins : null,
-            document: doc.id,
+            document: isOther ? null : doc.id,   // an ID card / schedule keeps the certificate as the coverage document
             expiry: expiry.value || null,
             note: note.value || null,
           });
@@ -183,10 +190,44 @@ export function coiCoverageCard(doc, onSaved) {
         } catch (e) {
           saveMsg.style.color = '#b91c1c'; saveMsg.textContent = humanizeError(e);
         }
-        b.disabled = false; b.textContent = 'Save coverage';
+        b.textContent = 'Save coverage'; syncSave();
       },
     }, 'Save coverage');
+    const saveHint = el('span', { style: S.sub + ';margin-left:10px' });
+    // A scheduled policy with no VINs would block every truck — that pending state is written by the system on
+    // approval, never by this button.
+    const syncSave = () => {
+      const empty = mode === 'scheduled' && !vins.length;
+      saveBtn.disabled = empty || !can('documents.review');
+      saveHint.textContent = empty ? 'Add at least one VIN (or choose Any auto) to save.' : '';
+    };
 
+    // bl_comp_0545 (d): ask the carrier for the schedule — through the email catalog; blocked addresses are shown
+    // with the unsubscribe engine's own reason, never routed around.
+    const reqMsg = el('div', { style: 'font-size:.82rem;margin-top:8px' });
+    const reqBtn = p.vins_pending ? el('button', {
+      type: 'button', class: 'lb-btn lb-btn-secondary', style: 'margin-left:8px',
+      onClick: async (ev) => {
+        const b = ev.currentTarget; b.disabled = true; b.textContent = 'Sending…'; reqMsg.textContent = '';
+        try {
+          const r = await coiRequestVins(p.org_id);
+          const blocked = (r && r.blocked) || [];
+          mount(reqMsg, [
+            el('div', { style: 'color:' + ((r && r.sent) ? '#15803d' : '#b91c1c') + ';font-weight:700' },
+              (r && r.sent) ? ('Request sent to ' + r.sent + ' address' + (r.sent === 1 ? '' : 'es') + '.')
+                : (r && r.recipients) ? 'Not sent.' : 'No active user with an email on this account.'),
+            ...blocked.map((x) => el('div', { style: 'color:#b91c1c' }, x.email + ': ' + (x.reason || 'blocked'))),
+          ]);
+          if (r && r.sent) toast('VIN schedule requested', 'success');
+        } catch (e) { reqMsg.style.color = '#b91c1c'; reqMsg.textContent = humanizeError(e); }
+        b.disabled = false; b.textContent = 'Request VIN schedule from carrier';
+      },
+    }, 'Request VIN schedule from carrier') : null;
+
+    const pendingLine = p.vins_pending
+      ? el('div', { style: 'margin-top:6px;border-radius:10px;padding:9px 12px;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;font-size:.82rem;font-weight:700' },
+          '⚠ VINs needed from carrier/agent — the COI is approved but no VINs are on file. Their trucks can be added; none can be posted until you record the schedule here (or Any auto).')
+      : null;
     const stateLine = p.mode === 'unset'
       ? el('div', { style: 'margin-top:6px;border-radius:10px;padding:9px 12px;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;font-size:.82rem;font-weight:700' },
           '⚠ Not recorded yet. Until it is, no truck on this account can be matched to a policy.')
@@ -201,6 +242,7 @@ export function coiCoverageCard(doc, onSaved) {
     mount(host, el('div', { style: S.wrap }, [
       el('div', { style: S.h }, 'What does this certificate cover?'),
       el('div', { style: S.sub }, 'This is what decides which trucks we are allowed to dispatch. Read it off the document on the left.'),
+      pendingLine,
       stateLine,
       modeHost,
       schedHost,
@@ -209,13 +251,14 @@ export function coiCoverageCard(doc, onSaved) {
       ]),
       el('label', { style: 'display:block;margin-top:8px' }, [el('div', { style: S.sub + ';font-weight:700' }, 'Note for the file'), note]),
       fleetHost,
-      el('div', { style: 'margin-top:12px' }, saveBtn),
-      saveMsg,
+      el('div', { style: 'margin-top:12px;display:flex;align-items:center;flex-wrap:wrap;gap:6px' }, [saveBtn, saveHint, reqBtn]),
+      saveMsg, reqMsg,
     ]));
 
+    syncSave();
     if (!can('documents.review')) {
-      saveBtn.disabled = true;
       saveBtn.title = 'You have view-only access to documents.';
+      if (reqBtn) { reqBtn.disabled = true; reqBtn.title = 'You have view-only access to documents.'; }
     }
   })();
 

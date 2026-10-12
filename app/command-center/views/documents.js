@@ -224,8 +224,8 @@ export function renderDocuments(host) {
       el('label', { class: 'cc-card-title', style: 'margin-top:16px;display:block' }, 'Document'),
       previewBox,
       el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [openBtn, dlBtn]),
-      // Insurance only: record what the policy covers while the certificate is on screen.
-      // Renders nothing for other document types (bl_coi_0234).
+      // Insurance: record what the policy covers while the certificate is on screen (bl_coi_0234).
+      // Also an 'Other' upload while the carrier's VINs are pending (ID card / schedule, bl_comp_0545); nothing otherwise.
       coiCoverageCard(d, load),
       // A carrier who emailed us a document instead of uploading it (bl_doc_0248).
       staffUploadCard({ id: d.carrier_id, name: d.company }, load),
