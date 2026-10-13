@@ -1588,6 +1588,10 @@ export async function dialerSmsSend(to, body) {
   return data;
 }
 export const ccDialerSms = (p) => rpc('cc_dialer_sms', { p: p ?? {} });
+// bl_dial_0547 — CC Text messages: main line, test numbers, go-live switches, document-text feed.
+export const ccSmsCenter = () => rpc('cc_sms_center');
+export const ccDocSmsConfigSet = (p) => rpc('cc_doc_sms_config_set', { p: p ?? {} });
+export const ccDocSmsTest = (number) => rpc('cc_doc_sms_test', { p_number: number });
 // bl_dial_0390 — SMS consent registry. A number cannot be texted until it has a live consent row;
 // the rule is a trigger on dialer_messages, so these RPCs are the UI's way to see and create one.
 export const dialerSmsConsentState  = (number) => rpc('dialer_sms_consent_state',  { p: { number } });
