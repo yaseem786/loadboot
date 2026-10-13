@@ -18,6 +18,7 @@ import {
   dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead,
   dispatcherBoard, dispatcherLoadDetail, dispatcherRequestBook, dispatcherPostTruck, dispatcherUpdatePosting, dispatcherPostingMatches, dispatcherMyKpis,
   dispatcherTrip, dispatcherTripAction, dispatcherTrialFeedback,
+  dispatcherPostLoad, dispatcherUpdateLoad, dispatcherWithdrawLoad, dispatcherMyPosts, dispatcherBrokerScreen, fmcsaVerify,   // bl_disp_0547 — post a 3rd-party load on the carrier's board
 } from '../shared/api.js';
 import { threadChat } from '../shared/thread-chat.js';   // bl_ui_0502
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
@@ -412,11 +413,12 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   // An unknown tab, or an id that is not in the feed, is IGNORED: the tab still opens and nothing
   // breaks — old links keep working forever.
   const DW_TABS = ['today', 'board', 'trucks', 'bookings', 'brokers', 'money', 'messages', 'email', 'packet', 'kpis'];
-  const DW_ALIAS = { queue: 'today', home: 'today', loads: 'board', search: 'board',
+  const DW_ALIAS = { queue: 'today', home: 'today', loads: 'board', search: 'board', post: 'board', postload: 'board',
     fleet: 'trucks', truck: 'trucks', availability: 'trucks', booking: 'bookings', rc: 'bookings',
     thread: 'messages', chat: 'messages', message: 'messages', commission: 'money', pay: 'money',
     docs: 'packet', documents: 'packet', packet: 'packet', broker: 'brokers', kpi: 'kpis' };
   let openThreadId = null, openTruckId = null, openBoardId = null, openAction = null;
+  let logPrefill = null;   // bl_disp_0547: "Log booking" from a posted load pre-fills the booking form once
   function dwGo(tabId, target) {
     const key = String(tabId == null ? '' : tabId).toLowerCase();
     const t9 = DW_ALIAS[key] || key;
@@ -425,7 +427,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     openId = null; openThreadId = null; openTruckId = null; openBoardId = null; openAction = null;
     if (t9 === 'bookings') { if (/^(new|log|add)$/i.test(id)) openAction = 'new-booking'; else if (id) openBooking(id); }
     else if (t9 === 'messages') { if (id) openThreadId = id; }
-    else if (t9 === 'board') { if (id) openBoardId = id; }
+    else if (t9 === 'board') { if (/^(post|new|postload)$/i.test(id)) openAction = 'post-load'; else if (id) openBoardId = id; }   // #board/post → "Post a load" (bl_disp_0547)
     else if (t9 === 'brokers') { if (/^(new|add)$/i.test(id)) openAction = 'new-broker'; }
     else if (t9 === 'trucks') {
       const p9 = id.split('/');
@@ -1076,6 +1078,19 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const miles = I('loaded miles', 'number', { min: '0' }), dh = I('deadhead miles', 'number', { min: '0' }), gross = I('total $', 'number', { min: '0', step: '0.01' });
     const comm = I('commodity'), wt = I('lbs', 'number'), eq = I('equipment as booked (e.g. 26ft box, liftgate)'), rcno = I('RC / load #'), rcFile = h('input', { type: 'file', accept: '.pdf,image/*', class: 'dw-in' }), notes = h('textarea', { class: 'dw-in', rows: 2, placeholder: 'special instructions, appointment info, pallet count…' });
     const stopsUI = stopsEditor(null, () => ({ origin: org.value, destination: dst.value, pu: pu.value, dl: dl.value }));
+    // bl_disp_0547: a posted load the carrier is taking off-platform arrives here pre-filled (one shot)
+    if (logPrefill) {
+      const P = logPrefill; logPrefill = null;
+      const set9 = (inp, v) => { if (v != null && v !== '') inp.value = String(v); };
+      set9(broker, P.broker); set9(bmc, P.broker_mc); set9(rep, P.broker_rep); set9(bphone, P.broker_phone); set9(bemail, P.broker_email);
+      set9(org, P.origin); set9(dst, P.destination); set9(miles, P.miles); set9(dh, P.deadhead); set9(gross, P.rate); set9(comm, P.commodity);
+      set9(wt, P.weight_lbs); set9(eq, P.equipment); set9(rcno, P.source_reference); set9(notes, P.notes);
+      const tm9 = (w) => { const m9 = /^(\d{1,2}):(\d{2})/.exec(String(w || '')); return m9 ? m9[1].padStart(2, '0') + ':' + m9[2] : null; };
+      if (P.pickup_date) pu.value = P.pickup_date + 'T' + (tm9(P.pickup_window) || '08:00');
+      if (P.delivery_date) dl.value = P.delivery_date + 'T' + (tm9(P.delivery_window) || '17:00');
+      if (P.truck_id && ts.some((t) => t.id === P.truck_id)) tsel.value = P.truck_id;
+      setTimeout(() => { try { calc(); } catch (_) {} }, 0);
+    }
     const rpmBox = h('div', { class: 'dw-muted' }, 'Enter miles + gross to see $/mile.');
     const aiBox = h('div', { style: 'display:none;margin-top:8px' });
     // brokers already in the book → quick-fill
@@ -1220,12 +1235,44 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     [fMin, fDh, fEq].forEach((x) => x.addEventListener('input', () => paintRows()));
     const body = h('div', { class: 'dw-muted' }, 'Loading the board…');
     let data = null;
+    const postsHost = h('div');
     const wrap = h('div', null, [
-      h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('search'), ' LoadBoot board — ' + ((cur.carrier && cur.carrier.name) || '')]), h('div', { class: 'dw-row' }, [as.length > 1 ? sel : null, h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh board', onClick: () => paint(true) }, ic('refresh', 14)), h('button', { class: 'dw-btn sm', onClick: () => postForm(cur) }, [ic('plus', 16), 'Post the truck'])])]),
-        h('div', { class: 'dw-muted', style: 'margin-bottom:8px' }, 'Loads posted on LoadBoot by brokers and shippers, ranked for this carrier’s truck. Requesting a load sends the broker a 30-minute booking request under the carrier’s MC; when the broker accepts, the booking appears under Bookings automatically. Your own DAT/Truckstop finds still go through “Log a booking”.'),
+      // bl_disp_0547 — loads this dispatcher posted for THIS carrier (DAT/Truckstop/… finds), with the carrier's decision
+      postsHost,
+      h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('search'), ' LoadBoot board — ' + ((cur.carrier && cur.carrier.name) || '')]), h('div', { class: 'dw-row' }, [as.length > 1 ? sel : null, h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh board', onClick: () => paint(true) }, ic('refresh', 14)), h('button', { class: 'dw-btn sm warn', 'data-tour': 'dw-post-load', onClick: () => postLoadForm(cur, null) }, [ic('plus', 16), 'Post a load for ' + ((cur.carrier && cur.carrier.name) || 'the carrier')]), h('button', { class: 'dw-btn sm', onClick: () => postForm(cur) }, [ic('plus', 16), 'Post the truck'])])]),
+        h('div', { class: 'dw-muted', style: 'margin-bottom:8px' }, 'Loads posted on LoadBoot by brokers and shippers, ranked for this carrier’s truck. Requesting a load sends the broker a 30-minute booking request under the carrier’s MC; when the broker accepts, the booking appears under Bookings automatically. Found a load on DAT, Truckstop or a broker call? “Post a load” puts it on the carrier’s LoadBoot board, tagged with your name — they tap “I’ll take it” and the booking opens for the RC.'),
         h('div', { class: 'dw-row dw-filter', style: 'margin-bottom:8px' }, [h('span', { class: 'dw-muted' }, 'Filter:'), fMin, fDh, fEq]),
         body]),
     ]);
+    // ---- posts for this carrier (bl_disp_0547)
+    const POST_PILL = { available: ['OPEN', '#fbbf24'], carrier_accepted: ['ACCEPTED', '#4ade80'], booked: ['BOOKED', '#4ade80'], declined: ['DECLINED', '#f87171'], expired: ['EXPIRED', '#94a3b8'], withdrawn: ['WITHDRAWN', '#94a3b8'], in_transit: ['MOVING', '#4ade80'], delivered: ['DELIVERED', '#4ade80'] };
+    const leftTxt = (iso) => { if (!iso) return ''; const s = Math.floor((new Date(iso).getTime() - Date.now()) / 1000); if (s <= 0) return 'expired'; const m0 = Math.floor(s / 60); return m0 >= 60 ? Math.floor(m0 / 60) + 'h ' + (m0 % 60) + 'm left' : m0 + 'm left'; };
+    async function paintPosts() {
+      let posts = []; try { posts = await dispatcherMyPosts(cur.carrier_org_id, 30); } catch (e) { posts = []; }
+      if (!Array.isArray(posts)) posts = [];
+      const openN = posts.filter((p0) => p0.status === 'available' && !p0.expired).length;
+      mount(postsHost, h('div', { class: 'dw-card', 'data-tour': 'dw-posts' }, [
+        h('h3', null, [h('span', null, [ic('package'), ' Loads you posted for ' + ((cur.carrier && cur.carrier.name) || 'the carrier') + (openN ? ' · ' + openN + ' open' : '')]), h('button', { class: 'dw-btn sm warn', onClick: () => postLoadForm(cur, null) }, [ic('plus', 16), 'Post a load'])]),
+        posts.length ? posts.slice(0, 12).map((p0) => {
+          const st = p0.expired && p0.status === 'available' ? 'expired' : p0.status; const pm = POST_PILL[st] || [String(st).toUpperCase(), '#cbd5e1'];
+          const dec = p0.decision || {}; const wd = p0.withdrawn || {};
+          return h('div', { class: 'dw-book', style: 'cursor:default' }, [
+            h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, p0.origin + ' → ' + p0.destination), h('span', null, [p0.below_min ? h('span', { class: 'dw-pill', style: 'color:#fbbf24;border-color:currentColor;margin-right:6px', title: p0.below_min_reason || '' }, 'BELOW FLOOR') : null, h('span', { class: 'dw-pill', style: 'color:' + pm[1] + ';border-color:currentColor' }, pm[0])])]),
+            h('div', { class: 'dw-muted', style: 'margin-top:4px' }, [money(p0.rate), p0.rpm != null ? '$' + Number(p0.rpm).toFixed(2) + '/mi' : null, p0.miles ? num(p0.miles) + ' mi' : null, p0.equipment, 'PU ' + dwDay(p0.pickup_date), p0.broker, 'found on ' + (p0.board_label || p0.board || '—'), st === 'available' ? '⏳ ' + leftTxt(p0.expires_at) : null, 'posted ' + ago(p0.created_at)].filter(Boolean).join(' · ')),
+            st === 'declined' && dec.reason ? h('div', { class: 'dw-warn', style: 'margin-top:6px' }, 'Carrier declined: ' + dec.reason) : null,
+            st === 'carrier_accepted' ? h('div', { class: 'dw-ok', style: 'margin-top:6px' }, 'Carrier said “I’ll take it” — get the rate confirmation from the broker and attach it to the booking.') : null,
+            st === 'withdrawn' && wd.reason ? h('div', { class: 'dw-muted', style: 'margin-top:4px' }, 'Withdrawn: ' + wd.reason) : null,
+            h('div', { class: 'dw-row', style: 'margin-top:8px' }, [
+              st === 'available' ? h('button', { class: 'dw-btn sm', onClick: () => postLoadForm(cur, p0) }, [ic('edit', 14), 'Edit']) : null,
+              st === 'available' ? h('button', { class: 'dw-btn sm ghost', onClick: async () => { const v = await ask({ title: 'Withdraw this post?', text: p0.origin + ' → ' + p0.destination + ' comes off the carrier’s board. If they already opened it, they are told.', ok: 'Withdraw', danger: true, fields: [{ key: 'reason', label: 'Reason (the carrier sees it)', type: 'textarea', placeholder: 'e.g. broker covered it elsewhere' }] }); if (!v) return; const r = await dispatcherWithdrawLoad(p0.id, v.reason).catch((e) => ({ error: e.message })); if (r && r.error) { toast(r.error, true); return; } toast('Withdrawn' + (r.carrier_notified ? ' — carrier notified' : '')); paintPosts(); } }, 'Withdraw') : null,
+              st === 'available' ? h('button', { class: 'dw-btn sm ghost', title: 'The carrier took it off-platform (phone/WhatsApp) — log the booking with the RC', onClick: () => { logPrefill = Object.assign({}, p0, { truck_id: p0.details && p0.details.truck_id, broker_mc: p0.details && p0.details.broker_mc, broker_rep: p0.details && p0.details.broker_rep, broker_phone: p0.details && p0.details.broker_phone, broker_email: p0.details && p0.details.broker_email, weight_lbs: p0.details && p0.details.weight_lbs }); tab = 'bookings'; render(); openLogForm(null); } }, 'Log booking') : null,
+              p0.booking && p0.booking.id ? h('button', { class: 'dw-btn sm', onClick: () => dwGo('bookings', p0.booking.id) }, [ic('doc', 14), p0.booking.status === 'pending_rc' ? 'Attach the RC' : 'Open booking']) : null,
+              (st === 'expired' || st === 'declined' || st === 'withdrawn') ? h('button', { class: 'dw-btn sm ghost', onClick: () => postLoadForm(cur, Object.assign({}, p0, { id: null, _repost: true })) }, 'Post again') : null,
+            ].filter(Boolean)),
+          ]);
+        }) : h('div', { class: 'dw-muted' }, 'Nothing posted yet. Found a load on DAT, Truckstop, 123Loadboard, Direct Freight or a broker call? Post it here — it lands on the carrier’s LoadBoot board as “Posted by your dispatcher”, they tap “I’ll take it”, and the booking opens for the RC.'),
+      ]));
+    }
     function paintRows() {
       const d = data; if (!d || d.error) return;
       const best = (d.best && d.best.loads) || []; const avail = Array.isArray(d.available) ? d.available : []; const reqs = Array.isArray(d.requests) ? d.requests : []; const posts = Array.isArray(d.postings) ? d.postings : [];
@@ -1263,6 +1310,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     }
     async function paint(force) {
       mount(body, h('div', { class: 'dw-muted' }, 'Loading the board…'));
+      paintPosts();
       let d = boardCache[cur.id]; if (!d || force) { try { d = await dispatcherBoard(cur.carrier_org_id, 20); } catch (e) { d = { error: e.message }; } boardCache[cur.id] = d; }
       data = d;
       if (d.error) { mount(body, err(d.error)); return; }
@@ -1285,6 +1333,124 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         h('div', { class: 'dw-form' }, [h('label', { class: 'wide' }, ['Truck', tsel]), h('label', null, ['Available at (City, ST) *', origin]), h('label', null, ['Destination preference', dest]), h('label', null, ['From *', from]), h('label', null, ['To *', to]), h('label', null, ['Radius (mi)', radius]), h('label', null, ['Min $/mile', minr]), h('label', { class: 'wide' }, ['Notes for brokers', notes])]), e,
         h('div', { class: 'dw-row', style: 'margin-top:12px' }, [h('button', { class: 'dw-btn', onClick: async (ev) => { ev.target.disabled = true; try { if (!origin.value.trim()) throw new Error('Where is the truck available?'); if (to.value < from.value) throw new Error('"To" is before "From".'); const r = await dispatcherPostTruck(a.carrier_org_id, { truck_id: tsel.value, origin: origin.value, dest_pref: dest.value, available_from: from.value, available_to: to.value, radius_miles: radius.value || null, min_rpm: minr.value || null, notes: notes.value }); if (r && r.error) throw new Error(r.error); m.close(); toast('Truck posted'); paint(true); } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, 'Post truck'), h('button', { class: 'dw-btn ghost', onClick: () => m.close() }, 'Cancel')])]));
     }
+    // ---- POST A LOAD (bl_disp_0547): one page, grouped like a load-board card. The carrier sees it on THEIR
+    // LoadBoot board as "Posted by your dispatcher <name>" with the same card/detail/decision they already know.
+    function postLoadForm(a, existing) {
+      const ts = (a.trucks || []); const ex = existing || {}; const exd = ex.details || {}; const exa = ex.accessorials || exd.accessorials || {};
+      const isEdit = !!ex.id;
+      const I = (ph, type, extra) => h('input', Object.assign({ class: 'dw-in', placeholder: ph || '', type: type || 'text' }, extra || {}));
+      const S = (opts, val) => h('select', { class: 'dw-in' }, opts.map(([v, l]) => h('option', { value: v, selected: String(val == null ? '' : val) === String(v) }, l)));
+      const V = (inp, v) => { if (v != null && v !== '') inp.value = String(v); return inp; };
+      const sec = (title, kids) => h('div', { style: 'margin:14px 0 4px' }, [h('div', { style: 'font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#7cc0ff;font-weight:900;margin-bottom:8px' }, title), h('div', { class: 'dw-form' }, kids)]);
+      // source
+      const board = S([['', 'Where did you find it? *'], ['dat', 'DAT'], ['truckstop', 'Truckstop'], ['123loadboard', '123Loadboard'], ['direct_freight', 'Direct Freight'], ['broker_direct', 'Broker direct (call / e-mail)'], ['other', 'Other']], ex.board || exd.board || '');
+      const bref = V(I('board load ID / reference'), ex.source_reference || exd.board_ref), blink = V(I('link to the posting (optional)', 'url'), exd.source_link);
+      // broker
+      const known = feed.brokers || [];
+      const broker = V(I('company *'), ex.broker || exd.broker), bmc = V(I('MC #'), exd.broker_mc), rep = V(I('rep name'), exd.broker_rep), bphone = V(I('phone', 'tel'), exd.broker_phone), bemail = V(I('email', 'email'), exd.broker_email);
+      const dl2 = h('datalist', { id: 'dw-brokers-post' }, known.map((k) => h('option', { value: k.broker }))); broker.setAttribute('list', 'dw-brokers-post');
+      broker.addEventListener('change', () => { const k = known.find((x) => x.broker.toLowerCase() === broker.value.trim().toLowerCase()); if (!k) return; if (!bmc.value && k.mc) { bmc.value = k.mc; screen(); } if (!rep.value && k.rep) rep.value = k.rep; if (!bphone.value && k.phone) bphone.value = k.phone; if (!bemail.value && k.email) bemail.value = k.email; });
+      const screenBox = h('div', { style: 'display:none' }); let screenRes = (exd.broker_screen && typeof exd.broker_screen === 'object') ? exd.broker_screen : null;
+      let confidence = ex.confidence || 'medium';
+      async function screen() {
+        const mc = bmc.value.replace(/\D/g, ''); if (!mc) { screenBox.style.display = 'none'; return; }
+        screenBox.style.display = 'block'; mount(screenBox, h('div', { class: 'dw-muted' }, [ic('search', 14), ' Screening MC ' + mc + ' on FMCSA…']));
+        const [lb, live] = await Promise.all([dispatcherBrokerScreen(mc).catch(() => null), fmcsaVerify({ mc }).catch(() => null)]);
+        const auth = live && (live.authority || live.status) ? String(live.authority || live.status).toLowerCase() : 'unknown';
+        const active = /^(active|authorized|yes|true)$/.test(auth) || live && live.authorityVerified === true && !/not_authorized|out_of_service|inactive/.test(auth);
+        const flagged = /not_authorized|out_of_service|inactive|revoked/.test(auth) || (live && live.outOfService === true);
+        const since = live && (live.registeredSince || live.registrationDate); let age = null;
+        if (since) { const y = (Date.now() - new Date(since).getTime()) / 31557600000; if (isFinite(y) && y >= 0) age = y < 1 ? Math.round(y * 12) + ' months' : Math.round(y * 10) / 10 + ' years'; }
+        const scr = lb && lb.screening; const onlb = lb && lb.on_loadboot; const bc = lb && lb.contact;
+        screenRes = { mc, authority: flagged ? 'flagged' : active ? 'active' : 'unknown', authority_raw: auth, legal_name: (live && (live.legalName || live.dbaName)) || (scr && scr.legal_name) || null, dot: live && live.dotNumber || null, registered_since: since || null, authority_age: age, broker_authority: live && live.authorityTypes ? !!live.authorityTypes.broker : (scr ? scr.broker_authority : null), out_of_service: !!(live && live.outOfService), source: (live && live.source) || (scr ? 'loadboot-screening' : null), loadboot_tier: onlb && onlb.tier || null, loadboot_screening: scr && scr.outcome || null, checked_at: new Date().toISOString() };
+        confidence = flagged ? 'low' : active ? 'high' : 'medium';
+        const tone = flagged ? 'dw-warn' : active ? 'dw-ok' : 'dw-info';
+        mount(screenBox, h('div', { class: tone }, [
+          h('div', { style: 'font-weight:900' }, flagged ? '🚩 Broker authority NOT active — ' + (auth.replace(/_/g, ' ')) + '. You can still post it; the carrier sees this flag.' : active ? '✓ Broker authority active' + (screenRes.broker_authority === false ? ' (carrier authority only — check this is really a broker)' : '') : '◐ Could not confirm the authority live (' + auth.replace(/_/g, ' ') + ') — call the broker and check the MC on FMCSA yourself.'),
+          h('div', { class: 'dw-muted', style: 'margin-top:4px' }, [screenRes.legal_name ? screenRes.legal_name : null, screenRes.dot ? 'USDOT ' + screenRes.dot : null, age ? 'authority age ' + age : null, screenRes.broker_authority === true ? 'broker authority on file' : null, onlb ? 'on LoadBoot: ' + (onlb.name || '') + (onlb.tier ? ' (' + onlb.tier + ')' : '') : 'not a LoadBoot brokerage', scr ? 'LoadBoot screening: ' + scr.outcome + (scr.checked_at ? ' ' + ago(scr.checked_at) : '') : null].filter(Boolean).join(' · ')),
+          bc ? h('div', { class: 'dw-muted', style: 'margin-top:4px' }, 'Your book: ' + bc.broker + (bc.rep ? ' · ' + bc.rep : '') + (bc.last_outcome ? ' · last ' + bc.last_outcome : '') + (bc.last_contact_at ? ' ' + ago(bc.last_contact_at) : '')) : null,
+          live == null && !scr ? h('div', { class: 'dw-muted', style: 'margin-top:4px' }, 'FMCSA live read unavailable right now (insurance on file is not read here — the RC and the broker’s bond are checked by LoadBoot at approval).') : null,
+        ]));
+        if (bc && !rep.value && bc.rep) rep.value = bc.rep; if (bc && !bphone.value && bc.phone) bphone.value = bc.phone; if (bc && !bemail.value && bc.email) bemail.value = bc.email;
+      }
+      bmc.addEventListener('blur', screen);
+      // lane
+      const origin = V(I('City, ST *'), ex.origin || exd.origin), ozip = V(I('ZIP / full address'), exd.origin_zip), dest = V(I('City, ST *'), ex.destination || exd.destination), dzip = V(I('ZIP / full address'), exd.destination_zip);
+      const pud = V(I('', 'date'), ex.pickup_date), puw = V(I('e.g. 08:00-14:00 or FCFS'), ex.pickup_window || exd.pickup_window), dld = V(I('', 'date'), ex.delivery_date), dlw = V(I('e.g. by 10:00'), ex.delivery_window || exd.delivery_window);
+      const miles = V(I('loaded miles', 'number', { min: '0' }), ex.miles), dh = V(I('deadhead miles', 'number', { min: '0' }), ex.deadhead);
+      const est = h('button', { class: 'dw-btn sm ghost', type: 'button', onClick: () => { const rm = roadMiles(origin.value, dest.value); if (rm) { miles.value = rm; calc(); } else toast('Could not estimate — use "City, ST" for both.', true); } }, 'Estimate');
+      // freight
+      const t0 = ts.find((t) => t.id === (exd.truck_id || '')) || ts[0] || null;
+      const tsel = S([['', 'Any truck']].concat(ts.map((t) => [t.id, 'Unit ' + (t.unit_no || '?') + ' · ' + (t.equipment || '')])), exd.truck_id || (t0 && t0.id) || '');
+      const eqOpts = Array.from(new Set(ts.map((t) => String(t.equipment || '').trim()).filter(Boolean)));
+      const eq = S(eqOpts.map((e0) => [e0, e0]).concat(eqOpts.length ? [] : [['', 'No truck on file']]), ex.equipment || exd.equipment || (t0 && t0.equipment) || eqOpts[0] || '');
+      const comm = V(I('commodity'), ex.commodity || exd.commodity), wt = V(I('lbs', 'number', { min: '0' }), exd.weight_lbs || (ex.weight ? String(ex.weight).replace(/\D/g, '') : '')), dimsL = V(I('L in', 'number'), exd.dims && exd.dims.l), dimsW = V(I('W in', 'number'), exd.dims && exd.dims.w), dimsH = V(I('H in', 'number'), exd.dims && exd.dims.h), pieces = V(I('e.g. 4 pallets / 12 pieces'), exd.pieces);
+      const ltype = S([['full', 'Full'], ['partial', 'Partial']], exd.load_type || exd.load_size || 'full');
+      const haz = h('input', { type: 'checkbox', checked: ex.hazmat || exd.hazmat ? '' : undefined }); const temp = V(I('°F (reefer only)'), exd.temperature);
+      const REQ = ['liftgate', 'pallet jack', 'team', 'TWIC', 'tarps', 'straps', 'chains', 'dock-high', 'residential', 'driver assist', 'lumper', 'hazmat endorsement'];
+      const reqSet = new Set(Array.isArray(exd.requirements) ? exd.requirements : (ex.requirements ? String(ex.requirements).split(/\s*,\s*/) : []));
+      const reqRow = h('div', { class: 'dw-row', style: 'gap:6px' }, REQ.map((r0) => { const b = h('button', { type: 'button', class: 'dw-chip', style: 'cursor:pointer;font:inherit;font-size:.78rem;padding:5px 10px;border-radius:999px;border:1px solid ' + (reqSet.has(r0) ? '#FC5305' : 'var(--dw-line2)') + ';background:' + (reqSet.has(r0) ? 'rgba(252,83,5,.18)' : 'transparent') + ';color:#fff', onClick: () => { if (reqSet.has(r0)) reqSet.delete(r0); else reqSet.add(r0); b.style.borderColor = reqSet.has(r0) ? '#FC5305' : 'var(--dw-line2)'; b.style.background = reqSet.has(r0) ? 'rgba(252,83,5,.18)' : 'transparent'; } }, r0); return b; }));
+      // money
+      const rate = V(I('gross line-haul $ *', 'number', { min: '0', step: '0.01' }), ex.rate);
+      const rpmBox = h('div', { class: 'dw-muted' }, 'Enter miles + rate to see $/mile.');
+      const reasonWrap = h('div', { style: 'display:none;margin-top:8px' }); const reason = h('textarea', { class: 'dw-in', rows: 2, placeholder: 'Why post it anyway? (stored with the load — the carrier and LoadBoot see it)' }, ex.below_min_reason || exd.below_min_reason || '');
+      mount(reasonWrap, h('label', { class: 'wide' }, ['Below the carrier’s floor — written reason *', reason]));
+      const det = V(I('$/hr', 'number'), exa.detention_per_hr), detFree = V(I('free hrs', 'number'), exa.detention_free_hours), tonu = V(I('$', 'number'), exa.tonu), lay = V(I('$/day', 'number'), exa.layover_per_day);
+      const lump = S([['', '—'], ['Reimbursed with receipt', 'Reimbursed with receipt'], ['Paid by broker', 'Paid by broker'], ['Paid by carrier', 'Paid by carrier'], ['No lumper', 'No lumper']], exa.lumper_policy || '');
+      const terms = S([['', '—'], ['quick pay', 'Quick pay'], ['net 15', 'Net 15'], ['net 30', 'Net 30'], ['net 45', 'Net 45'], ['net 60', 'Net 60']], exa.payment_terms || ''); const qp = V(I('quick-pay terms, e.g. 3% / 2 days'), exa.quick_pay);
+      const fact = h('input', { type: 'checkbox', checked: exa.factoring_ok ? '' : undefined });
+      // notes + expiry
+      const notes = h('textarea', { class: 'dw-in', rows: 3, placeholder: 'What the carrier should know — dock hours, why it fits, anything the broker said' }, ex.notes || exd.notes || '');
+      const EXP = [['0.5', '30 minutes'], ['1', '1 hour'], ['2', '2 hours (default)'], ['4', '4 hours'], ['8', '8 hours'], ['24', '24 hours']];
+      const expSel = S(EXP, isEdit ? '' : (exd.expiry_hours || '2')); if (isEdit) expSel.insertBefore(h('option', { value: '', selected: '' }, 'keep current expiry'), expSel.firstChild);
+      const minFor9 = () => { const t = ts.find((x) => x.id === tsel.value); return minFor(t ? { ...t, _a: a } : { _a: a }); };
+      const calc = () => { const m = Number(miles.value), g = Number(rate.value), d0 = Number(dh.value) || 0; const min = minFor9();
+        if (m > 0 && g > 0) { const r = g / m; const below = min != null && r < min; rpmBox.className = below ? 'dw-warn' : 'dw-ok'; rpmBox.textContent = '$' + r.toFixed(2) + ' per loaded mile' + (d0 > 0 ? ' · $' + (g / (m + d0)).toFixed(2) + '/mi all-in with ' + d0 + ' mi deadhead' : '') + (min != null ? (below ? ' — BELOW the floor of $' + min.toFixed(2) + '/mi: a written reason is required.' : ' — above the $' + min.toFixed(2) + ' floor') : ''); reasonWrap.style.display = below ? 'block' : 'none'; }
+        else { rpmBox.className = 'dw-muted'; rpmBox.textContent = 'Enter miles + rate to see $/mile.'; reasonWrap.style.display = 'none'; } };
+      [miles, rate, dh].forEach((x) => x.addEventListener('input', calc)); tsel.addEventListener('change', () => { const t = ts.find((x) => x.id === tsel.value); if (t && t.equipment) eq.value = t.equipment; autoDh(); calc(); });
+      const autoDh = () => { if (dh.value) return; const t = ts.find((x) => x.id === tsel.value) || t0; const av = t && t.availability; const from = (av && av.empty_location) || (t && [t.domicile_city, t.domicile_state].filter(Boolean).join(', ')); if (!from || !origin.value) return; const rm = roadMiles(from, origin.value); if (rm) dh.value = rm; };
+      origin.addEventListener('blur', () => { autoDh(); if (!miles.value && dest.value) { const rm = roadMiles(origin.value, dest.value); if (rm) miles.value = rm; } calc(); });
+      dest.addEventListener('blur', () => { if (!miles.value && origin.value) { const rm = roadMiles(origin.value, dest.value); if (rm) miles.value = rm; } calc(); });
+      if (screenRes && bmc.value) { screenBox.style.display = 'block'; mount(screenBox, h('div', { class: screenRes.authority === 'flagged' ? 'dw-warn' : screenRes.authority === 'active' ? 'dw-ok' : 'dw-info' }, 'Broker screen from the original post: ' + (screenRes.authority || 'unknown') + (screenRes.legal_name ? ' · ' + screenRes.legal_name : '') + ' — re-check by leaving the MC field.')); }
+      const e = h('div', { class: 'dw-err' });
+      const m = modal(isEdit ? 'Edit the posted load' : 'Post a load for ' + ((a.carrier && a.carrier.name) || 'the carrier'), h('div', null, [
+        h('div', { class: 'dw-info', style: 'margin-bottom:6px' }, 'One page — the truck is empty, so no wizard. The load appears on ' + ((a.carrier && a.carrier.name) || 'the carrier') + '’s LoadBoot board as “Posted by your dispatcher”, only to them. They tap “I’ll take it” or Decline; on yes, a booking opens under Bookings for the rate confirmation and LoadBoot approves from the RC as always. Dates are Eastern.'),
+        dl2,
+        sec('Source', [h('label', null, ['Board *', board]), h('label', null, ['Board load ID / reference', bref]), h('label', null, ['Link', blink])]),
+        sec('Broker', [h('label', null, ['Company *', broker]), h('label', null, ['MC # (screened on blur)', bmc]), h('label', null, ['Rep', rep]), h('label', null, ['Phone', bphone]), h('label', null, ['Email', bemail]), h('div', { class: 'wide' }, screenBox)]),
+        sec('Lane', [h('label', null, ['Origin *', origin]), h('label', null, ['Origin ZIP / address', ozip]), h('label', null, ['Destination *', dest]), h('label', null, ['Destination ZIP / address', dzip]), h('label', null, ['Pickup date *', pud]), h('label', null, ['Pickup window', puw]), h('label', null, ['Delivery date', dld]), h('label', null, ['Delivery window', dlw]), h('label', null, ['Loaded miles', h('div', { class: 'dw-row', style: 'flex-wrap:nowrap' }, [miles, est])]), h('label', null, ['Deadhead from the truck (auto)', dh])]),
+        sec('Freight', [h('label', null, ['Truck', tsel]), h('label', null, ['Equipment * (must be in the fleet)', eq]), h('label', null, ['Commodity', comm]), h('label', null, ['Weight (lbs)', wt]), h('label', null, ['Dims L × W × H (in)', h('div', { class: 'dw-row', style: 'flex-wrap:nowrap' }, [dimsL, dimsW, dimsH])]), h('label', null, ['Pieces / pallets', pieces]), h('label', null, ['Load type', ltype]), h('label', { style: 'flex-direction:row;align-items:center;gap:8px' }, [haz, 'Hazmat']), h('label', null, ['Reefer temp', temp]), h('label', { class: 'wide' }, ['Special requirements', reqRow])]),
+        sec('Money', [h('label', null, ['Rate — gross line-haul $ *', rate]), h('div', { class: 'wide' }, rpmBox), h('div', { class: 'wide' }, reasonWrap), h('label', null, ['Detention $/hr', det]), h('label', null, ['after (free hours)', detFree]), h('label', null, ['TONU $', tonu]), h('label', null, ['Layover $/day', lay]), h('label', null, ['Lumper', lump]), h('label', null, ['Payment terms', terms]), h('label', null, ['Quick pay', qp]), h('label', { style: 'flex-direction:row;align-items:center;gap:8px' }, [fact, 'Factoring OK'])]),
+        sec('Notes to the carrier', [h('label', { class: 'wide' }, ['Notes', notes]), h('label', null, ['Expires in', expSel])]),
+        e,
+        h('div', { class: 'dw-row', style: 'margin-top:14px' }, [h('button', { class: 'dw-btn warn', onClick: async (ev) => { ev.target.disabled = true; try {
+          if (!board.value) throw new Error('Pick the board you found this load on.');
+          if (!origin.value.trim() || !dest.value.trim()) throw new Error('Origin and destination are required.');
+          if (!broker.value.trim()) throw new Error('Broker company is required — the carrier has to know who pays.');
+          if (!pud.value) throw new Error('Pickup date is required.');
+          if (!(Number(rate.value) > 0)) throw new Error('Rate is required.');
+          if (!eq.value) throw new Error('Equipment is required — add a truck to the carrier first.');
+          const acc = { detention_per_hr: det.value || null, detention_free_hours: detFree.value || null, tonu: tonu.value || null, layover_per_day: lay.value || null, lumper_policy: lump.value || null, payment_terms: terms.value || null, quick_pay: qp.value || null, factoring_ok: !!fact.checked };
+          Object.keys(acc).forEach((k) => { if (acc[k] == null || acc[k] === '') delete acc[k]; });
+          const p = { board: board.value, board_ref: bref.value.trim() || null, source_reference: bref.value.trim() || null, source_link: blink.value.trim() || null,
+            broker: broker.value.trim(), broker_mc: bmc.value.trim() || null, broker_rep: rep.value.trim() || null, broker_phone: bphone.value.trim() || null, broker_email: bemail.value.trim() || null,
+            origin: origin.value.trim(), origin_zip: ozip.value.trim() || null, destination: dest.value.trim(), destination_zip: dzip.value.trim() || null,
+            pickup_date: pud.value, pickup_window: puw.value.trim() || null, delivery_date: dld.value || null, delivery_window: dlw.value.trim() || null,
+            miles: miles.value || null, deadhead: dh.value || null, truck_id: tsel.value || null, equipment: eq.value, commodity: comm.value.trim() || null, weight_lbs: wt.value || null,
+            dims: (dimsL.value || dimsW.value || dimsH.value) ? { l: dimsL.value || null, w: dimsW.value || null, h: dimsH.value || null } : null, pieces: pieces.value.trim() || null, load_type: ltype.value,
+            hazmat: !!haz.checked, temperature: temp.value.trim() || null, requirements: Array.from(reqSet), rate: rate.value, accessorials: acc,
+            notes: notes.value.trim() || null, confidence, broker_screen: screenRes || {}, below_min_reason: reason.value.trim() || null };
+          if (expSel.value) p.expiry_hours = expSel.value;
+          const r = isEdit ? await dispatcherUpdateLoad(ex.id, p) : await dispatcherPostLoad(a.carrier_org_id, p);
+          if (r && r.error) { if (r.below_min) { reasonWrap.style.display = 'block'; reason.focus(); } throw new Error(r.error); }
+          m.close(); toast(isEdit ? 'Post updated — the carrier sees the new version' : 'Posted — it is on ' + ((a.carrier && a.carrier.name) || 'the carrier') + '’s board now' + (r.below_min ? ' (flagged below floor)' : ''));
+          try { dwLive.send('status_change', { load: r.id }); } catch (_) {}
+          paintPosts();
+        } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, isEdit ? 'Save changes' : 'Post to the carrier’s board'), h('button', { class: 'dw-btn ghost', onClick: () => m.close() }, 'Cancel')]),
+      ]));
+      setTimeout(calc, 0);
+    }
+    if (openAction === 'post-load') { openAction = null; setTimeout(() => postLoadForm(cur, null), 0); }
     paint();
     return wrap;
   }

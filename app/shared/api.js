@@ -611,6 +611,15 @@ export const dispatcherBoard = (org, limit) => rpc('dispatcher_board', { p_org: 
 export const dispatcherLoadDetail = (org, load) => rpc('dispatcher_load_detail', { p_org: org, p_load: load });
 export const dispatcherRequestBook = (org, load, note) => rpc('dispatcher_request_book', { p_org: org, p_load: load, p_note: note ?? null });
 export const dispatcherPostTruck = (org, p) => rpc('dispatcher_post_truck', { p_org: org, p: p ?? {} });
+// bl_disp_0547 — dispatcher posts a 3rd-party load (DAT/Truckstop/…) ON his carrier's LoadBoot board; the carrier
+// decides with "I'll take it" / Decline, acceptance opens a dispatcher_bookings row (pending_rc) for the RC flow.
+export const dispatcherPostLoad = (org, p) => rpc('dispatcher_post_load', { p_org: org, p: p ?? {} });
+export const dispatcherUpdateLoad = (load, p) => rpc('dispatcher_update_load', { p_load: load, p: p ?? {} });
+export const dispatcherWithdrawLoad = (load, reason) => rpc('dispatcher_withdraw_load', { p_load: load, p_reason: reason ?? null });
+export const dispatcherMyPosts = (org, limit) => rpc('dispatcher_my_posts', { p_org: org ?? null, p_limit: limit ?? 100 });
+export const dispatcherBrokerScreen = (mc) => rpc('dispatcher_broker_screen', { p_mc: mc });
+export const carrierDispatcherLoadDecide = (load, action, reason, truck) => rpc('carrier_dispatcher_load_decide', { p_load: load, p_action: action, p_reason: reason ?? null, p_truck: truck ?? null });
+export const ccDispatcherPosts = (o = {}) => rpc('cc_dispatcher_posts', { p_org: o.org ?? null, p_user: o.user ?? null, p_limit: o.limit ?? 100 });
 export const dispatcherUpdatePosting = (org, id, action) => rpc('dispatcher_update_posting', { p_org: org, p_id: id, p_action: action });
 export const dispatcherPostingMatches = (org, id) => rpc('dispatcher_posting_matches', { p_org: org, p_id: id });
 export const dispatcherMyKpis = (days) => rpc('dispatcher_my_kpis', { p_days: days ?? 30 });

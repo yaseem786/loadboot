@@ -28,7 +28,7 @@ import {
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringRemitUpdate, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
   carrierEldSetup, carrierAccountingExport, carrierFuelImport, carrierFleetOptimization, qboAuthUrl, qboStatus,
   submitReinstatement, myReinstatements, poaThread, myStrikes, claimEscalate, pocketUploadTripDoc, pocketCancelTrip, cancelPreview, tripPickupStatus,
-  carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
+  carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail, carrierDispatcherLoadDecide,
   tripEmergencyRequest, tripMyEmergencies,
   rateCounterparty, myRating, carrierRateableTrips, pocketMarkAllNotificationsRead,
   postTruck, myTruckPostings, truckPostingMatches, updateTruckPosting, scanTruckMatches, confirmTruckPosting, myAvailabilityStatus, updateTruckPostingPlace, setTruckPostingAvailable,
@@ -268,6 +268,7 @@ function lbNotifDest(n, p) {
   const key9 = String((n && n.template_key) || '').toLowerCase();
   // trip/tracking alerts ALWAYS belong on My Loads, whatever the stored url says
   if (/^trip\.|^tracking/.test(key9)) return 'trips';
+  if (/^dispatcher\.load\./.test(key9)) return 'loads';   // bl_disp_0547: a load your dispatcher posted / updated / withdrew lives on the board
   // a deep link is "#tab/target" — take the tab, the target is handled by lbRunDeepLink
   if (p && p.url && p.url.indexOf('#') >= 0) { const t = p.url.split('#')[1]; if (t) { const t0 = t.replace(/^\//, '').split('/')[0]; if (TABS9.indexOf(t0) >= 0) return t0; } }
   const txt = (((p && p.title) || '') + ' ' + ((n && n.template_key) || '')).toLowerCase();
@@ -449,6 +450,54 @@ function lbTrailerFt(l) { const n = Number(l && l.details && l.details.trailer_l
 function lbFtIn(ft) { const n = Number(ft); if (!isFinite(n) || n <= 0) return ''; let f = Math.floor(n), i = Math.round((n - f) * 12); if (i === 12) { f += 1; i = 0; } return i ? f + '\'' + i + '"' : f + '\''; }
 function lbDimsTxt(l) { const d = l && l.details && l.details.dims_ft; return (d && typeof d === 'object') ? [['L', d.l], ['W', d.w], ['H', d.h]].filter(([, v]) => Number(v) > 0).map(([k, v]) => k + ' ' + lbFtIn(v)).join(' × ') : ''; }
 function lbSourceProvider(l) { const n = lbSourceNotice(l); return (n && n.provider) ? String(n.provider) : 'a partner network'; }
+// bl_disp_0547: a load the carrier's OWN dispatcher posted from a 3rd-party board (DAT/Truckstop/…) — details.dispatcher_post
+// on board rows, dispatcher_post on cc_load_detail. Only this carrier ever receives it (server-side), so the badge is a fact.
+function lbDispPost(l) { const d = l && (l.dispatcher_post || (l.details && l.details.dispatcher_post)); return (d && typeof d === 'object') ? d : null; }
+function lbDispName(dp) { const n = String((dp && dp.dispatcher_name) || '').trim(); return n ? n.split(/\s+/)[0] : 'your dispatcher'; }
+function lbDispCountdown(iso) {
+  const cd = h('span', { style: 'font-variant-numeric:tabular-nums' }, '—');
+  const exp = iso ? new Date(iso).getTime() : null; if (!exp || isNaN(exp)) { cd.textContent = 'no expiry'; return cd; }
+  let _wc = false;
+  const tick = () => {
+    if (cd.isConnected) _wc = true; else { if (_wc) clearInterval(iv); return; }
+    const s = Math.floor((exp - Date.now()) / 1000);
+    if (s <= 0) { cd.textContent = 'expired'; cd.style.color = '#f87171'; clearInterval(iv); return; }
+    const mm = Math.floor(s / 60);
+    cd.textContent = (mm >= 60 ? Math.floor(mm / 60) + 'h ' : '') + (mm % 60) + 'm ' + String(s % 60).padStart(2, '0') + 's';
+    cd.style.color = s < 600 ? '#f87171' : '#FC5305';
+  };
+  const iv = setInterval(tick, 1000); tick();
+  return cd;
+}
+function lbDispBadge(dp, small) {
+  return h('span', { class: 'cpx-chip', style: 'background:#10223B;color:#FC5305;border:1px solid #FC5305;font-weight:900;letter-spacing:.02em' + (small ? ';font-size:.72rem' : ''), title: 'Your dispatcher found this load for you and posted it here. Only you can see it.' }, '📋 Posted by your dispatcher ' + lbDispName(dp));
+}
+// shared decision UI (card + detail): "I'll take it" / Decline → carrier_dispatcher_load_decide
+function lbDispActions(l, host, onDone) {
+  const id9 = l.id || l.load_id;
+  const take9 = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#FC5305;border:0;font-weight:900;box-shadow:0 0 14px rgba(252,83,5,.25)', onClick: async (ev) => {
+    const _b = ev.currentTarget; _b.disabled = true; _b.textContent = 'Taking it…';
+    try {
+      await carrierDispatcherLoadDecide(id9, 'accept');
+      lbToast('Your dispatcher is getting the rate con — you’ll be notified when LoadBoot approves it.', 'ok', '✓ You took it');
+      mount(host, h('div', { class: 'cp-row-s', style: 'color:#4ade80;font-weight:700' }, '✅ You took it — your dispatcher is getting the rate con; you’ll be notified when LoadBoot approves it.'));
+      if (onDone) onDone('accepted');
+    } catch (e) { _b.disabled = false; _b.textContent = '✅ I’ll take it'; lbToast((e && e.message) || 'Could not take this load.', 'urgent', 'Not taken'); }
+  } }, '✅ I’ll take it');
+  const decl9 = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+    const why9 = h('textarea', { class: 'cp-in', rows: 3, placeholder: 'e.g. rate too low for the deadhead / truck is already committed / wrong lane' });
+    const err9 = h('div', { class: 'cp-err', style: 'min-height:1em' });
+    const send9 = h('button', { class: 'cp-btn', style: 'flex:1', onClick: async (ev) => {
+      const r9 = why9.value.trim(); if (!r9) { err9.textContent = 'Tell your dispatcher why — it goes to them so the next load fits better.'; return; }
+      ev.currentTarget.disabled = true;
+      try { await carrierDispatcherLoadDecide(id9, 'decline', r9); closeM9(); lbToast('Declined — your dispatcher has your reason.', 'info', 'Declined'); mount(host, h('div', { class: 'cp-row-s', style: 'color:#94a3b8;font-weight:700' }, '✕ Declined')); if (onDone) onDone('declined'); }
+      catch (e) { ev.currentTarget.disabled = false; err9.textContent = (e && e.message) || 'Could not decline.'; }
+    } }, 'Send to my dispatcher');
+    const closeM9 = openModal('Decline this load', [h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'Your dispatcher ' + lbDispName(lbDispPost(l)) + ' posted ' + (l.origin || '') + ' → ' + (l.destination || '') + ' for you. A reason is required — it helps them pick the next one.'), why9, err9, h('div', { style: 'display:flex;gap:10px;margin-top:10px' }, [send9, h('button', { class: 'cp-btn ghost', onClick: () => closeM9() }, 'Cancel')])]);
+  } }, 'Decline');
+  mount(host, [take9, decl9]);
+  return host;
+}
 // Full-trip feasibility from the driver's live GPS: location -> pickup -> delivery, with HOS.
 // Solo = 11h drive then 10h reset; Team = nonstop. Used for the board badges AND to block a
 // booking the driver physically cannot deliver on time.
@@ -3974,7 +4023,18 @@ async function appView(user) {
     // bl_comp_0504: "Insurance approved → post the trucks on your certificate" (server decides show/hide).
     const coiHost9 = h('div');
     import('./coi-trucks-banner.js').then((m9) => m9.mountCoiTrucksBanner(coiHost9, { h, go, openAvail: (typeof openAvailFromBar === 'function') ? openAvailFromBar : null })).catch(() => {});
-    mount(content, h('div', { class: 'cp-dash' }, [tripHero9, rateCard9, onbHero, noaDash9, coiHost9, ...topBanners, kpis, availHostD, acctStrip, setupCard, sugHost, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    // bl_disp_0547: "N loads from your dispatcher waiting" — one strip, straight to the board (server already sorts them first)
+    const dispStrip9 = h('div');
+    (async () => { try {
+      const rows9 = await pocketAvailableLoads(12, 0); const dl9 = (rows9 || []).filter(lbDispPost); if (!dl9.length) return;
+      const nm9 = lbDispName(lbDispPost(dl9[0]));
+      mount(dispStrip9, h('div', { class: 'cp-card cp-row-click', style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;border-left:4px solid #FC5305', onClick: () => go('loads') }, [
+        h('div', { style: 'min-width:200px;flex:1' }, [h('div', { class: 'cp-row-t' }, '📋 ' + dl9.length + ' load' + (dl9.length === 1 ? '' : 's') + ' from your dispatcher ' + nm9 + ' waiting'),
+          h('div', { class: 'cp-row-s' }, dl9.slice(0, 2).map((l9) => (l9.origin || '') + ' → ' + (l9.destination || '') + ' · ' + money(l9.rate)).join('  |  ') + (dl9.length > 2 ? '  |  +' + (dl9.length - 2) + ' more' : '') + ' — decide before they expire.')]),
+        h('button', { class: 'cp-btn cp-btn-sm', style: 'flex:none;background:#FC5305;border:0;font-weight:800', onClick: (e9) => { e9.stopPropagation(); go('loads'); } }, 'Open the board →'),
+      ]));
+    } catch (_) {} })();
+    mount(content, h('div', { class: 'cp-dash' }, [tripHero9, rateCard9, onbHero, noaDash9, coiHost9, ...topBanners, dispStrip9, kpis, availHostD, acctStrip, setupCard, sugHost, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     const econHost = h('div', null); prefsHost.parentNode.insertBefore(econHost, prefsHost.nextSibling);
     try { import('./economics.js').then((m) => m.mountBreakevenCard(econHost)).catch(() => {}); } catch (_) {}
     // Dispatcher card (bl_disp_0409): compact "Meet your dispatcher" + status; the full desk is the Dispatcher tab.
@@ -4710,6 +4770,8 @@ async function appView(user) {
       const key9 = k9 === 'newest' ? (l) => { const t9 = Date.parse(l.posted_at || ''); return isFinite(t9) ? t9 : null; } : k9 === 'rate' ? (l) => num9(l.rate) : k9 === 'rpm' ? rpm9 : k9 === 'deadhead' ? dh9 : k9 === 'pickup' ? (l) => (l.pickup_date ? Date.parse(l.pickup_date) : null) : null;
       const asc9 = k9 === 'deadhead' || k9 === 'pickup';
       return list.map((l, i) => ({ l, i })).sort((x, y) => {
+        const p9 = (lbDispPost(y.l) ? 1 : 0) - (lbDispPost(x.l) ? 1 : 0);   // bl_disp_0547: your dispatcher's posts always lead
+        if (p9) return p9;
         const d9 = (y.l.direct_to_you ? 1 : 0) - (x.l.direct_to_you ? 1 : 0);
         if (d9 || !key9) return d9 || x.i - y.i;
         const a9 = key9(x.l), b9 = key9(y.l);
@@ -4774,6 +4836,10 @@ async function appView(user) {
     } }, '🔔 Alert me');
     let _favOnly = false;
     const favBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Show only loads you saved with the star', onClick: (e9) => { _favOnly = !_favOnly; e9.currentTarget.style.color = _favOnly ? '#f59e0b' : ''; e9.currentTarget.style.borderColor = _favOnly ? '#f59e0b' : ''; renderList(); } }, '★ Saved');
+    // bl_disp_0547: "From my dispatcher" chip — only shown when the board has at least one dispatcher-posted load
+    let _dispOnly = false;
+    const dispN9 = rows.filter(lbDispPost).length;
+    const dispBtn = dispN9 ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#FC5305;border-color:rgba(252,83,5,.6);font-weight:800', title: 'Loads your dispatcher found and posted for you', onClick: (e9) => { _dispOnly = !_dispOnly; e9.currentTarget.style.background = _dispOnly ? 'rgba(252,83,5,.18)' : ''; renderList(); } }, '📋 From my dispatcher (' + dispN9 + ')') : null;
     const applyFilters = (list) => { const oC9 = radCtr9(fOrigin, fORad), dC9 = radCtr9(fDest, fDRad); _radMiss9 = new Set(); _radWait9 = new Set();
       const oR9 = oC9 && Array.isArray(oC9.c) ? oC9 : null, dR9 = dC9 && Array.isArray(dC9.c) ? dC9 : null; // 'wait' / not found -> text match
       const out9 = (list || []).filter(l => {
@@ -4799,7 +4865,7 @@ async function appView(user) {
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount)); [fSize, fLen].forEach((x9) => x9.addEventListener('change', () => { fCount(); renderList(); }));
     const fToggle = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { const open = fBody.style.display !== 'none'; fBody.style.display = open ? 'none' : 'flex'; fToggle.firstChild.textContent = open ? '⚙ Filters ▾' : '⚙ Filters ▴'; } }, [h('span', null, '⚙ Filters ▾'), fChip]);
     const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px', 'data-tour': 'loads-filters' }, [
-      h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [fToggle, favBtn, tbBtn, alertBtn, fSort]),
+      h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [fToggle, favBtn, dispBtn, tbBtn, alertBtn, fSort].filter(Boolean)),
       fBody,
     ]);
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(inp => { inp.onkeydown = (e) => { if (e.key === 'Enter') renderList(); }; });
@@ -4849,7 +4915,7 @@ async function appView(user) {
       ]);
     })()].filter(Boolean))); mount(content, h('div', null, [gpsBanner, capNudge, tabsBar, reqHost, availWrap].filter(Boolean))); return; }
     renderList = () => {
-      const shown = sortRows(applyFilters(rows));
+      const shown = sortRows(applyFilters(rows)).filter((l) => !_dispOnly || lbDispPost(l));
       const grid = document.getElementById('cp-loadgrid-host');
       if (grid) { grid.innerHTML = ''; shown.forEach(l => grid.appendChild(loadCard(l))); if (!shown.length) grid.appendChild(h('div', { class: 'cp-muted' }, 'No loads match your filters.')); }
     };
@@ -4987,6 +5053,10 @@ async function appView(user) {
         ]);
       } }, 'Propose rate');
       bookWrap.appendChild(counter);
+      // bl_disp_0547: a load posted by the carrier's own dispatcher — the broker is off-platform, so "Book" means
+      // "I'll take it": the dispatcher gets the RC and LoadBoot approves it, same pipeline as every dispatcher booking.
+      const dp9 = lbDispPost(l);
+      if (dp9) { bookWrap.innerHTML = ''; lbDispActions(l, bookWrap, (what9) => { if (what9 === 'declined') setTimeout(() => { try { const i9 = rows.indexOf(l); if (i9 >= 0) rows.splice(i9, 1); renderList(); } catch (_) {} }, 1200); }); }
       const detailsBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(l.id) }, 'Details');
       const meta = [];
       if (l.commodity) meta.push('Commodity: ' + l.commodity);
@@ -5269,6 +5339,10 @@ async function appView(user) {
         h('div', { class: 'cpx-req-rate' }, [h('span', { class: 'v' }, money(l.rate)), rpm ? h('span', { class: 'rpm' }, rpm) : null, profitEl,
           (function () { const k9 = String(l.id); const on9 = _lbFavs().has(k9); const b9 = h('button', { class: 'cpx-fav' + (on9 ? ' on' : ''), title: 'Save this load', 'aria-label': 'Save this load', onClick: (e9) => { e9.stopPropagation(); const now9 = lbFavToggle(k9); e9.currentTarget.classList.toggle('on', now9); e9.currentTarget.textContent = now9 ? '★' : '☆'; haptic('tap'); if (_favOnly) renderList(); } }, on9 ? '★' : '☆'); return b9; })()].filter(Boolean)),
         h('div', { class: 'cpx-req-chips' }, [
+          dp9 ? lbDispBadge(dp9) : null,
+          dp9 ? h('span', { class: 'cpx-chip', style: 'background:rgba(8,131,247,.14);color:#7cc0ff;font-weight:800', title: 'The board your dispatcher found it on' + (l.details && l.details.board_ref ? ' · ref ' + l.details.board_ref : '') }, '🔎 Found on ' + (dp9.board_label || 'a load board')) : null,
+          dp9 ? h('span', { class: 'cpx-chip', style: 'background:rgba(252,83,5,.12);color:#FC5305;font-weight:800', title: 'Decide before it expires — your dispatcher is holding the broker' }, ['⏳ ', lbDispCountdown(dp9.expires_at)]) : null,
+          dp9 && l.details && l.details.below_min ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)', title: String(l.details.below_min_reason || '') }, '⚠ BELOW YOUR MINIMUM — see why') : null,
           h('span', { class: 'cpx-chip eq', title: lbAltEq(l).length ? 'The broker accepts any of these' : null }, [icon('truck',15), ' ' + [l.equipment || 'Van'].concat(lbAltEq(l)).join(' or ')]),
           lbTrailerFt(l) ? h('span', { class: 'cpx-chip', title: 'Trailer length this load needs' }, '\ud83d\udccf ' + lbTrailerFt(l) + ' ft+') : null,
           lbDimsTxt(l) ? h('span', { class: 'cpx-chip', style: (l.details && l.details.oversize) ? 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)' : '', title: 'Freight dimensions (L \u00d7 W \u00d7 H)' }, ((l.details && l.details.oversize) ? '\u26a0 OVERSIZE \u00b7 ' : '\ud83d\udcd0 ') + lbDimsTxt(l)) : null,
@@ -5329,6 +5403,11 @@ async function appView(user) {
         ]),
         meta.length ? h('div', { class: 'cp-load-meta' }, meta.join(' · ')) : null,
         l.requirements ? h('div', { class: 'cp-row-s' }, l.requirements) : null,
+        dp9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px;padding:8px 11px;border-left:3px solid #FC5305;background:rgba(252,83,5,.07);border-radius:0 10px 10px 0' }, [
+          h('div', null, [h('b', null, '🏢 ' + (l.broker || 'Broker')), (l.details && l.details.broker_mc) ? ' · MC ' + l.details.broker_mc : '', (l.details && l.details.broker_rep) ? ' · ' + l.details.broker_rep : '',
+            (l.details && l.details.broker_screen && l.details.broker_screen.authority) ? h('span', { style: 'margin-left:6px;font-weight:800;color:' + (l.details.broker_screen.authority === 'active' ? '#4ade80' : l.details.broker_screen.authority === 'flagged' ? '#f87171' : '#fbbf24') }, l.details.broker_screen.authority === 'active' ? '✓ authority active' : l.details.broker_screen.authority === 'flagged' ? '🚩 authority NOT active' : '◐ authority unconfirmed') : null].filter(Boolean)),
+          dp9.note ? h('div', { style: 'margin-top:3px;font-style:italic' }, '💬 “' + dp9.note + '” — ' + lbDispName(dp9)) : null,
+        ]) : null,
         h('div', { style: 'margin:4px 0' }, h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'font-size:.74rem;padding:5px 12px', onClick: (ev9) => { ev9.stopPropagation(); openBrokerPacketPreview(); } }, (l.details && l.details.poster_kind === 'shipper' ? '\ud83d\udce6 Shipper\u2019s own load \u2014 you contract with the shipper \ud83d\udd12 what you get on booking' : '\ud83c\udfe2 Broker packet \ud83d\udd12 \u2014 what you get on booking'))),
         (l.accessorials && (l.accessorials.detention_per_hr || l.accessorials.tonu)) ? h('div', { class: 'cp-row-s', style: 'color:#0f766e' },
           '\ud83e\uddfe Rate card: ' + ['detention $' + (l.accessorials.detention_per_hr || '60') + '/hr after ' + (l.accessorials.detention_free_hours || '2') + 'h',
@@ -5364,8 +5443,35 @@ async function appView(user) {
      windows / FCFS, stops, instructions, and the mandatory-tracking notice. Broker identity is never shown. */
   async function showLoadDetail(loadId) {
     const bodyEl = h('div', null, h('div', { class: 'cp-muted' }, 'Loading load details…'));
-    openModal('Load overview', [bodyEl]);
+    const closeD9 = openModal('Load overview', [bodyEl]);
     let d; try { d = await carrierLoadDetail(loadId); } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load details.')); return; }
+    // bl_disp_0547: a load the carrier's own dispatcher posted — every field, the broker screen, the terms, the
+    // countdown and the two decisions sit at the top; the standard overview follows underneath.
+    const dpD9 = lbDispPost(d);
+    const dispBlock9 = dpD9 ? (function () {
+      const dx = (d.terms && d.terms.details) || {}; const acc = (d.terms && d.terms.accessorials) || {}; const bs = dx.broker_screen || {};
+      const row9 = (k, v) => (v == null || v === '') ? null : h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', { style: 'text-align:right' }, String(v))]);
+      const st9 = String(d.load_status || 'available');
+      const act9 = h('div', { class: 'cpx-req-bw', style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' });
+      if (st9 === 'available') lbDispActions({ id: d.load_id, origin: d.origin, destination: d.destination, dispatcher_post: dpD9 }, act9, () => { try { if (tab === 'loads') setTimeout(loadLoads, 1500); } catch (_) {} });
+      else mount(act9, h('div', { class: 'cp-row-s', style: 'font-weight:700;color:' + (st9 === 'carrier_accepted' || st9 === 'booked' ? '#4ade80' : '#94a3b8') }, st9 === 'carrier_accepted' ? '✅ You took it — your dispatcher is getting the rate con; you’ll be notified when LoadBoot approves it.' : st9 === 'booked' ? '✅ Approved by LoadBoot — see My Loads.' : st9 === 'declined' ? '✕ You declined this one.' : st9 === 'expired' ? '⏰ This post expired.' : st9 === 'withdrawn' ? '↩ Your dispatcher withdrew this post.' : st9));
+      const bsLine = bs.authority ? (bs.authority === 'active' ? '✓ Authority active' : bs.authority === 'flagged' ? '🚩 Authority NOT active (' + String(bs.authority_raw || '').replace(/_/g, ' ') + ')' : '◐ Authority not confirmed live') + (bs.legal_name ? ' · ' + bs.legal_name : '') + (bs.authority_age ? ' · ' + bs.authority_age + ' old' : '') + (bs.broker_authority === true ? ' · broker authority on file' : '') : 'Not screened — ask your dispatcher';
+      return h('div', { style: 'margin:0 0 12px;border:1px solid rgba(252,83,5,.45);border-radius:14px;padding:12px 14px;background:rgba(252,83,5,.06)' }, [
+        h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center' }, [lbDispBadge(dpD9), h('span', { class: 'cp-row-s', style: 'font-weight:800' }, ['⏳ expires in ', lbDispCountdown(dpD9.expires_at)])]),
+        h('div', { class: 'cp-row-s', style: 'margin:8px 0 2px' }, '🔎 Found on ' + (dpD9.board_label || 'a load board') + (d.source_reference ? ' · ref ' + d.source_reference : '') + (dx.source_link ? ' · ' : '')),
+        dpD9.note ? h('div', { class: 'cp-row-s', style: 'font-style:italic;margin:4px 0 6px' }, '💬 “' + dpD9.note + '” — ' + lbDispName(dpD9)) : null,
+        row9('Broker', [d.broker, dx.broker_mc ? 'MC ' + dx.broker_mc : null].filter(Boolean).join(' · ')),
+        row9('Broker rep', [dx.broker_rep, dx.broker_phone, dx.broker_email].filter(Boolean).join(' · ')),
+        h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Broker screen'), h('span', { style: 'text-align:right;font-weight:800;color:' + (bs.authority === 'active' ? '#4ade80' : bs.authority === 'flagged' ? '#f87171' : '#fbbf24') }, bsLine)]),
+        row9('Load type', dx.load_type || dx.load_size), row9('Pieces / pallets', dx.pieces), row9('Dims (in)', (dx.dims && (dx.dims.l || dx.dims.w || dx.dims.h)) ? [dx.dims.l, dx.dims.w, dx.dims.h].map((v) => v || '?').join(' × ') : null), row9('Reefer temp', dx.temperature), dx.hazmat ? row9('Hazmat', '☢ YES') : null,
+        row9('Requirements', Array.isArray(dx.requirements) && dx.requirements.length ? dx.requirements.join(', ') : null),
+        row9('Deadhead (from your truck)', d.deadhead ? d.deadhead + ' mi' : null),
+        row9('Payment terms', [acc.payment_terms, acc.quick_pay ? 'quick pay ' + acc.quick_pay : null, acc.factoring_ok ? 'factoring OK' : null].filter(Boolean).join(' · ')),
+        row9('Accessorials offered', [acc.detention_per_hr ? 'detention $' + acc.detention_per_hr + '/hr after ' + (acc.detention_free_hours || '2') + 'h' : null, acc.tonu ? 'TONU $' + acc.tonu : null, acc.layover_per_day ? 'layover $' + acc.layover_per_day + '/day' : null, acc.lumper_policy ? 'lumper: ' + acc.lumper_policy : null].filter(Boolean).join(' · ')),
+        dx.below_min ? h('div', { class: 'cp-row-s', style: 'margin-top:6px;padding:8px 10px;border-radius:10px;background:rgba(245,158,11,.12);color:#fbbf24;font-weight:700' }, '⚠ Below your minimum rate. ' + lbDispName(dpD9) + ' says: ' + (dx.below_min_reason || '—')) : null,
+        act9,
+      ].filter(Boolean));
+    })() : null;
     // 2026-08 audit: facility ratings (carriers rate pickup/delivery facilities after delivery).
     (async function () { try {
       const o9 = d && (d.origin || (d.load && d.load.origin)), de9 = d && (d.destination || (d.load && d.load.destination));
@@ -5398,6 +5504,7 @@ async function appView(user) {
     const rpm = d.rpm != null ? '$' + Number(d.rpm).toFixed(2) + '/mi' : null;
     const accEntries = Object.entries(acc);
     mount(bodyEl, h('div', null, [
+      dispBlock9,
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px' }, [
         h('b', { style: 'font-size:1.05rem' }, (d.origin || '—') + ' → ' + (d.destination || '—')),
         h('b', { style: 'color:var(--lb-green,#16a34a)' }, [money(d.rate), rpm ? h('span', { class: 'cp-muted', style: 'font-weight:400;margin-left:6px' }, rpm) : null].filter(Boolean)),

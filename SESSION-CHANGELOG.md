@@ -602,3 +602,24 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
 - Pre-assignment the candidate never sees names, phones, dockets, documents or bank/factoring.
 - DB: STAGING applied + rollback test green (tests/bl_disp_0442_rollback_test.sql). PROD pending owner test.
   Anon SECURITY DEFINER surface unchanged. Notes: claude/CHOOSE-CARRIER-0442.md.
+
+## Dispatcher posts a 3rd-party load on his carrier's board (bl_disp_0547, 13 Oct 2026)
+- Dispatcher workspace → Board: "Post a load for <carrier>" — one page (Source / Broker with inline FMCSA screen
+  on MC blur / Lane / Freight / Money / Notes + expiry), equipment limited to the fleet, $/mi + all-in live,
+  below-floor needs a written reason. "Loads you posted" card: status, countdown, Edit / Withdraw / Log booking
+  (pre-filled) / Attach the RC / Post again. Deep link #board/post.
+- Carrier board (same card, same detail): orange-on-navy "Posted by your dispatcher <name>", "Found on DAT",
+  countdown, broker line + note, sorted first, chip "From my dispatcher (n)"; "I'll take it" / Decline (reason).
+  Accept = status carrier_accepted + dispatcher_bookings row (pending_rc, source = board, load_id) → the existing
+  Log-a-booking → CC approve → Dispatched pipeline; CC approve/reject now also moves the load. Dashboard strip
+  "N loads from your dispatcher waiting". Notifications: in-app + push + premium e-mail (email_kit, catalog key
+  dispatcher.load.posted); demo orgs in-app only. Expiry sweep every 10 min (dispatcher.post.expired).
+- Visibility: loads.target_carrier_org — only that carrier (and staff): RLS + cc_pocket_available_loads +
+  cc_load_detail + cc_carrier_best_loads + both truck-posting matchers + get_public_load_opportunities patched
+  by anchor-replace. Verified on staging: another carrier sees nothing, public pages nothing, matcher nothing.
+- CC: Carrier 360 "Loads posted by the dispatcher" (staff Withdraw); Dispatcher 360 posted / accepted /
+  declined / expired; daily trial e-mail counts "Loads posted" (effort) and "Posts accepted" (outcome).
+- DB: STAGING applied in parts (the MCP holds `drop policy` for a confirmation → ALTER policy instead; prod's
+  select policy is named loads_carrier_select — handled). PROD pending. Anon SECURITY DEFINER surface
+  unchanged (35 staging). Gates: ESM ALL PASS (232), imports PASS, esbuild OK ×5, BUILD OK.
+  Notes + prod apply order: claude/DISPATCHER-LOAD-POST-0547.md.
