@@ -10,7 +10,7 @@ import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who
 import { prefsCard as sharedPrefsCard, prefsSourcesMap } from '../../shared/ui/prefs-card.js';   // bl_pref_0536 — aliased: `prefsCard` below is the local card() element
 import { ccCarrierFieldSources, ccFieldSuggestions, ccFieldSuggestionDecide } from '../../shared/api.js';
 import { ccDocSmsStatus } from '../../shared/api.js';   // bl_dial_0540 (N)
-import { dispatcherWithdrawLoad } from '../../shared/api.js';   // bl_disp_0547 — staff can withdraw a dispatcher-posted load
+import { dispatcherWithdrawLoad } from '../../shared/api.js';   // bl_disp_0549 — staff can withdraw a dispatcher-posted load
 import { dispatchHoldPanel } from './dispatchHold.js';   // bl_disp_0501 — hold from dispatchers
 import { icon } from '../../shared/ui/icons.js';
 
@@ -629,7 +629,7 @@ export function renderCarrier360(host, orgId) {
     })();
 
 
-    // bl_disp_0547 — loads the carrier's dispatcher posted from DAT / Truckstop / … onto THIS carrier's board (source +
+    // bl_disp_0549 — loads the carrier's dispatcher posted from DAT / Truckstop / … onto THIS carrier's board (source +
     // dispatcher name + the carrier's decision). Staff can withdraw an open post; the dispatcher is audited either way.
     const dposts = Array.isArray(d.dispatcher_posts) ? d.dispatcher_posts : [];
     const DP_TONE = { available: ['OPEN', '#b45309', '#fff7ed'], carrier_accepted: ['ACCEPTED', '#166534', '#f0fdf4'], booked: ['BOOKED', '#166534', '#f0fdf4'], declined: ['DECLINED', '#991b1b', '#fef2f2'], expired: ['EXPIRED', '#475569', '#f1f5f9'], withdrawn: ['WITHDRAWN', '#475569', '#f1f5f9'] };
@@ -1906,7 +1906,7 @@ export function renderCarrier360(host, orgId) {
       el('div', { style: 'margin-top:16px' }, fleetCard),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [driversCard, payoutCard]), // docsCard MERGED into Onboarding & compliance (view/verify/actions per doc live there)
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [tripsCard, scCard]),
-      el('div', { style: 'margin-top:16px' }, dispPostsCard),   // bl_disp_0547
+      el('div', { style: 'margin-top:16px' }, dispPostsCard),   // bl_disp_0549
       el('div', { style: 'margin-top:16px' }, backCard),
       el('div', { style: 'margin-top:16px' }, timelineCard),
     ]));

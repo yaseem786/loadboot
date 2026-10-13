@@ -18,7 +18,7 @@ import {
   dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead,
   dispatcherBoard, dispatcherLoadDetail, dispatcherRequestBook, dispatcherPostTruck, dispatcherUpdatePosting, dispatcherPostingMatches, dispatcherMyKpis,
   dispatcherTrip, dispatcherTripAction, dispatcherTrialFeedback,
-  dispatcherPostLoad, dispatcherUpdateLoad, dispatcherWithdrawLoad, dispatcherMyPosts, dispatcherBrokerScreen, fmcsaVerify,   // bl_disp_0547 — post a 3rd-party load on the carrier's board
+  dispatcherPostLoad, dispatcherUpdateLoad, dispatcherWithdrawLoad, dispatcherMyPosts, dispatcherBrokerScreen, fmcsaVerify,   // bl_disp_0549 — post a 3rd-party load on the carrier's board
 } from '../shared/api.js';
 import { threadChat } from '../shared/thread-chat.js';   // bl_ui_0502
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
@@ -418,7 +418,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     thread: 'messages', chat: 'messages', message: 'messages', commission: 'money', pay: 'money',
     docs: 'packet', documents: 'packet', packet: 'packet', broker: 'brokers', kpi: 'kpis' };
   let openThreadId = null, openTruckId = null, openBoardId = null, openAction = null;
-  let logPrefill = null;   // bl_disp_0547: "Log booking" from a posted load pre-fills the booking form once
+  let logPrefill = null;   // bl_disp_0549: "Log booking" from a posted load pre-fills the booking form once
   function dwGo(tabId, target) {
     const key = String(tabId == null ? '' : tabId).toLowerCase();
     const t9 = DW_ALIAS[key] || key;
@@ -427,7 +427,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     openId = null; openThreadId = null; openTruckId = null; openBoardId = null; openAction = null;
     if (t9 === 'bookings') { if (/^(new|log|add)$/i.test(id)) openAction = 'new-booking'; else if (id) openBooking(id); }
     else if (t9 === 'messages') { if (id) openThreadId = id; }
-    else if (t9 === 'board') { if (/^(post|new|postload)$/i.test(id)) openAction = 'post-load'; else if (id) openBoardId = id; }   // #board/post → "Post a load" (bl_disp_0547)
+    else if (t9 === 'board') { if (/^(post|new|postload)$/i.test(id)) openAction = 'post-load'; else if (id) openBoardId = id; }   // #board/post → "Post a load" (bl_disp_0549)
     else if (t9 === 'brokers') { if (/^(new|add)$/i.test(id)) openAction = 'new-broker'; }
     else if (t9 === 'trucks') {
       const p9 = id.split('/');
@@ -1078,7 +1078,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const miles = I('loaded miles', 'number', { min: '0' }), dh = I('deadhead miles', 'number', { min: '0' }), gross = I('total $', 'number', { min: '0', step: '0.01' });
     const comm = I('commodity'), wt = I('lbs', 'number'), eq = I('equipment as booked (e.g. 26ft box, liftgate)'), rcno = I('RC / load #'), rcFile = h('input', { type: 'file', accept: '.pdf,image/*', class: 'dw-in' }), notes = h('textarea', { class: 'dw-in', rows: 2, placeholder: 'special instructions, appointment info, pallet count…' });
     const stopsUI = stopsEditor(null, () => ({ origin: org.value, destination: dst.value, pu: pu.value, dl: dl.value }));
-    // bl_disp_0547: a posted load the carrier is taking off-platform arrives here pre-filled (one shot)
+    // bl_disp_0549: a posted load the carrier is taking off-platform arrives here pre-filled (one shot)
     if (logPrefill) {
       const P = logPrefill; logPrefill = null;
       const set9 = (inp, v) => { if (v != null && v !== '') inp.value = String(v); };
@@ -1237,14 +1237,14 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     let data = null;
     const postsHost = h('div');
     const wrap = h('div', null, [
-      // bl_disp_0547 — loads this dispatcher posted for THIS carrier (DAT/Truckstop/… finds), with the carrier's decision
+      // bl_disp_0549 — loads this dispatcher posted for THIS carrier (DAT/Truckstop/… finds), with the carrier's decision
       postsHost,
       h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('search'), ' LoadBoot board — ' + ((cur.carrier && cur.carrier.name) || '')]), h('div', { class: 'dw-row' }, [as.length > 1 ? sel : null, h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh board', onClick: () => paint(true) }, ic('refresh', 14)), h('button', { class: 'dw-btn sm warn', 'data-tour': 'dw-post-load', onClick: () => postLoadForm(cur, null) }, [ic('plus', 16), 'Post a load for ' + ((cur.carrier && cur.carrier.name) || 'the carrier')]), h('button', { class: 'dw-btn sm', onClick: () => postForm(cur) }, [ic('plus', 16), 'Post the truck'])])]),
         h('div', { class: 'dw-muted', style: 'margin-bottom:8px' }, 'Loads posted on LoadBoot by brokers and shippers, ranked for this carrier’s truck. Requesting a load sends the broker a 30-minute booking request under the carrier’s MC; when the broker accepts, the booking appears under Bookings automatically. Found a load on DAT, Truckstop or a broker call? “Post a load” puts it on the carrier’s LoadBoot board, tagged with your name — they tap “I’ll take it” and the booking opens for the RC.'),
         h('div', { class: 'dw-row dw-filter', style: 'margin-bottom:8px' }, [h('span', { class: 'dw-muted' }, 'Filter:'), fMin, fDh, fEq]),
         body]),
     ]);
-    // ---- posts for this carrier (bl_disp_0547)
+    // ---- posts for this carrier (bl_disp_0549)
     const POST_PILL = { available: ['OPEN', '#fbbf24'], carrier_accepted: ['ACCEPTED', '#4ade80'], booked: ['BOOKED', '#4ade80'], declined: ['DECLINED', '#f87171'], expired: ['EXPIRED', '#94a3b8'], withdrawn: ['WITHDRAWN', '#94a3b8'], in_transit: ['MOVING', '#4ade80'], delivered: ['DELIVERED', '#4ade80'] };
     const leftTxt = (iso) => { if (!iso) return ''; const s = Math.floor((new Date(iso).getTime() - Date.now()) / 1000); if (s <= 0) return 'expired'; const m0 = Math.floor(s / 60); return m0 >= 60 ? Math.floor(m0 / 60) + 'h ' + (m0 % 60) + 'm left' : m0 + 'm left'; };
     async function paintPosts() {
@@ -1333,7 +1333,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         h('div', { class: 'dw-form' }, [h('label', { class: 'wide' }, ['Truck', tsel]), h('label', null, ['Available at (City, ST) *', origin]), h('label', null, ['Destination preference', dest]), h('label', null, ['From *', from]), h('label', null, ['To *', to]), h('label', null, ['Radius (mi)', radius]), h('label', null, ['Min $/mile', minr]), h('label', { class: 'wide' }, ['Notes for brokers', notes])]), e,
         h('div', { class: 'dw-row', style: 'margin-top:12px' }, [h('button', { class: 'dw-btn', onClick: async (ev) => { ev.target.disabled = true; try { if (!origin.value.trim()) throw new Error('Where is the truck available?'); if (to.value < from.value) throw new Error('"To" is before "From".'); const r = await dispatcherPostTruck(a.carrier_org_id, { truck_id: tsel.value, origin: origin.value, dest_pref: dest.value, available_from: from.value, available_to: to.value, radius_miles: radius.value || null, min_rpm: minr.value || null, notes: notes.value }); if (r && r.error) throw new Error(r.error); m.close(); toast('Truck posted'); paint(true); } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, 'Post truck'), h('button', { class: 'dw-btn ghost', onClick: () => m.close() }, 'Cancel')])]));
     }
-    // ---- POST A LOAD (bl_disp_0547): one page, grouped like a load-board card. The carrier sees it on THEIR
+    // ---- POST A LOAD (bl_disp_0549): one page, grouped like a load-board card. The carrier sees it on THEIR
     // LoadBoot board as "Posted by your dispatcher <name>" with the same card/detail/decision they already know.
     function postLoadForm(a, existing) {
       const ts = (a.trucks || []); const ex = existing || {}; const exd = ex.details || {}; const exa = ex.accessorials || exd.accessorials || {};

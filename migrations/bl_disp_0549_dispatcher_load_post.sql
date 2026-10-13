@@ -1,4 +1,4 @@
--- bl_disp_0547 — Dispatcher posts a 3rd-party load ON HIS CARRIER'S board (13 Oct 2026)
+-- bl_disp_0549 — Dispatcher posts a 3rd-party load ON HIS CARRIER'S board (13 Oct 2026)
 --
 -- A hired dispatcher finds a load on DAT / Truckstop / 123Loadboard / Direct Freight / a broker call and posts it
 -- so it appears on his ASSIGNED carrier's LoadBoot load board, tagged "Posted by your dispatcher <name>", with the
@@ -24,6 +24,14 @@
 --   6. CC: cc_carrier_360.dispatcher_posts, cc_dispatcher_360.posts; the daily trial e-mail counts "Loads posted"
 --      as effort and "Posts accepted" as outcome.
 -- Anon-executable SECURITY DEFINER surface in public: UNCHANGED (asserted at the end).
+
+-- ---------------------------------------------------------------- preflight: bl_train_0548 (carrier training sandbox) must be in first
+-- (the anchors below contain training_load_ok(...) / app_live.* which only exist after 0548; prod order = 0548 → 0549)
+do $$ begin
+  if to_regprocedure('app_private.training_load_ok(uuid,uuid)') is null or to_regclass('app_live.loads') is null then
+    raise exception 'apply bl_train_0548_carrier_training_sandbox first (training_load_ok / app_live.loads missing)';
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------- 0. anchor-replace helper (app_private only)
 create or replace function app_private.fn_patch(p_fn regprocedure, p_anchor text, p_new text)
@@ -239,7 +247,7 @@ begin
       values ('carrier', m.uid, 'in_app', case when p_kind = 'updated' then 'dispatcher.load.updated' else 'dispatcher.load.posted' end,
         jsonb_build_object('title', v_title, 'body', v_body, 'tone', 'action', 'url', v_url, 'load_id', l.id), 'sent', now());
     exception when others then null; end;
-    begin perform app_private.push_enqueue(m.uid, v_title, v_body, v_url, 'disp-post-' || l.id::text); exception when others then null; end;
+    if not coalesce(v_demo, false) then begin perform app_private.push_enqueue(m.uid, v_title, v_body, v_url, 'disp-post-' || l.id::text); exception when others then null; end; end if;   -- demo/training: in-app only
     if coalesce(v_demo, false) or m.email is null or p_kind = 'updated' then continue; end if;   -- demo orgs: in-app only; updates: in-app only
     begin
       v_gate := app_private.email_gate('dispatcher.load.posted', m.email, m.uid);
@@ -341,12 +349,12 @@ begin
     end if;
   exception when others then null; end;
   v_note := app_private.disp_post_notify_carrier(v_id, 'posted');
-  begin
+  if not v_demo then begin   -- training/demo carriers never page staff
     insert into app_private.notifications (recipient_role, channel, template_key, payload, status, sent_at)
     values ('staff', 'in_app', 'dispatcher.post.created', jsonb_build_object('title', '📋 Dispatcher posted a load: ' || (n->>'origin') || ' → ' || (n->>'destination'),
       'body', v_name || ' · ' || (n->>'board_label') || ' · ' || app_private.disp_money((n->>'rate')::numeric) || case when (n->>'below_min')::boolean then ' · ⚠ below min rate' else '' end,
       'tone', case when (n->>'below_min')::boolean then 'warning' else 'info' end, 'url', '/app/command-center/#/carriers?id=' || p_org::text, 'load_id', v_id), 'sent', now());
-  exception when others then null; end;
+  exception when others then null; end; end if;
   perform app_private.disp_audit('dispatcher.load.post', 'load', v_id::text, p_org, v_name || ' posted ' || (n->>'origin') || ' → ' || (n->>'destination') || ' ' || app_private.disp_money((n->>'rate')::numeric) || ' from ' || (n->>'board_label'),
     jsonb_build_object('rpm', n->'rpm', 'min_rpm', n->'min_rpm', 'below_min', n->'below_min', 'expires_at', v_exp, 'notify', v_note));
   return jsonb_build_object('ok', true, 'id', v_id, 'status', 'available', 'rpm', n->'rpm', 'min_rpm', n->'min_rpm', 'below_min', n->'below_min', 'expires_at', v_exp, 'notify', v_note);
@@ -529,8 +537,8 @@ begin
       app_private.disp_money(l.rate) || coalesce(' · ' || l.miles || ' mi', '') || ' · pickup ' || to_char(v_pu at time zone 'America/New_York', 'Dy Mon DD HH24:MI') || ' ET'
       || E'\nCall the broker now, lock the rate and attach the rate confirmation to the booking LoadBoot created. LoadBoot approves from the RC; the driver moves after approval.',
       '/app/agent/#bookings/' || v_bid::text, true);
-    perform app_private.disp_notify(null, 'staff', 'dispatcher.post.accepted', 'Carrier accepted a dispatcher-posted load: ' || v_lane,
-      coalesce(v_cname, 'Carrier') || ' · ' || app_private.disp_money(l.rate) || ' · ' || coalesce(dp->>'board_label', '') || ' · booking ' || v_bid::text || ' waits for the RC', '/app/command-center/#dispatchers', false);
+    if not coalesce(l.is_demo, false) then perform app_private.disp_notify(null, 'staff', 'dispatcher.post.accepted', 'Carrier accepted a dispatcher-posted load: ' || v_lane,
+      coalesce(v_cname, 'Carrier') || ' · ' || app_private.disp_money(l.rate) || ' · ' || coalesce(dp->>'board_label', '') || ' · booking ' || v_bid::text || ' waits for the RC', '/app/command-center/#dispatchers', false); end if;
     begin
       insert into app_private.notifications (recipient_role, recipient_user, channel, template_key, payload, status, sent_at)
       values ('carrier', v_uid, 'in_app', 'dispatcher.load.accepted', jsonb_build_object('title', '✅ You took ' || v_lane, 'body', 'Your dispatcher is getting the rate con — you''ll be notified when LoadBoot approves it.', 'tone', 'success', 'url', '/app/carrier/#loads', 'load_id', l.id), 'sent', now());
@@ -631,6 +639,17 @@ begin
   perform app_private.fn_patch('public.cc_carrier_best_loads(uuid,integer)',
     $a$where status in ('available','offered','matching','approved_for_matching')$a$,
     $a$where status in ('available','offered','matching','approved_for_matching') and (target_carrier_org is null or target_carrier_org = v_target)$a$);
+  -- bl_train_0548's training clause: a training carrier's own posts have no broker_org, so the world is read from the target
+  perform app_private.fn_patch('public.cc_carrier_best_loads(uuid,integer)',
+    $a$app_private.training_world_of_org(coalesce(broker_org, shipper_org)) is not distinct from app_private.training_world_of_org(v_target)$a$,
+    $a$app_private.training_world_of_org(coalesce(broker_org, shipper_org, target_carrier_org)) is not distinct from app_private.training_world_of_org(v_target)$a$);
+  -- training reset wipes the posts aimed at the training carrier too (training_wipe exists on prod; on staging only once
+  -- scripts/training/staging-training-wipe.sql has been pasted — the MCP times out on DELETE text)
+  if to_regprocedure('app_private.training_wipe(uuid)') is not null then
+    perform app_private.fn_patch('app_private.training_wipe(uuid)',
+      $a$from public.loads where broker_org = w.broker_org or shipper_org = w.broker_org;$a$,
+      $a$from public.loads where broker_org = w.broker_org or shipper_org = w.broker_org or target_carrier_org = w.carrier_org;$a$);
+  end if;
   -- public pages (already is_public=true only; belt and braces)
   perform app_private.fn_patch('public.get_public_load_opportunities(integer)',
     $a$and is_public=true$a$, $a$and is_public=true and target_carrier_org is null$a$);
@@ -650,7 +669,7 @@ begin
           'accepted', count(*) filter (where l.status in ('carrier_accepted','booked','in_transit','delivered')), 'declined', count(*) filter (where l.status = 'declined'),
           'expired', count(*) filter (where l.status = 'expired' or (l.status = 'available' and l.expires_at <= now())), 'withdrawn', count(*) filter (where l.status = 'withdrawn'),
           'below_min', count(*) filter (where coalesce((l.details->>'below_min')::boolean, false)))
-        from public.loads l where l.source_type = 'dispatcher' and l.created_by = p_user),
+        from app_live.loads l where l.source_type = 'dispatcher' and l.created_by = p_user),
       'terms_log', coalesce($a$);
   perform app_private.fn_patch('public.cc_carrier_360(uuid)',
     $a$    'open_tasks',(select count(*)$a$,
@@ -665,12 +684,12 @@ begin
   perform app_private.fn_patch('app_private.disp_trial_stats(uuid,timestamptz,timestamptz,timestamptz)',
     $a$    'offers', (select count(*) from app_live.dispatcher_bookings b where b.dispatcher_user_id = p_user and b.created_at >= p_from and b.created_at < p_to),$a$,
     $a$    'offers', (select count(*) from app_live.dispatcher_bookings b where b.dispatcher_user_id = p_user and b.created_at >= p_from and b.created_at < p_to),
-    'loads_posted', (select count(*) from public.loads l where l.source_type = 'dispatcher' and l.created_by = p_user and l.created_at >= p_from and l.created_at < p_to),$a$);
+    'loads_posted', (select count(*) from app_live.loads l where l.source_type = 'dispatcher' and l.created_by = p_user and l.created_at >= p_from and l.created_at < p_to),$a$);
   perform app_private.fn_patch('app_private.disp_trial_stats(uuid,timestamptz,timestamptz,timestamptz)',
     $a$    'received', (select count(*) from app_private.dmail_messages where account_id = any(v_acct) and folder = 'inbox' and msg_date >= p_from and msg_date < p_to)
   ) into w;$a$,
     $a$    'received', (select count(*) from app_private.dmail_messages where account_id = any(v_acct) and folder = 'inbox' and msg_date >= p_from and msg_date < p_to),
-    'posts_accepted', (select count(*) from public.loads l where l.source_type = 'dispatcher' and l.created_by = p_user and (l.details->'decision'->>'action') = 'accepted'
+    'posts_accepted', (select count(*) from app_live.loads l where l.source_type = 'dispatcher' and l.created_by = p_user and (l.details->'decision'->>'action') = 'accepted'
                          and (l.details->'decision'->>'at')::timestamptz >= p_from and (l.details->'decision'->>'at')::timestamptz < p_to)
   ) into w;$a$);
   perform app_private.fn_patch('app_private.disp_trial_daily_build(uuid,date)',

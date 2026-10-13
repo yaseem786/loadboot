@@ -1,4 +1,4 @@
-# bl_disp_0547 — Dispatcher posts a 3rd-party load on his carrier's board (13 Oct 2026)
+# bl_disp_0549 — Dispatcher posts a 3rd-party load on his carrier's board (13 Oct 2026)
 
 Owner ask (`bl_disp_post`): a dispatcher finds a load on DAT / Truckstop / 123Loadboard / Direct Freight / a broker
 call and posts it so it appears **on his assigned carrier's LoadBoot load board**, tagged "Posted by your dispatcher
@@ -8,7 +8,7 @@ call and posts it so it appears **on his assigned carrier's LoadBoot load board*
 
 | Layer | File | What |
 |---|---|---|
-| DB | `migrations/bl_disp_0547_dispatcher_load_post.sql` | column `loads.target_carrier_org`; check constraints widened (`source_type` 'dispatcher', `verification_state` 'dispatcher_posted', `status` 'carrier_accepted' / 'declined' / 'withdrawn' / 'expired'); RLS `loads_visible` via `public.lb_load_target_visible(uuid)`; 5 catalog rows; RPCs; visibility patches; cron `lb-disp-posts-expire` (*/10 min). |
+| DB | `migrations/bl_disp_0549_dispatcher_load_post.sql` | column `loads.target_carrier_org`; check constraints widened (`source_type` 'dispatcher', `verification_state` 'dispatcher_posted', `status` 'carrier_accepted' / 'declined' / 'withdrawn' / 'expired'); RLS `loads_visible` via `public.lb_load_target_visible(uuid)`; 5 catalog rows; RPCs; visibility patches; cron `lb-disp-posts-expire` (*/10 min). |
 | Dispatcher | `app/agent/dispatcher-workspace.js` | Board tab → **"Post a load for <carrier>"** (one page, grouped Source / Broker / Lane / Freight / Money / Notes; MC blur = inline FMCSA screen, non-blocking; equipment restricted to the fleet; $/mi + all-in $/mi live; below-floor needs a written reason). **"Loads you posted"** card: status, countdown, Edit / Withdraw / Log booking (pre-fills Log a booking) / Attach the RC / Post again. Deep link `#board/post`. |
 | Carrier | `app/carrier/app.js` | Board card: orange-on-navy badge "Posted by your dispatcher Andrew", "Found on DAT", countdown, below-min flag, broker line + note; sorted first; chip **"From my dispatcher (n)"**; buttons **"I'll take it" / Decline** (reason required). Detail view: every field, broker screen (✓ active / 🚩 flag), payment terms, accessorials, countdown, the two buttons. Dashboard strip "N loads from your dispatcher waiting". `lbNotifDest`: `dispatcher.load.*` → loads. Deep link `/app/carrier/#loads/<id>` opens the detail. |
 | CC | `app/command-center/views/carrier360.js`, `dispatcher-360.js` | Carrier 360 → "Loads posted by the dispatcher" (source, dispatcher, status, decision, booking; staff **Withdraw**). Dispatcher 360 header: Loads posted · accepted / declined / expired. |
@@ -38,6 +38,16 @@ Dispatcher `b89cff94…` (stg.dispatcher.0548) → carrier "LOADBOOT TRAINING CA
 - Anon SECURITY DEFINER surface: **35 on staging, names = baseline** (none of the 8 new public functions is anon-executable).
 - Gates: `ESM SYNTAX CHECK: ALL PASS (232 files)`, `IMPORT-REFERENCE CHECK: PASS`, esbuild OK on all 5 edited modules, `python build_site.py` → BUILD OK.
 - Test records left on staging (all terminal, demo org): loads `4dd4e53a…` (declined via CC reject), `0965ca4f…` (declined), Tulsa→Dallas (expired), Waco→San Antonio (withdrawn); booking `34c9d599…` (rejected).
+
+## Coordination with bl_train_0548 (carrier training sandbox) — 13 Oct 2026
+Peer session's review (verified against staging + prod, read-only) and what changed:
+- **Numbering:** 0547 was taken twice on main (`bl_dial_0547`, `bl_ops_0547`), 0548 = training → this is **bl_disp_0549**. 0550 is reserved by the training session.
+- **Order on prod: 0548 → 0549.** The file starts with a preflight that raises unless `training_load_ok` + `app_live.loads` exist (prod has 0548 since 13 Oct).
+- **Training carrier sees its posts:** a post has no broker_org, so `training_load_ok(null, null)` is false for a training world; the board exempts `target_carrier_org = v_me` from that clause (verified on "Staging QA"), and `cc_carrier_best_loads` now reads the world from `coalesce(broker_org, shipper_org, target_carrier_org)`.
+- **Scorecards read `app_live.*`:** `disp_trial_stats` (loads_posted / posts_accepted) and `cc_dispatcher_360.posts` read `app_live.loads` (the non-demo view), so training posts never count. The view is `select *` frozen at 0548 and lacks `target_carrier_org`; nothing reporting needs it.
+- **Training reset:** `training_wipe` is anchor-patched (guarded by `to_regprocedure`) to also delete `target_carrier_org = w.carrier_org`.
+- **Demo/training quiet:** no staff in-app on post or accept, no push, no e-mail for demo carriers; `training_blocked_log` shows the sandbox guard stopping the dispatcher-side e-mails too (ids 84–87).
+- Verified again: a real (non-demo) carrier session sees 0 targeted posts on the board and in best-loads; `authenticated` holds no SELECT grant on `public.loads` on either DB (the RLS change is defence in depth).
 
 ## PROD apply notes — read before touching prod
 - **Apply in parts through the MCP, not as one `apply_migration` call.** A 66 KB apply timed out at 60 s with nothing committed; the real blocker was `drop policy` — the Supabase MCP holds any `drop policy` for a confirmation that never arrives in an autonomous session and times out. The file now uses `alter policy loads_visible … using (…)` (same end state). `drop constraint` is fine.

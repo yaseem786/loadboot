@@ -519,7 +519,7 @@ export async function renderDispatcher360(host, query) {
           el('div', { class: 'd3-hstats' }, [
             stat(live.length, 'Carriers', 'truck', 'carriers'), stat(trucks, 'Trucks', 'truck', 'carriers'),
             stat(k ? k.bookings : (state.bookings ? state.bookings.length : null), 'Loads booked', 'route', 'loads'),
-            // bl_disp_0547 — 3rd-party loads posted on the carrier's board: effort (posted) and outcome (accepted / declined / expired)
+            // bl_disp_0549 — 3rd-party loads posted on the carrier's board: effort (posted) and outcome (accepted / declined / expired)
             stat(dd.posts ? dd.posts.posted : null, 'Loads posted', 'route', 'carriers'),
             stat(dd.posts ? (dd.posts.accepted || 0) + ' / ' + (dd.posts.declined || 0) + ' / ' + (dd.posts.expired || 0) : null, 'Posts accepted / declined / expired', 'trend', 'carriers'),
             stat(k && k.avg_rpm != null ? '$' + Number(k.avg_rpm).toFixed(2) : null, 'Avg $/mi', 'trend', 'performance'),

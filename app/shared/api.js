@@ -611,7 +611,7 @@ export const dispatcherBoard = (org, limit) => rpc('dispatcher_board', { p_org: 
 export const dispatcherLoadDetail = (org, load) => rpc('dispatcher_load_detail', { p_org: org, p_load: load });
 export const dispatcherRequestBook = (org, load, note) => rpc('dispatcher_request_book', { p_org: org, p_load: load, p_note: note ?? null });
 export const dispatcherPostTruck = (org, p) => rpc('dispatcher_post_truck', { p_org: org, p: p ?? {} });
-// bl_disp_0547 — dispatcher posts a 3rd-party load (DAT/Truckstop/…) ON his carrier's LoadBoot board; the carrier
+// bl_disp_0549 — dispatcher posts a 3rd-party load (DAT/Truckstop/…) ON his carrier's LoadBoot board; the carrier
 // decides with "I'll take it" / Decline, acceptance opens a dispatcher_bookings row (pending_rc) for the RC flow.
 export const dispatcherPostLoad = (org, p) => rpc('dispatcher_post_load', { p_org: org, p: p ?? {} });
 export const dispatcherUpdateLoad = (load, p) => rpc('dispatcher_update_load', { p_load: load, p: p ?? {} });

@@ -268,7 +268,7 @@ function lbNotifDest(n, p) {
   const key9 = String((n && n.template_key) || '').toLowerCase();
   // trip/tracking alerts ALWAYS belong on My Loads, whatever the stored url says
   if (/^trip\.|^tracking/.test(key9)) return 'trips';
-  if (/^dispatcher\.load\./.test(key9)) return 'loads';   // bl_disp_0547: a load your dispatcher posted / updated / withdrew lives on the board
+  if (/^dispatcher\.load\./.test(key9)) return 'loads';   // bl_disp_0549: a load your dispatcher posted / updated / withdrew lives on the board
   // a deep link is "#tab/target" — take the tab, the target is handled by lbRunDeepLink
   if (p && p.url && p.url.indexOf('#') >= 0) { const t = p.url.split('#')[1]; if (t) { const t0 = t.replace(/^\//, '').split('/')[0]; if (TABS9.indexOf(t0) >= 0) return t0; } }
   const txt = (((p && p.title) || '') + ' ' + ((n && n.template_key) || '')).toLowerCase();
@@ -450,7 +450,7 @@ function lbTrailerFt(l) { const n = Number(l && l.details && l.details.trailer_l
 function lbFtIn(ft) { const n = Number(ft); if (!isFinite(n) || n <= 0) return ''; let f = Math.floor(n), i = Math.round((n - f) * 12); if (i === 12) { f += 1; i = 0; } return i ? f + '\'' + i + '"' : f + '\''; }
 function lbDimsTxt(l) { const d = l && l.details && l.details.dims_ft; return (d && typeof d === 'object') ? [['L', d.l], ['W', d.w], ['H', d.h]].filter(([, v]) => Number(v) > 0).map(([k, v]) => k + ' ' + lbFtIn(v)).join(' × ') : ''; }
 function lbSourceProvider(l) { const n = lbSourceNotice(l); return (n && n.provider) ? String(n.provider) : 'a partner network'; }
-// bl_disp_0547: a load the carrier's OWN dispatcher posted from a 3rd-party board (DAT/Truckstop/…) — details.dispatcher_post
+// bl_disp_0549: a load the carrier's OWN dispatcher posted from a 3rd-party board (DAT/Truckstop/…) — details.dispatcher_post
 // on board rows, dispatcher_post on cc_load_detail. Only this carrier ever receives it (server-side), so the badge is a fact.
 function lbDispPost(l) { const d = l && (l.dispatcher_post || (l.details && l.details.dispatcher_post)); return (d && typeof d === 'object') ? d : null; }
 function lbDispName(dp) { const n = String((dp && dp.dispatcher_name) || '').trim(); return n ? n.split(/\s+/)[0] : 'your dispatcher'; }
@@ -4023,7 +4023,7 @@ async function appView(user) {
     // bl_comp_0504: "Insurance approved → post the trucks on your certificate" (server decides show/hide).
     const coiHost9 = h('div');
     import('./coi-trucks-banner.js').then((m9) => m9.mountCoiTrucksBanner(coiHost9, { h, go, openAvail: (typeof openAvailFromBar === 'function') ? openAvailFromBar : null })).catch(() => {});
-    // bl_disp_0547: "N loads from your dispatcher waiting" — one strip, straight to the board (server already sorts them first)
+    // bl_disp_0549: "N loads from your dispatcher waiting" — one strip, straight to the board (server already sorts them first)
     const dispStrip9 = h('div');
     (async () => { try {
       const rows9 = await pocketAvailableLoads(12, 0); const dl9 = (rows9 || []).filter(lbDispPost); if (!dl9.length) return;
@@ -4770,7 +4770,7 @@ async function appView(user) {
       const key9 = k9 === 'newest' ? (l) => { const t9 = Date.parse(l.posted_at || ''); return isFinite(t9) ? t9 : null; } : k9 === 'rate' ? (l) => num9(l.rate) : k9 === 'rpm' ? rpm9 : k9 === 'deadhead' ? dh9 : k9 === 'pickup' ? (l) => (l.pickup_date ? Date.parse(l.pickup_date) : null) : null;
       const asc9 = k9 === 'deadhead' || k9 === 'pickup';
       return list.map((l, i) => ({ l, i })).sort((x, y) => {
-        const p9 = (lbDispPost(y.l) ? 1 : 0) - (lbDispPost(x.l) ? 1 : 0);   // bl_disp_0547: your dispatcher's posts always lead
+        const p9 = (lbDispPost(y.l) ? 1 : 0) - (lbDispPost(x.l) ? 1 : 0);   // bl_disp_0549: your dispatcher's posts always lead
         if (p9) return p9;
         const d9 = (y.l.direct_to_you ? 1 : 0) - (x.l.direct_to_you ? 1 : 0);
         if (d9 || !key9) return d9 || x.i - y.i;
@@ -4836,7 +4836,7 @@ async function appView(user) {
     } }, '🔔 Alert me');
     let _favOnly = false;
     const favBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Show only loads you saved with the star', onClick: (e9) => { _favOnly = !_favOnly; e9.currentTarget.style.color = _favOnly ? '#f59e0b' : ''; e9.currentTarget.style.borderColor = _favOnly ? '#f59e0b' : ''; renderList(); } }, '★ Saved');
-    // bl_disp_0547: "From my dispatcher" chip — only shown when the board has at least one dispatcher-posted load
+    // bl_disp_0549: "From my dispatcher" chip — only shown when the board has at least one dispatcher-posted load
     let _dispOnly = false;
     const dispN9 = rows.filter(lbDispPost).length;
     const dispBtn = dispN9 ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#FC5305;border-color:rgba(252,83,5,.6);font-weight:800', title: 'Loads your dispatcher found and posted for you', onClick: (e9) => { _dispOnly = !_dispOnly; e9.currentTarget.style.background = _dispOnly ? 'rgba(252,83,5,.18)' : ''; renderList(); } }, '📋 From my dispatcher (' + dispN9 + ')') : null;
@@ -5053,7 +5053,7 @@ async function appView(user) {
         ]);
       } }, 'Propose rate');
       bookWrap.appendChild(counter);
-      // bl_disp_0547: a load posted by the carrier's own dispatcher — the broker is off-platform, so "Book" means
+      // bl_disp_0549: a load posted by the carrier's own dispatcher — the broker is off-platform, so "Book" means
       // "I'll take it": the dispatcher gets the RC and LoadBoot approves it, same pipeline as every dispatcher booking.
       const dp9 = lbDispPost(l);
       if (dp9) { bookWrap.innerHTML = ''; lbDispActions(l, bookWrap, (what9) => { if (what9 === 'declined') setTimeout(() => { try { const i9 = rows.indexOf(l); if (i9 >= 0) rows.splice(i9, 1); renderList(); } catch (_) {} }, 1200); }); }
@@ -5445,7 +5445,7 @@ async function appView(user) {
     const bodyEl = h('div', null, h('div', { class: 'cp-muted' }, 'Loading load details…'));
     const closeD9 = openModal('Load overview', [bodyEl]);
     let d; try { d = await carrierLoadDetail(loadId); } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load details.')); return; }
-    // bl_disp_0547: a load the carrier's own dispatcher posted — every field, the broker screen, the terms, the
+    // bl_disp_0549: a load the carrier's own dispatcher posted — every field, the broker screen, the terms, the
     // countdown and the two decisions sit at the top; the standard overview follows underneath.
     const dpD9 = lbDispPost(d);
     const dispBlock9 = dpD9 ? (function () {

@@ -603,7 +603,7 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
 - DB: STAGING applied + rollback test green (tests/bl_disp_0442_rollback_test.sql). PROD pending owner test.
   Anon SECURITY DEFINER surface unchanged. Notes: claude/CHOOSE-CARRIER-0442.md.
 
-## Dispatcher posts a 3rd-party load on his carrier's board (bl_disp_0547, 13 Oct 2026)
+## Dispatcher posts a 3rd-party load on his carrier's board (bl_disp_0549, 13 Oct 2026)
 - Dispatcher workspace → Board: "Post a load for <carrier>" — one page (Source / Broker with inline FMCSA screen
   on MC blur / Lane / Freight / Money / Notes + expiry), equipment limited to the fleet, $/mi + all-in live,
   below-floor needs a written reason. "Loads you posted" card: status, countdown, Edit / Withdraw / Log booking
@@ -622,4 +622,4 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
 - DB: STAGING applied in parts (the MCP holds `drop policy` for a confirmation → ALTER policy instead; prod's
   select policy is named loads_carrier_select — handled). PROD pending. Anon SECURITY DEFINER surface
   unchanged (35 staging). Gates: ESM ALL PASS (232), imports PASS, esbuild OK ×5, BUILD OK.
-  Notes + prod apply order: claude/DISPATCHER-LOAD-POST-0547.md.
+  Notes + prod apply order: claude/DISPATCHER-LOAD-POST-0549.md.
