@@ -104,7 +104,7 @@ says "fully approved"; build a `doc_sms_queue` (org, due_at, doc_ids[]) + cron s
 
 ---------------------------------------------------------------------------------------------------------------
 ## O. Wrong-slot uploads (T Strick, O&O Murray, 9–10 Oct) — 1–5 DONE on staging (bl_doc_0539/b/c, see
-##    claude/O-WRONG-SLOT-0539.md; prod pending) · 6 NOT STARTED (added 12 Oct)
+##    claude/O-WRONG-SLOT-0539.md; PROD APPLIED 13 Oct incl. doc-precheck v6) · 6 NOT STARTED (added 12 Oct)
 
 1. AI precheck not saving: only ~6 of ~70 carrier documents in 45 days have `documents.ai_verdict`, 0 of 6 on 10 Oct.
    Start: `lbAiPrecheck` in app/carrier/app.js → edge fn `supabase/functions/doc-precheck/index.ts` (check its logs via
@@ -119,7 +119,7 @@ says "fully approved"; build a `doc_sms_queue` (org, due_at, doc_ids[]) + cron s
    'superseded' status in migrations).
 5. CC: one-click "Move to correct slot" per document → `public.cc_reclassify_document` (already updates documents.type
    AND app_private.carrier_compliance); make sure it can restore a superseded document to pending.
-6. [a–d DONE on staging 12 Oct — bl_comp_0545, claude/COI-VINS-0545.md; prod = migrations/PROD-bl_comp_0545.sql; e open]
+6. [a–d DONE on staging 12 Oct — bl_comp_0545, claude/COI-VINS-0545.md; prod APPLIED 13 Oct; e: 0 active postings held by pending carriers — nothing to do]
    VIN gate when an approved COI has no VINs recorded (owner, 12 Oct). Verified on prod 12 Oct: T Strick has a valid
    insurance_coi but NO `app_private.coi_coverage` row → vin_coverage_state='no_coi' → truck add AND post/dispatch are
    allowed (`assert_vin_dispatchable` only blocks 'not_covered'). An approved COI with no readable VINs (no ai_verdict /

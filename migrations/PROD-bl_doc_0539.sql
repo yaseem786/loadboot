@@ -1,4 +1,4 @@
--- PROD — bl_doc_0539 / 0539b / 0539c (item O: wrong-slot uploads) — DO NOT RUN until the owner says "laga do"
+-- PROD — bl_doc_0539 / 0539b / 0539c (item O: wrong-slot uploads) — APPLIED on prod 13 Oct 2026 (3 SQL blocks + doc-precheck v6 = prod version 11)
 -- Project: rwscphuhpjoudvljvmdk. Apply through a Claude session with the Supabase MCP (apply_migration), one block per
 -- migration name below — not the browser SQL editor (it mis-splits long plpgsql).
 --
