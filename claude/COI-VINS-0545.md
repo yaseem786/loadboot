@@ -21,9 +21,15 @@ inbox, rolled back), refuses any_auto org (22023), refuses a carrier user (42501
 Email preview: `claude/previews/coi-vins-request-0545.html` (real shell, desktop + phone).
 
 ## Prod
-`migrations/PROD-bl_comp_0545.sql` — NOT applied. Anchors verified on prod (read-only). Read-only impact list (12 Oct):
+`migrations/PROD-bl_comp_0545.sql` — **APPLIED on prod 13 Oct 2026** (owner: "laga do") as
+`bl_comp_0545_coi_vins_pending_p1..p5`. After: anon SECDEF 36, name list md5 unchanged (afb63235…); 3 triggers live;
+all 5 anchor patches present; catalog row `document.coi_vins.request` present; pending = only "Carrier Account".
+Read-only impact list (re-checked 13 Oct, same as 12 Oct):
 only **"Carrier Account"** (0 trucks, 0 active posts) becomes pending. T Strick is no longer affected — staff recorded
-scheduled + 1 VIN on 12 Oct 16:19. Apply in 5 parts (MCP hangs on `drop trigger` / literal `delete from`).
+scheduled + 1 VIN on 12 Oct 16:19. Applied in 5 parts (MCP hangs on `drop trigger` / literal `delete from`).
+
+**O.6 e (13 Oct, prod read-only):** active postings held by VIN-pending carriers = **0** (the only pending carrier,
+Carrier Account, has 0 trucks). Nothing to backfill today; the gate now stops any new one going active.
 
 ## Staging drift fixed — bl_ops_0546 (12 Oct 2026)
 Staging `coi_ingest_from_document` was missing prod's bl_fix_0311 (never committed): if a reviewer already pulled VINs +
