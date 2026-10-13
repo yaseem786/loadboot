@@ -17,8 +17,9 @@ import {
   dispatcherBookingEvent, dispatcherBookingTimeline, dispatcherBrokerUpsert, dispatcherBrokerDelete,
   dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead,
   dispatcherBoard, dispatcherLoadDetail, dispatcherRequestBook, dispatcherPostTruck, dispatcherUpdatePosting, dispatcherPostingMatches, dispatcherMyKpis,
-  dispatcherTrip, dispatcherTripAction, dispatcherTrialFeedback,
+  dispatcherTrip, dispatcherTripAction, dispatcherTrialFeedback, sessionDemoState,
 } from '../shared/api.js';
+import { setTrainingBanner, trainingBannerHeight } from '../shared/training-banner.js';   // bl_train_0548
 import { threadChat } from '../shared/thread-chat.js';   // bl_ui_0502
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { el, mount, clear } from '../shared/ui/dom.js';
@@ -395,7 +396,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   const paintClock = () => mount(clockEl, [h('span', { class: 'et' }, [ic('globe', 13), ' US Eastern ', h('b', null, clock(ET))]), h('span', null, ['Pakistan ', h('b', null, clock(PKT))]), h('span', { class: 'dw-clock-note', style: 'opacity:.75' }, 'All times in this workspace are ET — brokers, RCs and appointments use it.')]);
   paintClock(); const clockTimer = setInterval(paintClock, 30000);
   // stop timers when the host is unmounted (tab switch in the shell)
-  const mo = new MutationObserver(() => { if (!document.body.contains(root)) { restoreChrome(); clearInterval(clockTimer); stopThreadPoll(); try { dwLive.leave(); } catch (_) {} try { window.removeEventListener('hashchange', dwHash); } catch (_) {} mo.disconnect(); } });
+  const mo = new MutationObserver(() => { if (!document.body.contains(root)) { try { setTrainingBanner(false); } catch (_) {} restoreChrome(); clearInterval(clockTimer); stopThreadPoll(); try { dwLive.leave(); } catch (_) {} try { window.removeEventListener('hashchange', dwHash); } catch (_) {} mo.disconnect(); } });
   mo.observe(document.body, { childList: true, subtree: true });
   // ---- realtime wire to the Command Center (shared/dispatch-live.js).
   // Fire-and-forget: every send is a "refetch now" HINT, never data, and every method no-ops
@@ -508,6 +509,18 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   }
   function err(msg) { return h('div', { class: 'dw-err' }, msg); }
   const A = () => (feed && feed.assignments) || [];
+  // bl_train_0548 — the TRAINING strip shows while the carrier being worked is a demo / training carrier
+  let demoOrgs = new Set(); let focusOrg = null;
+  const isDemoOrg = (org) => !!org && demoOrgs.has(org);
+  const syncTrain = () => {
+    try {
+      const as = A(); const org = focusOrg || (as.length === 1 ? as[0].carrier_org_id : null);
+      const a = isDemoOrg(org) ? as.find((x) => x.carrier_org_id === org) : null;
+      setTrainingBanner(!!a, a ? { title: 'TRAINING ACCOUNT — nothing here is real', sub: ((a.carrier && a.carrier.name) || 'This carrier') + ' is a practice carrier — calls, SMS, WhatsApp and emails to it are switched off' } : {});
+      root.style.setProperty('--dw-top', (((document.querySelector('.cp-top') || {}).offsetHeight || 0) + trainingBannerHeight()) + 'px');
+    } catch (_) {}
+  };
+  sessionDemoState().then((st) => { demoOrgs = new Set((st && st.demo_orgs) || []); syncTrain(); if (demoOrgs.size && feed) render(); }).catch(() => {});
   const B = () => (feed && feed.bookings) || [];
   const trucksAll = () => A().flatMap((a) => (a.trucks || []).map((t) => ({ ...t, _a: a })));
   const activeFor = (truckId) => B().filter((b) => b.truck_id === truckId && OPEN.includes(b.status));
@@ -616,7 +629,9 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     if (tab !== 'messages') stopThreadPoll();
     const view = { today: vToday, board: vBoard, trucks: vTrucks, bookings: vBookings, brokers: vBrokers, money: vMoney, messages: vMessages, email: vEmail, packet: vPacket, kpis: vKpis }[tab] || vToday;
     if (tab === 'email' && mailHost && mailHost.parentNode === body) return;   // the inbox is live — a feed refresh must not re-attach it (that would reload the open email)
+    if (tab !== 'board' && tab !== 'messages') focusOrg = null;
     mount(body, view());
+    syncTrain();
   }
 
   // ---- MOBILE CHROME (20 Sep 2026): on phones the shell's bottom bar becomes the dispatcher's work nav
@@ -687,7 +702,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   }
   function paintChrome(TABS) {
     try {
-      root.style.setProperty('--dw-top', ((document.querySelector('.cp-top') || {}).offsetHeight || 0) + 'px');
+      root.style.setProperty('--dw-top', (((document.querySelector('.cp-top') || {}).offsetHeight || 0) + trainingBannerHeight()) + 'px');
       requestAnimationFrame(() => { const on = tabsEl.querySelector('.on'); if (on && tabsEl.scrollWidth > tabsEl.clientWidth) tabsEl.scrollLeft = on.offsetLeft - (tabsEl.clientWidth - on.offsetWidth) / 2; });
       if (!shellBar) shellBar = document.querySelector('.cp-tabbar');
       if (shellBar) {
@@ -767,6 +782,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     return h('div', { class: 'dw-card', 'data-carrier': a.carrier_org_id }, [
       h('h3', null, [h('span', null, [ic('building'), ' ' + (c.name || 'Carrier')]), h('div', { class: 'dw-row', style: 'gap:6px' }, [
         h('span', { class: 'dw-pill', style: 'color:#4ade80;border-color:currentColor' }, 'ASSIGNED'),
+        isDemoOrg(a.carrier_org_id) ? h('span', { class: 'dw-pill', style: 'color:#FC5305;border-color:currentColor;background:#10223B' }, 'TRAINING — NOT REAL') : null,
         h('span', { class: 'dw-pill', style: 'color:' + (c.broker_visible ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, c.broker_visible ? 'LIVE TO BROKERS' : 'NOT YET VISIBLE')])]),
       h('div', { class: 'dw-grid', 'data-fill': 'profile' }, [
         f('MC', c.mc), f('USDOT', c.dot), f('Contact', c.contact_name), f('Phone', c.phone ? tel(c.phone, { name: c.contact_name || c.name }) : null), f('WhatsApp', c.whatsapp), f('Email', c.email, 'wide'),
@@ -1189,7 +1205,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   function stopThreadPoll() { if (threadTimer) { clearInterval(threadTimer); threadTimer = null; } if (activeChat) { activeChat.destroy(); activeChat = null; } threadVisible = false; }
   function vMessages() {
     const as = A(); if (!as.length) return h('div', { class: 'dw-card' }, [h('h3', null, 'Messages'), h('div', { class: 'dw-muted' }, 'No carrier assigned yet.')]);
-    const wrap = h('div'); let cur = (openThreadId && as.find((a) => a.id === openThreadId)) || as.find((a) => Number(a.unread || 0) > 0) || as[0]; openThreadId = null;
+    const wrap = h('div'); let cur = (openThreadId && as.find((a) => a.id === openThreadId)) || as.find((a) => Number(a.unread || 0) > 0) || as[0]; openThreadId = null; focusOrg = cur.carrier_org_id;
     // bl_ui_0502 — the shared WhatsApp-style chat (same one the carrier and CC use)
     const slot = h('div'); const title = h('span');
     const open = () => {
@@ -1201,7 +1217,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       slot.replaceChildren(activeChat.el);
       title.replaceChildren(ic('chat'), document.createTextNode(' Thread with ' + ((cur.carrier && cur.carrier.name) || 'carrier') + ' + LoadBoot'));
     };
-    const sel = h('select', { class: 'dw-in', style: 'width:auto', 'aria-label': 'Carrier thread', onChange: () => { cur = as.find((a) => a.id === sel.value); open(); } }, as.map((a) => h('option', { value: a.id, selected: a.id === cur.id }, ((a.carrier && a.carrier.name) || 'Carrier') + (Number(a.unread || 0) ? ' (' + a.unread + ')' : ''))));
+    const sel = h('select', { class: 'dw-in', style: 'width:auto', 'aria-label': 'Carrier thread', onChange: () => { cur = as.find((a) => a.id === sel.value); focusOrg = cur.carrier_org_id; syncTrain(); open(); } }, as.map((a) => h('option', { value: a.id, selected: a.id === cur.id }, ((a.carrier && a.carrier.name) || 'Carrier') + (Number(a.unread || 0) ? ' (' + a.unread + ')' : ''))));
     stopThreadPoll(); threadVisible = true;
     open();
     mount(wrap, h('div', { class: 'dw-card' }, [h('h3', null, [title, as.length > 1 ? sel : null]), slot]));
@@ -1212,8 +1228,8 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   const boardCache = {};
   function vBoard() {
     const as = A(); if (!as.length) return h('div', { class: 'dw-card' }, [h('h3', null, 'Load board'), h('div', { class: 'dw-muted' }, 'No carrier assigned yet.')]);
-    let cur = (openBoardId && as.find((a) => a.id === openBoardId)) || as[0]; openBoardId = null;
-    const sel = h('select', { class: 'dw-in', style: 'width:auto', 'aria-label': 'Carrier', onChange: () => { cur = as.find((a) => a.id === sel.value); paint(); } }, as.map((a) => h('option', { value: a.id }, (a.carrier && a.carrier.name) || 'Carrier')));
+    let cur = (openBoardId && as.find((a) => a.id === openBoardId)) || as[0]; openBoardId = null; focusOrg = cur.carrier_org_id;
+    const sel = h('select', { class: 'dw-in', style: 'width:auto', 'aria-label': 'Carrier', onChange: () => { cur = as.find((a) => a.id === sel.value); focusOrg = cur.carrier_org_id; syncTrain(); paint(); } }, as.map((a) => h('option', { value: a.id }, (a.carrier && a.carrier.name) || 'Carrier')));
     const fMin = h('input', { class: 'dw-in', type: 'number', step: '0.05', placeholder: 'min $/mi', style: 'width:110px', 'aria-label': 'Minimum rate per mile' });
     const fDh = h('input', { class: 'dw-in', type: 'number', placeholder: 'max DH mi', style: 'width:110px', 'aria-label': 'Maximum deadhead' });
     const fEq = h('input', { class: 'dw-in', placeholder: 'equipment / text', style: 'width:150px', 'aria-label': 'Filter text' });

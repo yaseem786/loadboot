@@ -147,7 +147,8 @@ export async function openTripMap(t, opts = {}) {
   const fsBtn = chipBtn('⛶');
   fsBtn.onclick = () => toggleSheet();
   const sim = { on: false, timer: null, path: [], i: 0, pauseUntil: 0, pausedOnce: false };
-  const DEV_HOST = /^(\d+\.|localhost$|192\.|172\.|10\.)/.test(location.hostname);
+  // bl_train_0548: training carriers get the test-drive simulator too — a trainee is never physically at the pickup.
+  const DEV_HOST = /^(\d+\.|localhost$|192\.|172\.|10\.)/.test(location.hostname) || !!window.__LB_TRAINING;
   const gmapBtn = chipBtn('🗺'); gmapBtn.title = 'Navigate in Google Maps — LoadBoot keeps tracking in the background';
   const simBtn = DEV_HOST ? chipBtn('🧪') : null;
   const x = chipBtn('✕');
