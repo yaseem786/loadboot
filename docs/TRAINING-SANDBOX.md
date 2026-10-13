@@ -12,6 +12,7 @@ shippers, KPIs, investor numbers or public pages.
 | `migrations/bl_ops_0547_staging_demo_isolation_parity.sql` | **Staging only.** Ports prod's demo isolation (bl_demo_0214–0221, never committed) to staging. Already applied on staging. Do not run on prod. |
 | `migrations/bl_train_0548_carrier_training_sandbox.sql` | The sandbox: registry, outbound guards, isolation, Part C, seed/reset, CC + UI RPCs. **Run on prod first.** |
 | `scripts/training/prod-seed-training-carrier.sql` | Paste into the prod SQL Editor after the migration. `ANDREW_TRAINING_EMAIL` at the top. |
+| `scripts/training/staging-training-wipe.sql` | **Staging only.** Creates `training_wipe` and drops the inert `patch_fn` (the Supabase tool cannot run DELETE/DROP text). |
 | `tools/training/make-samples.py` · `tools/training/samples/*.pdf` | Seven sample PDFs, each watermarked **TRAINING SAMPLE — NOT A REAL DOCUMENT**. |
 | `tools/training/upload-samples.mjs` | Signs in as the training carrier and uploads the PDFs to the paths the seed recorded. |
 | `app/shared/training-banner.js` (+ `app/carrier/app.js`, `app/agent/dispatcher-workspace.js`, `app/carrier/trip-map.js`, `app/shared/api.js`) | The TRAINING strip, plus the trip-map test-drive simulator for training carriers. |
@@ -19,6 +20,8 @@ shippers, KPIs, investor numbers or public pages.
 ---
 
 ## 1. Seed one world (prod)
+
+Preflight done 13 Oct 2026 (read-only, prod `rwscphuhpjoudvljvmdk`): all 24 anchor patches + 8 board clauses + 10 `swap_live` targets found, no overloads; 0548 not yet applied; anon SECURITY DEFINER surface 36.
 
 1. Apply `migrations/bl_train_0548_carrier_training_sandbox.sql` in the prod SQL Editor (one run).
    Then run the anon check from `docs/audit-2026-09/anon-secdef-baseline.md`. It must still be **36, same names**:
@@ -175,7 +178,7 @@ and blanks the user id, so a "new sign-in" alert for the training login slipped 
 2. **Webhook fan-out has no tenant filter.** `fanout_domain_events` delivers every event to any endpoint subscribed to that event type,
    whoever owns it. Today the only active endpoint subscribes to nothing, so nothing leaks. One subscription would send it every org's events.
 3. **Staging cleanup needing your approval**: the Supabase tool asks for confirmation on any SQL with `DROP`/`DELETE` and times out.
-   - `app_private.training_wipe` (and so `training_reset`) is **not yet created on staging**. Run its block from the migration in the staging SQL Editor.
+   - `app_private.training_wipe` (and so `training_reset`) is **not yet created on staging**. Paste `scripts/training/staging-training-wipe.sql` into the staging SQL Editor (it also drops `patch_fn`, below).
    - `drop function app_private.patch_fn(text,text,text,text);` removes an inert helper left by bl_ops_0547 (it only raises).
 4. A dispatcher's request-to-book goes to the training broker, which nobody answers. Staff can approve it in CC, or it expires in 30 minutes,
    which is also a lesson.
