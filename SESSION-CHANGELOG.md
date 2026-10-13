@@ -620,6 +620,7 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
 - CC: Carrier 360 "Loads posted by the dispatcher" (staff Withdraw); Dispatcher 360 posted / accepted /
   declined / expired; daily trial e-mail counts "Loads posted" (effort) and "Posts accepted" (outcome).
 - DB: STAGING applied in parts (the MCP holds `drop policy` for a confirmation → ALTER policy instead; prod's
-  select policy is named loads_carrier_select — handled). PROD pending. Anon SECURITY DEFINER surface
+  select policy is named loads_carrier_select — handled). PROD applied 13 Oct 2026 after the main merge: all 19
+  anchors hit once, anon surface 36 (names = baseline), cron lb-disp-posts-expire live. Anon SECURITY DEFINER surface
   unchanged (35 staging). Gates: ESM ALL PASS (232), imports PASS, esbuild OK ×5, BUILD OK.
   Notes + prod apply order: claude/DISPATCHER-LOAD-POST-0549.md.
