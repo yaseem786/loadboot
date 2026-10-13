@@ -1,7 +1,10 @@
 # Item O — wrong-slot uploads (bl_doc_0539 / 0539b / 0539c) — 11 Oct 2026
 
-Staging: everything applied + edge fn `doc-precheck` v17 (= repo v6). Prod: **nothing applied** — SQL in
-`migrations/PROD-bl_doc_0539.sql` (order inside: SQL → edge fn → merge frontend).
+Staging: everything applied + edge fn `doc-precheck` v17 (= repo v6). Prod: **APPLIED 13 Oct 2026** (owner: "laga do") — `bl_doc_0539_precheck_failed_state`, `bl_doc_0539b_no_silent_supersede`,
+`bl_doc_0539c_reclassify_restore` (each replaced body diffed against prod first: prod was exactly the pre-0539 base, nothing
+lost); edge fn `doc-precheck` = repo v6 (prod version 11, verify_jwt true; prod v10 was repo v5 of 5 Sep). Smoke: POST without a
+user JWT → 401 `not_authorized` from our code (boots). Anon SECDEF 36, names unchanged. The frontend was ALREADY on `main`
+(merged before this) — so between that merge and 13 Oct the portal was sending slot/detect_only to v5; now closed.
 
 ## Root cause, proven from prod (read-only)
 

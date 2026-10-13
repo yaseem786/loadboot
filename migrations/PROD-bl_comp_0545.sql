@@ -1,4 +1,4 @@
--- PROD-bl_comp_0545 — prod copy of migrations/bl_comp_0545_coi_vins_pending.sql (O.6 a–d). NOT applied on prod.
+-- PROD-bl_comp_0545 — prod copy of migrations/bl_comp_0545_coi_vins_pending.sql (O.6 a–d). APPLIED on prod 13 Oct 2026 (p1..p5); anon SECDEF 36, names unchanged.
 -- Apply through a Claude session with the Supabase MCP (project rwscphuhpjoudvljvmdk), in the same 5 parts as staging
 -- (sections 0-4 | anchor patches 5-6 | triggers 7+9 | trigger 8 + catalog | cc_coi_request_vins), only after the
 -- owner has seen the read-only list of carriers this turns to 'VINs pending' (posting blocked for them from that moment).

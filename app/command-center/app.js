@@ -19,6 +19,7 @@ import { renderShell, registerSearchIndex } from './views/shell.js';
 import { renderTabbed } from './views/_tabbed.js';
 import { renderDispatch } from './views/dispatch.js';
 import { renderDialerLive } from './views/dialerLive.js';
+import { renderSmsCenter } from './views/smsCenter.js';   // bl_dial_0547
 import { renderRiley } from './views/riley.js';   // bl_voice_0458
 import { renderWhatsappLive } from './views/whatsappLive.js';
 import { renderDispatcherMail } from './views/dispatcherMail.js';
@@ -285,6 +286,8 @@ async function boot() {
     team: { nav: '/dispatchers', tabs: [
       { id: 'dispatchers', label: 'Dispatchers', path: '/dispatchers', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDispatchers(h) },
       { id: 'phones', label: 'Phones & live calls', path: '/phones', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDialerLive(h) },
+      { id: 'sms', label: 'Text messages', path: '/sms', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderSmsCenter(h),   // bl_dial_0547
+        keywords: 'sms text messages texting document texts main line 815 test number go live stop opt out dispatcher line telnyx' },
       { id: 'riley', label: 'Riley (AI phone)', path: '/riley', allowed: () => anyOf('comm.view', 'comm.manage', 'support.view', 'dispatch.manage', 'settings.manage'), render: (h, q) => renderRiley(h, q),   // bl_voice_0458
         keywords: 'riley ai phone voice agent retell calls recording transcript prompt whatsapp line 815 live calls call plans',
         sections: [
@@ -389,6 +392,7 @@ async function boot() {
     '/agents': tabbed('team', 'agents'),
     '/dispatchers': tabbed('team', 'dispatchers'),
     '/phones': tabbed('team', 'phones'),
+    '/sms': tabbed('team', 'sms'),   // bl_dial_0547
     '/riley': tabbed('team', 'riley'),
     '/dispatcher-email': tabbed('team', 'dmail'),
     '/carrier-requests': tabbed('team', 'creq'),

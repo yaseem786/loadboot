@@ -625,6 +625,8 @@ export const dispatcherPostingMatches = (org, id) => rpc('dispatcher_posting_mat
 export const dispatcherMyKpis = (days) => rpc('dispatcher_my_kpis', { p_days: days ?? 30 });
 // bl_disp_0484 — help / feedback / one-tap mood from the daily trial report (kind: help | feedback | mood)
 export const dispatcherTrialFeedback = (kind, mood, note) => rpc('disp_trial_feedback', { p_kind: kind, p_mood: mood ?? null, p_note: note ?? null });
+// bl_train_0548 — is this session (or the carrier a dispatcher has open) a demo / training account? Drives the banner.
+export const sessionDemoState = (org) => rpc('cc_session_demo_state', { p_org: org ?? null });
 export const ccDispatcherTrialReports = (user, limit) => rpc('cc_dispatcher_trial_reports', { p_user: user, p_limit: limit ?? 30 });   // bl_disp_0485
 export const ccDispatcherTrialAck = (kind, id, undo) => rpc('cc_dispatcher_trial_ack', { p_kind: kind, p_id: id, p_undo: !!undo });
 export const ccDispatcherKpis = (user, days) => rpc('cc_dispatcher_kpis', { p_user: user, p_days: days ?? 30 });
@@ -1597,6 +1599,10 @@ export async function dialerSmsSend(to, body) {
   return data;
 }
 export const ccDialerSms = (p) => rpc('cc_dialer_sms', { p: p ?? {} });
+// bl_dial_0547 — CC Text messages: main line, test numbers, go-live switches, document-text feed.
+export const ccSmsCenter = () => rpc('cc_sms_center');
+export const ccDocSmsConfigSet = (p) => rpc('cc_doc_sms_config_set', { p: p ?? {} });
+export const ccDocSmsTest = (number) => rpc('cc_doc_sms_test', { p_number: number });
 // bl_dial_0390 — SMS consent registry. A number cannot be texted until it has a live consent row;
 // the rule is a trigger on dialer_messages, so these RPCs are the UI's way to see and create one.
 export const dialerSmsConsentState  = (number) => rpc('dialer_sms_consent_state',  { p: { number } });

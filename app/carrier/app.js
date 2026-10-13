@@ -42,6 +42,8 @@ import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } f
 import { setPostingHos } from '../shared/api.js';
 import { formProgressPing, formProgressDone } from '../shared/api.js';
 import { pocketFieldSuggestions, pocketFieldSuggestionDecide } from '../shared/api.js';   // bl_fill_0534 — dispatcher suggestions on locked fields
+import { sessionDemoState } from '../shared/api.js';   // bl_train_0548 — demo / training banner
+import { setTrainingBanner } from '../shared/training-banner.js';
 // bl_dial_0390 — lifts the signup SMS checkbox into the dispatcher-side consent registry, so a
 // dispatcher can text a carrier who already agreed without logging anything by hand. Idempotent.
 import { smsConsentSelfSync } from '../shared/api.js';
@@ -2700,6 +2702,15 @@ async function appView(user) {
     (mobileBar = sideNav(true)),
   ]);
   mount(root, shell);
+  // bl_train_0548: a demo / training carrier always carries the "nothing here is real" strip, and its trip map
+  // offers the test-drive simulator (a trainee is never at the pickup, so GPS check-ins could not happen).
+  sessionDemoState().then((st) => {
+    if (!st || !st.is_demo) return;
+    window.__LB_TRAINING = !!st.training;
+    setTrainingBanner(true, st.training
+      ? { title: 'TRAINING ACCOUNT — nothing here is real', sub: 'Practice carrier' + (st.label ? ' · ' + st.label : '') + ' — emails, SMS, calls and payments are switched off' }
+      : { title: 'DEMO ACCOUNT — nothing here is real', sub: 'Demonstration data only' });
+  }).catch(() => {});
   if (DRV) { try { availPill.hidden = true; shell.querySelectorAll('.cp-top-right .cp-chip-btn, .cp-top-right [title="Settings"]').forEach((x) => { x.hidden = true; }); } catch (_) {} }
   // bl_ux_0320: pin/collapse sidebar. Labels stay while the account is still being set up; once
   // compliant the rail collapses by default (the carrier can pin it open any time).
