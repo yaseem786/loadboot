@@ -163,6 +163,13 @@ const CSS = `
 .dw-btn{border:0;border-radius:12px;padding:10px 16px;font:inherit;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;box-shadow:0 8px 18px -10px rgba(8,131,247,.55)}
 .dw-btn.ghost{background:transparent;border:1px solid var(--dw-line2);color:var(--dw-ink2);box-shadow:none}
 .dw-btn.warn{background:linear-gradient(135deg,#FC5305,#e04a03)}
+.dw-btn.accent{background:linear-gradient(180deg,rgba(255,145,80,.20),rgba(255,145,80,.08));border:1px solid rgba(255,160,100,.45);color:#ffe2cf;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 24px -16px rgba(255,130,60,.55);gap:6px;transition:background .15s,border-color .15s}
+.dw-btn.accent:hover{background:linear-gradient(180deg,rgba(255,145,80,.30),rgba(255,145,80,.14));border-color:rgba(255,170,115,.7)}
+.dw-pick{display:flex;flex-wrap:wrap;gap:8px}
+.dw-pick button{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:7px 13px;border-radius:12px;border:1px solid var(--dw-line2);background:var(--dw-panel);color:var(--dw-ink2);font:inherit;font-size:.84rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dw-pick button[aria-pressed="true"]{border-color:rgba(78,166,249,.7);background:rgba(78,166,249,.14);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.dw-pick button .tick{width:16px;height:16px;border-radius:5px;border:1.5px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:.7rem;line-height:1}
+.dw-pick button[aria-pressed="true"] .tick{background:#4EA6F9;border-color:#4EA6F9;color:#0b1220}
 .dw-btn.sm{padding:7px 11px;font-size:.8rem;border-radius:10px}
 .dw-btn:disabled{opacity:.5;cursor:default}
 .dw-q{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--dw-line)}
@@ -1255,7 +1262,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const wrap = h('div', null, [
       // bl_disp_0549 — loads this dispatcher posted for THIS carrier (DAT/Truckstop/… finds), with the carrier's decision
       postsHost,
-      h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('search'), ' LoadBoot board — ' + ((cur.carrier && cur.carrier.name) || '')]), h('div', { class: 'dw-row' }, [as.length > 1 ? sel : null, h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh board', onClick: () => paint(true) }, ic('refresh', 14)), h('button', { class: 'dw-btn sm warn', 'data-tour': 'dw-post-load', onClick: () => postLoadForm(cur, null) }, [ic('plus', 16), 'Post a load for ' + ((cur.carrier && cur.carrier.name) || 'the carrier')]), h('button', { class: 'dw-btn sm', onClick: () => postForm(cur) }, [ic('plus', 16), 'Post the truck'])])]),
+      h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('search'), ' LoadBoot board — ' + ((cur.carrier && cur.carrier.name) || '')]), h('div', { class: 'dw-row' }, [as.length > 1 ? sel : null, h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh board', onClick: () => paint(true) }, ic('refresh', 14)), h('button', { class: 'dw-btn sm accent', 'data-tour': 'dw-post-load', onClick: () => postLoadForm(cur, null) }, [ic('plus', 16), as.length > 1 ? 'Post a load' : 'Post a load for ' + ((cur.carrier && cur.carrier.name) || 'the carrier')]), h('button', { class: 'dw-btn sm', onClick: () => postForm(cur) }, [ic('plus', 16), 'Post the truck'])])]),
         h('div', { class: 'dw-muted', style: 'margin-bottom:8px' }, 'Loads posted on LoadBoot by brokers and shippers, ranked for this carrier’s truck. Requesting a load sends the broker a 30-minute booking request under the carrier’s MC; when the broker accepts, the booking appears under Bookings automatically. Found a load on DAT, Truckstop or a broker call? “Post a load” puts it on the carrier’s LoadBoot board, tagged with your name — they tap “I’ll take it” and the booking opens for the RC.'),
         h('div', { class: 'dw-row dw-filter', style: 'margin-bottom:8px' }, [h('span', { class: 'dw-muted' }, 'Filter:'), fMin, fDh, fEq]),
         body]),
@@ -1268,7 +1275,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       if (!Array.isArray(posts)) posts = [];
       const openN = posts.filter((p0) => p0.status === 'available' && !p0.expired).length;
       mount(postsHost, h('div', { class: 'dw-card', 'data-tour': 'dw-posts' }, [
-        h('h3', null, [h('span', null, [ic('package'), ' Loads you posted for ' + ((cur.carrier && cur.carrier.name) || 'the carrier') + (openN ? ' · ' + openN + ' open' : '')]), h('button', { class: 'dw-btn sm warn', onClick: () => postLoadForm(cur, null) }, [ic('plus', 16), 'Post a load'])]),
+        h('h3', null, [h('span', null, [ic('package'), ' Loads you posted for ' + ((cur.carrier && cur.carrier.name) || 'the carrier') + (openN ? ' · ' + openN + ' open' : '')]), h('button', { class: 'dw-btn sm accent', onClick: () => postLoadForm(cur, null) }, [ic('plus', 16), 'Post a load'])]),
         posts.length ? posts.slice(0, 12).map((p0) => {
           const st = p0.expired && p0.status === 'available' ? 'expired' : p0.status; const pm = POST_PILL[st] || [String(st).toUpperCase(), '#cbd5e1'];
           const dec = p0.decision || {}; const wd = p0.withdrawn || {};
@@ -1354,6 +1361,16 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     function postLoadForm(a, existing) {
       const ts = (a.trucks || []); const ex = existing || {}; const exd = ex.details || {}; const exa = ex.accessorials || exd.accessorials || {};
       const isEdit = !!ex.id;
+      // one form, many carriers: each picked carrier gets its OWN post (only that carrier sees it); edits stay on the one load
+      const allA = A(); const multi = !isEdit && allA.length > 1; const nameOf = (x) => (x && x.carrier && x.carrier.name) || 'the carrier';
+      const picked = new Set([a.carrier_org_id]); const pickRow = h('div', { class: 'dw-pick' });
+      const pickBtn = (label, on, onClick) => h('button', { type: 'button', 'aria-pressed': on ? 'true' : 'false', onClick }, [h('span', { class: 'tick' }, on ? '✓' : ''), label]);
+      function paintPick() {
+        const all = allA.every((x) => picked.has(x.carrier_org_id));
+        mount(pickRow, [allA.length > 2 ? pickBtn('All ' + allA.length + ' carriers', all, () => { allA.forEach((x) => all ? picked.delete(x.carrier_org_id) : picked.add(x.carrier_org_id)); paintPick(); }) : null]
+          .concat(allA.map((x) => pickBtn(nameOf(x), picked.has(x.carrier_org_id), () => { if (picked.has(x.carrier_org_id)) picked.delete(x.carrier_org_id); else picked.add(x.carrier_org_id); paintPick(); }))).filter(Boolean));
+      }
+      if (multi) paintPick();
       const I = (ph, type, extra) => h('input', Object.assign({ class: 'dw-in', placeholder: ph || '', type: type || 'text' }, extra || {}));
       const S = (opts, val) => h('select', { class: 'dw-in' }, opts.map(([v, l]) => h('option', { value: v, selected: String(val == null ? '' : val) === String(v) }, l)));
       const V = (inp, v) => { if (v != null && v !== '') inp.value = String(v); return inp; };
@@ -1398,7 +1415,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       // freight
       const t0 = ts.find((t) => t.id === (exd.truck_id || '')) || ts[0] || null;
       const tsel = S([['', 'Any truck']].concat(ts.map((t) => [t.id, 'Unit ' + (t.unit_no || '?') + ' · ' + (t.equipment || '')])), exd.truck_id || (t0 && t0.id) || '');
-      const eqOpts = Array.from(new Set(ts.map((t) => String(t.equipment || '').trim()).filter(Boolean)));
+      const eqOpts = Array.from(new Set((multi ? allA.flatMap((x) => x.trucks || []) : ts).map((t) => String(t.equipment || '').trim()).filter(Boolean)));
       const eq = S(eqOpts.map((e0) => [e0, e0]).concat(eqOpts.length ? [] : [['', 'No truck on file']]), ex.equipment || exd.equipment || (t0 && t0.equipment) || eqOpts[0] || '');
       const comm = V(I('commodity'), ex.commodity || exd.commodity), wt = V(I('lbs', 'number', { min: '0' }), exd.weight_lbs || (ex.weight ? String(ex.weight).replace(/\D/g, '') : '')), dimsL = V(I('L in', 'number'), exd.dims && exd.dims.l), dimsW = V(I('W in', 'number'), exd.dims && exd.dims.w), dimsH = V(I('H in', 'number'), exd.dims && exd.dims.h), pieces = V(I('e.g. 4 pallets / 12 pieces'), exd.pieces);
       const ltype = S([['full', 'Full'], ['partial', 'Partial']], exd.load_type || exd.load_size || 'full');
@@ -1429,17 +1446,18 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       dest.addEventListener('blur', () => { if (!miles.value && origin.value) { const rm = roadMiles(origin.value, dest.value); if (rm) miles.value = rm; } calc(); });
       if (screenRes && bmc.value) { screenBox.style.display = 'block'; mount(screenBox, h('div', { class: screenRes.authority === 'flagged' ? 'dw-warn' : screenRes.authority === 'active' ? 'dw-ok' : 'dw-info' }, 'Broker screen from the original post: ' + (screenRes.authority || 'unknown') + (screenRes.legal_name ? ' · ' + screenRes.legal_name : '') + ' — re-check by leaving the MC field.')); }
       const e = h('div', { class: 'dw-err' });
-      const m = modal(isEdit ? 'Edit the posted load' : 'Post a load for ' + ((a.carrier && a.carrier.name) || 'the carrier'), h('div', null, [
+      const m = modal(isEdit ? 'Edit the posted load' : multi ? 'Post a load' : 'Post a load for ' + nameOf(a), h('div', null, [
+        multi ? sec('Post for', [h('div', { class: 'wide' }, [pickRow, h('div', { class: 'dw-muted', style: 'margin-top:8px' }, 'Pick one or more carriers. Each one gets its own separate post on its own board — no carrier sees another’s. A carrier whose fleet cannot haul the equipment, or whose floor is above the rate without a reason, is skipped and named.')])]) : null,
         h('div', { class: 'dw-info', style: 'margin-bottom:6px' }, 'One page — the truck is empty, so no wizard. The load appears on ' + ((a.carrier && a.carrier.name) || 'the carrier') + '’s LoadBoot board as “Posted by your dispatcher”, only to them. They tap “I’ll take it” or Decline; on yes, a booking opens under Bookings for the rate confirmation and LoadBoot approves from the RC as always. Dates are Eastern.'),
         dl2,
         sec('Source', [h('label', null, ['Board *', board]), h('label', null, ['Board load ID / reference', bref]), h('label', null, ['Link', blink])]),
         sec('Broker', [h('label', null, ['Company *', broker]), h('label', null, ['MC # (screened on blur)', bmc]), h('label', null, ['Rep', rep]), h('label', null, ['Phone', bphone]), h('label', null, ['Email', bemail]), h('div', { class: 'wide' }, screenBox)]),
         sec('Lane', [h('label', null, ['Origin *', origin]), h('label', null, ['Origin ZIP / address', ozip]), h('label', null, ['Destination *', dest]), h('label', null, ['Destination ZIP / address', dzip]), h('label', null, ['Pickup date *', pud]), h('label', null, ['Pickup window', puw]), h('label', null, ['Delivery date', dld]), h('label', null, ['Delivery window', dlw]), h('label', null, ['Loaded miles', h('div', { class: 'dw-row', style: 'flex-wrap:nowrap' }, [miles, est])]), h('label', null, ['Deadhead from the truck (auto)', dh])]),
-        sec('Freight', [h('label', null, ['Truck', tsel]), h('label', null, ['Equipment * (must be in the fleet)', eq]), h('label', null, ['Commodity', comm]), h('label', null, ['Weight (lbs)', wt]), h('label', null, ['Dims L × W × H (in)', h('div', { class: 'dw-row', style: 'flex-wrap:nowrap' }, [dimsL, dimsW, dimsH])]), h('label', null, ['Pieces / pallets', pieces]), h('label', null, ['Load type', ltype]), h('label', { style: 'flex-direction:row;align-items:center;gap:8px' }, [haz, 'Hazmat']), h('label', null, ['Reefer temp', temp]), h('label', { class: 'wide' }, ['Special requirements', reqRow])]),
+        sec('Freight', [h('label', null, [multi ? 'Truck (' + nameOf(a) + ')' : 'Truck', tsel]), h('label', null, ['Equipment * (must be in the fleet)', eq]), h('label', null, ['Commodity', comm]), h('label', null, ['Weight (lbs)', wt]), h('label', null, ['Dims L × W × H (in)', h('div', { class: 'dw-row', style: 'flex-wrap:nowrap' }, [dimsL, dimsW, dimsH])]), h('label', null, ['Pieces / pallets', pieces]), h('label', null, ['Load type', ltype]), h('label', { style: 'flex-direction:row;align-items:center;gap:8px' }, [haz, 'Hazmat']), h('label', null, ['Reefer temp', temp]), h('label', { class: 'wide' }, ['Special requirements', reqRow])]),
         sec('Money', [h('label', null, ['Rate — gross line-haul $ *', rate]), h('div', { class: 'wide' }, rpmBox), h('div', { class: 'wide' }, reasonWrap), h('label', null, ['Detention $/hr', det]), h('label', null, ['after (free hours)', detFree]), h('label', null, ['TONU $', tonu]), h('label', null, ['Layover $/day', lay]), h('label', null, ['Lumper', lump]), h('label', null, ['Payment terms', terms]), h('label', null, ['Quick pay', qp]), h('label', { style: 'flex-direction:row;align-items:center;gap:8px' }, [fact, 'Factoring OK'])]),
         sec('Notes to the carrier', [h('label', { class: 'wide' }, ['Notes', notes]), h('label', null, ['Expires in', expSel])]),
         e,
-        h('div', { class: 'dw-row', style: 'margin-top:14px' }, [h('button', { class: 'dw-btn warn', onClick: async (ev) => { ev.target.disabled = true; try {
+        h('div', { class: 'dw-row', style: 'margin-top:14px' }, [h('button', { class: 'dw-btn', onClick: async (ev) => { ev.target.disabled = true; try {
           if (!board.value) throw new Error('Pick the board you found this load on.');
           if (!origin.value.trim() || !dest.value.trim()) throw new Error('Origin and destination are required.');
           if (!broker.value.trim()) throw new Error('Broker company is required — the carrier has to know who pays.');
@@ -1457,12 +1475,30 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
             hazmat: !!haz.checked, temperature: temp.value.trim() || null, requirements: Array.from(reqSet), rate: rate.value, accessorials: acc,
             notes: notes.value.trim() || null, confidence, broker_screen: screenRes || {}, below_min_reason: reason.value.trim() || null };
           if (expSel.value) p.expiry_hours = expSel.value;
-          const r = isEdit ? await dispatcherUpdateLoad(ex.id, p) : await dispatcherPostLoad(a.carrier_org_id, p);
-          if (r && r.error) { if (r.below_min) { reasonWrap.style.display = 'block'; reason.focus(); } throw new Error(r.error); }
-          m.close(); toast(isEdit ? 'Post updated — the carrier sees the new version' : 'Posted — it is on ' + ((a.carrier && a.carrier.name) || 'the carrier') + '’s board now' + (r.below_min ? ' (flagged below floor)' : ''));
-          try { dwLive.send('status_change', { load: r.id }); } catch (_) {}
-          paintPosts();
-        } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, isEdit ? 'Save changes' : 'Post to the carrier’s board'), h('button', { class: 'dw-btn ghost', onClick: () => m.close() }, 'Cancel')]),
+          if (isEdit) {
+            const r = await dispatcherUpdateLoad(ex.id, p);
+            if (r && r.error) { if (r.below_min) { reasonWrap.style.display = 'block'; reason.focus(); } throw new Error(r.error); }
+            m.close(); toast('Post updated — the carrier sees the new version');
+            try { dwLive.send('status_change', { load: r.id }); } catch (_) {}
+            paintPosts(); return;
+          }
+          const targets = allA.filter((x) => picked.has(x.carrier_org_id)); if (!targets.length) targets.push(a);
+          if (multi && !allA.some((x) => picked.has(x.carrier_org_id))) throw new Error('Pick at least one carrier.');
+          const done = [], bad = []; let flagged = false;
+          for (const x of targets) {   // one post per carrier; the truck belongs to the carrier the form opened on
+            const r = await dispatcherPostLoad(x.carrier_org_id, x.carrier_org_id === a.carrier_org_id ? p : Object.assign({}, p, { truck_id: null })).catch((err) => ({ error: err.message }));
+            if (r && r.error) { bad.push([x, r]); continue; }
+            done.push(x); picked.delete(x.carrier_org_id); if (r.below_min) flagged = true;
+            try { dwLive.send('status_change', { load: r.id }); } catch (_) {}
+          }
+          if (done.length) paintPosts();
+          if (bad.length) {
+            if (multi) paintPick();
+            if (bad.some(([, r]) => r.below_min)) { reasonWrap.style.display = 'block'; reason.focus(); }
+            throw new Error(multi ? (done.length ? 'Posted for ' + done.map(nameOf).join(', ') + '. ' : '') + 'Not posted — ' + bad.map(([x, r]) => nameOf(x) + ': ' + r.error).join(' · ') : bad[0][1].error);
+          }
+          m.close(); toast(done.length > 1 ? 'Posted — ' + done.length + ' separate posts, one on each carrier’s board' + (flagged ? ' (some flagged below floor)' : '') : 'Posted — it is on ' + nameOf(done[0]) + '’s board now' + (flagged ? ' (flagged below floor)' : ''));
+        } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, isEdit ? 'Save changes' : multi ? 'Post to each selected carrier' : 'Post to the carrier’s board'), h('button', { class: 'dw-btn ghost', onClick: () => m.close() }, 'Cancel')]),
       ]));
       setTimeout(calc, 0);
     }
