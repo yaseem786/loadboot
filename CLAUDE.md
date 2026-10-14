@@ -169,6 +169,10 @@ Docs: `claude/EMAIL-AUDIT-0391.md` (the audit) and `claude/EMAIL-CATALOG-PROD-03
    never insert into `suppressions`, `email_pref_optouts` or `comm_preferences` by hand. Doc:
    `claude/UNSUBSCRIBE-ENGINE-0446.md`.
 
+6. **A carrier email can carry an SMS (set 14 Oct 2026, `bl_dial_0550`).** The text lives on the catalog row
+   (`email_catalog.sms_enabled` + `sms_text`, CC → Email catalog → "Text message too"); `sys_email` queues it, never a
+   hand-rolled SMS send. Carrier emails only — never marketing/lifecycle/outreach. Doc: `claude/EMAIL-SMS-0550.md`.
+
 ---
 
 ## 7. Contact line — WhatsApp through the ONE switch, never the Riley phone (set 24 Sep 2026)

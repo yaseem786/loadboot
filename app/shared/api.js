@@ -1731,6 +1731,9 @@ export const emailTemplateNew = (p) => rpc('cc_email_template_new', p);
 // bl_comm_0396: who actually got one email — sends and preference blocks in one timeline
 // bl_comm_0398: the Live / Test / Off switch on one email
 export const emailMode = (key, mode, testTo, note) => rpc('cc_email_mode', { p_key: key, p_mode: mode, p_test_to: testTo || null, p_note: note || null });
+// bl_dial_0550: the SMS that rides with a carrier email (switch + words per catalog row). dry = validate/preview only.
+export const emailSms = (key) => rpc('cc_email_sms', { p_key: key });
+export const emailSmsSet = (key, enabled, text, dry) => rpc('cc_email_sms_set', { p_key: key, p_enabled: !!enabled, p_text: text ?? null, p_dry: !!dry });
 export const emailSends = (key, o = {}) => rpc('cc_email_sends', { p_key: key, p_status: o.status || null, p_q: o.q || null, p_limit: o.limit || 50, p_offset: o.offset || 0 });
 // bl_comm_0446 — the unsubscribe engine (CC "Unsubscribes", #/unsubscribes). Ask emailCanSend(to, key) BEFORE any hand send.
 export const unsubOverview = (days) => rpc('cc_unsub_overview', { p_days: days || 30 });
