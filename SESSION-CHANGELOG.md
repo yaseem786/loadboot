@@ -724,3 +724,10 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   "Apply exit hold now" for older requests (#16 not auto-applied).
 - DB: STAGING applied + rolled-back E2E 15 Oct (anon SECDEF 35, names unchanged). PROD applied 15 Oct 2026 —
   details in docs/ACCOUNT-EXIT-HOLD-0550.md §6.
+## Live chat persona — "Riley" came back after 0476, removed again (bl_brain_0476 re-apply, 15 Oct 2026)
+- bl_brain_0476 (27 Sep) took "Riley" out of the chat persona, but `bl_voice_0483` re-created
+  `app_private.brain_user_text` later the same day with the old line ("You are answering as Riley, LoadBoot's live-chat
+  assistant…"). Prod and staging both still said Riley; `rule.chat_specialists` was fine.
+- 15 Oct: 0476 part 1 (one anchor replace on the live definition) re-run on STAGING and PROD; persona now "LoadBoot
+  Support", no personal name. Anon SECDEF 36 prod (names = baseline) / 35 staging. The line in
+  migrations/bl_voice_0483_riley_call_plans.sql is corrected too, so a re-run cannot bring Riley back.
