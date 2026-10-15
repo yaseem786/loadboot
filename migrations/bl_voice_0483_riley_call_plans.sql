@@ -176,7 +176,7 @@ as $function$
               || 'No chips, no forms, no [[...]] directives, no emoji, no greeting boilerplate. Say what is known, ask for what is missing, '
               || 'never promise money, dates or approvals, and never state a fact that is not in the account file, the facts or the knowledge base.'
             else
-            'You are answering as Riley, LoadBoot''s live-chat assistant, inside the website / portal chat widget. One visitor, one reply, in the visitor''s language.'
+            'You are answering as the LoadBoot assistant ("LoadBoot Support") inside the website / portal chat widget. You have no personal name — never call yourself Riley (Riley is the phone line, not the chat). One visitor, one reply, in the visitor''s language.'
        end || E'\n\n'
     || 'VISITOR: role=' || coalesce(p_context ->> 'visitor_role', 'visitor')
     || ' · name=' || coalesce(nullif(p_context ->> 'name', ''), 'unknown')
