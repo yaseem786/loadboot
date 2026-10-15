@@ -13,9 +13,9 @@ import { breakeven, setCostAndLanes } from '../shared/api.js';
 const money = (n) => '$' + Math.round(Math.abs(Number(n) || 0)).toLocaleString();
 const signed = (n) => (Number(n) >= 0 ? '+' : '−') + money(n);
 
-const CARD = 'background:#111c31;border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:16px 18px;margin-bottom:14px';
-const H = 'font-weight:800;color:#eaf1fb;font-size:1.02rem';
-const SUB = 'color:#8ea2c3;font-size:.86rem;line-height:1.6';
+const CARD = 'background:var(--lbc-x-field,#111c31);border:1px solid var(--lbc-x-line,rgba(255,255,255,.09));border-radius:16px;padding:16px 18px;margin-bottom:14px';
+const H = 'font-weight:800;color:var(--lbc-x-ink,#eaf1fb);font-size:1.02rem';
+const SUB = 'color:var(--lbc-x-ink3,#8ea2c3);font-size:.86rem;line-height:1.6';
 
 const RT = [
   ['only', 'Round trip only', 'Never send me out without a load back'],
@@ -32,15 +32,15 @@ function invite(host) {
     + 'It stays on your account and is only ever shown to you.</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
     + '<div style="position:relative;flex:1;min-width:170px">'
-    + '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#8ea2c3;font-weight:700">$</span>'
+    + '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--lbc-x-ink3,#8ea2c3);font-weight:700">$</span>'
     + '<input class="lbe-cost" type="number" min="1" step="50" inputmode="numeric" placeholder="3,900" '
-    + 'style="width:100%;background:#0b1424;border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:11px 12px 11px 26px;color:#eaf1fb;font-size:1rem;font-weight:700">'
+    + 'style="width:100%;background:var(--lbc-x-field,#0b1424);border:1px solid var(--lbc-x-line,rgba(255,255,255,.14));border-radius:11px;padding:11px 12px 11px 26px;color:var(--lbc-x-ink,#eaf1fb);font-size:1rem;font-weight:700">'
     + '</div>'
     + '<button class="lbe-go" style="background:#FC5305;border:0;border-radius:11px;padding:11px 20px;color:#fff;font-weight:800;font-size:.92rem;cursor:pointer">Show me</button>'
     + '</div>'
-    + '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;color:#8ea2c3;font-size:.82rem;cursor:pointer">'
+    + '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;color:var(--lbc-x-ink3,#8ea2c3);font-size:.82rem;cursor:pointer">'
     + '<input class="lbe-pay" type="checkbox" checked> That figure includes what I pay myself and my drivers</label>'
-    + '<div class="lbe-err" style="color:#f87171;font-size:.82rem;margin-top:8px;display:none"></div>'
+    + '<div class="lbe-err" style="color:var(--lbc-x-danger,#f87171);font-size:.82rem;margin-top:8px;display:none"></div>'
     + '</div>';
 
   const go = host.querySelector('.lbe-go');
@@ -69,10 +69,10 @@ function answer(host, d) {
   const bars = rows.map((r) => {
     const over = Number(r.over_cost) || 0;
     const pct = Math.max(4, Math.round((Math.abs(over) / best) * 100));
-    const col = over >= 0 ? '#34d399' : '#f87171';
+    const col = over >= 0 ? 'var(--lbc-x-ok,#34d399)' : 'var(--lbc-x-danger,#f87171)';
     const soft = over >= 0 ? 'rgba(52,211,153,.16)' : 'rgba(248,113,113,.16)';
     return '<div style="display:flex;align-items:center;gap:10px;margin:5px 0">'
-      + '<div style="width:52px;color:#8ea2c3;font-size:.8rem;font-weight:700;text-align:right">' + Number(r.miles).toLocaleString() + '</div>'
+      + '<div style="width:52px;color:var(--lbc-x-ink3,#8ea2c3);font-size:.8rem;font-weight:700;text-align:right">' + Number(r.miles).toLocaleString() + '</div>'
       + '<div style="flex:1;height:8px;background:' + soft + ';border-radius:99px;overflow:hidden">'
       + '<div style="width:' + pct + '%;height:100%;background:' + col + ';border-radius:99px"></div></div>'
       + '<div style="width:74px;text-align:right;color:' + col + ';font-size:.82rem;font-weight:800">' + signed(over) + '</div>'
@@ -84,28 +84,28 @@ function answer(host, d) {
     const on = d.round_trip_pref === v;
     return '<button type="button" class="lbe-rt" data-v="' + v + '" title="' + sub + '" '
       + 'style="background:' + (on ? 'rgba(8,131,247,.18)' : 'transparent') + ';border:1px solid ' + (on ? 'rgba(8,131,247,.55)' : 'rgba(255,255,255,.16)')
-      + ';color:' + (on ? '#7cc0ff' : '#8ea2c3') + ';border-radius:999px;padding:6px 13px;font-size:.8rem;font-weight:700;cursor:pointer">'
+      + ';color:' + (on ? 'var(--lbc-x-link,#7cc0ff)' : 'var(--lbc-x-ink3,#8ea2c3)') + ';border-radius:999px;padding:6px 13px;font-size:.8rem;font-weight:700;cursor:pointer">'
       + (on ? '✓ ' : '') + label + '</button>';
   }).join('');
 
   host.innerHTML = '<div style="' + CARD + '">'
     + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
     + '<div style="' + H + '">Your break-even</div>'
-    + '<button class="lbe-edit" style="background:none;border:0;color:#7cc0ff;font-size:.82rem;font-weight:700;cursor:pointer;padding:0">edit ›</button></div>'
+    + '<button class="lbe-edit" style="background:none;border:0;color:var(--lbc-x-link,#7cc0ff);font-size:.82rem;font-weight:700;cursor:pointer;padding:0">edit ›</button></div>'
 
     + '<div style="display:flex;align-items:baseline;gap:10px;margin:12px 0 2px;flex-wrap:wrap">'
-    + '<div style="font-size:2.3rem;font-weight:800;color:#eaf1fb;line-height:1">' + Number(d.breakeven_miles).toLocaleString() + '</div>'
-    + '<div style="color:#8ea2c3;font-size:.92rem;font-weight:700">loaded miles a week</div></div>'
+    + '<div style="font-size:2.3rem;font-weight:800;color:var(--lbc-x-ink,#eaf1fb);line-height:1">' + Number(d.breakeven_miles).toLocaleString() + '</div>'
+    + '<div style="color:var(--lbc-x-ink3,#8ea2c3);font-size:.92rem;font-weight:700">loaded miles a week</div></div>'
     + '<div style="' + SUB + ';margin-bottom:14px">to cover ' + money(d.weekly_cost) + ' at your ' + money(d.rpm) + '.00 floor, after our ' + d.fee_pct + '% — '
     + 'about <b style="color:#c9d8ee">' + Number(d.miles_per_day).toLocaleString() + ' a day</b> over ' + d.driving_days + ' driving days.</div>'
 
     + bars
 
-    + '<div style="' + SUB + ';margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)">'
+    + '<div style="' + SUB + ';margin-top:10px;padding-top:10px;border-top:1px solid var(--lbc-x-line,rgba(255,255,255,.07))">'
     + 'Your cost per mile falls as the miles rise — which is why miles move your margin more than rate does.</div>'
 
     + '<div style="margin-top:14px">'
-    + '<div style="color:#8ea2c3;font-size:.8rem;font-weight:700;margin-bottom:7px">How should we pair your lanes?</div>'
+    + '<div style="color:var(--lbc-x-ink3,#8ea2c3);font-size:.8rem;font-weight:700;margin-bottom:7px">How should we pair your lanes?</div>'
     + '<div style="display:flex;gap:7px;flex-wrap:wrap">' + chips + '</div></div>'
     + '</div>';
 
@@ -134,12 +134,12 @@ export async function mountBreakevenCard(host) {
 // sentence a broker actually needs.
 export function loadingChip(profile) {
   if (!profile) return '';
-  const tone = profile.code === 'ground_capable' ? ['#34d399', 'rgba(52,211,153,.14)']
-    : profile.code === 'dock_or_forklift' ? ['#7cc0ff', 'rgba(8,131,247,.14)']
-    : profile.code === 'forklift_or_leveler' ? ['#fbbf24', 'rgba(251,191,36,.14)']
-    : ['#8ea2c3', 'rgba(255,255,255,.07)'];
+  const tone = profile.code === 'ground_capable' ? ['var(--lbc-x-ok,#34d399)', 'rgba(52,211,153,.14)']
+    : profile.code === 'dock_or_forklift' ? ['var(--lbc-x-link,#7cc0ff)', 'rgba(8,131,247,.14)']
+    : profile.code === 'forklift_or_leveler' ? ['var(--lbc-x-gold,#fbbf24)', 'rgba(251,191,36,.14)']
+    : ['var(--lbc-x-ink3,#8ea2c3)', 'rgba(255,255,255,.07)'];
   return '<span title="' + String(profile.detail || '').replace(/"/g, '&quot;') + '" '
-    + 'style="background:' + tone[1] + ';border:1px solid ' + tone[0] + '55;color:' + tone[0]
+    + 'style="background:' + tone[1] + ';border:1px solid color-mix(in srgb,' + tone[0] + ' 33%,transparent);color:' + tone[0]
     + ';border-radius:999px;padding:3px 10px;font-size:.74rem;font-weight:800;white-space:nowrap">'
     + (profile.code === 'unknown' ? '? ' : '') + profile.label + '</span>';
 }

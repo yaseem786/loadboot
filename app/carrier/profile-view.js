@@ -80,33 +80,33 @@ function fpanel(D,cur){
 }
 
 var STYLE = '<style>'
-+'#lbmp{--a:#3b9dff;--ok:#34d399;color:#eaf1fb;font-family:Inter,system-ui,Arial,sans-serif}'
-+'#lbmp .card{background:#0d1526;border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:20px;margin-bottom:14px}'
++'#lbmp{--a:#3b9dff;--ok:#34d399;color:var(--lbc-x-ink,#eaf1fb);font-family:Inter,system-ui,Arial,sans-serif}'
++'#lbmp .card{background:#0d1526;border:1px solid var(--lbc-x-line,rgba(255,255,255,.09));border-radius:18px;padding:20px;margin-bottom:14px}'
 +'#lbmp h1{font-size:1.5rem;font-weight:900;margin:0}'
 +'#lbmp .av{width:56px;height:56px;border-radius:15px;background:linear-gradient(135deg,#0b6fe0,#0883F7);display:grid;place-items:center;font-weight:900;font-size:1.2rem;color:#fff;flex:none}'
-+'#lbmp .sub{color:#7f92b3;font-size:.9rem;margin:2px 0 0}'
++'#lbmp .sub{color:var(--lbc-x-ink3,#7f92b3);font-size:.9rem;margin:2px 0 0}'
 +'#lbmp .badge{display:inline-block;padding:4px 11px;border-radius:99px;font-size:.7rem;font-weight:800}'
-+'#lbmp .b-rev{background:rgba(251,191,36,.14);color:#fbbf24}#lbmp .b-ok{background:rgba(52,211,153,.14);color:#34d399}'
-+'#lbmp .note{display:flex;gap:12px;align-items:center;background:rgba(59,157,255,.08);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:14px 16px;margin:14px 0}'
++'#lbmp .b-rev{background:rgba(251,191,36,.14);color:var(--lbc-x-gold,#fbbf24)}#lbmp .b-ok{background:rgba(52,211,153,.14);color:var(--lbc-x-ok,#34d399)}'
++'#lbmp .note{display:flex;gap:12px;align-items:center;background:rgba(59,157,255,.08);border:1px solid var(--lbc-x-line,rgba(255,255,255,.09));border-radius:14px;padding:14px 16px;margin:14px 0}'
 +'#lbmp .big{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:8px}'
-+'#lbmp .m{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:14px;text-align:center}'
-+'#lbmp .m b{display:block;font-size:1.5rem;font-weight:900;color:#3b9dff}#lbmp .m span{font-size:.62rem;color:#7f92b3;font-weight:800;letter-spacing:.04em}'
++'#lbmp .m{background:var(--lbc-x-panel,rgba(255,255,255,.03));border:1px solid var(--lbc-x-line,rgba(255,255,255,.09));border-radius:14px;padding:14px;text-align:center}'
++'#lbmp .m b{display:block;font-size:1.5rem;font-weight:900;color:var(--lbc-x-link,#3b9dff)}#lbmp .m span{font-size:.62rem;color:var(--lbc-x-ink3,#7f92b3);font-weight:800;letter-spacing:.04em}'
 +'#lbmp .chips{display:flex;flex-wrap:wrap;gap:8px}'
 +'#lbmp .chip{background:rgba(59,157,255,.1);color:#9fd0ff;border:1px solid rgba(59,157,255,.25);border-radius:99px;padding:6px 12px;font-size:.8rem;font-weight:700}'
-+'#lbmp .chip.ok{background:rgba(52,211,153,.13);color:#34d399;border-color:rgba(52,211,153,.3)}'
-+'#lbmp .chip.bad{background:rgba(248,113,113,.13);color:#f87171;border-color:rgba(248,113,113,.3)}'
++'#lbmp .chip.ok{background:rgba(52,211,153,.13);color:var(--lbc-x-ok,#34d399);border-color:rgba(52,211,153,.3)}'
++'#lbmp .chip.bad{background:rgba(248,113,113,.13);color:var(--lbc-x-danger,#f87171);border-color:rgba(248,113,113,.3)}'
 +'#lbmp .sec-h{font-size:.95rem;font-weight:800;margin:16px 0 10px}'
 +'#lbmp .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}'
-+'#lbmp .box{border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:15px;background:rgba(255,255,255,.02)}'
++'#lbmp .box{border:1px solid var(--lbc-x-line,rgba(255,255,255,.09));border-radius:14px;padding:15px;background:var(--lbc-x-panel,rgba(255,255,255,.02))}'
 +'#lbmp .box h3{margin:0 0 10px;font-size:.92rem}'
-+'#lbmp .f{padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07)}#lbmp .f:last-child{border-bottom:0}'
-+'#lbmp .f .k{font-size:.64rem;text-transform:uppercase;letter-spacing:.04em;color:#7f92b3;font-weight:800}#lbmp .f .v{font-weight:600;font-size:.92rem}'
-+'#lbmp table{width:100%;border-collapse:collapse;font-size:.82rem}#lbmp th{text-align:left;color:#7f92b3;font-size:.62rem;text-transform:uppercase;padding:8px;border-bottom:1px solid rgba(255,255,255,.16)}#lbmp td{padding:8px;border-bottom:1px solid rgba(255,255,255,.07);color:#c3d1e6}'
-+'#lbmp .pill2{padding:2px 8px;border-radius:99px;font-size:.68rem;font-weight:800}#lbmp .pill2.ok{background:rgba(52,211,153,.13);color:#34d399}#lbmp .pill2.bad{background:rgba(248,113,113,.13);color:#f87171}'
-+'#lbmp .tabs{display:flex;gap:2px;border-bottom:1px solid rgba(255,255,255,.09);overflow:auto;margin-bottom:14px}'
-+'#lbmp .tab{padding:11px 13px;font-weight:700;font-size:.84rem;color:#7f92b3;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}#lbmp .tab.on{color:#3b9dff;border-bottom-color:#3b9dff}'
-+'#lbmp .empty{text-align:center;color:#7f92b3;padding:30px}#lbmp .banner{background:rgba(52,211,153,.1);border-radius:12px;padding:14px}'
-+'#lbmp .verified{background:rgba(52,211,153,.14);color:#34d399;font-weight:800;font-size:.62rem;padding:3px 8px;border-radius:99px}'
++'#lbmp .f{padding:7px 0;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.07))}#lbmp .f:last-child{border-bottom:0}'
++'#lbmp .f .k{font-size:.64rem;text-transform:uppercase;letter-spacing:.04em;color:var(--lbc-x-ink3,#7f92b3);font-weight:800}#lbmp .f .v{font-weight:600;font-size:.92rem}'
++'#lbmp table{width:100%;border-collapse:collapse;font-size:.82rem}#lbmp th{text-align:left;color:var(--lbc-x-ink3,#7f92b3);font-size:.62rem;text-transform:uppercase;padding:8px;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.16))}#lbmp td{padding:8px;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.07));color:#c3d1e6}'
++'#lbmp .pill2{padding:2px 8px;border-radius:99px;font-size:.68rem;font-weight:800}#lbmp .pill2.ok{background:rgba(52,211,153,.13);color:var(--lbc-x-ok,#34d399)}#lbmp .pill2.bad{background:rgba(248,113,113,.13);color:var(--lbc-x-danger,#f87171)}'
++'#lbmp .tabs{display:flex;gap:2px;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.09));overflow:auto;margin-bottom:14px}'
++'#lbmp .tab{padding:11px 13px;font-weight:700;font-size:.84rem;color:var(--lbc-x-ink3,#7f92b3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}#lbmp .tab.on{color:var(--lbc-x-link,#3b9dff);border-bottom-color:#3b9dff}'
++'#lbmp .empty{text-align:center;color:var(--lbc-x-ink3,#7f92b3);padding:30px}#lbmp .banner{background:rgba(52,211,153,.1);border-radius:12px;padding:14px}'
++'#lbmp .verified{background:rgba(52,211,153,.14);color:var(--lbc-x-ok,#34d399);font-weight:800;font-size:.62rem;padding:3px 8px;border-radius:99px}'
 +'</style>';
 
 var PTABS=["General Information","Fleet","Insurance","Safety","Inspections","Violations","Crashes"];
@@ -132,9 +132,9 @@ var LIGHT_CSS = '<style>'
  +'#lbmp{color:#10223B !important}'
  +'#lbmp .card{background:#fff !important;border-color:#e5eaf2 !important;box-shadow:0 1px 3px rgba(16,34,59,.06)}'
  +'#lbmp .box,#lbmp .m{background:#f7fafd !important;border-color:#e5eaf2 !important}'
- +'#lbmp .m b{color:#0883F7 !important}#lbmp .m span,#lbmp .sub,#lbmp .f .k,#lbmp th{color:#64748b !important}'
+ +'#lbmp .m b{color:var(--lbc-x-link,#0883F7) !important}#lbmp .m span,#lbmp .sub,#lbmp .f .k,#lbmp th{color:#64748b !important}'
  +'#lbmp .f{border-color:#eef2f7 !important}#lbmp td{color:#334155 !important;border-color:#eef2f7 !important}'
- +'#lbmp .tabs{border-color:#e5eaf2 !important}#lbmp .tab{color:#64748b !important}#lbmp .tab.on{color:#0883F7 !important;border-bottom-color:#0883F7 !important}'
+ +'#lbmp .tabs{border-color:#e5eaf2 !important}#lbmp .tab{color:#64748b !important}#lbmp .tab.on{color:var(--lbc-x-link,#0883F7) !important;border-bottom-color:#0883F7 !important}'
  +'#lbmp .sec-h,#lbmp .box h3,#lbmp .f .v{color:#10223B !important}'
  +'</style>';
 export async function renderFmcsaOnly(host, dot, opts){
@@ -188,7 +188,7 @@ export async function renderMyProfile(host){
   var lanes=(dp.preferred_lanes||[]);
   var _stApproved=['approved','active','completed'].indexOf(String(ov.onboarding_stage||'').toLowerCase())>=0;
   var verified=!!(ov.compliance_ok)&&_stApproved;
-  var statusBadge=(String(ov.account_status||'')==='paused')?'<span class="badge b-rev" style="background:rgba(239,68,68,.16);color:#f87171">⏸ Account paused</span>':(ov.poa_required)?'<span class="badge b-rev" style="background:rgba(217,119,6,.16);color:#fbbf24">📋 Plan of action required</span>':verified?'<span class="badge b-ok">✓ VERIFIED</span>':(ov.compliance_ok?'<span class="badge b-rev">Docs verified — approval pending</span>':((['','not_started'].indexOf(String(ov.onboarding_stage||'').toLowerCase())>=0)?'<span class="badge b-rev" style="background:rgba(148,163,184,.16);color:#cbd5e1">Not submitted</span>':'<span class="badge b-rev">Under review</span>'));
+  var statusBadge=(String(ov.account_status||'')==='paused')?'<span class="badge b-rev" style="background:rgba(239,68,68,.16);color:var(--lbc-x-danger,#f87171)">⏸ Account paused</span>':(ov.poa_required)?'<span class="badge b-rev" style="background:rgba(217,119,6,.16);color:var(--lbc-x-gold,#fbbf24)">📋 Plan of action required</span>':verified?'<span class="badge b-ok">✓ VERIFIED</span>':(ov.compliance_ok?'<span class="badge b-rev">Docs verified — approval pending</span>':((['','not_started'].indexOf(String(ov.onboarding_stage||'').toLowerCase())>=0)?'<span class="badge b-rev" style="background:rgba(148,163,184,.16);color:var(--lbc-x-ink2,#cbd5e1)">Not submitted</span>':'<span class="badge b-rev">Under review</span>'));
 
   // compliance badges from the doc list
   function has(re){try{return ((comp&&comp.requirements)||[]).some(function(r){return re.test(String(r.name||''))&&/valid|verified|approv|on file|active/i.test(String(r.status||''));});}catch(_){return false;}}
@@ -216,7 +216,7 @@ export async function renderMyProfile(host){
       +'<div class="sec-h">Lanes</div><div class="chips">'+(lanes.length?lanes.map(function(e){return '<span class="chip">'+esc(e)+'</span>';}).join(''):'<span class="chip" style="opacity:.55">Not set yet \u2014 add lanes in dispatch preferences</span>')+'</div>'
       +'<div id="lbmp-truckdetail"></div>'
       +'<div id="lbmp-prefs" style="margin:12px 0"></div>'
-      +'<div class="sec-h">Compliance <span class="verified">on file</span></div><div class="chips">'+badge(cCoi,'COI')+badge(cW9,'W-9')+badge(cAgr,'Signed Agreement')+badge(cAuth,'FMCSA Authority')+(isFactoring?badge(true,'Factoring'):'')+(cBankPending?'<span class="badge b-rev" style="background:rgba(217,119,6,.16);color:#fbbf24">&#9203; Banking &mdash; in review</span>':((cBank||!isFactoring)?badge(cBank,'Banking'):''))+'</div>'
+      +'<div class="sec-h">Compliance <span class="verified">on file</span></div><div class="chips">'+badge(cCoi,'COI')+badge(cW9,'W-9')+badge(cAgr,'Signed Agreement')+badge(cAuth,'FMCSA Authority')+(isFactoring?badge(true,'Factoring'):'')+(cBankPending?'<span class="badge b-rev" style="background:rgba(217,119,6,.16);color:var(--lbc-x-gold,#fbbf24)">&#9203; Banking &mdash; in review</span>':((cBank||!isFactoring)?badge(cBank,'Banking'):''))+'</div>'
       +'</div>'
       +'<div class="card">'+fmcsa+'</div>'
       +'</div>';

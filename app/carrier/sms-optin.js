@@ -21,9 +21,9 @@ const CSS = `
 .lbsms a{color:#4aa3ff}
 .lbsms-row{display:flex;gap:9px;flex-wrap:wrap}
 .lbsms-b{flex:1 1 150px;height:42px;border-radius:12px;border:0;background:#0883F7;color:#fff;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit}
-.lbsms-b.ghost{background:transparent;border:1px solid rgba(148,163,184,.3);color:#cbd5e1}
+.lbsms-b.ghost{background:transparent;border:1px solid rgba(148,163,184,.3);color:var(--lbc-x-ink2,#cbd5e1)}
 .lbsms-b[disabled]{opacity:.55;cursor:default}
-.lbsms-x{position:absolute;top:8px;right:10px;background:none;border:0;color:#94a3b8;font-size:19px;line-height:1;cursor:pointer}
+.lbsms-x{position:absolute;top:8px;right:10px;background:none;border:0;color:var(--lbc-x-ink3,#94a3b8);font-size:19px;line-height:1;cursor:pointer}
 .lbsms-in{position:relative}
 @media (max-width:420px){.lbsms-b{flex:1 1 100%}}
 `;
@@ -56,7 +56,7 @@ export async function maybeAskSmsOptIn() {
   +     '<button class="lbsms-b" data-yes>Yes, text me</button>'
   +     '<button class="lbsms-b ghost" data-no>No, email only</button>'
   +   '</div>'
-  +   '<div class="lbsms-err" style="margin-top:9px;font-size:12px;color:#fca5a5"></div>'
+  +   '<div class="lbsms-err" style="margin-top:9px;font-size:12px;color:var(--lbc-x-danger,#fca5a5)"></div>'
   + '</div>';
   document.body.appendChild(wrap);
 
