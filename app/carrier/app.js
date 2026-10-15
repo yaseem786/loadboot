@@ -4665,7 +4665,16 @@ async function appView(user) {
     const paintGateL = async () => {
       let g = null; try { g = await carrierAvailabilityGate(); } catch (_) { g = null; }
       if (!g || !g.assigned || g.fresh) { gateHostL.innerHTML = ''; return; }
-      const last = g.last_label === 'never' ? 'You have not posted availability yet' : 'Your last post was ' + g.last_label + ' — older than ' + (g.days || 7) + ' days';
+      // bl_comm_0557 — no active truck yet: posting availability is impossible, so ask for the truck first.
+      if (g.reason === 'no_trucks') {
+        mount(gateHostL, h('div', { class: 'cp-card', style: 'margin-bottom:12px;border:1px solid #f59e0b;background:rgba(245,158,11,.08)' }, [
+          h('div', { class: 'cp-row-t' }, [icon('truck', 15), ' Add your truck first']),
+          h('div', { class: 'cp-row-s', style: 'margin:4px 0 10px' }, 'Your dispatcher works only trucks you have marked available, and there is no truck on your account yet. Add it once — then post its availability.'),
+          h('button', { class: 'cp-btn', onClick: () => { try { location.hash = '#fleet/add-truck'; } catch (_) {} } }, '+ Add a truck'),
+        ]));
+        return;
+      }
+      const last =g.last_label === 'never' ? 'You have not posted availability yet' : 'Your last post was ' + g.last_label + ' — older than ' + (g.days || 7) + ' days';
       mount(gateHostL, h('div', { class: 'cp-card', style: 'margin-bottom:12px;border:1px solid ' + (g.blocked ? '#ef4444' : '#f59e0b') + ';background:' + (g.blocked ? 'rgba(239,68,68,.08)' : 'rgba(245,158,11,.08)') }, [
         h('div', { class: 'cp-row-t' }, [icon('truck', 15), g.blocked ? ' You can’t see loads until you post your availability' : ' Your dispatcher hunts loads by your availability — post today’s']),
         h('div', { class: 'cp-row-s', style: 'margin:4px 0 10px' }, last + '. Your dispatcher works only trucks you have marked available' + (g.blocked ? '; the board opens the moment you post.' : '.') + ' It takes 30 seconds.'),

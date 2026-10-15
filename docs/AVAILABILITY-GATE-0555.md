@@ -198,3 +198,13 @@ urgent — everything else is in our thread."*
 - **Found, not fixed (pre-existing):** with a catalog row on `send_mode = 'off'`, `sys_email` raises
   `email_block_note(...) is not unique` (two overloads, 5 and 6 args) instead of skipping quietly. Latent on prod (no row is
   `off` today); the notice would land as `error`. Fix = drop the 5-arg overload (the 6-arg one is a superset, `p_code` defaults null).
+
+## 8. `bl_comm_0557` (15 Oct 2026)
+
+- Chip for a carrier with no active truck: **"No truck added yet — the carrier adds a truck first"** (gate `chip`, so CC
+  Dispatcher 360, Carrier 360 and the dispatcher workspace all show it). `disp_trial_stats.waiting_availability` no longer
+  counts them; the Dispatcher 360 rules card lists them with the reason but leaves them out of the "not posted" number.
+  Carrier portal: such a carrier sees "Add your truck first" + **+ Add a truck** (`#fleet/add-truck`) instead of
+  "post your availability". Applied staging + prod; prod check: THE WAY HOME LLC shows the new chip, anon names unchanged.
+- **Pending:** `drop function app_private.email_block_note(text, text, uuid, text, text);` (fixes `sys_email` raising on a
+  catalog row set to `off`). Not applied — the MCP held it for approval and timed out. Run it on staging, then prod.

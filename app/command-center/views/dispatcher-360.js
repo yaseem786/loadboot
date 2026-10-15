@@ -673,7 +673,8 @@ export async function renderDispatcher360(host, query) {
     const gate = ru.availability_gate_mode || 'warn', rule = ru.call_rule_mode || 'warn', days = Number(ru.availability_fresh_days || 7);
     const urgent = Number(cs.urgent || 0), off = Number(cs.offpolicy || 0);
     const wl = (dd.assignments || []).filter((a) => a.status === 'active' && a.availability && a.availability.fresh === false);
-    const waiting = Math.max(Number(cs.waiting_availability || 0), wl.length);
+    // bl_comm_0557 — a carrier with no truck yet is listed (with why) but is not "waiting for availability": they cannot post.
+    const waiting = Math.max(Number(cs.waiting_availability || 0), wl.filter((a) => a.availability.reason !== 'no_trucks').length);
     const mode = (label, m) => { const [txt, cls] = RL_MODE[m] || RL_MODE.warn; return el('div', { class: 'd3-rl-mode ' + cls }, [el('i', { class: 'dt' }), el('div', null, [el('span', null, label), el('b', null, txt)])]); };
     const stat = (n, label, tone, tip) => el('div', { class: 'd3-rl-stat ' + tone, title: tip }, [el('b', null, String(n)), el('span', null, label)]);
     return card('Rules & call reasons', 'What every dispatcher follows · this dispatcher, last 7 days', 'shield', el('div', { class: 'd3-pad' }, [
