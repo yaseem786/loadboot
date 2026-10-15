@@ -1,0 +1,121 @@
+/* ============================================================================
+   agent-theme.css — dispatcher (agent) portal theme layer (bl_ui_theme, 15 Oct 2026): LIGHT + a dark fix-up.
+   Light-first: the workspace is light, the sidebar stays navy. Dark = carrier-dark.css, switched on by
+   applyTheme() in carrier/app.js only when the dispatcher picks Dark (or System on a dark device).
+   ADDITIVE + REVERSIBLE: every rule is scoped to html[data-lbtheme="light"|"dark"]; delete this <link> (and the
+   media="not all" on carrier-dark.css in agent/index.html) to go back to dark-only.
+
+   The portal's JS draws many colours inline. Those literals now read var(--lbc-x-<role>, <old literal>):
+   the --lbc-x-* roles below exist ONLY in light, so in dark every one falls back to its exact old colour.
+   Role → semantic token (app/shared/theme.css, all WCAG AA on light surfaces):
+   ========================================================================== */
+html[data-lbtheme="light"] {
+  --lbc-x-ink: var(--lbc-text);
+  --lbc-x-ink2: var(--lbc-text-2);
+  --lbc-x-ink3: var(--lbc-text-3);
+  --lbc-x-ok: var(--lbc-ok-text);
+  --lbc-x-gold: var(--lbc-gold-text);
+  --lbc-x-danger: var(--lbc-danger-text);
+  --lbc-x-warn: var(--lbc-warn-text);
+  --lbc-x-link: var(--lbc-link);
+  --lbc-x-violet: #6D28D9;
+  --lbc-x-panel: var(--lbc-surface-2);
+  --lbc-x-line: var(--lbc-border);
+  --lbc-x-field: var(--lbc-surface);
+  --lbc-x-hero: linear-gradient(160deg, #FFFFFF 0%, #F1F5FB 100%);
+  background: var(--lbc-bg);
+}
+html[data-lbtheme="light"] body { background: var(--lbc-bg); color: var(--lbc-text); }
+
+/* ---------- shell: navy rail, light workspace ---------- */
+html[data-lbtheme="light"] .cp-side { background: linear-gradient(180deg, var(--lbc-rail-bg) 0%, #0D1C33 100%); color: var(--lbc-rail-text); }
+html[data-lbtheme="light"] .cp-main { background: var(--lbc-bg); }
+html[data-lbtheme="light"] .cp-top { background: rgba(255, 255, 255, .92); border-bottom-color: var(--lbc-border); }
+html[data-lbtheme="light"] .cp-top-title { color: var(--lbc-text); }
+html[data-lbtheme="light"] .cp-iconbtn { background: var(--lbc-surface); border-color: var(--lbc-border); color: var(--lbc-text-2); }
+html[data-lbtheme="light"] .cp-iconbtn:hover { color: var(--lbc-link); border-color: var(--lbc-accent); }
+html[data-lbtheme="light"] .cp-card { background: var(--lbc-surface); border-color: var(--lbc-border); color: var(--lbc-text); box-shadow: var(--lbc-shadow); }
+html[data-lbtheme="light"] .cp-cardhead h3, html[data-lbtheme="light"] .cp-card h3 { color: var(--lbc-text); }
+html[data-lbtheme="light"] .cp-row-s, html[data-lbtheme="light"] .cp-muted, html[data-lbtheme="light"] .cp-cardhead-sub { color: var(--lbc-text-2); }
+html[data-lbtheme="light"] .cp-pill { background: var(--lbc-surface-2); border-color: var(--lbc-border); }
+html[data-lbtheme="light"] :focus-visible { outline: 2px solid var(--lbc-focus); outline-offset: 2px; }
+html[data-lbtheme="light"] .lb-theme-btn { font-size: 1.05rem; line-height: 1; }
+
+/* ---------- dispatcher workspace (.dw — its own variable set) ---------- */
+html[data-lbtheme="light"] .dw {
+  --dw-line: var(--lbc-border);
+  --dw-line2: var(--lbc-border-2);
+  --dw-panel: var(--lbc-surface);
+  --dw-panel2: var(--lbc-surface-2);
+  --dw-ink: var(--lbc-text);
+  --dw-ink2: var(--lbc-text-2);
+  --dw-muted: var(--lbc-text-3);
+  --dw-blue: var(--lbc-link);
+  --dw-orange: var(--lbc-warn);
+}
+html[data-lbtheme="light"] .dw .dw-in,
+html[data-lbtheme="light"] .dw select,
+html[data-lbtheme="light"] .dw textarea { background: var(--lbc-surface); color: var(--lbc-text); border-color: var(--lbc-border-2); }
+html[data-lbtheme="light"] .dw .dw-in::placeholder, html[data-lbtheme="light"] .dw textarea::placeholder { color: var(--lbc-text-3); }
+html[data-lbtheme="light"] .dw-card, html[data-lbtheme="light"] .dw-kpi { box-shadow: var(--lbc-shadow); }
+/* Phone hamburger drawer = the phone version of the navy sidebar, so it stays navy in light too (owner, 15 Oct 2026).
+   `initial` makes each role guaranteed-invalid inside the drawer, so every var(--lbc-x-*, <old literal>) there falls
+   back to its dark literal — the drawer looks exactly like Dark mode while the page behind it is light. */
+html[data-lbtheme="light"] .dw-dr {
+  --lbc-x-ink: initial; --lbc-x-ink2: initial; --lbc-x-ink3: initial; --lbc-x-ok: initial; --lbc-x-gold: initial;
+  --lbc-x-danger: initial; --lbc-x-warn: initial; --lbc-x-link: initial; --lbc-x-violet: initial;
+  --lbc-x-panel: initial; --lbc-x-line: initial; --lbc-x-field: initial; --lbc-x-hero: initial;
+  color-scheme: dark;
+}
+html[data-lbtheme="light"] .dw-btn.accent { background: var(--lbc-tint-warn); border-color: rgba(252, 83, 5, .45); box-shadow: none; }
+html[data-lbtheme="light"] .dw-toast { box-shadow: 0 10px 30px rgba(16, 34, 59, .18); }
+
+/* ---------- choose-a-carrier sheet (.cyc — its own variable set) ---------- */
+html[data-lbtheme="light"] .cyc {
+  --line: var(--lbc-border);
+  --panel: var(--lbc-surface-2);
+  --ink: var(--lbc-text);
+  --mut: var(--lbc-text-2);
+  --blue: var(--lbc-link);
+}
+
+/* The TRAINING / DEMO banner (app/shared/training-banner.js) draws its own navy + orange in both themes — untouched. */
+
+/* ============================================================================
+   DARK fix-up. carrier.css has older html[data-lbtheme="dark"] rules (flat #0b1220 page, #111c33 cards) that
+   out-rank carrier-dark.css's plain selectors. Before bl_ui_theme the agent portal only got them on devices set
+   to system-dark; now Dark always sets the attribute, so the premium carrier-dark look is restored here with the
+   same specificity, loaded later. Generated 1:1 from carrier-dark.css (same values, @media nesting kept).
+   ========================================================================== */
+html[data-lbtheme="dark"] body { background: #0d1c34; background: radial-gradient(1100px 620px at 12% -6%, #1a3055 0%, rgba(15,29,54,0) 55%), radial-gradient(900px 560px at 100% 0%, rgba(252,83,5,.10) 0%, rgba(15,29,54,0) 48%), linear-gradient(180deg, #10233f 0%, #0d1c34 46%, #0b1830 100%); background-attachment: fixed; color: #eaf1fb; }
+html[data-lbtheme="dark"] .cp-main { background: transparent; }
+html[data-lbtheme="dark"] h1, html[data-lbtheme="dark"] h2, html[data-lbtheme="dark"] h3 { color: #eaf1fb; }
+html[data-lbtheme="dark"] .cp-top { background: rgba(7,11,20,.86); border-bottom-color: rgba(255,255,255,.09); }
+html[data-lbtheme="dark"] .cp-top-title { color: #eaf1fb; }
+html[data-lbtheme="dark"] .cp-card, html[data-lbtheme="dark"] .cp-stat, html[data-lbtheme="dark"] .cp-load, html[data-lbtheme="dark"] .cp-kpi { background: linear-gradient(162deg, rgba(28,44,74,.55) 0%, rgba(17,28,49,.72) 100%); border-color: rgba(130,165,225,.16); color: #eaf1fb; box-shadow: 0 18px 40px -28px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.04); backdrop-filter: blur(6px); }
+html[data-lbtheme="dark"] .cp-stat-v { color: #eaf1fb; }
+html[data-lbtheme="dark"] .cp-muted, html[data-lbtheme="dark"] .cp-row-s, html[data-lbtheme="dark"] .cp-load-meta { color: #8ea2c3; }
+html[data-lbtheme="dark"] .cp-row { border-bottom-color: rgba(255,255,255,.07); }
+html[data-lbtheme="dark"] .cp-row-t { color: #eaf1fb; }
+html[data-lbtheme="dark"] .cp-tag { background: rgba(8,131,247,.14); color: #9cc5f4; }
+html[data-lbtheme="dark"] .cp-in, html[data-lbtheme="dark"] select.cp-in, html[data-lbtheme="dark"] textarea.cp-in { background: #0c1628; border-color: rgba(255,255,255,.14); color: #eaf1fb; }
+html[data-lbtheme="dark"] .cp-btn.ghost { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); color: #eaf1fb; }
+html[data-lbtheme="dark"] .cp-btn.sec { background: rgba(255,255,255,.08); color: #eaf1fb; }
+html[data-lbtheme="dark"] .cp-modal-card { background: #111c31; color: #eaf1fb; }
+html[data-lbtheme="dark"] .cp-menu { background: #111c31; border-color: rgba(255,255,255,.09); }
+@media (max-width: 900px) {
+  html[data-lbtheme="dark"] .cp-tabbar { background: rgba(12,22,40,.86); border-top: 0; box-shadow: inset 0 1px 0 rgba(150,180,225,.13), 0 -10px 30px -20px rgba(0,0,0,.85); }
+  @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  html[data-lbtheme="dark"] .cp-tabbar { background: #0c1628; }
+}
+  html[data-lbtheme="dark"] .cp-tabbar .cp-navlink { color: #8ea2c3; }
+  html[data-lbtheme="dark"] .cp-tabbar .cp-navlink.active { color: #3b9dff; background: rgba(8,131,247,.18); }
+  html[data-lbtheme="dark"] .cp-tabbar .cp-fab { color: #8ea2c3; }
+  html[data-lbtheme="dark"] .cp-tabbar .cp-fab .cp-fab-in { border-color: #0c1628; box-shadow: 0 10px 22px -8px rgba(8,131,247,.85), 0 2px 5px -1px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.35); }
+  html[data-lbtheme="dark"] .cp-tab-badge { border-color: #0c1628; }
+}
+html[data-lbtheme="dark"] .cp-card, html[data-lbtheme="dark"] .cp-stat, html[data-lbtheme="dark"] .cp-load, html[data-lbtheme="dark"] .cp-modal-card { background: linear-gradient(180deg, #131f36 0%, #101a2e 100%); }
+html[data-lbtheme="dark"] .cp-card { border-color: rgba(255,255,255,.09); box-shadow: 0 12px 30px -20px rgba(0,0,0,.6); }
+html[data-lbtheme="dark"] .cp-btn.ghost { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); color: #eaf1fb; }
+html[data-lbtheme="dark"] .cp-card { overflow:hidden }
+html[data-lbtheme="dark"] .cp-row-t { overflow-wrap:anywhere }
