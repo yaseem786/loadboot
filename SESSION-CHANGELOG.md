@@ -650,3 +650,17 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   confirm popups no longer say "45 minutes, one attempt".
 - DB: STAGING applied + rolled-back E2E 15 Oct. PROD applied 15 Oct 2026 (via base64 execute_sql — apply_migration hung),
   anon SECDEF 36, names = baseline. Nothing re-sent on deploy (1-day window).
+
+## Carrier exit hold — deletion request stops every touchpoint, dispatcher released reason-free (bl_acct_0550, 15 Oct 2026)
+- New `app_private.comm_holds` + `comm_on_hold()`; `request_account_deletion` now calls `on_account_deletion_requested`
+  (never fails the request). Held orgs = owned / sole speaker only (a driver deleting their login holds only themselves).
+- Dispatcher assignments of held orgs ended (`end_reason 'loadboot: carrier exit'`, shown as "Ended by LoadBoot"),
+  open posts withdrawn, pending_rc bookings cancelled (moving freight left alone + flagged to staff), contact release
+  revoked, thread line, dispatcher e-mail `dispatcher.assignment.ended.carrier_exit` (email_kit) + in-app, staff summary.
+- Enforcement at the queues: `sys_email` check + BEFORE INSERT guards on message_deliveries, push_outbox,
+  wa_auto_outbox, riley_call_plans, doc_sms_queue; doc_sms_sweep reason; retell_dial refuses held numbers;
+  dispatcher_post_load refuses held orgs; trial stats ignore hold-cancelled bookings. Essential mail exempt.
+- Cancel / staff reject lifts the hold (assignments not restored). CC Deletion requests: "Automatic actions" card +
+  "Apply exit hold now" for older requests (#16 not auto-applied).
+- DB: STAGING applied + rolled-back E2E 15 Oct (anon SECDEF 35, names unchanged). PROD: owner runs the file —
+  steps in docs/ACCOUNT-EXIT-HOLD-0550.md.

@@ -478,6 +478,8 @@ export const ccAccountDeletionProcess = async (id, action, note) => {
 };
 // bl_priv_0437 — Deletion desk (CC → Deletion requests). One enriched read + the per-file erasure review.
 export const ccAccountDeletions = (view) => rpc('cc_account_deletions', { p_view: view || 'open' });
+// bl_acct_0550 — carrier exit hold, for requests filed before it existed (new requests get it automatically).
+export const ccAccountExitHoldApply = (requestId) => rpc('cc_account_exit_hold_apply', { p_request: requestId });
 export const ccErasureItems = (requestId) => rpc('cc_erasure_items', { p_request_id: requestId });
 export const ccErasureDecide = (requestId, itemKey, decision, retentionClass, retainUntil, note) =>
   rpc('cc_erasure_decide', { p_request_id: requestId, p_item_key: itemKey, p_decision: decision,
