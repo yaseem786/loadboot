@@ -620,6 +620,10 @@ export const dispatcherMyPosts = (org, limit) => rpc('dispatcher_my_posts', { p_
 export const dispatcherBrokerScreen = (mc) => rpc('dispatcher_broker_screen', { p_mc: mc });
 export const carrierDispatcherLoadDecide = (load, action, reason, truck) => rpc('carrier_dispatcher_load_decide', { p_load: load, p_action: action, p_reason: reason ?? null, p_truck: truck ?? null });
 export const ccDispatcherPosts = (o = {}) => rpc('cc_dispatcher_posts', { p_org: o.org ?? null, p_user: o.user ?? null, p_limit: o.limit ?? 100 });
+// bl_disp_0551 — "seen" ping from the carrier app (board | detail), staff hide/unhide/delete/restore, staff alert to the dispatcher
+export const carrierDispatcherPostSeen = (load, kind) => rpc('carrier_dispatcher_post_seen', { p_load: load, p_kind: kind || 'board' });
+export const ccDispatcherPostAction = (load, action, reason) => rpc('cc_dispatcher_post_action', { p_load: load, p_action: action, p_reason: reason ?? null });
+export const ccDispatcherPostAlert = (load, message) => rpc('cc_dispatcher_post_alert', { p_load: load, p_message: message });
 export const dispatcherUpdatePosting = (org, id, action) => rpc('dispatcher_update_posting', { p_org: org, p_id: id, p_action: action });
 export const dispatcherPostingMatches = (org, id) => rpc('dispatcher_posting_matches', { p_org: org, p_id: id });
 export const dispatcherMyKpis = (days) => rpc('dispatcher_my_kpis', { p_days: days ?? 30 });
