@@ -320,7 +320,7 @@ export async function renderSmsCenter(host) {
     return el('div', null, [
       el('div', { class: 'sc-form' }, [
         el('label', null, ['Wait after the last decision (min)', deb, el('small', null, 'Decisions inside this window become one text.')]),
-        el('label', null, ['Max document texts per carrier / day', cap, el('small', null, 'Counted over 24 hours.')]),
+        el('label', null, ['Max texts per carrier / day (all kinds)', cap, el('small', null, 'Document + email texts, counted over 24 hours. Account notices are never held back.')]),
         b,
       ]),
       dl.first_suffix_unicode ? el('div', { class: 'sc-warn' }, [
