@@ -10,7 +10,7 @@ import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who
 import { prefsCard as sharedPrefsCard, prefsSourcesMap } from '../../shared/ui/prefs-card.js';   // bl_pref_0536 — aliased: `prefsCard` below is the local card() element
 import { ccCarrierFieldSources, ccFieldSuggestions, ccFieldSuggestionDecide } from '../../shared/api.js';
 import { ccDocSmsStatus } from '../../shared/api.js';   // bl_dial_0540 (N)
-import { dispatcherWithdrawLoad } from '../../shared/api.js';   // bl_disp_0549 — staff can withdraw a dispatcher-posted load
+import { dispatcherPostsPanel } from './dispatcherPosts.js';   // bl_disp_0549 → 0551 — dispatcher-posted loads (shared with Dispatcher 360)
 import { dispatchHoldPanel } from './dispatchHold.js';   // bl_disp_0501 — hold from dispatchers
 import { icon } from '../../shared/ui/icons.js';
 
@@ -631,34 +631,8 @@ export function renderCarrier360(host, orgId) {
 
     // bl_disp_0549 — loads the carrier's dispatcher posted from DAT / Truckstop / … onto THIS carrier's board (source +
     // dispatcher name + the carrier's decision). Staff can withdraw an open post; the dispatcher is audited either way.
-    const dposts = Array.isArray(d.dispatcher_posts) ? d.dispatcher_posts : [];
-    const DP_TONE = { available: ['OPEN', '#b45309', '#fff7ed'], carrier_accepted: ['ACCEPTED', '#166534', '#f0fdf4'], booked: ['BOOKED', '#166534', '#f0fdf4'], declined: ['DECLINED', '#991b1b', '#fef2f2'], expired: ['EXPIRED', '#475569', '#f1f5f9'], withdrawn: ['WITHDRAWN', '#475569', '#f1f5f9'] };
-    const dispPostsCard = card([
-      el('h4', { class: 'cc-card-title' }, 'Loads posted by the dispatcher' + (dposts.length ? ' (' + dposts.length + ')' : '')),
-      el('div', { class: 'cc-sub', style: 'margin-bottom:8px' }, 'Found on a 3rd-party board and posted on this carrier’s LoadBoot board, tagged with the dispatcher’s name. Only this carrier sees them. "Accepted" opens a dispatcher booking (pending RC) — approve it under Dispatchers as usual.'),
-      dposts.length ? el('table', { class: 'cc-table cc-table-tight' }, [
-        el('thead', null, el('tr', null, [el('th', null, 'Lane'), el('th', null, 'Rate'), el('th', null, 'Source'), el('th', null, 'Dispatcher'), el('th', null, 'Status'), el('th', null, 'Posted'), el('th', null, '')])),
-        el('tbody', null, dposts.map((x) => {
-          const st = (x.status === 'available' && x.expires_at && new Date(x.expires_at) <= new Date()) ? 'expired' : x.status;
-          const t = DP_TONE[st] || [String(st).toUpperCase(), '#475569', '#f1f5f9'];
-          const dec = x.decision || {};
-          return el('tr', null, [
-            el('td', null, [el('b', null, (x.origin || '—') + ' → ' + (x.destination || '—')), el('div', { class: 'cc-sub' }, [x.equipment, x.miles ? x.miles + ' mi' : null, x.pickup_date ? 'PU ' + fmtDate(x.pickup_date) : null, x.broker].filter(Boolean).join(' · '))]),
-            el('td', null, [money(x.rate), x.rpm != null ? el('div', { class: 'cc-sub' }, '$' + Number(x.rpm).toFixed(2) + '/mi' + (x.below_min ? ' · ⚠ below floor' : '')) : '', x.below_min && x.below_min_reason ? el('div', { class: 'cc-sub', title: x.below_min_reason }, 'Reason: ' + x.below_min_reason) : '']),
-            el('td', null, [x.board_label || x.board || '—', x.source_reference ? el('div', { class: 'cc-sub' }, 'ref ' + x.source_reference) : '']),
-            el('td', null, x.dispatcher ? el('a', { href: '#/dispatchers?id=' + encodeURIComponent(x.dispatcher_user || ''), style: 'font-weight:700' }, x.dispatcher) : '—'),
-            el('td', null, [el('span', { style: 'display:inline-block;padding:2px 9px;border-radius:999px;font-weight:800;font-size:11px;background:' + t[2] + ';color:' + t[1] }, t[0]), st === 'declined' && dec.reason ? el('div', { class: 'cc-sub', title: dec.reason }, 'Carrier: ' + dec.reason) : '', x.booking && x.booking.id ? el('div', { class: 'cc-sub' }, 'booking ' + String(x.booking.status || '').replace(/_/g, ' ')) : '']),
-            el('td', null, [fmtDateTime(x.created_at), st === 'available' && x.expires_at ? el('div', { class: 'cc-sub' }, 'expires ' + fmtDateTime(x.expires_at)) : '']),
-            el('td', null, st === 'available' ? el('button', { class: 'cc-btn cc-btn-sm', onClick: async () => {
-              const why = await askReason('Withdraw this dispatcher post?', { placeholder: 'Reason — the dispatcher and (if they opened it) the carrier see it', confirmLabel: 'Withdraw' });
-              if (why == null) return;
-              try { const r = await dispatcherWithdrawLoad(x.id, why); if (r && r.error) throw new Error(r.error); toast('Post withdrawn' + (r.carrier_notified ? ' — carrier notified' : '')); load(); }
-              catch (e) { toast(humanizeError(e), 'error'); }
-            } }, 'Withdraw') : ''),
-          ]);
-        })),
-      ]) : el('div', { class: 'cc-sub' }, 'No dispatcher-posted loads yet.'),
-    ]);
+    // bl_disp_0551 — the shared premium panel: every posted field, the carrier's journey, gaps, staff alert / hide / delete.
+    const dispPostsCard = card([dispatcherPostsPanel({ org: orgId })]);
     const trips = d.recent_trips || [];
     const tripsCard = card([
       el('h4', { class: 'cc-card-title' }, 'Recent trips'),

@@ -26,6 +26,7 @@ import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { el, mount, clear } from '../shared/ui/dom.js';
 import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
 import { roadMiles } from '../shared/usGeo.js';
+import { postMissing, postSeenLine } from '../shared/dispatcher-post-quality.js';   // bl_disp_0551 — seen + gaps on your posts
 import { icon as sharedIcon } from '../shared/ui/icons.js';
 import { dispatchLiveJoin } from '../shared/dispatch-live.js';
 import { mountDispatcherMail } from '../shared/dmail.js';   // bl_dmail_0356 — company mailbox assigned from the Command Center; no login here
@@ -1282,6 +1283,11 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
           return h('div', { class: 'dw-book', style: 'cursor:default' }, [
             h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, p0.origin + ' → ' + p0.destination), h('span', null, [p0.below_min ? h('span', { class: 'dw-pill', style: 'color:#fbbf24;border-color:currentColor;margin-right:6px', title: p0.below_min_reason || '' }, 'BELOW FLOOR') : null, h('span', { class: 'dw-pill', style: 'color:' + pm[1] + ';border-color:currentColor' }, pm[0])])]),
             h('div', { class: 'dw-muted', style: 'margin-top:4px' }, [money(p0.rate), p0.rpm != null ? '$' + Number(p0.rpm).toFixed(2) + '/mi' : null, p0.miles ? num(p0.miles) + ' mi' : null, p0.equipment, 'PU ' + dwDay(p0.pickup_date), p0.broker, 'found on ' + (p0.board_label || p0.board || '—'), st === 'available' ? '⏳ ' + leftTxt(p0.expires_at) : null, 'posted ' + ago(p0.created_at)].filter(Boolean).join(' · ')),
+            // bl_disp_0551 — did the carrier see it, what is missing, and anything LoadBoot told you about it
+            (() => { const sn = p0.seen || {}; return h('div', { class: sn.opened_at ? 'dw-ok' : 'dw-info', style: 'margin-top:6px' }, '👁 ' + postSeenLine(p0, (x) => ago(x))); })(),
+            (() => { const ms = postMissing(p0); const hi = ms.filter((x) => x.level === 'high'); const lo = ms.filter((x) => x.level !== 'high');
+              return ms.length ? h('div', { class: hi.length ? 'dw-warn' : 'dw-muted', style: 'margin-top:6px' }, (hi.length ? '⚠ Missing: ' + hi.map((x) => x.label).join(', ') + (lo.length ? ' · also: ' : '') : 'Could add: ') + lo.map((x) => x.label).join(', ')) : null; })(),
+            Array.isArray(p0.staff_alerts) && p0.staff_alerts.length ? h('div', { class: 'dw-warn', style: 'margin-top:6px' }, p0.staff_alerts.slice(-2).map((a9) => h('div', null, '🔔 LoadBoot (' + (a9.by || 'staff') + ', ' + ago(a9.at) + '): ' + a9.message))) : null,
             st === 'declined' && dec.reason ? h('div', { class: 'dw-warn', style: 'margin-top:6px' }, 'Carrier declined: ' + dec.reason) : null,
             st === 'carrier_accepted' ? h('div', { class: 'dw-ok', style: 'margin-top:6px' }, 'Carrier said “I’ll take it” — get the rate confirmation from the broker and attach it to the booking.') : null,
             st === 'withdrawn' && wd.reason ? h('div', { class: 'dw-muted', style: 'margin-top:4px' }, 'Withdrawn: ' + wd.reason) : null,

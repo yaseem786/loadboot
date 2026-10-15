@@ -28,6 +28,7 @@ import { REASONS, BOARD_RULE, noteContradictsBoardRule } from '../../agent/dispa
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { renderTestPanel } from './dispatcher-test.js';
 import { can } from '../../shared/permissions.js';   // bl_sec_0509 — dispatch.view opens this page read-only
+import { dispatcherPostsPanel } from './dispatcherPosts.js';   // bl_disp_0551
 
 const ET = 'America/New_York';
 const et = (v) => { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleString('en-US', { timeZone: ET, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET'; };
@@ -994,6 +995,12 @@ export async function renderDispatcher360(host, query) {
     ]));
   }
 
+  // bl_disp_0551 — loads this dispatcher posted on carriers' LoadBoot boards (same panel as Carrier 360)
+  function postsCard() {
+    return card('Loads posted on carrier boards', 'Everything they entered, what each carrier did (seen · opened · accepted / declined), what is missing — alert, hide or delete', 'route',
+      el('div', { class: 'd3-pad' }, dispatcherPostsPanel({ user: id, noTitle: true })), [], null);
+  }
+
   // ---- compose
   function body() {
     const left = []; const right = [];
@@ -1001,7 +1008,7 @@ export async function renderDispatcher360(host, query) {
     else if (tab === 'test') { const h = el('div'); renderTestPanel(h, { userId: id, name: state.dd.profile.full_name, onChange: () => rerender('test') }); left.push(h); right.push(signalsCard(), applicationCard()); }
     else if (tab === 'carriers') { left.push(...reportCards(), ...choiceCards(), carriersCard(true)); right.push(termsCard(), signalsCard(), activityCard()); }
     else if (tab === 'performance') { left.push(scorecardCard(true), trialReportsCard(), readinessCard()); right.push(termsCard(), signalsCard()); }
-    else if (tab === 'loads') { left.push(loadsCard()); right.push(carriersCard(false), termsCard()); }
+    else if (tab === 'loads') { left.push(postsCard(), loadsCard()); right.push(carriersCard(false), termsCard()); }
     else if (tab === 'money') { left.push(moneyCard()); right.push(termsCard(), activityCard()); }
     else if (tab === 'messages') { left.push(messagesCard()); right.push(carriersCard(false), activityCard()); }
     else if (tab === 'timeline') { left.push(card('Timeline', 'Everything the system recorded, newest first', 'activity', el('div', { class: 'd3-pad' }, activityList()), [], 'timeline')); right.push(termsCard(), noteCard()); }

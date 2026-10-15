@@ -28,7 +28,7 @@ import {
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringRemitUpdate, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
   carrierEldSetup, carrierAccountingExport, carrierFuelImport, carrierFleetOptimization, qboAuthUrl, qboStatus,
   submitReinstatement, myReinstatements, poaThread, myStrikes, claimEscalate, pocketUploadTripDoc, pocketCancelTrip, cancelPreview, tripPickupStatus,
-  carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail, carrierDispatcherLoadDecide,
+  carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail, carrierDispatcherLoadDecide, carrierDispatcherPostSeen,
   tripEmergencyRequest, tripMyEmergencies,
   rateCounterparty, myRating, carrierRateableTrips, pocketMarkAllNotificationsRead,
   postTruck, myTruckPostings, truckPostingMatches, updateTruckPosting, scanTruckMatches, confirmTruckPosting, myAvailabilityStatus, updateTruckPostingPlace, setTruckPostingAvailable,
@@ -455,6 +455,10 @@ function lbSourceProvider(l) { const n = lbSourceNotice(l); return (n && n.provi
 // bl_disp_0549: a load the carrier's OWN dispatcher posted from a 3rd-party board (DAT/Truckstop/…) — details.dispatcher_post
 // on board rows, dispatcher_post on cc_load_detail. Only this carrier ever receives it (server-side), so the badge is a fact.
 function lbDispPost(l) { const d = l && (l.dispatcher_post || (l.details && l.details.dispatcher_post)); return (d && typeof d === 'object') ? d : null; }
+// bl_disp_0551: tell the dispatcher (and LoadBoot) the post reached the carrier — 'board' once per session when the card
+// renders, 'detail' every time it is opened. Server ignores staff / the poster / non-members; failures never surface.
+const _lbDispSeen = new Set();
+function lbDispSeen(id, kind) { if (!id) return; const k = id + ':' + kind; if (kind === 'board' && _lbDispSeen.has(k)) return; _lbDispSeen.add(k); try { carrierDispatcherPostSeen(id, kind).catch(() => {}); } catch (_) {} }
 function lbDispName(dp) { const n = String((dp && dp.dispatcher_name) || '').trim(); return n ? n.split(/\s+/)[0] : 'your dispatcher'; }
 function lbDispCountdown(iso) {
   const cd = h('span', { style: 'font-variant-numeric:tabular-nums' }, '—');
@@ -5067,6 +5071,7 @@ async function appView(user) {
       // bl_disp_0549: a load posted by the carrier's own dispatcher — the broker is off-platform, so "Book" means
       // "I'll take it": the dispatcher gets the RC and LoadBoot approves it, same pipeline as every dispatcher booking.
       const dp9 = lbDispPost(l);
+      if (dp9) lbDispSeen(l.id, 'board');
       if (dp9) { bookWrap.innerHTML = ''; lbDispActions(l, bookWrap, (what9) => { if (what9 === 'declined') setTimeout(() => { try { const i9 = rows.indexOf(l); if (i9 >= 0) rows.splice(i9, 1); renderList(); } catch (_) {} }, 1200); }); }
       const detailsBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(l.id) }, 'Details');
       const meta = [];
@@ -5459,6 +5464,7 @@ async function appView(user) {
     // bl_disp_0549: a load the carrier's own dispatcher posted — every field, the broker screen, the terms, the
     // countdown and the two decisions sit at the top; the standard overview follows underneath.
     const dpD9 = lbDispPost(d);
+    if (dpD9) lbDispSeen(d.load_id || d.id || loadId, 'detail');
     const dispBlock9 = dpD9 ? (function () {
       const dx = (d.terms && d.terms.details) || {}; const acc = (d.terms && d.terms.accessorials) || {}; const bs = dx.broker_screen || {};
       const row9 = (k, v) => (v == null || v === '') ? null : h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', { style: 'text-align:right' }, String(v))]);
