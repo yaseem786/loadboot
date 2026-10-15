@@ -58,11 +58,15 @@ New helpers: `npa_tz(number)` (area code → US zone, null when unknown), `riley
    party Riley says that line first, then the AI + recorded line above. If you want the very first words to be the
    spec opener, the clean way is a follow-up: pass an `opener` variable from `retell_dial` and set begin_message to
    `{{opener}}` (not done here — begin_message is shared by every outbound call).
-2. **Retell → Riley Outbound → Post-call analysis**: add a text field **`confirmed`** — "One line: what the person
-   confirmed (yes/no per item asked). Empty if nothing was confirmed." Without it, `outcome.confirmed` falls back
-   to the call summary.
-3. Staging only, for the test with your own phone: staging has `tool.schedule_riley_call` switched **off** and the
-   Outbound prompt unpublished, so nothing can dial there until you switch both on.
+2. **`confirmed` post-call field — nothing to do by hand.** It is in `POST_CALL_ANALYSIS` in
+   `supabase/functions/retell-admin/index.ts` (deployed 15 Oct: prod v9, staging v7), so step 1's Publish puts it on the
+   agent. Do NOT add it in the Retell dashboard: every Publish overwrites the post-call fields with that list, so a
+   dashboard-only field would be wiped by the next Publish. Without it, `outcome.confirmed` falls back to the call summary.
+3. **Staging and prod share ONE Retell Outbound agent** (same agent id + API key; checked 15 Oct). Publishing from
+   STAGING CC pushes staging's prompt text and begin_message onto the live Riley that prod dials with. So never press
+   Publish on staging. For a staging phone test: publish on PROD (step 1), then copy prod's Outbound prompt row into
+   staging's `riley_prompts` and mark it published there by SQL (no Retell call), and switch staging's
+   `tool.schedule_riley_call` on for the test only (it is off). Staging dials from +1 (737) 306-1175.
 
 ## Test (staging, 15 Oct)
 - Validation: no name / bad role / bad number / unknown area code / non-US zone / no purpose note / no carrier for a

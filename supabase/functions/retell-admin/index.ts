@@ -4,6 +4,9 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // bl_voice_0525 (2026-10-08): post-call analysis — equipment_type gains sprinter_van + cargo_van (a Sprinter was
 // tagged "hotshot", a cargo van "box_truck"); contact_email no longer requires a confirmed read-back (it was left
 // empty on 4 of 6 calls where an email was given, so the promised follow-up email never went out).
+// bl_voice_0555 (2026-10-15): post-call analysis gains `confirmed` (third-party calls). It lives HERE, not in the Retell
+// dashboard: every publish overwrites post_call_analysis_data with this list, so a dashboard-only field is wiped.
+// Staging and prod share ONE Retell outbound agent, so both must run this same version.
 //
 // WHY. Riley's prompts, agent wiring and phone-number mapping lived only in the Retell dashboard, and on
 // 7 Sep the inbound line was left pointing at a one-off "Broker Outbound" script by hand. Postgres cannot
@@ -124,6 +127,10 @@ const POST_CALL_ANALYSIS = [
     description: "hot = asked to sign up, gave MC, or wants loads right away. warm = interested, thinking / call back. cold = listened, no real interest. not_interested = said no or asked not to be contacted. wrong_number = a person said it is the wrong number, or spam, vendor, robocall. voicemail = only a voicemail greeting or answering machine, no live person. ivr = only a company phone menu, recording or hold queue, no live person reached (bl_voice_0524)." },
   { name: "next_step", type: "string", description: "The single next step Riley promised, in one sentence, e.g. 'team emails document checklist', 'dispatcher confirms load within the hour'. Empty if none." },
   { name: "needs_human", type: "boolean", description: "true if the caller raised a specific load, payment, claim, dispute or complaint that a human must follow up, or asked for a person. false otherwise." },
+  // bl_voice_0555: third-party calls (factoring / insurer / broker about a carrier) → riley_plan_on_call writes it to outcome.confirmed
+  { name: "confirmed", type: "string", required: false,
+    description: "One line: what the person confirmed, yes or no per item Riley asked, e.g. 'NOA on file: yes; payments current: no'. Empty if nothing was confirmed.",
+    conditional_prompt: "Populate only on a call where Riley called a business on behalf of LoadBoot about a carrier and asked them to confirm items. Never include account numbers, amounts or other values; yes / no only." },
 ];
 
 function agentIdFor(cfg: Cfg, key: string): string | null {
