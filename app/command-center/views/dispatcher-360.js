@@ -22,6 +22,8 @@ import { ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSo
 import { humanizeError, toast } from '../../shared/errors.js';
 import { ccDispatcherSetRejectReasons, ccDispatcherChoices, ccDispatcherChoiceDecide } from '../../shared/api.js';   // bl_disp_0442 — carrier choices
 import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
+import { ccDispDeskConfig, ccDispDeskConfigSet, ccDispCallReasons, ccDispCallReasonSet } from '../../shared/api.js';   // bl_disp_0555 — availability gate + call rule
+import { STANDING_RULES } from '../../shared/dispatcher-rules.js';
 import { ccDispatcherReports, ccDispatcherReportDecide } from '../../shared/api.js';   // bl_disp_0443 — carrier reports → permanent block
 import { ccDispatcherTrialReports, ccDispatcherTrialAck } from '../../shared/api.js';   // bl_disp_0485 — trial daily report history + feedback
 import { REASONS, BOARD_RULE, noteContradictsBoardRule } from '../../agent/dispatcher-gaps.js';
@@ -602,6 +604,60 @@ export async function renderDispatcher360(host, query) {
       ])).concat([weakest && weakest.note ? el('div', { style: 'display:flex;gap:9px;align-items:flex-start;margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff7f2;font-size:12.2px;color:#7c2d12' }, [el('span', { style: 'color:#c2410c;margin-top:2px' }, icon('alert', 15)), el('div', null, [el('b', null, weakest.label + ' is holding the score down. '), weakest.note])]) : ''])),
       [], 'overview');
   }
+  // bl_disp_0555 — the standing rules, this dispatcher's call counts, and the switches (warn → enforce) + the CC call-reason list
+  function rulesCard() {
+    const dd = state.dd || {}; const cs = dd.calls || {}; const ru = dd.rules || {};
+    const waiting = Number(cs.waiting_availability || 0), urgent = Number(cs.urgent || 0), off = Number(cs.offpolicy || 0);
+    return card('Rules & call reasons', 'availability gate: ' + (ru.availability_gate_mode || 'warn') + ' · call rule: ' + (ru.call_rule_mode || 'warn') + ' · ' + (ru.availability_fresh_days || 7) + '-day post', 'shield', el('div', null, [
+      el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px' }, [
+        pill(waiting + ' carrier' + (waiting === 1 ? '' : 's') + ' waiting for availability', waiting ? 'orange' : 'green', waiting ? 'alert' : 'check'),
+        pill(urgent + ' urgent call' + (urgent === 1 ? '' : 's') + ' · 7d', urgent > 5 ? 'orange' : 'blue', 'phone'),
+        off ? pill(off + ' outside the rule · 7d', 'orange', 'alert') : pill('0 outside the rule', 'green'),
+      ]),
+      el('div', { class: 'd3-mut', style: 'font-size:12px;line-height:1.6' }, STANDING_RULES.map((r, i) => el('div', null, [el('b', null, (i + 1) + '. ' + r[0] + '. '), r[1]]))),
+      Array.isArray(cs.recent) && cs.recent.length ? el('div', { style: 'margin-top:8px' }, [el('b', { style: 'font-size:12px' }, 'Recent urgent / off-rule calls'), ...cs.recent.slice(0, 6).map((c) => el('div', { class: 'd3-mut', style: 'font-size:12px' }, dShort(c.at) + ' · ' + (c.carrier || '') + ' · ' + (c.policy === 'urgent' ? 'URGENT' : 'outside the rule') + ' · ' + (c.reason || '') + (c.note ? ' — ' + c.note : '') + (c.answered ? '' : ' · no answer')))]) : '',
+      el('div', { style: 'margin-top:10px' }, btn('Modes & call reasons', rulesDrawer, 'sm', 'shield')),
+    ]));
+  }
+  async function rulesDrawer() {
+    const [cfg, rs] = await Promise.all([ccDispDeskConfig().catch(() => []), ccDispCallReasons().catch(() => ({}))]);
+    const cfgRows = Array.isArray(cfg) ? cfg : []; const val = (k) => { const r = cfgRows.find((x) => x.key === k); return r ? (r.value || '') : ''; };
+    const body = el('div', { style: 'display:grid;gap:12px' });
+    const sel = (key, options, label, why) => {
+      const s = el('select', { class: 'cc-input', style: 'max-width:220px' }, options.map(([v, l]) => el('option', { value: v, selected: val(key) === v ? '' : undefined }, l)));
+      s.addEventListener('change', async () => { const r = await ccDispDeskConfigSet(key, s.value).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ ' + label + ' → ' + s.value); rerender('dd'); });
+      return el('div', null, [el('b', null, label), el('div', { class: 'd3-mut', style: 'font-size:12px;margin:2px 0 4px' }, why), s]);
+    };
+    const days = el('input', { class: 'cc-input', type: 'number', min: '1', max: '30', value: val('availability_fresh_days') || '7', style: 'width:90px' });
+    days.addEventListener('change', async () => { const r = await ccDispDeskConfigSet('availability_fresh_days', days.value).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ post counts for ' + days.value + ' days'); });
+    body.appendChild(el('div', { class: 'cc-sub', style: 'line-height:1.5' }, 'Start in WARN: nothing is blocked, carriers are reminded once a day, chips and counts show who is waiting. Flip to ENFORCE when carriers are posting — then a carrier with a dispatcher sees no loads until they post, and the dispatcher cannot post or book for them.'));
+    body.appendChild(sel('availability_gate_mode', [['off', 'Off — no gate, no reminders'], ['warn', 'Warn — chips + daily reminder, nothing blocked'], ['enforce', 'Enforce — board hidden, dispatcher cannot post/book']], 'Availability gate', 'The carrier posts availability (their own truck posting or Trucks-tab line). A dispatcher-entered line never counts.'));
+    body.appendChild(el('div', null, [el('b', null, 'Post counts for'), el('div', { class: 'd3-mut', style: 'font-size:12px;margin:2px 0 4px' }, 'days — after that the carrier is "waiting for availability" again'), days]));
+    body.appendChild(sel('call_rule_mode', [['warn', 'Warn — a non-urgent call after the intro is allowed but counted'], ['enforce', 'Enforce — the phone refuses it']], 'Call rule after the intro', 'One intro call per carrier (set when the answered call had reason "intro"). After it: urgent reasons only. A reason is always required; a callback within 30 min of the carrier’s call needs none.'));
+    // reasons table
+    const list = el('div', { style: 'display:grid;gap:6px' });
+    const paintReasons = (data) => {
+      mount(list, (data.reasons || []).map((r) => {
+        const lab = el('input', { class: 'cc-input', value: r.label || '', style: 'flex:1;min-width:200px' });
+        const urg = el('input', { type: 'checkbox', checked: r.urgent ? '' : undefined, disabled: ['intro', 'callback'].includes(r.code) ? '' : undefined });
+        const act = el('input', { type: 'checkbox', checked: r.active ? '' : undefined, disabled: ['intro', 'callback'].includes(r.code) ? '' : undefined });
+        const srt = el('input', { class: 'cc-input', type: 'number', value: r.sort ?? 100, style: 'width:70px' });
+        const hint = el('input', { class: 'cc-input', value: r.hint || '', placeholder: 'hint the dispatcher sees', style: 'flex:1;min-width:200px' });
+        const saveB = btn('Save', async () => { const x = await ccDispCallReasonSet({ code: r.code, label: lab.value, urgent: urg.checked, active: act.checked, sort: Number(srt.value) || 100, hint: hint.value }).catch((e) => ({ error: humanizeError(e) })); if (x && x.error) { toast(x.error); return; } toast('✓ ' + r.code + ' saved'); paintReasons(x); }, 'sm');
+        return el('div', { style: 'border:1px solid #e5e7eb;border-radius:8px;padding:8px' }, [
+          el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [el('code', { style: 'font-size:11px' }, r.code), lab, el('label', { style: 'font-size:12px' }, [urg, ' urgent']), el('label', { style: 'font-size:12px' }, [act, ' active']), srt, saveB]),
+          el('div', { style: 'display:flex;gap:8px;margin-top:6px' }, [hint]),
+        ]);
+      }));
+    };
+    paintReasons(rs || {});
+    const code = el('input', { class: 'cc-input', placeholder: 'new code (a-z, 0-9, _)', style: 'width:180px' }); const nlab = el('input', { class: 'cc-input', placeholder: 'label', style: 'flex:1;min-width:200px' }); const nurg = el('input', { type: 'checkbox' });
+    const addB = btn('Add reason', async () => { const x = await ccDispCallReasonSet({ code: code.value, label: nlab.value, urgent: nurg.checked, active: true }).catch((e) => ({ error: humanizeError(e) })); if (x && x.error) { toast(x.error); return; } code.value = ''; nlab.value = ''; nurg.checked = false; toast('✓ added'); paintReasons(x); }, 'sm');
+    body.appendChild(el('div', null, [el('b', null, 'Call reasons (what the phone offers before a carrier call)'), el('div', { class: 'd3-mut', style: 'font-size:12px;margin:2px 0 8px' }, 'Urgent = allowed after the intro. Not urgent = allowed before the intro only (warn: allowed + counted). intro and callback cannot be switched off.'), list,
+      el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px' }, [code, nlab, el('label', { style: 'font-size:12px' }, [nurg, ' urgent']), addB])]));
+    openDrawer('Rules & call reasons', body, { size: 'lg' });
+  }
+
   function carrierCard(a) {
     const sop = a.sop || {}; const quiet = (() => { const last = (state.bookings || []).filter((b) => b.carrier_org_id === a.carrier_org_id || b.carrier === a.carrier).map((b) => b.created_at).sort().pop(); return last ? { last, d: daysBetween(last, new Date()) } : null; })();
     const warn = a.status === 'active' && (!quiet || quiet.d >= 3);
@@ -628,6 +684,9 @@ export async function renderDispatcher360(host, query) {
         btn('End', async () => { if (!(await askConfirm('End this assignment?', { body: 'The carrier frees up for reassignment and is told LoadBoot dispatch covers the truck. Blocked while loads are moving unless you add "force".', danger: true }))) return; const reason = await askReason('Reason (dispatcher + carrier see it)'); if (reason === null) return; const r = await ccDispatcherUnassign(a.id, reason, false).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ ended'); rerender('dd'); }, 'sm danger', 'x')]),
       fieldSourcesPanel(a.carrier_org_id, true),   // bl_disp_0459
       el('div', { class: 'd3-spec' }, [
+        // bl_disp_0555 — the carrier's own availability post (7-day rule) + the one intro call
+        el('div', null, [el('b', null, [icon('cal', 11), 'Availability']), a.availability ? (a.availability.fresh ? el('span', { style: 'color:#15803d' }, '✓ posted ' + a.availability.last_label + ' · ' + (a.availability.trucks || 0) + ' truck' + (a.availability.trucks === 1 ? '' : 's')) : el('span', { style: 'color:' + (a.availability.blocked ? '#b91c1c' : '#b45309') }, (a.availability.chip || 'Waiting for availability') + (a.availability.blocked ? ' · board hidden' : ''))) : '—']),
+        el('div', null, [el('b', null, [icon('phone', 11), 'Intro call']), a.intro_call_at ? 'done ' + dShort(a.intro_call_at) + ' · urgent only since' : el('span', { style: 'color:#b45309' }, a.status === 'active' ? 'pending — the one call' : '—')]),
         el('div', null, [el('b', null, [icon('truck', 11), 'Trucks']), String(a.trucks || 0) + ' active']),
         el('div', null, [el('b', null, [icon('user', 11), 'Contact']), a.carrier_contact || '—']),
         el('div', null, [el('b', null, [icon('dollar', 11), 'Floor']), sop.min_rate ? '$' + Number(sop.min_rate).toFixed(2) + '/mi' + (sop.min_rate_note ? ' · ' + sop.min_rate_note : '') : el('span', { style: 'color:#b45309' }, 'no floor set')]),
@@ -1004,7 +1063,7 @@ export async function renderDispatcher360(host, query) {
   // ---- compose
   function body() {
     const left = []; const right = [];
-    if (tab === 'overview') { left.push(...reportCards(), ...choiceCards(), ...(trialOpen() ? [trialReportsCard()] : []), nbaCard(), readinessCard(), carriersCard(false), scorecardCard(false)); right.push(termsCard(), documentsCard(false), signalsCard(), activityCard(), noteCard()); }   // bl_disp_0442: a waiting carrier choice comes first
+    if (tab === 'overview') { left.push(...reportCards(), ...choiceCards(), ...(trialOpen() ? [trialReportsCard()] : []), nbaCard(), readinessCard(), carriersCard(false), scorecardCard(false)); right.push(termsCard(), rulesCard(), documentsCard(false), signalsCard(), activityCard(), noteCard()); }   // bl_disp_0555: rulesCard   // bl_disp_0442: a waiting carrier choice comes first
     else if (tab === 'test') { const h = el('div'); renderTestPanel(h, { userId: id, name: state.dd.profile.full_name, onChange: () => rerender('test') }); left.push(h); right.push(signalsCard(), applicationCard()); }
     else if (tab === 'carriers') { left.push(...reportCards(), ...choiceCards(), carriersCard(true)); right.push(termsCard(), signalsCard(), activityCard()); }
     else if (tab === 'performance') { left.push(scorecardCard(true), trialReportsCard(), readinessCard()); right.push(termsCard(), signalsCard()); }

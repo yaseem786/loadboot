@@ -16,6 +16,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { threadChat } from '../../shared/thread-chat.js';   // bl_ui_0502
 import { icon } from '../../shared/ui/icons.js';
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm, openDrawer } from '../../shared/ui/components.js';
+import { STANDING_RULES } from '../../shared/dispatcher-rules.js';   // bl_disp_0555
 import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSop,
          ccDispatcherUnassign, getCarriersDirectory, ccCarrierPrefs,
          ccDispatcherSetTerms, ccDispatcherBookings, ccDispatcherBookingDecide, ccDispatcherCommissionStatus, ccDispatcherCommissionList,
@@ -865,6 +866,11 @@ export function renderDispatchers(host) {
         el('div', { role: 'dialog', 'aria-modal': 'true', class: 'cc-xdlg cc-xdlg-sm', onClick: (e) => e.stopPropagation() }, [
           el('div', { style: 'font-weight:800;margin-bottom:4px' }, 'SOP — ' + (a.carrier || 'carrier')),
           el('div', { class: 'cc-sub', style: 'margin-bottom:10px;line-height:1.5' }, '⚖️ Scope basis keeps this carrier’s loads NON-overlapping with your other carriers — so no load is ever "allocated" between carriers (FMCSA 88 FR 39371). The floor is what the rate check uses: a booking under it needs your written reason to approve.'),
+          // bl_disp_0555 — standing rules apply to every carrier and are not part of the per-carrier SOP (the dispatcher reads them in the brief e-mail, the thread and the workspace)
+          el('div', { class: 'cc-sub', style: 'background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.5' }, [
+            el('b', null, 'LoadBoot standing rules (every carrier, not editable here): '),
+            STANDING_RULES.map((r9, i9) => (i9 + 1) + '. ' + r9[0] + '. ').join(''),
+            el('span', null, 'Modes and the call-reason list: Dispatcher 360 → Rules & call reasons.')]),
           prefsHint,
           el('label', { class: 'cc-sub' }, 'Scope basis (required for compliance)'), scopeType, scopeVal,
           el('label', { class: 'cc-sub', style: 'margin-top:8px;display:block' }, 'Floor rate $/loaded mile (number)'), el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [minRate, minNote]),

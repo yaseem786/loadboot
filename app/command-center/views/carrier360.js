@@ -160,6 +160,15 @@ export function renderCarrier360(host, orgId) {
       ]));
     })();
 
+    // bl_disp_0555 — availability gate + the one intro call, as the dispatcher side sees it
+    if (d.dispatcher_assignment) {
+      const g = d.availability_gate || {}; const da = d.dispatcher_assignment;
+      body.appendChild(card('Dispatcher · availability + intro call', el('div', { class: 'cc-sub', style: 'line-height:1.7' }, [
+        el('div', null, [el('b', null, da.dispatcher || 'Dispatcher'), ' · assigned ' + String(da.assigned_at || '').slice(0, 10) + (da.intro_call_at ? ' · intro call done ' + String(da.intro_call_at).slice(0, 10) + ' — urgent calls only since' : ' · intro call pending (the one call the dispatcher makes)')]),
+        el('div', { style: 'color:' + (g.fresh ? '#15803d' : g.blocked ? '#b91c1c' : '#b45309') + ';font-weight:700' }, g.fresh ? '✓ Availability posted by the carrier ' + g.last_label + ' · ' + (g.trucks || 0) + ' truck(s)' : (g.chip || 'Waiting for availability') + (g.blocked ? ' · board hidden, dispatcher cannot post (enforce)' : ' · warn mode — nothing blocked, carrier reminded once a day')),
+        el('div', null, 'A line the dispatcher enters in Trucks never counts — only the carrier’s own post (truck posting or Trucks-tab line, within ' + (g.days || 7) + ' days). Modes: Dispatcher 360 → Rules & call reasons.'),
+      ])));
+    }
     // bl_disp_0410 — why no dispatcher yet: the reason the carrier reads on their Dispatcher tab once the 3-business-day window passes.
     (() => {
       const REASONS = [['authority_new', 'Authority too new — brokers not releasing freight yet'], ['capacity', 'All dispatchers at full load'], ['docs_pending', 'A document is still in verification'], ['working', 'Working on it — needs more time'], ['other', 'Other (write the note)']];

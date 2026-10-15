@@ -39,7 +39,8 @@ import {
   laneRate, fuelPricesGet, deviceSeen, myDevices, facilityReviewSubmit, facilityRatings,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } from '../shared/storage.js';
-import { setPostingHos } from '../shared/api.js';
+import { setPostingHos } from '../shared/api.js'
+import { carrierAvailabilityGate } from '../shared/api.js';   // bl_disp_0555 — availability gate (dispatcher assigned + no fresh post of your own);
 import { formProgressPing, formProgressDone } from '../shared/api.js';
 import { pocketFieldSuggestions, pocketFieldSuggestionDecide } from '../shared/api.js';   // bl_fill_0534 — dispatcher suggestions on locked fields
 import { sessionDemoState } from '../shared/api.js';   // bl_train_0548 — demo / training banner
@@ -4658,6 +4659,20 @@ async function appView(user) {
         } });
     };
     paintAvailL();
+    // bl_disp_0555 — a carrier WITH a dispatcher and no fresh availability post of their own: warn = banner, enforce = the board is
+    // empty (server side) and this card says why. One button → the quick post. Carriers without a dispatcher never see it.
+    const gateHostL = h('div');
+    const paintGateL = async () => {
+      let g = null; try { g = await carrierAvailabilityGate(); } catch (_) { g = null; }
+      if (!g || !g.assigned || g.fresh) { gateHostL.innerHTML = ''; return; }
+      const last = g.last_label === 'never' ? 'You have not posted availability yet' : 'Your last post was ' + g.last_label + ' — older than ' + (g.days || 7) + ' days';
+      mount(gateHostL, h('div', { class: 'cp-card', style: 'margin-bottom:12px;border:1px solid ' + (g.blocked ? '#ef4444' : '#f59e0b') + ';background:' + (g.blocked ? 'rgba(239,68,68,.08)' : 'rgba(245,158,11,.08)') }, [
+        h('div', { class: 'cp-row-t' }, [icon('truck', 15), g.blocked ? ' You can’t see loads until you post your availability' : ' Your dispatcher hunts loads by your availability — post today’s']),
+        h('div', { class: 'cp-row-s', style: 'margin:4px 0 10px' }, last + '. Your dispatcher works only trucks you have marked available' + (g.blocked ? '; the board opens the moment you post.' : '.') + ' It takes 30 seconds.'),
+        h('button', { class: 'cp-btn', onClick: () => openQuickPost('empty') }, '+ Post availability'),
+      ]));
+    };
+    paintGateL();
     try { const k9 = sessionStorage.getItem('lb:avail:kind'); if (k9) { sessionStorage.removeItem('lb:avail:kind');
       if (k9 === '__reactivate__') { const p9 = (postings || []).find(x9 => x9.status === 'paused'); setTimeout(() => openPostingForm(p9 || null, p9 ? undefined : 'empty'), 300); }
       else setTimeout(() => openPostingForm(null, k9), 300); } } catch (_) {}
@@ -4944,7 +4959,7 @@ async function appView(user) {
         ]);
       }
     } catch (_) {}
-    if (!rows || !rows.length) { mount(availWrap, h('div', null, [availHostL, truckCard, setupBanner, bestCard, (function () {
+    if (!rows || !rows.length) { mount(availWrap, h('div', null, [gateHostL, availHostL, truckCard, setupBanner, bestCard, (function () {
       const dp9 = _dp || {};
       const prefsSet9 = !!(dp9.min_rpm || (dp9.preferred_equipment || []).length || (dp9.preferred_lanes || []).length);
       return h('div', { class: 'cp-card', style: 'text-align:center;padding:34px 22px', 'data-tour': 'loads-empty' }, [
@@ -5479,7 +5494,7 @@ async function appView(user) {
       moreBtn9.style.display = _lbMore9 ? 'block' : 'none';
       renderList(); enrichDh9(true);
     });
-    mount(availWrap, h('div', null, [availHostL, truckCard, filterBar, setupBanner, bestCard, gridHost, moreBtn9].filter(Boolean)));
+    mount(availWrap, h('div', null, [gateHostL, availHostL, truckCard, filterBar, setupBanner, bestCard, gridHost, moreBtn9].filter(Boolean)));
     mount(content, h('div', null, [gpsBanner, capNudge, tabsBar, reqHost, availWrap].filter(Boolean)));
     renderList();
     try { const de9 = window.__lbDeepEnt; if (de9 && de9.tab === 'loads' && de9.id) { window.__lbDeepEnt = null; showLoadDetail(de9.id); } } catch (_) {}

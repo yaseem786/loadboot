@@ -651,6 +651,23 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
 - DB: STAGING applied + rolled-back E2E 15 Oct. PROD applied 15 Oct 2026 (via base64 execute_sql — apply_migration hung),
   anon SECDEF 36, names = baseline. Nothing re-sent on deploy (1-day window).
 
+## Availability-first dispatching + one-intro-call rule (bl_disp_0555, 15 Oct 2026) — WARN mode
+- The CARRIER posts availability (their own truck posting or Trucks-tab line, 7 days); a dispatcher-written line never counts.
+  `disp_desk_config`: `availability_gate_mode` off|warn|**enforce** (deploys as warn), `availability_fresh_days`, `call_rule_mode`.
+  Warn: chips everywhere, carrier notice `carrier.availability.required` (in-app + email_kit, once/24 h, stops when fresh, cron
+  `lb-disp-avail-sweep` hourly + at assign), `availability_warning` on dispatcher posts/books, counts. Enforce: carrier board empty +
+  full-width card, dispatcher post/book/availability-write refused. CC → Dispatcher 360 → Rules & call reasons flips it.
+- Calls: one intro call per assignment (`dispatcher_assignments.intro_call_at`, set by trigger on the answered call with reason
+  `intro`); every carrier call needs a reason from the CC list (`app_private.disp_call_reasons`, editable); after the intro urgent
+  reasons only (warn: allowed + counted as `offpolicy` + staff notice; enforce: refused); callback within 30 min and inbound always
+  allowed. Thread system lines for intro / urgent / off-rule calls. `dialer_calls.reason_code / reason_note / policy`.
+- Standing rules text (one SQL source) in the dispatcher brief e-mail, the thread at assignment, the workspace, CC SOP dialog;
+  `disp_load_stage` = step / whose move / next action on every dispatcher post (workspace + Carrier 360). Daily trial e-mail
+  tiles *Waiting for availability* + *Urgent calls*; `cc_dispatcher_360.calls`. Design + step table: docs/AVAILABILITY-GATE-0555.md.
+- DB: STAGING applied 15 Oct in parts + rolled-back E2E (all scenarios in the doc). Anon SECDEF 35, names unchanged.
+  PROD applied 15 Oct 2026 in parts (trigger created alone with lock_timeout — the drop/create batch hangs the MCP); anon SECDEF 36,
+  names = baseline; cron lb-disp-avail-sweep live; 4 active carriers all read "waiting" (warn → chips + one reminder/24 h). Next number 0556.
+- UI: node --check + ESM ALL PASS (237) + imports PASS + esbuild OK ×6. Not rendered in a browser.
 ## Dispatcher posts — carrier told when a post expires (bl_disp_0553, 15 Oct 2026)
 - Gap: `app_private.disp_posts_expire()` told only the dispatcher; the carrier's board drops the post at `expires_at`,
   so for the carrier it just vanished. Now up to 3 active non-driver carrier members get an in-app notice
@@ -705,5 +722,5 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   dispatcher_post_load refuses held orgs; trial stats ignore hold-cancelled bookings. Essential mail exempt.
 - Cancel / staff reject lifts the hold (assignments not restored). CC Deletion requests: "Automatic actions" card +
   "Apply exit hold now" for older requests (#16 not auto-applied).
-- DB: STAGING applied + rolled-back E2E 15 Oct (anon SECDEF 35, names unchanged). PROD: owner runs the file —
-  steps in docs/ACCOUNT-EXIT-HOLD-0550.md.
+- DB: STAGING applied + rolled-back E2E 15 Oct (anon SECDEF 35, names unchanged). PROD applied 15 Oct 2026 —
+  details in docs/ACCOUNT-EXIT-HOLD-0550.md §6.

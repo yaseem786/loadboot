@@ -82,7 +82,15 @@ cancelled; new doc SMS skipped; `dispatcher_post_load` refused; second apply = `
 staff notice, assignment stays ended. Driver-only request: only the driver held, employer org and owner not held.
 Anon SECDEF in public on staging: 35, names unchanged; `cc_account_exit_hold_apply` not anon-executable.
 
-## 6. Prod — run it yourself
+## 6. Prod — APPLIED 15 Oct 2026
+
+Applied on prod (`rwscphuhpjoudvljvmdk`) on 15 Oct 2026. Verified after the run: anon SECURITY DEFINER count 36 and the
+names match `docs/audit-2026-09/anon-secdef-baseline.md`; 5 `a1_comm_hold_guard` triggers; function md5s identical to
+staging. Request #16 (T STRICK TRANSPORT LLC): **Apply exit hold now** pressed in CC at 20:17:59 UTC (audit 6314); the
+dispatcher-release email to Andrew Higgins was delivered at 20:18:01 UTC and carries no word of the reason.
+
+Steps as run (kept for reference / a re-apply):
+
 
 1. Supabase → prod (`rwscphuhpjoudvljvmdk`) → SQL editor → paste **all of** `migrations/bl_acct_0550_carrier_exit_hold.sql`
    → Run. It is one transaction; any anchor that moved aborts the whole file (all 11 were checked on prod 15 Oct: each
@@ -97,7 +105,7 @@ Anon SECDEF in public on staging: 35, names unchanged; `cc_account_exit_hold_app
    select count(*) from app_private.comm_holds;                                                          -- 0 (nothing applied to #16)
    ```
    and compare the anon NAMES with `docs/audit-2026-09/anon-secdef-baseline.md`.
-3. Request #16 stays untouched until you press **Apply exit hold now** on it in CC.
+3. Request #16 stayed untouched until **Apply exit hold now** was pressed on it in CC (done 20:17:59 UTC, above).
 
 Rollback: drop the five `a1_comm_hold_guard` triggers; re-create the 11 patched functions from their previous
 definitions (anchor-replace back); `update app_private.email_catalog set status='retired'` for the three keys.
