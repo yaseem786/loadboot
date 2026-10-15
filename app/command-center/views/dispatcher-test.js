@@ -100,7 +100,7 @@ export function renderTestPanel(host, opts) {
   function inviteBtn(again) {
     return btn(again ? 'Send another' : 'Send skills test', async () => {
       const ok = await askConfirm(again ? 'Send another skills test?' : 'Send the skills test?', {
-        body: (again ? 'This issues a fresh attempt — the previous one stays on the record. ' : '') + 'The candidate gets one e-mail with a button into their portal: ' + INVITE_MINUTES + ' minutes once they press Start, must start within ' + INVITE_START_HOURS + ' hours. Bank v2 draws one item per group, so no two candidates get the same test.',
+        body: (again ? 'This issues a fresh attempt — the previous one stays on the record. ' : '') + 'The candidate gets one e-mail with a button into their portal: ' + INVITE_MINUTES + ' minutes once they press Start, must start within ' + INVITE_START_HOURS + ' hours. If they do not start, LoadBoot re-invites them automatically up to 3 times. Bank v2 draws one item per group, so no two candidates get the same test.',
         confirmLabel: 'Send it' });
       if (!ok) return;
       const r = await ccDispatcherTestInvite(userId, INVITE_MINUTES, INVITE_START_HOURS).catch((e) => ({ error: humanizeError(e) }));
@@ -114,11 +114,11 @@ export function renderTestPanel(host, opts) {
   function statusCard() {
     const st = t.state; let body; const actions = [];
     if (st === 'none') { body = 'Not sent yet. The candidate gets a short e-mail with one button into the test screen in their portal.'; actions.push(inviteBtn(false)); }
-    else if (st === 'invited') body = 'Invited ' + fmtDateTime(t.invited_at) + ' — not started yet. Must start by ' + fmtDateTime(t.start_by) + ' (' + t.minutes + ' minutes once started).';
+    else if (st === 'invited') body = (t.auto_reinvite ? 'Automatic re-invite ' + t.auto_reinvite + ' of 3, sent ' : 'Invited ') + fmtDateTime(t.invited_at) + ' — not started yet. Must start by ' + fmtDateTime(t.start_by) + ' (' + t.minutes + ' minutes once started).';
     else if (st === 'in_progress') body = 'In progress — started ' + fmtDateTime(t.started_at) + ', clock ends ' + fmtDateTime(t.ends_at) + '. Nothing to grade until it is submitted.';
-    else if (st === 'expired') { body = 'Expired without a submission. Send another only if there was a real reason — a lapsed invite is itself a signal.'; actions.push(inviteBtn(true)); }
+    else if (st === 'expired') { body = t.auto_reinvite >= 3 ? 'Expired unstarted after the original invite and 3 automatic re-invites (bl_disp_0553). Nothing more goes out on its own — send another only if there is a real reason.' : 'Expired without a submission. If it was never started, LoadBoot re-invites automatically (up to 3 times) within 10 minutes; a started-but-blank test is not re-sent.'; actions.push(inviteBtn(true)); }
     return card('Skills test', st === 'none' ? 'Bank v2 · ' + (t.bank_size || '—') + ' live items' : 'Attempt ' + (t.attempt_no || 1), 'clipboard', el('div', { class: 'd3-pad' }, [el('div', { style: 'font-size:12.8px;line-height:1.6' }, body),
-      (t.history || []).length > 1 ? el('div', { class: 'd3-mut', style: 'font-size:11.8px;margin-top:8px' }, 'Earlier: ' + t.history.filter((h) => h.no !== t.attempt_no).map((h) => 'attempt ' + h.no + ' · ' + h.status + (h.score != null ? ' · ' + h.score : '') + (h.decision ? ' · ' + h.decision : '')).join(' · ')) : '']), actions);
+      (t.history || []).length > 1 ? el('div', { class: 'd3-mut', style: 'font-size:11.8px;margin-top:8px' }, 'Earlier: ' + t.history.filter((h) => h.no !== t.attempt_no).map((h) => 'attempt ' + h.no + (h.auto ? ' (auto ' + h.auto + '/3)' : '') + ' · ' + h.status + (h.score != null ? ' · ' + h.score : '') + (h.decision ? ' · ' + h.decision : '')).join(' · ')) : '']), actions);
   }
 
   // ---- per-question current values (draft over saved)

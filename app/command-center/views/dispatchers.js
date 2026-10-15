@@ -538,11 +538,11 @@ export function renderDispatchers(host) {
       return el('button', { class: 'lb-btn', onClick: async () => {
         const ok = await askConfirm(again ? 'Send another skills test?' : 'Send the skills test?', {
           body: (again ? 'This issues a fresh attempt — the previous one stays on the record, and the new one is numbered so you can see it was a second go. ' : '')
-              + 'The candidate gets a short e-mail with one button into their portal: 45 minutes once they press Start, and they must start within 48 hours.',
+              + 'The candidate gets a short e-mail with one button into their portal: 75 minutes once they press Start, and they must start within 48 hours. If they do not start, LoadBoot re-invites them automatically up to 3 times.',
           confirmLabel: 'Send it',
         });
         if (!ok) return;
-        const r = await ccDispatcherTestInvite(x.user_id, 45, 48).catch((e) => ({ error: humanizeError(e) }));
+        const r = await ccDispatcherTestInvite(x.user_id).catch((e) => ({ error: humanizeError(e) }));
         if (r && r.error) { toast(r.error); return; }
         toast('✓ Skills test sent'); rerender();
       } }, label);
@@ -558,9 +558,9 @@ export function renderDispatchers(host) {
       ]);
 
       if (st === 'none') { mount(body, el('div', { class: 'cc-sub' }, 'Not sent yet. The candidate gets a short e-mail with one button into the test screen in their portal.')); return; }
-      if (st === 'invited') { mount(body, el('div', { class: 'cc-sub' }, 'Invited ' + fmtDateTime(t.invited_at) + ' — not started yet. Must start by ' + fmtDateTime(t.start_by) + ' (' + t.minutes + ' minutes once started).')); return; }
+      if (st === 'invited') { mount(body, el('div', { class: 'cc-sub' }, (t.auto_reinvite ? 'Automatic re-invite ' + t.auto_reinvite + ' of 3, sent ' : 'Invited ') + fmtDateTime(t.invited_at) + ' — not started yet. Must start by ' + fmtDateTime(t.start_by) + ' (' + t.minutes + ' minutes once started).')); return; }
       if (st === 'in_progress') { mount(body, el('div', { class: 'cc-sub' }, 'In progress — started ' + fmtDateTime(t.started_at) + ', clock ends ' + fmtDateTime(t.ends_at) + '.')); return; }
-      if (st === 'expired') { mount(body, el('div', { class: 'cc-sub' }, 'Expired without a submission. Send another only if there was a real reason — a lapsed invite is itself a signal.')); return; }
+      if (st === 'expired') { mount(body, el('div', { class: 'cc-sub' }, t.auto_reinvite >= 3 ? 'Expired unstarted after the original invite and 3 automatic re-invites. Nothing more goes out on its own — send another only if there is a real reason.' : 'Expired without a submission. If it was never started, LoadBoot re-invites automatically (up to 3 times) within 10 minutes.')); return; }
 
       const ig = t.integrity || {};
       const scored = (t.staff_score != null ? t.staff_score : t.auto_score);
