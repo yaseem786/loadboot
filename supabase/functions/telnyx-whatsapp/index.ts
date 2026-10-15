@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// telnyx-whatsapp v2 (bl_wa_0367 + bl_wa_0375) — sends ONE WhatsApp message from LoadBoot's single WABA number
+// telnyx-whatsapp v3 (bl_wa_0367 + bl_wa_0375 + bl_wa_0532) — sends ONE WhatsApp message from LoadBoot's single WABA number
 // (+1 815 365 1168, shared by every dispatcher; the conversation has an owner, the number does not). verify_jwt = true.
 // Body: { thread_id } or { to } plus either { body } (free text, only inside the 24-hour window) or
 //       { template: { name, vars: [...] } } (an APPROVED Utility template, the only thing allowed outside the window).
@@ -15,6 +15,12 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // SIGNED link with the service role and puts it in the Telnyx payload. The bucket stays private, the browser
 // never mints the link, and the link dies long before anyone could pass it around.
 // messaging_profile_id is NOT sent: it is not documented for this endpoint, and `from` already routes the message.
+// v3 (bl_wa_0532) - quoted replies. { reply_to: <wa_messages.id> } on any send (text, template, media). wa_send_prepare
+// checks the target is in the same thread (and not hidden from a dispatcher) and puts `context: { message_id }` into
+// whatsapp_message itself - Telnyx's documented shape. A quoted INBOUND message has Meta's wamid; one of OUR OWN
+// messages only has a Telnyx id (Telnyx returns no wamid, see the migration). If Telnyx refuses that id as context
+// (`context_fallback` from the RPC), the SAME request goes once more WITHOUT context - a refused request sent nothing,
+// so nothing is doubled - and the quote simply stays visible in LoadBoot only.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const ANON = Deno.env.get("SUPABASE_ANON_KEY") || "";
@@ -59,6 +65,7 @@ Deno.serve(async (req: Request) => {
     const b = await req.json().catch(() => ({}));
     const p_in: Record<string, unknown> = {};
     if (b?.thread_id) p_in.thread_id = String(b.thread_id);
+    if (b?.reply_to) p_in.reply_to = String(b.reply_to);
     if (b?.to) p_in.to = String(b.to);
     if (typeof b?.body === "string") p_in.body = b.body;
     if (b?.template?.name) p_in.template = { name: String(b.template.name), vars: Array.isArray(b.template.vars) ? b.template.vars.map((v: unknown) => String(v ?? "")) : [] };
@@ -86,19 +93,29 @@ Deno.serve(async (req: Request) => {
       msg[p.media_kind] = { ...(msg[p.media_kind] || {}), link };
     }
 
-    const t = await fetch(`${TX}/messages/whatsapp`, {
+    const post = (wm: Record<string, unknown>) => fetch(`${TX}/messages/whatsapp`, {
       method: "POST", headers: { Authorization: `Bearer ${TELNYX_KEY}`, "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ from: p.from, to: p.to, whatsapp_message: msg }),
+      body: JSON.stringify({ from: p.from, to: p.to, whatsapp_message: wm }),
     });
-    const j = await t.json().catch(() => ({}));
-    const id = j?.data?.id || j?.data?.message_id || j?.id;
+    let t = await post(msg);
+    let j = await t.json().catch(() => ({}));
+    let id = j?.data?.id || j?.data?.message_id || j?.id;
+    let quoteLocal = false;
+    if ((!t.ok || !id) && p.context_fallback && msg.context) {
+      // v3: our own message's Telnyx id was refused as a quote target - send the same message unquoted (once)
+      const { context: _c, ...bare } = msg;
+      t = await post(bare);
+      j = await t.json().catch(() => ({}));
+      id = j?.data?.id || j?.data?.message_id || j?.id;
+      quoteLocal = !!(t.ok && id);
+    }
     if (!t.ok || !id) {
       const why = String(j?.errors?.[0]?.detail || j?.errors?.[0]?.title || ("Telnyx " + t.status)).slice(0, 280);
       const m = await mark(p.id, "failed", null, why);
       return json({ ok: false, error: why, thread_id: p.thread_id, message: m }, 200);
     }
     const m = await mark(p.id, "sent", String(id), null);
-    return json({ ok: true, thread_id: p.thread_id, message: m });
+    return json({ ok: true, thread_id: p.thread_id, message: m, quote_local: quoteLocal });
   } catch (e) {
     return json({ ok: false, error: String((e as Error)?.message || e) }, 500);
   }

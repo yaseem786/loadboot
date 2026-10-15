@@ -21,12 +21,20 @@ function growTa(ta) { try { ta.style.height = 'auto'; ta.style.height = Math.min
 export function createWaPanel(ctx) {
   const { h, mount, ic, ago, pretty, digits, toast, paint, rootOf, S, api, onCall } = ctx;
   let timer = null;
+  let menuEl = null;   // bl_wa_0532 — the per-bubble menu (Reply / Copy)
 
   const SEC = 'font:700 11px Inter,system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--mu);margin:12px 0 4px';
 
   // bl_wa_0372 - the chat reads like WhatsApp: day separators, delivery ticks, and attachments you can open.
   // Styles are scoped (lbdwa-) and injected once, so dialer.js's own stylesheet is untouched.
   const WA_CSS = `
+.lbdwa-q{display:block;width:100%;box-sizing:border-box;text-align:left;border:0;border-left:3px solid #25d366;background:rgba(255,255,255,.08);border-radius:6px;padding:5px 8px;margin:0 0 6px;font:inherit;font-size:12.5px;line-height:1.35;color:#fff;cursor:pointer}
+.lbdwa-q b{display:block;font-size:11px;color:#25d366}.lbdwa-q span{display:block;color:#cbd7ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lbdwa-q.na span{font-style:italic}
+.lbd-bub.lbdwa-hl{outline:2px solid #53bdeb;outline-offset:2px}
+.lbdwa-rbar{display:flex;align-items:center;gap:8px;padding:6px 8px;margin:6px 0 0;background:rgba(255,255,255,.07);border-left:3px solid #25d366;border-radius:6px;font-size:12.5px;color:#fff}
+.lbdwa-rbar .t{flex:1;min-width:0}.lbdwa-rbar b{display:block;font-size:11px;color:#25d366}.lbdwa-rbar span{display:block;color:#cbd7ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lbdwa-menu{position:fixed;z-index:100001;background:#0b1526;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:6px;box-shadow:0 12px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;min-width:150px}
+.lbdwa-menu button{background:none;border:none;color:#fff;text-align:left;padding:8px 10px;border-radius:6px;font:600 13px Inter,system-ui,sans-serif;cursor:pointer}.lbdwa-menu button:hover{background:rgba(255,255,255,.1)}
 .lbdwa-day{align-self:center;background:rgba(255,255,255,.09);color:#cbd7ee;font:600 10.5px Inter,system-ui,sans-serif;
   padding:3px 10px;border-radius:999px;margin:8px 0 2px;letter-spacing:.3px}
 .lbdwa-img{max-width:230px;max-height:280px;border-radius:12px;display:block;cursor:zoom-in;object-fit:cover}
@@ -191,7 +199,7 @@ export function createWaPanel(ctx) {
     } catch (_) {}
   }
 
-  function close() { if (timer) { clearInterval(timer); timer = null; } S.waId = null; S.waThread = null; S.waDraft = ''; S.waTpl = null; S.waVars = []; clearPend(); msgsBox = null; waTop = 0; waAtEnd = true; }
+  function close() { if (timer) { clearInterval(timer); timer = null; } S.waId = null; S.waThread = null; S.waDraft = ''; S.waTpl = null; S.waVars = []; clearPend(); dropReply(); killMenu(); msgsBox = null; waTop = 0; waAtEnd = true; }
 
   async function loadThread(quiet) {
     if (!S.waId) return;
@@ -231,11 +239,78 @@ export function createWaPanel(ctx) {
   function bubble(m) {
     const failed = m.status === 'failed';
     const media = m.has_media ? mediaEl(m) : null;
-    return h('div', { class: 'lbd-bub' + (m.direction === 'outbound' ? ' out' : '') + (failed ? ' fail' : '') }, [
+    const b = h('div', { class: 'lbd-bub' + (m.direction === 'outbound' ? ' out' : '') + (failed ? ' fail' : ''), 'data-mid': m.id,
+      onDblclick: () => setReply(m),
+      onContextmenu: (e) => { e.preventDefault(); showMenu(m, e.clientX, e.clientY); } }, [
+      quoteEl(m),
       media,
       m.body ? h('div', { class: media ? 'lbdwa-cap' : '' }, m.body) : null,
       metaLine(m),
     ]);
+    swipeReply(b, m);
+    return b;
+  }
+
+  // bl_wa_0532 — quoted replies. Reply = first item of the bubble menu (right-click / long-press), or double-click,
+  // or a swipe to the right on a phone. The quote block in a bubble scrolls to the original and flashes it; a
+  // message hidden from this dispatcher (bl_wa_0487) is only ever "Message hidden" here.
+  function whoOf(m) { const th = S.waThread && S.waThread.thread; return m.direction === 'outbound' ? 'You' : ((th && (th.contact_name || pretty(th.number))) || 'Them'); }
+  function quoteText(q) { return q.hidden ? 'Message hidden' : q.missing ? 'Original message not available' : (q.body || (q.media_kind ? '[' + q.media_kind + ']' : '') || (q.kind === 'template' ? 'Template' : '')); }
+  function quoteEl(m) {
+    const q = m.quote; if (!q) return null;
+    const na = !!(q.hidden || q.missing);
+    return h('button', { class: 'lbdwa-q' + (na ? ' na' : ''), type: 'button', title: na ? null : 'Go to the original message',
+      onClick: (e) => { e.stopPropagation(); jumpTo(q); } }, [na ? null : h('b', null, whoOf(q)), h('span', null, quoteText(q))]);
+  }
+  function jumpTo(q) {
+    if (q.hidden) { toast('Message hidden'); return; }
+    const root = rootOf();
+    const el2 = !q.missing && root ? root.querySelector('[data-walist] [data-mid="' + q.id + '"]') : null;
+    if (!el2) { toast('Original message not available'); return; }
+    el2.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el2.classList.add('lbdwa-hl'); setTimeout(() => el2.classList.remove('lbdwa-hl'), 1800);
+  }
+  function escReply(e) { if (e.key === 'Escape' && S.waReply) { e.preventDefault(); clearReply(); } }
+  function dropReply() { S.waReply = null; document.removeEventListener('keydown', escReply, true); }
+  function setReply(m) {
+    if (!m || !S.waId) return;
+    killMenu();
+    S.waReply = m; document.addEventListener('keydown', escReply, true);
+    paint();
+    const ta = rootOf() && rootOf().querySelector('#lbd-wa'); if (ta) ta.focus();
+  }
+  function clearReply() { dropReply(); paint(); }
+  function replyStrip() {
+    const m = S.waReply; if (!m) return null;
+    return h('div', { class: 'lbdwa-rbar', role: 'status' }, [
+      h('div', { class: 't' }, [h('b', null, 'Replying to ' + whoOf(m)), h('span', null, quoteText({ body: m.body, media_kind: m.media_kind, kind: m.kind }))]),
+      h('button', { class: 'lbd-ib', type: 'button', 'aria-label': 'Cancel reply (Esc)', title: 'Cancel reply (Esc)', onClick: clearReply, style: 'font-size:18px;line-height:1' }, '\u00d7'),
+    ]);
+  }
+  function killMenu() { if (menuEl) { menuEl.remove(); menuEl = null; document.removeEventListener('mousedown', menuOutside, true); } }
+  function menuOutside(e) { if (menuEl && !menuEl.contains(e.target)) killMenu(); }
+  function showMenu(m, x, y) {
+    killMenu();
+    menuEl = h('div', { class: 'lbdwa-menu', role: 'menu' }, [
+      h('button', { type: 'button', role: 'menuitem', onClick: () => setReply(m) }, '\u21a9 Reply'),
+      m.body ? h('button', { type: 'button', role: 'menuitem', onClick: async () => { killMenu(); try { await navigator.clipboard.writeText(m.body); toast('Copied'); } catch (_) { toast('Could not copy'); } } }, 'Copy') : null,
+    ]);
+    document.body.appendChild(menuEl);
+    const r = menuEl.getBoundingClientRect();
+    menuEl.style.left = Math.max(4, Math.min(x, window.innerWidth - r.width - 4)) + 'px';
+    menuEl.style.top = Math.max(4, Math.min(y, window.innerHeight - r.height - 4)) + 'px';
+    setTimeout(() => document.addEventListener('mousedown', menuOutside, true), 0);
+  }
+  function swipeReply(node, m) {      // touch: drag a bubble to the right = reply, like WhatsApp
+    let x0 = 0, y0 = 0, dx = 0, on = false;
+    node.addEventListener('touchstart', (e) => { const p = e.touches[0]; x0 = p.clientX; y0 = p.clientY; dx = 0; on = true; }, { passive: true });
+    node.addEventListener('touchmove', (e) => {
+      if (!on) return; const p = e.touches[0]; const dy = p.clientY - y0; dx = p.clientX - x0;
+      if (Math.abs(dy) > 30 || dx < 0) { dx = 0; on = false; node.style.transform = ''; return; }
+      node.style.transform = 'translateX(' + Math.min(dx, 72) + 'px)';
+    }, { passive: true });
+    const end = () => { const go = on && dx > 56; on = false; node.style.transform = ''; if (go) setReply(m); };
+    node.addEventListener('touchend', end); node.addEventListener('touchcancel', end);
   }
 
   // bl_wa_0386 - the whole list used to be re-mounted on every poll, so each status tick (sent - delivered
@@ -344,10 +419,11 @@ export function createWaPanel(ctx) {
 
   async function send(payload) {
     if (S.waBusy) return;
+    if (S.waReply && !payload.reply_to) payload.reply_to = S.waReply.id;   // bl_wa_0532
     S.waBusy = true; paint();
     try {
       const r = await api.waSend(payload);
-      if (r && r.ok) { S.waDraft = ''; S.waTpl = null; S.waVars = []; }
+      if (r && r.ok) { S.waDraft = ''; S.waTpl = null; S.waVars = []; if (payload.reply_to) { dropReply(); if (r.quote_local) toast('Sent. The quote shows in LoadBoot only — WhatsApp could not attach it to your own earlier message.'); } }
       else toast((r && r.error) || 'Could not send that message.');
     } catch (e) { toast((e && e.message) || 'Could not send that message.'); }
     S.waBusy = false;
@@ -383,8 +459,8 @@ export function createWaPanel(ctx) {
     S.waBusy = true; paint();
     try {
       const up = await api.waUploadMedia(threadId, file);
-      const r = await api.waSend({ thread_id: threadId, media: { ...up, voice: !!voice, caption: voice ? '' : (S.waDraft || '') } });
-      if (r && r.ok) { S.waDraft = ''; clearPend(); }
+      const r = await api.waSend({ thread_id: threadId, reply_to: S.waReply ? S.waReply.id : undefined, media: { ...up, voice: !!voice, caption: voice ? '' : (S.waDraft || '') } });
+      if (r && r.ok) { S.waDraft = ''; clearPend(); if (S.waReply) { dropReply(); if (r.quote_local) toast('Sent. The quote shows in LoadBoot only — WhatsApp could not attach it to your own earlier message.'); } }
       else toast((r && r.error) || 'That attachment could not be sent.');
     } catch (e) { toast((e && e.message) || 'That attachment could not be sent.'); }
     S.waBusy = false;
@@ -539,6 +615,7 @@ export function createWaPanel(ctx) {
       if (rec) return recStrip();                   // bl_wa_0385 - the pill replaces the whole composer
       return h('div', null, [
         pendStrip(),
+        replyStrip(),
         h('div', { class: 'lbd-comp' }, [
           rec ? null : iconBtn(CLIP, S.waPend ? 'Replace the attachment' : 'Attach a file', () => pickFile(t.thread.id)),
           S.waPend ? null : h('button', { class: 'lbd-send', type: 'button', 'data-warec': '1', 'aria-label': rec ? 'Stop and send' : 'Record a voice note',
@@ -548,7 +625,7 @@ export function createWaPanel(ctx) {
           h('textarea', { class: 'lbd-in lbdwa-ta', id: 'lbd-wa', rows: '1', maxlength: '3000',
             placeholder: S.waPend ? 'Add a caption… (optional)' : 'Write a WhatsApp message… (Shift+Enter = new line)', 'aria-label': S.waPend ? 'Caption' : 'Message',
             onInput: (e) => { S.waDraft = e.target.value; growTa(e.target); const b = rootOf().querySelector('[data-wasend]'); if (b) b.disabled = S.waBusy || (!S.waPend && !e.target.value.trim()); },
-            onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); goSend(); } } }, S.waDraft),
+            onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); goSend(); } else if (e.key === 'Escape' && S.waReply) { e.preventDefault(); clearReply(); } } }, S.waDraft),
           h('button', { class: 'lbd-send', 'data-wasend': '1', 'aria-label': S.waPend ? 'Send attachment' : 'Send WhatsApp message',
             disabled: S.waBusy || (!S.waPend && !(S.waDraft || '').trim()), onClick: goSend }, ic('send', 17)),
         ]),
@@ -562,6 +639,7 @@ export function createWaPanel(ctx) {
     }
     const chosen = tpls.find((x) => x.name === S.waTpl) || null;
     return h('div', null, [
+      replyStrip(),
       h('div', { class: 'lbd-note', style: 'margin:0 0 8px' }, 'The 24-hour window is closed — only an approved template can go out.'),
       h('div', { class: 'lbdwa-tpls' }, tpls.map((x) => h('button', {
         type: 'button', class: 'lbdwa-tpl' + (S.waTpl === x.name ? ' on' : ''),
