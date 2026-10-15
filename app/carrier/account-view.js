@@ -31,11 +31,11 @@ function lbConfirm(title, body, okLabel) {
   return new Promise((res) => {
     const ov = document.createElement('div');
     ov.style.cssText = 'position:fixed;inset:0;z-index:4000;background:rgba(4,9,18,.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px';
-    ov.innerHTML = '<div style="background:linear-gradient(180deg,#131f36,#101a2e);border:1px solid rgba(255,255,255,.12);border-radius:18px;max-width:460px;width:100%;padding:22px;box-shadow:0 30px 80px -20px rgba(0,0,0,.85)">'
-      + '<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px"><span style="width:34px;height:34px;border-radius:10px;flex:none;background:rgba(217,119,6,.16);color:#fbbf24;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">!</span>'
-      + '<div style="font-weight:800;font-size:1.02rem;color:#eaf1fb;line-height:1.35;padding-top:5px">' + title + '</div></div>'
-      + '<div style="font-size:.86rem;color:#b9c6db;line-height:1.65;white-space:pre-line;margin-bottom:16px">' + body + '</div>'
-      + '<div style="display:flex;gap:9px;justify-content:flex-end"><button id="lbc-no" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#eaf1fb;border-radius:11px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:inherit">Cancel</button>'
+    ov.innerHTML = '<div style="background:var(--lbc-x-hero,linear-gradient(180deg,#131f36,#101a2e));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:18px;max-width:460px;width:100%;padding:22px;box-shadow:0 30px 80px -20px rgba(0,0,0,.85)">'
+      + '<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px"><span style="width:34px;height:34px;border-radius:10px;flex:none;background:rgba(217,119,6,.16);color:var(--lbc-x-gold,#fbbf24);display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">!</span>'
+      + '<div style="font-weight:800;font-size:1.02rem;color:var(--lbc-x-ink,#eaf1fb);line-height:1.35;padding-top:5px">' + title + '</div></div>'
+      + '<div style="font-size:.86rem;color:var(--lbc-x-ink2,#b9c6db);line-height:1.65;white-space:pre-line;margin-bottom:16px">' + body + '</div>'
+      + '<div style="display:flex;gap:9px;justify-content:flex-end"><button id="lbc-no" style="background:var(--lbc-x-panel,rgba(255,255,255,.07));border:1px solid var(--lbc-x-line,rgba(255,255,255,.14));color:var(--lbc-x-ink,#eaf1fb);border-radius:11px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:inherit">Cancel</button>'
       + '<button id="lbc-ok" style="background:linear-gradient(135deg,#d97706,#f59e0b);border:0;color:#fff;border-radius:11px;padding:10px 16px;font-weight:800;cursor:pointer;font-family:inherit">' + (okLabel || 'Continue') + '</button></div></div>';
     document.body.appendChild(ov); lockPage(ov);
     const done = (v) => { ov.remove(); res(v); };
@@ -50,7 +50,7 @@ export async function renderPremiumAccount(host, ctx) {
   ctx = ctx || {};
   const ov = ctx.ov || {};
   const user = ctx.user || {};
-  host.innerHTML = '<div class="acx"><div style="padding:40px;text-align:center;color:#9aa7bd">Loading your account…</div></div>';
+  host.innerHTML = '<div class="acx"><div style="padding:40px;text-align:center;color:var(--lbc-x-ink3,#9aa7bd)">Loading your account…</div></div>';
 
   const [health, comp, prefs, pay, autopay, trust, prof] = await Promise.all([
     accountHealth().catch(() => null),
@@ -131,18 +131,18 @@ export async function renderPremiumAccount(host, ctx) {
   const _isPaused = String(ov.account_status || '') === 'paused';
   const _poaReq = !_isPaused && ov.poa_required;
   const vpill = _stageRejected && !_isPaused
-    ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(239,68,68,.3),rgba(239,68,68,.12));color:#fca5a5;border-color:rgba(239,68,68,.45)"><span class="gdot" style="background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.25)"></span> ACCESS REVOKED — CONTACT SUPPORT</div>'
+    ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(239,68,68,.3),rgba(239,68,68,.12));color:var(--lbc-x-danger,#fca5a5);border-color:rgba(239,68,68,.45)"><span class="gdot" style="background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.25)"></span> ACCESS REVOKED — CONTACT SUPPORT</div>'
     : _isPaused
-    ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(239,68,68,.3),rgba(239,68,68,.12));color:#fca5a5;border-color:rgba(239,68,68,.45)"><span class="gdot" style="background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.25)"></span> PAUSED' + (ov.pause_reason ? ' — ' + String(ov.pause_reason).replace(/</g,'&lt;').toUpperCase().slice(0,60) : '') + '</div>'
+    ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(239,68,68,.3),rgba(239,68,68,.12));color:var(--lbc-x-danger,#fca5a5);border-color:rgba(239,68,68,.45)"><span class="gdot" style="background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.25)"></span> PAUSED' + (ov.pause_reason ? ' — ' + String(ov.pause_reason).replace(/</g,'&lt;').toUpperCase().slice(0,60) : '') + '</div>'
     : _poaReq
-    ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(217,119,6,.3),rgba(217,119,6,.12));color:#fcd34d;border-color:rgba(217,119,6,.45)"><span class="gdot" style="background:#fbbf24;box-shadow:0 0 0 4px rgba(251,191,36,.25)"></span> ACTION REQUIRED — PLAN OF ACTION' + (ov.poa_required.factor ? ': ' + String(ov.poa_required.factor).replace(/</g,'&lt;').toUpperCase().slice(0,40) : '') + '</div>'
+    ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(217,119,6,.3),rgba(217,119,6,.12));color:var(--lbc-x-gold,#fcd34d);border-color:rgba(217,119,6,.45)"><span class="gdot" style="background:#fbbf24;box-shadow:0 0 0 4px rgba(251,191,36,.25)"></span> ACTION REQUIRED — PLAN OF ACTION' + (ov.poa_required.factor ? ': ' + String(ov.poa_required.factor).replace(/</g,'&lt;').toUpperCase().slice(0,40) : '') + '</div>'
     : (compliant && _stageApproved)
     ? '<div class="vpill"><span class="gdot"></span> VERIFIED — BOOKING OPEN</div>'
     : compliant
-      ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(8,131,247,.28),rgba(8,131,247,.12));color:#9cc5f4;border-color:rgba(8,131,247,.4)"><span class="gdot" style="background:#0883F7;box-shadow:0 0 0 4px rgba(8,131,247,.25)"></span> DOCS VERIFIED — FINAL APPROVAL PENDING</div>'
+      ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(8,131,247,.28),rgba(8,131,247,.12));color:var(--lbc-x-link,#9cc5f4);border-color:rgba(8,131,247,.4)"><span class="gdot" style="background:#0883F7;box-shadow:0 0 0 4px rgba(8,131,247,.25)"></span> DOCS VERIFIED — FINAL APPROVAL PENDING</div>'
       : _stageNone
-      ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(148,163,184,.22),rgba(148,163,184,.08));color:#cbd5e1;border-color:rgba(148,163,184,.35)"><span class="gdot" style="background:#94a3b8;box-shadow:0 0 0 4px rgba(148,163,184,.2)"></span> NOT SUBMITTED \u2014 START ONBOARDING</div>'
-      : '<div class="vpill" style="background:linear-gradient(90deg,rgba(217,119,6,.28),rgba(217,119,6,.12));color:#fcd34d;border-color:rgba(217,119,6,.4)"><span class="gdot" style="background:#fbbf24;box-shadow:0 0 0 4px rgba(251,191,36,.25)"></span> PENDING VERIFICATION</div>';
+      ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(148,163,184,.22),rgba(148,163,184,.08));color:var(--lbc-x-ink2,#cbd5e1);border-color:rgba(148,163,184,.35)"><span class="gdot" style="background:#94a3b8;box-shadow:0 0 0 4px rgba(148,163,184,.2)"></span> NOT SUBMITTED \u2014 START ONBOARDING</div>'
+      : '<div class="vpill" style="background:linear-gradient(90deg,rgba(217,119,6,.28),rgba(217,119,6,.12));color:var(--lbc-x-gold,#fcd34d);border-color:rgba(217,119,6,.4)"><span class="gdot" style="background:#fbbf24;box-shadow:0 0 0 4px rgba(251,191,36,.25)"></span> PENDING VERIFICATION</div>';
 
   const dp = (await getDispatchPrefs().catch(() => ({}))) || {};
   const EQ_IC = { 'Dry Van': '🚚', 'Reefer': '❄️', 'Flatbed': '🛻', 'Power Only': '🔌', 'Step Deck': '📐', 'Box Truck': '📦', 'Hotshot': '⚡', 'Cargo Van': '🚐', 'Sprinter Van': '🚐' };   // bl_ux_0509
@@ -185,7 +185,7 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div style="margin-top:13px;display:flex;gap:8px"><button class="btn sm" data-toast="Profile saved">Save changes</button><button class="btn sec sm" id="acx-photo">Change photo</button></div>'
     +   '<input type="file" id="acx-avafile" accept="image/*" hidden></div>'
     + '<div class="card" id="s-verify"><div class="sec-h"><div class="sec-ico ic-green">' + sic('shield') + '</div><div class="sec-t">Verification &amp; documents</div></div><div class="sec-s">Same live status as the Documents tab — one source of truth.</div>'
-    +   '<div class="ringwrap"><svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e3ecf6" stroke-width="3.6"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#12a150" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="' + ringOff.toFixed(1) + '" transform="rotate(-90 18 18)"/><text x="18" y="17" text-anchor="middle" font-size="8" font-weight="800" fill="#0b1b33">' + okDocs + '/' + totalDocs + '</text><text x="18" y="24" text-anchor="middle" font-size="3.4" fill="#9aa7bd">verified</text></svg>'
+    +   '<div class="ringwrap"><svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e3ecf6" stroke-width="3.6"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#12a150" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="' + ringOff.toFixed(1) + '" transform="rotate(-90 18 18)"/><text x="18" y="17" text-anchor="middle" font-size="8" font-weight="800" fill="#0b1b33">' + okDocs + '/' + totalDocs + '</text><text x="18" y="24" text-anchor="middle" font-size="3.4" fill="#9aa7bd" style="fill:var(--lbc-x-ink3,#9aa7bd)">verified</text></svg>'
     +     '<div><div style="font-weight:800;font-size:.98rem">Compliance packet</div><div class="mini">' + ([needDocs ? needDocs + ' still needed' : '', revDocs ? revDocs + ' in review' : ''].filter(Boolean).join(' \u00b7 ') || 'All required documents verified \u2713') + '</div></div></div>'
     +   '<div>' + docHtml + '</div>'
     +   '<div style="margin-top:12px">' + (compliant ? '<button class="btn sm" data-go="documents">Open Documents</button>' : '<button class="btn sm" data-go="onboarding">Finish onboarding &rarr;</button> <button class="btn ghost sm" data-go="documents">Open Documents</button>') + '</div>'
@@ -193,12 +193,12 @@ export async function renderPremiumAccount(host, ctx) {
     + '<div class="card" id="s-biz"><div class="sec-h" style="align-items:center"><div class="sec-ico ic-navy">' + sic('building') + '</div><div class="sec-t">Business profile</div>' + (compliant ? '<span class="cpa-autopill">&#10003; verified</span>' : (_stageRev ? '<span class="cpa-autopill" style="background:var(--ice);color:var(--blue);border-color:#9cc5f4">&#9203; In review</span>' : '')) + '</div><div class="sec-s">Legal identity from your approved authority &amp; W-9. Changing a verified detail re-opens review.</div>'
     +   '<div class="grid2"><div class="field"><label>Legal entity</label><input class="acx-cred" id="acx-entity" value="' + esc(name) + '" readonly></div><div class="field"><label>Entity type</label><select id="acx-etype"><option>LLC</option><option>Sole proprietor</option><option>Corporation</option></select></div>'
     +   '<div class="field"><label>MC number</label><input class="acx-cred" id="acx-mc" value="' + esc(mc) + '" placeholder="MC-000000" readonly></div><div class="field"><label>USDOT</label><input class="acx-cred" id="acx-dot" value="' + esc(dot) + '" placeholder="0000000" readonly></div></div>'
-    +   '<div class="field"><label>Business address <span style="color:#94a3b8;font-size:.66rem">&middot; freely editable</span></label><input id="acx-addr" value="' + esc(ov.address || '') + '" placeholder="Street, City, ST ZIP"></div>'
+    +   '<div class="field"><label>Business address <span style="color:var(--lbc-x-ink3,#94a3b8);font-size:.66rem">&middot; freely editable</span></label><input id="acx-addr" value="' + esc(ov.address || '') + '" placeholder="Street, City, ST ZIP"></div>'
     +   '<div id="acx-bizmsg" class="cp-row-s" style="margin-top:8px"></div>'
     +   '<div style="margin-top:10px;display:flex;gap:8px">' + (!compliant && _stageRev ? '<button class="btn ghost sm" disabled style="opacity:.55;cursor:default">&#9203; In review \u2014 editing locked</button>' : '<button class="btn ghost sm" id="acx-bizchange">Change verified details</button>') + '<button class="btn sm" id="acx-bizsave">Save</button></div></div>'
     + '<div class="card" id="s-disp"><div class="sec-h"><div class="sec-ico ic-orange">' + sic('truck') + '</div><div class="sec-t">Dispatch preferences</div></div><div class="sec-s">Drives the load-matching engine — better in, better loads.</div>'
     +   '<div id="acx-prefscard" style="margin:6px 0 12px"></div><div id="acx-prefsform" hidden>'
-    +   '<style>.acx .field label.acx-eqp,.acx-eqp{position:relative;display:inline-flex;margin:0;font-size:.82rem;color:inherit;align-items:center;gap:7px;padding:9px 15px;border-radius:999px;border:1.5px solid var(--border,#334155);cursor:pointer;font-size:.82rem;font-weight:800;transition:all .15s;user-select:none}.acx-eqp .ic{font-size:.95rem}.acx-eqp .ck{display:none;color:#0883F7;font-weight:900}.acx-eqp.on{border-color:#0883F7;background:rgba(8,131,247,.16);box-shadow:0 4px 14px -6px rgba(8,131,247,.5)}.acx-eqp.on .ck{display:inline}.acx-sub{display:flex;align-items:center;gap:7px;font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#7f92b3;margin:16px 0 8px}.acx-sub::after{content:"";flex:1;height:1px;background:var(--border,#33415566)}</style>'
+    +   '<style>.acx .field label.acx-eqp,.acx-eqp{position:relative;display:inline-flex;margin:0;font-size:.82rem;color:inherit;align-items:center;gap:7px;padding:9px 15px;border-radius:999px;border:1.5px solid var(--border,#334155);cursor:pointer;font-size:.82rem;font-weight:800;transition:all .15s;user-select:none}.acx-eqp .ic{font-size:.95rem}.acx-eqp .ck{display:none;color:var(--lbc-x-link,#0883F7);font-weight:900}.acx-eqp.on{border-color:#0883F7;background:rgba(8,131,247,.16);box-shadow:0 4px 14px -6px rgba(8,131,247,.5)}.acx-eqp.on .ck{display:inline}.acx-sub{display:flex;align-items:center;gap:7px;font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--lbc-x-ink3,#7f92b3);margin:16px 0 8px}.acx-sub::after{content:"";flex:1;height:1px;background:var(--border,#33415566)}</style>'
     +   '<div class="acx-sub">🚛 Equipment — select all you run</div>'
     +   '<div id="acx-eq" style="display:flex;flex-wrap:wrap;gap:8px">' + eqSel() + '</div>'
     +   '<div class="rs" style="margin-top:6px">Tick only what you physically run \u2014 brokers and your dispatcher book from this list. \u201cHotshot\u201d means a pickup pulling a gooseneck / flatbed trailer; a Sprinter is \u201cSprinter Van\u201d.</div>'
@@ -340,7 +340,7 @@ export async function renderPremiumAccount(host, ctx) {
       // FIXED logical grouping (no height-packing — deterministic, organized):
       // col 0 = identity & money · col 1 = operations & help
       const COL1 = ['s-profile', 's-verify', 's-biz', 's-pay', 's-support', 's-legal', 's-danger'];
-      const hdr = (t) => { const d = document.createElement('div'); d.style.cssText = 'font-size:.66rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7f92b3;padding:4px 6px 2px'; d.textContent = t; return d; };
+      const hdr = (t) => { const d = document.createElement('div'); d.style.cssText = 'font-size:.66rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--lbc-x-ink3,#7f92b3);padding:4px 6px 2px'; d.textContent = t; return d; };
       cols[0].appendChild(hdr('Account & payments'));
       cols[1].appendChild(hdr('Operations & support'));
       cards.forEach((card) => { const ci = (card.id && COL1.indexOf(card.id) >= 0) ? 0 : 1; cols[ci].appendChild(card); });
@@ -382,7 +382,7 @@ export async function renderPremiumAccount(host, ctx) {
     const saveBtn = root.querySelector('#acx-bizsave');
     if (changeBtn) changeBtn.addEventListener('click', async () => {
       const okc = await lbConfirm('Change a verified detail?', 'MC / USDOT / legal entity were verified against your official documents.\n\nChanging one sends your account back to PENDING and pauses booking until the Command Center re-verifies the new value.\n\nOnly change it if your real authority or entity actually changed.', 'Yes, unlock & change'); if (!okc) return;
-      credIds.forEach((id) => { const e = root.querySelector('#' + id); if (e) { e.readOnly = false; e.style.background = '#0c1628'; e.style.color = '#eaf1fb'; e.style.borderColor = '#3b9dff'; e.style.boxShadow = '0 0 0 3px rgba(8,131,247,.18)'; } });
+      credIds.forEach((id) => { const e = root.querySelector('#' + id); if (e) { e.readOnly = false; e.style.background = '#0c1628'; e.style.color = 'var(--lbc-x-ink,#eaf1fb)'; e.style.borderColor = 'var(--lbc-x-link,#3b9dff)'; e.style.boxShadow = '0 0 0 3px rgba(8,131,247,.18)'; } });
       changeBtn.style.display = 'none';
       const m = root.querySelector('#acx-bizmsg'); if (m) { m.style.color = '#d97706'; m.textContent = 'Editing verified details — saving will send your account for re-verification.'; }
     });
@@ -447,7 +447,7 @@ export async function renderPremiumAccount(host, ctx) {
       const on = wkVal !== null && b.getAttribute('data-v') === wkVal;
       b.style.cssText = 'cursor:pointer;border-radius:999px;padding:8px 15px;font:700 .8rem inherit;'
         + (on ? 'background:#0883F7;color:#fff;border:1px solid #0883F7'
-              : 'background:transparent;color:#93a4bd;border:1px solid rgba(148,163,184,.4)');
+              : 'background:transparent;color:var(--lbc-x-ink3,#93a4bd);border:1px solid rgba(148,163,184,.4)');
     });
     if (wkHint) {
       wkHint.textContent = wkVal === null
@@ -541,7 +541,7 @@ export async function renderPremiumAccount(host, ctx) {
     try { v = (window.__LB_ENV && window.__LB_ENV.buildId) ? String(window.__LB_ENV.buildId) : ''; } catch (_) {}
     var f = document.createElement('div');
     f.style.cssText = 'margin:34px 0 10px;padding:0 4px;text-align:center';
-    f.innerHTML = '<button id="acx-foot-signout" style="background:none;border:0;cursor:pointer;color:#8ea2c3;font-weight:700;font-size:.92rem;padding:12px 26px;border-radius:12px">Sign out</button>'
+    f.innerHTML = '<button id="acx-foot-signout" style="background:none;border:0;cursor:pointer;color:var(--lbc-x-ink3,#8ea2c3);font-weight:700;font-size:.92rem;padding:12px 26px;border-radius:12px">Sign out</button>'
       + '<div style="margin-top:6px;color:#5a6e8f;font-size:.72rem;font-weight:600">LoadBoot · The Operating System for Trucking' + (v ? ' · ' + v : '') + '</div>';
     root.appendChild(f);
     var fb = f.querySelector('#acx-foot-signout');

@@ -14,8 +14,8 @@
 // actually removed — the server returns ERASURE_REVIEW_REQUIRED and this screen pivots to the review.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, openDrawer, fmtDate, fmtDateTime, ago, askReason, segmented } from '../../shared/ui/components.js';
-import { ccAccountDeletions, ccAccountDeletionProcess, ccErasureItems, ccErasureDecide, ccErasurePurge } from '../../shared/api.js';
+import { sectionHead, statCard, openDrawer, fmtDate, fmtDateTime, ago, askReason, askConfirm, segmented } from '../../shared/ui/components.js';
+import { ccAccountDeletions, ccAccountDeletionProcess, ccAccountExitHoldApply, ccErasureItems, ccErasureDecide, ccErasurePurge } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { orgHrefFor } from '../../shared/ui/entityLink.js';
 
@@ -219,6 +219,33 @@ export function renderDeletionRequests(host) {
       ]),
     ])] : null;
 
+    // bl_acct_0550 — what the carrier exit hold did (or a button to apply it on a request filed before it existed)
+    const eh = r.exit_hold || {};
+    const holdRows = (eh.holds || []).flatMap((h) => {
+      const act = h.actions || {};
+      const lines = (act.assignments || []).map((a) => el('li', null, 'Dispatcher ' + (a.dispatcher || '—') + ' released ' + (a.ended_at ? fmtDateTime(a.ended_at) : '')
+        + ' · ' + (a.posts_withdrawn || 0) + ' posts withdrawn · ' + (a.bookings_cancelled || 0) + ' pending bookings cancelled'
+        + (a.emailed_at ? ' · e-mailed' : '') + (a.moving_left ? ' · ' + a.moving_left + ' MOVING booking(s) left for a person' : '')));
+      return [el('li', null, [el('b', null, h.org || 'Login only'), ' — held ' + fmtDateTime(h.started_at) + (h.lifted_at ? ', lifted ' + fmtDateTime(h.lifted_at) : '')
+        + ' · ' + (h.emails || 0) + ' e-mail(s), ' + (h.phones || 0) + ' phone(s) blocked' + (act.riley_cancelled ? ' · ' + act.riley_cancelled + ' Riley plan(s) cancelled' : '')])].concat(lines);
+    });
+    const auto = eh.applied
+      ? [el('div', { class: 'dd-sec' }, 'Automatic actions'), el('div', { class: 'dd-box' }, [
+          el('div', { style: 'font-size:.85rem;margin-bottom:6px' }, eh.live
+            ? 'Exit hold on since ' + fmtDateTime(eh.started_at) + ': no reminders, texts, WhatsApp, push or Riley calls reach this account. Account, security and billing notices still go.'
+            : 'Exit hold lifted ' + fmtDateTime(eh.lifted_at) + (eh.lifted_note ? ' (' + eh.lifted_note + ')' : '') + '. Dispatcher assignments were not restored.'),
+          el('ul', { class: 'dd-ul' }, holdRows.length ? holdRows : [el('li', null, 'No dispatcher assignment was active.')])])]
+      : open ? [el('div', { class: 'dd-sec' }, 'Automatic actions'), el('div', { class: 'dd-box' }, [
+          el('div', { style: 'font-size:.85rem;margin-bottom:8px' }, 'This request was filed before the exit hold existed, so nothing was stopped automatically. Applying it ends any dispatcher assignment (the dispatcher gets a reason-free e-mail), withdraws their posts and stops every non-essential message to this account.'),
+          el('button', { class: 'lb-btn lb-btn-secondary', onClick: async () => {
+            if (!(await askConfirm('Apply the exit hold now?', { body: 'Stops reminders, texts, WhatsApp, push and Riley calls to ' + whoOf(r) + ', ends their dispatcher assignment and e-mails the dispatcher. Account, security and billing notices still go. This cannot be undone automatically.', confirmLabel: 'Apply exit hold', danger: true }))) return;
+            try { const res = await ccAccountExitHoldApply(r.id); if (res && res.error) throw new Error(res.error);
+              toast('✓ Exit hold applied' + (res && res.assignments_ended ? ' · ' + res.assignments_ended + ' assignment(s) ended' : ''));
+              drawer.close(); onChanged(); load();
+            } catch (e) { toast(humanizeError(e)); }
+          } }, 'Apply exit hold now')])]
+      : null;
+
     const note = !open && r.note ? [el('div', { class: 'dd-sec' }, 'Record'), el('div', { class: 'dd-box', style: 'white-space:pre-wrap;font-size:.85rem;color:#1c2f4d;word-break:break-word' }, r.note)] : null;
 
     const actions = open ? el('div', { class: 'dd-actions' }, [
@@ -229,7 +256,7 @@ export function renderDeletionRequests(host) {
       el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => copyEmail(r, 'done') }, 'Copy "account deleted" email'),
     ]) : null);
 
-    mount(body, [el('style', null, CSS), banner, facts, reason, erase, reviewNode, note, actions]);
+    mount(body, [el('style', null, CSS), banner, facts, reason, auto, erase, reviewNode, note, actions]);
   }
 
   // ------------------------------------------------------------------ file review

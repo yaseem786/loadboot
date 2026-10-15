@@ -24,12 +24,12 @@ export function printExecutedW9(o) {
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Form W-9 (Request for Taxpayer ID)</title>'
     + '<style>*{font-family:Inter,system-ui,Arial,sans-serif;box-sizing:border-box}body{margin:0;color:#0f1e36;padding:28px;max-width:820px;margin:0 auto}'
     + '.lh{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #0b1b33;padding-bottom:12px}.lh img{height:26px}.meta{text-align:right;font-size:.7rem;color:#51617a;line-height:1.6}'
-    + 'h1{text-align:center;font-size:1.3rem;margin:14px 0 2px}.ref{text-align:center;font-size:.72rem;color:#94a3b8;margin-bottom:14px}'
-    + '.fld{border:1px solid #dbe4ef;border-radius:9px;padding:9px 12px;margin:7px 0}.k{font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:800;display:block;margin-bottom:2px}.v{font-size:.95rem;color:#0b1b33;font-weight:600}'
+    + 'h1{text-align:center;font-size:1.3rem;margin:14px 0 2px}.ref{text-align:center;font-size:.72rem;color:var(--lbc-x-ink3,#94a3b8);margin-bottom:14px}'
+    + '.fld{border:1px solid #dbe4ef;border-radius:9px;padding:9px 12px;margin:7px 0}.k{font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lbc-x-ink3,#94a3b8);font-weight:800;display:block;margin-bottom:2px}.v{font-size:.95rem;color:#0b1b33;font-weight:600}'
     + '.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}'
     + '.cert{font-size:.72rem;color:#334155;line-height:1.55;border-top:1px solid #eaf0f7;margin-top:12px;padding-top:10px}'
     + '.sb{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;margin-top:16px;border-top:2px solid #eaf0f7;padding-top:14px}'
-    + '.lbl{font-size:.66rem;text-transform:uppercase;color:#94a3b8;font-weight:800}.line{border-bottom:1.5px solid #0f1e36;min-height:30px;font-family:cursive;font-size:1.35rem;color:#0b1b33;padding:2px}'
+    + '.lbl{font-size:.66rem;text-transform:uppercase;color:var(--lbc-x-ink3,#94a3b8);font-weight:800}.line{border-bottom:1.5px solid #0f1e36;min-height:30px;font-family:cursive;font-size:1.35rem;color:#0b1b33;padding:2px}'
     + '.m{font-size:.7rem;color:#51617a;margin-top:5px}.stamp{border:3px solid #12a150;color:#12a150;font-weight:800;display:inline-block;padding:5px 12px;border-radius:8px;transform:rotate(-8deg);letter-spacing:.08em;margin-top:14px}</style></head><body>'
     + '<div class="lh"><img src="/logo-full.png" alt="LoadBoot"><div class="meta">Form W-9 · Ref ' + (o.ref || REF) + '<br>Request for Taxpayer Identification Number &amp; Certification</div></div>'
     + '<h1>Form W-9</h1><div class="ref">Substitute W-9 · furnished to LoadBoot as payer · retained on file</div>'
@@ -94,14 +94,14 @@ export function openW9Wizard(ctx, opts, onDone) {
   let step = 1; let close;
   // 2026-08 audit: draft persistence — an accidental backdrop tap used to lose all 5 steps.
   try { const _d9 = JSON.parse(sessionStorage.getItem('lb_w9_draft') || 'null'); if (_d9 && _d9.state) { for (var _k9 in _d9.state) { if (Object.prototype.hasOwnProperty.call(state, _k9) && _d9.state[_k9]) state[_k9] = _d9.state[_k9]; } if (_d9.step >= 1 && _d9.step <= 5) step = _d9.step; } } catch (_) {}
-  const setDots = function () { dots.forEach(function (d, i) { d.style.background = i < step ? '#0883F7' : '#e2e8f0'; }); };
+  const setDots = function () { dots.forEach(function (d, i) { d.style.background = i < step ? '#0883F7' : 'var(--lbc-x-ink,#e2e8f0)'; }); };
   const btnRow = function (backTo, nextFn, nextLabel) {
     const row = mk('div', 'display:flex;gap:8px;margin-top:16px');
     if (backTo) { const b = mk('button', 'flex:1;background:#eef3fb;color:#0b1b33;border:0;border-radius:12px;padding:12px;font-weight:800;cursor:pointer', 'Back'); b.onclick = function () { step = backTo; render(); }; row.appendChild(b); }
     const n = mk('button', 'flex:2;background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;border:0;border-radius:12px;padding:12px;font-weight:800;cursor:pointer', nextLabel || 'Continue'); n.onclick = nextFn; row.appendChild(n);
     return row;
   };
-  const head = function (t, s) { const h = mk('div', 'font-size:1.15rem;font-weight:800', t); const sub = mk('div', 'color:#94a3b8;font-size:.8rem;margin:2px 0 4px', s); const wrap = mk('div'); wrap.appendChild(h); wrap.appendChild(sub); return wrap; };
+  const head = function (t, s) { const h = mk('div', 'font-size:1.15rem;font-weight:800', t); const sub = mk('div', 'color:var(--lbc-x-ink3,#94a3b8);font-size:.8rem;margin:2px 0 4px', s); const wrap = mk('div'); wrap.appendChild(h); wrap.appendChild(sub); return wrap; };
 
   function render() {
     try { sessionStorage.setItem('lb_w9_draft', JSON.stringify({ step: step, state: state })); } catch (_) {}
@@ -128,7 +128,7 @@ export function openW9Wizard(ctx, opts, onDone) {
             + (on ? 'background:#eef6ff;border:2px solid #0883F7' : 'background:#fafcff;border:2px solid #eaf0f7'));
           b.appendChild(mk('div', 'font-weight:800;font-size:.96rem;color:#0b1b33', (on ? '\u2713 ' : '') + c[1]));
           b.appendChild(mk('div', 'font-size:.79rem;color:#51617a;line-height:1.55;margin-top:3px', c[2]));
-          b.appendChild(mk('div', 'font-size:.74rem;color:#0883F7;font-weight:700;margin-top:4px', c[3]));
+          b.appendChild(mk('div', 'font-size:.74rem;color:var(--lbc-x-link,#0883F7);font-weight:700;margin-top:4px', c[3]));
           b.onclick = function () { state.who = c[0]; drawPick(); };
           pickHost.appendChild(b);
         });
@@ -163,7 +163,7 @@ export function openW9Wizard(ctx, opts, onDone) {
         const l2 = mk('label', lblCss, 'Line 2 \u2014 business name / DBA');
         const bz = mk('input', inCss); bz.value = state.business || COMPANY; bz.placeholder = COMPANY || 'Optional';
         body.appendChild(l1); body.appendChild(nm); body.appendChild(l2); body.appendChild(bz);
-        body.appendChild(mk('div', 'font-size:.75rem;color:#94a3b8;margin-top:8px', 'Tax classification: Individual / sole proprietor \u2014 set for you from your last answer.'));
+        body.appendChild(mk('div', 'font-size:.75rem;color:var(--lbc-x-ink3,#94a3b8);margin-top:8px', 'Tax classification: Individual / sole proprietor \u2014 set for you from your last answer.'));
         body.appendChild(btnRow(1, function () {
           const v = nm.value.trim();
           if (v.length < 3) { msg.textContent = 'Enter your own legal name.'; return; }

@@ -27,7 +27,8 @@ import { equipmentDetailCard, carrierNotesCard } from '../../shared/ui/carrierDe
 import { staffUploadCard } from './staffUpload.js';
 import { can } from '../../shared/permissions.js';
 import { META as REMINDER_META } from './carrierReminders.js';
-import { planCallFlow } from './rileyPlanFlow.js';   // bl_voice_0483 — Riley call plan
+import { planCallFlow, PLAN_STATUS, PLAN_REASON_LABEL, TARGET_ROLE_LABEL, planLink } from './rileyPlanFlow.js';   // bl_voice_0483 — Riley call plan (+0555 calls about this carrier)
+import { ccRileyPlans } from '../../shared/api.js';
 
 export function renderCarrier360(host, orgId) {
   mount(host, el('div', { class: 'cc-view' }, [
@@ -642,6 +643,28 @@ export function renderCarrier360(host, orgId) {
     // dispatcher name + the carrier's decision). Staff can withdraw an open post; the dispatcher is audited either way.
     // bl_disp_0551 — the shared premium panel: every posted field, the carrier's journey, gaps, staff alert / hide / delete.
     const dispPostsCard = card([dispatcherPostsPanel({ org: orgId })]);
+    // bl_voice_0555 — every Riley call plan for this carrier: to the carrier, and to someone else ABOUT the carrier
+    // (factoring / insurance / broker / shipper), with "what they confirmed" so staff approve with that evidence.
+    const rileyHost = el('div', null, el('div', { class: 'cc-sub' }, 'Loading Riley calls…'));
+    const rileyCard = card([el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Riley calls'), el('span', { class: 'cc-sub' }, 'to the carrier and about the carrier · staff only')]), rileyHost]);
+    ccRileyPlans(null, 20, orgId).then((r) => {
+      const rows = (r && !r.error && r.plans) || [];
+      if (r && r.error) { rileyCard.style.display = 'none'; return; }
+      if (!rows.length) { mount(rileyHost, el('div', { class: 'cc-sub' }, 'No Riley call plans for this carrier yet.')); return; }
+      mount(rileyHost, el('div', null, rows.map((x) => {
+        const tp = x.target && x.target.kind === 'third_party'; const o = x.outcome || {}; const st = PLAN_STATUS[x.status] || [x.status];
+        return el('a', { href: planLink(x.id), style: 'display:block;text-decoration:none;color:inherit;border:1px solid #e8edf3;border-radius:12px;padding:9px 12px;margin-top:8px' }, [
+          el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
+            el('b', { style: 'font-size:.88rem' }, tp ? '\u260e ' + x.target.name + (x.target.org ? ' \u00b7 ' + x.target.org : '') + ' (' + (TARGET_ROLE_LABEL[x.target.role] || x.target.role) + ')' : '\u260e The carrier'),
+            el('span', { class: 'cc-pill cc-pill-' + (x.status === 'called' ? 'green' : x.status === 'failed' || x.status === 'cancelled' ? 'red' : 'blue') }, st[0]),
+            el('span', { class: 'cc-sub', style: 'margin-left:auto' }, (PLAN_REASON_LABEL[x.reason] || x.reason) + ' \u00b7 ' + fmtDateTime(x.called_at || x.created_at)),
+          ]),
+          tp && o.confirmed ? el('div', { style: 'margin-top:6px;font-size:.84rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:6px 9px' }, [el('b', null, 'What they confirmed: '), o.confirmed]) : null,
+          !tp && o.summary ? el('div', { class: 'cc-sub', style: 'margin-top:4px;font-size:.82rem' }, o.summary) : null,
+          x.note && tp ? el('div', { class: 'cc-sub', style: 'margin-top:4px;font-size:.78rem' }, 'Asked: ' + x.note) : null,
+        ]);
+      })));
+    }).catch(() => { rileyCard.style.display = 'none'; });
     const trips = d.recent_trips || [];
     const tripsCard = card([
       el('h4', { class: 'cc-card-title' }, 'Recent trips'),
@@ -1890,6 +1913,7 @@ export function renderCarrier360(host, orgId) {
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [driversCard, payoutCard]), // docsCard MERGED into Onboarding & compliance (view/verify/actions per doc live there)
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [tripsCard, scCard]),
       el('div', { style: 'margin-top:16px' }, dispPostsCard),   // bl_disp_0549
+      el('div', { style: 'margin-top:16px' }, rileyCard),   // bl_voice_0555
       el('div', { style: 'margin-top:16px' }, backCard),
       el('div', { style: 'margin-top:16px' }, timelineCard),
     ]));

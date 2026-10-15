@@ -13,9 +13,9 @@ export function phoneVerifyCard(h, mount) {
   const S = {
     card: 'display:grid;gap:10px;border-color:rgba(245,158,11,.45);margin-bottom:14px;background:linear-gradient(135deg,rgba(245,158,11,.08),transparent)',
     num: 'font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:1.05rem;font-variant-numeric:tabular-nums',
-    link: 'background:none;border:0;padding:0;color:#fb923c;font-weight:700;cursor:pointer;font:inherit;text-align:left',
-    input: 'width:100%;max-width:320px;padding:11px 12px;border-radius:10px;border:1px solid rgba(148,163,184,.35);background:rgba(15,23,42,.35);color:inherit;font:inherit;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.05rem',
-    err: 'color:#f87171;font-size:.86rem',
+    link: 'background:none;border:0;padding:0;color:var(--lbc-x-warn,#fb923c);font-weight:700;cursor:pointer;font:inherit;text-align:left',
+    input: 'width:100%;max-width:320px;padding:11px 12px;border-radius:10px;border:1px solid rgba(148,163,184,.35);background:var(--lbc-x-panel,rgba(15,23,42,.35));color:inherit;font:inherit;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.05rem',
+    err: 'color:var(--lbc-x-danger,#f87171);font-size:.86rem',
   };
   const btn = (label, onClick, ghost) => h('button', { class: 'cp-btn' + (ghost ? ' ghost' : ''), style: 'margin:0;justify-self:start', onClick }, label);
   // Owner ask 30 Sep: the green "Phone verified" banner has an ✕ and leaves by itself 2 days after verified_at.
@@ -99,7 +99,7 @@ export function phoneVerifyCard(h, mount) {
       again.onclick = () => { if (secsLeft() === 0) call(target); };
       inp.onkeydown = (e) => { if (e.key === 'Enter') check(inp.value); };
       body = [
-        h('span', { style: 'display:inline-flex;gap:6px;align-items:center;justify-self:start;font-size:.8rem;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(251,146,60,.14);color:#fb923c' }, '📞 Calling ' + mask(target)),
+        h('span', { style: 'display:inline-flex;gap:6px;align-items:center;justify-self:start;font-size:.8rem;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(251,146,60,.14);color:var(--lbc-x-warn,#fb923c)' }, '📞 Calling ' + mask(target)),
         h('div', { class: 'cp-row-t', style: 'font-size:1.08rem' }, 'Type the code you hear'),
         inp,
         errEl,
@@ -111,8 +111,8 @@ export function phoneVerifyCard(h, mount) {
     } else {
       body = [
         h('button', { type: 'button', 'aria-label': 'Dismiss', title: 'Dismiss', onClick: dismiss,
-          style: 'position:absolute;top:10px;right:12px;background:none;border:0;color:#94a3b8;font-size:1.2rem;line-height:1;cursor:pointer;padding:4px 6px' }, '✕'),
-        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:#34d399;padding-right:28px' }, '✓ Phone verified'),
+          style: 'position:absolute;top:10px;right:12px;background:none;border:0;color:var(--lbc-x-ink3,#94a3b8);font-size:1.2rem;line-height:1;cursor:pointer;padding:4px 6px' }, '✕'),
+        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:var(--lbc-x-ok,#34d399);padding-right:28px' }, '✓ Phone verified'),
         h('div', { class: 'cp-row-s' }, 'Your dispatcher will use ' + fmt(st && st.phone) + ' to reach you. Next: add your trucks and post availability.'),
       ];
     }

@@ -11,13 +11,14 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm, askReason } from '../../shared/ui/components.js';
 import { ccRileyCalls, ccRileySettingsGet, ccRileySettingsSet, ccRileyPromptsGet, ccRileyPromptSave, ccRileyPromptRestore, ccRileyCallbackDone, ccRileyCallbackDispatchers, ccRileyCallbackAssign, ccRileyPlans, ccRileyPlan, ccRileyPlanSet, ccRileyPlanBook, ccRileyFollowupAct, rileyAdmin, rileyRecordingBlob, ccRetellCallback } from '../../shared/api.js';
-import { PLAN_STATUS, PLAN_REASON_LABEL, NEXT_ACTION } from './rileyPlanFlow.js';   // bl_voice_0483 — call plans (+0485 booking / next step)
+import { PLAN_STATUS, PLAN_REASON_LABEL, NEXT_ACTION, planCallFlow, TARGET_ROLE_LABEL, tzLabel } from './rileyPlanFlow.js';   // bl_voice_0483 — call plans (+0485 booking / next step, +0555 someone else)
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ET = 'America/New_York';
 const addTo = (host, ...xs) => host.append(...xs.flat().filter((x) => x != null && x !== false && x !== ''));   // Node.append(null) would print "null"
 const LOW_BALANCE_USD = 10;   // bl_voice_0484 — below this the Riley page warns (typed Retell balance)
 const digits = (s) => String(s || '').replace(/[^0-9]/g, '');
+const isTp = (p) => !!(p && p.target && p.target.kind === 'third_party');   // bl_voice_0555
 const pretty = (n) => { const d = digits(n); const k = d.length === 11 && d[0] === '1' ? d.slice(1) : d; return k.length === 10 ? '(' + k.slice(0, 3) + ') ' + k.slice(3, 6) + '-' + k.slice(6) : String(n || '—'); };
 const mmss = (s) => { s = Math.max(0, Math.round(Number(s || 0))); const m = Math.floor(s / 60); return String(m) + ':' + String(s % 60).padStart(2, '0'); };
 const et = (v) => { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? '—' : d.toLocaleString('en-US', { timeZone: ET, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET'; };
@@ -316,6 +317,8 @@ export async function renderRiley(host, query) {
             [['', 'Every status'], ['planning', 'Planning'], ['ready', 'Ready'], ['failed', 'Failed'], ['scheduled', 'Call booked'], ['dialing', 'Riley is calling'], ['called', 'Called'], ['no_answer', 'No answer'], ['cancelled', 'Cancelled']].map(([v, l]) => el('option', { value: v, selected: PF.status === v ? 'selected' : undefined }, l))),
           el('span', { style: 'color:var(--mut,#64748b);font-size:12.5px' }, rows.length + ' plans'),
           el('a', { class: 'ry-btn sm', href: '#/carriers', style: 'margin-left:auto' }, [icon('truck', 14), 'Carriers']),
+          // bl_voice_0555: a call to someone else with no carrier (purpose note required)
+          canPlan() ? el('button', { class: 'ry-btn sm', title: 'Plan a Riley call to a business contact — no carrier', onClick: () => planCallFlow(null, null, { onDone: (r) => { plans = null; focusPlan = r && r.id; loadPlans(); } }) }, [icon('phone', 14), 'Custom call']) : null,
         ]),
         rows.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ry-t' }, [
           el('thead', null, el('tr', null, ['When', 'Carrier', 'Why', 'Status', 'Goal / next step', 'Cost', ''].map((x) => el('th', null, x)))),
@@ -323,7 +326,8 @@ export async function renderRiley(host, query) {
             const st = PLAN_STATUS[p.status] || [p.status, 'm']; const pl = p.plan || {}; const f = p.followup || {};
             return el('tr', { class: 'click' + (focusPlan && String(p.id) === String(focusPlan) ? ' hit' : ''), 'data-plan': p.id, onClick: () => openPlan(p) }, [
               el('td', { style: 'white-space:nowrap' }, [et(p.created_at), el('div', { style: 'font-size:11.5px;opacity:.65' }, ago(p.created_at))]),
-              el('td', null, [el('b', null, p.org_name || '—'), el('div', { style: 'font-size:12px;opacity:.7' }, [p.contact_name || '', p.contact_name ? ' · ' : '', pretty(p.to_number)].join(''))]),
+              el('td', null, isTp(p) ? [el('b', null, p.target.name + (p.target.org ? ' · ' + p.target.org : '')), el('div', { style: 'font-size:12px;opacity:.7' }, [TARGET_ROLE_LABEL[p.target.role] || p.target.role, pretty(p.to_number), p.org_name ? 'about ' + p.org_name : 'custom call'].join(' · '))]
+                : [el('b', null, p.org_name || '—'), el('div', { style: 'font-size:12px;opacity:.7' }, [p.contact_name || '', p.contact_name ? ' · ' : '', pretty(p.to_number)].join(''))]),
               el('td', null, [PLAN_REASON_LABEL[p.reason] || p.reason, p.attempt > 1 ? el('div', { style: 'font-size:11.5px;opacity:.7' }, 'attempt ' + p.attempt + ' of 3') : null, p.lang === 'es' ? el('div', { style: 'font-size:11.5px;opacity:.7' }, 'Spanish') : null]),
               el('td', null, [el('span', { class: 'ry-pill ' + st[1] }, st[0]),
                 p.status === 'scheduled' && p.scheduled_local ? el('div', { style: 'font-size:11.5px;opacity:.75' }, p.scheduled_local) : null,
@@ -378,7 +382,10 @@ export async function renderRiley(host, query) {
       } catch (e) { toast(humanizeError(e), 'error'); }
     };
     const dr = openDrawer('Book with Riley — ' + (p.org_name || ''), el('div', { style: 'display:grid;gap:12px' }, [
-      el('p', { class: 'hint' }, 'Riley calls ' + pretty(p.to_number) + ' with this briefing. Calls only go out Mon–Fri 9:00–18:30 in the carrier’s time zone' + (p.tz ? ' (' + p.tz.replace('_', ' ') + ')' : ' (unknown zone → 11:00–18:30 Eastern)') + ', one per carrier per day. Every rule is checked again right before dialling.'),
+      el('p', { class: 'hint' }, isTp(p)
+        ? 'Riley calls ' + p.target.name + ' at ' + pretty(p.to_number) + ' with this briefing. Calls only go out Mon–Fri 9:00–17:00 their time (' + tzLabel(p.tz) + '), one per number per day. Every rule is checked again right before dialling.'
+        : 'Riley calls ' + pretty(p.to_number) + ' with this briefing. Calls only go out Mon–Fri 9:00–18:30 in the carrier’s time zone' + (p.tz ? ' (' + p.tz.replace('_', ' ') + ')' : ' (unknown zone → 11:00–18:30 Eastern)') + ', one per carrier per day. Every rule is checked again right before dialling.'),
+      el('div', { style: 'font-size:13px' }, ['Estimated cost: ', el('b', null, p.cost && p.cost.est_total != null ? planUsd(p.cost.est_total) : '—'), ' (≈ ' + ((p.cost && p.cost.est_minutes) || 4) + ' min × $0.13/min Retell + brain ' + planUsd(p.cost && p.cost.brain_usd) + ').']),
       el('label', { class: 'ry-row' }, [pickNow, 'Next allowed time' + (p.gate && p.gate.next_slot ? ' — ' + et(p.gate.next_slot) : '')]),
       el('label', { class: 'ry-row' }, [pickAt, 'At (your local time):', when]),
       el('div', { class: 'ry-row' }, [el('button', { class: 'ry-btn o', onClick: () => go(false) }, [icon('phone', 14), 'Book the call'])]),
@@ -437,6 +444,7 @@ export async function renderRiley(host, query) {
     const st = PLAN_STATUS[p.status] || [p.status, 'm']; const pl = p.plan || {}; const c = p.consent || {}; const cost = p.cost || {}; const job = p.job || {}; const dial = p.dial_tool || {};
     const bs = bookingState(dial); const gate = p.gate || {}; const out = p.outcome || {};
     const editable = ['planning', 'ready', 'failed'].includes(p.status);
+    const tp = isTp(p);   // bl_voice_0555: a call to someone else
     const kv = (k, v) => el('div', null, [el('small', null, k), el('span', null, v == null || v === '' ? '—' : String(v))]);
     const list = (title, arr, ordered) => (arr && arr.length) ? el('div', null, [el('b', null, title), el(ordered ? 'ol' : 'ul', { style: 'margin:4px 0 0;padding-left:22px;line-height:1.55;font-size:13.5px' }, arr.map((x) => el('li', null, x)))]) : null;
     const body = el('div', { style: 'display:grid;gap:14px' });
@@ -469,7 +477,8 @@ export async function renderRiley(host, query) {
       ['called', 'no_answer'].includes(p.status) ? el('div', { class: 'ry-card', style: 'margin:0;border:1px solid var(--line,#e2e8f0)' }, [
         el('h3', null, ['The call', el('span', { class: 'ry-pill ' + (p.status === 'called' ? 'g' : 'a') }, p.status === 'called' ? mmss(out.duration_sec) + ' min' : 'not reached')]),
         el('div', { class: 'ry-kv' }, [kv('When', et(p.called_at)), kv('Sentiment', out.sentiment), kv('Interest', out.interest), kv('Riley’s next step', out.next_step)]),
-        out.summary ? el('div', { style: 'font-size:14px;line-height:1.5;margin-top:6px' }, out.summary) : null,
+        tp && out.confirmed ? el('div', { class: 'ry-card', style: 'margin:6px 0 0;background:#f0fdf4;border:1px solid #bbf7d0' }, [el('b', null, 'What they confirmed'), el('div', { style: 'font-size:14px;line-height:1.5;margin-top:3px' }, out.confirmed)]) : null,
+        out.summary && !(tp && out.confirmed === out.summary) ? el('div', { style: 'font-size:14px;line-height:1.5;margin-top:6px' }, out.summary) : null,
         el('div', { class: 'ry-row', style: 'margin-top:8px' }, [
           el('button', { class: 'ry-btn', onClick: () => {
             const row = (data.calls || []).find((x) => String(x.id) === String(p.call_id));
@@ -484,8 +493,10 @@ export async function renderRiley(host, query) {
       (p.children || []).length ? el('div', { style: 'font-size:13.5px' }, [el('b', null, 'Follow-up plans: '), ...(p.children || []).map((ch) => el('a', { href: '#', style: 'margin-right:10px', onClick: (e) => { e.preventDefault(); openPlanById(ch.id); } }, '#' + ch.id + ' · ' + ((PLAN_STATUS[ch.status] || [ch.status])[0])))]) : null,
       p.parent_id ? el('div', { style: 'font-size:13.5px' }, ['Follow-up to ', el('a', { href: '#', onClick: (e) => { e.preventDefault(); openPlanById(p.parent_id); } }, 'plan #' + p.parent_id)]) : null,
       el('div', { class: 'ry-kv' }, [
-        kv('Carrier', p.org_name), kv('Contact', p.contact_name), kv('Number', pretty(p.to_number)), kv('Why', PLAN_REASON_LABEL[p.reason] || p.reason),
-        kv('Call language', p.lang === 'es' ? 'Spanish' : 'English'), kv('Carrier time zone', p.tz ? p.tz.replace('_', ' ') : 'unknown → Eastern window'),
+        ...(tp ? [kv('Calling', p.target.name + (p.target.org ? ' · ' + p.target.org : '')), kv('Their role', TARGET_ROLE_LABEL[p.target.role] || p.target.role), kv('About carrier', p.org_name || 'none — custom call')]
+          : [kv('Carrier', p.org_name), kv('Contact', p.contact_name)]),
+        kv('Number', pretty(p.to_number)), kv('Why', PLAN_REASON_LABEL[p.reason] || p.reason),
+        kv('Call language', p.lang === 'es' ? 'Spanish' : 'English'), kv(tp ? 'Their time zone' : 'Carrier time zone', tp ? tzLabel(p.tz) + ' · Mon–Fri 9:00–17:00' : (p.tz ? p.tz.replace('_', ' ') : 'unknown → Eastern window')),
         kv('Consent basis', c.basis ? (c.basis + (c.sms_consent ? ' · SMS consent on file' : '')) : '—'),
         kv('Cost', cost.est_total != null ? planUsd(cost.est_total) + ' (brain ' + planUsd(cost.brain_usd) + ' + Retell ≈ ' + (out.duration_sec ? mmss(out.duration_sec) : cost.est_minutes + ' min') + ' × $' + cost.retell_per_min + '/min)' : '—'),
         kv('Staff note', p.note),
@@ -494,7 +505,7 @@ export async function renderRiley(host, query) {
       p.plan_text && pl.parsed ? el('details', null, [el('summary', { style: 'cursor:pointer;font-weight:600' }, 'Briefing as Riley will read it (verbatim)'), el('div', { class: 'ry-tr', style: 'margin-top:8px' }, p.plan_text)]) : null,
       p.status === 'ready' && !gate.ok && bs[1] !== 'm' ? el('div', { style: 'font-size:12.5px;color:#b45309' }, 'Cannot book right now: ' + (gate.reason || '—')) : null,
       el('div', { class: 'ry-row', style: 'flex-wrap:wrap' }, [
-        el('a', { class: 'ry-btn', href: '#/carrier?id=' + encodeURIComponent(p.org_id || '') }, [icon('truck', 14), 'Open carrier']),
+        p.org_id ? el('a', { class: 'ry-btn', href: '#/carrier?id=' + encodeURIComponent(p.org_id) }, [icon('truck', 14), 'Open carrier']) : null,
         p.plan_text ? el('button', { class: 'ry-btn', onClick: async () => { try { await navigator.clipboard.writeText(p.plan_text); toast('Briefing copied.'); } catch (_) { toast('Copy failed — select the text instead.', 'error'); } } }, 'Copy briefing') : null,
         editable && p.plan_text && canPlan() ? el('button', { class: 'ry-btn', onClick: () => {
           const ta = el('textarea', { class: 'ry-ta', rows: '16', style: 'width:100%' }); ta.value = p.plan_text;
@@ -519,7 +530,7 @@ export async function renderRiley(host, query) {
         } }, 'Do not call') : null,
       ]),
     );
-    planDr = openDrawer((p.org_name || 'Carrier') + ' — call plan', body, { size: 'lg', subtitle: 'Riley’s briefing, the booking, the call and the next step · staff only' });
+    planDr = openDrawer((tp ? 'Call to ' + p.target.name + (p.org_name ? ' about ' + p.org_name : '') : (p.org_name || 'Carrier')) + ' — call plan', body, { size: 'lg', subtitle: 'Riley’s briefing, the booking, the call and the next step · staff only' });
   }
 
   // ---------- prompts

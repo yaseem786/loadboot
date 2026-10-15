@@ -47,7 +47,7 @@ export function installGate(root, ctx, user) {
   const { h, mount } = UI();
   const intent = 'intent://loadboot.com/app/carrier/#Intent;scheme=https;package=' + PLAY_ID + ';S.browser_fallback_url=' + encodeURIComponent(PLAY_URL) + ';end';
   mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card dm-wall' }, [
-    h('div', { class: 'dm-brand', style: 'display:flex;align-items:flex-start;gap:4px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, 'Driver')]),
+    h('div', { class: 'dm-brand', style: 'display:flex;align-items:flex-start;gap:4px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1;margin-top:7px" }, 'Driver')]),
     h('h1', null, 'Install the LoadBoot app to continue'),
     h('p', { class: 'cp-auth-sub' }, (ctx.carrier || 'Your carrier') + ' requires the app on Android — GPS check-in, live tracking on active loads and POD upload only work inside it. It takes about 30 seconds.'),
     h('a', { class: 'cp-btn cp-btn-lg dm-play', href: PLAY_URL, target: '_blank', rel: 'noopener' }, '▶ Get it on Google Play'),
@@ -68,7 +68,7 @@ export function renderBlocked(root, ctx, user) {
   const { h, mount } = UI();
   const paused = ctx.membership_status === 'suspended';
   mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card dm-wall' }, [
-    h('div', { class: 'dm-brand', style: 'display:flex;align-items:flex-start;gap:4px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, 'Driver')]),
+    h('div', { class: 'dm-brand', style: 'display:flex;align-items:flex-start;gap:4px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1;margin-top:7px" }, 'Driver')]),
     h('h1', null, paused ? 'Access paused' : 'Almost there'),
     h('p', { class: 'cp-auth-sub' }, paused
       ? (ctx.carrier || 'Your carrier') + ' paused your app access. Nothing is lost — call the owner to resume it, and this screen updates by itself.'
@@ -149,7 +149,7 @@ export async function renderToday(content, ctx, api) {
     h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'Shared only while a load is active. Dispatch sees the truck; your carrier gets detention proof.'),
     h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => { try { navigator.geolocation.getCurrentPosition(() => paintLoc('granted'), () => paintLoc('denied')); } catch (_) {} } }, 'Allow location'),
   ]);
-  function paintLoc(state) { const el = locCard.querySelector('#dm-loc-state'); if (!el) return; el.textContent = state === 'granted' ? '✓ Allowed on this phone' : state === 'denied' ? 'Blocked — turn it on in phone Settings → Apps → LoadBoot → Location' : 'Not allowed yet'; el.style.color = state === 'granted' ? '#4ade80' : state === 'denied' ? '#f87171' : '#fbbf24'; locCard.querySelector('button').hidden = state === 'granted'; }
+  function paintLoc(state) { const el = locCard.querySelector('#dm-loc-state'); if (!el) return; el.textContent = state === 'granted' ? '✓ Allowed on this phone' : state === 'denied' ? 'Blocked — turn it on in phone Settings → Apps → LoadBoot → Location' : 'Not allowed yet'; el.style.color = state === 'granted' ? 'var(--lbc-x-ok,#4ade80)' : state === 'denied' ? 'var(--lbc-x-danger,#f87171)' : 'var(--lbc-x-gold,#fbbf24)'; locCard.querySelector('button').hidden = state === 'granted'; }
   try { if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: 'geolocation' }).then((s) => paintLoc(s.state)); else paintLoc('prompt'); } catch (_) { paintLoc('prompt'); }
   const install = (pi.platform === 'android' && !pi.twa) ? h('div', { class: 'cpx-banner amber', onClick: () => window.open(PLAY_URL, '_blank', 'noopener') }, [h('span', null, icon('alert', 15)), h('span', null, 'Install the LoadBoot app from Google Play — background tracking and check-in need it'), h('span', { class: 'cpx-b-go' }, '›')])
     : (pi.platform === 'ios' && !pi.standalone) ? h('div', { class: 'cpx-banner amber' }, [h('span', null, icon('alert', 15)), h('span', null, 'Add LoadBoot to your Home Screen: tap Share ⎋ then “Add to Home Screen”'), h('span', { class: 'cpx-b-go' }, '›')]) : null;
@@ -167,7 +167,7 @@ export async function renderToday(content, ctx, api) {
     ctx.docs_pending ? h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7' }, [h('div', { class: 'cp-row-t' }, ctx.docs_pending + ' document' + (ctx.docs_pending > 1 ? 's' : '') + ' waiting for your carrier’s review'), h('div', { class: 'cp-row-s' }, 'You will get an alert when it is approved.')]) : null,
     h('div', { class: 'cp-card' }, [cardHead('What you can do here', (11 + can.length) + ' permissions from ' + (ctx.carrier || 'your carrier')),
       h('div', { class: 'cp-row-s' }, 'Always: your loads, GPS check-in, live location on active loads, POD upload, detention / lumper / breakdown reports, SOS, alerts, support chat.'),
-      can.length ? h('div', { class: 'da-chips', style: 'margin-top:8px' }, can.map((l) => h('span', { class: 'da-pill blue' }, l))) : h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:#94a3b8' }, 'Need the load board, fleet or earnings? Ask the owner — changes reach this phone in seconds.'),
+      can.length ? h('div', { class: 'da-chips', style: 'margin-top:8px' }, can.map((l) => h('span', { class: 'da-pill blue' }, l))) : h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:var(--lbc-x-ink3,#94a3b8)' }, 'Need the load board, fleet or earnings? Ask the owner — changes reach this phone in seconds.'),
     ]),
   ].filter(Boolean)));
 }
@@ -192,7 +192,7 @@ function installCard(h, cardHead) {
   const iosSteps = () => steps([['Open ', h('b', null, 'loadboot.com/app/carrier'), ' in ', h('b', null, 'Safari')], ['Tap ', h('b', null, 'Share ⎋'), ' at the bottom'], ['Tap ', h('b', null, 'Add to Home Screen'), ' → ', h('b', null, 'Add')], ['Open LoadBoot from your Home Screen and sign in once — then allow ', h('b', null, 'Location'), ' + ', h('b', null, 'Notifications')]]);
   if (pi.twa || pi.standalone) {
     return h('div', { class: 'cp-card' }, [cardHead('App', pi.platform === 'android' ? 'Android · installed' : pi.platform === 'ios' ? 'iPhone · Home Screen' : 'Installed'),
-      h('div', { class: 'cp-row-s', style: 'color:#86efac' }, '✓ Installed — background tracking, GPS check-in and alerts work.'),
+      h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-ok,#86efac)' }, '✓ Installed — background tracking, GPS check-in and alerts work.'),
       pi.model ? h('div', { class: 'cp-row-s' }, 'Device: ' + pi.model) : null].filter(Boolean));
   }
   if (pi.platform === 'android') {
@@ -245,7 +245,7 @@ export async function renderMe(content, ctx, api) {
   mount(content, h('div', null, [
     h('div', { class: 'cp-card' }, [cardHead(fd.name || 'Driver', 'Driver at ' + (ctx.carrier || '')),
       h('div', { class: 'cp-row-s' }, [fd.license_no ? 'License ' + fd.license_no + (fd.license_state ? ' (' + fd.license_state + ')' : '') : 'License: not on file', fd.license_exp ? ' · expires ' + fd.license_exp : '', fd.medical_exp ? ' · medical ' + fd.medical_exp : ''].join('')),
-      h('div', { class: 'cp-row-s', style: 'margin-top:4px;color:#94a3b8' }, 'Name and license are managed by your carrier. You can update your phone and emergency contacts (Safety).'),
+      h('div', { class: 'cp-row-s', style: 'margin-top:4px;color:var(--lbc-x-ink3,#94a3b8)' }, 'Name and license are managed by your carrier. You can update your phone and emergency contacts (Safety).'),
       h('div', { class: 'cp-formrow2', style: 'margin-top:10px' }, [phone, saveP]),
     ]),
     perms.has('docs.upload_own') ? h('div', { class: 'cp-card' }, [cardHead('My documents', 'CDL and medical card — your carrier approves'), docsHost, uploadRow('cdl', 'CDL'), uploadRow('medical', 'medical card')]) : null,

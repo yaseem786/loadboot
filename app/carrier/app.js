@@ -141,16 +141,42 @@ try { localStorage.setItem('lb_last_portal', window.__LB_AGENT ? '/app/agent/' :
 try { const _q0 = new URLSearchParams(location.search); const _r0 = (_q0.get('ref') || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase(); if (_r0) localStorage.setItem('lb_ref', _r0);
   const _j0 = _q0.get('join'); if (_j0 === 'dispatcher' || _j0 === 'referral') localStorage.setItem('lb_join', _j0); } catch (_) {}
 try { const _ack0 = new URLSearchParams(location.search).get('ack'); if (_ack0) { sessionStorage.setItem('lb_disp_ack', _ack0); if (!location.hash) history.replaceState(null, '', location.pathname + '#dispatcher'); } } catch (_) {}   // bl_disp_0409: the intro e-mail's "Got it" link lands on the Dispatcher tab (no confirm step any more)
-const THEME_KEY = 'lb_theme';
-function themeMode() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; } }
+// bl_ui_theme (15 Oct 2026): both portals can be light or dark; carrier-dark.css (<link id="lb-dark-css">) is switched on
+// only in dark. Dispatcher portal: key lb_theme_agent, default 'off' (light).
+// Carrier portal (bl_ui_theme carrier, 15 Oct 2026): key lb_theme. Step 1 shipped with default 'on' (dark) so no screen
+// changed; after every screen was checked in both themes (desktop + phone) the default is 'off' (light-first) too.
+// A carrier who already picked Light / Dark / System keeps that choice.
+const THEME_KEY = window.__LB_AGENT ? 'lb_theme_agent' : 'lb_theme';
+const THEME_DEFAULT = 'off';
+function themeMode() { try { return localStorage.getItem(THEME_KEY) || THEME_DEFAULT; } catch (_) { return THEME_DEFAULT; } }
 function setThemeMode(m) { try { localStorage.setItem(THEME_KEY, m); } catch (_) {} applyTheme(); }
+function isDarkTheme() { return document.documentElement.getAttribute('data-lbtheme') === 'dark'; }
+function paintThemeBtns() {
+  const d = isDarkTheme();
+  document.querySelectorAll('.lb-theme-btn').forEach((b) => { b.textContent = d ? '\u2600\ufe0f' : '\ud83c\udf19'; b.title = d ? 'Switch to light mode' : 'Switch to dark mode'; b.setAttribute('aria-label', b.title); b.setAttribute('aria-pressed', d ? 'true' : 'false'); });
+  document.querySelectorAll('.lb-theme-seg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === themeMode()));
+}
 function applyTheme() {
   const m = themeMode();
   const dark = m === 'on' || (m === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.setAttribute('data-lbtheme', dark ? 'dark' : 'light');
+  const darkCss = document.getElementById('lb-dark-css');
+  if (darkCss) darkCss.media = dark ? 'all' : 'not all';
+  const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', dark ? '#0F172A' : '#10223B');
+  paintThemeBtns();
 }
 try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (themeMode() === 'system') applyTheme(); }); } catch (_) {}
 applyTheme();
+// ☀️ / 🌙 in the top bar (one tap) + Settings → Appearance (Light / Dark / System). Both portals.
+function themeToggleBtn() {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'cp-iconbtn lb-theme-btn';
+  b.addEventListener('click', () => setThemeMode(isDarkTheme() ? 'off' : 'on'));
+  setTimeout(paintThemeBtns, 0); return b;
+}
+function themeSeg() {
+  return h('div', { class: 'cpx-seg lb-theme-seg' }, [['off', 'Light'], ['on', 'Dark'], ['system', 'System']].map(([v, l]) =>
+    h('button', { 'data-mode': v, class: v === themeMode() ? 'on' : '', onClick: () => setThemeMode(v) }, l)));
+}
 
 registerAppSW(); // /app/sw.js — includes Web Push handlers
 const root = document.getElementById('lb-app');
@@ -241,11 +267,11 @@ function lbRunDeepLink(tab) {
 // GLOBAL notification / status tone tokens — defined ONCE, reused everywhere (dashboard gaps, notification feed,
 // Command Center pushes). Command Center controls a notification's severity via payload.tone.
 const TONE = {
-  urgent:  { c: '#f87171', bg: 'rgba(220,38,38,.14)', label: 'Urgent' },
-  warning: { c: '#fbbf24', bg: 'rgba(217,119,6,.14)', label: 'Attention' },
-  action:  { c: '#3b9dff', bg: 'rgba(8,131,247,.14)', label: 'Action' },
-  success: { c: '#34d399', bg: 'rgba(22,163,74,.14)', label: 'Done' },
-  info:    { c: '#9fb0ca', bg: 'rgba(148,163,184,.10)', label: 'Info' },
+  urgent:  { c: 'var(--lbc-x-danger,#f87171)', bg: 'rgba(220,38,38,.14)', label: 'Urgent' },
+  warning: { c: 'var(--lbc-x-gold,#fbbf24)', bg: 'rgba(217,119,6,.14)', label: 'Attention' },
+  action:  { c: 'var(--lbc-x-link,#3b9dff)', bg: 'rgba(8,131,247,.14)', label: 'Action' },
+  success: { c: 'var(--lbc-x-ok,#34d399)', bg: 'rgba(22,163,74,.14)', label: 'Done' },
+  info:    { c: 'var(--lbc-x-ink3,#9fb0ca)', bg: 'rgba(148,163,184,.10)', label: 'Info' },
 };
 const toneOf = (t) => TONE[t] || TONE.info;
 // Premium toast notifications (top-center slide-in card; replaces browser alert()).
@@ -314,9 +340,9 @@ function lbMaybeAskStoreReview() {
     if (Date.now() - Number(localStorage.getItem('lb_store_rev') || 0) < 90 * 864e5) return;
     localStorage.setItem('lb_store_rev', String(Date.now()));
     const isAndroid = /android/i.test(navigator.userAgent);
-    const card = h('div', { style: 'position:fixed;left:12px;right:12px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:9998;background:#10223B;color:#eaf1fb;border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:14px 16px;box-shadow:0 18px 44px -12px rgba(0,0,0,.65);max-width:480px;margin:0 auto' }, [
-      h('div', { style: 'display:flex;align-items:center;gap:8px' }, [h('b', { style: 'font-size:14px' }, '⭐ Enjoying LoadBoot?'), h('button', { style: 'margin-left:auto;background:none;border:0;color:#8ea2c3;font-size:18px;cursor:pointer', onClick: () => card.remove() }, '×')]),
-      h('div', { style: 'font-size:.84rem;color:#b9c6db;margin-top:4px' }, 'A quick rating helps more carriers find verified freight.'),
+    const card = h('div', { class: 'lbc-dark', style: 'position:fixed;left:12px;right:12px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:9998;background:#10223B;color:#eaf1fb;border:1px solid var(--lbc-x-line,rgba(255,255,255,.14));border-radius:16px;padding:14px 16px;box-shadow:0 18px 44px -12px rgba(0,0,0,.65);max-width:480px;margin:0 auto' }, [
+      h('div', { style: 'display:flex;align-items:center;gap:8px' }, [h('b', { style: 'font-size:14px' }, '⭐ Enjoying LoadBoot?'), h('button', { style: 'margin-left:auto;background:none;border:0;color:var(--lbc-x-ink3,#8ea2c3);font-size:18px;cursor:pointer', onClick: () => card.remove() }, '×')]),
+      h('div', { style: 'font-size:.84rem;color:var(--lbc-x-ink2,#b9c6db);margin-top:4px' }, 'A quick rating helps more carriers find verified freight.'),
       isAndroid ? h('a', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;display:inline-block;text-decoration:none', href: 'https://play.google.com/store/apps/details?id=com.loadboot.app', target: '_blank', rel: 'noopener' }, 'Rate on Google Play') : null,
     ].filter(Boolean));
     document.body.appendChild(card);
@@ -335,10 +361,10 @@ function lbToast(msg, tone, title) {
   try { haptic(tone === 'success' ? 'success' : tone === 'action' ? 'tap' : 'warn'); } catch (_) {}
   if (!_lbToastHost) { _lbToastHost = h('div', { style: 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;gap:10px;width:min(480px,92vw)' }); document.body.appendChild(_lbToastHost); }
   const icon = tone === 'success' ? '\u2713' : tone === 'action' ? '\u2139' : '!';
-  const card = h('div', { style: 'display:flex;gap:12px;align-items:flex-start;background:#111c31;border:1px solid rgba(255,255,255,.12);border-left:4px solid ' + t.c + ';border-radius:14px;padding:13px 14px;box-shadow:0 18px 44px -14px rgba(0,0,0,.7);transform:translateY(-8px);opacity:0;transition:.25s' }, [
+  const card = h('div', { style: 'display:flex;gap:12px;align-items:flex-start;background:var(--lbc-x-field,#111c31);border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-left:4px solid ' + t.c + ';border-radius:14px;padding:13px 14px;box-shadow:0 18px 44px -14px rgba(0,0,0,.7);transform:translateY(-8px);opacity:0;transition:.25s' }, [
     h('span', { style: 'width:26px;height:26px;border-radius:50%;flex:none;background:' + t.bg + ';color:' + t.c + ';display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px' }, icon),
-    h('div', { style: 'flex:1;min-width:0' }, [h('div', { style: 'font-weight:800;font-size:.92rem;color:#eaf1fb' }, title || (tone === 'success' ? 'Done' : 'Action needed')), h('div', { style: 'font-size:.84rem;color:#b9c6db;margin-top:2px;line-height:1.45' }, msg)]),
-    h('button', { style: 'background:none;border:0;color:#8ea2c3;font-size:18px;cursor:pointer;line-height:1;padding:0 2px', onClick: () => card.remove() }, '\u00d7'),
+    h('div', { style: 'flex:1;min-width:0' }, [h('div', { style: 'font-weight:800;font-size:.92rem;color:var(--lbc-x-ink,#eaf1fb)' }, title || (tone === 'success' ? 'Done' : 'Action needed')), h('div', { style: 'font-size:.84rem;color:var(--lbc-x-ink2,#b9c6db);margin-top:2px;line-height:1.45' }, msg)]),
+    h('button', { style: 'background:none;border:0;color:var(--lbc-x-ink3,#8ea2c3);font-size:18px;cursor:pointer;line-height:1;padding:0 2px', onClick: () => card.remove() }, '\u00d7'),
   ]);
   _lbToastHost.appendChild(card);
   requestAnimationFrame(() => { card.style.transform = 'none'; card.style.opacity = '1'; });
@@ -403,7 +429,7 @@ function openShipperTerms() {
     const tt = h('input', { class: 'cp-in', placeholder: 'Your title (e.g. Owner)', style: 'width:100%;margin-top:6px' });
     const cb = h('input', { type: 'checkbox', id: 'sct-consent' });
     const cons = h('label', { for: 'sct-consent', style: 'display:flex;gap:8px;align-items:flex-start;font-size:.85rem;margin-top:10px' }, [cb, h('span', null, 'I agree to sign electronically, I have authority to bind my company, and my typed name is my signature.')]);
-    const msg = h('div', { style: 'color:#f87171;font-size:.85rem;margin-top:6px' });
+    const msg = h('div', { style: 'color:var(--lbc-x-danger,#f87171);font-size:.85rem;margin-top:6px' });
     const go = h('button', { class: 'cp-btn', style: 'width:100%;margin-top:12px' }, 'Accept the Terms');
     const close = openModal(ag.title + ' (v' + ag.version + ')', [intro, body, nm, tt, cons, msg, go], { onClose: done });
     go.onclick = async () => {
@@ -468,16 +494,16 @@ function lbDispCountdown(iso) {
   const tick = () => {
     if (cd.isConnected) _wc = true; else { if (_wc) clearInterval(iv); return; }
     const s = Math.floor((exp - Date.now()) / 1000);
-    if (s <= 0) { cd.textContent = 'expired'; cd.style.color = '#f87171'; clearInterval(iv); return; }
+    if (s <= 0) { cd.textContent = 'expired'; cd.style.color = 'var(--lbc-x-danger,#f87171)'; clearInterval(iv); return; }
     const mm = Math.floor(s / 60);
     cd.textContent = (mm >= 60 ? Math.floor(mm / 60) + 'h ' : '') + (mm % 60) + 'm ' + String(s % 60).padStart(2, '0') + 's';
-    cd.style.color = s < 600 ? '#f87171' : '#FC5305';
+    cd.style.color = s < 600 ? 'var(--lbc-x-danger,#f87171)' : '#FC5305';
   };
   const iv = setInterval(tick, 1000); tick();
   return cd;
 }
 function lbDispBadge(dp, small) {
-  return h('span', { class: 'cpx-chip', style: 'background:#10223B;color:#FC5305;border:1px solid #FC5305;font-weight:900;letter-spacing:.02em' + (small ? ';font-size:.72rem' : ''), title: 'Your dispatcher found this load for you and posted it here. Only you can see it.' }, '📋 Posted by your dispatcher ' + lbDispName(dp));
+  return h('span', { class: 'cpx-chip', style: 'background:#10223B;color:var(--lbc-x-warn,#FC5305);border:1px solid #FC5305;font-weight:900;letter-spacing:.02em' + (small ? ';font-size:.72rem' : ''), title: 'Your dispatcher found this load for you and posted it here. Only you can see it.' }, '📋 Posted by your dispatcher ' + lbDispName(dp));
 }
 // shared decision UI (card + detail): "I'll take it" / Decline → carrier_dispatcher_load_decide
 function lbDispActions(l, host, onDone) {
@@ -487,7 +513,7 @@ function lbDispActions(l, host, onDone) {
     try {
       await carrierDispatcherLoadDecide(id9, 'accept');
       lbToast('Your dispatcher is getting the rate con — you’ll be notified when LoadBoot approves it.', 'ok', '✓ You took it');
-      mount(host, h('div', { class: 'cp-row-s', style: 'color:#4ade80;font-weight:700' }, '✅ You took it — your dispatcher is getting the rate con; you’ll be notified when LoadBoot approves it.'));
+      mount(host, h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-ok,#4ade80);font-weight:700' }, '✅ You took it — your dispatcher is getting the rate con; you’ll be notified when LoadBoot approves it.'));
       if (onDone) onDone('accepted');
     } catch (e) { _b.disabled = false; _b.textContent = '✅ I’ll take it'; lbToast((e && e.message) || 'Could not take this load.', 'urgent', 'Not taken'); }
   } }, '✅ I’ll take it');
@@ -497,7 +523,7 @@ function lbDispActions(l, host, onDone) {
     const send9 = h('button', { class: 'cp-btn', style: 'flex:1', onClick: async (ev) => {
       const r9 = why9.value.trim(); if (!r9) { err9.textContent = 'Tell your dispatcher why — it goes to them so the next load fits better.'; return; }
       ev.currentTarget.disabled = true;
-      try { await carrierDispatcherLoadDecide(id9, 'decline', r9); closeM9(); lbToast('Declined — your dispatcher has your reason.', 'info', 'Declined'); mount(host, h('div', { class: 'cp-row-s', style: 'color:#94a3b8;font-weight:700' }, '✕ Declined')); if (onDone) onDone('declined'); }
+      try { await carrierDispatcherLoadDecide(id9, 'decline', r9); closeM9(); lbToast('Declined — your dispatcher has your reason.', 'info', 'Declined'); mount(host, h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-ink3,#94a3b8);font-weight:700' }, '✕ Declined')); if (onDone) onDone('declined'); }
       catch (e) { ev.currentTarget.disabled = false; err9.textContent = (e && e.message) || 'Could not decline.'; }
     } }, 'Send to my dispatcher');
     const closeM9 = openModal('Decline this load', [h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'Your dispatcher ' + lbDispName(lbDispPost(l)) + ' posted ' + (l.origin || '') + ' → ' + (l.destination || '') + ' for you. A reason is required — it helps them pick the next one.'), why9, err9, h('div', { style: 'display:flex;gap:10px;margin-top:10px' }, [send9, h('button', { class: 'cp-btn ghost', onClick: () => closeM9() }, 'Cancel')])]);
@@ -544,21 +570,21 @@ function lbFeasChips(l, dp) {
   let dh = (window.__lbDh && window.__lbDh[l.load_id || l.id] != null) ? Number(window.__lbDh[l.load_id || l.id]) : null;
   if (dh == null && pos && l.pickup_lat != null && l.pickup_lng != null) dh = Math.round(havMi(pos.coords.latitude, pos.coords.longitude, l.pickup_lat, l.pickup_lng) * 1.2);
   if (dh == null) return out;
-  out.push(h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:#4ade80;font-weight:800' }, '\ud83d\udccd ' + Number(dh).toLocaleString() + ' mi deadhead \u2014 live from your GPS'));
+  out.push(h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, '\ud83d\udccd ' + Number(dh).toLocaleString() + ' mi deadhead \u2014 live from your GPS'));
   const f = lbFeas(l, dp);
   const rnd = (x) => x < 10 ? Math.round(x * 10) / 10 : Math.round(x);
   if (f.have && f.puEtaH != null && f.puHoursTo != null && f.puHoursTo > -24) {
     let bg, col, txt;
-    if (f.puEtaH + 1 <= f.puHoursTo) { bg = 'rgba(34,197,94,.16)'; col = '#4ade80'; txt = '\u23f1 ~' + rnd(f.puEtaH) + 'h to pickup \u2014 you\u2019ll make it'; }
-    else if (f.puEtaH <= f.puHoursTo) { bg = 'rgba(245,158,11,.18)'; col = '#fbbf24'; txt = '\u23f1 ~' + rnd(f.puEtaH) + 'h to pickup \u2014 tight, roll now'; }
-    else { bg = 'rgba(239,68,68,.16)'; col = '#fca5a5'; txt = '\u26a0 ~' + rnd(f.puEtaH) + 'h to pickup, only ' + rnd(Math.max(f.puHoursTo, 0)) + 'h left \u2014 you\u2019d be LATE'; }
+    if (f.puEtaH + 1 <= f.puHoursTo) { bg = 'rgba(34,197,94,.16)'; col = 'var(--lbc-x-ok,#4ade80)'; txt = '\u23f1 ~' + rnd(f.puEtaH) + 'h to pickup \u2014 you\u2019ll make it'; }
+    else if (f.puEtaH <= f.puHoursTo) { bg = 'rgba(245,158,11,.18)'; col = 'var(--lbc-x-gold,#fbbf24)'; txt = '\u23f1 ~' + rnd(f.puEtaH) + 'h to pickup \u2014 tight, roll now'; }
+    else { bg = 'rgba(239,68,68,.16)'; col = 'var(--lbc-x-danger,#fca5a5)'; txt = '\u26a0 ~' + rnd(f.puEtaH) + 'h to pickup, only ' + rnd(Math.max(f.puHoursTo, 0)) + 'h left \u2014 you\u2019d be LATE'; }
     out.push(h('span', { class: 'cpx-chip', style: 'background:' + bg + ';color:' + col + ';font-weight:800', title: (f.team ? 'Team (nonstop)' : 'Solo (incl. HOS breaks)') + ' estimate from your live position' }, txt));
   }
   if (f.have && f.delEtaH != null && f.delHoursTo != null) {
     let bg, col, txt;
-    if (f.delEtaH + 2 <= f.delHoursTo) { bg = 'rgba(34,197,94,.16)'; col = '#4ade80'; txt = '\ud83c\udfc1 ~' + rnd(f.delEtaH) + 'h to deliver \u2014 on time'; }
-    else if (f.delEtaH <= f.delHoursTo) { bg = 'rgba(245,158,11,.18)'; col = '#fbbf24'; txt = '\ud83c\udfc1 ~' + rnd(f.delEtaH) + 'h to deliver \u2014 tight'; }
-    else { bg = 'rgba(239,68,68,.16)'; col = '#fca5a5'; txt = '\u26a0 can\u2019t deliver in time (~' + rnd(f.delEtaH) + 'h needed, ' + rnd(Math.max(f.delHoursTo, 0)) + 'h left)'; }
+    if (f.delEtaH + 2 <= f.delHoursTo) { bg = 'rgba(34,197,94,.16)'; col = 'var(--lbc-x-ok,#4ade80)'; txt = '\ud83c\udfc1 ~' + rnd(f.delEtaH) + 'h to deliver \u2014 on time'; }
+    else if (f.delEtaH <= f.delHoursTo) { bg = 'rgba(245,158,11,.18)'; col = 'var(--lbc-x-gold,#fbbf24)'; txt = '\ud83c\udfc1 ~' + rnd(f.delEtaH) + 'h to deliver \u2014 tight'; }
+    else { bg = 'rgba(239,68,68,.16)'; col = 'var(--lbc-x-danger,#fca5a5)'; txt = '\u26a0 can\u2019t deliver in time (~' + rnd(f.delEtaH) + 'h needed, ' + rnd(Math.max(f.delHoursTo, 0)) + 'h left)'; }
     out.push(h('span', { class: 'cpx-chip', style: 'background:' + bg + ';color:' + col + ';font-weight:800', title: (f.team ? 'Team (nonstop)' : 'Solo (incl. HOS breaks)') + ' \u2014 location\u2192pickup\u2192delivery vs the delivery schedule' }, txt));
   }
   return out;
@@ -633,13 +659,13 @@ function miniBars(data, opts = {}) {
   const W = 100, H = 40, n = d.length || 1, gap = 1.6, bw = (W - gap * (n - 1)) / n;
   let bars = '';
   d.forEach((p, i) => { const hh = (Number(p.value) || 0) / max * (H - 4); bars += '<rect x="' + (i * (bw + gap)).toFixed(2) + '" y="' + (H - hh).toFixed(2) + '" width="' + bw.toFixed(2) + '" height="' + Math.max(hh, 0.8).toFixed(2) + '" rx="1" fill="url(#cpg)"/>'; });
-  return h('div', { class: 'cp-chart', html: '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" width="100%" height="' + (opts.height || 64) + '"><defs><linearGradient id="cpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0883F7"/><stop offset="1" stop-color="#93c5fd"/></linearGradient></defs>' + bars + '</svg>' });
+  return h('div', { class: 'cp-chart', html: '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" width="100%" height="' + (opts.height || 64) + '"><defs><linearGradient id="cpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0883F7"/><stop offset="1" stop-color="#93c5fd" style="stop-color:var(--lbc-x-link,#93c5fd)"/></linearGradient></defs>' + bars + '</svg>' });
 }
 function donut(parts) {
   // parts: [{label,value,color}]
   const total = parts.reduce((a, p) => a + (Number(p.value) || 0), 0) || 1;
   let acc = 0; const R = 16, C = 2 * Math.PI * R; let segs = '';
-  parts.forEach(p => { const frac = (Number(p.value) || 0) / total; const len = frac * C; segs += '<circle r="' + R + '" cx="21" cy="21" fill="none" stroke="' + p.color + '" stroke-width="6" stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '" stroke-dashoffset="' + (-acc).toFixed(2) + '" transform="rotate(-90 21 21)"/>'; acc += len; });
+  parts.forEach(p => { const frac = (Number(p.value) || 0) / total; const len = frac * C; segs += '<circle r="' + R + '" cx="21" cy="21" fill="none" style="stroke:' + p.color + '" stroke-width="6" stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '" stroke-dashoffset="' + (-acc).toFixed(2) + '" transform="rotate(-90 21 21)"/>'; acc += len; });
   return h('div', { class: 'cp-donut', html: '<svg viewBox="0 0 42 42" width="92" height="92">' + segs + '</svg>' });
 }
 
@@ -657,7 +683,7 @@ function recoveryScreen() {
     catch (e) { err.textContent = (e && e.message) || 'Could not update password.'; btn.disabled = false; btn.textContent = 'Set new password'; }
   } }, 'Set new password');
   mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [
-    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Dispatcher' : 'Carrier')]),
+    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Dispatcher' : 'Carrier')]),
     h('h1', null, 'Set a new password'),
     h('p', { class: 'cp-auth-sub' }, 'You followed a reset link — choose a new password for your account.'),
     p1, p2, err, btn,
@@ -705,7 +731,7 @@ function authScreen() {
   };
   let AGINTENT = (function () { try { return localStorage.getItem('lb_join') || ''; } catch (_) { return ''; } })();
   const _agFresh = /[?&]join=(dispatcher|referral|both)\b/.test(location.search);
-  const descr = h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? (AGINTENT === 'referral' ? 'Referral Partner' : AGINTENT === 'dispatcher' ? 'Dispatcher' : 'Partner portal') : ROLE === 'driver' ? 'Driver' : ROLE === 'oo' ? 'Owner-operator' : 'Carrier');
+  const descr = h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1;margin-top:7px" }, window.__LB_AGENT ? (AGINTENT === 'referral' ? 'Referral Partner' : AGINTENT === 'dispatcher' ? 'Dispatcher' : 'Partner portal') : ROLE === 'driver' ? 'Driver' : ROLE === 'oo' ? 'Owner-operator' : 'Carrier');
   const _urlRole = /[?&#]role=(driver|oo|carrier)\b/.exec(location.href);
   // bl_agent_0402 — AGENT PORTAL TRACK: one login, one explicit choice. 'dispatcher' = apply for the
   // salaried/commission dispatcher role; 'referral' = the 1% Referral Partner program. The choice
@@ -756,13 +782,13 @@ function authScreen() {
   // bl_drv_0344f: explicit role picker — Carrier owner / Driver / I own & drive. The choice is remembered per device.
   const ROLES = [
     ['carrier', 'Carrier owner', 'Run the company — loads, trips, fleet, documents & finance', 'rgba(252,83,5,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FC5305" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>'],
-    ['driver', 'Driver', 'Invited by a carrier — your loads, GPS check-in, POD', 'rgba(8,131,247,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.6-1.6 1.7-2.3 3-2.3s2.4.7 3 2.3M14 10h4M14 13h4"/></svg>'],
-    ['oo', 'I own & drive', 'Owner-operator — same carrier login, no separate driver account needed', 'rgba(34,197,94,.14)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3v6.5M4 14l5.8-1.5M20 14l-5.8-1.5"/></svg>'],
+    ['driver', 'Driver', 'Invited by a carrier — your loads, GPS check-in, POD', 'rgba(8,131,247,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" style="stroke:var(--lbc-x-link,#60a5fa)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.6-1.6 1.7-2.3 3-2.3s2.4.7 3 2.3M14 10h4M14 13h4"/></svg>'],
+    ['oo', 'I own & drive', 'Owner-operator — same carrier login, no separate driver account needed', 'rgba(34,197,94,.14)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" style="stroke:var(--lbc-x-ok,#4ade80)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3v6.5M4 14l5.8-1.5M20 14l-5.8-1.5"/></svg>'],
   ];
   const AGROLES = [
-    ['dispatcher', 'Work as a Dispatcher', 'Book loads for US carriers under LoadBoot — commission trial, then a written package. Own load-board access required.', 'rgba(8,131,247,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 9h5M7 12h8"/></svg>'],
+    ['dispatcher', 'Work as a Dispatcher', 'Book loads for US carriers under LoadBoot — commission trial, then a written package. Own load-board access required.', 'rgba(8,131,247,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" style="stroke:var(--lbc-x-link,#60a5fa)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 9h5M7 12h8"/></svg>'],
     ['referral', 'Earn 1% as a Referral Partner', 'Share your link. Every carrier, broker or shipper you bring in pays you 1% of every delivered load — for as long as they move freight.', 'rgba(252,83,5,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FC5305" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>'],
-    ['both', 'Do both — Dispatch & refer', 'Apply as a dispatcher AND get your personal 1% referral link — two ways to earn, one login.', 'rgba(34,197,94,.14)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M12 4v16"/><circle cx="12" cy="12" r="9"/></svg>'],
+    ['both', 'Do both — Dispatch & refer', 'Apply as a dispatcher AND get your personal 1% referral link — two ways to earn, one login.', 'rgba(34,197,94,.14)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" style="stroke:var(--lbc-x-ok,#4ade80)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M12 4v16"/><circle cx="12" cy="12" r="9"/></svg>'],
   ];
   const showStep = () => { if (!chooser) return; chooser.style.display = roleChosen ? 'none' : ''; formWrap.style.display = roleChosen ? '' : 'none'; descr.style.visibility = roleChosen ? '' : 'hidden'; };
   const paintRoles = () => { if (!chooser) return; const AG9 = !!window.__LB_AGENT; mount(chooser, [
@@ -831,7 +857,7 @@ function authScreen() {
     + '<circle cx="150" cy="37" r="17" fill="rgba(252,83,5,.15)" stroke="#FC5305" stroke-width="2.5"/><text x="150" y="42" font-size="13" text-anchor="middle">⚡</text>'
     + '<circle cx="270" cy="37" r="15" fill="rgba(34,197,94,.12)" stroke="#16a34a" stroke-width="2.5"/><text x="270" y="42" font-size="13" text-anchor="middle">🚛</text>'
     + '<text x="150" y="70" font-size="11" font-weight="700" fill="#64748B" text-anchor="middle" font-family="Manrope,sans-serif">your carrier · LoadBoot dispatcher · verified brokers</text></svg>'
-    + '<div style="margin-top:18px;font-size:25px;font-weight:800;color:#fff;line-height:1.22;letter-spacing:-.02em">Dispatch for US carriers.<br>The software does the ops.<br><span style="color:#4ade80">Earn a salary + bonus.</span></div>'
+    + '<div style="margin-top:18px;font-size:25px;font-weight:800;color:var(--lbc-x-ink,#fff);line-height:1.22;letter-spacing:-.02em">Dispatch for US carriers.<br>The software does the ops.<br><span style="color:var(--lbc-x-ok,#4ade80)">Earn a salary + bonus.</span></div>'
     + '<div class="cpx-mockstack">'
     +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">🚛 Ironhide Freight <span style="font-weight:600;color:#64748b;font-size:12px">— your carrier</span></b><span class="cpx-mockchip green">assigned ✓</span></div>'
     +     '<div class="cpx-mockroute"><span class="d o"></span>booked: Dallas, TX → Atlanta, GA · $2,850</div></div>'
@@ -840,14 +866,14 @@ function authScreen() {
     +   '<div class="cpx-mocktoast ok">💰 salary + per-truck + performance bonus</div>'
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;margin-top:22px;flex-wrap:wrap">'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">1</i>Create your account</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--lbc-x-ink2,#cdd7ea)"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:var(--lbc-x-link,#3b9dff);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">1</i>Create your account</span>'
     +   '<span style="color:#3b4f75;font-weight:800">›</span>'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">2</i>Apply as a dispatcher</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--lbc-x-ink2,#cdd7ea)"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:var(--lbc-x-link,#3b9dff);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">2</i>Apply as a dispatcher</span>'
     +   '<span style="color:#3b4f75;font-weight:800">›</span>'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(52,211,153,.16);color:#34d399;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">3</i>Get hired &amp; assigned</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--lbc-x-ink2,#cdd7ea)"><i style="width:20px;height:20px;border-radius:50%;background:rgba(52,211,153,.16);color:var(--lbc-x-ok,#34d399);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">3</i>Get hired &amp; assigned</span>'
     + '</div>'
-    + '<div style="margin-top:12px;font-size:12px;font-weight:600;color:#8ea2c3;letter-spacing:.01em">Salaried &nbsp;·&nbsp; per-truck &nbsp;·&nbsp; performance bonus &nbsp;·&nbsp; or refer &amp; earn 1%</div>'
-    + '<div style="margin-top:20px;color:#94a3b8;font-weight:500;font-size:13px;letter-spacing:.02em">The Operating System for Trucking</div>';
+    + '<div style="margin-top:12px;font-size:12px;font-weight:600;color:var(--lbc-x-ink3,#8ea2c3);letter-spacing:.01em">Salaried &nbsp;·&nbsp; per-truck &nbsp;·&nbsp; performance bonus &nbsp;·&nbsp; or refer &amp; earn 1%</div>'
+    + '<div style="margin-top:20px;color:var(--lbc-x-ink3,#94a3b8);font-weight:500;font-size:13px;letter-spacing:.02em">The Operating System for Trucking</div>';
   const formWrap = h('div', null, [changeRole, title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), passWrap, extra, err, btn, toggle, forgot,
     h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')])].filter(Boolean));
   if (changeRole) changeRole.onclick = () => { roleChosen = false; paintRoles(); showStep(); };
@@ -859,29 +885,29 @@ function authScreen() {
     + '<circle cx="8" cy="74" r="6" fill="none" stroke="#0883F7" stroke-width="3.5"/>'
     + '<circle cx="292" cy="30" r="6" fill="none" stroke="#16a34a" stroke-width="3.5"/>'
     + '<text x="150" y="82" font-size="11" font-weight="700" fill="#64748B" text-anchor="middle" font-family="Manrope,sans-serif">781 mi · booked in one tap</text></svg>'
-    + '<div style="margin-top:18px;font-size:25px;font-weight:800;color:#fff;line-height:1.22;letter-spacing:-.02em">Higher-paying loads.<br>Paperwork that handles itself.</div>'
+    + '<div style="margin-top:18px;font-size:25px;font-weight:800;color:var(--lbc-x-ink,#fff);line-height:1.22;letter-spacing:-.02em">Higher-paying loads.<br>Paperwork that handles itself.</div>'
     + '<div class="cpx-mockstack">'
     +   '<div class="cpx-mockcard">'
     +     '<div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:19px">$2,850</b><span class="cpx-mockchip green">≈ +$540 profit</span></div>'
     +     '<div class="cpx-mockroute"><span class="d o"></span>Dallas, TX</div>'
-    +     '<div class="cpx-mockroute"><span class="d g"></span>Atlanta, GA <span style="color:#94a3b8;font-weight:500">· 781 mi · $3.65/mi</span></div>'
+    +     '<div class="cpx-mockroute"><span class="d g"></span>Atlanta, GA <span style="color:var(--lbc-x-ink3,#94a3b8);font-weight:500">· 781 mi · $3.65/mi</span></div>'
     +   '</div>'
     +   '<div class="cpx-mocktoast">📍 Arrived 14:02 — detention clock running</div>'
     +   '<div class="cpx-mocktoast ok">✓ POD approved — invoice ready</div>'
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;margin-top:22px;flex-wrap:wrap">'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">1</i>Create your profile</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--lbc-x-ink2,#cdd7ea)"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:var(--lbc-x-link,#3b9dff);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">1</i>Create your profile</span>'
     +   '<span style="color:#3b4f75;font-weight:800">›</span>'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">2</i>Get FMCSA-verified</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--lbc-x-ink2,#cdd7ea)"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:var(--lbc-x-link,#3b9dff);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">2</i>Get FMCSA-verified</span>'
     +   '<span style="color:#3b4f75;font-weight:800">›</span>'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(52,211,153,.16);color:#34d399;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">3</i>Start receiving broker loads</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--lbc-x-ink2,#cdd7ea)"><i style="width:20px;height:20px;border-radius:50%;background:rgba(52,211,153,.16);color:var(--lbc-x-ok,#34d399);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">3</i>Start receiving broker loads</span>'
     + '</div>'
-    + '<div style="margin-top:12px;font-size:12px;font-weight:600;color:#8ea2c3;letter-spacing:.01em">No forced dispatch &nbsp;·&nbsp; No contracts &nbsp;·&nbsp; You approve every load</div>'
-    + '<div style="margin-top:20px;color:#94a3b8;font-weight:500;font-size:13px;letter-spacing:.02em">The Operating System for Trucking</div>' });
+    + '<div style="margin-top:12px;font-size:12px;font-weight:600;color:var(--lbc-x-ink3,#8ea2c3);letter-spacing:.01em">No forced dispatch &nbsp;·&nbsp; No contracts &nbsp;·&nbsp; You approve every load</div>'
+    + '<div style="margin-top:20px;color:var(--lbc-x-ink3,#94a3b8);font-weight:500;font-size:13px;letter-spacing:.02em">The Operating System for Trucking</div>' });
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cpx-auth-split' }, [brandPanel,
     h('div', { class: 'cp-auth-card' }, [
-      h('a', { href: '/app/?choose=1', style: 'display:inline-flex;align-items:center;gap:6px;color:#8ea2c3;font-weight:700;font-size:.82rem;text-decoration:none;margin:-4px 0 12px;padding:4px 0', html: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>All portals</span>' }),
+      h('a', { href: '/app/?choose=1', style: 'display:inline-flex;align-items:center;gap:6px;color:var(--lbc-x-ink3,#8ea2c3);font-weight:700;font-size:.82rem;text-decoration:none;margin:-4px 0 12px;padding:4px 0', html: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>All portals</span>' }),
       h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), descr]),
       chooser,
       formWrap,
@@ -1035,9 +1061,9 @@ async function agentPortal(user) {
   const sideLb9 = (k9) => (SIDE9[k9] || ['🏢', String(k9 || '')])[1];
   const tourTag = (el9, n9) => { try { if (el9 && el9.setAttribute) el9.setAttribute('data-tour', n9); } catch (_) {} return el9; };   // guided-tour hook (25 Sep 2026)
   const agCard = (t9, kids9, tour9) => h('div', { class: 'cp-card', 'data-tour': tour9 || null }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, t9)]), ...(Array.isArray(kids9) ? kids9 : [kids9])].filter(Boolean));
-  const tile9 = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:120px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;text-align:center' }, [
-    h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:#7f92b3;text-transform:uppercase' }, lbl),
-    h('div', { style: 'font-size:1.45rem;font-weight:900;margin-top:3px;color:' + (hi ? '#4ade80' : '#fff') }, val)]);
+  const tile9 = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:120px;background:var(--lbc-x-panel,rgba(255,255,255,.05));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:13px;padding:14px;text-align:center' }, [
+    h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:var(--lbc-x-ink3,#7f92b3);text-transform:uppercase' }, lbl),
+    h('div', { style: 'font-size:1.45rem;font-weight:900;margin-top:3px;color:' + (hi ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink,#fff)') }, val)]);
   const taxPdf9 = () => {
     const W9d = (window.__agw && window.__agw.d) || {};
     const nm9 = W9d.full_name || (obProfile && obProfile.full_name) || feed.name || '';
@@ -1068,9 +1094,9 @@ async function agentPortal(user) {
   };
   const rulesModal9 = () => {
     const P9 = (t9) => [document.createTextNode(t9), h('br')];
-    const H9 = (t9) => h('b', { style: 'color:#fff;display:block;margin:13px 0 3px' }, t9);
+    const H9 = (t9) => h('b', { style: 'color:var(--lbc-x-ink,#fff);display:block;margin:13px 0 3px' }, t9);
     return openModal('\ud83d\udcd6 Referral Partner Program \u2014 Rules, Policies & Terms', [
-      h('div', { style: 'font-size:.86rem;line-height:1.7;color:#cbd5e1' }, [
+      h('div', { style: 'font-size:.86rem;line-height:1.7;color:var(--lbc-x-ink2,#cbd5e1)' }, [
         H9('1. Eligibility & your referral link'),
         ...P9('\u2022 Open to individuals 18+ who complete verification (identity, payout method and tax form). One account per person; duplicate or fake accounts are removed.'),
         ...P9('\u2022 Anyone \u2014 a broker, shipper or carrier \u2014 who signs up through your link is tied to you permanently and automatically. There is NO pairing or \u201cactive chain\u201d requirement.'),
@@ -1105,7 +1131,7 @@ async function agentPortal(user) {
     ]);
   };
   const banner9 = () => h('div', {
-    style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#4ade80;font-weight:800;border-radius:12px;padding:11px 14px;cursor:pointer', onClick: rulesModal9,
+    style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:var(--lbc-x-ok,#4ade80);font-weight:800;border-radius:12px;padding:11px 14px;cursor:pointer', onClick: rulesModal9,
   }, [
     h('div', null, '✅ You earn 1% on every GPS-verified delivered load your referred clients move.'),
     h('div', { style: 'font-size:.72rem;font-weight:700;opacity:.75;margin-top:3px' }, [icon('docs',15),' Tap to read the program rules & policies']),
@@ -1153,7 +1179,7 @@ async function agentPortal(user) {
       h('div', { style: 'flex:1;min-width:190px' }, [
         h('div', { class: 'cp-row-t' }, sideIc9(x.side) + ' ' + (x.org || '')),
         h('div', { class: 'cp-row-s' }, sideLb9(x.side) + ' · joined ' + (x.joined_at ? new Date(x.joined_at).toLocaleDateString() : '') + ' · ' + (x.loads_posted || 0) + ' posted · ' + (x.trips_delivered || 0) + ' delivered'),
-      ]), h('b', { style: 'color:#4ade80' }, money9(x.your_earnings)),
+      ]), h('b', { style: 'color:var(--lbc-x-ok,#4ade80)' }, money9(x.your_earnings)),
     ])) : [h('div', { class: 'cp-muted' }, 'Nobody yet — copy an invite from your link card and send it to the broker or carrier you already know.')];
   const loadRows = () => {
     const loads = Array.isArray(feed.loads) ? feed.loads : [];
@@ -1163,9 +1189,9 @@ async function agentPortal(user) {
         h('div', { class: 'cp-row-t' }, (x.lane || '') + (x.rate ? ' · $' + Number(x.rate).toLocaleString() : '')),
         h('div', { class: 'cp-row-s' }, 'broker: ' + (x.broker || '—') + (x.broker_yours ? ' ★yours' : '') + (x.booked_by ? ' · carrier: ' + x.booked_by + (x.booked_by_yours ? ' ★YOURS — double chain ✓' : '') : '') + (Number(x.your_commission) ? ' · your cut ' + money9(x.your_commission) : '')),
       ]),
-      x.delivered_at ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ DELIVERED')
-        : x.trip_status ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff' }, [icon('truck',15),' BOOKED'])
-        : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, [icon('loads',15),' POSTED']),
+      x.delivered_at ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '✓ DELIVERED')
+        : x.trip_status ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:var(--lbc-x-link,#3b9dff)' }, [icon('truck',15),' BOOKED'])
+        : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:var(--lbc-x-gold,#fbbf24)' }, [icon('loads',15),' POSTED']),
     ]));
   };
   // ---- DISPATCHER HOME: application → status → (once hired) the Dispatcher Workspace module
@@ -1177,14 +1203,14 @@ async function agentPortal(user) {
     let d = null; try { d = await dispatcherMyStatus(); } catch (_) {}
     const prof = d && d.profile;
     const stMsg = {
-      applied: ['#94a3b8', '📝 Draft — finish and submit to apply'],
-      screening: ['#fbbf24', '⏳ In screening — the team is reviewing your application'],
-      skills_test: ['#fbbf24', '📝 Skills test — check your email / messages'],
-      trial: ['#4ade80', '🚀 Working trial in progress — your workspace is open below'],
-      verified: ['#4ade80', '✅ Verified — you’ll be assigned a carrier soon'],
-      active: ['#4ade80', '✅ Active dispatcher'],
-      suspended: ['#f87171', '⏸ Suspended — contact the team'],
-      rejected: ['#f87171', '✕ Not approved at this time'],
+      applied: ['var(--lbc-x-ink3,#94a3b8)', '📝 Draft — finish and submit to apply'],
+      screening: ['var(--lbc-x-gold,#fbbf24)', '⏳ In screening — the team is reviewing your application'],
+      skills_test: ['var(--lbc-x-gold,#fbbf24)', '📝 Skills test — check your email / messages'],
+      trial: ['var(--lbc-x-ok,#4ade80)', '🚀 Working trial in progress — your workspace is open below'],
+      verified: ['var(--lbc-x-ok,#4ade80)', '✅ Verified — you’ll be assigned a carrier soon'],
+      active: ['var(--lbc-x-ok,#4ade80)', '✅ Active dispatcher'],
+      suspended: ['var(--lbc-x-danger,#f87171)', '⏸ Suspended — contact the team'],
+      rejected: ['var(--lbc-x-danger,#f87171)', '✕ Not approved at this time'],
     };
     // bl_disp_0378 — display labels for the reason codes staff tick in the CC reject dialog.
     // Kept in sync with REASONS in app/agent/dispatcher-gaps.js (that module owns the gate itself).
@@ -1198,16 +1224,16 @@ async function agentPortal(user) {
       if (!exclusive || !c9.checked) return;
       if (b9 === exclusive) { arr.forEach((o9) => { if (o9 !== exclusive) map[o9].checked = false; }); }
       else if (map[exclusive]) { map[exclusive].checked = false; }
-    } }); map[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:#cbd5e1' }, [c9, b9]); })); return { box, map, values: () => arr.filter((x9) => map[x9].checked) }; };
+    } }); map[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:var(--lbc-x-ink2,#cbd5e1)' }, [c9, b9]); })); return { box, map, values: () => arr.filter((x9) => map[x9].checked) }; };
     // ---- premium / educational blocks (keep the dispatcher engaged) ----
-    const dHero = () => h('div', { style: 'border-radius:18px;padding:22px 22px;margin-bottom:14px;background:linear-gradient(135deg,#10223B 0%,#0d2a4d 55%,#0b1f3d 100%);border:1px solid rgba(8,131,247,.35);position:relative;overflow:hidden' }, [
-      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#7cc0ff' }, 'LOADBOOT DISPATCH ACADEMY'),
-      h('div', { style: 'font-size:1.5rem;font-weight:900;color:#fff;margin:6px 0 4px;line-height:1.15' }, 'Your salaried dispatch career starts here'),
+    const dHero = () => h('div', { style: 'border-radius:18px;padding:22px 22px;margin-bottom:14px;background:var(--lbc-x-hero,linear-gradient(135deg,#10223B 0%,#0d2a4d 55%,#0b1f3d 100%));border:1px solid rgba(8,131,247,.35);position:relative;overflow:hidden' }, [
+      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:var(--lbc-x-link,#7cc0ff)' }, 'LOADBOOT DISPATCH ACADEMY'),
+      h('div', { style: 'font-size:1.5rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:6px 0 4px;line-height:1.15' }, 'Your salaried dispatch career starts here'),
       h('div', { class: 'cp-row-s', style: 'max-width:640px;line-height:1.6' }, 'Dispatch for US carriers on a real salary — base + per-truck + performance bonus. Learn the craft below while your application is reviewed.'),
-      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [['💵 Salary + bonus'], ['🚚 Dedicated carrier'], ['🌍 Remote worldwide'], ['📈 Grows with your book']].map((c9) => h('span', { class: 'cp-pill', style: 'background:rgba(255,255,255,.07);color:#cbd5e1;font-weight:700' }, c9[0]))),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [['💵 Salary + bonus'], ['🚚 Dedicated carrier'], ['🌍 Remote worldwide'], ['📈 Grows with your book']].map((c9) => h('span', { class: 'cp-pill', style: 'background:var(--lbc-x-panel,rgba(255,255,255,.07));color:var(--lbc-x-ink2,#cbd5e1);font-weight:700' }, c9[0]))),
     ]);
-    const stepPill = (n9, t9, s9, done9) => h('div', { style: 'flex:1;min-width:150px;border-radius:12px;padding:12px;border:1px solid ' + (done9 ? 'rgba(34,197,94,.4)' : 'rgba(148,163,184,.18)') + ';background:' + (done9 ? 'rgba(34,197,94,.07)' : 'rgba(255,255,255,.02)') }, [
-      h('div', { style: 'font-weight:900;color:' + (done9 ? '#4ade80' : '#7cc0ff') }, (done9 ? '✓ ' : n9 + '. ') + t9), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, s9)]);
+    const stepPill = (n9, t9, s9, done9) => h('div', { style: 'flex:1;min-width:150px;border-radius:12px;padding:12px;border:1px solid ' + (done9 ? 'rgba(34,197,94,.4)' : 'var(--lbc-x-line,rgba(148,163,184,.18))') + ';background:' + (done9 ? 'rgba(34,197,94,.07)' : 'var(--lbc-x-panel,rgba(255,255,255,.02))') }, [
+      h('div', { style: 'font-weight:900;color:' + (done9 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-link,#7cc0ff)') }, (done9 ? '✓ ' : n9 + '. ') + t9), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, s9)]);
     const dSteps = (status) => { const order = ['screening', 'skills_test', 'trial', 'verified', 'active']; const idx = order.indexOf(status); return agCard('🧭 Your path to a salaried seat', [
       h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
         stepPill(1, 'Apply', 'Submit your detailed application + CV.', idx >= 0),
@@ -1222,12 +1248,12 @@ async function agentPortal(user) {
         ['Per-active-truck', 'Extra for every truck you keep loaded — your pay grows as your book grows (5–8 → 10–15 trucks).'],
         ['Performance bonus', 'Paid monthly on your KPIs: utilization, on-time, gross/truck, retention.'],
       ].map((c9) => h('div', { style: 'flex:1;min-width:180px;border-radius:12px;padding:12px;background:rgba(8,131,247,.06);border:1px solid rgba(8,131,247,.2)' }, [
-        h('div', { style: 'font-weight:800;color:#7cc0ff' }, c9[0]), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, c9[1])]))),
+        h('div', { style: 'font-weight:800;color:var(--lbc-x-link,#7cc0ff)' }, c9[0]), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, c9[1])]))),
       h('div', { class: 'cp-row-s', style: 'margin-top:8px;opacity:.85' }, 'Exact figures for your tier are in your written offer and scale with your book and results.'),
     ]);
-    const det = (ic9, t9, body9) => h('details', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:11px;margin-top:8px;background:rgba(255,255,255,.03);overflow:hidden' }, [
-      h('summary', { style: 'cursor:pointer;padding:11px 13px;font-weight:800;font-size:.9rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, ic9), h('span', { style: 'flex:1' }, t9), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
-      h('div', { style: 'padding:0 13px 12px;color:#b9c6da;font-size:.85rem;line-height:1.75' }, body9)]);
+    const det = (ic9, t9, body9) => h('details', { style: 'border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:11px;margin-top:8px;background:var(--lbc-x-panel,rgba(255,255,255,.03));overflow:hidden' }, [
+      h('summary', { style: 'cursor:pointer;padding:11px 13px;font-weight:800;font-size:.9rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, ic9), h('span', { style: 'flex:1' }, t9), h('span', { style: 'color:var(--lbc-x-ink3,#7f92b3);font-weight:900' }, '▾')]),
+      h('div', { style: 'padding:0 13px 12px;color:var(--lbc-x-ink2,#b9c6da);font-size:.85rem;line-height:1.75' }, body9)]);
     const dAcademy = () => agCard('🎓 Dispatcher Academy — learn the craft', [
       h('div', { class: 'cp-row-s', style: 'margin-bottom:4px' }, 'Tap each lesson. Knowing these cold is what separates a hired dispatcher from an applicant.'),
       det('🔎', 'Load boards 101 (DAT & Truckstop)', 'You book on the CARRIER’s own DAT/Truckstop seat under their MC. Learn to filter by lane, equipment and rate-per-mile, spot ghost/duplicate postings, verify the broker’s MC and authority, and read a rate confirmation before you commit a truck.'),
@@ -1267,9 +1293,9 @@ async function agentPortal(user) {
       const ownBoards = checks(['DAT', 'Truckstop', '123Loadboard', 'Other board']);
       const ownWrap = h('div', { hidden: true }, [h('div', { class: 'cp-row-s', style: 'margin:6px 0 2px' }, 'Which board(s) can you log into and book on? *'), ownBoards.box]);
       const boardAck = h('input', { type: 'checkbox' });
-      const boardWarn = h('div', { hidden: true, role: 'note', style: 'margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid rgba(252,83,5,.5);background:rgba(252,83,5,.08);font-size:.85rem;line-height:1.6;color:#fdba74' }, [
+      const boardWarn = h('div', { hidden: true, role: 'note', style: 'margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid rgba(252,83,5,.5);background:rgba(252,83,5,.08);font-size:.85rem;line-height:1.6;color:var(--lbc-x-warn,#fdba74)' }, [
         h('div', null, 'This role requires working load-board access from week one and loads you find and book yourself. The subscription does not have to be in your name — an employer’s or a carrier’s login is fine — but you must be able to log in today. Applications with no board access are not being moved forward right now. If that changes, pick one of the first two options — otherwise you can still submit and we will keep your details.'),
-        h('label', { style: 'display:flex;gap:6px;align-items:center;margin-top:8px;color:#e2e8f0' }, [boardAck, 'I understand and want to submit anyway'])]);
+        h('label', { style: 'display:flex;gap:6px;align-items:center;margin-top:8px;color:var(--lbc-x-ink,#e2e8f0)' }, [boardAck, 'I understand and want to submit anyway'])]);
       // Owner rule 21 Sep 2026: own_paid AND employer both pass — the subscription need not be in
       // the candidate's own name. none_willing / none / learning are the gap.
       const boardOk9 = (v9) => v9 === 'own_paid' || v9 === 'employer';
@@ -1289,10 +1315,10 @@ async function agentPortal(user) {
       const docState = { cv: ps9.cv_doc || null, cvName: ps9.cv_name || null, idd: ps9.id_doc || null, iddName: ps9.id_name || null };
       const mkUpload = (type9, key9, nameKey9) => {
         const on9 = docState[nameKey9];
-        const st9 = h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:' + (on9 ? '#4ade80' : '#94a3b8') }, on9 ? '✓ ' + on9 + ' — already on file (upload again to replace)' : 'PDF, DOC or image · up to 25 MB');
+        const st9 = h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:' + (on9 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink3,#94a3b8)') }, on9 ? '✓ ' + on9 + ' — already on file (upload again to replace)' : 'PDF, DOC or image · up to 25 MB');
         const inp9 = h('input', { type: 'file', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png', class: 'cp-in', onChange: async (e9) => {
           const file9 = e9.target.files && e9.target.files[0]; if (!file9) return;
-          st9.style.color = '#94a3b8'; st9.textContent = 'Uploading…';
+          st9.style.color = 'var(--lbc-x-ink3,#94a3b8)'; st9.textContent = 'Uploading…';
           try {
             const m9 = await uploadDocument(file9, type9); docState[key9] = m9.path; docState[nameKey9] = m9.fileName;
             // bl_disp_0460 — the ID used to live only in docState until Submit; a submit blocked by validation
@@ -1302,10 +1328,10 @@ async function agentPortal(user) {
               const r9 = await dispatcherSubmitId(m9.path, m9.fileName);
               if (r9 && r9.error) throw new Error(r9.error);
               prof.skills = Object.assign({}, prof.skills || {}, { id_doc: m9.path, id_name: m9.fileName });
-              st9.style.color = '#4ade80'; st9.textContent = '✓ ' + m9.fileName + ' — saved to your profile.';
-            } else { st9.style.color = '#fbbf24'; st9.textContent = '✓ ' + m9.fileName + ' — attached, not yet saved. Submit the form to store it.'; }
+              st9.style.color = 'var(--lbc-x-ok,#4ade80)'; st9.textContent = '✓ ' + m9.fileName + ' — saved to your profile.';
+            } else { st9.style.color = 'var(--lbc-x-gold,#fbbf24)'; st9.textContent = '✓ ' + m9.fileName + ' — attached, not yet saved. Submit the form to store it.'; }
           }
-          catch (e10) { st9.style.color = '#f87171'; st9.textContent = 'Upload failed — ' + ((e10 && e10.message) || 'try again'); }
+          catch (e10) { st9.style.color = 'var(--lbc-x-danger,#f87171)'; st9.textContent = 'Upload failed — ' + ((e10 && e10.message) || 'try again'); }
         } });
         return h('div', null, [inp9, st9]);
       };
@@ -1348,8 +1374,8 @@ async function agentPortal(user) {
       }
       const msg = h('div', { class: 'cp-err' });
       const grp = (label, node) => h('div', { style: 'margin-bottom:2px' }, [h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 2px' }, label), node]);
-      const fsec = (title, open, kids) => h('details', Object.assign({ style: 'border:1px solid rgba(130,165,225,.16);border-radius:13px;margin-top:10px;background:rgba(255,255,255,.02);overflow:hidden' }, open ? { open: '' } : {}), [
-        h('summary', { style: 'cursor:pointer;padding:13px 15px;font-weight:800;font-size:.95rem;color:#fff;list-style:none;display:flex;align-items:center;gap:9px' }, [h('span', { style: 'flex:1' }, title), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
+      const fsec = (title, open, kids) => h('details', Object.assign({ style: 'border:1px solid var(--lbc-x-line,rgba(130,165,225,.16));border-radius:13px;margin-top:10px;background:var(--lbc-x-panel,rgba(255,255,255,.02));overflow:hidden' }, open ? { open: '' } : {}), [
+        h('summary', { style: 'cursor:pointer;padding:13px 15px;font-weight:800;font-size:.95rem;color:var(--lbc-x-ink,#fff);list-style:none;display:flex;align-items:center;gap:9px' }, [h('span', { style: 'flex:1' }, title), h('span', { style: 'color:var(--lbc-x-ink3,#7f92b3);font-weight:900' }, '▾')]),
         h('div', { style: 'padding:2px 15px 15px' }, kids)]);
       const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
         const b9 = ev.currentTarget;
@@ -1381,7 +1407,7 @@ async function agentPortal(user) {
           fsec('1 · About you', true, [
             grp('Full name *', f.full_name), h('div', { style: 'display:flex;gap:8px' }, [grp('Country *', f.country), grp('City', f.city)]), grp('Phone / WhatsApp', f.phone),
             grp('Timezone', f.timezone), grp('Hours available per week *', f.hours),
-            h('label', { style: 'display:flex;gap:6px;align-items:center;font-size:.85rem;color:#cbd5e1;margin:6px 0' }, [f.us_overlap, 'I can overlap with US business hours']),
+            h('label', { style: 'display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--lbc-x-ink2,#cbd5e1);margin:6px 0' }, [f.us_overlap, 'I can overlap with US business hours']),
           ]),
           fsec('2 · Experience & skills', false, [
             grp('Years of US dispatch experience', f.years), grp('Most trucks managed at once', f.trucks),
@@ -1422,12 +1448,12 @@ async function agentPortal(user) {
     // Post-application premium banner: candidate-list assurance (owner request) — the applicant
     // knows exactly where they stand, and is cross-sold into the Referral (1%) program while waiting.
     const waitBanner = ['screening', 'skills_test'].includes(prof.status) ? h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,rgba(34,197,94,.14),rgba(8,131,247,.10));border:1.5px solid rgba(74,222,128,.45)' }, [
-      h('div', { style: 'font-weight:900;color:#4ade80;font-size:1.05rem' }, '✅ Application received — you\u2019re on the candidate list'),
+      h('div', { style: 'font-weight:900;color:var(--lbc-x-ok,#4ade80);font-size:1.05rem' }, '✅ Application received — you\u2019re on the candidate list'),
       h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.7' }, 'Your dispatcher application is submitted and saved on LoadBoot\u2019s dispatcher candidate list. Whenever LoadBoot hires, we select directly from this list \u2014 you don\u2019t need to do anything else. If you\u2019re shortlisted, we\u2019ll reach out by email or phone for the next step (skills test \u2192 paid trial). Keep your phone reachable.'),
     ]) : null;
-    const referralUpsell = ['screening', 'skills_test', 'trial'].includes(prof.status) ? h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,#0d1f3a,#153055);border:1.5px solid rgba(252,83,5,.5)' }, [
-      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#ff9c66' }, 'WHILE YOU WAIT \u2014 START EARNING TODAY'),
-      h('div', { style: 'font-size:1.25rem;font-weight:900;color:#fff;margin:6px 0 4px' }, 'Your trucking network is worth 1% of every load \u2014 forever'),
+    const referralUpsell = ['screening', 'skills_test', 'trial'].includes(prof.status) ? h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:var(--lbc-x-hero,linear-gradient(135deg,#0d1f3a,#153055));border:1.5px solid rgba(252,83,5,.5)' }, [
+      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:var(--lbc-x-warn,#ff9c66)' }, 'WHILE YOU WAIT \u2014 START EARNING TODAY'),
+      h('div', { style: 'font-size:1.25rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:6px 0 4px' }, 'Your trucking network is worth 1% of every load \u2014 forever'),
       h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'You clearly know trucking \u2014 that network is money. Refer carriers or brokers with your personal link: every load they run on LoadBoot pays you 1% of gross, for as long as they keep running. No cap, no cost to them, paid monthly. Many of our dispatcher candidates earn from referrals before their first shift.'),
       h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [
         h('button', { class: 'cp-btn', onClick: async (e9) => { if (optedIn) { go('referral'); return; } e9.currentTarget.disabled = true; e9.currentTarget.textContent = 'Activating…'; try { await agentReferralOptIn(); location.hash = '#referral'; location.reload(); } catch (_) { e9.currentTarget.disabled = false; e9.currentTarget.textContent = 'Try again'; } } }, '\ud83d\ude80 Activate my referral link \u2192'),
@@ -1447,21 +1473,21 @@ async function agentPortal(user) {
     const idVerifyCard = (function () {
       const sk0 = prof.skills || {};
       const when0 = (function () { try { return sk0.id_uploaded_at ? new Date(sk0.id_uploaded_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; } catch (_) { return ''; } })();
-      const st = h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8;line-height:1.6' }, idOnFile
+      const st = h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:var(--lbc-x-ink3,#94a3b8);line-height:1.6' }, idOnFile
         ? 'On file: ' + (sk0.id_name || 'your ID') + (when0 ? ', uploaded ' + when0 : '') + '. Choosing a new file replaces it \u00b7 PDF or photo \u00b7 up to 25 MB \u00b7 stored privately.'
         : 'Passport, national ID or driver\u2019s licence \u00b7 PDF or photo \u00b7 up to 25 MB. Stored privately \u2014 only LoadBoot staff can open it.');
       const file = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png', class: 'cp-in', style: 'margin-top:10px', onChange: async (e9) => {
         const f9 = e9.target.files && e9.target.files[0]; if (!f9) return;
-        file.disabled = true; st.style.color = '#94a3b8'; st.textContent = 'Uploading\u2026';
+        file.disabled = true; st.style.color = 'var(--lbc-x-ink3,#94a3b8)'; st.textContent = 'Uploading\u2026';
         try {
           const up = await uploadDocument(f9, 'dispatcher_id');
           const r9 = await dispatcherSubmitId(up.path, up.fileName);
           if (r9 && r9.error) throw new Error(r9.error);
           prof.skills = Object.assign({}, prof.skills || {}, { id_doc: up.path, id_name: up.fileName, id_uploaded_at: new Date().toISOString() });
-          st.style.color = '#4ade80';
+          st.style.color = 'var(--lbc-x-ok,#4ade80)';
           st.textContent = '\u2713 ' + up.fileName + (idOnFile ? ' received \u2014 it replaces the previous file.' : ' received.') + ' Verification usually completes within one business day.';
         } catch (e10) {
-          file.disabled = false; st.style.color = '#f87171';
+          file.disabled = false; st.style.color = 'var(--lbc-x-danger,#f87171)';
           st.textContent = 'Upload failed \u2014 ' + ((e10 && e10.message) || 'please try again') + '.';
         }
       } });
@@ -1469,11 +1495,11 @@ async function agentPortal(user) {
       // card says what the ID still gates (the carrier hand-over); on phone it folds to one line so the
       // workspace tabs are not 560px down on every screen.
       const past9 = ['trial', 'verified', 'active'].includes(prof.status);
-      const card9 = h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;' + (idOnFile ? 'background:rgba(255,255,255,.03);border:1.5px solid rgba(130,165,225,.22)' : 'background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5)') }, [
-        h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:' + (idOnFile ? '#94a3b8' : '#fdba74') }, idOnFile ? 'IDENTITY DOCUMENT \u2014 ON FILE' : 'ACTION NEEDED \u2014 IDENTITY VERIFICATION'),
-        h('div', { style: 'font-size:1.1rem;font-weight:900;color:#fff;margin:6px 0 4px' }, idOnFile ? 'Your government ID is on file' : past9 ? 'Upload a government ID before your first carrier hand-over' : 'Upload a government ID to continue'),
+      const card9 = h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;' + (idOnFile ? 'background:var(--lbc-x-panel,rgba(255,255,255,.03));border:1.5px solid var(--lbc-x-line,rgba(130,165,225,.22))' : 'background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5)') }, [
+        h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:' + (idOnFile ? 'var(--lbc-x-ink3,#94a3b8)' : 'var(--lbc-x-warn,#fdba74)') }, idOnFile ? 'IDENTITY DOCUMENT \u2014 ON FILE' : 'ACTION NEEDED \u2014 IDENTITY VERIFICATION'),
+        h('div', { style: 'font-size:1.1rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:6px 0 4px' }, idOnFile ? 'Your government ID is on file' : past9 ? 'Upload a government ID before your first carrier hand-over' : 'Upload a government ID to continue'),
         h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, idOnFile ? 'Wrong file, unreadable, expired, or LoadBoot asked for a new one? Upload a different file below \u2014 the new upload replaces the current one.' : 'Every LoadBoot dispatcher is verified before a carrier account is handed over \u2014 you will hold that carrier\u2019s authority documents and speak to brokers in their name. We check that the name and country on your application match your ID.' + (past9 ? '' : ' Applications without a verified ID are not moved to the skills test.')),
-        idOnFile ? h('div', { style: 'margin-top:10px;font-size:.84rem;font-weight:800;color:#cbd5e1' }, 'Upload a different file') : null,
+        idOnFile ? h('div', { style: 'margin-top:10px;font-size:.84rem;font-weight:800;color:var(--lbc-x-ink2,#cbd5e1)' }, 'Upload a different file') : null,
         file, st,
       ]);
       if (idOnFile) return card9;   // calm state never folds into the orange summary
@@ -1481,7 +1507,7 @@ async function agentPortal(user) {
       if (!(past9 && phone9)) return card9;
       card9.style.marginBottom = '0'; card9.style.borderTopLeftRadius = '0'; card9.style.borderTopRightRadius = '0'; card9.style.borderTop = '0';
       return h('details', { style: 'margin-bottom:12px' }, [
-        h('summary', { style: 'list-style:none;cursor:pointer;border-radius:14px;padding:11px 14px;background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5);font-weight:800;color:#fdba74;font-size:.84rem;display:flex;align-items:center;gap:8px' }, [h('span', null, '\u26a0'), h('span', { style: 'flex:1' }, 'Government ID still needed \u2014 tap to upload'), h('span', { style: 'opacity:.7' }, '\u25be')]),
+        h('summary', { style: 'list-style:none;cursor:pointer;border-radius:14px;padding:11px 14px;background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5);font-weight:800;color:var(--lbc-x-warn,#fdba74);font-size:.84rem;display:flex;align-items:center;gap:8px' }, [h('span', null, '\u26a0'), h('span', { style: 'flex:1' }, 'Government ID still needed \u2014 tap to upload'), h('span', { style: 'opacity:.7' }, '\u25be')]),
         card9,
       ]);
     })();
@@ -1489,15 +1515,15 @@ async function agentPortal(user) {
     // the team's own note, and the named points to close, in that order.
     const rejPanel9 = () => {
       const rr9 = (Array.isArray(prof.reject_reasons) ? prof.reject_reasons : []).filter(Boolean);
-      return h('div', { style: 'border-radius:20px;padding:20px 20px 18px;margin-bottom:14px;background:linear-gradient(150deg,#22100c 0%,#152236 58%,#0b1f3d 100%);border:1.5px solid rgba(248,113,113,.45);box-shadow:0 18px 40px -26px rgba(248,113,113,.6)' }, [
-        h('div', { style: 'font-size:.7rem;font-weight:900;letter-spacing:.14em;color:#fca5a5' }, 'LOADBOOT DISPATCH · APPLICATION STATUS'),
-        h('div', { style: 'font-size:1.32rem;font-weight:900;color:#fff;margin:7px 0 4px;line-height:1.18' }, 'Not approved at this time'),
+      return h('div', { style: 'border-radius:20px;padding:20px 20px 18px;margin-bottom:14px;background:var(--lbc-x-hero,linear-gradient(150deg,#22100c 0%,#152236 58%,#0b1f3d 100%));border:1.5px solid rgba(248,113,113,.45);box-shadow:0 18px 40px -26px rgba(248,113,113,.6)' }, [
+        h('div', { style: 'font-size:.7rem;font-weight:900;letter-spacing:.14em;color:var(--lbc-x-danger,#fca5a5)' }, 'LOADBOOT DISPATCH · APPLICATION STATUS'),
+        h('div', { style: 'font-size:1.32rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:7px 0 4px;line-height:1.18' }, 'Not approved at this time'),
         h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, 'Your account stays open and every answer you gave is saved. This is not the end of the road — close the points below, then apply again.'),
-        prof.review_note ? h('div', { style: 'margin-top:12px;border-radius:12px;padding:12px 14px;background:rgba(2,8,20,.45);border-left:3px solid rgba(248,113,113,.8);font-size:.87rem;color:#e6edf9;line-height:1.7;white-space:pre-wrap' }, [
-          h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:#fca5a5;margin-bottom:5px' }, 'NOTE FROM THE TEAM'), prof.review_note]) : '',
+        prof.review_note ? h('div', { style: 'margin-top:12px;border-radius:12px;padding:12px 14px;background:var(--lbc-x-field,rgba(2,8,20,.45));border-left:3px solid rgba(248,113,113,.8);font-size:.87rem;color:var(--lbc-x-ink,#e6edf9);line-height:1.7;white-space:pre-wrap' }, [
+          h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:var(--lbc-x-danger,#fca5a5);margin-bottom:5px' }, 'NOTE FROM THE TEAM'), prof.review_note]) : '',
         rr9.length ? h('div', { style: 'margin-top:13px' }, [
-          h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:#fdba74;margin-bottom:7px' }, 'WHAT TO CLOSE BEFORE YOU APPLY AGAIN'),
-          h('div', { style: 'display:flex;gap:7px;flex-wrap:wrap' }, rr9.map((c9) => h('span', { class: 'cp-pill', style: 'background:rgba(252,83,5,.12);border:1px solid rgba(252,83,5,.45);color:#fdba74;font-weight:700' }, REJ_LABEL[c9] || c9))),
+          h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:var(--lbc-x-warn,#fdba74);margin-bottom:7px' }, 'WHAT TO CLOSE BEFORE YOU APPLY AGAIN'),
+          h('div', { style: 'display:flex;gap:7px;flex-wrap:wrap' }, rr9.map((c9) => h('span', { class: 'cp-pill', style: 'background:rgba(252,83,5,.12);border:1px solid rgba(252,83,5,.45);color:var(--lbc-x-warn,#fdba74);font-weight:700' }, REJ_LABEL[c9] || c9))),
         ]) : '',
       ]);
     };
@@ -1565,10 +1591,10 @@ async function agentPortal(user) {
     if (asg.length) {
       cards.push(agCard('🚚 Your assigned carriers (' + asg.length + ')', asg.map((a9) => {
         const s9 = a9.sop || {};
-        return h('div', { style: 'padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)' }, [
-          h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [h('b', { style: 'color:#fff' }, a9.carrier || 'Carrier'), h('span', { class: 'cp-pill', style: 'color:#4ade80' }, (a9.trucks || 0) + ' trucks · ' + a9.status)]),
+        return h('div', { style: 'padding:10px 0;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.06))' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [h('b', { style: 'color:var(--lbc-x-ink,#fff)' }, a9.carrier || 'Carrier'), h('span', { class: 'cp-pill', style: 'color:var(--lbc-x-ok,#4ade80)' }, (a9.trucks || 0) + ' trucks · ' + a9.status)]),
           h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.7' }, [
-            s9.scope_value ? h('div', { style: 'color:#7cc0ff' }, '⚖️ Your scope: ' + s9.scope_value + ' — only source loads that fit this scope.') : '',
+            s9.scope_value ? h('div', { style: 'color:var(--lbc-x-link,#7cc0ff)' }, '⚖️ Your scope: ' + s9.scope_value + ' — only source loads that fit this scope.') : '',
             s9.lanes ? h('div', null, 'Lanes: ' + s9.lanes) : '',
             s9.min_rate ? h('div', null, 'Min rate/mile: ' + s9.min_rate) : '',
             s9.equipment ? h('div', null, 'Equipment: ' + s9.equipment) : '',
@@ -1605,10 +1631,10 @@ async function agentPortal(user) {
   }
   function renderTrackChooser(host) {
     const card9 = (ic9, t9, s9, b9, cls9, on9) => h('div', { class: 'cp-card', style: 'padding:22px' }, [
-      h('div', { style: 'font-size:2rem' }, ic9), h('div', { style: 'font-size:1.15rem;font-weight:900;color:#fff;margin:6px 0 4px' }, t9), h('div', { class: 'cp-row-s', style: 'line-height:1.6' }, s9),
+      h('div', { style: 'font-size:2rem' }, ic9), h('div', { style: 'font-size:1.15rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:6px 0 4px' }, t9), h('div', { class: 'cp-row-s', style: 'line-height:1.6' }, s9),
       h('button', { class: 'cp-btn' + cls9, style: 'margin-top:14px', onClick: on9 }, b9)]);
     mount(host, h('div', null, [
-      h('div', { style: 'margin:4px 0 14px' }, [h('div', { style: 'font-size:1.35rem;font-weight:900;color:#fff' }, 'Welcome — pick your track'), h('div', { class: 'cp-row-s' }, 'One account, two ways to work with LoadBoot. Choose one now; you can add the other any time from your dashboard.')]),
+      h('div', { style: 'margin:4px 0 14px' }, [h('div', { style: 'font-size:1.35rem;font-weight:900;color:var(--lbc-x-ink,#fff)' }, 'Welcome — pick your track'), h('div', { class: 'cp-row-s' }, 'One account, two ways to work with LoadBoot. Choose one now; you can add the other any time from your dashboard.')]),
       h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px' }, [
         card9('🧑‍✈️', 'Work as a Dispatcher', 'Book loads for US carriers under LoadBoot. Commission trial first, then a written package. Own load-board access required.', 'Start my application →', '', async (e9) => { e9.currentTarget.disabled = true; try { await agentSetIntent('dispatcher'); } catch (_) {} location.reload(); }),
         card9('⚡', 'Earn 1% as a Referral Partner', 'Share your personal link. Every carrier, broker or shipper you bring in pays you 1% of every delivered load — for as long as they move freight.', 'Activate my referral link →', ' ghost', async (e9) => { e9.currentTarget.disabled = true; try { await agentReferralOptIn(); location.hash = '#dashboard'; } catch (_) {} location.reload(); }),
@@ -1634,28 +1660,28 @@ async function agentPortal(user) {
         signed: !!(obProfile && obProfile.agreement_signed_at),
       };
       const obCount = Object.values(obDone).filter(Boolean).length;
-      const obStep = (lbl9, ok9) => h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:' + (ok9 ? '#4ade80' : '#94a3b8') }, (ok9 ? '✓ ' : '○ ') + lbl9);
+      const obStep = (lbl9, ok9) => h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:' + (ok9 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink3,#94a3b8)') }, (ok9 ? '✓ ' : '○ ') + lbl9);
       const verifyCard =
-        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, [icon('shield',15),' Verified partner — payouts unlocked.'])
+        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:var(--lbc-x-ok,#4ade80);margin-bottom:12px' }, [icon('shield',15),' Verified partner — payouts unlocked.'])
         : obStatus === 'under_review' ? h('div', { style: 'background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.4);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
-            h('div', { style: 'font-weight:800;color:#7cc0ff' }, '⏳ Verification UNDER REVIEW'),
+            h('div', { style: 'font-weight:800;color:var(--lbc-x-link,#7cc0ff)' }, '⏳ Verification UNDER REVIEW'),
             h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'LoadBoot dispatch is reviewing your application — usually under 24 hours. Your link works; earnings switch on at approval.')])
         : obStatus === 'info_needed' ? h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
-            h('div', { style: 'font-weight:800;color:#fbbf24' }, [icon('alert',15),' Verification — more info needed']),
+            h('div', { style: 'font-weight:800;color:var(--lbc-x-gold,#fbbf24)' }, [icon('alert',15),' Verification — more info needed']),
             h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px' }, (obProfile && obProfile.review_note) || ''),
             h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('verify') }, 'Update & resubmit →')])
-        : obStatus === 'rejected' ? h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fca5a5;font-weight:700' }, '✕ Application not approved — ' + ((obProfile && obProfile.review_note) || 'contact support.'))
+        : obStatus === 'rejected' ? h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:var(--lbc-x-danger,#fca5a5);font-weight:700' }, '✕ Application not approved — ' + ((obProfile && obProfile.review_note) || 'contact support.'))
         : h('div', { style: 'background:linear-gradient(120deg,rgba(252,83,5,.14),rgba(8,131,247,.1));border:1.5px solid rgba(252,83,5,.5);border-radius:14px;padding:16px 18px;margin-bottom:12px' }, [
             h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center' }, [
               h('div', null, [
-                h('div', { style: 'font-weight:900;font-size:1.02rem;color:#fff' }, [icon('shield',15), ' Complete your verification — ' + obCount + ' of 4 steps done']),
+                h('div', { style: 'font-weight:900;font-size:1.02rem;color:var(--lbc-x-ink,#fff)' }, [icon('shield',15), ' Complete your verification — ' + obCount + ' of 4 steps done']),
                 h('div', { style: 'display:flex;gap:14px;flex-wrap:wrap;margin-top:8px' }, [
                   obStep('Identity', obDone.identity), obStep('Network', obDone.network), obStep('Payout & tax', obDone.payout), obStep('Agreement signed', obDone.signed)]),
                 h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Earnings stay locked until LoadBoot approves you. Your link works meanwhile — joins are recorded.'),
               ]),
               h('button', { class: 'cp-btn', style: 'background:#FC5305;flex:none', onClick: () => go('verify') }, obCount ? 'Continue verification →' : 'Start verification →'),
             ]),
-            h('div', { style: 'height:6px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden' },
+            h('div', { style: 'height:6px;border-radius:99px;background:var(--lbc-x-panel,rgba(255,255,255,.08));margin-top:12px;overflow:hidden' },
               h('div', { style: 'height:100%;width:' + (obCount * 25) + '%;border-radius:99px;background:linear-gradient(90deg,#FC5305,#4ade80)' })),
           ]);
       const refKids9 = [refHome9,
@@ -1669,9 +1695,9 @@ async function agentPortal(user) {
         agCard('📈 How your money works — tap any line to open it', [
           (() => {
             const det9 = (icon9, title9, body9) => {
-              const d9 = h('details', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:11px;margin-top:6px;background:rgba(255,255,255,.03);overflow:hidden' }, [
-                h('summary', { style: 'cursor:pointer;padding:10px 13px;font-weight:800;font-size:.88rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, icon9), h('span', { style: 'flex:1' }, title9), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
-                h('div', { style: 'padding:0 13px 12px;color:#b9c6da;font-size:.84rem;line-height:1.75' }, body9),
+              const d9 = h('details', { style: 'border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:11px;margin-top:6px;background:var(--lbc-x-panel,rgba(255,255,255,.03));overflow:hidden' }, [
+                h('summary', { style: 'cursor:pointer;padding:10px 13px;font-weight:800;font-size:.88rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, icon9), h('span', { style: 'flex:1' }, title9), h('span', { style: 'color:var(--lbc-x-ink3,#7f92b3);font-weight:900' }, '▾')]),
+                h('div', { style: 'padding:0 13px 12px;color:var(--lbc-x-ink2,#b9c6da);font-size:.84rem;line-height:1.75' }, body9),
               ]);
               return d9;
             };
@@ -1686,7 +1712,7 @@ async function agentPortal(user) {
                 'Freight has disputes, claims and reversals. The 15-day window lets every load settle cleanly — it protects YOU too: once cleared, that money is firmly yours. Ledger shows it as "Accrued" during clearing, then it flips to PAYABLE automatically.'),
               det9('🏦', 'STEP 5 — Monthly payout to your VERIFIED account',
                 'Payable balance ≥ $100 → request payout from the Payouts tab (or it goes out on the monthly run). Money goes only to the account you verified in onboarding (that\u2019s why we take the ID + bank proof — nobody can redirect your money). W-9/W-8BEN keeps you tax-clean; US persons get a 1099.'),
-              h('div', { style: 'margin:14px 0 4px;font-weight:900;font-size:.8rem;letter-spacing:.08em;color:#7f92b3' }, 'THE 5 LEVELS — TAP EACH TO SEE THE MATH'),
+              h('div', { style: 'margin:14px 0 4px;font-weight:900;font-size:.8rem;letter-spacing:.08em;color:var(--lbc-x-ink3,#7f92b3)' }, 'THE 5 LEVELS — TAP EACH TO SEE THE MATH'),
               det9('🥇', 'LEVEL 1 — your direct clients · 1.00%',
                 'Every delivered load your OWN referrals (or your own posted loads) touch. Example: your broker moves 20 loads/month averaging $2,400 → $48,000 moved → YOU earn $480 every month from that one relationship. This is your bread and butter.'),
               det9('🥈', 'LEVEL 2 — agents YOU recruit · 0.50%',
@@ -1700,7 +1726,7 @@ async function agentPortal(user) {
             ]);
           })(),
         ]),
-                agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.2)' }, (n.at ? fmtWhen9(n.at) + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
+                agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed var(--lbc-x-line,rgba(148,163,184,.2))' }, (n.at ? fmtWhen9(n.at) + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
       ];
       // ux-audit A3 (24 Sep 2026): with the live referral home on top (dispatcher + partner), the legacy
       // block below it repeated the link card, the seven tiles and the activity list — 4,969px on a phone.
@@ -1714,7 +1740,7 @@ async function agentPortal(user) {
       const obDocs9 = (ob && ob.docs) || {};
       const itemRow9 = (lbl9, ok9, hint9) => h('div', { class: 'cp-row' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, lbl9), hint9 ? h('div', { class: 'cp-row-s' }, hint9) : null].filter(Boolean)),
-        ok9 ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ missing'),
+        ok9 ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '✓ on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '✕ missing'),
       ]);
       const trackerCard9 = () => agCard('📋 Submission tracker — what CC sees', [
         itemRow9('Identity (name + mobile)', !!(obProfile && (obProfile.full_name || '').trim() && (obProfile.phone || '').trim())),
@@ -1723,27 +1749,27 @@ async function agentPortal(user) {
         itemRow9('Payout method + tax form', !!(obProfile && (obProfile.payout_method || '').trim() && (obProfile.tax_form || '').trim())),
         (() => { const st9 = obDocs9.id_doc_status || 'pending';
           return h('div', { class: 'cp-row' }, [
-            h('div', null, [h('div', { class: 'cp-row-t' }, 'Government photo ID'), st9 === 'rejected' && obDocs9.id_doc_reason ? h('div', { class: 'cp-row-s', style: 'color:#f87171' }, '✕ ' + obDocs9.id_doc_reason + ' — re-upload in step 3') : null].filter(Boolean)),
-            !obDocs9.id_doc ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ missing')
-              : st9 === 'accepted' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ accepted')
-              : st9 === 'rejected' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ rejected')
-              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '⏳ pending review')]); })(),
+            h('div', null, [h('div', { class: 'cp-row-t' }, 'Government photo ID'), st9 === 'rejected' && obDocs9.id_doc_reason ? h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-danger,#f87171)' }, '✕ ' + obDocs9.id_doc_reason + ' — re-upload in step 3') : null].filter(Boolean)),
+            !obDocs9.id_doc ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '✕ missing')
+              : st9 === 'accepted' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '✓ accepted')
+              : st9 === 'rejected' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '✕ rejected')
+              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:var(--lbc-x-gold,#fbbf24)' }, '⏳ pending review')]); })(),
         (() => { const st9 = obDocs9.bank_doc_status || 'pending';
           return h('div', { class: 'cp-row' }, [
-            h('div', null, [h('div', { class: 'cp-row-t' }, 'Bank proof document'), st9 === 'rejected' && obDocs9.bank_doc_reason ? h('div', { class: 'cp-row-s', style: 'color:#f87171' }, '✕ ' + obDocs9.bank_doc_reason + ' — re-upload in step 3') : null].filter(Boolean)),
-            !obDocs9.bank_doc ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ missing')
-              : st9 === 'accepted' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ accepted')
-              : st9 === 'rejected' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ rejected')
-              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '⏳ pending review')]); })(),
+            h('div', null, [h('div', { class: 'cp-row-t' }, 'Bank proof document'), st9 === 'rejected' && obDocs9.bank_doc_reason ? h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-danger,#f87171)' }, '✕ ' + obDocs9.bank_doc_reason + ' — re-upload in step 3') : null].filter(Boolean)),
+            !obDocs9.bank_doc ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '✕ missing')
+              : st9 === 'accepted' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '✓ accepted')
+              : st9 === 'rejected' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '✕ rejected')
+              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:var(--lbc-x-gold,#fbbf24)' }, '⏳ pending review')]); })(),
         itemRow9('Agent Agreement e-signed', !!(obProfile && obProfile.agreement_signed_at), obProfile && obProfile.agreement_name ? 'signed: ' + obProfile.agreement_name : null),
       ]);
       const tl9 = () => { const steps9 = [['Submitted', ['under_review','info_needed','approved','rejected'].includes(obStatus)], ['Under review', ['under_review','info_needed'].includes(obStatus) || obStatus === 'approved' || obStatus === 'rejected'], ['Decision', obStatus === 'approved' || obStatus === 'rejected' || obStatus === 'info_needed'], ['Active', obStatus === 'approved']];
-        return h('div', { style: 'display:flex;gap:6px;margin-bottom:12px' }, steps9.map(([nm9, on9], i9) => h('div', { style: 'flex:1;text-align:center;font-size:.68rem;font-weight:800;padding:7px 4px;border-radius:9px;background:' + (on9 ? (nm9 === 'Active' ? 'rgba(34,197,94,.2)' : 'rgba(8,131,247,.2)') : 'rgba(255,255,255,.05)') + ';color:' + (on9 ? (nm9 === 'Active' ? '#4ade80' : '#7cc0ff') : '#64748b') }, (i9 + 1) + '. ' + nm9))); };
+        return h('div', { style: 'display:flex;gap:6px;margin-bottom:12px' }, steps9.map(([nm9, on9], i9) => h('div', { style: 'flex:1;text-align:center;font-size:.68rem;font-weight:800;padding:7px 4px;border-radius:9px;background:' + (on9 ? (nm9 === 'Active' ? 'rgba(34,197,94,.2)' : 'rgba(8,131,247,.2)') : 'var(--lbc-x-panel,rgba(255,255,255,.05))') + ';color:' + (on9 ? (nm9 === 'Active' ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-link,#7cc0ff)') : 'var(--lbc-x-ink3,#64748b)') }, (i9 + 1) + '. ' + nm9))); };
       const threadCard9 = () => { const host9 = agCard('💬 Talk to LoadBoot dispatch — about YOUR verification', [h('div', { class: 'cp-muted' }, 'Loading…')]);
         (async () => {
           let msgs9 = []; try { msgs9 = (await agentMsgList()) || []; } catch (_) {}
           const list9 = h('div', { style: 'max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:4px 0' },
-            msgs9.length ? msgs9.map((m9) => h('div', { style: 'max-width:85%;padding:8px 12px;border-radius:12px;font-size:.85rem;line-height:1.55;' + (m9.sender === 'agent' ? 'align-self:flex-end;background:rgba(8,131,247,.2);color:#dbeafe' : 'align-self:flex-start;background:rgba(255,255,255,.07);color:#e6edf8') }, [
+            msgs9.length ? msgs9.map((m9) => h('div', { style: 'max-width:85%;padding:8px 12px;border-radius:12px;font-size:.85rem;line-height:1.55;' + (m9.sender === 'agent' ? 'align-self:flex-end;background:rgba(8,131,247,.2);color:var(--lbc-x-ink,#dbeafe)' : 'align-self:flex-start;background:var(--lbc-x-panel,rgba(255,255,255,.07));color:var(--lbc-x-ink,#e6edf8)') }, [
               h('div', null, m9.body), h('div', { style: 'font-size:.62rem;opacity:.6;margin-top:3px' }, (m9.sender === 'agent' ? 'You' : 'LoadBoot dispatch') + ' · ' + (m9.at ? fmtWhen9(m9.at) : ''))]))
             : [h('div', { class: 'cp-muted' }, 'No messages yet — ask anything about your verification, documents or the program. Dispatch replies here and you get a notification.')]);
           const inp9 = h('input', { class: 'cp-in', placeholder: 'Type a message to dispatch…', style: 'flex:1;margin:0' });
@@ -1774,12 +1800,12 @@ async function agentPortal(user) {
       // under-review screen below would lock them out of the very form they must fix.
       const req9 = pdSeed9.details_requested || null;
       const needsFix9 = pdSeed9.payout_status === 'info_requested' || pdSeed9.payout_status === 'rejected';
-      const stEl = (st9, note9, tone9) => h('div', { style: 'background:' + (tone9 === 'ok' ? 'rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' : tone9 === 'warn' ? 'rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)' : 'rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)') + ';border-radius:12px;padding:12px 14px;font-weight:700;color:#e6edf8' }, [h('b', null, st9), note9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, note9) : null]);
+      const stEl = (st9, note9, tone9) => h('div', { style: 'background:' + (tone9 === 'ok' ? 'rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' : tone9 === 'warn' ? 'rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)' : 'rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)') + ';border-radius:12px;padding:12px 14px;font-weight:700;color:var(--lbc-x-ink,#e6edf8)' }, [h('b', null, st9), note9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, note9) : null]);
       if (obStatus === 'under_review' && needsFix9 && !W.editPayout) {
         const fields9 = (req9 && Array.isArray(req9.fields)) ? req9.fields : [];
         mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [
           stEl('📋 ACTION NEEDED — payout details', 'Your application is with us, but we cannot approve your payout method until the details below are on file. Everything else is done.', 'warn'),
-          fields9.length ? h('div', { style: 'margin-top:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:12px 14px;color:#fcd9a2' }, [
+          fields9.length ? h('div', { style: 'margin-top:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:12px 14px;color:var(--lbc-x-gold,#fcd9a2)' }, [
             h('b', null, 'We still need:'),
             h('ul', { style: 'margin:6px 0 0;padding-left:20px;line-height:1.7' }, fields9.map((f9) => h('li', null, String(f9)))),
             (req9 && req9.note) ? h('div', { style: 'margin-top:8px;font-style:italic' }, String(req9.note)) : null,
@@ -1792,7 +1818,7 @@ async function agentPortal(user) {
       if (obStatus === 'rejected') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✕ NOT APPROVED', (obProfile && obProfile.review_note) || 'Contact support for details.', 'bad')]), threadCard9()])); return; }
       const fld = (lbl9, key9, ph9, type9) => { const i9 = h('input', { class: 'cp-in', type: type9 || 'text', placeholder: ph9 || '' }); i9.value = d[key9] || ''; i9.oninput = () => { d[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
       const steps9 = ['Identity', 'Your network', 'Payout & agreement'];
-      const bar9 = h('div', { style: 'display:flex;gap:8px;margin-bottom:14px' }, steps9.map((nm9, i9) => h('div', { style: 'flex:1;text-align:center;font-size:.72rem;font-weight:800;padding:7px;border-radius:9px;background:' + (i9 === W.step ? '#0883F7' : 'rgba(255,255,255,.06)') + ';color:' + (i9 === W.step ? '#fff' : '#7f92b3') }, (i9 + 1) + '. ' + nm9)));
+      const bar9 = h('div', { style: 'display:flex;gap:8px;margin-bottom:14px' }, steps9.map((nm9, i9) => h('div', { style: 'flex:1;text-align:center;font-size:.72rem;font-weight:800;padding:7px;border-radius:9px;background:' + (i9 === W.step ? '#0883F7' : 'var(--lbc-x-panel,rgba(255,255,255,.06))') + ';color:' + (i9 === W.step ? '#fff' : 'var(--lbc-x-ink3,#7f92b3)') }, (i9 + 1) + '. ' + nm9)));
       const err9 = h('div', { class: 'cp-err' });
       let body9;
       if (W.step === 0) {
@@ -1851,17 +1877,17 @@ async function agentPortal(user) {
             h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Tax form *'), tax9]),
           ].filter(Boolean)),
           // PAYOUT GUIDANCE — honest about what actually works cross-border, and what it costs.
-          d.payout_method ? h('div', { style: 'margin-top:10px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.28);border-radius:12px;padding:11px 14px;font-size:.84rem;line-height:1.65;color:#cbd5e1' },
+          d.payout_method ? h('div', { style: 'margin-top:10px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.28);border-radius:12px;padding:11px 14px;font-size:.84rem;line-height:1.65;color:var(--lbc-x-ink2,#cbd5e1)' },
             d.payout_method === 'payoneer' ? [h('b', null, '\u2b50 Why Payoneer'), ' \u2014 we send USD to your Payoneer account, then you withdraw to your own local bank in your own currency. Payoneer\u2019s standard withdrawal fee is a small fixed amount (about US$1.50 per withdrawal on USD accounts; currency conversion is charged separately by Payoneer). ', h('b', null, 'LoadBoot adds no fee.'), ' Open a free account at payoneer.com first, then paste that email here \u2014 it must be in the same legal name as your ID.']
             : d.payout_method === 'local_bank' ? [h('b', null, '\U0001f3e6 Your own local bank, paid through Payoneer'), ' \u2014 we send the payout through Payoneer\u2019s local transfer rail, so it lands in your normal bank account in your own currency, usually in 1\u20133 business days. Payoneer\u2019s standard fee applies (about US$1.50 fixed on USD withdrawals; currency conversion charged separately). ', h('b', null, 'The account must be a real bank account in your own legal name'), ' \u2014 mobile wallets are not banks and cannot receive it.']
             : d.payout_method === 'ach' ? [h('b', null, 'US bank (ACH)'), ' \u2014 free, arrives in 1\u20133 business days. Only for accounts held at a US bank in your legal name.']
             : d.payout_method === 'crypto' ? [h('b', null, 'USDT on the Tron (TRC-20) network only'), ' \u2014 the network fee (typically US$1\u20133) is deducted from your payout, and the exact amount is shown on the payout receipt. Send-to-wrong-network losses cannot be recovered, so the address is verified with a small test transfer before your first full payout.']
             : [h('b', null, 'Requesting another method'), ' \u2014 tell us the method and the reason. Our team reviews it and enables it only if it can legally and reliably receive an international USD payment in your name.']) : null,
           // What we cannot pay to — stated plainly so nobody wastes a payout cycle.
-          d.payout_method ? h('div', { style: 'margin-top:8px;background:rgba(245,158,11,.09);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:11px 14px;font-size:.83rem;line-height:1.6;color:#fcd9a2' },
+          d.payout_method ? h('div', { style: 'margin-top:8px;background:rgba(245,158,11,.09);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:11px 14px;font-size:.83rem;line-height:1.6;color:var(--lbc-x-gold,#fcd9a2)' },
             [h('b', null, '\u26a0 We cannot pay to mobile wallets.'), ' JazzCash, EasyPaisa, bKash, M-Pesa, GCash and similar local wallets cannot receive an international USD payment directly \u2014 a payout sent there is rejected or lost. Use Payoneer (it pays into your local bank for you), a US bank account, or ask us about another method. The receiving account must be in ', h('b', null, 'your own legal name'), ' \u2014 third-party accounts are refused for anti-fraud reasons.']) : null,
           // ---- substitute tax-form fields (signed by the same e-signature below) ----
-          d.tax_form === 'w9' ? h('div', { style: 'margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px' }, [
+          d.tax_form === 'w9' ? h('div', { style: 'margin-top:12px;background:var(--lbc-x-panel,rgba(255,255,255,.04));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:12px;padding:12px 14px' }, [
             h('div', { style: 'font-weight:800;font-size:.88rem' }, [icon('receipt',15),' W-9 (substitute) — US person']),
             h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;margin-top:8px' }, [
               (() => { const c9 = h('select', { class: 'cp-in' }, [['', 'Federal tax classification *'], ['individual', 'Individual / sole proprietor'], ['single_llc', 'Single-member LLC'], ['c_corp', 'C corporation'], ['s_corp', 'S corporation'], ['partnership', 'Partnership'], ['llc', 'LLC (C/S/P)']].map(([v9, l9]) => h('option', { value: v9 }, l9))); c9.value = d.tax_class || ''; c9.onchange = () => { d.tax_class = c9.value; }; return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Tax classification *'), c9]); })(),
@@ -1870,7 +1896,7 @@ async function agentPortal(user) {
             ]),
             h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Your Step-1 address is used on the form. Your e-signature below also signs this W-9 (substitute) — certification included (backup withholding & TIN correctness).'),
           ]) : null,
-          d.tax_form === 'w8ben' ? h('div', { style: 'margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px' }, [
+          d.tax_form === 'w8ben' ? h('div', { style: 'margin-top:12px;background:var(--lbc-x-panel,rgba(255,255,255,.04));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:12px;padding:12px 14px' }, [
             h('div', { style: 'font-weight:800;font-size:.88rem' }, [icon('receipt',15),' W-8BEN (substitute) — non-US person']),
             h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;margin-top:8px' }, [
               fld('Country of citizenship *', 'tax_citizen', 'e.g. Pakistan'),
@@ -1898,8 +1924,8 @@ async function agentPortal(user) {
                 return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Bank proof * (voided check / statement header / Payoneer screenshot)'), i9, st9, docTrustBadge('agent_bank', { compact: true })]); })(),
             ]),
           ]),
-          h('div', { style: 'margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;max-height:190px;overflow:auto;font-size:.82rem;line-height:1.7;color:#b9c6da' }, [
-            h('b', { style: 'color:#fff' }, 'LoadBoot Agent Agreement — summary (full text on loadboot.com/agents.html)'), h('br'),
+          h('div', { style: 'margin-top:14px;background:var(--lbc-x-panel,rgba(255,255,255,.04));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:12px;padding:12px 14px;max-height:190px;overflow:auto;font-size:.82rem;line-height:1.7;color:var(--lbc-x-ink2,#b9c6da)' }, [
+            h('b', { style: 'color:var(--lbc-x-ink,#fff)' }, 'LoadBoot Agent Agreement — summary (full text on loadboot.com/agents.html)'), h('br'),
             '1. Independent contractor — not an employee; you handle your own taxes (1099). ',
             '2. Commission: 1% of gross on GPS-verified DELIVERED loads only; pair-activation required; 15-day clearing; monthly payout from $100; paid from LoadBoot\u2019s own fee; nothing on cancelled/disputed loads. ',
             '3. Anti-fraud: self-referrals, fake companies or circumvention = immediate termination + forfeiture. ',
@@ -1964,10 +1990,10 @@ async function agentPortal(user) {
       const now9 = Date.now();
       const days9 = (x9) => x9.last_activity ? Math.round((now9 - new Date(x9.last_activity).getTime()) / 86400000) : 999;
       const health9 = (x9) => { const dd9 = days9(x9); const nn9 = (now9 - new Date(x9.joined_at || 0).getTime()) / 86400000;
-        return nn9 < 7 && !(x9.trips_delivered || 0) ? ['🆕 NEW', 'rgba(8,131,247,.15)', '#3b9dff']
-          : dd9 <= 7 ? ['🔥 ACTIVE', 'rgba(34,197,94,.15)', '#4ade80']
-          : dd9 <= 30 ? ['🌤 QUIET ' + dd9 + 'd', 'rgba(245,158,11,.15)', '#fbbf24']
-          : ['😴 IDLE ' + dd9 + 'd', 'rgba(239,68,68,.15)', '#f87171']; };
+        return nn9 < 7 && !(x9.trips_delivered || 0) ? ['🆕 NEW', 'rgba(8,131,247,.15)', 'var(--lbc-x-link,#3b9dff)']
+          : dd9 <= 7 ? ['🔥 ACTIVE', 'rgba(34,197,94,.15)', 'var(--lbc-x-ok,#4ade80)']
+          : dd9 <= 30 ? ['🌤 QUIET ' + dd9 + 'd', 'rgba(245,158,11,.15)', 'var(--lbc-x-gold,#fbbf24)']
+          : ['😴 IDLE ' + dd9 + 'd', 'rgba(239,68,68,.15)', 'var(--lbc-x-danger,#f87171)']; };
       // KPI strip
       const act9 = all9.filter((x9) => days9(x9) <= 7).length, idle9 = all9.filter((x9) => days9(x9) > 30).length;
       const earnTot9 = all9.reduce((a9, x9) => a9 + Number(x9.your_earnings || 0), 0);
@@ -1986,14 +2012,14 @@ async function agentPortal(user) {
         : x9.side === 'carrier'
         ? 'Salaam! Quick one — the board has fresh ' + '(your lanes)' + ' loads today, zero ghost posts, detention auto-paid with GPS proof. Jump in: loadboot.com/app/carrier/ — I\u2019m here if you need anything.'
         : 'Hi! Reminder — posting on LoadBoot takes 2 minutes and verified carriers book in one tap (GPS tracking + auto paperwork included). Post one today: loadboot.com/app/partner/ — I\u2019ll personally watch it get covered.';
-      const row9x = (x9) => { const hb9 = health9(x9); return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:12px 14px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
+      const row9x = (x9) => { const hb9 = health9(x9); return h('div', { style: 'border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:13px;padding:12px 14px;margin-top:8px;background:var(--lbc-x-panel,rgba(255,255,255,.03))' }, [
         h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
           h('div', { style: 'flex:1;min-width:200px' }, [
             h('div', { style: 'font-weight:800;font-size:.95rem' }, sideIc9(x9.side) + ' ' + (x9.org || '')),
             h('div', { class: 'cp-row-s' }, sideLb9(x9.side) + ' · joined ' + (x9.joined_at ? new Date(x9.joined_at).toLocaleDateString() : '') + ' · last activity ' + (days9(x9) >= 999 ? '—' : days9(x9) === 0 ? 'today' : days9(x9) + 'd ago')),
           ]),
           h('span', { class: 'cp-pill', style: 'background:' + hb9[1] + ';color:' + hb9[2] + ';font-weight:800' }, hb9[0]),
-          h('b', { style: 'color:#4ade80;font-size:1.02rem' }, money9(x9.your_earnings)),
+          h('b', { style: 'color:var(--lbc-x-ok,#4ade80);font-size:1.02rem' }, money9(x9.your_earnings)),
         ]),
         h('div', { style: 'display:flex;gap:14px;flex-wrap:wrap;margin-top:8px' }, [
           h('span', { class: 'cp-row-s' }, [icon('loads',15), ' ' + (x9.loads_posted || 0) + ' posted']),
@@ -2041,7 +2067,7 @@ async function agentPortal(user) {
       const row9 = (x9) => {
         const st9 = stOf9(x9);
         const clearBy9 = x9.delivered_at ? new Date(new Date(x9.delivered_at).getTime() + 15 * 86400000) : null;
-        return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:12px 14px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
+        return h('div', { style: 'border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:13px;padding:12px 14px;margin-top:8px;background:var(--lbc-x-panel,rgba(255,255,255,.03))' }, [
           h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
             h('div', { style: 'flex:1;min-width:210px' }, [
               h('div', { style: 'font-weight:800;font-size:.95rem' }, (x9.lane || '') + (x9.rate ? ' · $' + Number(x9.rate).toLocaleString() : '')),
@@ -2051,17 +2077,17 @@ async function agentPortal(user) {
                 (x9.broker_yours || x9.own_post) && x9.booked_by_yours ? ' · ⚡ double chain' : '',
               ].join('')),
             ]),
-            st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ DELIVERED')
-              : st9 === 'booked' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff;font-weight:800' }, [icon('truck',15),' MOVING'])
-              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800' }, [icon('loads',15),' ON BOARD']),
+            st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, '✓ DELIVERED')
+              : st9 === 'booked' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:var(--lbc-x-link,#3b9dff);font-weight:800' }, [icon('truck',15),' MOVING'])
+              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:var(--lbc-x-gold,#fbbf24);font-weight:800' }, [icon('loads',15),' ON BOARD']),
           ]),
-          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:.74rem;color:#8fa3bf;font-weight:700' }, [
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:.74rem;color:var(--lbc-x-ink3,#8fa3bf);font-weight:700' }, [
             h('span', null, [icon('loads',15), ' posted ' + fmtD9(x9.posted_at)]),
             x9.booked_at ? h('span', null, '→ 🚛 booked ' + fmtD9(x9.booked_at)) : null,
             x9.delivered_at ? h('span', null, '→ ✓ delivered ' + fmtD9(x9.delivered_at)) : null,
             h('span', { style: 'flex:1' }),
-            Number(x9.your_commission) ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80;font-weight:800' }, [icon('finance',15), ' your 1% = ' + money9(x9.your_commission) + (clearBy9 && clearBy9 > new Date() ? ' · clears ~' + fmtD9(clearBy9) : ' · cleared')])
-              : st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.14);color:#fbbf24' }, '⏳ 1% crediting…') : null,
+            Number(x9.your_commission) ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, [icon('finance',15), ' your 1% = ' + money9(x9.your_commission) + (clearBy9 && clearBy9 > new Date() ? ' · clears ~' + fmtD9(clearBy9) : ' · cleared')])
+              : st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.14);color:var(--lbc-x-gold,#fbbf24)' }, '⏳ 1% crediting…') : null,
           ].filter(Boolean)),
         ]);
       };
@@ -2104,9 +2130,9 @@ async function agentPortal(user) {
           try { const r9 = await agentRequestPayout(); lbToast((r9 && r9.note) || 'Requested.', 'success', '💸 Payout requested'); render(); }
           catch (e9) { b9.disabled = false; b9.textContent = '💸 Request payout — ' + money9(pc.payable); lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
         } }, [icon('finance',15), ' Request payout — ' + money9(pc.payable)]) : null;
-        const stMap9 = { requested: ['🕐 REQUESTED — under review', 'rgba(245,158,11,.15)', '#fbbf24'], approved: ['✅ APPROVED — transfer being prepared', 'rgba(8,131,247,.15)', '#3b9dff'], sent: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', '#7cc0ff'], paid: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', '#7cc0ff'], received: ['✓ RECEIVED', 'rgba(34,197,94,.15)', '#4ade80'], rejected: ['✕ REJECTED', 'rgba(239,68,68,.15)', '#f87171'] };
-        const reqRows9 = (Array.isArray(pc.requests) ? pc.requests : []).map((r9) => { const m9 = stMap9[r9.status] || [r9.status, 'rgba(148,163,184,.15)', '#94a3b8'];
-          return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 13px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
+        const stMap9 = { requested: ['🕐 REQUESTED — under review', 'rgba(245,158,11,.15)', 'var(--lbc-x-gold,#fbbf24)'], approved: ['✅ APPROVED — transfer being prepared', 'rgba(8,131,247,.15)', 'var(--lbc-x-link,#3b9dff)'], sent: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', 'var(--lbc-x-link,#7cc0ff)'], paid: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', 'var(--lbc-x-link,#7cc0ff)'], received: ['✓ RECEIVED', 'rgba(34,197,94,.15)', 'var(--lbc-x-ok,#4ade80)'], rejected: ['✕ REJECTED', 'rgba(239,68,68,.15)', 'var(--lbc-x-danger,#f87171)'] };
+        const reqRows9 = (Array.isArray(pc.requests) ? pc.requests : []).map((r9) => { const m9 = stMap9[r9.status] || [r9.status, 'rgba(148,163,184,.15)', 'var(--lbc-x-ink3,#94a3b8)'];
+          return h('div', { style: 'border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:12px;padding:11px 13px;margin-top:8px;background:var(--lbc-x-panel,rgba(255,255,255,.03))' }, [
             h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
               h('div', { style: 'flex:1;min-width:170px' }, [
                 h('div', { style: 'font-weight:900;font-size:1.05rem' }, money9(r9.amount)),
@@ -2124,12 +2150,12 @@ async function agentPortal(user) {
             pc.next_clearing ? tile9('Next release', new Date(pc.next_clearing).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) : null].filter(Boolean)),
           pc.eligible
             ? h('div', { style: 'background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.45);border-radius:14px;padding:16px 18px;margin-bottom:12px;text-align:center' }, [
-                h('div', { style: 'font-weight:900;font-size:1.05rem;color:#4ade80;margin-bottom:10px' }, [icon('check',15),' You are ELIGIBLE — money is ready to move']), reqBtn,
+                h('div', { style: 'font-weight:900;font-size:1.05rem;color:var(--lbc-x-ok,#4ade80);margin-bottom:10px' }, [icon('check',15),' You are ELIGIBLE — money is ready to move']), reqBtn,
                 h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Goes to your verified account on file · reviewed by a person · bank transfers land in 3–5 business days after SENT.')])
             : h('div', { style: 'background:rgba(245,158,11,.09);border:1.5px solid rgba(245,158,11,.4);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
-                h('div', { style: 'font-weight:900;color:#fbbf24' }, '⏳ Not eligible yet — here is exactly why:'),
+                h('div', { style: 'font-weight:900;color:var(--lbc-x-gold,#fbbf24)' }, '⏳ Not eligible yet — here is exactly why:'),
                 ...(Array.isArray(pc.reasons) ? pc.reasons : []).map((x9) => h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, (x9.icon || '•') + ' ' + (x9.text || ''))),
-                h('div', { style: 'height:7px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden' },
+                h('div', { style: 'height:7px;border-radius:99px;background:var(--lbc-x-panel,rgba(255,255,255,.08));margin-top:12px;overflow:hidden' },
                   h('div', { style: 'height:100%;width:' + pct9 + '%;border-radius:99px;background:linear-gradient(90deg,#FC5305,#4ade80)' })),
                 h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, money9(pc.payable) + ' of ' + money9(pc.min_required) + ' minimum (' + pct9 + '%)')]),
           pc.bank ? agCard('🏦 Payout account on file', [
@@ -2138,8 +2164,8 @@ async function agentPortal(user) {
             pc.bank.bank_name ? h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Bank'), h('span', null, pc.bank.bank_name)]) : null,
             h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Account'), h('span', null, '···' + (pc.bank.last4 || '——'))]),
             h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
-              pc.bank.verified ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ Verified by LoadBoot') : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '⏳ pending verification'),
-              pc.bank.docs_ok ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '📎 ID + bank proof on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '📎 documents missing'),
+              pc.bank.verified ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '✓ Verified by LoadBoot') : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:var(--lbc-x-gold,#fbbf24)' }, '⏳ pending verification'),
+              pc.bank.docs_ok ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '📎 ID + bank proof on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '📎 documents missing'),
               h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('verify') }, '✎ Update account'),
             ].filter(Boolean)),
             h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, [icon('lock',15),' Payouts only ever go to this verified account — nobody can redirect your money.']),
@@ -2148,10 +2174,14 @@ async function agentPortal(user) {
         ]));
       })();
     } else if (tab === 'settings') {
-      const kv9 = (k9, v9) => h('div', { style: 'display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem' }, [h('span', { class: 'cp-row-s' }, k9), h('b', { style: 'text-align:right;word-break:break-word' }, v9 || '—')]);
-      const stMap9 = { approved: ['#4ade80', '✅ Verified'], under_review: ['#fbbf24', '⏳ Under review'], info_needed: ['#fbbf24', '✋ Info needed'], rejected: ['#f87171', '✕ Not approved'], draft: ['#94a3b8', '📝 Not submitted'] };
+      const kv9 = (k9, v9) => h('div', { style: 'display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.06));font-size:.86rem' }, [h('span', { class: 'cp-row-s' }, k9), h('b', { style: 'text-align:right;word-break:break-word' }, v9 || '—')]);
+      const stMap9 = { approved: ['var(--lbc-x-ok,#4ade80)', '✅ Verified'], under_review: ['var(--lbc-x-gold,#fbbf24)', '⏳ Under review'], info_needed: ['var(--lbc-x-gold,#fbbf24)', '✋ Info needed'], rejected: ['var(--lbc-x-danger,#f87171)', '✕ Not approved'], draft: ['var(--lbc-x-ink3,#94a3b8)', '📝 Not submitted'] };
       const st9 = stMap9[obStatus] || stMap9.draft;
+      const themeSeg9 = themeSeg();
       mount(content, h('div', null, [
+        agCard('🌗 Appearance', [
+          h('div', { class: 'cpx-set-row' }, [h('div', null, [h('div', { class: 'cpx-set-t' }, 'Theme'), h('div', { class: 'cpx-set-s' }, 'Light is the default. System follows your device. Saved on this device.')]), themeSeg9]),
+        ]),
         agCard('👤 Account', [
           kv9('Name', (obProfile && obProfile.full_name) || feed.name),
           kv9('Email', (user && user.email) || ''),
@@ -2201,8 +2231,8 @@ async function agentPortal(user) {
   // ---- 🔔 notification bell (top-right): commissions, chain joins, payout + doc updates ----
   const agBellBadge = h('span', { class: 'cp-bell-badge', hidden: true });
   const agBellList = h('div', { style: 'max-height:380px;overflow:auto' });
-  const agBellPanel = h('div', { hidden: true, style: 'position:absolute;top:44px;right:0;width:min(360px,86vw);background:#0f1b30;border:1px solid rgba(255,255,255,.14);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.55);z-index:60;overflow:hidden;text-align:left' }, [
-    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.09)' }, [
+  const agBellPanel = h('div', { hidden: true, style: 'position:absolute;top:44px;right:0;width:min(360px,86vw);background:#0f1b30;border:1px solid var(--lbc-x-line,rgba(255,255,255,.14));border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.55);z-index:60;overflow:hidden;text-align:left' }, [
+    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.09))' }, [
       h('b', { style: 'font-size:.85rem' }, [icon('bell',15),' Notifications']),
       h('button', { class: 'cp-btn-ghost', style: 'font-size:.72rem;padding:4px 8px', onClick: async () => { try { await pocketMarkAllNotificationsRead(); } catch (_) {} agLoadBell(); } }, 'Mark all read'),
     ]),
@@ -2214,7 +2244,7 @@ async function agentPortal(user) {
     agBellBadge.hidden = un9 === 0; agBellBadge.textContent = un9 > 9 ? '9+' : String(un9);
     mount(agBellList, ns9.length ? h('div', null, ns9.map((n) => {
       const p9 = n.payload || {};
-      return h('button', { style: 'display:block;width:100%;text-align:left;background:' + (n.read_at ? 'transparent' : 'rgba(8,131,247,.09)') + ';border:0;border-bottom:1px solid rgba(255,255,255,.06);padding:10px 14px;cursor:pointer;color:inherit;font:inherit', onClick: async () => { try { await pocketMarkNotificationRead(n.id); } catch (_) {} agLoadBell(); } }, [
+      return h('button', { style: 'display:block;width:100%;text-align:left;background:' + (n.read_at ? 'transparent' : 'rgba(8,131,247,.09)') + ';border:0;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.06));padding:10px 14px;cursor:pointer;color:inherit;font:inherit', onClick: async () => { try { await pocketMarkNotificationRead(n.id); } catch (_) {} agLoadBell(); } }, [
         h('div', { style: 'font-weight:800;font-size:.82rem' }, p9.title || n.template_key || 'Update'),
         p9.body ? h('div', { class: 'cp-row-s', style: 'margin-top:2px;line-height:1.5' }, String(p9.body).slice(0, 160)) : null,
         h('div', { class: 'cp-row-s', style: 'margin-top:3px;opacity:.7;font-size:.68rem' }, fmtWhen9(n.created_at)),
@@ -2237,7 +2267,7 @@ async function agentPortal(user) {
     let close9 = null;
     const sideBox9 = (ok9, ic9, t9, lines9) => h('div', { style: 'flex:1;min-width:220px;border-radius:14px;padding:14px;border:1.5px solid ' + (ok9 ? 'rgba(34,197,94,.4)' : 'rgba(245,158,11,.4)') + ';background:' + (ok9 ? 'rgba(34,197,94,.07)' : 'rgba(245,158,11,.06)') }, [
       h('div', { style: 'font-size:1.3rem' }, ic9 + (ok9 ? ' ✅' : ' ⏳')),
-      h('div', { style: 'font-weight:900;margin-top:4px;color:#fff' }, t9),
+      h('div', { style: 'font-weight:900;margin-top:4px;color:var(--lbc-x-ink,#fff)' }, t9),
       h('div', { class: 'cp-row-s', style: 'margin-top:5px;line-height:1.65' }, lines9),
     ]);
     close9 = openModal(active9 ? '✅ Your chain is ACTIVE — earning is ON' : '⏳ Pair pending — one step from earning', [
@@ -2252,14 +2282,14 @@ async function agentPortal(user) {
           : 'No freight side yet — refer a broker or shipper with your link, OR post a load yourself from the Post a Load tab. Either one turns this green.'),
       ]),
       h('div', { style: 'margin-top:12px;border-radius:12px;padding:12px 14px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3)' }, [
-        h('div', { style: 'font-weight:800;color:#93c5fd' }, active9 ? '💰 What happens now' : '💰 What happens the moment both are green'),
+        h('div', { style: 'font-weight:800;color:var(--lbc-x-link,#93c5fd)' }, active9 ? '💰 What happens now' : '💰 What happens the moment both are green'),
         h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.7' },
           '1) A load is GPS-verified DELIVERED where any side is yours → 2) 1% of the gross lands in Earnings within the half hour (🔔 + email) → 3) it clears in 15 days → 4) from $100 you request a payout in the Payouts tab. Your clients never pay extra — your cut comes out of LoadBoot\u2019s own 5% fee.'),
       ]),
       // bl_agent_0307 (29 Aug 2026): money the pair rule is holding is the strongest reason
       // to finish the pair — show it, with the exact side that unlocks it.
       (!active9 && cs9 && Number(cs9.held_on_pair) > 0) ? h('div', { style: 'margin-top:10px;border-radius:12px;padding:12px 14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35)' }, [
-        h('div', { style: 'font-weight:900;color:#fcd34d' }, '💰 $' + Number(cs9.held_on_pair).toFixed(2) + ' already earned — waiting on your pair'),
+        h('div', { style: 'font-weight:900;color:var(--lbc-x-gold,#fcd34d)' }, '💰 $' + Number(cs9.held_on_pair).toFixed(2) + ' already earned — waiting on your pair'),
         h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.65' },
           'This is real commission from delivered loads, held only because your chain isn’t paired yet. '
           + (cs9.pair_missing === 'carrier' ? 'Bring ONE carrier through your link and it releases.' : 'Bring ONE broker or shipper through your link — or post a load yourself — and it releases.')
@@ -2323,6 +2353,7 @@ async function agentPortal(user) {
           titleEl,
         ]),
         h('div', { class: 'cp-top-right' }, [
+          themeToggleBtn(),   // bl_ui_theme: light-first, one tap to dark (also in Settings → Appearance)
           agBellWrap,
         ]),
       ]),
@@ -2359,10 +2390,10 @@ async function agentPortal(user) {
 // exact street addresses & pins unlock after booking (they go on the rate confirmation).
 function lbStopsModal9(l9) {
   const st9 = (l9.details && l9.details.stops) || [];
-  const row9 = (ic9, t9, s9, hot9) => h('div', { style: 'display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07)' }, [
+  const row9 = (ic9, t9, s9, hot9) => h('div', { style: 'display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.07))' }, [
     h('span', { style: 'font-size:1.15rem;flex:none' }, ic9),
     h('div', null, [
-      h('div', { style: 'font-weight:800;color:' + (hot9 ? '#c4b5fd' : '#fff') }, t9),
+      h('div', { style: 'font-weight:800;color:' + (hot9 ? 'var(--lbc-x-violet,#c4b5fd)' : 'var(--lbc-x-ink,#fff)') }, t9),
       s9 ? h('div', { class: 'cp-row-s', style: 'margin-top:1px' }, s9) : null,
     ].filter(Boolean)),
   ]);
@@ -2408,13 +2439,13 @@ function notCarrier() {
       if (!cs || !cs.has_code) return;
       const money9 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
       const k = cs.kpis || {}; const tt = cs.totals || {};
-      const tile = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:110px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:12px;text-align:center' }, [
-        h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:#7f92b3;text-transform:uppercase' }, lbl),
-        h('div', { style: 'font-size:1.35rem;font-weight:900;margin-top:3px;color:' + (hi ? '#4ade80' : '#fff') }, val)]);
+      const tile = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:110px;background:var(--lbc-x-panel,rgba(255,255,255,.05));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:13px;padding:12px;text-align:center' }, [
+        h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:var(--lbc-x-ink3,#7f92b3);text-transform:uppercase' }, lbl),
+        h('div', { style: 'font-size:1.35rem;font-weight:900;margin-top:3px;color:' + (hi ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink,#fff)') }, val)]);
       const kpis = h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
         tile('Referred', String(k.referred || 0)), tile('Brokers', String(k.brokers || 0)), tile('Carriers', String(k.carriers || 0)),
         tile('Clearing', money9(tt.accrued)), tile('Payable', money9(tt.payable), true), tile('Paid', money9(tt.paid), true)]);
-      const banner = h('div', { style: 'margin-top:10px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80' }, [icon('check',15),' You earn 1% on every GPS-verified delivered load your referred clients move.']);
+      const banner = h('div', { style: 'margin-top:10px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:10px 14px;font-weight:800;color:var(--lbc-x-ok,#4ade80)' }, [icon('check',15),' You earn 1% on every GPS-verified delivered load your referred clients move.']);
       // invite templates — one-tap copy
       const invite = (label9, txt9) => h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { try { const _ct1387 = ev9.currentTarget; await navigator.clipboard.writeText(txt9); _ct1387.textContent = 'Copied ✓'; setTimeout(() => { _ct1387.textContent = label9; }, 1500); } catch (_) { alert(txt9); } } }, label9);
       const inviteRow = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' }, [
@@ -2425,9 +2456,9 @@ function notCarrier() {
       const loads = Array.isArray(cs.loads) ? cs.loads : [];
       const badge9 = (txt9, bg9, cl9) => h('span', { class: 'cp-pill', style: 'background:' + bg9 + ';color:' + cl9 }, txt9);
       const loadRows = loads.map((x) => {
-        const st9 = x.delivered_at ? badge9('✓ DELIVERED', 'rgba(34,197,94,.15)', '#4ade80')
-          : x.trip_status ? badge9('🚛 BOOKED', 'rgba(8,131,247,.15)', '#3b9dff')
-          : badge9('📦 POSTED', 'rgba(245,158,11,.15)', '#fbbf24');
+        const st9 = x.delivered_at ? badge9('✓ DELIVERED', 'rgba(34,197,94,.15)', 'var(--lbc-x-ok,#4ade80)')
+          : x.trip_status ? badge9('🚛 BOOKED', 'rgba(8,131,247,.15)', 'var(--lbc-x-link,#3b9dff)')
+          : badge9('📦 POSTED', 'rgba(245,158,11,.15)', 'var(--lbc-x-gold,#fbbf24)');
         return h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
           h('div', { style: 'flex:1;min-width:190px' }, [
             h('div', { class: 'cp-row-t' }, (x.lane || '') + (x.rate ? ' · $' + Number(x.rate).toLocaleString() : '')),
@@ -2448,7 +2479,7 @@ function notCarrier() {
           h('div', { style: 'flex:1;min-width:190px' }, [
             h('div', { class: 'cp-row-t' }, (x.side === 'carrier' ? '🚛 ' : '🏢 ') + (x.org || '')),
             h('div', { class: 'cp-row-s' }, x.side + ' · joined ' + (x.joined_at ? new Date(x.joined_at).toLocaleDateString() : '') + ' · ' + (x.loads_posted || 0) + ' posted · ' + (x.trips_delivered || 0) + ' delivered'),
-          ]), h('b', { style: 'color:#4ade80' }, money9(x.your_earnings)),
+          ]), h('b', { style: 'color:var(--lbc-x-ok,#4ade80)' }, money9(x.your_earnings)),
         ]))) : h('div', { class: 'cp-row-s' }, 'Nobody yet — copy an invite above and send it to that broker or carrier you already know.'),
         h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, [icon('loads',15),' Chain loads — live']),
         loadRows.length ? h('div', null, loadRows) : h('div', { class: 'cp-row-s' }, 'Loads your clients post or haul appear here the moment they happen: POSTED → BOOKED → DELIVERED (+ your cut).'),
@@ -2638,7 +2669,7 @@ async function appView(user) {
     } catch (_) {} })();
     // Availability dot on the avatar (green = online, grey = offline) — mirrors the real toggle.
     const avaDot = h('span', { class: 'cpx-d-avadot' });
-    function paintDot() { avaDot.style.background = !(_dp && _dp.available === false) ? '#22c55e' : '#64748b'; }
+    function paintDot() { avaDot.style.background = !(_dp && _dp.available === false) ? 'var(--lbc-x-ok,#22c55e)' : '#64748b'; }
     paintDot();
     const drawer = h('aside', { class: 'cpx-drawer' }, [
       h('div', { class: 'cpx-d-head', onClick: () => { close(); go('account'); } }, [
@@ -2682,6 +2713,7 @@ async function appView(user) {
         ]),
         h('div', { class: 'cp-top-right' }, [
           availPill,
+          themeToggleBtn(),   // bl_ui_theme carrier: one tap Light ↔ Dark (also Settings → Appearance)
           h('button', { class: 'cp-iconbtn cpx-desktop', title: 'Settings', onClick: () => go('settings') }, icon('cog', 20)),
           h('button', { class: 'cp-chip cp-chip-btn cpx-desktop ' + (ov.compliance_ok ? 'ok' : 'warn'), title: ov.compliance_ok ? 'Account compliant' : 'Action needed \u2014 finish your setup', onClick: () => go(ov.compliance_ok ? 'account' : 'documents') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
           bell,
@@ -2791,10 +2823,10 @@ async function appView(user) {
             const hot9 = us9 && Number(x9.diesel) > Number(us9.diesel);
             return h('div', { style: 'border:1px solid rgba(148,163,184,.25);border-radius:12px;padding:10px 12px' }, [
               h('div', { class: 'cp-row-s', style: 'font-weight:700' }, x9.region),
-              h('div', { style: 'font-weight:800;font-size:1.05rem;color:' + (hot9 ? '#fbbf24' : '#4ade80') }, '$' + Number(x9.diesel).toFixed(3) + '/gal'),
+              h('div', { style: 'font-weight:800;font-size:1.05rem;color:' + (hot9 ? 'var(--lbc-x-gold,#fbbf24)' : 'var(--lbc-x-ok,#4ade80)') }, '$' + Number(x9.diesel).toFixed(3) + '/gal'),
             ]);
           })),
-          h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8' }, 'Fuel your profit engine uses this data \u2014 set your MPG in Settings. Green = at/below national average, amber = above.'),
+          h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:var(--lbc-x-ink3,#94a3b8)' }, 'Fuel your profit engine uses this data \u2014 set your MPG in Settings. Green = at/below national average, amber = above.'),
         ]));
       } catch (_) {} })(); }).catch(function () { mount(content, h('div', { class: 'cp-muted' }, 'Could not load market rates.')); });
     else loadDashboard();
@@ -2843,7 +2875,7 @@ async function appView(user) {
   // Star row helper (official palette: orange stars like the brand accent)
   const starsRow = (avg, size) => {
     const full = Math.round(Number(avg) || 0);
-    return h('span', { style: 'color:#F97316;font-size:' + (size || 16) + 'px;letter-spacing:2px' }, '★'.repeat(full) + '☆'.repeat(5 - full));
+    return h('span', { style: 'color:var(--lbc-x-warn,#F97316);font-size:' + (size || 16) + 'px;letter-spacing:2px' }, '★'.repeat(full) + '☆'.repeat(5 - full));
   };
   /* ----- Amazon-style appeal: reinstatement request / health plan of action ----- */
   async function loadReinstate() {
@@ -2905,10 +2937,10 @@ async function appView(user) {
       let wasConn = false; const tick = () => {
         if (tEl.isConnected) wasConn = true; else if (wasConn) { clearInterval(iv9); return; }
         const left = dl9 - Date.now();
-        if (left <= 0) { tEl.textContent = '\u23f0 DEADLINE PASSED \u2014 answer immediately to avoid the consequence'; tEl.style.color = '#f87171'; return; }
+        if (left <= 0) { tEl.textContent = '\u23f0 DEADLINE PASSED \u2014 answer immediately to avoid the consequence'; tEl.style.color = 'var(--lbc-x-danger,#f87171)'; return; }
         const hh = Math.floor(left / 36e5), mm = Math.floor((left % 36e5) / 6e4);
         tEl.textContent = '\u23f3 ' + (hh >= 48 ? Math.floor(hh / 24) + 'd ' + (hh % 24) + 'h' : hh + 'h ' + mm + 'm') + ' left to respond';
-        tEl.style.color = left < 3 * 36e5 ? '#f87171' : '#fbbf24';
+        tEl.style.color = left < 3 * 36e5 ? 'var(--lbc-x-danger,#f87171)' : 'var(--lbc-x-gold,#fbbf24)';
       }; const iv9 = setInterval(tick, 30e3); tick();
       return tEl;
     };
@@ -2923,21 +2955,21 @@ async function appView(user) {
         if (!ev.length) continue;
         const reqsK = hist.filter((r) => r.kind === k9);
         const latest = reqsK[0] || null;
-        const stPill = latest ? (() => { const pl = (latest.status === 'approved') ? ['\u2713 Approved', 'rgba(22,163,74,.15)', '#4ade80'] : latest.status === 'rejected' ? ['\u2715 Declined', 'rgba(239,68,68,.15)', '#f87171'] : latest.status === 'in_review' ? ['\u23f3 In review', 'rgba(8,131,247,.15)', '#3b9dff'] : latest.status === 'more_info' ? ['\u21a9 More info needed', 'rgba(217,119,6,.15)', '#fbbf24'] : ['\u2022 Submitted', 'rgba(217,119,6,.15)', '#fbbf24']; return h('span', { class: 'cp-pill', style: 'background:' + pl[1] + ';color:' + pl[2] }, pl[0]); })() : null;
+        const stPill = latest ? (() => { const pl = (latest.status === 'approved') ? ['\u2713 Approved', 'rgba(22,163,74,.15)', 'var(--lbc-x-ok,#4ade80)'] : latest.status === 'rejected' ? ['\u2715 Declined', 'rgba(239,68,68,.15)', 'var(--lbc-x-danger,#f87171)'] : latest.status === 'in_review' ? ['\u23f3 In review', 'rgba(8,131,247,.15)', 'var(--lbc-x-link,#3b9dff)'] : latest.status === 'more_info' ? ['\u21a9 More info needed', 'rgba(217,119,6,.15)', 'var(--lbc-x-gold,#fbbf24)'] : ['\u2022 Submitted', 'rgba(217,119,6,.15)', 'var(--lbc-x-gold,#fbbf24)']; return h('span', { class: 'cp-pill', style: 'background:' + pl[1] + ';color:' + pl[2] }, pl[0]); })() : null;
         const d0 = ev[0] && ev[0].at ? new Date(ev[0].at).toLocaleDateString() : '';
         const d1 = ev[ev.length - 1] && ev[ev.length - 1].at ? new Date(ev[ev.length - 1].at).toLocaleDateString() : '';
         const body9 = h('div', { style: 'display:none;margin-top:8px;border-top:1px dashed rgba(148,163,184,.25);padding-top:6px' });
         let lastDay = '';
         ev.forEach((e9) => {
           const day9 = e9.at ? new Date(e9.at).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : '';
-          if (day9 && day9 !== lastDay) { lastDay = day9; body9.appendChild(h('div', { style: 'text-align:center;margin:8px 0 2px' }, h('span', { class: 'cp-pill', style: 'background:rgba(148,163,184,.15);color:#94a3b8;font-size:.7rem' }, day9))); }
+          if (day9 && day9 !== lastDay) { lastDay = day9; body9.appendChild(h('div', { style: 'text-align:center;margin:8px 0 2px' }, h('span', { class: 'cp-pill', style: 'background:rgba(148,163,184,.15);color:var(--lbc-x-ink3,#94a3b8);font-size:.7rem' }, day9))); }
           const you = e9.who === 'you';
-          const tone9 = e9.type === 'accepted' ? ['rgba(22,163,74,.12)', '#4ade80', '\u2713 Accepted'] :
-                        e9.type === 'declined' ? ['rgba(239,68,68,.12)', '#f87171', '\u2715 Declined'] :
-                        e9.type === 'more_info' ? ['rgba(217,119,6,.12)', '#fbbf24', '\u21a9 More info requested'] :
-                        e9.type === 'demand' ? ['rgba(217,119,6,.12)', '#fbbf24', '\ud83d\udccb Demand' + (e9.factor ? ' \u2014 ' + e9.factor : '')] :
-                        e9.type === 'pause' ? ['rgba(239,68,68,.12)', '#f87171', '\u23f8 Account paused' + (e9.factor ? ' (' + e9.factor + ')' : '')] :
-                        you ? ['rgba(8,131,247,.12)', '#3b9dff', '\ud83d\udce4 Your answer'] : ['rgba(148,163,184,.12)', '#94a3b8', 'Reply'];
+          const tone9 = e9.type === 'accepted' ? ['rgba(22,163,74,.12)', 'var(--lbc-x-ok,#4ade80)', '\u2713 Accepted'] :
+                        e9.type === 'declined' ? ['rgba(239,68,68,.12)', 'var(--lbc-x-danger,#f87171)', '\u2715 Declined'] :
+                        e9.type === 'more_info' ? ['rgba(217,119,6,.12)', 'var(--lbc-x-gold,#fbbf24)', '\u21a9 More info requested'] :
+                        e9.type === 'demand' ? ['rgba(217,119,6,.12)', 'var(--lbc-x-gold,#fbbf24)', '\ud83d\udccb Demand' + (e9.factor ? ' \u2014 ' + e9.factor : '')] :
+                        e9.type === 'pause' ? ['rgba(239,68,68,.12)', 'var(--lbc-x-danger,#f87171)', '\u23f8 Account paused' + (e9.factor ? ' (' + e9.factor + ')' : '')] :
+                        you ? ['rgba(8,131,247,.12)', 'var(--lbc-x-link,#3b9dff)', '\ud83d\udce4 Your answer'] : ['rgba(148,163,184,.12)', 'var(--lbc-x-ink3,#94a3b8)', 'Reply'];
           body9.appendChild(h('div', { style: 'display:flex;justify-content:' + (you ? 'flex-end' : 'flex-start') + ';margin:5px 0' },
             h('div', { style: 'max-width:88%;background:' + tone9[0] + ';border:1px solid rgba(148,163,184,.18);border-radius:12px;padding:9px 12px' }, [
               h('div', { style: 'display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap' }, [
@@ -2945,10 +2977,10 @@ async function appView(user) {
                 h('span', { class: 'cp-row-s', style: 'font-size:.72rem' }, e9.at ? new Date(e9.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''),
               ]),
               h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;margin-top:4px' }, e9.text || ''),
-              (Array.isArray(e9.attachments) && e9.attachments.length) ? h('div', { class: 'cp-row-s', style: 'margin-top:4px;color:#3b9dff;cursor:pointer', onClick: (x9) => { x9.stopPropagation(); go('documents'); } }, '\ud83d\udcce ' + e9.attachments.map((a9) => a9.file_name).join(' \u00b7 ') + ' \u2014 view in Documents \u2192') : null,
+              (Array.isArray(e9.attachments) && e9.attachments.length) ? h('div', { class: 'cp-row-s', style: 'margin-top:4px;color:var(--lbc-x-link,#3b9dff);cursor:pointer', onClick: (x9) => { x9.stopPropagation(); go('documents'); } }, '\ud83d\udcce ' + e9.attachments.map((a9) => a9.file_name).join(' \u00b7 ') + ' \u2014 view in Documents \u2192') : null,
             ].filter(Boolean))));
         });
-        const caret9 = h('span', { style: 'color:#3b9dff;font-weight:700;font-size:.85rem' }, '\u25be View details');
+        const caret9 = h('span', { style: 'color:var(--lbc-x-link,#3b9dff);font-weight:700;font-size:.85rem' }, '\u25be View details');
         secs.push(h('div', { style: 'border:1px solid rgba(148,163,184,.2);border-radius:12px;padding:10px 12px;margin-top:8px' }, [
           h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer', onClick: () => { const on = body9.style.display !== 'none'; body9.style.display = on ? 'none' : 'block'; caret9.textContent = on ? '\u25be View details' : '\u25b4 Hide'; } }, [
             h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [h('span', { style: 'font-weight:700;font-size:.92rem' }, label9), stPill].filter(Boolean)),
@@ -2967,7 +2999,7 @@ async function appView(user) {
     };
     const head = h('div', { class: 'cp-card', style: paused ? 'border-color:rgba(239,68,68,.45)' : 'border-color:rgba(217,119,6,.4)' }, [
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' }, [
-        h('div', { class: 'cp-row-t', style: 'font-size:1.05rem;color:' + (paused ? '#f87171' : '#fbbf24') }, paused ? '\u23f8 Account paused \u2014 ' + (ov.pause_scope === 'booking' ? 'booking blocked' : 'all services blocked') : '\ud83d\udccb Plan of action \u2014 account health'),
+        h('div', { class: 'cp-row-t', style: 'font-size:1.05rem;color:' + (paused ? 'var(--lbc-x-danger,#f87171)' : 'var(--lbc-x-gold,#fbbf24)') }, paused ? '\u23f8 Account paused \u2014 ' + (ov.pause_scope === 'booking' ? 'booking blocked' : 'all services blocked') : '\ud83d\udccb Plan of action \u2014 account health'),
         helpBtn9(true),
       ]),
       paused && reason ? h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'Reason on file: ' + reason) : null,
@@ -2975,12 +3007,12 @@ async function appView(user) {
         ? 'Complete the requirements below and submit \u2014 our team reviews every request within 24 hours. Approval reinstates your account instantly.'
         : 'Your health score dropped. Per LoadBoot policy, explain what caused it, what you fixed, and how you\u2019ll prevent it. This answer stays on your record and is reviewed within 24 hours.'),
       (!paused && poaCtx && poaCtx.factors && poaCtx.factors.length) ? h('div', { style: 'margin-top:8px;display:flex;gap:6px;flex-wrap:wrap' },
-        poaCtx.factors.map((f) => h('span', { class: 'cp-pill', style: 'background:rgba(217,119,6,.15);color:#fbbf24' }, (f.label || '') + (f.lost ? ' \u2212' + f.lost : '')))) : null,
+        poaCtx.factors.map((f) => h('span', { class: 'cp-pill', style: 'background:rgba(217,119,6,.15);color:var(--lbc-x-gold,#fbbf24)' }, (f.label || '') + (f.lost ? ' \u2212' + f.lost : '')))) : null,
       demand ? (() => {
         const tEl = needMore ? null : mkDl(demand.note, demand.at);
         return h('div', { style: 'margin-top:10px;background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.35);border-radius:10px;padding:10px 12px' }, [
           h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center' }, [
-            h('div', { style: 'font-weight:800;font-size:.85rem;color:#fbbf24' }, '\ud83d\udccb What the ' + (lbTeamOf(demand.note) || 'LoadBoot review') + ' demanded (' + new Date(demand.at).toLocaleDateString() + '):'),
+            h('div', { style: 'font-weight:800;font-size:.85rem;color:var(--lbc-x-gold,#fbbf24)' }, '\ud83d\udccb What the ' + (lbTeamOf(demand.note) || 'LoadBoot review') + ' demanded (' + new Date(demand.at).toLocaleDateString() + '):'),
             tEl,
           ].filter(Boolean)),
           h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;margin-top:4px' }, demand.note || ('Answer for: ' + (demand.factor || ''))),
@@ -2990,7 +3022,7 @@ async function appView(user) {
         const tEl = mkDl(needMore.staff_note, needMore.decided_at || needMore.created_at);
         return h('div', { style: 'margin-top:10px;background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.35);border-radius:10px;padding:10px 12px' }, [
           h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center' }, [
-            h('div', { style: 'font-weight:800;font-size:.85rem;color:#fbbf24' }, '\u21a9 ' + (lbTeamOf(needMore.staff_note) || 'Reviewer') + ' needs MORE information on your last answer' + (needMore.decided_at ? ' (' + new Date(needMore.decided_at).toLocaleString() + ')' : '') + ':'),
+            h('div', { style: 'font-weight:800;font-size:.85rem;color:var(--lbc-x-gold,#fbbf24)' }, '\u21a9 ' + (lbTeamOf(needMore.staff_note) || 'Reviewer') + ' needs MORE information on your last answer' + (needMore.decided_at ? ' (' + new Date(needMore.decided_at).toLocaleString() + ')' : '') + ':'),
             tEl,
           ].filter(Boolean)),
           h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;margin-top:4px' }, needMore.staff_note || ''),
@@ -3003,7 +3035,7 @@ async function appView(user) {
     const demandNewer = !!(demand && open && new Date(demand.at).getTime() > new Date(open.created_at).getTime());
     if (open && !demandNewer) {
       const step = (label, on, done) => h('div', { style: 'display:flex;align-items:center;gap:10px;padding:8px 0' }, [
-        h('div', { style: 'width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;' + (done ? 'background:#16a34a;color:#fff' : on ? 'background:#0883F7;color:#fff' : 'background:rgba(148,163,184,.25);color:#94a3b8') }, done ? '\u2713' : on ? '\u25cf' : ''),
+        h('div', { style: 'width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;' + (done ? 'background:#16a34a;color:#fff' : on ? 'background:#0883F7;color:#fff' : 'background:rgba(148,163,184,.25);color:var(--lbc-x-ink3,#94a3b8)') }, done ? '\u2713' : on ? '\u25cf' : ''),
         h('div', null, [h('div', { style: 'font-weight:700;font-size:.92rem' }, label), on && !done ? h('div', { class: 'cp-row-s' }, 'Current stage') : null]),
       ]);
       const inRev = open.status === 'in_review';
@@ -3030,7 +3062,7 @@ async function appView(user) {
     const reqCard = REQ.length ? h('div', { class: 'cp-card' }, [
       h('div', { class: 'cp-row-t' }, 'What we need from you'),
       ...REQ.map((r, i) => h('div', { style: 'display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(148,163,184,.15)' }, [
-        h('div', { style: 'width:26px;height:26px;border-radius:50%;flex:none;background:rgba(8,131,247,.15);color:#3b9dff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px' }, String(i + 1)),
+        h('div', { style: 'width:26px;height:26px;border-radius:50%;flex:none;background:rgba(8,131,247,.15);color:var(--lbc-x-link,#3b9dff);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px' }, String(i + 1)),
         h('div', null, [h('div', { style: 'font-weight:700;font-size:.92rem' }, r.t), h('div', { class: 'cp-row-s' }, r.d)]),
       ])),
     ]) : null;
@@ -3102,7 +3134,7 @@ async function appView(user) {
     function histCard(list) {
       const past = (list || []).filter((r) => !(r.status === 'submitted' || r.status === 'in_review') || r.kind !== kind);
       if (!past.length && !(list || []).length) return null;
-      const pillOf = (st) => st === 'approved' ? ['\u2713 Approved', 'rgba(22,163,74,.15)', '#4ade80'] : st === 'rejected' ? ['\u2715 Declined', 'rgba(239,68,68,.15)', '#f87171'] : st === 'in_review' ? ['\u23f3 In review', 'rgba(8,131,247,.15)', '#3b9dff'] : st === 'more_info' ? ['\u21a9 More info needed', 'rgba(217,119,6,.15)', '#fbbf24'] : ['\u2022 Submitted', 'rgba(217,119,6,.15)', '#fbbf24'];
+      const pillOf = (st) => st === 'approved' ? ['\u2713 Approved', 'rgba(22,163,74,.15)', 'var(--lbc-x-ok,#4ade80)'] : st === 'rejected' ? ['\u2715 Declined', 'rgba(239,68,68,.15)', 'var(--lbc-x-danger,#f87171)'] : st === 'in_review' ? ['\u23f3 In review', 'rgba(8,131,247,.15)', 'var(--lbc-x-link,#3b9dff)'] : st === 'more_info' ? ['\u21a9 More info needed', 'rgba(217,119,6,.15)', 'var(--lbc-x-gold,#fbbf24)'] : ['\u2022 Submitted', 'rgba(217,119,6,.15)', 'var(--lbc-x-gold,#fbbf24)'];
       return h('div', { class: 'cp-card' }, [
         h('div', { class: 'cp-row-t' }, 'Previous requests'),
         ...(list || []).map((r) => { const pl = pillOf(r.status);
@@ -3113,16 +3145,16 @@ async function appView(user) {
             h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;margin-top:2px' }, r.message || ''),
             (Array.isArray(r.attachments) && r.attachments.length) ? h('div', { style: 'margin-top:8px' }, [
               h('div', { style: 'font-weight:700;font-size:.82rem' }, 'Documents you attached (' + r.attachments.length + '):'),
-              ...r.attachments.map((a9) => h('div', { class: 'cp-row-s', style: 'padding:2px 0;cursor:pointer;color:#3b9dff', title: 'Open Documents to view/download it', onClick: (e9) => { e9.stopPropagation(); go('documents'); } }, '\ud83d\udcce ' + (a9.file_name || '') + ' (' + (a9.type || '') + ') \u2014 view in Documents \u2192')),
+              ...r.attachments.map((a9) => h('div', { class: 'cp-row-s', style: 'padding:2px 0;cursor:pointer;color:var(--lbc-x-link,#3b9dff)', title: 'Open Documents to view/download it', onClick: (e9) => { e9.stopPropagation(); go('documents'); } }, '\ud83d\udcce ' + (a9.file_name || '') + ' (' + (a9.type || '') + ') \u2014 view in Documents \u2192')),
             ]) : h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, [
               'No documents were attached to this answer. ',
-              h('span', { style: 'color:#3b9dff;cursor:pointer', onClick: (e9) => { e9.stopPropagation(); go('documents'); } }, 'Your uploads still live in Documents \u2192'),
+              h('span', { style: 'color:var(--lbc-x-link,#3b9dff);cursor:pointer', onClick: (e9) => { e9.stopPropagation(); go('documents'); } }, 'Your uploads still live in Documents \u2192'),
             ]),
             r.staff_note ? h('div', { class: 'cp-row-s', style: 'margin-top:8px;background:' + (r.status === 'approved' ? 'rgba(22,163,74,.1)' : 'rgba(217,119,6,.1)') + ';border-radius:8px;padding:8px 10px' }, [h('b', null, 'Reviewer\u2019s note: '), r.staff_note]) : null,
             r.status === 'more_info' ? h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, '\u21a9 Submit again above with the missing information \u2014 this answer stays on record.') : null,
             r.status === 'rejected' ? h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'You can address the note and submit a fresh request above.') : null,
           ].filter(Boolean));
-          const caret = h('span', { style: 'color:#3b9dff;font-weight:700;font-size:.8rem' }, '\u25be Details');
+          const caret = h('span', { style: 'color:var(--lbc-x-link,#3b9dff);font-weight:700;font-size:.8rem' }, '\u25be Details');
           const rowEl = h('div', { style: 'padding:10px 0;border-bottom:1px solid rgba(148,163,184,.15)' }, [
             h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer', onClick: () => { const on = det.style.display !== 'none'; det.style.display = on ? 'none' : 'block'; caret.textContent = on ? '\u25be Details' : '\u25b4 Hide'; } }, [
               h('span', { style: 'font-weight:700;font-size:.9rem' }, (r.kind === 'health_poa' ? 'Plan of action' : 'Reinstatement') + ' \u00b7 ' + new Date(r.created_at).toLocaleDateString()),
@@ -3152,11 +3184,11 @@ async function appView(user) {
         const [tr9, tp9] = await Promise.all([pocketTrips(200).catch(() => []), myTrustProfile().catch(() => null)]);
         const done9 = (tr9 || []).filter(t9 => t9.status === 'delivered' || t9.status === 'invoiced').length;
         const ot9 = tp9 && tp9.on_time_pct != null ? Number(tp9.on_time_pct) : null;
-        const TIERS9 = [['Bronze', 0, '#b45309'], ['Silver', 5, '#94a3b8'], ['Gold', 20, '#f59e0b'], ['Platinum', 50, '#7cc0ff']];
+        const TIERS9 = [['Bronze', 0, '#b45309'], ['Silver', 5, 'var(--lbc-x-ink3,#94a3b8)'], ['Gold', 20, 'var(--lbc-x-gold,#f59e0b)'], ['Platinum', 50, 'var(--lbc-x-link,#7cc0ff)']];
         let ti9 = 0; TIERS9.forEach((t9, i9) => { if (done9 >= t9[1] && (i9 < 2 || (ot9 == null || ot9 >= (i9 === 2 ? 90 : 95)))) ti9 = i9; });
         const cur9 = TIERS9[ti9], nxt9 = TIERS9[ti9 + 1] || null;
         const pct9 = nxt9 ? Math.min(100, Math.round(done9 / nxt9[1] * 100)) : 100;
-        tierCard9.appendChild(h('div', { class: 'cp-card', style: 'border-color:' + cur9[2] + '55' }, [
+        tierCard9.appendChild(h('div', { class: 'cp-card', style: 'border-color:color-mix(in srgb,' + cur9[2] + ' 33%,transparent)' }, [
           h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' }, [
             h('span', { style: 'font-size:26px;line-height:1' }, ti9 >= 3 ? '💎' : ti9 === 2 ? '🥇' : ti9 === 1 ? '🥈' : '🥉'),
             h('div', { style: 'flex:1;min-width:160px' }, [
@@ -3165,7 +3197,7 @@ async function appView(user) {
             ]),
           ]),
           nxt9 ? h('div', { style: 'height:6px;border-radius:99px;background:rgba(148,163,184,.2);margin-top:10px;overflow:hidden' }, h('i', { style: 'display:block;height:6px;border-radius:99px;width:' + pct9 + '%;background:' + cur9[2] })) : null,
-          h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8' }, 'Higher tiers rank you higher in broker matching and direct-offer targeting — built purely from your real delivered record.'),
+          h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:var(--lbc-x-ink3,#94a3b8)' }, 'Higher tiers rank you higher in broker matching and direct-offer targeting — built purely from your real delivered record.'),
         ].filter(Boolean)));
       } catch (_) {}
     })();
@@ -3210,41 +3242,41 @@ async function appView(user) {
     const groupsCard = grpsArr.length ? h('div', { class: 'cp-card' }, [
       h('div', { style: 'display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap' }, [
         cardHead('Performance breakdown', 'Tap any area to see each metric — like it appears to our dispatch team'),
-        h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.12);color:#60A5FA;font-weight:800;flex:none' }, (ah.window_days || 180) + '-day rolling window'),
+        h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.12);color:var(--lbc-x-link,#60A5FA);font-weight:800;flex:none' }, (ah.window_days || 180) + '-day rolling window'),
       ]),
-      ah.grace ? h('div', { style: 'margin:2px 0 12px;padding:10px 14px;border-radius:12px;background:rgba(8,131,247,.10);border:1px solid rgba(8,131,247,.25);color:#93c5fd;font-size:.85rem;font-weight:600' },
+      ah.grace ? h('div', { style: 'margin:2px 0 12px;padding:10px 14px;border-radius:12px;background:rgba(8,131,247,.10);border:1px solid rgba(8,131,247,.25);color:var(--lbc-x-link,#93c5fd);font-size:.85rem;font-weight:600' },
         '\ud83d\udee1 Building period — you are new here. We watch these numbers but nothing counts against you until 5 delivered loads or 30 days. Use this time to learn the targets below.') : null,
       h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px' }, grpsArr.map(gp => {
         const w = Number(gp.weight) || 0, earned = Number(gp.earned) || 0;
         const pctW = w ? Math.round(earned / w * 100) : 100;
-        const gc = pctW >= 100 ? '#22c55e' : pctW >= 60 ? '#f59e0b' : '#ef4444';
+        const gc = pctW >= 100 ? 'var(--lbc-x-ok,#22c55e)' : pctW >= 60 ? 'var(--lbc-x-gold,#f59e0b)' : 'var(--lbc-x-danger,#ef4444)';
         const gbg = pctW >= 100 ? 'rgba(34,197,94,.12)' : pctW >= 60 ? 'rgba(245,158,11,.12)' : 'rgba(239,68,68,.12)';
         const meta = GMETA[gp.key] || { ic: 'dash', blurb: '' };
         const items = Array.isArray(gp.items) ? gp.items : [];
         const detail = h('div', { style: 'display:none;flex-direction:column;gap:10px;margin-top:12px' }, [
           ...items.map(it => {
             const dd = Number(it.deducted) || 0;
-            const ic2 = dd > 0 ? '#ef4444' : it.state === 'review' ? '#fbbf24' : '#22c55e';
-            return h('div', { style: 'border:1px solid var(--lb-line,#22314e);border-radius:12px;padding:11px 13px;background:rgba(255,255,255,.02)' }, [
+            const ic2 = dd > 0 ? 'var(--lbc-x-danger,#ef4444)' : it.state === 'review' ? 'var(--lbc-x-gold,#fbbf24)' : 'var(--lbc-x-ok,#22c55e)';
+            return h('div', { style: 'border:1px solid var(--lb-line,var(--lbc-x-line,#22314e));border-radius:12px;padding:11px 13px;background:var(--lbc-x-panel,rgba(255,255,255,.02))' }, [
               h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px' }, [
                 h('b', { style: 'font-size:.88rem' }, it.label || ''),
-                dd > 0 ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171;font-weight:800;flex:none' }, '\u2212' + dd + ' pts')
-                       : it.state === 'review' ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.14);color:#fbbf24;font-weight:800;flex:none' }, '\u23f3 in review \u00b7 no penalty')
-                       : h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80;font-weight:800;flex:none' }, '\u2713 on target'),
+                dd > 0 ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:var(--lbc-x-danger,#f87171);font-weight:800;flex:none' }, '\u2212' + dd + ' pts')
+                       : it.state === 'review' ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.14);color:var(--lbc-x-gold,#fbbf24);font-weight:800;flex:none' }, '\u23f3 in review \u00b7 no penalty')
+                       : h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:var(--lbc-x-ok,#4ade80);font-weight:800;flex:none' }, '\u2713 on target'),
               ]),
               h('div', { style: 'display:flex;align-items:baseline;gap:10px;margin-top:8px;flex-wrap:wrap' }, [
                 h('span', { style: 'font-size:1.35rem;font-weight:800;color:' + ic2 }, String(it.value ?? '\u2014')),
                 h('span', { class: 'cp-row-s', style: 'font-weight:700' }, 'target ' + (it.target || '\u2014')),
               ]),
               h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, it.basis || ''),
-              it.improve ? h('div', { class: 'cp-row-s', style: 'margin-top:5px;color:#60A5FA' }, '\u21b3 ' + it.improve) : null,
+              it.improve ? h('div', { class: 'cp-row-s', style: 'margin-top:5px;color:var(--lbc-x-link,#60A5FA)' }, '\u21b3 ' + it.improve) : null,
             ].filter(Boolean));
           }),
-          Number(gp.expiring_soon) > 0 ? h('div', { style: 'border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:10px 13px;background:rgba(245,158,11,.10);color:#fbbf24;font-size:.83rem;font-weight:700' },
+          Number(gp.expiring_soon) > 0 ? h('div', { style: 'border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:10px 13px;background:rgba(245,158,11,.10);color:var(--lbc-x-gold,#fbbf24);font-size:.83rem;font-weight:700' },
             '\u26a0 ' + gp.expiring_soon + ' document(s) expiring within 30 days \u2014 replace them early so no points are lost.') : null,
         ].filter(Boolean));
         const chev = h('span', { style: 'font-size:.8rem;color:var(--lb-muted,#8ea2c3);transition:transform .15s;display:inline-block' }, '\u25be');
-        const gcard = h('div', { style: 'border:1px solid var(--lb-line,#22314e);border-radius:14px;padding:14px 15px;cursor:pointer;transition:border-color .15s', onClick: () => {
+        const gcard = h('div', { style: 'border:1px solid var(--lb-line,var(--lbc-x-line,#22314e));border-radius:14px;padding:14px 15px;cursor:pointer;transition:border-color .15s', onClick: () => {
           const open = detail.style.display !== 'none';
           detail.style.display = open ? 'none' : 'flex';
           chev.style.transform = open ? '' : 'rotate(180deg)';
@@ -3298,7 +3330,7 @@ async function appView(user) {
       mount(trustCard, [cardHead('Trust profile', 'What brokers & shippers see about you'),
         h('div', { style: 'display:flex;align-items:center;gap:14px;flex-wrap:wrap' }, [
           h('span', { class: 'cp-pill', style: 'background:' + vtone.bg + ';color:' + vtone.c + ';font-weight:800' }, tp.verified ? '\u2713 ' + tp.verified_label : 'Not yet verified'),
-          _rated ? h('div', { style: 'font-size:1.35rem;color:#f59e0b;letter-spacing:3px' }, stars) : null,
+          _rated ? h('div', { style: 'font-size:1.35rem;color:var(--lbc-x-gold,#f59e0b);letter-spacing:3px' }, stars) : null,
           _rated
             ? h('b', null, rating.toFixed(1) + ' / 5 \u00b7 ' + (tp.ratings_count || 0) + ' rating' + ((tp.ratings_count === 1) ? '' : 's'))
             : h('span', { class: 'cp-pill', style: 'background:#eef2ff;color:#3730a3;font-weight:800' }, 'New \u00b7 no rating yet'),
@@ -3376,23 +3408,23 @@ async function appView(user) {
         h('div', { class: 'cp-row-s', style: 'margin-top:2px' }, 'Every strike and staff adjustment, item by item \u2014 with its exact points, expiry and the way out.'),
         ...sts.map((v9) => {
           const sv = String(v9.severity || 'warning');
-          const col = v9.resolved ? '#4ade80' : sv === 'critical' ? '#f87171' : sv === 'violation' ? '#fb923c' : '#fbbf24';
+          const col = v9.resolved ? 'var(--lbc-x-ok,#4ade80)' : sv === 'critical' ? 'var(--lbc-x-danger,#f87171)' : sv === 'violation' ? 'var(--lbc-x-warn,#fb923c)' : 'var(--lbc-x-gold,#fbbf24)';
           return h('div', { style: 'border:1px solid rgba(148,163,184,.2);border-left:4px solid ' + col + ';border-radius:10px;padding:9px 12px;margin-top:8px' }, [
             h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center' }, [
               h('span', { style: 'font-weight:800;font-size:.85rem;color:' + col }, (v9.resolved ? '\u2713 RESOLVED \u2014 ' : '') + sv.toUpperCase() + ' \u00b7 \u2212' + v9.points + ' points'),
               h('span', { class: 'cp-row-s', style: 'font-size:.75rem' }, new Date(v9.at).toLocaleDateString() + (v9.resolved ? '' : ' \u00b7 auto-expires ' + new Date(v9.expires).toLocaleDateString() + ' (' + dleft(v9.expires) + ')')),
             ]),
             h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, v9.note || ''),
-            v9.resolved ? null : h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:#3b9dff' }, '\u21b3 Way out: fix the cited issue and keep clean \u2014 it auto-expires on the date above, or LoadBoot resolves it early once corrected.'),
+            v9.resolved ? null : h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:var(--lbc-x-link,#3b9dff)' }, '\u21b3 Way out: fix the cited issue and keep clean \u2014 it auto-expires on the date above, or LoadBoot resolves it early once corrected.'),
           ].filter(Boolean));
         }),
-        ...adjs.map((a9) => h('div', { style: 'border:1px solid rgba(148,163,184,.2);border-left:4px solid ' + (a9.points > 0 ? '#4ade80' : '#f87171') + ';border-radius:10px;padding:9px 12px;margin-top:8px' }, [
+        ...adjs.map((a9) => h('div', { style: 'border:1px solid rgba(148,163,184,.2);border-left:4px solid ' + (a9.points > 0 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-danger,#f87171)') + ';border-radius:10px;padding:9px 12px;margin-top:8px' }, [
           h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center' }, [
-            h('span', { style: 'font-weight:800;font-size:.85rem;color:' + (a9.points > 0 ? '#4ade80' : '#f87171') }, 'STAFF ADJUSTMENT \u00b7 ' + (a9.points > 0 ? '+' : '') + a9.points + ' points \u2014 ' + (a9.factor || 'account')),
+            h('span', { style: 'font-weight:800;font-size:.85rem;color:' + (a9.points > 0 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-danger,#f87171)') }, 'STAFF ADJUSTMENT \u00b7 ' + (a9.points > 0 ? '+' : '') + a9.points + ' points \u2014 ' + (a9.factor || 'account')),
             h('span', { class: 'cp-row-s', style: 'font-size:.75rem' }, new Date(a9.at).toLocaleDateString() + (a9.expires ? ' \u00b7 expires ' + new Date(a9.expires).toLocaleDateString() : '')),
           ]),
           h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, a9.reason || ''),
-          a9.fix ? h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:#3b9dff' }, '\u21b3 How to fix: ' + a9.fix) : null,
+          a9.fix ? h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:var(--lbc-x-link,#3b9dff)' }, '\u21b3 How to fix: ' + a9.fix) : null,
         ].filter(Boolean))),
       ].filter(Boolean));
     })();
@@ -3400,13 +3432,11 @@ async function appView(user) {
   }
   /* ----- Settings (inDrive pattern): appearance, notifications, availability ----- */
   function loadSettings() {
-    const seg = (cur, onPick) => h('div', { class: 'cpx-seg' }, [['off', 'Off'], ['on', 'On'], ['system', 'System']].map(([v, l]) =>
-      h('button', { class: v === cur ? 'on' : '', onClick: (ev) => { onPick(v); Array.from(ev.currentTarget.parentNode.children).forEach(b => b.classList.toggle('on', b === ev.currentTarget)); } }, l)));
     const themeCard = h('div', { class: 'cp-card' }, [
       h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Appearance'),
       h('div', { class: 'cpx-set-row' }, [
-        h('div', null, [h('div', { class: 'cpx-set-t' }, '🌙 Dark mode'), h('div', { class: 'cpx-set-s' }, 'System follows your device setting')]),
-        seg(themeMode(), (v) => setThemeMode(v)),
+        h('div', null, [h('div', { class: 'cpx-set-t' }, '🌗 Theme'), h('div', { class: 'cpx-set-s' }, 'Light or Dark. System follows your device. Saved on this device.')]),
+        themeSeg(),
       ]),
     ]);
     let pushCard = null;
@@ -3548,7 +3578,7 @@ async function appView(user) {
           const devs9 = await myDevices();
           if (Array.isArray(devs9) && devs9.length) {
             const myKey9 = localStorage.getItem('lb_device_key');
-            host9.appendChild(h('div', { class: 'cp-row-s', style: 'margin-top:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;font-size:.68rem;letter-spacing:.06em' }, 'Devices signed in (last 10)'));
+            host9.appendChild(h('div', { class: 'cp-row-s', style: 'margin-top:12px;font-weight:800;color:var(--lbc-x-ink3,#94a3b8);text-transform:uppercase;font-size:.68rem;letter-spacing:.06em' }, 'Devices signed in (last 10)'));
             devs9.slice(0, 10).forEach((d9) => {
               host9.appendChild(h('div', { class: 'cpx-set-row' }, [
                 h('div', { class: 'cpx-set-t' }, [
@@ -3587,7 +3617,7 @@ async function appView(user) {
           h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Delete account'),
           open
             ? h('div', null, [
-                h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px 14px;color:#fcd9a2;font-weight:600' },
+                h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px 14px;color:var(--lbc-x-gold,#fcd9a2);font-weight:600' },
                   '⏳ Deletion requested — we complete it within 30 days. You can still cancel.'),
                 h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:10px', onClick: async (ev) => {
                   const b = ev.currentTarget; b.disabled = true;
@@ -3598,7 +3628,7 @@ async function appView(user) {
             : h('div', null, [
                 h('div', { class: 'cpx-set-s', style: 'line-height:1.6' },
                   'Permanently deletes your profile, contact details, uploaded documents, banking details and location history. Delivered load paperwork and settlement records are kept where US law requires (3 years for load documents, 7 for tax records), with your personal details removed from them. '),
-                h('a', { href: 'https://loadboot.com/delete-account.html', target: '_blank', rel: 'noopener', style: 'color:#0883F7;font-size:.86rem;display:inline-block;margin:12px 14px 0 0' }, 'Read the full policy →'),
+                h('a', { href: 'https://loadboot.com/delete-account.html', target: '_blank', rel: 'noopener', style: 'color:var(--lbc-x-link,#0883F7);font-size:.86rem;display:inline-block;margin:12px 14px 0 0' }, 'Read the full policy →'),
                 // ux-audit C11 (24 Sep 2026): was a native confirm() — same pattern as broker O11. In-app sheet:
                 // says what happens, the destructive button is the only red thing, and the request fires only from it.
                 h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:12px;background:#b91c1c;border-color:#b91c1c', onClick: () => {
@@ -3609,7 +3639,7 @@ async function appView(user) {
                   } }, 'Yes, delete my account');
                   const closeD = openModal('Delete your account?', [
                     h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, 'This asks LoadBoot to delete your account and personal data. A person completes it within 30 days, and you can cancel any time before then from this screen.'),
-                    h('div', { class: 'cp-row-s', style: 'line-height:1.65;margin-top:8px;color:#94a3b8' }, 'Delivered load paperwork and settlement records stay for the period US law requires; everything else goes.'),
+                    h('div', { class: 'cp-row-s', style: 'line-height:1.65;margin-top:8px;color:var(--lbc-x-ink3,#94a3b8)' }, 'Delivered load paperwork and settlement records stay for the period US law requires; everything else goes.'),
                     h('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'flex:1', onClick: () => closeD() }, 'Keep my account'), goBtn]),
                   ]);
                 } }, 'Delete my account'),
@@ -3751,13 +3781,13 @@ async function appView(user) {
     const _obSubmitted = ['submitted', 'in_review', 'review', 'compliance_check', 'changes_requested'].indexOf(_obStage) >= 0;
     let _obPct = _obDone ? 100 : 0;
     const _obRing = h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:conic-gradient(#0883F7 0%, rgba(255,255,255,.1) 0);display:flex;align-items:center;justify-content:center;box-shadow:0 0 26px -6px rgba(8,131,247,.55)' },
-      h('div', { style: 'width:52px;height:52px;border-radius:50%;background:#111c31;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px' }, '\u2026'));
+      h('div', { style: 'width:52px;height:52px;border-radius:50%;background:var(--lbc-x-field,#111c31);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px' }, '\u2026'));
     const _obBtn = h('button', { class: 'cp-btn', style: 'margin:0;background:linear-gradient(135deg,#0883F7,#3b9dff);box-shadow:0 10px 26px -10px rgba(8,131,247,.65)', onClick: () => {
       try { const _rej2 = ((comp && comp.requirements) || []).some(r => ['rejected', 'expired'].indexOf(String(r.status || '').toLowerCase()) >= 0); if (_rej2) sessionStorage.setItem('lb:onb:jump', '4'); } catch (_) {}
       go('onboarding');
     } }, 'Submit Your Profile \u2192');
     const _approvedHero = h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(52,211,153,.45);margin-bottom:14px;background:linear-gradient(135deg,rgba(52,211,153,.08),transparent)' }, [
-      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(52,211,153,.16);color:#34d399;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px;box-shadow:0 0 26px -8px rgba(52,211,153,.6)' }, '\ud83c\udf89'),
+      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(52,211,153,.16);color:var(--lbc-x-ok,#34d399);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px;box-shadow:0 0 26px -8px rgba(52,211,153,.6)' }, '\ud83c\udf89'),
       h('div', { style: 'flex:1;min-width:220px' }, [
         h('div', { class: 'cp-row-t', style: 'font-size:1.08rem' }, 'Approved \u2014 booking is unlocked'),
         h('div', { class: 'cp-row-s' }, 'Your documents are verified and your account is live. Direct broker requests and the load board are open for you.'),
@@ -3766,7 +3796,7 @@ async function appView(user) {
     ]);
     const _rejReqs = ((comp && comp.requirements) || []).filter(r => r.mandatory && ['rejected', 'expired'].indexOf(String(r.status || '').toLowerCase()) >= 0);   // bl_ob_0532b — optional never counts
     const _fixHero = _rejReqs.length ? h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(239,68,68,.45);margin-bottom:14px;background:linear-gradient(135deg,rgba(239,68,68,.08),transparent)' }, [
-      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(239,68,68,.14);color:#f87171;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u26a0'),
+      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(239,68,68,.14);color:var(--lbc-x-danger,#f87171);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u26a0'),
       h('div', { style: 'flex:1;min-width:220px' }, [
         h('div', { class: 'cp-row-t', style: 'font-size:1.08rem' }, _rejReqs.length + ' document(s) need your action'),
         h('div', { class: 'cp-row-s' }, _rejReqs.map(r => r.name + (r.note ? ' \u2014 ' + (String(r.note).length > 96 ? String(r.note).slice(0, 96).replace(/\s+\S*$/, '') + '\u2026' : String(r.note)) : '')).join('  \u00b7  ')),
@@ -3775,7 +3805,7 @@ async function appView(user) {
     ]) : null;
     const _compOk = (comp && typeof comp.mandatory_ok === 'boolean') ? comp.mandatory_ok : ov.compliance_ok;
     const _docsOkHero = h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(59,157,255,.35);margin-bottom:14px' }, [
-      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(59,157,255,.14);color:#3b9dff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\ud83d\udd0e'),
+      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(59,157,255,.14);color:var(--lbc-x-link,#3b9dff);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\ud83d\udd0e'),
       h('div', { style: 'flex:1;min-width:220px' }, [
         h('div', { class: 'cp-row-t', style: 'font-size:1.08rem' }, 'Documents verified \u2713 \u2014 final approval in progress'),
         h('div', { class: 'cp-row-s' }, 'Every document passed review. Our team gives the final sign-off \u2014 you\u2019ll be notified the moment booking unlocks.'),
@@ -3783,18 +3813,18 @@ async function appView(user) {
       h('button', { class: 'cp-btn ghost', style: 'margin:0', onClick: () => go('account') }, 'View status'),
     ]);
     const _pausedHero = (ov.account_status === 'paused') ? h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(239,68,68,.45);margin-bottom:14px' }, [
-      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(239,68,68,.15);color:#f87171;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u23f8'),
+      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u23f8'),
       h('div', { style: 'flex:1;min-width:220px' }, [
-        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:#f87171' }, 'Account paused \u2014 ' + (ov.pause_scope === 'booking' ? 'booking is blocked' : 'all services blocked')),
+        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:var(--lbc-x-danger,#f87171)' }, 'Account paused \u2014 ' + (ov.pause_scope === 'booking' ? 'booking is blocked' : 'all services blocked')),
         h('div', { class: 'cp-row-s' }, ov.pause_reason ? ('Reason: ' + ov.pause_reason) : 'LoadBoot has paused your account.'),
         h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'Resolve the issue above and contact dispatch \u2014 accounts are reinstated the moment the issue is fixed.'),
       ]),
       h('button', { class: 'cp-btn', style: 'margin:0', onClick: () => go('reinstate') }, 'Request reinstatement \u2192'),
     ]) : null;
     const _poaHero = (!_pausedHero && ov.poa_required) ? h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(217,119,6,.45);margin-bottom:14px' }, [
-      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(217,119,6,.15);color:#fbbf24;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\ud83d\udccb'),
+      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(217,119,6,.15);color:var(--lbc-x-gold,#fbbf24);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\ud83d\udccb'),
       h('div', { style: 'flex:1;min-width:220px' }, [
-        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:#fbbf24' }, 'Plan of action required \u2014 ' + (ov.poa_required.factor || 'account health')),
+        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:var(--lbc-x-gold,#fbbf24)' }, 'Plan of action required \u2014 ' + (ov.poa_required.factor || 'account health')),
         h('div', { class: 'cp-row-s' }, 'LoadBoot review has demanded a written answer. Your account stays flagged until you respond.'),
       ]),
       h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
@@ -3804,9 +3834,9 @@ async function appView(user) {
     ]) : null;
     const _ap = ov.appeal_open || null;
     const _moreInfoHero = (!_pausedHero && _ap && _ap.status === 'more_info') ? h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(217,119,6,.45);margin-bottom:14px' }, [
-      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(217,119,6,.15);color:#fbbf24;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u21a9'),
+      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(217,119,6,.15);color:var(--lbc-x-gold,#fbbf24);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u21a9'),
       h('div', { style: 'flex:1;min-width:220px' }, [
-        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:#fbbf24' }, (lbTeamOf(_ap.staff_note) || 'Reviewer') + ' replied \u2014 more information required'),
+        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:var(--lbc-x-gold,#fbbf24)' }, (lbTeamOf(_ap.staff_note) || 'Reviewer') + ' replied \u2014 more information required'),
         h('div', { class: 'cp-row-s' }, _ap.staff_note ? ('\u201c' + String(_ap.staff_note).slice(0, 120) + '\u201d') : 'Open your request to see exactly what is missing, then submit again.'),
       ]),
       h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
@@ -3815,7 +3845,7 @@ async function appView(user) {
       ]),
     ]) : null;
     const _reviewHero = (!_pausedHero && !_moreInfoHero && _ap && (_ap.status === 'submitted' || _ap.status === 'in_review')) ? h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(8,131,247,.4);margin-bottom:14px' }, [
-      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(8,131,247,.14);color:#3b9dff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u23f3'),
+      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(8,131,247,.14);color:var(--lbc-x-link,#3b9dff);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u23f3'),
       h('div', { style: 'flex:1;min-width:220px' }, [
         h('div', { class: 'cp-row-t', style: 'font-size:1.08rem' }, (_ap.kind === 'health_poa' ? 'Plan of action' : 'Reinstatement request') + ' \u2014 ' + (_ap.status === 'in_review' ? 'being reviewed right now' : 'submitted, under review')),
         h('div', { class: 'cp-row-s' }, 'Sent ' + new Date(_ap.at).toLocaleString() + ' \u00b7 decision within 24 hours \u00b7 you\u2019ll be notified here + by email.'),
@@ -3823,9 +3853,9 @@ async function appView(user) {
       h('button', { class: 'cp-btn ghost', style: 'margin:0', onClick: () => go('reinstate') }, 'Track request \u2192'),
     ]) : null;
     const _revokedHero = (_obStage === 'rejected' && !_fixHero) ? h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(239,68,68,.45);margin-bottom:14px' }, [
-      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(239,68,68,.15);color:#f87171;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u26d4'),
+      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u26d4'),
       h('div', { style: 'flex:1;min-width:220px' }, [
-        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:#f87171' }, 'Account access revoked \u2014 booking is locked'),
+        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:var(--lbc-x-danger,#f87171)' }, 'Account access revoked \u2014 booking is locked'),
         h('div', { class: 'cp-row-s' }, 'LoadBoot review has revoked your approval. Check your notifications for the reason \u2014 fix what was cited, or talk to support to get reinstated.'),
       ]),
       h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
@@ -3834,7 +3864,7 @@ async function appView(user) {
       ]),
     ]) : null;
     const onbHero = _pausedHero ? _pausedHero : _revokedHero ? _revokedHero : _moreInfoHero ? _moreInfoHero : _poaHero ? _poaHero : _reviewHero ? _reviewHero : _fixHero ? _fixHero : (_obDone && _compOk) ? _approvedHero : (_compOk && _obSubmitted) ? _docsOkHero : _obDone ? null : _obSubmitted ? h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-color:rgba(52,211,153,.3);margin-bottom:14px' }, [
-      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(52,211,153,.14);color:#34d399;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px;box-shadow:0 0 26px -8px rgba(52,211,153,.5)' }, '\u2713'),
+      h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(52,211,153,.14);color:var(--lbc-x-ok,#34d399);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px;box-shadow:0 0 26px -8px rgba(52,211,153,.5)' }, '\u2713'),
       h('div', { style: 'flex:1;min-width:220px' }, [
         h('div', { class: 'cp-row-t', style: 'font-size:1.08rem' }, 'Profile submitted \u2014 under review'),
         h('div', { class: 'cp-row-s' }, 'Our team is verifying your details and documents. You\u2019ll get a notification the moment you\u2019re approved and booking unlocks.'),
@@ -3885,7 +3915,7 @@ async function appView(user) {
         const fly9 = owed9.filter((x9) => x9.transfer_status === 'sent').reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
         if (amt9 <= 0 && fly9 <= 0) return;
         const host9 = document.getElementById('lb-recv-banner'); if (!host9) return;
-        host9.appendChild(h('button', { class: 'cpx-banner', style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#4ade80', onClick: () => { window.__finSec9 = 'in'; go('finance'); } }, [
+        host9.appendChild(h('button', { class: 'cpx-banner', style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:var(--lbc-x-ok,#4ade80)', onClick: () => { window.__finSec9 = 'in'; go('finance'); } }, [
           h('span', null, [icon('inbox',15), '']),
           h('span', null, (amt9 > 0 ? money(amt9) + ' owed to you by brokers' : '') + (amt9 > 0 && fly9 > 0 ? ' · ' : '') + (fly9 > 0 ? money(fly9) + ' on the way — tap ✓ Received when it lands' : '')),
           h('span', { class: 'cpx-b-go' }, '›'),
@@ -3916,34 +3946,34 @@ async function appView(user) {
         const tick9 = () => {
           if (cnt9.__t && !cnt9.isConnected) { clearInterval(cnt9.__t); return; }
           const ms9 = new Date(t9.scheduled_pickup).getTime() - Date.now();
-          if (ms9 <= 0) { cnt9.textContent = '\u26a0 PICKUP OVERDUE \u2014 roll now'; cnt9.style.color = '#fecaca'; return; }
+          if (ms9 <= 0) { cnt9.textContent = '\u26a0 PICKUP OVERDUE \u2014 roll now'; cnt9.style.color = 'var(--lbc-x-danger,#fecaca)'; return; }
           const hh9 = Math.floor(ms9 / 3600000), mm9 = Math.floor((ms9 % 3600000) / 60000);
           let txt9 = '\u23f1 Pickup in ' + (hh9 > 0 ? hh9 + 'h ' : '') + mm9 + 'm \u00b7 due ' + new Date(t9.scheduled_pickup).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
           if (leave9) {
-            if (Date.now() >= leave9.at) { txt9 += '  \u00b7  \ud83d\udd34 ROLL NOW \u2014 ~' + leave9.h + 'h drive (' + leave9.dh + ' mi), leave immediately to make it'; cnt9.style.color = '#fecaca'; }
+            if (Date.now() >= leave9.at) { txt9 += '  \u00b7  \ud83d\udd34 ROLL NOW \u2014 ~' + leave9.h + 'h drive (' + leave9.dh + ' mi), leave immediately to make it'; cnt9.style.color = 'var(--lbc-x-danger,#fecaca)'; }
             else { txt9 += '  \u00b7  \ud83d\ude9b leave by ' + new Date(leave9.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' (~' + leave9.h + 'h drive \u00b7 ' + leave9.dh + ' mi)'; }
           }
           cnt9.textContent = txt9;
         };
         tick9(); cnt9.__t = setInterval(tick9, 30000);
       } else cnt9.textContent = '';
-      return h('div', {
+      return h('div', { class: 'lbc-dark',   // bl_ui_theme carrier: brand hero stays navy→blue in Light too
         style: 'position:relative;overflow:hidden;border-radius:18px;padding:18px 20px;margin-bottom:14px;cursor:pointer;background:linear-gradient(120deg,#0b1a33,#10305e 55%,#0883F7);border:1.5px solid rgba(8,131,247,.55);box-shadow:0 18px 44px -18px rgba(8,131,247,.5)',
         onClick: () => go('loads'),
       }, [
         h('div', { style: 'position:absolute;inset:0;pointer-events:none;background:radial-gradient(600px 200px at 85% -20%,rgba(252,83,5,.25),transparent 60%)' }),
         h('div', { style: 'display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;position:relative' }, [
           h('div', null, [
-            h('div', { style: 'display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:4px 12px;font-size:.7rem;font-weight:800;color:#fff;letter-spacing:.06em' }, [
-              h('span', { style: 'width:8px;height:8px;border-radius:50%;background:' + (inTr9 ? '#22c55e' : '#FC5305') + ';box-shadow:0 0 0 4px ' + (inTr9 ? 'rgba(34,197,94,.25)' : 'rgba(252,83,5,.25)') + ';animation:pulse 1.6s infinite' }),
+            h('div', { style: 'display:inline-flex;align-items:center;gap:8px;background:var(--lbc-x-panel,rgba(255,255,255,.1));border:1px solid var(--lbc-x-line,rgba(255,255,255,.2));border-radius:999px;padding:4px 12px;font-size:.7rem;font-weight:800;color:var(--lbc-x-ink,#fff);letter-spacing:.06em' }, [
+              h('span', { style: 'width:8px;height:8px;border-radius:50%;background:' + (inTr9 ? 'var(--lbc-x-ok,#22c55e)' : '#FC5305') + ';box-shadow:0 0 0 4px ' + (inTr9 ? 'rgba(34,197,94,.25)' : 'rgba(252,83,5,.25)') + ';animation:pulse 1.6s infinite' }),
               'ACTIVE TRIP \u00b7 ' + stTxt9,
             ]),
-            h('div', { style: 'font-weight:800;font-size:1.12rem;color:#fff;margin-top:9px' }, (t9.origin || '\u2014') + ' \u2192 ' + (t9.destination || '\u2014')),
-            h('div', { style: 'color:#bcd3f2;font-size:.8rem;margin-top:3px' }, [(t9.rate ? '$' + Number(t9.rate).toLocaleString() : null), (t9.miles ? Number(t9.miles).toLocaleString() + ' mi' : null)].filter(Boolean).join(' \u00b7 ')),
-            h('div', { style: 'color:#ffd7c2;font-size:.86rem;font-weight:800;margin-top:6px' }, cnt9),
-            (t9.status === 'planned') ? h('div', { style: 'margin-top:8px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.38);border-radius:10px;padding:8px 12px;font-size:.76rem;line-height:1.5;color:#bbf7d0;font-weight:700;max-width:480px' },
+            h('div', { style: 'font-weight:800;font-size:1.12rem;color:var(--lbc-x-ink,#fff);margin-top:9px' }, (t9.origin || '\u2014') + ' \u2192 ' + (t9.destination || '\u2014')),
+            h('div', { style: 'color:var(--lbc-x-ink2,#bcd3f2);font-size:.8rem;margin-top:3px' }, [(t9.rate ? '$' + Number(t9.rate).toLocaleString() : null), (t9.miles ? Number(t9.miles).toLocaleString() + ' mi' : null)].filter(Boolean).join(' \u00b7 ')),
+            h('div', { style: 'color:var(--lbc-x-warn,#ffd7c2);font-size:.86rem;font-weight:800;margin-top:6px' }, cnt9),
+            (t9.status === 'planned') ? h('div', { style: 'margin-top:8px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.38);border-radius:10px;padding:8px 12px;font-size:.76rem;line-height:1.5;color:var(--lbc-x-ok,#bbf7d0);font-weight:700;max-width:480px' },
               '\ud83d\udef0 Tracking is ON since booking \u2014 your GPS proof records automatically (keep the app open while working this load). Tap \u201cStart your trip\u201d when you roll: it opens turn-by-turn navigation and the status then updates on its own from your movement.') : null,
-            inTr9 ? h('div', { style: 'margin-top:8px;background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.4);border-radius:10px;padding:7px 12px;font-size:.76rem;font-weight:800;color:#86efac;max-width:480px' },
+            inTr9 ? h('div', { style: 'margin-top:8px;background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.4);border-radius:10px;padding:7px 12px;font-size:.76rem;font-weight:800;color:var(--lbc-x-ok,#86efac);max-width:480px' },
               '\ud83d\udef0 Tracking LIVE \u2014 locked on until delivery. Your GPS is your evidence.') : null,
           ]),
           h('button', { class: 'cp-btn', style: 'background:#FC5305;border:0;font-weight:800;box-shadow:0 10px 26px -10px rgba(252,83,5,.8)', onClick: (e9) => { e9.stopPropagation(); go('loads'); } },
@@ -3953,11 +3983,11 @@ async function appView(user) {
     })() : null;
     const rateCard9 = (window.__dashRateables && window.__dashRateables.length) ? (() => {
       const r9 = window.__dashRateables[0];
-      const card9 = h('div', { class: 'cp-card', style: 'position:relative;border:1.5px solid rgba(245,158,11,.45);background:linear-gradient(120deg,rgba(245,158,11,.07),transparent 60%)' });
-      const dismiss9 = h('button', { title: 'Not now', style: 'position:absolute;top:10px;right:12px;border:0;background:transparent;color:#94a3b8;font-size:1.05rem;cursor:pointer;font-weight:800', onClick: () => { try { localStorage.setItem('lb:rated:' + r9.trip_id, 'skip'); } catch (_) {} card9.remove(); } }, '\u2715');
+      const card9 = h('div', { class: 'cp-card', style: 'position:relative;border:1.5px solid rgba(245,158,11,.45);background:var(--lbc-x-hero,linear-gradient(120deg,rgba(245,158,11,.07),transparent 60%))' });
+      const dismiss9 = h('button', { title: 'Not now', style: 'position:absolute;top:10px;right:12px;border:0;background:transparent;color:var(--lbc-x-ink3,#94a3b8);font-size:1.05rem;cursor:pointer;font-weight:800', onClick: () => { try { localStorage.setItem('lb:rated:' + r9.trip_id, 'skip'); } catch (_) {} card9.remove(); } }, '\u2715');
       let stars9 = 0; const starBtns9 = [];
       const paint9 = () => starBtns9.forEach((b9, i9) => { b9.textContent = i9 < stars9 ? '\u2b50' : '\u2606'; b9.style.filter = i9 < stars9 ? 'none' : 'grayscale(1)'; b9.style.transform = i9 < stars9 ? 'scale(1.12)' : 'scale(1)'; });
-      for (let i9 = 0; i9 < 5; i9++) starBtns9.push(h('button', { style: 'border:0;background:transparent;font-size:1.9rem;cursor:pointer;transition:transform .12s;padding:2px 4px;color:#fbbf24;text-shadow:0 0 1px #fbbf24', onClick: () => { stars9 = i9 + 1; paint9(); } }, '\u2606'));
+      for (let i9 = 0; i9 < 5; i9++) starBtns9.push(h('button', { style: 'border:0;background:transparent;font-size:1.9rem;cursor:pointer;transition:transform .12s;padding:2px 4px;color:var(--lbc-x-gold,#fbbf24);text-shadow:0 0 1px #fbbf24', onClick: () => { stars9 = i9 + 1; paint9(); } }, '\u2606'));
       const cm9 = h('input', { class: 'cp-in', placeholder: 'Optional \u2014 one line about this broker (payment, dock, communication)', style: 'margin:8px 0 0' });
       const send9 = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px', onClick: async () => {
         if (!stars9) { lbToast('Tap the stars first \u2014 1 to 5.', 'action', 'Pick a rating'); return; }
@@ -3988,7 +4018,7 @@ async function appView(user) {
         let docs9 = []; try { docs9 = await carrierListDocuments(); } catch (_) {}
         if ((docs9 || []).some((d9) => d9.type === 'noa')) return;
         const bIn9 = h('input', { type: 'file', accept: '.pdf', style: 'font-size:.85rem' });
-        const bSt9 = h('span', { style: 'font-size:.8rem;color:#f87171;font-weight:700' });
+        const bSt9 = h('span', { style: 'font-size:.8rem;color:var(--lbc-x-danger,#f87171);font-weight:700' });
         mount(noaDash9, h('div', { class: 'cp-card', style: 'border:1.5px solid rgba(139,92,246,.5);background:rgba(139,92,246,.08)' }, [
           h('div', { style: 'font-weight:900' }, [icon('bank',15),' One step left on factoring — upload your NOA letter']),
           h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px;line-height:1.6' }, 'You activated factoring with ' + (pp9.factoring_company || 'your factor') + ' but the Notice of Assignment letter (PDF from your factor) is not on file. Upload it right here — LoadBoot verifies it and brokers see “verified” on every pay panel.'),
@@ -4005,7 +4035,7 @@ async function appView(user) {
                 const m9 = await uploadDocument(f9, 'noa');
                 await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path, aiVerdict: pv9 });
                 mount(noaDash9, h('div', { class: 'cp-card', style: 'border:1.5px solid rgba(34,197,94,.45);background:rgba(34,197,94,.08)' }, [
-                  h('div', { style: 'font-weight:900;color:#4ade80' }, '✓ NOA letter uploaded — in review'),
+                  h('div', { style: 'font-weight:900;color:var(--lbc-x-ok,#4ade80)' }, '✓ NOA letter uploaded — in review'),
                   h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'LoadBoot verifies it against your remit-to details (usually a few hours). Track it in Documents — this card disappears on your next visit.'),
                 ]));
               } catch (e9) { b9.disabled = false; b9.textContent = 'Upload NOA'; bSt9.textContent = (e9 && e9.message) || 'Upload failed.'; }
@@ -4065,7 +4095,7 @@ async function appView(user) {
   /* ----- Available loads (Phase 2B — real, race-safe booking) ----- */
   function openBrokerPacketPreview() {
     openModal('\ud83c\udfe2 Broker packet \u2014 what YOU get', [h('div', { style: 'text-align:center;padding:6px 4px 2px' }, [
-      h('div', { style: 'width:74px;height:74px;border-radius:22px;margin:6px auto 12px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:linear-gradient(135deg,#0b1830,#14335c);color:#fff;box-shadow:0 16px 34px -16px rgba(2,12,30,.55)' }, '\ud83d\udd12'),
+      h('div', { style: 'width:74px;height:74px;border-radius:22px;margin:6px auto 12px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:var(--lbc-x-hero,linear-gradient(135deg,#0b1830,#14335c));color:var(--lbc-x-ink,#fff);box-shadow:0 16px 34px -16px rgba(2,12,30,.55)' }, '\ud83d\udd12'),
       h('div', { style: 'font-weight:800;font-size:1.08rem' }, 'Locked \u2014 unlocks the moment your request is accepted / you book'),
       h('div', { class: 'cp-muted', style: 'max-width:470px;margin:6px auto 14px' }, 'On the board the broker stays anonymous \u2014 but every broker here is already LoadBoot-verified. The second you book, the full packet lands in your Dispatch pack:'),
       h('div', { style: 'text-align:left;max-width:440px;margin:0 auto;background:rgba(8,131,247,.07);border:1px solid rgba(8,131,247,.25);border-radius:14px;padding:14px 16px' }, [
@@ -4149,7 +4179,7 @@ async function appView(user) {
       const v = vals(); const t9 = truck;
       mount(truckHost, fleet9.length > 1 ? [lbl('Which truck?'), h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' }, fleet9.map(x9 => h('button', { type: 'button', class: 'cp-chip2' + (truck && truck.id === x9.id ? ' on' : ''), onClick: () => { truck = x9; prefillPlace(); paint(); } }, 'Unit ' + (x9.unit_no || '?') + (x9.equipment ? ' · ' + x9.equipment : ''))))] : null);
       mount(spec, [
-        h('span', { style: 'color:#e2e8f0;font-weight:700' }, (t9 ? '🚛 Unit ' + (t9.unit_no || '?') : 'Truck') + (v.equipment.length ? ' · ' + v.equipment.join(', ') : '')),
+        h('span', { style: 'color:var(--lbc-x-ink,#e2e8f0);font-weight:700' }, (t9 ? '🚛 Unit ' + (t9.unit_no || '?') : 'Truck') + (v.equipment.length ? ' · ' + v.equipment.join(', ') : '')),
         ' · ' + v.radius + ' mi radius' + (v.minRpm ? ' · $' + Number(v.minRpm).toFixed(2) + '/mi floor' : '') + (v.dest ? ' · toward ' + v.dest : ' · anywhere'),
         ' — ', h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'margin:0;padding:3px 9px;font-size:.78rem', onClick: more }, 'More details'),
       ]);
@@ -4244,7 +4274,7 @@ async function appView(user) {
         const todayISO = new Date().toISOString().slice(0, 10);
         const from = h('input', { class: 'cp-in', type: 'date', min: todayISO, value: existing ? '' : todayISO });
         const to = h('input', { class: 'cp-in', type: 'date', min: todayISO, value: existing ? '' : new Date(Date.now() + 1 * 864e5).toISOString().slice(0, 10) });
-        const dateHint = existing ? h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:#fbbf24;font-size:.8rem;line-height:1.5' },
+        const dateHint = existing ? h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:var(--lbc-x-gold,#fbbf24);font-size:.8rem;line-height:1.5' },
           'Dates start blank on purpose — tell us today’s window, not the one you saved last time.') : null;
         const eq = h('input', { class: 'cp-in', placeholder: 'Equipment (e.g. Van, Reefer)', value: ((existing && existing.equipment) || (preset && preset.equipment ? [preset.equipment] : null) || (_dp && _dp.preferred_equipment) || []).join(', ') });
         const rpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi (optional)', value: (existing && existing.min_rpm) || (preset && preset.min_rpm) || (_dp && _dp.min_rpm) || '' });
@@ -4301,12 +4331,12 @@ async function appView(user) {
           if (t9.twic) bits.push('TWIC');
           if (t9.team_driven) bits.push('team');
           specHost.appendChild(h('div', { style: 'border:1px solid rgba(74,222,128,.22);background:rgba(74,222,128,.05);border-radius:11px;padding:9px 12px;margin:2px 0 4px;font-size:.83rem;line-height:1.6' }, [
-            h('div', { style: 'font-weight:800;color:#4ade80;margin-bottom:2px' }, 'Your dispatcher and brokers will see'),
-            h('div', { style: 'color:#94a3b8' }, bits.length ? bits.join(' · ') : 'No capacity details on this truck yet — add them and you will match far more loads.'),
+            h('div', { style: 'font-weight:800;color:var(--lbc-x-ok,#4ade80);margin-bottom:2px' }, 'Your dispatcher and brokers will see'),
+            h('div', { style: 'color:var(--lbc-x-ink3,#94a3b8)' }, bits.length ? bits.join(' · ') : 'No capacity details on this truck yet — add them and you will match far more loads.'),
             bits.length ? null : h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:6px', onClick: () => { try { _closePT(); } catch (_) {} truckForm(t9); } }, 'Add them now'),
           ]));
           if (!t9.vin || String(t9.vin).length !== 17) {
-            specHost.appendChild(h('div', { style: 'border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fca5a5' }, [
+            specHost.appendChild(h('div', { style: 'border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:var(--lbc-x-danger,#fca5a5)' }, [
               'This truck has no valid VIN on file — it cannot be posted until it does. ',
               h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:6px', onClick: () => { try { _closePT(); } catch (_) {} truckForm(t9); } }, 'Add VIN'),
             ]));
@@ -4315,11 +4345,11 @@ async function appView(user) {
           // The certificate decides what we can dispatch, so say it before they post.
           try {
             const cv = await vinCoverage(t9.vin);
-            if (cv && cv.state === 'not_covered') specHost.appendChild(h('div', { style: 'border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fca5a5' },
+            if (cv && cv.state === 'not_covered') specHost.appendChild(h('div', { style: 'border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:var(--lbc-x-danger,#fca5a5)' },
               'This truck is not listed on your certificate of insurance, so we cannot dispatch it. Ask your agent to add the VIN and upload the updated certificate — then post it.'));
-            else if (cv && cv.state === 'coi_vins_pending') specHost.appendChild(h('div', { style: 'border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fcd34d' },
+            else if (cv && cv.state === 'coi_vins_pending') specHost.appendChild(h('div', { style: 'border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:var(--lbc-x-gold,#fcd34d)' },
               'Your insurance is approved, but it does not list this truck\'s VIN yet. Upload your insurance ID card or vehicle schedule under Documents — this truck can be posted as soon as we match it.'));   // bl_comp_0545
-            else if (cv && cv.state === 'no_coi') specHost.appendChild(h('div', { style: 'border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fcd34d' },
+            else if (cv && cv.state === 'no_coi') specHost.appendChild(h('div', { style: 'border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:var(--lbc-x-gold,#fcd34d)' },
               'We do not have your certificate of insurance yet. You can post, but nothing can be dispatched until it is on file.'));
           } catch (_) {}
         };
@@ -4377,7 +4407,7 @@ async function appView(user) {
             lbToast((e && e.message) || 'Could not post.', 'urgent', 'Not posted');
           }
         } }, existing ? (existing.status === 'paused' ? 'Post availability' : 'Save changes') : 'Post availability');
-        const reqNoteP9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:#94a3b8' }, 'Fields marked * are required — we will not post a truck a dispatcher cannot act on.');
+        const reqNoteP9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:var(--lbc-x-ink3,#94a3b8)' }, 'Fields marked * are required — we will not post a truck a dispatcher cannot act on.');
         // Unfinished-post recovery. 60 minutes only: this form describes where the truck is
         // RIGHT NOW, and restoring an hours-old answer would quietly reintroduce exactly the
         // stale window bl_avail_0322 exists to prevent.
@@ -4404,7 +4434,7 @@ async function appView(user) {
           lbl('Drive hours left'), hos, hosNote,
           lbl('Notes'), notes,
           h('label', { style: 'display:flex;gap:8px;align-items:center;margin-top:10px;font-size:.88rem' }, [auto, 'Auto-request matching loads (broker still approves every booking)']),
-          h('div', { class: 'cp-row-s', style: 'margin-top:10px;padding:8px 10px;border-radius:10px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.25);font-size:.8rem;line-height:1.5;color:#cbd5e1' }, AVAIL_RULE),
+          h('div', { class: 'cp-row-s', style: 'margin-top:10px;padding:8px 10px;border-radius:10px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.25);font-size:.8rem;line-height:1.5;color:var(--lbc-x-ink2,#cbd5e1)' }, AVAIL_RULE),
           h('div', { style: 'height:8px' }), save]);
         paintKind();
         paintSpec();
@@ -4468,7 +4498,7 @@ async function appView(user) {
     const availWrap = h('div');
     const tabBtn = (label) => h('button', { style: 'flex:1;border:0;border-radius:12px;padding:12px;font-weight:800;font-size:.92rem;cursor:pointer;font-family:Manrope,sans-serif;background:transparent;color:var(--lb-muted,#8ea2c3);transition:all .15s' }, label);
     const tbReq = tabBtn('\ud83d\udce8 Requests'), tbAv = tabBtn('\ud83c\udf10 Available loads');
-    const tabsBar = h('div', { style: 'display:flex;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--lb-line,#22314e);border-radius:14px;padding:5px;margin-bottom:12px' }, [tbReq, tbAv]);
+    const tabsBar = h('div', { style: 'display:flex;gap:6px;background:var(--lbc-x-panel,rgba(255,255,255,.04));border:1px solid var(--lb-line,var(--lbc-x-line,#22314e));border-radius:14px;padding:5px;margin-bottom:12px' }, [tbReq, tbAv]);
     const setTab = (which) => {
       const on = 'background:#0883F7;color:#fff;box-shadow:0 4px 14px rgba(8,131,247,.35)';
       const off = 'background:transparent;color:var(--lb-muted,#8ea2c3);box-shadow:none';
@@ -4497,19 +4527,19 @@ async function appView(user) {
       const cardR = h('div', { class: 'cp-card', style: 'border:1px solid rgba(252,83,5,.4);box-shadow:0 0 22px rgba(252,83,5,.08)' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px' }, [
           h('b', { style: 'font-size:1.02rem' }, '\ud83d\udce8 Requests for you'),
-          h('span', { class: 'cp-pill', style: 'background:rgba(252,83,5,.14);color:#FC5305;font-weight:800' }, offers.length + ' direct from brokers'),
+          h('span', { class: 'cp-pill', style: 'background:rgba(252,83,5,.14);color:var(--lbc-x-warn,#FC5305);font-weight:800' }, offers.length + ' direct from brokers'),
         ]),
         h('div', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'A verified broker posted these straight to your profile. Everything is already vetted on the broker side — you just accept before the timer runs out.'),
         h('div', null, offers.map(o => {
-          const box = h('div', { style: 'border:1px solid var(--lb-line,#22314e);border-radius:14px;padding:13px 14px;margin-bottom:10px' });
+          const box = h('div', { style: 'border:1px solid var(--lb-line,var(--lbc-x-line,#22314e));border-radius:14px;padding:13px 14px;margin-bottom:10px' });
           const exp = o.expiry_at ? new Date(o.expiry_at).getTime() : null;
-          const cd = h('b', { style: 'color:#FC5305;font-variant-numeric:tabular-nums;font-size:1.02rem' }, '\u2014');
+          const cd = h('b', { style: 'color:var(--lbc-x-warn,#FC5305);font-variant-numeric:tabular-nums;font-size:1.02rem' }, '\u2014');
           box.appendChild(h('div', { style: 'margin:2px 0 6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'font-size:.72rem;padding:4px 11px', onClick: () => openBrokerPacketPreview() }, '\ud83c\udfe2 Broker packet \ud83d\udd12 \u2014 what you get once accepted')));
           box.appendChild(h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 6px' }, [
-            (o.details && Array.isArray(o.details.stops) && o.details.stops.length) ? h('button', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.16);color:#c4b5fd;font-weight:800;border:1px solid rgba(139,92,246,.35);cursor:pointer;font:inherit', title: 'Tap for the stop-by-stop route', onClick: (e9) => { e9.stopPropagation(); lbStopsModal9(o); } }, '\ud83d\udfe3 +' + o.details.stops.length + ' STOP' + (o.details.stops.length > 1 ? 'S' : '') + ' \u00b7 ' + o.details.stops.map((s9) => s9.city || '?').join(' \u2192 ') + ' \u203a') : null,
-          (o.details && o.details.team_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)' }, '\u26a0 \ud83d\udc65 TEAM DRIVERS REQUIRED') : h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:#94a3b8;font-weight:700' }, '\ud83d\udc64 Solo OK'),
-            (o.details && o.details.driver_assist_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.16);color:#fbbf24;font-weight:800' }, '\u26a0 DRIVER ASSIST REQUIRED') : null,
-            o.hazmat ? h('span', { class: 'cpx-chip', style: 'background:rgba(239,68,68,.15);color:#f87171;font-weight:800' }, '\u2622 HAZMAT') : null,
+            (o.details && Array.isArray(o.details.stops) && o.details.stops.length) ? h('button', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.16);color:var(--lbc-x-violet,#c4b5fd);font-weight:800;border:1px solid rgba(139,92,246,.35);cursor:pointer;font:inherit', title: 'Tap for the stop-by-stop route', onClick: (e9) => { e9.stopPropagation(); lbStopsModal9(o); } }, '\ud83d\udfe3 +' + o.details.stops.length + ' STOP' + (o.details.stops.length > 1 ? 'S' : '') + ' \u00b7 ' + o.details.stops.map((s9) => s9.city || '?').join(' \u2192 ') + ' \u203a') : null,
+          (o.details && o.details.team_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:var(--lbc-x-gold,#fbbf24);font-weight:800;border:1px solid rgba(245,158,11,.35)' }, '\u26a0 \ud83d\udc65 TEAM DRIVERS REQUIRED') : h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:var(--lbc-x-ink3,#94a3b8);font-weight:700' }, '\ud83d\udc64 Solo OK'),
+            (o.details && o.details.driver_assist_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.16);color:var(--lbc-x-gold,#fbbf24);font-weight:800' }, '\u26a0 DRIVER ASSIST REQUIRED') : null,
+            o.hazmat ? h('span', { class: 'cpx-chip', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171);font-weight:800' }, '\u2622 HAZMAT') : null,
             (o.details && o.details.temperature) ? h('span', { class: 'cpx-chip' }, '\u2744 ' + o.details.temperature + '\u00b0F') : null,
             ...lbFeasChips(o),
           ].filter(Boolean)));
@@ -4519,10 +4549,10 @@ async function appView(user) {
               if (cd.isConnected) _wc = true;
               else { if (_wc) clearInterval(iv); return; }
               let d2 = Math.floor((exp - Date.now()) / 1000);
-              if (d2 <= 0) { cd.textContent = 'expired'; cd.style.color = '#f87171'; clearInterval(iv); box.style.opacity = '.5'; return; }
+              if (d2 <= 0) { cd.textContent = 'expired'; cd.style.color = 'var(--lbc-x-danger,#f87171)'; clearInterval(iv); box.style.opacity = '.5'; return; }
               const mm = Math.floor(d2 / 60), ss = d2 % 60;
               cd.textContent = (mm >= 60 ? Math.floor(mm / 60) + 'h ' : '') + (mm % 60) + 'm ' + String(ss).padStart(2, '0') + 's';
-              if (d2 < 300) cd.style.color = '#f87171';
+              if (d2 < 300) cd.style.color = 'var(--lbc-x-danger,#f87171)';
             };
             const iv = setInterval(tick, 1000); tick();
           } else cd.textContent = 'no expiry';
@@ -4542,7 +4572,7 @@ async function appView(user) {
           } }, 'Decline');
           const _gr = Number(o.offered_rate || o.load_rate || 0), _net2 = Math.round(_gr * 0.95 * 100) / 100;
           const fmtD = (d2) => d2 ? new Date(d2 + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : null;
-          const chip2 = (txt, urgent2) => txt ? h('span', { style: 'background:' + (urgent2 ? 'rgba(239,68,68,.15)' : 'rgba(8,131,247,.12)') + ';color:' + (urgent2 ? '#f87171' : '#60A5FA') + ';font-size:.74rem;font-weight:800;padding:5px 10px;border-radius:9px;white-space:nowrap' }, txt) : null;
+          const chip2 = (txt, urgent2) => txt ? h('span', { style: 'background:' + (urgent2 ? 'rgba(239,68,68,.15)' : 'rgba(8,131,247,.12)') + ';color:' + (urgent2 ? 'var(--lbc-x-danger,#f87171)' : 'var(--lbc-x-link,#60A5FA)') + ';font-size:.74rem;font-weight:800;padding:5px 10px;border-radius:9px;white-space:nowrap' }, txt) : null;
           const dRow = (label2, val2) => val2 ? h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:3px 0' }, [h('span', { class: 'cp-row-s', style: 'flex:none' }, label2), h('span', { style: 'font-size:.85rem;font-weight:700;text-align:right' }, val2)]) : null;
           box.append(
             h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:flex-start' }, [
@@ -4554,7 +4584,7 @@ async function appView(user) {
               h('div', { style: 'text-align:right;flex:none' }, [
                 h('div', { style: 'font-size:1.35rem;font-weight:900' }, money(_gr)),
                 o.rpm ? h('div', { class: 'cp-row-s', style: 'font-weight:700' }, '$' + Number(o.rpm).toFixed(2) + '/mi' + (o.miles ? ' \u00b7 ' + o.miles + ' mi' : '')) : null,
-                h('div', { class: 'cp-row-s', style: 'color:#4ade80;font-weight:800' }, 'Net ' + money(_net2) + ' after 5%'),
+                h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-ok,#4ade80);font-weight:800' }, 'Net ' + money(_net2) + ' after 5%'),
               ].filter(Boolean)),
             ]),
             h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin:9px 0 4px' }, [
@@ -4565,7 +4595,7 @@ async function appView(user) {
             h('div', { style: 'margin:4px 0 6px' }, [
               dRow('Requirements', o.requirements),
               dRow('Load notes', o.notes),
-              o.message ? h('div', { style: 'margin-top:7px;padding:9px 12px;border-radius:11px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.2);font-size:.84rem;font-weight:600;color:#9fc3f5' }, '\ud83d\udcac ' + o.message) : null,
+              o.message ? h('div', { style: 'margin-top:7px;padding:9px 12px;border-radius:11px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.2);font-size:.84rem;font-weight:600;color:var(--lbc-x-link,#9fc3f5)' }, '\ud83d\udcac ' + o.message) : null,
             ].filter(Boolean)),
             (() => {
               // Your protections — the load's REAL accessorial rate card (detention, TONU, layover, lumper)
@@ -4575,10 +4605,10 @@ async function appView(user) {
                 const a2 = (det2 && det2.terms && det2.terms.accessorials) || {};
                 const pr = (label2, val2) => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:3px 0' }, [
                   h('span', { class: 'cp-row-s' }, label2),
-                  h('span', { style: 'font-size:.84rem;font-weight:800;color:' + (val2 ? '#4ade80' : '#f59e0b') }, val2 || 'not set \u2014 platform standard applies'),
+                  h('span', { style: 'font-size:.84rem;font-weight:800;color:' + (val2 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-gold,#f59e0b)') }, val2 || 'not set \u2014 platform standard applies'),
                 ]);
                 mount(protHost, h('div', { style: 'border:1px solid rgba(74,222,128,.25);background:rgba(74,222,128,.05);border-radius:12px;padding:10px 13px' }, [
-                  h('div', { style: 'font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#4ade80;margin-bottom:4px' }, '\ud83d\udee1 Your protections on this load'),
+                  h('div', { style: 'font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--lbc-x-ok,#4ade80);margin-bottom:4px' }, '\ud83d\udee1 Your protections on this load'),
                   pr('Detention', a2.detention_per_hr ? ('$' + a2.detention_per_hr + '/hr after ' + (a2.detention_free_hours || 2) + 'h free') : null),
                   pr('TONU (truck ordered, not used)', a2.tonu ? ('$' + a2.tonu) : null),
                   pr('Layover', a2.layover_per_day ? ('$' + a2.layover_per_day + '/day') : null),
@@ -4663,9 +4693,9 @@ async function appView(user) {
             // A posting past its end date is off the board even though nothing on screen
             // used to say so. Say it, and put the one-tap fix right next to it.
             (p.is_live === false && p.status !== 'paused')
-              ? h('div', { class: 'cp-row-s', style: 'color:#fca5a5;font-weight:700;margin-top:2px' },
+              ? h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-danger,#fca5a5);font-weight:700;margin-top:2px' },
                   '\u26a0 Not on the board' + (p.days_ago ? ' — ended ' + p.days_ago + ' day' + (p.days_ago === 1 ? '' : 's') + ' ago' : '') + '. Extend it to go live again.')
-              : (expiryLine(h, p) || (p.is_live ? h('div', { class: 'cp-row-s', style: 'color:#4ade80;font-weight:700;margin-top:2px' }, '\u25cf Live on the board') : null)),
+              : (expiryLine(h, p) || (p.is_live ? h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-ok,#4ade80);font-weight:700;margin-top:2px' }, '\u25cf Live on the board') : null)),
           ]),
           h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;max-width:100%;justify-content:flex-end' }, [
             h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
@@ -4702,7 +4732,7 @@ async function appView(user) {
             // carrier restates today's window before the truck goes back in front of a dispatcher.
             p.status === 'paused'
               ? h('button', { class: 'cp-btn cp-btn-sm', title: 'Put this truck back on the board', onClick: () => openPostingForm(p) }, 'Available')
-              : h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#fbbf24;border-color:rgba(251,191,36,.45)', title: 'Take this truck off the board — your dispatcher stops on it', onClick: async (ev) => {
+              : h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:var(--lbc-x-gold,#fbbf24);border-color:rgba(251,191,36,.45)', title: 'Take this truck off the board — your dispatcher stops on it', onClick: async (ev) => {
                   const b = ev.currentTarget; b.disabled = true; const was = b.textContent; b.textContent = '…';
                   try { await setTruckPostingAvailable(p.id, false); lbToast('Truck is off the board. Your dispatcher has stopped on it — tap Available when it frees up.', 'ok', 'Not available'); loadLoads(); }
                   catch (e) { b.disabled = false; b.textContent = was; alert((e && e.message) || 'Failed'); }
@@ -4836,7 +4866,7 @@ async function appView(user) {
         top9.length ? h('div', null, top9.map(c9 => h('div', { style: 'border:1px solid rgba(148,163,184,.25);border-radius:14px;padding:12px 14px;margin-bottom:10px' }, [
           h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline' }, [
             h('b', { style: 'font-size:.95rem' }, (c9.a.origin || '') + ' → ' + (c9.a.destination || '') + '  ⇒  ' + (c9.b.origin || '') + ' → ' + (c9.b.destination || '')),
-            h('b', { style: 'color:#4ade80;font-size:1.05rem' }, money(c9.rate)),
+            h('b', { style: 'color:var(--lbc-x-ok,#4ade80);font-size:1.05rem' }, money(c9.rate)),
           ]),
           h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, [
             Math.round(c9.mi).toLocaleString() + ' total mi',
@@ -4865,11 +4895,11 @@ async function appView(user) {
       });
     } }, '🔔 Alert me');
     let _favOnly = false;
-    const favBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Show only loads you saved with the star', onClick: (e9) => { _favOnly = !_favOnly; e9.currentTarget.style.color = _favOnly ? '#f59e0b' : ''; e9.currentTarget.style.borderColor = _favOnly ? '#f59e0b' : ''; renderList(); } }, '★ Saved');
+    const favBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Show only loads you saved with the star', onClick: (e9) => { _favOnly = !_favOnly; e9.currentTarget.style.color = _favOnly ? 'var(--lbc-x-gold,#f59e0b)' : ''; e9.currentTarget.style.borderColor = _favOnly ? 'var(--lbc-x-gold,#f59e0b)' : ''; renderList(); } }, '★ Saved');
     // bl_disp_0549: "From my dispatcher" chip — only shown when the board has at least one dispatcher-posted load
     let _dispOnly = false;
     const dispN9 = rows.filter(lbDispPost).length;
-    const dispBtn = dispN9 ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#FC5305;border-color:rgba(252,83,5,.6);font-weight:800', title: 'Loads your dispatcher found and posted for you', onClick: (e9) => { _dispOnly = !_dispOnly; e9.currentTarget.style.background = _dispOnly ? 'rgba(252,83,5,.18)' : ''; renderList(); } }, '📋 From my dispatcher (' + dispN9 + ')') : null;
+    const dispBtn = dispN9 ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:var(--lbc-x-warn,#FC5305);border-color:rgba(252,83,5,.6);font-weight:800', title: 'Loads your dispatcher found and posted for you', onClick: (e9) => { _dispOnly = !_dispOnly; e9.currentTarget.style.background = _dispOnly ? 'rgba(252,83,5,.18)' : ''; renderList(); } }, '📋 From my dispatcher (' + dispN9 + ')') : null;
     const applyFilters = (list) => { const oC9 = radCtr9(fOrigin, fORad), dC9 = radCtr9(fDest, fDRad); _radMiss9 = new Set(); _radWait9 = new Set();
       const oR9 = oC9 && Array.isArray(oC9.c) ? oC9 : null, dR9 = dC9 && Array.isArray(dC9.c) ? dC9 : null; // 'wait' / not found -> text match
       const out9 = (list || []).filter(l => {
@@ -4941,7 +4971,7 @@ async function appView(user) {
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('rates') }, '\ud83d\udcc8 Market rates'),
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('fleet') }, '\ud83d\ude9b Add your truck'),
         ]),
-        h('div', { class: 'cp-row-s', style: 'margin-top:14px;color:#94a3b8' }, '\u2b06 Post your truck above \u2014 matching loads auto-alert you, and your dispatcher sees exactly where you free up next.'),
+        h('div', { class: 'cp-row-s', style: 'margin-top:14px;color:var(--lbc-x-ink3,#94a3b8)' }, '\u2b06 Post your truck above \u2014 matching loads auto-alert you, and your dispatcher sees exactly where you free up next.'),
       ]);
     })()].filter(Boolean))); mount(content, h('div', null, [gpsBanner, capNudge, tabsBar, reqHost, availWrap].filter(Boolean))); return; }
     renderList = () => {
@@ -4979,7 +5009,7 @@ async function appView(user) {
               h('div', { class: 'cp-row-t', style: 'margin:10px 0 6px;font-size:1.05rem' }, 'One step before you can book'),
               h('div', { class: 'cp-row-s', style: 'max-width:340px;margin:0 auto' }, 'Brokers only see booking requests from verified carriers. Upload your MC/DOT authority, insurance (COI) and W-9 — our team verifies fast.'),
               h('button', { class: 'cp-btn', style: 'margin-top:16px', onClick: () => { closeV(); go('onboarding'); } }, 'Finish onboarding →'),
-              h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#94a3b8' }, 'Already uploaded? Verification is usually quick — check back soon.'),
+              h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:var(--lbc-x-ink3,#94a3b8)' }, 'Already uploaded? Verification is usually quick — check back soon.'),
             ]),
           ]);
           return;
@@ -4991,7 +5021,7 @@ async function appView(user) {
               h('div', { class: 'cp-row-t', style: 'margin:10px 0 6px;font-size:1.05rem' }, 'This is a HAZMAT load'),
               h('div', { class: 'cp-row-s', style: 'max-width:340px;margin:0 auto' }, 'Your hazmat certificate is not verified yet. If you want to haul hazmat freight, upload your hazmat certificate / permit — once verified, hazmat loads unlock automatically.'),
               h('button', { class: 'cp-btn', style: 'margin-top:16px', onClick: () => { closeH(); go('account'); } }, 'Upload hazmat certificate →'),
-              h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#94a3b8' }, 'Non-hazmat loads are not affected.'),
+              h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:var(--lbc-x-ink3,#94a3b8)' }, 'Non-hazmat loads are not affected.'),
             ]),
           ]);
           return;
@@ -5004,7 +5034,7 @@ async function appView(user) {
               h('div', { class: 'cp-row-t', style: 'margin:10px 0 6px;font-size:1.05rem' }, 'This load is for ' + eqNeed9 + ' equipment'),
               h('div', { class: 'cp-row-s', style: 'max-width:360px;margin:0 auto' }, 'Your fleet doesn\u2019t have a ' + eqNeed9 + ' on file \u2014 brokers match and pay by equipment, so this one can\u2019t be requested. If you run a ' + eqNeed9 + ', add the truck and loads like this unlock automatically.'),
               h('button', { class: 'cp-btn', style: 'margin-top:16px', onClick: () => { closeE9(); go('fleet'); } }, '\u2795 Add your ' + eqNeed9 + ' truck \u2192 Fleet'),
-              h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#94a3b8' }, 'Your fleet today: ' + (window.__fleetEq.map(e9 => e9.replace(/\b\w/g, c9 => c9.toUpperCase())).join(', ') || '\u2014')),
+              h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:var(--lbc-x-ink3,#94a3b8)' }, 'Your fleet today: ' + (window.__fleetEq.map(e9 => e9.replace(/\b\w/g, c9 => c9.toUpperCase())).join(', ') || '\u2014')),
             ]),
           ]);
           return;
@@ -5015,7 +5045,7 @@ async function appView(user) {
               h('div', { style: 'font-size:44px;line-height:1' }, '\u23f3'),
               h('div', { class: 'cp-row-t', style: 'margin:10px 0 6px;font-size:1.05rem' }, 'This load came from ' + lbSourceProvider(l)),
               h('div', { class: 'cp-row-s', style: 'max-width:380px;margin:0 auto;line-height:1.7' }, 'The brokerage that posted it has not completed LoadBoot verification yet \u2014 we have not confirmed their authority, insurance or bond. We will not let you commit a truck to freight we cannot stand behind.'),
-              h('div', { class: 'cp-row-s', style: 'max-width:380px;margin:10px auto 0;line-height:1.7;color:#94a3b8' }, 'We are chasing their paperwork. The moment it clears, this load becomes bookable on its own and you will see it here \u2014 nothing for you to do.'),
+              h('div', { class: 'cp-row-s', style: 'max-width:380px;margin:10px auto 0;line-height:1.7;color:var(--lbc-x-ink3,#94a3b8)' }, 'We are chasing their paperwork. The moment it clears, this load becomes bookable on its own and you will see it here \u2014 nothing for you to do.'),
             ]),
           ]);
           return;
@@ -5028,18 +5058,18 @@ async function appView(user) {
             h('div', { class: 'cp-row-s' }, !_f.delOk
               ? ('From where you are now, running ' + (_f.team ? 'team (nonstop)' : 'solo (with HOS breaks)') + ' it takes ~' + rnd(_f.delEtaH) + 'h to reach pickup and deliver \u2014 but only ~' + rnd(Math.max(_f.delHoursTo || 0, 0)) + 'h remain before the delivery appointment. You would deliver LATE.')
               : ('It takes ~' + rnd(_f.puEtaH) + 'h to reach pickup but only ~' + rnd(Math.max(_f.puHoursTo || 0, 0)) + 'h remain before the pickup window \u2014 you\u2019d be late to pickup.')),
-            (!_f.team && !_f.delOk && _f.teamDelOk) ? h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:#4ade80;font-weight:700' }, 'A TEAM (nonstop) could make it \u2014 solo cannot. Run this only if you have a co-driver.') : null,
-            h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8' }, 'Booking is blocked to protect your on-time score. Pick a load you can run on time.'),
+            (!_f.team && !_f.delOk && _f.teamDelOk) ? h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:var(--lbc-x-ok,#4ade80);font-weight:700' }, 'A TEAM (nonstop) could make it \u2014 solo cannot. Run this only if you have a co-driver.') : null,
+            h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:var(--lbc-x-ink3,#94a3b8)' }, 'Booking is blocked to protect your on-time score. Pick a load you can run on time.'),
           ].filter(Boolean));
           return;
         }
         const err9 = h('div', { class: 'cp-err', style: 'min-height:1em' });
         const go9 = h('button', { class: 'cp-btn', style: 'flex:1;background:linear-gradient(120deg,#0883F7,#0967d2);font-weight:800' }, '\ud83c\udfaf Send booking request');
         const closeB9 = openModal('\ud83c\udfaf Request to book', [
-          h('div', { style: 'background:linear-gradient(120deg,#0b1830,#14335c);border-radius:16px;padding:16px 18px;color:#fff;margin-bottom:12px' }, [
+          h('div', { style: 'background:var(--lbc-x-hero,linear-gradient(120deg,#0b1830,#14335c));border-radius:16px;padding:16px 18px;color:var(--lbc-x-ink,#fff);margin-bottom:12px' }, [
             h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline' }, [
               h('div', { style: 'font-weight:800;font-size:1.05rem' }, (l.origin || '') + ' → ' + (l.destination || '')),
-              h('div', { style: 'font-weight:800;font-size:1.25rem;color:#7cc0ff' }, money(l.rate)),
+              h('div', { style: 'font-weight:800;font-size:1.25rem;color:var(--lbc-x-link,#7cc0ff)' }, money(l.rate)),
             ]),
             h('div', { style: 'font-size:.8rem;opacity:.8;margin-top:4px' }, [rpm || null, l.equipment || null, l.miles ? Number(l.miles).toLocaleString() + ' mi' : null, l.pickup_date ? 'PU ' + l.pickup_date : null].filter(Boolean).join(' · ')),
             h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:10px' }, lbFeasChips(l, _dp)),
@@ -5183,13 +5213,13 @@ async function appView(user) {
             mount(brokerHost, h('div', { style: 'margin-top:10px;border-radius:12px;padding:12px;background:#0F172A;color:#fff' }, [
               h('div', { style: 'display:flex;align-items:center;gap:10px' }, [
                 h('span', { html: '<svg width="24" height="26" viewBox="16 14 68 72"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#FFFFFF"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#FFFFFF"/></svg>', style: 'line-height:0' }),
-                h('div', null, [h('b', { style: 'font-size:13.5px' }, 'LoadBoot Dispatch — platform post'), h('div', { style: 'font-size:11px;color:#94a3b8' }, 'The marketplace itself is the posting party')]),
+                h('div', null, [h('b', { style: 'font-size:13.5px' }, 'LoadBoot Dispatch — platform post'), h('div', { style: 'font-size:11px;color:var(--lbc-x-ink3,#94a3b8)' }, 'The marketplace itself is the posting party')]),
                 h('span', { class: 'cp-pill green', style: 'margin-left:auto' }, '✓ Platform'),
               ]),
-              h('div', { style: 'font-size:11.5px;color:#cbd5e1;margin-top:8px;line-height:1.7' },
+              h('div', { style: 'font-size:11.5px;color:var(--lbc-x-ink2,#cbd5e1);margin-top:8px;line-height:1.7' },
                 '✓ All marketplace standards ENFORCED at post time (detention $60/2h · TONU $250 · layover $250 · lumper receipt · assist $75)' +
                 ' — not negotiable, it is policy.'),
-              h('div', { style: 'font-size:10.5px;color:#94a3b8;margin-top:4px' }, 'Carrier ratings of LoadBoot posts build from trip-verified reviews — same rules as brokers, no self-exemption.'),
+              h('div', { style: 'font-size:10.5px;color:var(--lbc-x-ink3,#94a3b8);margin-top:4px' }, 'Carrier ratings of LoadBoot posts build from trip-verified reviews — same rules as brokers, no self-exemption.'),
             ]));
             render();
             return;
@@ -5202,7 +5232,7 @@ async function appView(user) {
               h('b', { style: 'font-size:13px' }, [icon('building',15), ' ' + (ps.posted_by || 'Posting party')]),
               h('span', null, [
                 ps.broker_verified != null ? h('span', { class: 'cp-pill ' + (ps.broker_verified ? 'green' : 'amber'), style: 'margin-right:6px' }, ps.broker_verified ? '✓ Verified (bond + authority on file)' : 'Unverified') : null,
-                stars ? h('span', { style: 'color:#f59e0b;font-weight:800' }, stars + ' ' + br.toFixed(1)) : null,
+                stars ? h('span', { style: 'color:var(--lbc-x-gold,#f59e0b);font-weight:800' }, stars + ' ' + br.toFixed(1)) : null,
               ].filter(Boolean)),
             ]),
             h('div', { class: 'cp-row-s', style: 'margin-top:5px' }, [
@@ -5211,7 +5241,7 @@ async function appView(user) {
               ps.on_time_pct != null ? ps.on_time_pct + '% on-time' : null,
               (ps.pay && ps.pay.eligible === true) ? '\ud83d\udcb0 pays in ~' + ps.pay.median_days + ' days (median of ' + ps.pay.paid_n + ' carrier-confirmed payments from ' + ps.pay.carriers_n + ' carriers, last 12 months' + (ps.pay.within_30_pct != null ? ' \u00b7 ' + ps.pay.within_30_pct + '% within 30 days' : '') + ')' : null,
             ].filter(Boolean).join(' · ') || (ps.signal || '')),
-            (ps.pay && ps.pay.eligible === true) ? null : h('div', { class: 'cp-row-s', style: 'color:#94a3b8' }, 'No payment history on LoadBoot yet' + (ps.broker_verified ? ' \u2014 bond on file, authority FMCSA-verified' : '') + '. Builds automatically as carriers confirm payments here. Ratings are trip-verified only.'),
+            (ps.pay && ps.pay.eligible === true) ? null : h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-ink3,#94a3b8)' }, 'No payment history on LoadBoot yet' + (ps.broker_verified ? ' \u2014 bond on file, authority FMCSA-verified' : '') + '. Builds automatically as carriers confirm payments here. Ratings are trip-verified only.'),
           ].filter(Boolean)));
         })();
         const render = () => {
@@ -5268,22 +5298,22 @@ async function appView(user) {
             (() => {
               // LOCKED v8 hero: ring dial + verdict + NET/PER-DAY/TRIP + ranked why-rows + watch strip.
               const C2 = 2 * Math.PI * 40, off2 = C2 * (1 - lbScore / 100);
-              const dcol = lbScore >= 70 ? '#22c55e' : lbScore >= 45 ? '#f59e0b' : '#ef4444';
+              const dcol = lbScore >= 70 ? 'var(--lbc-x-ok,#22c55e)' : lbScore >= 45 ? 'var(--lbc-x-gold,#f59e0b)' : 'var(--lbc-x-danger,#ef4444)';
               const rank = SC.filter(x2 => x2[2] > 0).slice().sort((a2, b2) => (b2[1] / b2[2]) - (a2[1] / a2[2]));
               const tops = rank.slice(0, 3), worst = rank[rank.length - 1];
               const medals = ['#F97316', '#0883F7', '#475569'];
               return h('div', { class: 'cpx-mhero' }, [
                 h('div', { class: 'mh-lock' }, [
                   h('span', { html: '<svg width="19" height="20" viewBox="16 14 68 72"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#FFFFFF"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#FFFFFF"/></svg>', style: 'line-height:0' }),
-                  h('span', { style: 'display:inline-flex;align-items:flex-start;gap:4px' }, [h('b', { html: 'Load<span style="color:#F97316">Boot</span>', style: 'font-size:15px;letter-spacing:-.02em;line-height:1;color:#fff' }), h('span', { style: 'font-size:11px;font-weight:600;color:#FB923C;line-height:1' }, 'Match')]),
+                  h('span', { style: 'display:inline-flex;align-items:flex-start;gap:4px' }, [h('b', { html: 'Load<span style="color:var(--lbc-x-warn,#F97316)">Boot</span>', style: 'font-size:15px;letter-spacing:-.02em;line-height:1;color:var(--lbc-x-ink,#fff)' }), h('span', { style: 'font-size:11px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1' }, 'Match')]),
                   h('span', { class: 'mh-eng' }, 'DECISION ENGINE'),
                 ]),
                 h('div', { style: 'display:flex;align-items:center;gap:14px' }, [
                   h('div', { style: 'position:relative;width:92px;height:92px;flex:none' }, [
                     h('span', { html: '<svg width="92" height="92" viewBox="0 0 92 92" style="transform:rotate(-90deg)"><circle cx="46" cy="46" r="40" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="8"/><circle cx="46" cy="46" r="40" fill="none" stroke="' + dcol + '" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + C2.toFixed(1) + '" stroke-dashoffset="' + off2.toFixed(1) + '"/></svg>', style: 'line-height:0;display:block' }),
-                    h('span', { style: 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center' }, [h('b', { style: 'font-size:26px;line-height:1;color:#fff' }, String(lbScore)), h('span', { style: 'font-size:8.5px;color:#94a3b8;font-weight:800;letter-spacing:.08em;margin-top:2px' }, 'OF 100')]),
+                    h('span', { style: 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center' }, [h('b', { style: 'font-size:26px;line-height:1;color:var(--lbc-x-ink,#fff)' }, String(lbScore)), h('span', { style: 'font-size:8.5px;color:var(--lbc-x-ink3,#94a3b8);font-weight:800;letter-spacing:.08em;margin-top:2px' }, 'OF 100')]),
                   ]),
-                  h('div', null, [h('div', { style: 'font-size:17px;font-weight:800;color:' + dcol }, V[0] + ' ' + V[1]), h('div', { style: 'font-size:12px;color:#94a3b8;margin-top:2px;line-height:1.5' }, V[2])]),
+                  h('div', null, [h('div', { style: 'font-size:17px;font-weight:800;color:' + dcol }, V[0] + ' ' + V[1]), h('div', { style: 'font-size:12px;color:var(--lbc-x-ink3,#94a3b8);margin-top:2px;line-height:1.5' }, V[2])]),
                 ]),
                 h('div', { class: 'mh-boxes' }, [
                   h('div', { class: 'bx hl' }, [h('span', null, 'NET PROFIT'), h('b', null, (net >= 0 ? '+$' : '−$') + Math.abs(net).toLocaleString())]),
@@ -5293,8 +5323,8 @@ async function appView(user) {
                 h('div', { class: 'mh-sect' }, 'WHY IT MATCHES YOU'),
                 ...tops.map((t2, i2) => { const pc2 = Math.round(t2[1] / t2[2] * 100); return h('div', { class: 'mh-wrow' }, [
                   h('span', { class: 'mh-medal', style: 'background:' + medals[i2] }, String(i2 + 1)),
-                  h('span', { style: 'min-width:0;flex:1' }, [h('div', { style: 'font-weight:800;font-size:13px;color:#fff' }, t2[0]), h('div', { style: 'font-size:11.5px;color:#94a3b8;margin-top:1px;line-height:1.45' }, t2[3]), h('div', { class: 'mh-bar' }, h('i', { style: 'width:' + pc2 + '%' }))]),
-                  h('b', { style: 'color:#4ade80;font-size:12px;flex:none' }, t2[1] + '/' + t2[2]),
+                  h('span', { style: 'min-width:0;flex:1' }, [h('div', { style: 'font-weight:800;font-size:13px;color:var(--lbc-x-ink,#fff)' }, t2[0]), h('div', { style: 'font-size:11.5px;color:var(--lbc-x-ink3,#94a3b8);margin-top:1px;line-height:1.45' }, t2[3]), h('div', { class: 'mh-bar' }, h('i', { style: 'width:' + pc2 + '%' }))]),
+                  h('b', { style: 'color:var(--lbc-x-ok,#4ade80);font-size:12px;flex:none' }, t2[1] + '/' + t2[2]),
                 ]); }),
                 (worst && (worst[1] / worst[2]) < 0.6) ? h('div', { class: 'mh-watch' }, [icon('alert',15), ' Watch — ' + worst[0] + ': ' + worst[3]]) : null,
               ].filter(Boolean));
@@ -5318,11 +5348,11 @@ async function appView(user) {
             h('div', { style: 'margin-top:10px;border-radius:11px;padding:9px 12px;background:rgba(8,131,247,.07);font-size:12px;font-weight:700;color:#1e3a8a' },
               '⛽ Deadhead fuel: ' + (st.dh || 0) + ' mi ÷ ' + st.mpg + ' mpg × $' + st.fuel + ' = $' + fuelDead.toLocaleString() + ' just to reach pickup · Loaded-leg fuel: $' + fuelLoaded.toLocaleString()),
             h('div', { class: 'cpx-adv-grid' }, [
-              h('div', { class: 'cell' }, [h('label', null, [icon('pin',15),' DEADHEAD (MI)']), numIn(st.dh, 1, (v) => { st.dh = v; st.dhKnown = true; st.dhBasis = 'entered by you'; render(); }), h('span', { style: 'font-size:9.5px;color:#94a3b8;font-weight:600' }, st.dhBasis)]),
+              h('div', { class: 'cell' }, [h('label', null, [icon('pin',15),' DEADHEAD (MI)']), numIn(st.dh, 1, (v) => { st.dh = v; st.dhKnown = true; st.dhBasis = 'entered by you'; render(); }), h('span', { style: 'font-size:9.5px;color:var(--lbc-x-ink3,#94a3b8);font-weight:600' }, st.dhBasis)]),
               h('div', { class: 'cell' }, [h('label', null, '⛽ FUEL $/GAL (auto-saved)'), numIn(st.fuel, 0.05, (v) => { st.fuel = v; persistCpm(); render(); })]),
               h('div', { class: 'cell' }, [h('label', null, [icon('truck',15),' TRUCK MPG (auto-saved)']), numIn(st.mpg, 0.1, (v) => { st.mpg = v; persistCpm(); render(); })]),
               h('div', { class: 'cell' }, [h('label', null, [icon('tools',15),' OTHER COST/MI (maint+ins)']), numIn(st.cpm, 0.05, (v) => { st.cpm = v; persistCpm(); render(); })]),
-              h('div', { class: 'cell' }, [h('label', null, '🛣 TOLLS (auto-estimated)'), numIn(Math.round(st.tolls), 1, (v) => { st.tolls = v; render(); }), h('span', { style: 'font-size:9.5px;color:#94a3b8;font-weight:600' }, tollAuto.parts.length ? tollAuto.parts.map(p2 => p2[1]).join(' + ') : tollAuto.basis)]),
+              h('div', { class: 'cell' }, [h('label', null, '🛣 TOLLS (auto-estimated)'), numIn(Math.round(st.tolls), 1, (v) => { st.tolls = v; render(); }), h('span', { style: 'font-size:9.5px;color:var(--lbc-x-ink3,#94a3b8);font-weight:600' }, tollAuto.parts.length ? tollAuto.parts.map(p2 => p2[1]).join(' + ') : tollAuto.basis)]),
               h('div', { class: 'cell' }, [h('label', null, 'LOADED MI' + (st.useVerified ? ' (CORRECTED)' : '') + ' · ALL-IN'), h('b', null, loadedMi.toLocaleString() + ' mi · $' + allInRpm.toFixed(2) + '/mi')]),
             ]),
             h('div', { style: 'margin-top:8px' }, [
@@ -5351,10 +5381,10 @@ async function appView(user) {
                   h('div', { style: 'font-size:11.5px;color:#64748b;line-height:1.5' }, x2[3]),
                 ].filter(Boolean));
               }),
-              h('div', { style: 'font-size:9.5px;color:#94a3b8;margin-top:5px' }, 'MEASURED = read from GPS / our board · VERIFIED = documents & trip records · ESTIMATE = labeled approximation · YOU SET = your own saved numbers. Anything unknown is asked — never invented. Dispatch fee (5%) is always auto-deducted before Net.'),
+              h('div', { style: 'font-size:9.5px;color:var(--lbc-x-ink3,#94a3b8);margin-top:5px' }, 'MEASURED = read from GPS / our board · VERIFIED = documents & trip records · ESTIMATE = labeled approximation · YOU SET = your own saved numbers. Anything unknown is asked — never invented. Dispatch fee (5%) is always auto-deducted before Net.'),
             ]),
             brokerHost,
-            h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8' }, 'City-map road + corridor-toll estimates (±) + your saved numbers — everything auto, everything editable. Not financial advice.'),
+            h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:var(--lbc-x-ink3,#94a3b8)' }, 'City-map road + corridor-toll estimates (±) + your saved numbers — everything auto, everything editable. Not financial advice.'),
           ].filter(Boolean));
         };
         render();
@@ -5371,30 +5401,30 @@ async function appView(user) {
           (function () { const k9 = String(l.id); const on9 = _lbFavs().has(k9); const b9 = h('button', { class: 'cpx-fav' + (on9 ? ' on' : ''), title: 'Save this load', 'aria-label': 'Save this load', onClick: (e9) => { e9.stopPropagation(); const now9 = lbFavToggle(k9); e9.currentTarget.classList.toggle('on', now9); e9.currentTarget.textContent = now9 ? '★' : '☆'; haptic('tap'); if (_favOnly) renderList(); } }, on9 ? '★' : '☆'); return b9; })()].filter(Boolean)),
         h('div', { class: 'cpx-req-chips' }, [
           dp9 ? lbDispBadge(dp9) : null,
-          dp9 ? h('span', { class: 'cpx-chip', style: 'background:rgba(8,131,247,.14);color:#7cc0ff;font-weight:800', title: 'The board your dispatcher found it on' + (l.details && l.details.board_ref ? ' · ref ' + l.details.board_ref : '') }, '🔎 Found on ' + (dp9.board_label || 'a load board')) : null,
-          dp9 ? h('span', { class: 'cpx-chip', style: 'background:rgba(252,83,5,.12);color:#FC5305;font-weight:800', title: 'Decide before it expires — your dispatcher is holding the broker' }, ['⏳ ', lbDispCountdown(dp9.expires_at)]) : null,
-          dp9 && l.details && l.details.below_min ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)', title: String(l.details.below_min_reason || '') }, '⚠ BELOW YOUR MINIMUM — see why') : null,
+          dp9 ? h('span', { class: 'cpx-chip', style: 'background:rgba(8,131,247,.14);color:var(--lbc-x-link,#7cc0ff);font-weight:800', title: 'The board your dispatcher found it on' + (l.details && l.details.board_ref ? ' · ref ' + l.details.board_ref : '') }, '🔎 Found on ' + (dp9.board_label || 'a load board')) : null,
+          dp9 ? h('span', { class: 'cpx-chip', style: 'background:rgba(252,83,5,.12);color:var(--lbc-x-warn,#FC5305);font-weight:800', title: 'Decide before it expires — your dispatcher is holding the broker' }, ['⏳ ', lbDispCountdown(dp9.expires_at)]) : null,
+          dp9 && l.details && l.details.below_min ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:var(--lbc-x-gold,#fbbf24);font-weight:800;border:1px solid rgba(245,158,11,.35)', title: String(l.details.below_min_reason || '') }, '⚠ BELOW YOUR MINIMUM — see why') : null,
           h('span', { class: 'cpx-chip eq', title: lbAltEq(l).length ? 'The broker accepts any of these' : null }, [icon('truck',15), ' ' + [l.equipment || 'Van'].concat(lbAltEq(l)).join(' or ')]),
           lbTrailerFt(l) ? h('span', { class: 'cpx-chip', title: 'Trailer length this load needs' }, '\ud83d\udccf ' + lbTrailerFt(l) + ' ft+') : null,
-          lbDimsTxt(l) ? h('span', { class: 'cpx-chip', style: (l.details && l.details.oversize) ? 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)' : '', title: 'Freight dimensions (L \u00d7 W \u00d7 H)' }, ((l.details && l.details.oversize) ? '\u26a0 OVERSIZE \u00b7 ' : '\ud83d\udcd0 ') + lbDimsTxt(l)) : null,
+          lbDimsTxt(l) ? h('span', { class: 'cpx-chip', style: (l.details && l.details.oversize) ? 'background:rgba(245,158,11,.18);color:var(--lbc-x-gold,#fbbf24);font-weight:800;border:1px solid rgba(245,158,11,.35)' : '', title: 'Freight dimensions (L \u00d7 W \u00d7 H)' }, ((l.details && l.details.oversize) ? '\u26a0 OVERSIZE \u00b7 ' : '\ud83d\udcd0 ') + lbDimsTxt(l)) : null,
           l.hazmat ? h('span', { class: 'cpx-chip', style: 'background:rgba(220,38,38,.14);color:#b91c1c;font-weight:800' }, '☣ HAZMAT') : null,
           l.pickup_date ? h('span', { class: 'cpx-chip' }, '🕐 Pickup: ' + l.pickup_date) : null,
-          lbAgeMin(l) != null ? h('span', { class: 'cpx-chip', style: lbAgeMin(l) < 60 ? 'background:rgba(34,197,94,.16);color:#4ade80;font-weight:800' : '', title: 'Posted ' + new Date(l.posted_at).toLocaleString() }, (lbAgeMin(l) < 60 ? '\ud83c\udd95 Posted ' : 'Posted ') + lbAgeTxt(lbAgeMin(l))) : null,
+          lbAgeMin(l) != null ? h('span', { class: 'cpx-chip', style: lbAgeMin(l) < 60 ? 'background:rgba(34,197,94,.16);color:var(--lbc-x-ok,#4ade80);font-weight:800' : '', title: 'Posted ' + new Date(l.posted_at).toLocaleString() }, (lbAgeMin(l) < 60 ? '\ud83c\udd95 Posted ' : 'Posted ') + lbAgeTxt(lbAgeMin(l))) : null,
           l.direct_to_you ? (l.direct_offer_expired
-            ? h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.18);color:#94a3b8;font-weight:800', title: 'The broker\u2019s direct request window ran out unanswered \u2014 the load is still yours to book from the board at the posted rate.' }, '\ud83c\udfaf DIRECT REQUEST \u2014 expired \u00b7 still bookable')
-            : h('span', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.2);color:#c4b5fd;font-weight:800' }, '\ud83c\udfaf DIRECT REQUEST \u2014 reserved for you')) : null,
-          (l.details && Array.isArray(l.details.stops) && l.details.stops.length) ? h('button', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.16);color:#c4b5fd;font-weight:800;border:1px solid rgba(139,92,246,.35);cursor:pointer;font:inherit', title: 'Tap for the stop-by-stop route', onClick: (e9) => { e9.stopPropagation(); lbStopsModal9(l); } }, '\ud83d\udfe3 +' + l.details.stops.length + ' STOP' + (l.details.stops.length > 1 ? 'S' : '') + ' \u00b7 ' + l.details.stops.map((s9) => s9.city || '?').join(' \u2192 ') + ' \u203a') : null,
-          (l.details && l.details.team_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)' }, '\u26a0 \ud83d\udc65 TEAM DRIVERS REQUIRED') : h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:#94a3b8;font-weight:700' }, '\ud83d\udc64 Solo OK'),
-          (l.details && l.details.driver_assist_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.16);color:#fbbf24;font-weight:800' }, '\u26a0 DRIVER ASSIST REQUIRED') : null,
-          lbExpired(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(239,68,68,.2);color:#fca5a5;font-weight:800;border:1px solid rgba(239,68,68,.45)' }, '\u23f0 EXPIRED \u2014 pickup date passed, waiting on broker') : null,
-          lbSourceBlocked(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.45)' }, '\u26a0 VIA ' + lbSourceProvider(l).toUpperCase() + ' \u2014 broker not LoadBoot-verified yet, not bookable') : ((lbSourceNotice(l) && lbSourceNotice(l).request_only) ? h('span', { class: 'cpx-chip', title: String(lbSourceNotice(l).label || ''), style: 'background:rgba(8,131,247,.16);color:#7cc0ff;font-weight:800;border:1px solid rgba(8,131,247,.4)' }, '\ud83d\udee1 ' + (lbSourceNotice(l).tier === 'agent_confirmed' ? 'Agent-posted \u00b7 brokerage confirmed' : 'New brokerage \u00b7 FMCSA-verified') + ' \u00b7 broker approves your request') : (lbSourceNotice(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:#94a3b8;font-weight:700' }, '\u21aa Posted via ' + lbSourceProvider(l)) : null)),
+            ? h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.18);color:var(--lbc-x-ink3,#94a3b8);font-weight:800', title: 'The broker\u2019s direct request window ran out unanswered \u2014 the load is still yours to book from the board at the posted rate.' }, '\ud83c\udfaf DIRECT REQUEST \u2014 expired \u00b7 still bookable')
+            : h('span', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.2);color:var(--lbc-x-violet,#c4b5fd);font-weight:800' }, '\ud83c\udfaf DIRECT REQUEST \u2014 reserved for you')) : null,
+          (l.details && Array.isArray(l.details.stops) && l.details.stops.length) ? h('button', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.16);color:var(--lbc-x-violet,#c4b5fd);font-weight:800;border:1px solid rgba(139,92,246,.35);cursor:pointer;font:inherit', title: 'Tap for the stop-by-stop route', onClick: (e9) => { e9.stopPropagation(); lbStopsModal9(l); } }, '\ud83d\udfe3 +' + l.details.stops.length + ' STOP' + (l.details.stops.length > 1 ? 'S' : '') + ' \u00b7 ' + l.details.stops.map((s9) => s9.city || '?').join(' \u2192 ') + ' \u203a') : null,
+          (l.details && l.details.team_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:var(--lbc-x-gold,#fbbf24);font-weight:800;border:1px solid rgba(245,158,11,.35)' }, '\u26a0 \ud83d\udc65 TEAM DRIVERS REQUIRED') : h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:var(--lbc-x-ink3,#94a3b8);font-weight:700' }, '\ud83d\udc64 Solo OK'),
+          (l.details && l.details.driver_assist_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.16);color:var(--lbc-x-gold,#fbbf24);font-weight:800' }, '\u26a0 DRIVER ASSIST REQUIRED') : null,
+          lbExpired(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(239,68,68,.2);color:var(--lbc-x-danger,#fca5a5);font-weight:800;border:1px solid rgba(239,68,68,.45)' }, '\u23f0 EXPIRED \u2014 pickup date passed, waiting on broker') : null,
+          lbSourceBlocked(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:var(--lbc-x-gold,#fbbf24);font-weight:800;border:1px solid rgba(245,158,11,.45)' }, '\u26a0 VIA ' + lbSourceProvider(l).toUpperCase() + ' \u2014 broker not LoadBoot-verified yet, not bookable') : ((lbSourceNotice(l) && lbSourceNotice(l).request_only) ? h('span', { class: 'cpx-chip', title: String(lbSourceNotice(l).label || ''), style: 'background:rgba(8,131,247,.16);color:var(--lbc-x-link,#7cc0ff);font-weight:800;border:1px solid rgba(8,131,247,.4)' }, '\ud83d\udee1 ' + (lbSourceNotice(l).tier === 'agent_confirmed' ? 'Agent-posted \u00b7 brokerage confirmed' : 'New brokerage \u00b7 FMCSA-verified') + ' \u00b7 broker approves your request') : (lbSourceNotice(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:var(--lbc-x-ink3,#94a3b8);font-weight:700' }, '\u21aa Posted via ' + lbSourceProvider(l)) : null)),
           // bl_bp_0450: broker pay-behaviour from LoadBoot's own settlement records (details.broker_pay).
           // Shown only when eligible (>=3 carrier-confirmed payments to >=2 carriers, 12 months); a new brokerage shows nothing, not a warning.
           (function () { const bp = l.details && l.details.broker_pay; if (!bp || bp.eligible !== true) return null;
-            return h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:#4ade80;font-weight:800;border:1px solid rgba(34,197,94,.35)',
+            return h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:var(--lbc-x-ok,#4ade80);font-weight:800;border:1px solid rgba(34,197,94,.35)',
               title: 'Median days from delivery to carrier-confirmed payment on LoadBoot \u2014 ' + bp.paid_n + ' payments to ' + bp.carriers_n + ' carriers in the last 12 months' + (bp.within_30_pct != null ? ', ' + bp.within_30_pct + '% within 30 days' : '') },
               '\ud83d\udcb0 Pays ~' + Math.round(Number(bp.median_days)) + 'd \u00b7 ' + bp.paid_n + ' paid'); })(),
-          (window.__lbDh && window.__lbDh[l.id] != null) ? h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:#4ade80;font-weight:800' }, '\ud83d\udccd ' + window.__lbDh[l.id].toLocaleString() + ' mi deadhead \u2014 live from your GPS') : null,
+          (window.__lbDh && window.__lbDh[l.id] != null) ? h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, '\ud83d\udccd ' + window.__lbDh[l.id].toLocaleString() + ' mi deadhead \u2014 live from your GPS') : null,
           (function () {
             const dh = (window.__lbDh && window.__lbDh[l.id] != null) ? Number(window.__lbDh[l.id]) : null;
             if (dh == null || !l.pickup_date) return null;
@@ -5411,9 +5441,9 @@ async function appView(user) {
             const etaH = team ? driveH : (driveH + Math.floor(driveH / 11) * 10);
             const rnd = (x) => x < 10 ? Math.round(x * 10) / 10 : Math.round(x);
             let bg, col, txt;
-            if (etaH + 1 <= hoursTo) { bg = 'rgba(34,197,94,.16)'; col = '#4ade80'; txt = '⏱ ~' + rnd(etaH) + 'h to pickup — you’ll make it'; }
-            else if (etaH <= hoursTo) { bg = 'rgba(245,158,11,.18)'; col = '#fbbf24'; txt = '⏱ ~' + rnd(etaH) + 'h to pickup — tight, roll now'; }
-            else { bg = 'rgba(239,68,68,.16)'; col = '#fca5a5'; txt = '⚠ ~' + rnd(etaH) + 'h to pickup, only ' + rnd(Math.max(hoursTo, 0)) + 'h left — you’d be LATE'; }
+            if (etaH + 1 <= hoursTo) { bg = 'rgba(34,197,94,.16)'; col = 'var(--lbc-x-ok,#4ade80)'; txt = '⏱ ~' + rnd(etaH) + 'h to pickup — you’ll make it'; }
+            else if (etaH <= hoursTo) { bg = 'rgba(245,158,11,.18)'; col = 'var(--lbc-x-gold,#fbbf24)'; txt = '⏱ ~' + rnd(etaH) + 'h to pickup — tight, roll now'; }
+            else { bg = 'rgba(239,68,68,.16)'; col = 'var(--lbc-x-danger,#fca5a5)'; txt = '⚠ ~' + rnd(etaH) + 'h to pickup, only ' + rnd(Math.max(hoursTo, 0)) + 'h left — you’d be LATE'; }
             return h('span', { class: 'cpx-chip', style: 'background:' + bg + ';color:' + col + ';font-weight:800', title: (team ? 'Team (nonstop)' : 'Solo (incl. HOS breaks)') + ' estimate from your live deadhead — leave in time or skip the load' }, txt);
           })(),
           (function () {
@@ -5421,9 +5451,9 @@ async function appView(user) {
             if (!_f.have || _f.delEtaH == null || _f.delHoursTo == null) return null;
             const rnd = (x) => x < 10 ? Math.round(x * 10) / 10 : Math.round(x);
             let bg, col, txt;
-            if (_f.delEtaH + 2 <= _f.delHoursTo) { bg = 'rgba(34,197,94,.16)'; col = '#4ade80'; txt = '\ud83c\udfc1 ~' + rnd(_f.delEtaH) + 'h to deliver \u2014 on time'; }
-            else if (_f.delEtaH <= _f.delHoursTo) { bg = 'rgba(245,158,11,.18)'; col = '#fbbf24'; txt = '\ud83c\udfc1 ~' + rnd(_f.delEtaH) + 'h to deliver \u2014 tight'; }
-            else { bg = 'rgba(239,68,68,.16)'; col = '#fca5a5'; txt = '\u26a0 can\u2019t deliver in time (~' + rnd(_f.delEtaH) + 'h needed, ' + rnd(Math.max(_f.delHoursTo, 0)) + 'h left)'; }
+            if (_f.delEtaH + 2 <= _f.delHoursTo) { bg = 'rgba(34,197,94,.16)'; col = 'var(--lbc-x-ok,#4ade80)'; txt = '\ud83c\udfc1 ~' + rnd(_f.delEtaH) + 'h to deliver \u2014 on time'; }
+            else if (_f.delEtaH <= _f.delHoursTo) { bg = 'rgba(245,158,11,.18)'; col = 'var(--lbc-x-gold,#fbbf24)'; txt = '\ud83c\udfc1 ~' + rnd(_f.delEtaH) + 'h to deliver \u2014 tight'; }
+            else { bg = 'rgba(239,68,68,.16)'; col = 'var(--lbc-x-danger,#fca5a5)'; txt = '\u26a0 can\u2019t deliver in time (~' + rnd(_f.delEtaH) + 'h needed, ' + rnd(Math.max(_f.delHoursTo, 0)) + 'h left)'; }
             return h('span', { class: 'cpx-chip', style: 'background:' + bg + ';color:' + col + ';font-weight:800', title: (_f.team ? 'Team (nonstop)' : 'Solo (incl. HOS breaks)') + ' \u2014 location\u2192pickup\u2192delivery vs the delivery appointment' }, txt);
           })(),
           l.delivery_date ? h('span', { class: 'cpx-chip' }, 'DEL ' + l.delivery_date) : null,
@@ -5436,7 +5466,7 @@ async function appView(user) {
         l.requirements ? h('div', { class: 'cp-row-s' }, l.requirements) : null,
         dp9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px;padding:8px 11px;border-left:3px solid #FC5305;background:rgba(252,83,5,.07);border-radius:0 10px 10px 0' }, [
           h('div', null, [h('b', null, '🏢 ' + (l.broker || 'Broker')), (l.details && l.details.broker_mc) ? ' · MC ' + l.details.broker_mc : '', (l.details && l.details.broker_rep) ? ' · ' + l.details.broker_rep : '',
-            (l.details && l.details.broker_screen && l.details.broker_screen.authority) ? h('span', { style: 'margin-left:6px;font-weight:800;color:' + (l.details.broker_screen.authority === 'active' ? '#4ade80' : l.details.broker_screen.authority === 'flagged' ? '#f87171' : '#fbbf24') }, l.details.broker_screen.authority === 'active' ? '✓ authority active' : l.details.broker_screen.authority === 'flagged' ? '🚩 authority NOT active' : '◐ authority unconfirmed') : null].filter(Boolean)),
+            (l.details && l.details.broker_screen && l.details.broker_screen.authority) ? h('span', { style: 'margin-left:6px;font-weight:800;color:' + (l.details.broker_screen.authority === 'active' ? 'var(--lbc-x-ok,#4ade80)' : l.details.broker_screen.authority === 'flagged' ? 'var(--lbc-x-danger,#f87171)' : 'var(--lbc-x-gold,#fbbf24)') }, l.details.broker_screen.authority === 'active' ? '✓ authority active' : l.details.broker_screen.authority === 'flagged' ? '🚩 authority NOT active' : '◐ authority unconfirmed') : null].filter(Boolean)),
           dp9.note ? h('div', { style: 'margin-top:3px;font-style:italic' }, '💬 “' + dp9.note + '” — ' + lbDispName(dp9)) : null,
         ]) : null,
         h('div', { style: 'margin:4px 0' }, h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'font-size:.74rem;padding:5px 12px', onClick: (ev9) => { ev9.stopPropagation(); openBrokerPacketPreview(); } }, (l.details && l.details.poster_kind === 'shipper' ? '\ud83d\udce6 Shipper\u2019s own load \u2014 you contract with the shipper \ud83d\udd12 what you get on booking' : '\ud83c\udfe2 Broker packet \ud83d\udd12 \u2014 what you get on booking'))),
@@ -5486,7 +5516,7 @@ async function appView(user) {
       const st9 = String(d.load_status || 'available');
       const act9 = h('div', { class: 'cpx-req-bw', style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' });
       if (st9 === 'available') lbDispActions({ id: d.load_id, origin: d.origin, destination: d.destination, dispatcher_post: dpD9 }, act9, () => { try { if (tab === 'loads') setTimeout(loadLoads, 1500); } catch (_) {} });
-      else mount(act9, h('div', { class: 'cp-row-s', style: 'font-weight:700;color:' + (st9 === 'carrier_accepted' || st9 === 'booked' ? '#4ade80' : '#94a3b8') }, st9 === 'carrier_accepted' ? '✅ You took it — your dispatcher is getting the rate con; you’ll be notified when LoadBoot approves it.' : st9 === 'booked' ? '✅ Approved by LoadBoot — see My Loads.' : st9 === 'declined' ? '✕ You declined this one.' : st9 === 'expired' ? '⏰ This post expired.' : st9 === 'withdrawn' ? '↩ Your dispatcher withdrew this post.' : st9));
+      else mount(act9, h('div', { class: 'cp-row-s', style: 'font-weight:700;color:' + (st9 === 'carrier_accepted' || st9 === 'booked' ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink3,#94a3b8)') }, st9 === 'carrier_accepted' ? '✅ You took it — your dispatcher is getting the rate con; you’ll be notified when LoadBoot approves it.' : st9 === 'booked' ? '✅ Approved by LoadBoot — see My Loads.' : st9 === 'declined' ? '✕ You declined this one.' : st9 === 'expired' ? '⏰ This post expired.' : st9 === 'withdrawn' ? '↩ Your dispatcher withdrew this post.' : st9));
       const bsLine = bs.authority ? (bs.authority === 'active' ? '✓ Authority active' : bs.authority === 'flagged' ? '🚩 Authority NOT active (' + String(bs.authority_raw || '').replace(/_/g, ' ') + ')' : '◐ Authority not confirmed live') + (bs.legal_name ? ' · ' + bs.legal_name : '') + (bs.authority_age ? ' · ' + bs.authority_age + ' old' : '') + (bs.broker_authority === true ? ' · broker authority on file' : '') : 'Not screened — ask your dispatcher';
       return h('div', { style: 'margin:0 0 12px;border:1px solid rgba(252,83,5,.45);border-radius:14px;padding:12px 14px;background:rgba(252,83,5,.06)' }, [
         h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center' }, [lbDispBadge(dpD9), h('span', { class: 'cp-row-s', style: 'font-weight:800' }, ['⏳ expires in ', lbDispCountdown(dpD9.expires_at)])]),
@@ -5496,14 +5526,14 @@ async function appView(user) {
         row9('Broker rep', [dx.broker_rep, dx.broker_phone, dx.broker_email].filter(Boolean).join(' · ')),
         // bl_disp_0552 (dispatch agreement Art. 10.2): rep, phone, e-mail and the board load ID / link are redacted by
         // cc_load_detail until the carrier accepts; name + MC + the screen stay so the broker can still be judged.
-        d.contact_locked ? h('div', { class: 'cp-row-s', style: 'margin:4px 0 2px;color:#94a3b8' }, '🔒 Broker contact and the board load ID open after you accept — your dispatcher handles the broker until then.') : null,
-        h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Broker screen'), h('span', { style: 'text-align:right;font-weight:800;color:' + (bs.authority === 'active' ? '#4ade80' : bs.authority === 'flagged' ? '#f87171' : '#fbbf24') }, bsLine)]),
+        d.contact_locked ? h('div', { class: 'cp-row-s', style: 'margin:4px 0 2px;color:var(--lbc-x-ink3,#94a3b8)' }, '🔒 Broker contact and the board load ID open after you accept — your dispatcher handles the broker until then.') : null,
+        h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Broker screen'), h('span', { style: 'text-align:right;font-weight:800;color:' + (bs.authority === 'active' ? 'var(--lbc-x-ok,#4ade80)' : bs.authority === 'flagged' ? 'var(--lbc-x-danger,#f87171)' : 'var(--lbc-x-gold,#fbbf24)') }, bsLine)]),
         row9('Load type', dx.load_type || dx.load_size), row9('Pieces / pallets', dx.pieces), row9('Dims (in)', (dx.dims && (dx.dims.l || dx.dims.w || dx.dims.h)) ? [dx.dims.l, dx.dims.w, dx.dims.h].map((v) => v || '?').join(' × ') : null), row9('Reefer temp', dx.temperature), dx.hazmat ? row9('Hazmat', '☢ YES') : null,
         row9('Requirements', Array.isArray(dx.requirements) && dx.requirements.length ? dx.requirements.join(', ') : null),
         row9('Deadhead (from your truck)', d.deadhead ? d.deadhead + ' mi' : null),
         row9('Payment terms', [acc.payment_terms, acc.quick_pay ? 'quick pay ' + acc.quick_pay : null, acc.factoring_ok ? 'factoring OK' : null].filter(Boolean).join(' · ')),
         row9('Accessorials offered', [acc.detention_per_hr ? 'detention $' + acc.detention_per_hr + '/hr after ' + (acc.detention_free_hours || '2') + 'h' : null, acc.tonu ? 'TONU $' + acc.tonu : null, acc.layover_per_day ? 'layover $' + acc.layover_per_day + '/day' : null, acc.lumper_policy ? 'lumper: ' + acc.lumper_policy : null].filter(Boolean).join(' · ')),
-        dx.below_min ? h('div', { class: 'cp-row-s', style: 'margin-top:6px;padding:8px 10px;border-radius:10px;background:rgba(245,158,11,.12);color:#fbbf24;font-weight:700' }, '⚠ Below your minimum rate. ' + lbDispName(dpD9) + ' says: ' + (dx.below_min_reason || '—')) : null,
+        dx.below_min ? h('div', { class: 'cp-row-s', style: 'margin-top:6px;padding:8px 10px;border-radius:10px;background:rgba(245,158,11,.12);color:var(--lbc-x-gold,#fbbf24);font-weight:700' }, '⚠ Below your minimum rate. ' + lbDispName(dpD9) + ' says: ' + (dx.below_min_reason || '—')) : null,
         act9,
       ].filter(Boolean));
     })() : null;
@@ -5529,7 +5559,7 @@ async function appView(user) {
         h('div', null, [
           h('div', { class: 'cp-row-t', style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, ['Posting party: ' + (ps.posted_by || '—'),
             ps.broker_trust_score != null ? h('span', { class: 'cp-pill', style: 'background:' + btone.bg + ';color:' + btone.c + ';font-weight:800' }, bverified ? '\u2713 Verified broker' : 'Unverified broker') : null,
-            bstars ? h('span', { style: 'color:#f59e0b;font-weight:700' }, bstars + ' ' + brate.toFixed(1)) : null].filter(Boolean)),
+            bstars ? h('span', { style: 'color:var(--lbc-x-gold,#f59e0b);font-weight:700' }, bstars + ' ' + brate.toFixed(1)) : null].filter(Boolean)),
           h('div', { class: 'cp-row-s' }, [ps.broker_trust_score != null ? 'Trust ' + ps.broker_trust_score + '/100' : null, ps.loads_delivered != null ? ps.loads_delivered + ' loads delivered' : null, ps.on_time_pct != null ? ps.on_time_pct + '% on-time' : null, ps.loads_submitted != null ? ps.loads_submitted + ' submitted' : null].filter(Boolean).join(' \u00b7 ') || ps.signal || '—'),
           h('div', { class: 'cp-row-s' }, ps.basis || '')]),
       ]));
@@ -5664,7 +5694,7 @@ function tripStepper(status) {
         const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { const _ct3533 = ev.currentTarget; await pocketReportIssue(t.id, kind.value, note.value.trim()); fw.innerHTML = ''; fw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Reported to dispatch')); } catch (e) { _ct3533.disabled = false; _ct3533.textContent = 'Send'; alert((e && e.message) || 'Could not report.'); } } }, 'Send');
         fw.appendChild(h('div', { class: 'cp-inlineform' }, [kind, note, send]));
       } }, [icon('alert',15),' Report issue']) : null;
-      const emergency = active ? h('button', { class: 'cp-btn cp-btn-sm', style: 'border-color:#dc2626;color:#dc2626', onClick: () => openEmergency(t) }, '🚨 Emergency') : null;
+      const emergency = active ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'border-color:#dc2626;color:var(--lbc-x-danger,#dc2626)', onClick: () => openEmergency(t) }, '🚨 Emergency') : null;
       const podW = h('div');
       const canPod = t.status === 'delivered' || t.status === 'invoiced';
       // Suggested Reloads (Relay-style): loads picking up near this trip's destination
@@ -5694,7 +5724,7 @@ function tripStepper(status) {
       const rateBtn = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
         if (rateW.firstChild) { rateW.innerHTML = ''; return; }
         let sel = 0; const starEls = [];
-        const paint = () => starEls.forEach((el2, i) => { el2.textContent = i < sel ? '★' : '☆'; el2.style.color = i < sel ? '#F97316' : '#94a3b8'; });
+        const paint = () => starEls.forEach((el2, i) => { el2.textContent = i < sel ? '★' : '☆'; el2.style.color = i < sel ? '#F97316' : 'var(--lbc-x-ink3,#94a3b8)'; });
         const starsBar = h('div', { style: 'display:flex;gap:6px;font-size:26px;cursor:pointer;user-select:none' }, [1, 2, 3, 4, 5].map((n) => { const el2 = h('span', { onClick: () => { sel = n; paint(); } }, '☆'); starEls.push(el2); return el2; }));
         const cmt = h('input', { class: 'cp-in', placeholder: 'Comment (optional)' });
         const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
@@ -5742,7 +5772,7 @@ function tripStepper(status) {
         closeM = openModal(goingToPickup ? '\u25b6 Start your trip' : '\ud83d\uddfa Continue your trip', [
           h('div', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'Heading to: ' + destTxt + '. Your check-ins (arrive/depart) always happen in the LoadBoot map \u2014 they are your proof for on-time and detention pay.'),
           big('#FC5305', '#fff', '\ud83d\uddfa LoadBoot live map', 'In-app navigation with GPS check-in buttons, route and ETA', () => { if (closeM) closeM(); _openInApp(); }),
-          big('rgba(8,131,247,.15)', '#60A5FA', '\ud83e\udded Google Maps', 'Opens your phone\u2019s Google Maps \u2014 destination is pre-filled, just drive', () => { window.open('https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + encodeURIComponent(dest), '_blank'); }),
+          big('rgba(8,131,247,.15)', 'var(--lbc-x-link,#60A5FA)', '\ud83e\udded Google Maps', 'Opens your phone\u2019s Google Maps \u2014 destination is pre-filled, just drive', () => { window.open('https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + encodeURIComponent(dest), '_blank'); }),
           big('rgba(255,255,255,.07)', 'var(--lb-ink,#dbe6f5)', '\ud83d\udcf1 Other map apps', 'Apple Maps / Waze / HERE \u2014 device chooser', () => {
             const q2 = dest.includes(',') && !/[a-z]/i.test(dest) ? dest : encodeURIComponent(dest);
             if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) window.open('https://maps.apple.com/?daddr=' + q2 + '&dirflg=d', '_blank');
@@ -5751,17 +5781,17 @@ function tripStepper(status) {
         ]);
       } }, t.status === 'planned' ? '\u25b6 Start your trip' : '\ud83d\uddfa Live trip') : null;
       const start = null; // status is earned by GPS check-in at the pickup — no manual Start-status button
-      const cancelBtn = (t.status === 'planned' || t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#f87171', onClick: async () => {
+      const cancelBtn = (t.status === 'planned' || t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:var(--lbc-x-danger,#f87171)', onClick: async () => {
         let prev; try { prev = await cancelPreview(t.id); } catch (_) { prev = { tier: 'standard', penalty: false, hours_to_pickup: null, message: 'The load goes back on the board.' }; }
-        const tone = !prev.penalty ? { c: '#4ade80', bd: '#22c55e', bg: 'rgba(34,197,94,.1)' } : (prev.tier === 'very_late' ? { c: '#fca5a5', bd: '#ef4444', bg: 'rgba(239,68,68,.12)' } : { c: '#fcd34d', bd: '#f59e0b', bg: 'rgba(245,158,11,.12)' });
+        const tone = !prev.penalty ? { c: 'var(--lbc-x-ok,#4ade80)', bd: 'var(--lbc-x-ok,#22c55e)', bg: 'rgba(34,197,94,.1)' } : (prev.tier === 'very_late' ? { c: 'var(--lbc-x-danger,#fca5a5)', bd: 'var(--lbc-x-danger,#ef4444)', bg: 'rgba(239,68,68,.12)' } : { c: 'var(--lbc-x-gold,#fcd34d)', bd: 'var(--lbc-x-gold,#f59e0b)', bg: 'rgba(245,158,11,.12)' });
         const reason = h('input', { class: 'cp-in', placeholder: 'Reason (required \u2014 broker & dispatch see this)' });
         const emsg = h('div', { class: 'cp-row-s' });
         let closeM;
         const doBtn = h('button', { class: 'cp-btn', style: 'flex:1;background:' + tone.bd, onClick: async (ev) => {
-          if (!reason.value.trim()) { emsg.textContent = 'A written reason is required.'; emsg.style.color = '#f87171'; return; }
+          if (!reason.value.trim()) { emsg.textContent = 'A written reason is required.'; emsg.style.color = 'var(--lbc-x-danger,#f87171)'; return; }
           ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Cancelling\u2026';
           try { const r9 = await pocketCancelTrip(t.id, reason.value.trim()); if (closeM) closeM(); lbToast(r9.note || 'Cancelled.', r9.penalty ? 'urgent' : 'warning', 'Load cancelled'); loadTrips(); }
-          catch (e9) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Cancel this load'; emsg.textContent = (e9 && e9.message) || 'Could not cancel.'; emsg.style.color = '#f87171'; }
+          catch (e9) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Cancel this load'; emsg.textContent = (e9 && e9.message) || 'Could not cancel.'; emsg.style.color = 'var(--lbc-x-danger,#f87171)'; }
         } }, 'Cancel this load');
         const keepBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { if (closeM) closeM(); } }, 'Keep it');
         closeM = openModal('Cancel this load?', [
@@ -5808,18 +5838,18 @@ function tripStepper(status) {
         const trMap9 = {}; (Array.isArray(trs9) ? trs9 : []).forEach((x9) => { if (x9.kind === 'claim') trMap9[x9.ref_id] = x9; });
         accW.innerHTML = '';
         const rows = h('div', null, list.map(a => {
-          const tone2 = a.status === 'approved' ? ['rgba(34,197,94,.14)', '#4ade80'] : a.status === 'rejected' ? ['rgba(239,68,68,.14)', '#f87171'] : ['rgba(245,158,11,.14)', '#fbbf24'];
+          const tone2 = a.status === 'approved' ? ['rgba(34,197,94,.14)', 'var(--lbc-x-ok,#4ade80)'] : a.status === 'rejected' ? ['rgba(239,68,68,.14)', 'var(--lbc-x-danger,#f87171)'] : ['rgba(245,158,11,.14)', 'var(--lbc-x-gold,#fbbf24)'];
           const bs = a.broker_status; const ss = a.support_status;
           return h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
             h('div', { style: 'min-width:200px;flex:1' }, [h('div', { class: 'cp-row-t' }, (KLBL[a.kind] || a.kind) + (a.amount != null ? ' · ' + money(a.amount) : '')),
               h('div', { class: 'cp-row-s' }, (a.note || '') + (a.decision_note ? ' — ' + a.decision_note : '')),
-              (a.evidence && a.evidence.calc) ? h('div', { class: 'cp-row-s', style: 'color:#7cc0ff' }, '🧮 ' + a.evidence.calc) : null,
+              (a.evidence && a.evidence.calc) ? h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-link,#7cc0ff)' }, '🧮 ' + a.evidence.calc) : null,
               h('div', { style: 'display:flex;gap:6px;margin-top:3px;flex-wrap:wrap' }, [
-                bs === 'approved' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80' }, '✓ Broker approved') : bs === 'disputed' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171', title: a.broker_note || '' }, '✕ Broker rejected') : bs ? h('span', { class: 'cp-pill', style: 'background:rgba(148,163,184,.15);color:#94a3b8' }, 'Broker reviewing') : null,
-                ss === 'open' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.14);color:#3b9dff' }, '🎧 With support') : null,
-                ss === 'decided' ? h('span', { class: 'cp-pill', style: 'background:' + (a.support_verdict === 'carrier' ? 'rgba(34,197,94,.14);color:#4ade80' : 'rgba(239,68,68,.14);color:#f87171') }, '⚖ ' + (a.support_verdict === 'carrier' ? 'Ruled FOR you' : 'Ruled against you')) : null,
-                (trMap9[a.id] && trMap9[a.id].status === 'sent') ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:#fbbf24' }, '\u{1F4B8} Payment on the way \u00b7 by ' + (trMap9[a.id].expected_by ? new Date(trMap9[a.id].expected_by).toLocaleDateString() : 'soon')) : null,
-                (trMap9[a.id] && trMap9[a.id].status === 'received') ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80' }, '\u2713 Payment received') : null,
+                bs === 'approved' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:var(--lbc-x-ok,#4ade80)' }, '✓ Broker approved') : bs === 'disputed' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:var(--lbc-x-danger,#f87171)', title: a.broker_note || '' }, '✕ Broker rejected') : bs ? h('span', { class: 'cp-pill', style: 'background:rgba(148,163,184,.15);color:var(--lbc-x-ink3,#94a3b8)' }, 'Broker reviewing') : null,
+                ss === 'open' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.14);color:var(--lbc-x-link,#3b9dff)' }, '🎧 With support') : null,
+                ss === 'decided' ? h('span', { class: 'cp-pill', style: 'background:' + (a.support_verdict === 'carrier' ? 'rgba(34,197,94,.14);color:var(--lbc-x-ok,#4ade80)' : 'rgba(239,68,68,.14);color:var(--lbc-x-danger,#f87171)') }, '⚖ ' + (a.support_verdict === 'carrier' ? 'Ruled FOR you' : 'Ruled against you')) : null,
+                (trMap9[a.id] && trMap9[a.id].status === 'sent') ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:var(--lbc-x-gold,#fbbf24)' }, '\u{1F4B8} Payment on the way \u00b7 by ' + (trMap9[a.id].expected_by ? new Date(trMap9[a.id].expected_by).toLocaleDateString() : 'soon')) : null,
+                (trMap9[a.id] && trMap9[a.id].status === 'received') ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:var(--lbc-x-ok,#4ade80)' }, '\u2713 Payment received') : null,
               ].filter(Boolean)),
               ss === 'decided' && a.support_note ? h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'Verdict: ' + a.support_note) : null,
               bs === 'disputed' && ss === 'none' ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:5px', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
@@ -5882,7 +5912,7 @@ function tripStepper(status) {
               h('div', { style: 'font-weight:800;font-size:.82rem;margin-bottom:4px' }, '\ud83c\udfe2 Broker packet \u2014 ' + (pk9.broker_name || 'broker') + ' (LoadBoot-verified)'),
               ...pk9.broker_packet.map(bp9 => h('div', { style: 'display:flex;justify-content:space-between;font-size:.78rem;padding:2.5px 0' }, [
                 h('span', { style: 'opacity:.75' }, bp9.label),
-                h('b', { style: 'color:' + (bp9.status === 'verified' ? '#4ade80' : '#fbbf24') }, bp9.status === 'verified' ? '\u2713 verified' : bp9.status),
+                h('b', { style: 'color:' + (bp9.status === 'verified' ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-gold,#fbbf24)') }, bp9.status === 'verified' ? '\u2713 verified' : bp9.status),
               ])),
               h('div', { style: 'font-size:.7rem;opacity:.7;margin-top:4px' }, pk9.payments_note || ''),
             ]) : null,
@@ -5930,7 +5960,7 @@ function tripStepper(status) {
       const dispatchSheetCard = (d) => {
         d = d || {}; const pk = d.pickup || {}, dl = d.delivery || {}, dr = d.driver || {}, det = d.detention || {};
         return h('div', null, [
-          h('div', { style: 'background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;border-radius:14px;padding:16px 18px' }, [
+          h('div', { style: 'background:var(--lbc-x-hero,linear-gradient(135deg,#0b1220,#12304f));color:var(--lbc-x-ink,#fff);border-radius:14px;padding:16px 18px' }, [
             h('div', { style: 'font-size:.7rem;letter-spacing:.11em;text-transform:uppercase;opacity:.7' }, (d.issued_by || 'LoadBoot Dispatch') + ' · dispatch sheet'),
             h('div', { style: 'display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:5px' }, [
               h('div', { style: 'font-size:1.7rem;font-weight:800' }, money(d.agreed_rate || 0)),
@@ -6002,15 +6032,15 @@ function tripStepper(status) {
       // ---- PREMIUM CARD: hero strip (route, rate, countdown, big map button) + collapsed tools ----
       const abRow = (color, letter, txt) => h('div', { style: 'display:flex;align-items:center;gap:9px;padding:3px 0' }, [
         h('span', { style: 'width:19px;height:19px;border-radius:50%;background:' + color + ';color:#ffffff;font-weight:900;font-size:11px;display:inline-flex;align-items:center;justify-content:center;flex:none' }, letter),
-        h('span', { style: 'font-weight:700;font-size:.92rem;color:#eef3fb' }, txt || '—'),
+        h('span', { style: 'font-weight:700;font-size:.92rem;color:var(--lbc-x-ink,#eef3fb)' }, txt || '—'),
       ]);
       let cdEl = null;
       if (active && t.pickup_mode !== 'fcfs' && (t.scheduled_pickup || t.scheduled_delivery)) {
         const toPickup = t.status === 'planned' || t.status === 'dispatched';
         const tgt = new Date(toPickup ? t.scheduled_pickup : (t.scheduled_delivery || t.scheduled_pickup)).getTime();
         cdEl = h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:10px 13px;border-radius:12px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.25)' });
-        const lbl = h('span', { style: 'color:#8ea2c3;font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase' }, toPickup ? '\u23f1 Pickup in' : '\u23f1 Delivery in');
-        const val = h('b', { style: 'font-size:1.15rem;color:#FC5305;font-variant-numeric:tabular-nums' }, '\u2014');
+        const lbl = h('span', { style: 'color:var(--lbc-x-ink3,#8ea2c3);font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase' }, toPickup ? '\u23f1 Pickup in' : '\u23f1 Delivery in');
+        const val = h('b', { style: 'font-size:1.15rem;color:var(--lbc-x-warn,#FC5305);font-variant-numeric:tabular-nums' }, '\u2014');
         cdEl.append(lbl, val);
         let _wasConn = false;
         const tick = () => {
@@ -6020,7 +6050,7 @@ function tripStepper(status) {
           const late = d2 < 0; if (late) d2 = -d2;
           const hh = Math.floor(d2 / 3600), mm = Math.floor((d2 % 3600) / 60), ss = d2 % 60;
           val.textContent = hh >= 48 ? Math.floor(hh / 24) + ' d ' + (hh % 24) + ' h' : String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0');  // ux-audit C9: "-130:26:25" read as a negative clock; the label already says overdue
-          if (late) { val.style.color = '#f87171'; lbl.textContent = toPickup ? '\u26a0 Pickup overdue by' : '\u26a0 Delivery overdue by'; cdEl.style.background = 'rgba(239,68,68,.10)'; cdEl.style.borderColor = 'rgba(239,68,68,.35)'; }
+          if (late) { val.style.color = 'var(--lbc-x-danger,#f87171)'; lbl.textContent = toPickup ? '\u26a0 Pickup overdue by' : '\u26a0 Delivery overdue by'; cdEl.style.background = 'rgba(239,68,68,.10)'; cdEl.style.borderColor = 'rgba(239,68,68,.35)'; }
         };
         const iv = setInterval(tick, 1000); tick();
       }
@@ -6030,7 +6060,7 @@ function tripStepper(status) {
           let a; try { a = await tripPickupStatus(t.id); } catch (_) { return; }
           if (!a || (a.risk !== 'at_risk' && a.risk !== 'late')) return;
           const isLate = a.risk === 'late';
-          const bd = isLate ? '#ef4444' : '#f59e0b', bg = isLate ? 'rgba(239,68,68,.12)' : 'rgba(245,158,11,.12)', col = isLate ? '#fca5a5' : '#fcd34d';
+          const bd = isLate ? 'var(--lbc-x-danger,#ef4444)' : 'var(--lbc-x-gold,#f59e0b)', bg = isLate ? 'rgba(239,68,68,.12)' : 'rgba(245,158,11,.12)', col = isLate ? 'var(--lbc-x-danger,#fca5a5)' : 'var(--lbc-x-gold,#fcd34d)';
           mount(riskEl, h('div', { style: 'margin-top:10px;padding:11px 13px;border-radius:12px;background:' + bg + ';border:1px solid ' + bd + ';color:' + col }, [
             h('div', { style: 'font-weight:800;font-size:.95rem' }, isLate ? '\ud83d\udd34 You are LATE to pickup' : '\u23f1 Roll now \u2014 pickup at risk'),
             h('div', { style: 'font-size:.82rem;margin-top:3px;line-height:1.5' }, (a.distance_mi ? '~' + a.distance_mi + ' mi to pickup \u00b7 ~' + a.eta_h + 'h drive. ' : '') + (isLate ? 'You have not moved toward pickup in time \u2014 move now, or tap \u201c\u26a0 Report issue \u2192 Emergency\u201d if you broke down. The broker may cancel (no TONU if you never moved).' : 'Depart now to make the pickup window.')),
@@ -6042,15 +6072,15 @@ function tripStepper(status) {
         liveMap.style.cssText = 'width:100%;border:0;border-radius:14px;padding:14px;margin-top:10px;font-size:1rem;font-weight:900;cursor:pointer;background:#FC5305;color:#ffffff;box-shadow:0 0 18px rgba(252,83,5,.3);font-family:Manrope,sans-serif';
         liveMap.textContent = t.status === 'planned' ? '\u25b6  Start your trip' : '\ud83d\uddfa  Continue live trip';
       }
-      const hero = h('div', { style: 'background:linear-gradient(135deg,#0b1220,#13253f);border-radius:16px;padding:15px 16px 14px' }, [
+      const hero = h('div', { style: 'background:var(--lbc-x-hero,linear-gradient(135deg,#0b1220,#13253f));border-radius:16px;padding:15px 16px 14px' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:10px' }, [
           h('div', { style: 'min-width:0' }, [abRow('#0883F7', 'A', t.origin), abRow('#FC5305', 'B', t.destination)]),
           h('div', { style: 'text-align:right;flex:none' }, [
-            h('div', { style: 'font-size:1.35rem;font-weight:900;color:#fff' }, money(t.rate || 0)),
+            h('div', { style: 'font-size:1.35rem;font-weight:900;color:var(--lbc-x-ink,#fff)' }, money(t.rate || 0)),
             pill(t.status),
           ]),
         ]),
-        t.pickup_mode === 'fcfs' && active ? h('div', { style: 'margin-top:10px;padding:9px 13px;border-radius:12px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fbbf24;font-size:.82rem;font-weight:800' }, '\u26a1 FCFS \u2014 first come, first served \u00b7 no appointment clock, arrive within the window') : null,
+        t.pickup_mode === 'fcfs' && active ? h('div', { style: 'margin-top:10px;padding:9px 13px;border-radius:12px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:var(--lbc-x-gold,#fbbf24);font-size:.82rem;font-weight:800' }, '\u26a1 FCFS \u2014 first come, first served \u00b7 no appointment clock, arrive within the window') : null,
         riskEl, cdEl, liveMap,
       ].filter(Boolean));
       const loadDetBtn = t.load_id ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(t.load_id) }, '\ud83d\udd0d Load details') : null;
@@ -6059,7 +6089,7 @@ function tripStepper(status) {
         openModal('\ud83d\udd13 Dispatch pack \u2014 unlocked for this booking', [host9]);
         let pk9; try { pk9 = await pocketTripDocs(t.id); } catch (e9) { mount(host9, h('div', { class: 'cp-muted' }, (e9 && e9.message) || 'Could not load.')); return; }
         const r9 = (k9, v9, miss9) => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(148,163,184,.25);font-size:.86rem;flex-wrap:wrap' }, [
-          h('span', { style: 'opacity:.75' }, k9), v9 ? h('b', { style: 'text-align:right' }, v9) : h('span', { style: 'color:#fbbf24;font-weight:700' }, miss9 || 'pending from broker')]);
+          h('span', { style: 'opacity:.75' }, k9), v9 ? h('b', { style: 'text-align:right' }, v9) : h('span', { style: 'color:var(--lbc-x-gold,#fbbf24);font-weight:700' }, miss9 || 'pending from broker')]);
         mount(host9, h('div', null, [
           r9('\ud83d\udccd Pickup address', pk9.origin_full), r9('\ud83d\udccd Delivery address', pk9.destination_full),
           r9('\ud83d\udce6 Pickup / PU number', pk9.pickup_number), r9('\ud83c\udfc1 Delivery number', pk9.delivery_number),
@@ -6070,7 +6100,7 @@ function tripStepper(status) {
             h('div', { style: 'font-weight:800;margin-bottom:6px' }, '\ud83c\udfe2 Broker packet \u2014 ' + pk9.broker_name + ' (LoadBoot-verified)'),
             ...pk9.broker_packet.map(bp9 => h('div', { style: 'display:flex;justify-content:space-between;font-size:.82rem;padding:3px 0' }, [
               h('span', { style: 'opacity:.75' }, bp9.label),
-              h('b', { style: 'color:' + (bp9.status === 'verified' ? '#4ade80' : '#fbbf24') }, bp9.status === 'verified' ? '\u2713 verified' : bp9.status),
+              h('b', { style: 'color:' + (bp9.status === 'verified' ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-gold,#fbbf24)') }, bp9.status === 'verified' ? '\u2713 verified' : bp9.status),
             ])),
             h('div', { class: 'cp-muted', style: 'font-size:.74rem;margin-top:6px' }, (pk9.payments_note || '') + ' Original broker files are held & verified by LoadBoot.'),
             h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px;width:100%', onClick: async (ev9) => {
@@ -6107,9 +6137,9 @@ function tripStepper(status) {
       const _tRow = (label2, sch, act) => (sch || act) ? h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:2px 0' }, [
         h('span', { class: 'cp-row-s', style: 'font-weight:800' }, label2),
         h('span', { class: 'cp-row-s', style: 'text-align:right' }, [act ? '\u2713 ' + _fmtT(act) : (sch ? 'due ' + _fmtT(sch) : '\u2014'),
-          h('span', { style: (_late(act, sch).includes('late') ? 'color:#f87171' : 'color:#4ade80') + ';font-weight:800' }, _late(act, sch))]),
+          h('span', { style: (_late(act, sch).includes('late') ? 'color:var(--lbc-x-danger,#f87171)' : 'color:var(--lbc-x-ok,#4ade80)') + ';font-weight:800' }, _late(act, sch))]),
       ]) : null;
-      const timesEl = (t.started_at || t.delivered_at || t.scheduled_pickup) ? h('div', { style: 'margin:6px 0 2px;padding:8px 12px;border:1px solid var(--lb-line,#22314e);border-radius:12px' }, [
+      const timesEl = (t.started_at || t.delivered_at || t.scheduled_pickup) ? h('div', { style: 'margin:6px 0 2px;padding:8px 12px;border:1px solid var(--lb-line,var(--lbc-x-line,#22314e));border-radius:12px' }, [
         _tRow('Pickup' + (t.pickup_mode === 'fcfs' ? ' (FCFS)' : ''), t.scheduled_pickup, t.started_at),
         _tRow('Delivery', t.scheduled_delivery, t.delivered_at),
       ].filter(Boolean)) : null;
@@ -6120,10 +6150,10 @@ function tripStepper(status) {
       const _fmtEv = (v) => { try { return new Date(v).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (_) { return v; } };
       const tonuEvidence = (_cancelled && t.cancel_fault && t.cancelled_by === 'broker') ? (_faultCarrier
         ? h('div', { style: 'margin-top:9px;padding:11px 13px;border-radius:11px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)' }, [
-            h('div', { style: 'font-weight:800;color:#fca5a5;font-size:.9rem' }, '⛔ No TONU — you cannot claim this load'),
+            h('div', { style: 'font-weight:800;color:var(--lbc-x-danger,#fca5a5);font-size:.9rem' }, '⛔ No TONU — you cannot claim this load'),
             h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'It was cancelled because your truck did not move toward pickup in time. Under the signed rate confirmation, a late / no-show carrier does NOT qualify for TONU — this is decided from your GPS, not opinion.'),
             h('div', { style: 'margin-top:8px;padding:9px 11px;border-radius:9px;background:rgba(0,0,0,.25)' }, [
-              h('div', { style: 'font-weight:700;font-size:.78rem;color:#e5edf8;margin-bottom:3px' }, [icon('pin',15),' GPS evidence recorded at cancellation']),
+              h('div', { style: 'font-weight:700;font-size:.78rem;color:var(--lbc-x-ink,#e5edf8);margin-bottom:3px' }, [icon('pin',15),' GPS evidence recorded at cancellation']),
               _ev.distance_mi != null ? h('div', { class: 'cp-row-s' }, '• Truck was ~' + _ev.distance_mi + ' mi from pickup and ' + (_ev.moving ? 'moving' : 'NOT moving toward it')) : null,
               _ev.must_depart_by ? h('div', { class: 'cp-row-s' }, '• You had to depart by ' + _fmtEv(_ev.must_depart_by) + ' to make the appointment') : null,
               (_ev.hours_to_pickup != null) ? h('div', { class: 'cp-row-s' }, '• Pickup was ' + (Number(_ev.hours_to_pickup) < 0 ? Math.abs(Math.round(_ev.hours_to_pickup)) + 'h overdue' : 'in ' + Math.round(_ev.hours_to_pickup) + 'h') + ' when the load was cancelled') : null,
@@ -6132,12 +6162,12 @@ function tripStepper(status) {
             h('div', { class: 'cp-row-s', style: 'margin-top:7px' }, 'Was this a verified breakdown or emergency? Use “⚠ Report issue → Emergency” to appeal — a proven emergency is never penalised.'),
           ].filter(Boolean))
         : h('div', { style: 'margin-top:9px;padding:11px 13px;border-radius:11px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' }, [
-            h('div', { style: 'font-weight:800;color:#4ade80;font-size:.9rem' }, _stale ? '✓ TONU owed — this load was already stale' : '✓ TONU filed for you — you were on track'),
+            h('div', { style: 'font-weight:800;color:var(--lbc-x-ok,#4ade80);font-size:.9rem' }, _stale ? '✓ TONU owed — this load was already stale' : '✓ TONU filed for you — you were on track'),
             h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, _stale ? 'This load’s pickup time had ALREADY passed when you booked it — the lateness isn’t yours, it was a stale listing. So a TONU is owed and it does NOT count against your reliability. A claim was auto-filed; dispatch reviews it.' : 'Your GPS showed you were moving toward pickup and on time, so the broker cancelling means a TONU is owed. A claim was auto-filed with your evidence — dispatch will review it. This does NOT count against your health. Open “💰 Pay claims” below to track it.'),
           ].filter(Boolean))
       ) : null;
       const cancelInfo = _cancelled ? h('div', { style: 'margin:8px 2px 2px;padding:11px 13px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.28)' }, [
-        h('div', { style: 'font-weight:800;color:#f87171;font-size:.92rem' }, t.cancelled_by === 'broker' ? '✕ Cancelled by the broker' : '✕ Trip cancelled'),
+        h('div', { style: 'font-weight:800;color:var(--lbc-x-danger,#f87171);font-size:.92rem' }, t.cancelled_by === 'broker' ? '✕ Cancelled by the broker' : '✕ Trip cancelled'),
         t.cancel_reason ? h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'Reason: ' + t.cancel_reason) : null,
         tonuEvidence,
         h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'This load is no longer assigned to you. Pick up a replacement on the Load Board.'),
@@ -6500,7 +6530,7 @@ function tripStepper(status) {
           lbToast('\ud83d\udc64 Driver saved \u2014 valid license & medical unlock booking.', 'ok', 'Fleet updated');
         } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
       } }, 'Save');
-      const reqNote9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:#94a3b8' }, 'Fields marked * are required.');
+      const reqNote9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:var(--lbc-x-ink3,#94a3b8)' }, 'Fields marked * are required.');
       const draftHostD9 = h('div');
       const closeD9 = openModal((d ? 'Edit driver' : 'Add driver'), [reqNote9, draftHostD9, name, phone, email, h('div', { class: 'cp-formrow2' }, [lic, st]), h('label', { class: 'cp-row-s' }, 'License expiry'), lexp, h('label', { class: 'cp-row-s' }, 'Medical expiry'), mexp, save]);
       const dkeyD9 = 'driver:' + ((d && d.id) || 'new');
@@ -6532,7 +6562,7 @@ function tripStepper(status) {
       }
     }
     function _truckFormInner(t) {
-      const secStyle = 'font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;margin:16px 0 7px;padding-top:12px;border-top:1px solid rgba(148,163,184,.16)';
+      const secStyle = 'font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--lbc-x-ink3,#94a3b8);margin:16px 0 7px;padding-top:12px;border-top:1px solid rgba(148,163,184,.16)';
       const sec = (txt, sub) => h('div', null, [
         h('div', { style: secStyle }, txt),
         sub ? h('div', { class: 'cp-row-s', style: 'margin:-3px 0 7px' }, sub) : null,
@@ -6638,8 +6668,8 @@ function tripStepper(status) {
         if (!numOf(cLen) && !numOf(trLen)) missing.push('deck/cargo length');
         if (!(dZip.value.trim() || (dCity.value.trim() && dState.value.trim()))) missing.push('home base');
         if (OPEN_DECK.indexOf(eq.value) >= 0 && !trType.value) missing.push('trailer type');
-        if (missing.length) { postReady.textContent = '\u26a0 Not posting-ready \u2014 load boards will ask for: ' + missing.join(', '); postReady.style.color = '#fbbf24'; }
-        else { postReady.textContent = '\u2713 Posting-ready \u2014 this unit can go on a load board as-is.'; postReady.style.color = '#4ade80'; }
+        if (missing.length) { postReady.textContent = '\u26a0 Not posting-ready \u2014 load boards will ask for: ' + missing.join(', '); postReady.style.color = 'var(--lbc-x-gold,#fbbf24)'; }
+        else { postReady.textContent = '\u2713 Posting-ready \u2014 this unit can go on a load board as-is.'; postReady.style.color = 'var(--lbc-x-ok,#4ade80)'; }
       };
       [payload, cLen, trLen, dZip, dCity, dState].forEach((el2) => el2.addEventListener('input', readyCheck));
       [eq, trType].forEach((el2) => el2.addEventListener('change', readyCheck));
@@ -6683,13 +6713,13 @@ function tripStepper(status) {
         const ceil = GVWR_CEIL[key];
         if (lb >= ceil) {
           capHint.textContent = '✕ ' + lb.toLocaleString() + ' lb is more than this chassis weighs in total when loaded (' + ceil.toLocaleString() + ' lb gross). Payload is what you carry on top of the empty vehicle.';
-          capHint.style.color = '#f87171';
+          capHint.style.color = 'var(--lbc-x-danger,#f87171)';
         } else if (lb > ceil * 0.55) {
           capHint.textContent = '⚠ ' + lb.toLocaleString() + ' lb looks high for a ' + ceil.toLocaleString() + ' lb gross chassis — worth double-checking the door sticker before a scale does it for you.';
-          capHint.style.color = '#fbbf24';
+          capHint.style.color = 'var(--lbc-x-gold,#fbbf24)';
         } else {
           capHint.textContent = '✓ Sits comfortably inside the ' + ceil.toLocaleString() + ' lb gross rating.';
-          capHint.style.color = '#4ade80';
+          capHint.style.color = 'var(--lbc-x-ok,#4ade80)';
         }
       };
       payload.addEventListener('input', capCheck);
@@ -6700,16 +6730,16 @@ function tripStepper(status) {
         coiState = r && r.state;
         coiInfo.innerHTML = '';
         if (!r) return;
-        const box = (color, bg, title, body) => h('div', { style: 'border:1px solid ' + color + '55;background:' + bg + ';border-radius:10px;padding:9px 12px' }, [
+        const box = (color, bg, title, body) => h('div', { style: 'border:1px solid color-mix(in srgb,' + color + ' 33%,transparent);background:' + bg + ';border-radius:10px;padding:9px 12px' }, [
           h('div', { style: 'font-weight:800;color:' + color + ';margin-bottom:2px' }, title),
-          body ? h('div', { style: 'color:#94a3b8' }, body) : null,
+          body ? h('div', { style: 'color:var(--lbc-x-ink3,#94a3b8)' }, body) : null,
         ]);
         if (r.state === 'covered') {
-          coiInfo.appendChild(box('#4ade80', 'rgba(74,222,128,.07)', '✓ This VIN is on your certificate of insurance',
+          coiInfo.appendChild(box('var(--lbc-x-ok,#4ade80)', 'rgba(74,222,128,.07)', '✓ This VIN is on your certificate of insurance',
             r.mode === 'any_auto' ? 'Your policy covers any auto, so every truck you add is dispatchable.' : 'Cleared for dispatch.'));
         } else if (r.state === 'not_covered') {
           const vins = ((r.covered_vins || []).map(v => v.vin).filter(Boolean));
-          coiInfo.appendChild(box('#f87171', 'rgba(248,113,113,.07)', '✕ Not on your certificate of insurance',
+          coiInfo.appendChild(box('var(--lbc-x-danger,#f87171)', 'rgba(248,113,113,.07)', '✕ Not on your certificate of insurance',
             (vins.length ? 'It currently lists ' + (vins.length === 1 ? 'one truck: ' : vins.length + ' trucks: ') + vins.join(', ') + '. ' : '')
             + 'Ask your agent to add this VIN to the policy schedule — it is free — then upload the updated certificate under Documents. We verify it the same day.'));
         } else if (r.state === 'coi_vins_pending') {
@@ -6718,7 +6748,7 @@ function tripStepper(status) {
           const upBtn = h('button', { type: 'button', class: 'cp-btn cp-btn-sm', style: 'margin-top:8px',
             onClick: () => { try { closeT9(); } catch (_) {} if (typeof go === 'function') go('documents'); else location.hash = '#documents'; } },
             'Upload your insurance ID cards or vehicle schedule');
-          coiInfo.appendChild(box('#38bdf8', 'rgba(56,189,248,.07)', '✓ Your insurance is approved',
+          coiInfo.appendChild(box('var(--lbc-x-link,#38bdf8)', 'rgba(56,189,248,.07)', '✓ Your insurance is approved',
             'Send your insurance ID card or vehicle schedule so we can match this truck\'s VIN. You can save the truck now — it can be posted for loads as soon as the VIN is matched, usually the same working day.'));
           coiInfo.appendChild(upBtn);
         } else if (r.state === 'no_coi') {
@@ -6726,11 +6756,11 @@ function tripStepper(status) {
           // the fleet_truck_coi_gate trigger refuses the insert with LB004 until a
           // verified COI is on file. Saying so here stops the carrier filling in a
           // whole form for nothing.
-          coiInfo.appendChild(box('#fbbf24', 'rgba(251,191,36,.07)', '⚠ We need your certificate of insurance first',
+          coiInfo.appendChild(box('var(--lbc-x-gold,#fbbf24)', 'rgba(251,191,36,.07)', '⚠ We need your certificate of insurance first',
             'A truck cannot be added until we have your COI on file and verified. Upload it on the Documents page — we review it the same working day, then this truck saves in one tap.'));
         }
         if (r.expired) {
-          coiInfo.appendChild(h('div', { style: 'color:#f87171;font-weight:700;margin-top:5px' }, '⚠ The certificate we hold expired on ' + r.expiry_date + ' — send the renewal so nothing stops mid-load.'));
+          coiInfo.appendChild(h('div', { style: 'color:var(--lbc-x-danger,#f87171);font-weight:700;margin-top:5px' }, '⚠ The certificate we hold expired on ' + r.expiry_date + ' — send the renewal so nothing stops mid-load.'));
         }
       };
       const checkCoi = async (v) => {
@@ -6763,7 +6793,7 @@ function tripStepper(status) {
         if (vin9) {
           if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin9) || /^\d{17}$/.test(vin9)) {
             vinInfo.textContent = '✕ Not a real VIN — 17 characters, letters AND digits (no I, O, Q). Copy it from the door-jamb sticker or registration.';
-            vinInfo.style.color = '#f87171';
+            vinInfo.style.color = 'var(--lbc-x-danger,#f87171)';
             alert('⚠ “' + vin9 + '” is not a valid VIN.\n\nA real VIN is exactly 17 characters and mixes letters and digits (never I, O or Q). It’s on the door-jamb sticker, dash plate, title and registration. Fake VINs fail verification and can pause your account.');
             return;
           }
@@ -6776,13 +6806,13 @@ function tripStepper(status) {
             if (dV && dV.Make) {
               vinFacts = { make: dV.Make || null, model: dV.Model || null, year: dV.ModelYear || null, gvwr: dV.GVWR || null, body: dV.BodyClass || null };
               vinInfo.textContent = '✓ VIN verified with U.S. DOT: ' + [dV.ModelYear, dV.Make, dV.Model].filter(Boolean).join(' ') + (dV.BodyClass ? ' · ' + dV.BodyClass : '') + (dV.GVWR ? ' · ' + dV.GVWR : '');
-              vinInfo.style.color = '#4ade80';
+              vinInfo.style.color = 'var(--lbc-x-ok,#4ade80)';
               capCheck();
             } else {
               vinInfo.textContent = '⚠ U.S. DOT registry could not identify this VIN — double-check it against the truck. Saving anyway; verification may flag it.';
-              vinInfo.style.color = '#fbbf24';
+              vinInfo.style.color = 'var(--lbc-x-gold,#fbbf24)';
             }
-          } catch (_) { vinInfo.textContent = '⚠ VIN registry unreachable — format OK, saving. It will be verified later.'; vinInfo.style.color = '#fbbf24'; }
+          } catch (_) { vinInfo.textContent = '⚠ VIN registry unreachable — format OK, saving. It will be verified later.'; vinInfo.style.color = 'var(--lbc-x-gold,#fbbf24)'; }
           await checkCoi(vin9);
         }
         btn9.disabled = true; btn9.textContent = 'Saving…';
@@ -6883,7 +6913,7 @@ function tripStepper(status) {
         }
       } }, 'Save truck');
 
-      const reqNoteT9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:#94a3b8' }, 'Fields marked * are required. Everything else makes you match more loads.');
+      const reqNoteT9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:var(--lbc-x-ink3,#94a3b8)' }, 'Fields marked * are required. Everything else makes you match more loads.');
       // ~30 fields. Losing them to a phone call is the fastest way to make someone give up on
       // the fleet tab, so the whole modal is drafted to this device for 7 days.
       const draftHostT9 = h('div');
@@ -7001,7 +7031,7 @@ function tripStepper(status) {
           h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'Which trucks earn and which sit — and the lanes that pay you best. Assign trucks on every trip to sharpen this.'),
           ...tr9.map((t9) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
             h('div', { style: 'flex:1;min-width:180px' }, [h('div', { class: 'cp-row-t' }, [icon('truck',15), ' ' + t9.truck]), h('div', { class: 'cp-row-s' }, (t9.trips || 0) + ' trips · ' + Number(t9.miles || 0).toLocaleString() + ' mi · ' + (t9.active_days || 0) + ' active days')]),
-            h('div', { style: 'text-align:right' }, [h('div', { class: 'cp-row-t', style: 'color:#4ade80' }, money(t9.revenue || 0)), t9.rpm != null ? h('div', { class: 'cp-row-s' }, '$' + t9.rpm + '/mi') : null]),
+            h('div', { style: 'text-align:right' }, [h('div', { class: 'cp-row-t', style: 'color:var(--lbc-x-ok,#4ade80)' }, money(t9.revenue || 0)), t9.rpm != null ? h('div', { class: 'cp-row-s' }, '$' + t9.rpm + '/mi') : null]),
           ])),
           ln9.length ? h('div', { style: 'margin-top:10px' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, '🗺 Your best lanes'),
             ...ln9.map((l9) => h('div', { class: 'cp-row-s', style: 'padding:3px 0' }, l9.lane + ' — ' + (l9.trips || 0) + ' trips · ' + money(l9.revenue || 0) + (l9.rpm != null ? ' · $' + l9.rpm + '/mi' : '')))]) : null,
@@ -7096,22 +7126,22 @@ function tripStepper(status) {
       const now = new Date();
       const nextI = DL.findIndex(([dt]) => { const [mo, dy] = dt.split(' '); const dd = new Date(yr + (mo === 'Jan' ? 1 : 0), mIdx[mo], Number(dy)); return dd >= now; });
       const row = (k, v, sub, col) => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed rgba(148,163,184,.18)' }, [
-        h('div', { style: 'min-width:0' }, [h('div', { class: 'cp-row-s', style: 'font-weight:700;color:#dbe6f5' }, k), sub ? h('div', { class: 'cp-row-s' }, sub) : null].filter(Boolean)),
-        h('div', { style: 'font-weight:800;flex:none;color:' + (col || '#dbe6f5') }, v),
+        h('div', { style: 'min-width:0' }, [h('div', { class: 'cp-row-s', style: 'font-weight:700;color:var(--lbc-x-ink,#dbe6f5)' }, k), sub ? h('div', { class: 'cp-row-s' }, sub) : null].filter(Boolean)),
+        h('div', { style: 'font-weight:800;flex:none;color:' + (col || 'var(--lbc-x-ink,#dbe6f5)') }, v),
       ]);
       mount(card, h('div', null, [
         cardHead([icon('receipt',15), ' Tax centre — ' + yr], 'estimates only · not tax advice'),
         h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:12px 14px;margin-bottom:10px' }, [
-          h('div', { style: 'font-weight:800;color:#4ade80' }, '🛏 Per diem — ' + nights + ' nights away'),
-          h('div', { style: 'font-size:1.6rem;font-weight:900;color:#4ade80;margin:2px 0' }, '$' + pdDeduct.toLocaleString()),
+          h('div', { style: 'font-weight:800;color:var(--lbc-x-ok,#4ade80)' }, '🛏 Per diem — ' + nights + ' nights away'),
+          h('div', { style: 'font-size:1.6rem;font-weight:900;color:var(--lbc-x-ok,#4ade80);margin:2px 0' }, '$' + pdDeduct.toLocaleString()),
           h('div', { class: 'cp-row-s' }, nights + ' nights × $' + PD_RATE + '/day × 80% deductible. Most owner-ops leave this on the table — your GPS trip records ARE the proof.'),
         ]),
         h('div', { class: 'cp-row-s', style: 'font-weight:800;margin:10px 0 2px' }, '📅 Deadlines'),
-        ...DL.map(([dt, what], i) => row(dt, i === nextI ? 'NEXT UP' : '', what, i === nextI ? '#fbbf24' : '#7f92b3')),
+        ...DL.map(([dt, what], i) => row(dt, i === nextI ? 'NEXT UP' : '', what, i === nextI ? 'var(--lbc-x-gold,#fbbf24)' : 'var(--lbc-x-ink3,#7f92b3)')),
         h('div', { class: 'cp-row-s', style: 'font-weight:800;margin:12px 0 2px' }, [icon('chart',15),' Schedule C — deductible expenses logged']),
-        cats.length ? h('div', null, [...cats.map(c => row(c, '$' + Math.round(byCat[c]).toLocaleString())), row('TOTAL LOGGED', '$' + Math.round(exTotal).toLocaleString(), null, '#4ade80')])
+        cats.length ? h('div', null, [...cats.map(c => row(c, '$' + Math.round(byCat[c]).toLocaleString())), row('TOTAL LOGGED', '$' + Math.round(exTotal).toLocaleString(), null, 'var(--lbc-x-ok,#4ade80)')])
           : h('div', { class: 'cp-muted', style: 'padding:6px 0' }, 'No expenses logged yet — log fuel, tolls, scales, repairs under Costs and they roll up here for Schedule C.'),
-        h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#7f92b3' }, 'Deduct: fuel · per diem · truck payment interest · insurance · maintenance · tolls · scales · parking · permits. Principal on the truck loan is NOT deductible. This is a worksheet, not tax advice.'),
+        h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:var(--lbc-x-ink3,#7f92b3)' }, 'Deduct: fuel · per diem · truck payment interest · insurance · maintenance · tolls · scales · parking · permits. Principal on the truck loan is NOT deductible. This is a worksheet, not tax advice.'),
       ]));
     })();
     return card;
@@ -7125,20 +7155,20 @@ function tripStepper(status) {
     const overdue = sent.filter(i => i.created_at && (now - new Date(i.created_at).getTime()) > 30 * 864e5);
     const overdueAmt = overdue.reduce((a, i) => a + (Number(i.gross) || 0), 0);
     const paidAmt = (rows || []).filter(i => i.status === 'paid').reduce((a, i) => a + (Number(i.gross) || 0), 0);
-    const t = (k, v, col, sub) => h('div', { style: 'flex:1;min-width:130px;padding:12px 14px;border:1px solid var(--lb-line,#22314e);border-radius:14px' }, [
-      h('div', { style: 'font-size:.6rem;letter-spacing:.09em;color:#7f92b3;font-weight:800' }, k),
+    const t = (k, v, col, sub) => h('div', { style: 'flex:1;min-width:130px;padding:12px 14px;border:1px solid var(--lb-line,var(--lbc-x-line,#22314e));border-radius:14px' }, [
+      h('div', { style: 'font-size:.6rem;letter-spacing:.09em;color:var(--lbc-x-ink3,#7f92b3);font-weight:800' }, k),
       h('div', { style: 'font-weight:900;font-size:1.3rem;margin-top:2px;color:' + col }, '$' + Math.round(v).toLocaleString()),
       sub ? h('div', { class: 'cp-row-s' }, sub) : null,
     ].filter(Boolean));
     return h('div', { class: 'cp-card' }, [
       cardHead([icon('inbox',15),' Cash position'], 'trucking pays in 30–45 days — watch the gap'),
       h('div', { style: 'display:flex;gap:9px;flex-wrap:wrap' }, [
-        t('AWAITING PAYMENT', awaiting, '#fbbf24', sent.length + ' invoice(s) out'),
-        t('OVERDUE 30+ DAYS', overdueAmt, overdueAmt > 0 ? '#f87171' : '#4ade80', overdue.length + ' invoice(s)'),
-        t('PAID', paidAmt, '#4ade80', 'received'),
+        t('AWAITING PAYMENT', awaiting, 'var(--lbc-x-gold,#fbbf24)', sent.length + ' invoice(s) out'),
+        t('OVERDUE 30+ DAYS', overdueAmt, overdueAmt > 0 ? 'var(--lbc-x-danger,#f87171)' : 'var(--lbc-x-ok,#4ade80)', overdue.length + ' invoice(s)'),
+        t('PAID', paidAmt, 'var(--lbc-x-ok,#4ade80)', 'received'),
       ]),
       overdueAmt > 0 ? h('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:11px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3)' },
-        h('div', { class: 'cp-row-s', style: 'color:#fca5a5' }, [icon('alert',15), ' $' + Math.round(overdueAmt).toLocaleString() + ' is past 30 days. Chase it, or factor it to free the cash.'])) : null,
+        h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-danger,#fca5a5)' }, [icon('alert',15), ' $' + Math.round(overdueAmt).toLocaleString() + ' is past 30 days. Chase it, or factor it to free the cash.'])) : null,
     ].filter(Boolean));
   }
 
@@ -7148,7 +7178,7 @@ function tripStepper(status) {
     let days = 30;
     const M = (v) => '$' + Math.round(Number(v) || 0).toLocaleString();
     const M2 = (v) => (v == null ? '—' : '$' + Number(v).toFixed(2));
-    const HC = { good: ['rgba(34,197,94,.16)', '#4ade80'], ok: ['rgba(245,158,11,.16)', '#fbbf24'], risky: ['rgba(239,68,68,.16)', '#f87171'], unknown: ['rgba(148,163,184,.14)', '#94a3b8'] };
+    const HC = { good: ['rgba(34,197,94,.16)', 'var(--lbc-x-ok,#4ade80)'], ok: ['rgba(245,158,11,.16)', 'var(--lbc-x-gold,#fbbf24)'], risky: ['rgba(239,68,68,.16)', 'var(--lbc-x-danger,#f87171)'], unknown: ['rgba(148,163,184,.14)', 'var(--lbc-x-ink3,#94a3b8)'] };
 
     const costModelBox = () => {
       const w = h('div', { style: 'display:none' });
@@ -7163,7 +7193,7 @@ function tripStepper(status) {
           const o = {}; fields.forEach(fd => { const i = fd.querySelector('input'); const v = i.value.trim(); if (v !== '') o[i.dataset.k] = Number(v); });
           try { await setCostModel(o); b.textContent = 'Saved ✓'; render(); } catch (e) { b.disabled = false; b.textContent = 'Save cost model'; lbToast((e && e.message) || 'Failed.', 'urgent'); }
         } }, 'Save cost model');
-        mount(w, h('div', { style: 'margin-top:10px;padding:12px;border:1px solid var(--lb-line,#22314e);border-radius:12px' }, [
+        mount(w, h('div', { style: 'margin-top:10px;padding:12px;border:1px solid var(--lb-line,var(--lbc-x-line,#22314e));border-radius:12px' }, [
           h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'These numbers drive every automatic cost line below. Set them once — every trip is priced with YOUR real costs.'),
           h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px' }, fields),
           save,
@@ -7186,34 +7216,34 @@ function tripStepper(status) {
           h('div', { class: 'cp-row-s' }, [tr.delivered_at ? new Date(tr.delivered_at).toLocaleDateString() : (tr.status || ''), (tr.miles_total ? Math.round(tr.miles_total) + ' mi' : null), (mt.rpm != null ? '$' + mt.rpm + '/mi' : null)].filter(Boolean).join(' · ')),
         ]),
         h('div', { style: 'text-align:right;flex:none' }, [
-          h('div', { style: 'font-weight:900;font-size:1.05rem;color:' + (Number(p.net) >= 0 ? '#4ade80' : '#f87171') }, M(p.net)),
+          h('div', { style: 'font-weight:900;font-size:1.05rem;color:' + (Number(p.net) >= 0 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-danger,#f87171)') }, M(p.net)),
           h('span', { class: 'cp-pill', style: 'background:' + hc[0] + ';color:' + hc[1] + ';font-weight:800' }, (mt.margin_pct != null ? mt.margin_pct + '% margin' : 'n/a')),
         ]),
       ]);
       const drawBody = () => {
         const ln = (lbl, amt, sub, col, onDel) => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.18)' }, [
-          h('div', { style: 'min-width:0' }, [h('div', { class: 'cp-row-s', style: 'font-weight:700;color:#dbe6f5' }, lbl), sub ? h('div', { class: 'cp-row-s' }, sub) : null].filter(Boolean)),
+          h('div', { style: 'min-width:0' }, [h('div', { class: 'cp-row-s', style: 'font-weight:700;color:var(--lbc-x-ink,#dbe6f5)' }, lbl), sub ? h('div', { class: 'cp-row-s' }, sub) : null].filter(Boolean)),
           h('div', { style: 'display:flex;gap:8px;align-items:center;flex:none' }, [
-            h('span', { style: 'font-weight:800;color:' + (col || '#dbe6f5') }, amt),
+            h('span', { style: 'font-weight:800;color:' + (col || 'var(--lbc-x-ink,#dbe6f5)') }, amt),
             onDel ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'padding:2px 8px', onClick: onDel }, '✕') : null,
           ].filter(Boolean)),
         ]);
         const rows = [];
-        rows.push(h('div', { class: 'cp-row-s', style: 'font-weight:800;color:#4ade80;margin-top:6px' }, 'MONEY IN'));
-        rows.push(ln('Linehaul', M2(rev.linehaul), null, '#4ade80'));
-        (rev.accessorials || []).forEach(a => rows.push(ln(String(a.kind || '').toUpperCase(), M2(a.amount), a.status === 'approved' ? 'approved ✓' : a.status, a.status === 'approved' ? '#4ade80' : '#94a3b8')));
-        (rev.custom || []).forEach(c => rows.push(ln(c.label, M2(c.amount), c.category, '#4ade80', async () => { try { await tripFinanceRemove(c.id); render(); } catch (_) {} })));
-        rows.push(ln('GROSS', M2(rev.gross), null, '#4ade80'));
-        rows.push(h('div', { class: 'cp-row-s', style: 'font-weight:800;color:#f87171;margin-top:10px' }, 'MONEY OUT'));
-        (cst.auto || []).forEach(c => rows.push(ln(c.label, '−' + M2(c.amount).slice(1), 'auto', '#f87171')));
-        (cst.custom || []).forEach(c => rows.push(ln(c.label, '−' + M2(c.amount).slice(1), c.category, '#f87171', async () => { try { await tripFinanceRemove(c.id); render(); } catch (_) {} })));
-        rows.push(ln('TOTAL COST', '−' + M2(cst.total).slice(1), null, '#f87171'));
+        rows.push(h('div', { class: 'cp-row-s', style: 'font-weight:800;color:var(--lbc-x-ok,#4ade80);margin-top:6px' }, 'MONEY IN'));
+        rows.push(ln('Linehaul', M2(rev.linehaul), null, 'var(--lbc-x-ok,#4ade80)'));
+        (rev.accessorials || []).forEach(a => rows.push(ln(String(a.kind || '').toUpperCase(), M2(a.amount), a.status === 'approved' ? 'approved ✓' : a.status, a.status === 'approved' ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink3,#94a3b8)')));
+        (rev.custom || []).forEach(c => rows.push(ln(c.label, M2(c.amount), c.category, 'var(--lbc-x-ok,#4ade80)', async () => { try { await tripFinanceRemove(c.id); render(); } catch (_) {} })));
+        rows.push(ln('GROSS', M2(rev.gross), null, 'var(--lbc-x-ok,#4ade80)'));
+        rows.push(h('div', { class: 'cp-row-s', style: 'font-weight:800;color:var(--lbc-x-danger,#f87171);margin-top:10px' }, 'MONEY OUT'));
+        (cst.auto || []).forEach(c => rows.push(ln(c.label, '−' + M2(c.amount).slice(1), 'auto', 'var(--lbc-x-danger,#f87171)')));
+        (cst.custom || []).forEach(c => rows.push(ln(c.label, '−' + M2(c.amount).slice(1), c.category, 'var(--lbc-x-danger,#f87171)', async () => { try { await tripFinanceRemove(c.id); render(); } catch (_) {} })));
+        rows.push(ln('TOTAL COST', '−' + M2(cst.total).slice(1), null, 'var(--lbc-x-danger,#f87171)'));
         rows.push(h('div', { style: 'display:flex;justify-content:space-between;padding:10px 0 4px;border-top:2px solid rgba(148,163,184,.25);margin-top:6px' }, [
           h('div', { style: 'font-weight:900;font-size:1rem' }, 'NET PROFIT'),
-          h('div', { style: 'font-weight:900;font-size:1.15rem;color:' + (Number(p.net) >= 0 ? '#4ade80' : '#f87171') }, M2(p.net)),
+          h('div', { style: 'font-weight:900;font-size:1.15rem;color:' + (Number(p.net) >= 0 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-danger,#f87171)') }, M2(p.net)),
         ]));
-        const mtile = (k, v) => h('div', { style: 'flex:1;min-width:88px;text-align:center;padding:7px 4px;border:1px solid var(--lb-line,#22314e);border-radius:10px' }, [
-          h('div', { style: 'font-size:.62rem;letter-spacing:.08em;color:#7f92b3;font-weight:800' }, k),
+        const mtile = (k, v) => h('div', { style: 'flex:1;min-width:88px;text-align:center;padding:7px 4px;border:1px solid var(--lb-line,var(--lbc-x-line,#22314e));border-radius:10px' }, [
+          h('div', { style: 'font-size:.62rem;letter-spacing:.08em;color:var(--lbc-x-ink3,#7f92b3);font-weight:800' }, k),
           h('div', { style: 'font-weight:800;margin-top:2px' }, v),
         ]);
         rows.push(h('div', { style: 'display:flex;gap:7px;flex-wrap:wrap;margin-top:10px' }, [
@@ -7252,13 +7282,13 @@ function tripStepper(status) {
       const t = d.totals || {}, trips = d.trips || [];
       const chip = (n, lbl) => h('button', { class: 'cp-btn cp-btn-sm ' + (days === n ? '' : 'ghost'), style: 'padding:5px 12px', onClick: () => { days = n; render(); } }, lbl);
       const big = h('div', { style: 'text-align:center;padding:6px 0 12px' }, [
-        h('div', { style: 'font-size:.66rem;letter-spacing:.12em;color:#7f92b3;font-weight:800' }, 'NET PROFIT · LAST ' + days + ' DAYS'),
-        h('div', { style: 'font-size:2.5rem;font-weight:900;letter-spacing:-.02em;color:' + (Number(t.net) >= 0 ? '#4ade80' : '#f87171') }, M(t.net)),
+        h('div', { style: 'font-size:.66rem;letter-spacing:.12em;color:var(--lbc-x-ink3,#7f92b3);font-weight:800' }, 'NET PROFIT · LAST ' + days + ' DAYS'),
+        h('div', { style: 'font-size:2.5rem;font-weight:900;letter-spacing:-.02em;color:' + (Number(t.net) >= 0 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-danger,#f87171)') }, M(t.net)),
         h('div', { class: 'cp-row-s' }, M(t.gross) + ' gross − ' + M(t.costs) + ' costs · ' + (t.trip_count || 0) + ' trips · ' + Math.round(t.miles || 0).toLocaleString() + ' mi'),
       ]);
-      const kt = (k, v, col) => h('div', { style: 'flex:1;min-width:90px;text-align:center;padding:9px 5px;border:1px solid var(--lb-line,#22314e);border-radius:12px' }, [
-        h('div', { style: 'font-size:.6rem;letter-spacing:.09em;color:#7f92b3;font-weight:800' }, k),
-        h('div', { style: 'font-weight:900;margin-top:2px;color:' + (col || '#dbe6f5') }, v),
+      const kt = (k, v, col) => h('div', { style: 'flex:1;min-width:90px;text-align:center;padding:9px 5px;border:1px solid var(--lb-line,var(--lbc-x-line,#22314e));border-radius:12px' }, [
+        h('div', { style: 'font-size:.6rem;letter-spacing:.09em;color:var(--lbc-x-ink3,#7f92b3);font-weight:800' }, k),
+        h('div', { style: 'font-weight:900;margin-top:2px;color:' + (col || 'var(--lbc-x-ink,#dbe6f5)') }, v),
       ]);
       mount(card, h('div', null, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' }, [
@@ -7269,9 +7299,9 @@ function tripStepper(status) {
         h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px' }, [
           kt('REVENUE/MI', t.rpm != null ? '$' + t.rpm : '—'),
           kt('COST/MI', t.cpm != null ? '$' + t.cpm : '—'),
-          kt('NET/MI', t.net_per_mile != null ? '$' + t.net_per_mile : '—', Number(t.net_per_mile) >= 0 ? '#4ade80' : '#f87171'),
+          kt('NET/MI', t.net_per_mile != null ? '$' + t.net_per_mile : '—', Number(t.net_per_mile) >= 0 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-danger,#f87171)'),
           kt('NET/HR', t.net_per_hour != null ? '$' + t.net_per_hour : '—'),
-          kt('MARGIN', t.margin_pct != null ? t.margin_pct + '%' : '—', (t.margin_pct >= 30 ? '#4ade80' : t.margin_pct >= 15 ? '#fbbf24' : '#f87171')),
+          kt('MARGIN', t.margin_pct != null ? t.margin_pct + '%' : '—', (t.margin_pct >= 30 ? 'var(--lbc-x-ok,#4ade80)' : t.margin_pct >= 15 ? 'var(--lbc-x-gold,#fbbf24)' : 'var(--lbc-x-danger,#f87171)')),
         ]),
         (d.settings_hint === false) ? null : null,
         trips.length
@@ -7293,8 +7323,8 @@ function tripStepper(status) {
     const series = rows.slice(0, 14).reverse().map((i, k) => ({ label: String(k), value: Number(i.fee) || 0 }));
     const statusParts = [
       { label: 'Paid', value: rows.filter(i => i.status === 'paid').length, color: '#16a34a' },
-      { label: 'Due', value: rows.filter(i => i.status === 'sent').length, color: '#f59e0b' },
-      { label: 'Draft', value: rows.filter(i => i.status === 'draft').length, color: '#94a3b8' },
+      { label: 'Due', value: rows.filter(i => i.status === 'sent').length, color: 'var(--lbc-x-gold,#f59e0b)' },
+      { label: 'Draft', value: rows.filter(i => i.status === 'draft').length, color: 'var(--lbc-x-ink3,#94a3b8)' },
     ];
     // ---- 🏦 FACTORING (NOA) — org-level by design: an NOA legally binds ALL your invoices (UCC 9-406);
     // there is no per-load bank/factor toggle. Switching back needs the factor's signed RELEASE letter.
@@ -7304,10 +7334,10 @@ function tripStepper(status) {
         let pp9 = null; try { pp9 = await myPaymentProfile(); } catch (_) {}
         const st9 = (pp9 && pp9.noa_status) || 'none';
         const on9 = !!(pp9 && pp9.factoring_noa);
-        const chip9 = { pending: ['#fbbf24', '⏳ NOA under LoadBoot review — brokers already see the factor\u2019s details with a “verification pending” note'], verified: ['#4ade80', '✅ NOA verified — every broker payment panel shows your FACTOR\u2019s remit-to, never your bank'], rejected: ['#f87171', '✕ NOA rejected — fix and resubmit'], released: ['#94a3b8', '↩ Factoring released — brokers pay your own bank again'], none: ['#94a3b8', 'Not using factoring — brokers pay your bank on file directly'] }[st9] || ['#94a3b8', ''];
+        const chip9 = { pending: ['var(--lbc-x-gold,#fbbf24)', '⏳ NOA under LoadBoot review — brokers already see the factor\u2019s details with a “verification pending” note'], verified: ['var(--lbc-x-ok,#4ade80)', '✅ NOA verified — every broker payment panel shows your FACTOR\u2019s remit-to, never your bank'], rejected: ['var(--lbc-x-danger,#f87171)', '✕ NOA rejected — fix and resubmit'], released: ['var(--lbc-x-ink3,#94a3b8)', '↩ Factoring released — brokers pay your own bank again'], none: ['var(--lbc-x-ink3,#94a3b8)', 'Not using factoring — brokers pay your bank on file directly'] }[st9] || ['var(--lbc-x-ink3,#94a3b8)', ''];
         const f9 = { factoring_company: (pp9 && pp9.factoring_company) || '', account_title: '', bank_name: '', account_number: '', routing_number: '', remittance_email: '', payment_method: 'ACH', advance_pct: '', fee_pct: '', terms_days_broker: '30' };
         const inp9 = (k9, lbl9, ph9) => { const i9 = h('input', { class: 'cp-in', placeholder: ph9 || '', value: f9[k9] || '' }); i9.oninput = () => { f9[k9] = i9.value; }; return h('div', { style: 'flex:1;min-width:190px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
-        const msg9 = h('div', { style: 'margin-top:6px;min-height:1em;color:#f87171;font-weight:700;font-size:.82rem' });
+        const msg9 = h('div', { style: 'margin-top:6px;min-height:1em;color:var(--lbc-x-danger,#f87171);font-weight:700;font-size:.82rem' });
         const form9 = h('div', { style: on9 ? 'display:none' : '' }, [
           h('div', { class: 'cp-row-s', style: 'line-height:1.7;margin:8px 0' }, 'Use a factoring company? Declare it here ONCE — it applies to ALL your loads (a Notice of Assignment legally covers every invoice — that\u2019s why there is no per-trip choice). Brokers then automatically see your factor\u2019s remit-to details instead of your bank, with the NOA warning. First upload the factor\u2019s NOA letter under Documents → Factoring NOA.'),
           h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
@@ -7333,7 +7363,7 @@ function tripStepper(status) {
         const remitRow9 = on9 ? (() => {
           const g9 = { account_title: fr9.account_title || (pp9 && pp9.factoring_company) || '', bank_name: fr9.bank_name || '', account_number: '', routing_number: '', remittance_email: fr9.remittance_email || '', source: '' };
           const gi9 = (k9, lbl9, ph9) => { const i9 = h('input', { class: 'cp-in', placeholder: ph9 || '', value: g9[k9] || '', autocomplete: 'off' }); i9.oninput = () => { g9[k9] = i9.value; }; return h('div', { style: 'flex:1;min-width:190px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
-          const gmsg9 = h('div', { style: 'margin-top:6px;min-height:1em;color:#f87171;font-weight:700;font-size:.82rem' });
+          const gmsg9 = h('div', { style: 'margin-top:6px;min-height:1em;color:var(--lbc-x-danger,#f87171);font-weight:700;font-size:.82rem' });
           const open9 = !fr9.has_ach;
           const formHost9 = h('div', { style: open9 ? '' : 'display:none' }, [
             h('div', { class: 'cp-row-s', style: 'line-height:1.7;margin:8px 0' }, 'These are the details your FACTORING COMPANY gave you for receiving payments — from their welcome packet, remittance-instructions letter, or their portal. Not your own bank. Brokers and LoadBoot pay the factor here; the factor pays you.'),
@@ -7350,13 +7380,13 @@ function tripStepper(status) {
               catch (e9) { b9.disabled = false; gmsg9.textContent = (e9 && e9.message) || 'Failed.'; } } }, 'Save factor remit-to details'),
             gmsg9,
           ]);
-          return h('div', { style: 'margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)' }, [
+          return h('div', { style: 'margin-top:12px;padding-top:10px;border-top:1px solid var(--lbc-x-line,rgba(255,255,255,.08))' }, [
             h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
               h('div', null, [h('div', { style: 'font-weight:800' }, 'Factor’s remit-to (where brokers and LoadBoot send the money)'),
                 h('div', { class: 'cp-row-s' }, fr9.has_ach ? ((fr9.account_title || '') + ' · ' + (fr9.bank_name || '') + ' ····' + (fr9.account_last4 || '') + (fr9.remit_verified === false ? ' · ⏳ LoadBoot is confirming these with the factor' : fr9.remit_verified ? ' · ✅ confirmed' : '')) : (fr9.remit_to ? 'On file: ' + fr9.remit_to + ' (mailing address only — no ACH yet)' : 'Not on file yet'))]),
               !open9 ? h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => { formHost9.style.display = formHost9.style.display === 'none' ? '' : 'none'; } }, 'Update') : null,
             ].filter(Boolean)),
-            !fr9.has_ach ? h('div', { style: 'margin-top:6px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:9px 12px;color:#fcd9a2;line-height:1.5;font-size:.86rem' }, 'Action needed: your factor’s ACH details are missing, so settlements cannot be paid electronically. Fill them in below (2 minutes).') : null,
+            !fr9.has_ach ? h('div', { style: 'margin-top:6px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:9px 12px;color:var(--lbc-x-gold,#fcd9a2);line-height:1.5;font-size:.86rem' }, 'Action needed: your factor’s ACH details are missing, so settlements cannot be paid electronically. Fill them in below (2 minutes).') : null,
             formHost9,
           ].filter(Boolean));
         })() : null;
@@ -7382,10 +7412,10 @@ function tripStepper(status) {
                 const btn9 = h('button', { class: 'cp-btn-ghost cp-btn-sm', style: 'font-size:.74rem', onClick: async (ev9) => { const x9 = ev9.currentTarget; x9.disabled = true;
                   try { await carrierFactoringBrokerSet(b9.org_id, !isDirect9); lbToast((b9.name || 'Broker') + ' → ' + (!isDirect9 ? 'DIRECT to your bank' : 'via ' + ((bl9 && bl9.factoring_company) || 'factor')) + ' — the broker was notified.', 'ok', '🎛 Switched'); loadFinance(); }
                   catch (e9) { x9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent', 'Switch'); } } }, isDirect9 ? '→ Switch to factor' : '→ Switch to direct');
-                return h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07);flex-wrap:wrap' }, [
+                return h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.07));flex-wrap:wrap' }, [
                   h('div', null, [h('b', { style: 'font-size:.86rem' }, b9.name || 'Broker'), h('div', { class: 'cp-row-s' }, (b9.trips || 0) + ' trips')]),
                   h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
-                    h('span', { class: 'cp-pill', style: 'font-weight:800;' + (isDirect9 ? 'background:rgba(34,197,94,.15);color:#4ade80' : 'background:rgba(139,92,246,.18);color:#c4b5fd') }, isDirect9 ? '🏛 pays YOU directly' : '🏦 pays your FACTOR'),
+                    h('span', { class: 'cp-pill', style: 'font-weight:800;' + (isDirect9 ? 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' : 'background:rgba(139,92,246,.18);color:var(--lbc-x-violet,#c4b5fd)') }, isDirect9 ? '🏛 pays YOU directly' : '🏦 pays your FACTOR'),
                     btn9,
                   ]),
                 ]);
@@ -7644,8 +7674,8 @@ function tripStepper(status) {
         const factOn9 = !!(fb9 && fb9.factoring_on);
         const direct9 = !factOn9 || dirMap9[x9.counterparty] === 'direct';
         return direct9
-          ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.13);color:#4ade80;font-weight:800' }, [icon('bank',15),' lands in YOUR bank (direct)'])
-          : h('span', { class: 'cp-pill', style: 'background:rgba(139,92,246,.18);color:#c4b5fd;font-weight:800' }, [icon('bank',15), ' goes to ' + ((fb9 && fb9.factoring_company) || 'your factor') + ' (NOA)']);
+          ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.13);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, [icon('bank',15),' lands in YOUR bank (direct)'])
+          : h('span', { class: 'cp-pill', style: 'background:rgba(139,92,246,.18);color:var(--lbc-x-violet,#c4b5fd);font-weight:800' }, [icon('bank',15), ' goes to ' + ((fb9 && fb9.factoring_company) || 'your factor') + ' (NOA)']);
       };
       trs = Array.isArray(trs) ? trs : [];
       // money OWED to you that the broker has not even sent yet (no transfer row)
@@ -7660,7 +7690,7 @@ function tripStepper(status) {
             h('div', { class: 'cp-row-s' }, 'From ' + (x9.counterparty || 'broker') + (x9.due_since ? ' · due since ' + new Date(x9.due_since).toLocaleDateString() + (age9 != null ? ' (' + age9 + 'd)' : '') : '') + ' · memo ' + (x9.memo || '')),
           ]),
           h('div', { class: 'cp-inflight-actions' }, [
-            h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171' }, [icon('clock',13),' awaiting broker payment']),
+            h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:var(--lbc-x-danger,#f87171)' }, [icon('clock',13),' awaiting broker payment']),
             routeChip9(x9),
             (x9.kind === 'claim' || x9.kind === 'freight') ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
               try { await payRequestReminder(x9.kind, x9.ref_id); b9.textContent = '✓ Requested'; lbToast('Payment request sent — the broker got a 🔔 + email with the pay panel link.', 'success', '🔔 Requested'); }
@@ -7681,17 +7711,17 @@ function tripStepper(status) {
           h('div', { class: 'cp-row-t' }, (x.direction === 'incoming' ? '📥 ' : '📤 ') + (x.label || x.kind) + ' · ' + money(x.amount)),
           h('div', { class: 'cp-row-s' }, (x.direction === 'incoming' ? 'From ' : 'To ') + (x.counterparty || '') + ' · sent ' + (x.sent_at ? new Date(x.sent_at).toLocaleDateString() : '')
             + (x.payment_ref ? ' · ref ' + x.payment_ref : '')),
-          x.status === 'sent' ? h('div', { class: 'cp-row-s', style: 'margin-top:2px;font-weight:700;color:' + (dl9 != null && dl9 <= 0 ? '#fbbf24' : '#60a5fa') }, eta9) : null,
+          x.status === 'sent' ? h('div', { class: 'cp-row-s', style: 'margin-top:2px;font-weight:700;color:' + (dl9 != null && dl9 <= 0 ? 'var(--lbc-x-gold,#fbbf24)' : 'var(--lbc-x-link,#60a5fa)') }, eta9) : null,
           (() => { const c9 = routeChip9(Object.assign({ direction: x.direction }, x)); return c9 ? h('div', { style: 'margin-top:4px' }, c9) : null; })(),
           (x.status === 'sent' && x.receipt_path) ? h('button', { class: 'cp-btn-ghost cp-btn-sm', style: 'margin-top:5px;font-size:.72rem', onClick: async (ev9) => {
             try { const u9 = await signedDocumentUrl(x.receipt_path); window.open(u9, '_blank', 'noopener'); } catch (_) { lbToast('Could not open the receipt.', 'urgent'); }
           } }, '📎 View their receipt') : null,
         ].filter(Boolean)),
-        x.status === 'received' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80' }, '✓ received' + (x.received_at ? ' ' + new Date(x.received_at).toLocaleDateString() : ''))
+        x.status === 'received' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:var(--lbc-x-ok,#4ade80)' }, '✓ received' + (x.received_at ? ' ' + new Date(x.received_at).toLocaleDateString() : ''))
         : x.direction === 'incoming' ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
             try { await payConfirmReceived(x.id); lbToast('Marked received — the payer sees this as settled.', 'success', 'Payment received'); loadFinance(); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
           } }, '✓ I received it')
-        : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:#fbbf24' }, x.kind === 'platform_fee' ? '⏳ LoadBoot verifying' : '⏳ awaiting their ✓'),
+        : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:var(--lbc-x-gold,#fbbf24)' }, x.kind === 'platform_fee' ? '⏳ LoadBoot verifying' : '⏳ awaiting their ✓'),
       ]); };
       const owedTotal9 = owed9.reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
       mount(payFlightCard, [cardHead([icon('finance',15),' Your money — owed & in flight']),
@@ -7772,7 +7802,7 @@ function tripStepper(status) {
         if (st9 && st9.connected) {
           mount(host9, [cardHead('🟢 QuickBooks Online', 'connected'),
             h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [
-              h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ ' + (st9.company || 'Connected')),
+              h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, '✓ ' + (st9.company || 'Connected')),
               syncBtn9,
             ]),
             h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.6' }, 'Pushes your delivered-freight invoices (customer = broker) and every expense into QuickBooks, and pulls back which invoices got PAID there. ' + (st9.synced || 0) + ' records synced' + (st9.paid_in_qbo ? ' · ' + st9.paid_in_qbo + ' marked paid in QBO' : '') + (st9.last_sync_note ? ' · last sync: ' + st9.last_sync_note : '') + '.'),
@@ -7796,10 +7826,10 @@ function tripStepper(status) {
       h('div', { class: 'cp-row-s', style: 'line-height:1.7' },
         'Every delivered load becomes an invoice in YOUR QuickBooks automatically. Every expense lands as a Purchase. When the broker pays, paid-status flows back. Zero manual bookkeeping — your accountant gets ready books.'),
       h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' }, [
-        h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ Invoices auto-push'),
-        h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ Expenses auto-push'),
-        h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ Paid-status pull-back'),
-        h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#7cc0ff;font-weight:800' }, '⬇ CSV export for any accountant'),
+        h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, '✓ Invoices auto-push'),
+        h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, '✓ Expenses auto-push'),
+        h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, '✓ Paid-status pull-back'),
+        h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:var(--lbc-x-link,#7cc0ff);font-weight:800' }, '⬇ CSV export for any accountant'),
       ]),
     ]);
     const SECS = [
@@ -7845,7 +7875,7 @@ function tripStepper(status) {
         const setOff9 = (v9) => { try { localStorage.setItem('lb:bookintro:off', v9 ? '1' : '0'); } catch (_) {} paintIntro9(); };
         if (off9) {
           mount(bookIntro9, h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;background:rgba(8,131,247,.06);display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px' }, [
-            h('div', { class: 'cp-row-s', style: 'color:#3b9dff;font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:.72rem' }, '\ud83d\udcd2 Your books live here too'),
+            h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-link,#3b9dff);font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:.72rem' }, '\ud83d\udcd2 Your books live here too'),
             h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Show the books guide', onClick: () => setOff9(false) }, 'Show \u25be'),
           ]));
           return;
@@ -7853,7 +7883,7 @@ function tripStepper(status) {
       mount(bookIntro9, h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;background:rgba(8,131,247,.06)' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:10px' }, [
           h('div', null, [
-            h('div', { class: 'cp-row-s', style: 'color:#3b9dff;font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:.72rem' }, 'Your books live here too'),
+            h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-link,#3b9dff);font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:.72rem' }, 'Your books live here too'),
             h('div', { class: 'cp-row-t', style: 'margin-top:2px' }, 'You are already paying for this \u2014 most of it takes one minute'),
             h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.55' }, 'Every load you run already produces the numbers. Turn them into books your accountant can use at tax time, instead of a shoebox in March.'),
           ]),
@@ -7865,7 +7895,7 @@ function tripStepper(status) {
           item9('\ud83d\uddfa', 'IFTA state miles', 'Enter miles per state as you run them and the quarter is already done when the filing is due.', () => jump9('tax')),
           item9('\ud83d\udc65', 'Payroll', 'Track what you owe your drivers and what is already paid \u2014 no spreadsheet.', () => jump9('pay')),
         ]),
-        h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8;font-size:.78rem;line-height:1.5' }, 'Only you see any of this. LoadBoot staff can view it read-only for support \u2014 nobody can edit your books.'),
+        h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:var(--lbc-x-ink3,#94a3b8);font-size:.78rem;line-height:1.5' }, 'Only you see any of this. LoadBoot staff can view it read-only for support \u2014 nobody can edit your books.'),
       ]));
       };
       paintIntro9();
@@ -7890,7 +7920,7 @@ function tripStepper(status) {
               li9('Send the bundle to: ' + (pk9.factor.remittance_email || 'your factor') + (pk9.factor.advance_pct ? ' · advance ~' + pk9.factor.advance_pct + '%' : '') + ' · broker pays them in ' + (pk9.factor.terms_days_broker || '30') + ' days'),
             ]) : h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'No factoring on file — this packet works for direct billing too.'),
             (pk9.missing && pk9.missing.length) ? h('div', { style: 'background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:10px 13px;margin-bottom:10px' },
-              [h('b', { style: 'color:#fbbf24' }, [icon('alert',15),' Still needed for funding']), ...pk9.missing.map((m9) => li9('• ' + m9))]) : h('div', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800;margin-bottom:10px' }, [icon('check',15),' Packet complete — fund-ready']),
+              [h('b', { style: 'color:var(--lbc-x-gold,#fbbf24)' }, [icon('alert',15),' Still needed for funding']), ...pk9.missing.map((m9) => li9('• ' + m9))]) : h('div', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80);font-weight:800;margin-bottom:10px' }, [icon('check',15),' Packet complete — fund-ready']),
             h('b', null, 'In this packet (collected automatically during the trip):'),
             li9('🧾 Invoice ' + ((pk9.invoice && pk9.invoice.invoice_no) || '—') + (pk9.invoice ? ' · $' + Number(pk9.invoice.gross || 0).toLocaleString() : '')),
             li9('✍ Executed rate confirmation: ' + (pk9.rate_confirmation ? 'on file (signed by the broker' + (pk9.rate_confirmation.submitted_at ? ' ' + new Date(pk9.rate_confirmation.submitted_at).toLocaleDateString() : '') + ')' : 'not yet')),
@@ -7912,7 +7942,7 @@ function tripStepper(status) {
           let pi; try { pi = await payInstructions('platform_fee', i.id); } catch (e9) { dw.innerHTML = ''; dw.appendChild(h('div', { class: 'cp-row-s' }, (e9 && e9.message) || 'Failed.')); return; }
           dw.innerHTML = '';
           const tr9 = pi && pi.transfer;
-          if (tr9 && tr9.status === 'sent') { dw.appendChild(h('div', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:#fbbf24;margin-top:6px' }, '⏳ Receipt uploaded — LoadBoot is verifying. This invoice flips to PAID once confirmed.')); return; }
+          if (tr9 && tr9.status === 'sent') { dw.appendChild(h('div', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:var(--lbc-x-gold,#fbbf24);margin-top:6px' }, '⏳ Receipt uploaded — LoadBoot is verifying. This invoice flips to PAID once confirmed.')); return; }
           const refIn = h('input', { class: 'cp-in', placeholder: 'Transfer reference / confirmation #' });
           const fIn = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.85rem;margin-top:6px' });
           const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:4px' });
@@ -7930,17 +7960,17 @@ function tripStepper(status) {
           const parts9 = insTxt9.split(/\n\s*RULES\s*\n/i);
           const remit9 = (parts9[0] || '').trim(); const rules9 = (parts9[1] || '').trim();
           const memoPill9 = h('button', { class: 'cp-pill', style: 'background:#FC5305;color:#fff;font-weight:900;letter-spacing:.04em;cursor:pointer;border:0;font-size:.9rem;padding:7px 16px', title: 'Tap to copy', onClick: (ev9) => { try { navigator.clipboard.writeText(i.invoice_no || ''); ev9.currentTarget.textContent = '✓ copied — ' + (i.invoice_no || ''); } catch (_) {} } }, i.invoice_no || '');
-          const step9 = (n9, t9, s9) => h('div', { style: 'flex:1;min-width:140px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:9px 11px' }, [
-            h('div', { style: 'font-weight:900;color:#60a5fa;font-size:.78rem' }, n9 + ' · ' + t9),
+          const step9 = (n9, t9, s9) => h('div', { style: 'flex:1;min-width:140px;background:var(--lbc-x-panel,rgba(255,255,255,.04));border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:11px;padding:9px 11px' }, [
+            h('div', { style: 'font-weight:900;color:var(--lbc-x-link,#60a5fa);font-size:.78rem' }, n9 + ' · ' + t9),
             h('div', { class: 'cp-row-s', style: 'margin-top:2px;line-height:1.5' }, s9)]);
-          dw.appendChild(h('div', { style: 'margin-top:8px;border:1px solid rgba(255,255,255,.14);border-radius:16px;overflow:hidden' }, [
-            h('div', { style: 'background:linear-gradient(120deg,#10223B,#0d2f56);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
-              h('div', null, [h('div', { style: 'font-weight:900;color:#fff' }, [icon('card',15),' Pay LoadBoot']), h('div', { style: 'font-size:.72rem;color:#9fb0cc' }, 'flat 5% dispatch fee · net 15')]),
-              h('div', { style: 'font-size:1.5rem;font-weight:900;color:#fff' }, money(pi.amount || i.fee || 0)),
+          dw.appendChild(h('div', { style: 'margin-top:8px;border:1px solid var(--lbc-x-line,rgba(255,255,255,.14));border-radius:16px;overflow:hidden' }, [
+            h('div', { style: 'background:var(--lbc-x-hero,linear-gradient(120deg,#10223B,#0d2f56));padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+              h('div', null, [h('div', { style: 'font-weight:900;color:var(--lbc-x-ink,#fff)' }, [icon('card',15),' Pay LoadBoot']), h('div', { style: 'font-size:.72rem;color:var(--lbc-x-ink2,#9fb0cc)' }, 'flat 5% dispatch fee · net 15')]),
+              h('div', { style: 'font-size:1.5rem;font-weight:900;color:var(--lbc-x-ink,#fff)' }, money(pi.amount || i.fee || 0)),
             ]),
             h('div', { style: 'padding:12px 16px' }, [
               h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:12px;padding:10px 13px' }, [
-                h('div', { style: 'font-weight:800;font-size:.78rem;letter-spacing:.06em;color:#93c5fd;margin-bottom:4px' }, [icon('bank',15),' REMIT-TO']),
+                h('div', { style: 'font-weight:800;font-size:.78rem;letter-spacing:.06em;color:var(--lbc-x-link,#93c5fd);margin-bottom:4px' }, [icon('bank',15),' REMIT-TO']),
                 h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;line-height:1.8;font-family:ui-monospace,Menlo,monospace;font-size:.8rem;user-select:all' }, remit9 || 'Payment instructions are being finalised — contact billing@loadboot.com.'),
               ]),
               h('div', { style: 'display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap' }, [
@@ -8220,11 +8250,11 @@ function tripStepper(status) {
       const finish9 = (ok9) => { if (done9) return; done9 = true; try { closeG9(); } catch (_) {} clearInterval(iv9); resolve9(ok9); };
       const closeG9 = openModal('🤖 Instant check found a problem', [
         probe9,
-        h('div', null, (v9.issues || []).slice(0, 5).map((i9) => h('div', { style: 'border-left:3px solid ' + (i9.severity === 'reject' ? '#ef4444' : '#f59e0b') + ';padding:7px 11px;margin:6px 0;background:rgba(239,68,68,.06);border-radius:0 9px 9px 0' }, [
+        h('div', null, (v9.issues || []).slice(0, 5).map((i9) => h('div', { style: 'border-left:3px solid ' + (i9.severity === 'reject' ? 'var(--lbc-x-danger,#ef4444)' : 'var(--lbc-x-gold,#f59e0b)') + ';padding:7px 11px;margin:6px 0;background:rgba(239,68,68,.06);border-radius:0 9px 9px 0' }, [
           h('div', { style: 'font-weight:800;font-size:.85rem' }, i9.problem || ''),
           i9.fix ? h('div', { class: 'cp-row-s', style: 'margin-top:2px;color:#16a34a;font-weight:700' }, '✔ Fix: ' + i9.fix) : null,
         ].filter(Boolean)))),
-        h('div', { class: 'cp-row-s', style: 'margin:10px 0;color:#94a3b8' }, 'Fixing it first saves you a rejection and a re-upload — or send it anyway and our team reviews it manually.'),
+        h('div', { class: 'cp-row-s', style: 'margin:10px 0;color:var(--lbc-x-ink3,#94a3b8)' }, 'Fixing it first saves you a rejection and a re-upload — or send it anyway and our team reviews it manually.'),
         h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:4px' }, [
           h('button', { class: 'cp-btn', style: 'flex:1;min-width:190px', onClick: () => finish9(false) }, "✋ I'll fix it first (recommended)"),
           h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'flex:0 0 auto', onClick: () => finish9(true) }, 'Upload anyway'),
@@ -8537,11 +8567,11 @@ function tripStepper(status) {
       const STEPS = [['Uploaded', d ? fdate(d.created_at) : null], ['In review', stateIdx >= 2 && !rejected && r.status !== 'valid' ? 'dispatch team — usually a few hours' : (rejected ? fdate(d && d.reviewed_at) : null)], [rejected ? 'Rejected' : 'Approved', r.status === 'valid' ? fdate(d && d.reviewed_at) || '✓' : null]];
       const stepper = stateIdx > 0 ? h('div', { style: 'display:flex;gap:6px;margin:9px 0 2px' }, STEPS.map(([lbl, sub], si) => {
         const on = si < stateIdx; const isLast = si === 2;
-        const colr = isLast && rejected && on ? '#dc2626' : on ? (isLast && r.status === 'valid' ? '#16a34a' : '#0883F7') : '#e2e8f0';
+        const colr = isLast && rejected && on ? '#dc2626' : on ? (isLast && r.status === 'valid' ? '#16a34a' : '#0883F7') : 'var(--lbc-x-ink,#e2e8f0)';
         return h('div', { style: 'flex:1;text-align:center' }, [
           h('div', { style: 'height:5px;border-radius:99px;background:' + colr }),
-          h('div', { style: 'font-size:10px;margin-top:4px;font-weight:' + (on ? '800' : '500') + ';color:' + (on ? colr : '#94a3b8') }, lbl),
-          sub ? h('div', { style: 'font-size:9px;color:#94a3b8' }, sub) : null,
+          h('div', { style: 'font-size:10px;margin-top:4px;font-weight:' + (on ? '800' : '500') + ';color:' + (on ? colr : 'var(--lbc-x-ink3,#94a3b8)') }, lbl),
+          sub ? h('div', { style: 'font-size:9px;color:var(--lbc-x-ink3,#94a3b8)' }, sub) : null,
         ].filter(Boolean));
       })) : null;
       // The reason used to come only off the document row, so a requirement with no file
@@ -8823,7 +8853,7 @@ function tripStepper(status) {
             } }, o9[1] + ' \u00b7 ' + o9[2]);
             return b9;
           })),
-          h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:#94a3b8' }, 'Leave all three off and we show you every length of haul.'),
+          h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:var(--lbc-x-ink3,#94a3b8)' }, 'Leave all three off and we show you every length of haul.'),
         ]),
       ]);
     }
@@ -8890,7 +8920,7 @@ function tripStepper(status) {
       const hazHost = h('div');
       const loadReqs = async () => { try { const c = await pocketCompliance(); const rs = ((c && c.requirements) || []).slice().sort((a, b) => (b.mandatory ? 1 : 0) - (a.mandatory ? 1 : 0));   // bl_ob_0532b — required first, optional last
         const optHelp = (r) => (/mcs-?150/i.test(String(r.requirement_key || r.doc_type || r.name || '')) ? 'Optional \u2014 your latest MCS-150 (biennial update). Not required to get loads.' : 'Optional \u2014 not required to get loads.');
-        mount(reqHost, h('div', { style: 'margin-bottom:10px', 'data-lb': 'doc-checklist' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Documents checklist'), h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'Required ones first. Optional items are marked \u201cOptional\u201d and never hold up your approval.'), ...rs.map((r) => { const st = String(r.status || 'missing').toLowerCase(); const okd = st === 'valid'; const rev = st === 'pending' || st === 'in_review' || st === 'review' || st === 'submitted'; const bad = st === 'rejected' || st === 'expired'; const col = okd ? '#34d399' : rev ? '#3b9dff' : (bad && r.mandatory) ? '#f87171' : r.mandatory ? '#f87171' : '#94a3b8';
+        mount(reqHost, h('div', { style: 'margin-bottom:10px', 'data-lb': 'doc-checklist' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Documents checklist'), h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'Required ones first. Optional items are marked \u201cOptional\u201d and never hold up your approval.'), ...rs.map((r) => { const st = String(r.status || 'missing').toLowerCase(); const okd = st === 'valid'; const rev = st === 'pending' || st === 'in_review' || st === 'review' || st === 'submitted'; const bad = st === 'rejected' || st === 'expired'; const col = okd ? 'var(--lbc-x-ok,#34d399)' : rev ? 'var(--lbc-x-link,#3b9dff)' : (bad && r.mandatory) ? 'var(--lbc-x-danger,#f87171)' : r.mandatory ? 'var(--lbc-x-danger,#f87171)' : 'var(--lbc-x-ink3,#94a3b8)';
           let dt0 = r.doc_type || (/w-?9/i.test(r.name || '') ? 'w9' : /agreement/i.test(r.name || '') ? 'agreement' : ''); if (/agreement/i.test(dt0)) dt0 = 'agreement'; if (/^w-?9$/i.test(dt0)) dt0 = 'w9';
           const goUp = () => {
             if (dt0 === 'w9') { w9Btn.click(); return; }
@@ -8913,7 +8943,7 @@ function tripStepper(status) {
             : h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0' + (bad ? ';background:linear-gradient(135deg,#dc2626,#f87171)' : ''), onClick: goUp }, bad ? (dt0 === 'w9' ? 'Redo W-9' : dt0 === 'agreement' ? 'Re-sign' : 'Upload the corrected one') : dt0 === 'w9' ? 'Start W-9' : dt0 === 'agreement' ? 'Sign' : 'Upload');
           // deep-link anchor: #documents/w9, /agreement, /insurance, /authority, /bank land on THIS row.
           try { const _b9 = (act && act.tagName === 'BUTTON') ? act : (act && act.querySelector ? act.querySelector('button') : null); const _k9 = r.doc_type || dt0; if (_b9 && _k9) _b9.setAttribute('data-lb', 'docbtn-' + _k9); } catch (_) {}
-          const why = bad && r.note ? h('div', { style: 'margin-top:6px;border-radius:10px;padding:9px 12px;background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.28)' }, [h('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#f87171;margin-bottom:3px' }, 'Why it was ' + (st === 'expired' ? 'expired' : 'rejected') + (r.reviewed_at ? ' \u00b7 ' + new Date(r.reviewed_at).toLocaleDateString() : '')), h('div', { class: 'cp-row-s', style: 'color:#fca5a5;white-space:pre-wrap' }, r.note)]) : null;
+          const why = bad && r.note ? h('div', { style: 'margin-top:6px;border-radius:10px;padding:9px 12px;background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.28)' }, [h('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--lbc-x-danger,#f87171);margin-bottom:3px' }, 'Why it was ' + (st === 'expired' ? 'expired' : 'rejected') + (r.reviewed_at ? ' \u00b7 ' + new Date(r.reviewed_at).toLocaleDateString() : '')), h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-danger,#fca5a5);white-space:pre-wrap' }, r.note)]) : null;
           const row9 = h('div', { class: 'cp-row', 'data-lb': (r.doc_type || dt0) ? 'doc-' + (r.doc_type || dt0) : null, style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' + (r.mandatory ? '' : ' \u00b7 Optional') : rev ? 'Submitted \u00b7 in review' : bad ? (st === 'expired' ? '\u2715 Expired \u2014 send a current one' : '\u2715 Rejected \u2014 fix it and re-upload') + (r.mandatory ? '' : ' (optional)') : (r.mandatory ? 'Required \u2014 not on file' : optHelp(r))), why].filter(Boolean)), act]);
           // The holder block rides with the row while the item is still open — not once it is
           // approved or already in review, where it would only be noise.
@@ -8997,13 +9027,13 @@ function tripStepper(status) {
             const fIn9 = h('input', { type: 'file', accept: '.pdf', style: 'font-size:.85rem' });
             const st9 = h('span', { class: 'cp-row-s' }, f.noa_uploaded ? '✓ NOA letter attached' : '');
             const up9 = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { const b9 = ev9.currentTarget;
-              const f9 = fIn9.files && fIn9.files[0]; if (!f9) { st9.textContent = 'Choose the factor\u2019s NOA PDF first.'; st9.style.color = '#f87171'; return; }
+              const f9 = fIn9.files && fIn9.files[0]; if (!f9) { st9.textContent = 'Choose the factor\u2019s NOA PDF first.'; st9.style.color = 'var(--lbc-x-danger,#f87171)'; return; }
               b9.disabled = true; b9.textContent = '🤖 Checking\u2026';
               const pv9 = await lbCheckUpload(f9, 'noa');
-              if (pv9 === false) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#94a3b8'; st9.textContent = 'Nothing submitted — attach the corrected NOA when ready.'; return; }
+              if (pv9 === false) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = 'var(--lbc-x-ink3,#94a3b8)'; st9.textContent = 'Nothing submitted — attach the corrected NOA when ready.'; return; }
               b9.textContent = 'Uploading\u2026';
-              try { const m9 = await uploadDocument(f9, 'noa'); await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path, aiVerdict: pv9 }); f.noa_uploaded = true; f.noa_path = m9.path; st9.style.color = '#4ade80'; st9.textContent = '✓ NOA letter attached — LoadBoot verifies it against your remit-to'; b9.textContent = '✓ Uploaded'; }
-              catch (e9) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#f87171'; st9.textContent = (e9 && e9.message) || 'Upload failed.'; }
+              try { const m9 = await uploadDocument(f9, 'noa'); await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path, aiVerdict: pv9 }); f.noa_uploaded = true; f.noa_path = m9.path; st9.style.color = 'var(--lbc-x-ok,#4ade80)'; st9.textContent = '✓ NOA letter attached — LoadBoot verifies it against your remit-to'; b9.textContent = '✓ Uploaded'; }
+              catch (e9) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = 'var(--lbc-x-danger,#f87171)'; st9.textContent = (e9 && e9.message) || 'Upload failed.'; }
             } }, 'Upload NOA');
             return h('div', { style: 'margin-top:10px' }, [
               h('div', { class: 'cp-row-t' }, [icon('docs',15),' The NOA letter itself (PDF from your factoring company)']),
@@ -9012,7 +9042,7 @@ function tripStepper(status) {
             ]);
           })(),
           h('div', { style: 'margin-top:10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:11px;padding:10px 13px' }, [
-            h('div', { style: 'font-weight:800;color:#4ade80' }, '💡 Don\u2019t worry — nothing gets locked'),
+            h('div', { style: 'font-weight:800;color:var(--lbc-x-ok,#4ade80)' }, '💡 Don\u2019t worry — nothing gets locked'),
             h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.65' }, 'Add your own bank below too (recommended): direct-pay / quick-pay brokers and fee settlements use it. Later you can switch ANY broker between factor and direct per-broker (Finance → 🏦 Factoring), and if you ever leave your factor, one release letter flips everything back. You stay in control.'),
           ]),
         ]) : null)]);
@@ -9142,18 +9172,18 @@ function tripStepper(status) {
       h('a', { class: 'cp-btn ghost', href: '/contact.html', style: 'flex:1;text-align:center;text-decoration:none' }, '24/7 Dispatch support'),
     ]);
     const trip = active[0] || null;
-    const sosCard = h('div', { class: 'cp-card', style: 'background:linear-gradient(150deg,#101d3a,#0b1220 70%);color:#fff;border:0' }, [
+    const sosCard = h('div', { class: 'cp-card', style: 'background:var(--lbc-x-hero,linear-gradient(150deg,#101d3a,#0b1220 70%));color:var(--lbc-x-ink,#fff);border:0' }, [
       h('div', { style: 'font-weight:800;font-size:15px' }, 'Emergency on a trip?'),
-      h('div', { style: 'font-size:12.5px;color:#94a3b8;margin-top:4px;line-height:1.6' }, 'Report with proof — 24/7 Dispatch support is notified the same second, with your live GPS pin. Live location is required.'),
+      h('div', { style: 'font-size:12.5px;color:var(--lbc-x-ink3,#94a3b8);margin-top:4px;line-height:1.6' }, 'Report with proof — 24/7 Dispatch support is notified the same second, with your live GPS pin. Live location is required.'),
       trip
         ? h('div', null, [
-            h('div', { style: 'display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border-radius:11px;padding:9px 11px;margin-top:10px;font-size:12px;font-weight:700' }, [
+            h('div', { style: 'display:flex;align-items:center;gap:8px;background:var(--lbc-x-panel,rgba(255,255,255,.07));border-radius:11px;padding:9px 11px;margin-top:10px;font-size:12px;font-weight:700' }, [
               h('span', { style: 'width:8px;height:8px;border-radius:50%;background:#22c55e;flex:none' }),
               'ACTIVE TRIP — ' + (trip.origin || '—') + ' → ' + (trip.destination || '—'),
             ]),
             h('button', { class: 'cp-btn', style: 'width:100%;margin-top:10px;background:#dc2626', onClick: () => openIncidentSheet(trip, loadSafety) }, 'Report a problem on this trip'),
           ])
-        : h('div', { style: 'font-size:12px;color:#94a3b8;margin-top:10px' }, 'No active trip right now — emergency reporting is tied to a live trip so proof and rescheduling attach to the right delivery.'),
+        : h('div', { style: 'font-size:12px;color:var(--lbc-x-ink3,#94a3b8);margin-top:10px' }, 'No active trip right now — emergency reporting is tied to a live trip so proof and rescheduling attach to the right delivery.'),
     ]);
     const repCard = incidents.length ? h('div', { class: 'cp-card' }, [cardHead('My reports'),
       ...incidents.slice(0, 6).map(i => { const t = stTxt[i.status] || stTxt.open; return h('div', { class: 'cp-row' }, [
@@ -9190,7 +9220,7 @@ function tripStepper(status) {
     const centre = h('div', { class: 'cp-card' }, [cardHead('Safety centre', 'policies & guides'),
       ...LINKS.map(([t, sub, url]) => h('a', { class: 'cp-row', href: url, target: '_blank', style: 'text-decoration:none;color:inherit' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, t), h('div', { class: 'cp-row-s' }, sub)]),
-        h('span', { style: 'color:#94a3b8;font-size:19px;font-weight:600' }, '›'),
+        h('span', { style: 'color:var(--lbc-x-ink3,#94a3b8);font-size:19px;font-weight:600' }, '›'),
       ])),
 
     ]);
@@ -9283,7 +9313,7 @@ function tripStepper(status) {
     let bucket = null;
     shown.forEach((n) => {
       const p = n.payload || {}, tone = toneOf(p.tone), b = lbNotifBucket(n.created_at);
-      if (b !== bucket) { bucket = b; kids.push(h('div', { style: 'font-size:.63rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#94a3b8;margin:15px 0 3px' }, b)); }
+      if (b !== bucket) { bucket = b; kids.push(h('div', { style: 'font-size:.63rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--lbc-x-ink3,#94a3b8);margin:15px 0 3px' }, b)); }
       const dest = lbNotifDest(n, p), navItem = NAV.find((x) => x[0] === dest);
       const open9 = async () => {
         if (!n.read_at) { try { await pocketMarkNotificationRead(n.id); n.read_at = new Date().toISOString(); refreshUnread(); } catch (_) {} }
@@ -9295,16 +9325,16 @@ function tripStepper(status) {
       };
       const act = (['urgent', 'warning', 'action'].indexOf(p.tone) >= 0 && !n.read_at)
         ? h('div', { style: 'margin-top:9px;display:flex;align-items:center;gap:11px;flex-wrap:wrap' }, [
-            h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0;background:' + tone.c + ';color:#07101d;font-weight:800', onClick: (e9) => { e9.stopPropagation(); open9(); } },
+            h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0;background:' + tone.c + ';color:var(--lbc-x-onfill,#07101d);font-weight:800', onClick: (e9) => { e9.stopPropagation(); open9(); } },
               (p.cta || (p.tone === 'urgent' ? 'Fix it' : 'Open')) + ' →'),
-            navItem ? h('span', { style: 'font-size:.68rem;color:#94a3b8' }, navItem[1]) : null,
+            navItem ? h('span', { style: 'font-size:.68rem;color:var(--lbc-x-ink3,#94a3b8)' }, navItem[1]) : null,
           ].filter(Boolean))
         : null;
       // The icon is the real LoadBoot app icon with a tone ring; the small corner glyph is what
       // says at a glance whether this is a document, a truck or a payment.
       const mark = '<span style="position:relative;display:inline-block">'
         + '<img src="/icon-512.png" width="36" height="36" alt="LoadBoot" style="display:block;border-radius:11px;box-shadow:0 0 0 2px ' + tone.c + '">'
-        + '<span style="position:absolute;right:-6px;bottom:-6px;width:19px;height:19px;border-radius:7px;background:#0e1726;border:1.5px solid ' + tone.c + ';font-size:10px;line-height:16px;text-align:center">' + lbNotifGlyph(n.template_key) + '</span></span>';
+        + '<span style="position:absolute;right:-6px;bottom:-6px;width:19px;height:19px;border-radius:7px;background:var(--lbc-x-field,#0e1726);border:1.5px solid ' + tone.c + ';font-size:10px;line-height:16px;text-align:center">' + lbNotifGlyph(n.template_key) + '</span></span>';
       const row = h('div', { class: 'cp-row cp-notif' + (n.read_at ? '' : ' unread'),
         style: 'align-items:flex-start;gap:12px;border-left:3px solid ' + tone.c + ';padding-left:11px;border-radius:0 12px 12px 0'
                + (n.read_at ? ';opacity:.72' : ';background:' + tone.bg),
@@ -9313,8 +9343,8 @@ function tripStepper(status) {
         h('div', { style: 'min-width:0;flex:1' }, [
           h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [
             h('span', { style: 'font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:' + tone.c }, tone.label),
-            n._dup ? h('span', { style: 'font-size:.62rem;font-weight:800;color:#94a3b8;background:rgba(148,163,184,.16);border-radius:999px;padding:1px 7px' }, '×' + n._dup) : null,
-            h('span', { style: 'margin-left:auto;font-size:.66rem;color:#94a3b8;white-space:nowrap' }, lbRelTime(n.created_at)),
+            n._dup ? h('span', { style: 'font-size:.62rem;font-weight:800;color:var(--lbc-x-ink3,#94a3b8);background:rgba(148,163,184,.16);border-radius:999px;padding:1px 7px' }, '×' + n._dup) : null,
+            h('span', { style: 'margin-left:auto;font-size:.66rem;color:var(--lbc-x-ink3,#94a3b8);white-space:nowrap' }, lbRelTime(n.created_at)),
           ].filter(Boolean)),
           h('div', { class: 'cp-row-t', style: 'margin-top:1px' }, p.title || n.template_key || 'Notification'),
           p.body ? h('div', { class: 'cp-row-s' }, p.body) : null,

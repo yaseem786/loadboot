@@ -1,0 +1,54 @@
+/* ============================================================================
+   carrier-theme.css — carrier portal LIGHT layer (bl_ui_theme carrier, 15 Oct 2026).
+   Loaded after carrier-dark.css and ../agent/agent-theme.css (which already gives the shared cp-* shell its light
+   look and restores carrier-dark's values in dark). Every rule here is scoped to html[data-lbtheme="light"], so
+   Dark is untouched: delete this <link> (and the agent-theme.css one) and the portal is the old dark portal again.
+   carrier.css was a light design before carrier-dark.css; this file fixes the parts that were later drawn dark-only.
+   ========================================================================== */
+
+/* Carrier-only roles. --lbc-x-onfill = text on a button whose fill is a status colour (dark #07101d on the bright
+   dark-theme status colours; near-white on the darker AA status colours of Light). */
+html[data-lbtheme="light"] { --lbc-x-onfill: var(--lbc-accent-text); }
+/* account page (.acx, a light design under carrier-dark's override): its muted grey #9aa7bd is 2.4:1 on white */
+html[data-lbtheme="light"] .acx { --mute: var(--lbc-text-3); }
+
+/* Dark islands: brand heroes that stay navy in Light too (like the sidebar). `initial` turns every --lbc-x-* role
+   invalid inside them, so each var(--lbc-x-*, <old literal>) falls back to its dark literal. */
+html[data-lbtheme="light"] .lbc-dark {
+  --lbc-x-onfill: initial; --lbc-x-ink: initial; --lbc-x-ink2: initial; --lbc-x-ink3: initial; --lbc-x-ok: initial; --lbc-x-gold: initial;
+  --lbc-x-danger: initial; --lbc-x-warn: initial; --lbc-x-link: initial; --lbc-x-violet: initial;
+  --lbc-x-panel: initial; --lbc-x-line: initial; --lbc-x-field: initial; --lbc-x-hero: initial;
+  color-scheme: dark;
+}
+html[data-lbtheme="light"] :is(.cp-side, .cpx-side, .cpx-drawer, .cp-auth, .cpx-auth-brand, .cpx-mhero, .cpa-hero, .acx .hero, .lb-ptr, .cp-railtip, .acx-toast) {
+  --lbc-x-onfill: initial; --lbc-x-ink: initial; --lbc-x-ink2: initial; --lbc-x-ink3: initial; --lbc-x-ok: initial; --lbc-x-gold: initial;
+  --lbc-x-danger: initial; --lbc-x-warn: initial; --lbc-x-link: initial; --lbc-x-violet: initial;
+  --lbc-x-panel: initial; --lbc-x-line: initial; --lbc-x-field: initial; --lbc-x-hero: initial;
+}
+/* …and the white sign-in card on the navy auth backdrop is light again (same roles as agent-theme.css's :root block). */
+html[data-lbtheme="light"] .cp-auth-card, html[data-lbtheme="light"] .lbc-light {
+  --lbc-x-ink: var(--lbc-text); --lbc-x-ink2: var(--lbc-text-2); --lbc-x-ink3: var(--lbc-text-3);
+  --lbc-x-ok: var(--lbc-ok-text); --lbc-x-gold: var(--lbc-gold-text); --lbc-x-danger: var(--lbc-danger-text);
+  --lbc-x-warn: var(--lbc-warn-text); --lbc-x-link: var(--lbc-link); --lbc-x-violet: #6D28D9;
+  --lbc-x-panel: var(--lbc-surface-2); --lbc-x-line: var(--lbc-border); --lbc-x-field: var(--lbc-surface);
+  --lbc-x-hero: linear-gradient(160deg, #FFFFFF 0%, #F1F5FB 100%);
+  --lbc-x-onfill: var(--lbc-accent-text);
+  color-scheme: light;
+}
+
+/* ============================================================================
+   DARK fix-up (carrier-only selectors; the shared ones are in agent-theme.css). carrier.css has older
+   html[data-lbtheme="dark"] rules that out-rank carrier-dark.css. Before this, carriers only got them on a
+   system-dark device; Dark now always sets the attribute, so carrier-dark's values are re-applied 1:1 here.
+   ========================================================================== */
+html[data-lbtheme="dark"] .cpx-chip { background: rgba(8,131,247,.2); color: #93c5fd; }
+html[data-lbtheme="dark"] .cpx-chip.eq { background: rgba(249,115,22,.2); color: #fdba74; }
+html[data-lbtheme="dark"] .cpx-banner.red { background: rgba(220,38,38,.18); color: #fca5a5; }
+html[data-lbtheme="dark"] .cpx-banner.amber { background: rgba(217,119,6,.16); color: #fcd34d; }
+html[data-lbtheme="dark"] .cpx-avail.off { color: #f87171; }
+html[data-lbtheme="dark"] .cpx-tabpick { border-color: rgba(255,255,255,.16); }
+html[data-lbtheme="dark"] .cpx-tabpick.on { background: #0883F7; border-color: #0883F7; color: #fff; }
+html[data-lbtheme="dark"] .cpx-seg button { border-color: rgba(255,255,255,.16); }
+html[data-lbtheme="dark"] .cpx-seg button.on { background: #eaf1fb; color: #0a1322; border-color: #eaf1fb; }
+html[data-lbtheme="dark"] .cpx-adv { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.09); }
+html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c31; border-color: rgba(255,255,255,.09); }

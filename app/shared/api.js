@@ -478,6 +478,8 @@ export const ccAccountDeletionProcess = async (id, action, note) => {
 };
 // bl_priv_0437 — Deletion desk (CC → Deletion requests). One enriched read + the per-file erasure review.
 export const ccAccountDeletions = (view) => rpc('cc_account_deletions', { p_view: view || 'open' });
+// bl_acct_0550 — carrier exit hold, for requests filed before it existed (new requests get it automatically).
+export const ccAccountExitHoldApply = (requestId) => rpc('cc_account_exit_hold_apply', { p_request: requestId });
 export const ccErasureItems = (requestId) => rpc('cc_erasure_items', { p_request_id: requestId });
 export const ccErasureDecide = (requestId, itemKey, decision, retentionClass, retainUntil, note) =>
   rpc('cc_erasure_decide', { p_request_id: requestId, p_item_key: itemKey, p_decision: decision,
@@ -691,6 +693,10 @@ export const ccRileyCallbackDone = (id, note) => rpc('cc_riley_callback_done', {
 export const ccRileyCallbackDispatchers = () => rpc('cc_riley_callback_dispatchers', {});
 export const ccRileyCallbackAssign = (id, dispatcher, note) => rpc('cc_riley_callback_assign', { p_id: id, p_dispatcher: dispatcher, p_note: note ?? null });
 export const ccRileyPlanCreate = (org, reason, note, lang) => rpc('cc_riley_plan_create', { p_org: org, p_reason: reason, p_note: note ?? null, p_lang: lang || 'en' });   // bl_voice_0483
+// bl_voice_0555 — a call to someone else (for a carrier, or a custom call with no carrier) + the number pre-check
+export const ccRileyPlanCreateTarget = (org, reason, note, lang, t) => rpc('cc_riley_plan_create_target', { p_org: org ?? null, p_reason: reason || 'custom', p_note: note ?? null, p_lang: lang || 'en',
+  p_target_kind: 'third_party', p_to_number: t.number, p_target_name: t.name, p_target_org: t.org ?? null, p_target_role: t.role, p_target_tz: t.tz ?? null });
+export const ccRileyNumberCheck = (number) => rpc('cc_riley_number_check', { p_number: number });
 export const ccRileyPlans = (status, limit, org) => rpc('cc_riley_plans', { p_status: status ?? null, p_limit: limit ?? 100, p_org: org ?? null });
 export const ccRileyPlan = (id) => rpc('cc_riley_plan', { p_id: id });
 export const ccRileyPlanSet = (id, action, note) => rpc('cc_riley_plan_set', { p_id: id, p_action: action, p_note: note ?? null });
