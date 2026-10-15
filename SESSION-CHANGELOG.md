@@ -624,3 +624,12 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   anchors hit once, anon surface 36 (names = baseline), cron lb-disp-posts-expire live. Anon SECURITY DEFINER surface
   unchanged (35 staging). Gates: ESM ALL PASS (232), imports PASS, esbuild OK ×5, BUILD OK.
   Notes + prod apply order: claude/DISPATCHER-LOAD-POST-0549.md.
+
+## Dispatcher posts — seen tracking, everything posted, CC hide / delete / alert (bl_disp_0551, 15 Oct 2026)
+- Seen (board / opened, per carrier user), everything the dispatcher entered, missing-info chips, staff hide /
+  delete (withdraws an open post) / restore / alert (in-app + push, no e-mail). Code on branch
+  `claude/peaceful-fermi-igtp1w` (4146cf7 on main already; faa5571 merge pending). Notes: claude/DISPATCHER-POST-TRACKING-0551.md.
+- DB: STAGING applied + E2E 15 Oct. PROD applied 15 Oct 2026 as `bl_disp_0551_dispatcher_post_tracking`
+  (the file's one inline comment in `cc_dispatcher_post_action` left out so prosrc matches staging): md5 of all 8
+  functions = staging, both tables RLS on, the 5 public RPCs anon=false / authenticated=true. Anon SECURITY DEFINER
+  surface 36, names = baseline. The doc's "Prod: not yet applied" line is superseded by this entry.
