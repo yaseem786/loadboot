@@ -640,3 +640,23 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   `cc_pocket_available_loads` and the carrier "new load" notice/e-mail. Notes: claude/DISPATCHER-POST-CONTACT-LOCK-0552.md.
 - DB: STAGING applied + rolled-back E2E 15 Oct. PROD applied 15 Oct 2026, md5 = staging, anon SECDEF 36, names = baseline.
 - UI: carrier lock line, missing-chip copy ("For the LoadBoot record"), dispatcher form hints. node --check OK.
+
+## Dispatcher posts — carrier told when a post expires (bl_disp_0553, 15 Oct 2026)
+- Gap: `app_private.disp_posts_expire()` told only the dispatcher; the carrier's board drops the post at `expires_at`,
+  so for the carrier it just vanished. Now up to 3 active non-driver carrier members get an in-app notice
+  `dispatcher.load.expired` ("⏰ Load expired: A → B … off your board; nothing to do") linking to the load, which shows
+  "⏰ This post expired." In-app only (no e-mail, no catalog row — like `dispatcher.load.accepted/updated`). One per post
+  per member. Owner, 15 Oct: expired posts stay on record as `expired`, never deleted, off the board.
+  Notes: claude/DISPATCHER-POST-EXPIRY-NOTICE-0553.md.
+- DB: STAGING applied + rolled-back E2E 15 Oct (1 notice, re-run adds none). PROD applied 15 Oct 2026, md5 = staging
+  (4aea369b…), ACL unchanged, anon SECDEF 36 / 35, names = baseline. No UI change needed (notices render from payload).
+
+## Dispatcher portal light-first + dark toggle (bl_ui_theme, 15 Oct 2026)
+- Agent portal opens LIGHT (navy sidebar, light workspace); ☀️/🌙 in the top bar + Settings → Appearance
+  (Light / Dark / System), stored in localStorage `lb_theme_agent`. Dark = the old carrier-dark look; a pixel diff vs the
+  old code shows only the new button and native file inputs. Carrier portal unchanged (theme.css linked, tokens only).
+- New: `app/shared/theme.css` (`--lbc-*` tokens), `tools/theme-contrast-check.mjs` (WCAG AA gate, wired into
+  build_site.py — 46/46 pass), `app/agent/agent-theme.css`. ~540 inline literals in app/agent/*.js + agentPortal()
+  → `var(--lbc-x-<role>, <old literal>)` (light-only roles, so dark falls back exactly). No DB change.
+- Checks: node --check + esbuild on every edited .js, BUILD OK, Playwright harness (fake Supabase) on 15 screens
+  × 2 themes × desktop/phone. Notes: claude/UI-THEME-LIGHT-FIRST.md.

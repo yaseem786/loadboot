@@ -140,13 +140,19 @@ try { localStorage.setItem('lb_last_portal', window.__LB_AGENT ? '/app/agent/' :
 try { const _q0 = new URLSearchParams(location.search); const _r0 = (_q0.get('ref') || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase(); if (_r0) localStorage.setItem('lb_ref', _r0);
   const _j0 = _q0.get('join'); if (_j0 === 'dispatcher' || _j0 === 'referral') localStorage.setItem('lb_join', _j0); } catch (_) {}
 try { const _ack0 = new URLSearchParams(location.search).get('ack'); if (_ack0) { sessionStorage.setItem('lb_disp_ack', _ack0); if (!location.hash) history.replaceState(null, '', location.pathname + '#dispatcher'); } } catch (_) {}   // bl_disp_0409: the intro e-mail's "Got it" link lands on the Dispatcher tab (no confirm step any more)
-const THEME_KEY = 'lb_theme';
-function themeMode() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; } }
+// bl_ui_theme (15 Oct 2026): the agent (dispatcher) portal is light-first — its own key, default 'off' (light),
+// and carrier-dark.css (<link id="lb-dark-css">, media="not all" in agent/index.html) is switched on only in dark.
+// The carrier portal keeps its key and default; its carrier-dark.css link has no id, so nothing changes there.
+const THEME_KEY = window.__LB_AGENT ? 'lb_theme_agent' : 'lb_theme';
+function themeMode() { try { return localStorage.getItem(THEME_KEY) || (window.__LB_AGENT ? 'off' : 'system'); } catch (_) { return window.__LB_AGENT ? 'off' : 'system'; } }
 function setThemeMode(m) { try { localStorage.setItem(THEME_KEY, m); } catch (_) {} applyTheme(); }
 function applyTheme() {
   const m = themeMode();
   const dark = m === 'on' || (m === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.setAttribute('data-lbtheme', dark ? 'dark' : 'light');
+  const darkCss = document.getElementById('lb-dark-css');
+  if (darkCss) darkCss.media = dark ? 'all' : 'not all';
+  if (window.__LB_AGENT) { const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', dark ? '#0F172A' : '#10223B'); }
 }
 try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (themeMode() === 'system') applyTheme(); }); } catch (_) {}
 applyTheme();
@@ -1034,9 +1040,9 @@ async function agentPortal(user) {
   const sideLb9 = (k9) => (SIDE9[k9] || ['🏢', String(k9 || '')])[1];
   const tourTag = (el9, n9) => { try { if (el9 && el9.setAttribute) el9.setAttribute('data-tour', n9); } catch (_) {} return el9; };   // guided-tour hook (25 Sep 2026)
   const agCard = (t9, kids9, tour9) => h('div', { class: 'cp-card', 'data-tour': tour9 || null }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, t9)]), ...(Array.isArray(kids9) ? kids9 : [kids9])].filter(Boolean));
-  const tile9 = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:120px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;text-align:center' }, [
-    h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:#7f92b3;text-transform:uppercase' }, lbl),
-    h('div', { style: 'font-size:1.45rem;font-weight:900;margin-top:3px;color:' + (hi ? '#4ade80' : '#fff') }, val)]);
+  const tile9 = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:120px;background:var(--lbc-x-panel,rgba(255,255,255,.05));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:13px;padding:14px;text-align:center' }, [
+    h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:var(--lbc-x-ink3,#7f92b3);text-transform:uppercase' }, lbl),
+    h('div', { style: 'font-size:1.45rem;font-weight:900;margin-top:3px;color:' + (hi ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink,#fff)') }, val)]);
   const taxPdf9 = () => {
     const W9d = (window.__agw && window.__agw.d) || {};
     const nm9 = W9d.full_name || (obProfile && obProfile.full_name) || feed.name || '';
@@ -1067,9 +1073,9 @@ async function agentPortal(user) {
   };
   const rulesModal9 = () => {
     const P9 = (t9) => [document.createTextNode(t9), h('br')];
-    const H9 = (t9) => h('b', { style: 'color:#fff;display:block;margin:13px 0 3px' }, t9);
+    const H9 = (t9) => h('b', { style: 'color:var(--lbc-x-ink,#fff);display:block;margin:13px 0 3px' }, t9);
     return openModal('\ud83d\udcd6 Referral Partner Program \u2014 Rules, Policies & Terms', [
-      h('div', { style: 'font-size:.86rem;line-height:1.7;color:#cbd5e1' }, [
+      h('div', { style: 'font-size:.86rem;line-height:1.7;color:var(--lbc-x-ink2,#cbd5e1)' }, [
         H9('1. Eligibility & your referral link'),
         ...P9('\u2022 Open to individuals 18+ who complete verification (identity, payout method and tax form). One account per person; duplicate or fake accounts are removed.'),
         ...P9('\u2022 Anyone \u2014 a broker, shipper or carrier \u2014 who signs up through your link is tied to you permanently and automatically. There is NO pairing or \u201cactive chain\u201d requirement.'),
@@ -1104,7 +1110,7 @@ async function agentPortal(user) {
     ]);
   };
   const banner9 = () => h('div', {
-    style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#4ade80;font-weight:800;border-radius:12px;padding:11px 14px;cursor:pointer', onClick: rulesModal9,
+    style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:var(--lbc-x-ok,#4ade80);font-weight:800;border-radius:12px;padding:11px 14px;cursor:pointer', onClick: rulesModal9,
   }, [
     h('div', null, '✅ You earn 1% on every GPS-verified delivered load your referred clients move.'),
     h('div', { style: 'font-size:.72rem;font-weight:700;opacity:.75;margin-top:3px' }, [icon('docs',15),' Tap to read the program rules & policies']),
@@ -1152,7 +1158,7 @@ async function agentPortal(user) {
       h('div', { style: 'flex:1;min-width:190px' }, [
         h('div', { class: 'cp-row-t' }, sideIc9(x.side) + ' ' + (x.org || '')),
         h('div', { class: 'cp-row-s' }, sideLb9(x.side) + ' · joined ' + (x.joined_at ? new Date(x.joined_at).toLocaleDateString() : '') + ' · ' + (x.loads_posted || 0) + ' posted · ' + (x.trips_delivered || 0) + ' delivered'),
-      ]), h('b', { style: 'color:#4ade80' }, money9(x.your_earnings)),
+      ]), h('b', { style: 'color:var(--lbc-x-ok,#4ade80)' }, money9(x.your_earnings)),
     ])) : [h('div', { class: 'cp-muted' }, 'Nobody yet — copy an invite from your link card and send it to the broker or carrier you already know.')];
   const loadRows = () => {
     const loads = Array.isArray(feed.loads) ? feed.loads : [];
@@ -1162,9 +1168,9 @@ async function agentPortal(user) {
         h('div', { class: 'cp-row-t' }, (x.lane || '') + (x.rate ? ' · $' + Number(x.rate).toLocaleString() : '')),
         h('div', { class: 'cp-row-s' }, 'broker: ' + (x.broker || '—') + (x.broker_yours ? ' ★yours' : '') + (x.booked_by ? ' · carrier: ' + x.booked_by + (x.booked_by_yours ? ' ★YOURS — double chain ✓' : '') : '') + (Number(x.your_commission) ? ' · your cut ' + money9(x.your_commission) : '')),
       ]),
-      x.delivered_at ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ DELIVERED')
-        : x.trip_status ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff' }, [icon('truck',15),' BOOKED'])
-        : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, [icon('loads',15),' POSTED']),
+      x.delivered_at ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '✓ DELIVERED')
+        : x.trip_status ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:var(--lbc-x-link,#3b9dff)' }, [icon('truck',15),' BOOKED'])
+        : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:var(--lbc-x-gold,#fbbf24)' }, [icon('loads',15),' POSTED']),
     ]));
   };
   // ---- DISPATCHER HOME: application → status → (once hired) the Dispatcher Workspace module
@@ -1176,14 +1182,14 @@ async function agentPortal(user) {
     let d = null; try { d = await dispatcherMyStatus(); } catch (_) {}
     const prof = d && d.profile;
     const stMsg = {
-      applied: ['#94a3b8', '📝 Draft — finish and submit to apply'],
-      screening: ['#fbbf24', '⏳ In screening — the team is reviewing your application'],
-      skills_test: ['#fbbf24', '📝 Skills test — check your email / messages'],
-      trial: ['#4ade80', '🚀 Working trial in progress — your workspace is open below'],
-      verified: ['#4ade80', '✅ Verified — you’ll be assigned a carrier soon'],
-      active: ['#4ade80', '✅ Active dispatcher'],
-      suspended: ['#f87171', '⏸ Suspended — contact the team'],
-      rejected: ['#f87171', '✕ Not approved at this time'],
+      applied: ['var(--lbc-x-ink3,#94a3b8)', '📝 Draft — finish and submit to apply'],
+      screening: ['var(--lbc-x-gold,#fbbf24)', '⏳ In screening — the team is reviewing your application'],
+      skills_test: ['var(--lbc-x-gold,#fbbf24)', '📝 Skills test — check your email / messages'],
+      trial: ['var(--lbc-x-ok,#4ade80)', '🚀 Working trial in progress — your workspace is open below'],
+      verified: ['var(--lbc-x-ok,#4ade80)', '✅ Verified — you’ll be assigned a carrier soon'],
+      active: ['var(--lbc-x-ok,#4ade80)', '✅ Active dispatcher'],
+      suspended: ['var(--lbc-x-danger,#f87171)', '⏸ Suspended — contact the team'],
+      rejected: ['var(--lbc-x-danger,#f87171)', '✕ Not approved at this time'],
     };
     // bl_disp_0378 — display labels for the reason codes staff tick in the CC reject dialog.
     // Kept in sync with REASONS in app/agent/dispatcher-gaps.js (that module owns the gate itself).
@@ -1197,16 +1203,16 @@ async function agentPortal(user) {
       if (!exclusive || !c9.checked) return;
       if (b9 === exclusive) { arr.forEach((o9) => { if (o9 !== exclusive) map[o9].checked = false; }); }
       else if (map[exclusive]) { map[exclusive].checked = false; }
-    } }); map[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:#cbd5e1' }, [c9, b9]); })); return { box, map, values: () => arr.filter((x9) => map[x9].checked) }; };
+    } }); map[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:var(--lbc-x-ink2,#cbd5e1)' }, [c9, b9]); })); return { box, map, values: () => arr.filter((x9) => map[x9].checked) }; };
     // ---- premium / educational blocks (keep the dispatcher engaged) ----
-    const dHero = () => h('div', { style: 'border-radius:18px;padding:22px 22px;margin-bottom:14px;background:linear-gradient(135deg,#10223B 0%,#0d2a4d 55%,#0b1f3d 100%);border:1px solid rgba(8,131,247,.35);position:relative;overflow:hidden' }, [
-      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#7cc0ff' }, 'LOADBOOT DISPATCH ACADEMY'),
-      h('div', { style: 'font-size:1.5rem;font-weight:900;color:#fff;margin:6px 0 4px;line-height:1.15' }, 'Your salaried dispatch career starts here'),
+    const dHero = () => h('div', { style: 'border-radius:18px;padding:22px 22px;margin-bottom:14px;background:var(--lbc-x-hero,linear-gradient(135deg,#10223B 0%,#0d2a4d 55%,#0b1f3d 100%));border:1px solid rgba(8,131,247,.35);position:relative;overflow:hidden' }, [
+      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:var(--lbc-x-link,#7cc0ff)' }, 'LOADBOOT DISPATCH ACADEMY'),
+      h('div', { style: 'font-size:1.5rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:6px 0 4px;line-height:1.15' }, 'Your salaried dispatch career starts here'),
       h('div', { class: 'cp-row-s', style: 'max-width:640px;line-height:1.6' }, 'Dispatch for US carriers on a real salary — base + per-truck + performance bonus. Learn the craft below while your application is reviewed.'),
-      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [['💵 Salary + bonus'], ['🚚 Dedicated carrier'], ['🌍 Remote worldwide'], ['📈 Grows with your book']].map((c9) => h('span', { class: 'cp-pill', style: 'background:rgba(255,255,255,.07);color:#cbd5e1;font-weight:700' }, c9[0]))),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [['💵 Salary + bonus'], ['🚚 Dedicated carrier'], ['🌍 Remote worldwide'], ['📈 Grows with your book']].map((c9) => h('span', { class: 'cp-pill', style: 'background:var(--lbc-x-panel,rgba(255,255,255,.07));color:var(--lbc-x-ink2,#cbd5e1);font-weight:700' }, c9[0]))),
     ]);
-    const stepPill = (n9, t9, s9, done9) => h('div', { style: 'flex:1;min-width:150px;border-radius:12px;padding:12px;border:1px solid ' + (done9 ? 'rgba(34,197,94,.4)' : 'rgba(148,163,184,.18)') + ';background:' + (done9 ? 'rgba(34,197,94,.07)' : 'rgba(255,255,255,.02)') }, [
-      h('div', { style: 'font-weight:900;color:' + (done9 ? '#4ade80' : '#7cc0ff') }, (done9 ? '✓ ' : n9 + '. ') + t9), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, s9)]);
+    const stepPill = (n9, t9, s9, done9) => h('div', { style: 'flex:1;min-width:150px;border-radius:12px;padding:12px;border:1px solid ' + (done9 ? 'rgba(34,197,94,.4)' : 'var(--lbc-x-line,rgba(148,163,184,.18))') + ';background:' + (done9 ? 'rgba(34,197,94,.07)' : 'var(--lbc-x-panel,rgba(255,255,255,.02))') }, [
+      h('div', { style: 'font-weight:900;color:' + (done9 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-link,#7cc0ff)') }, (done9 ? '✓ ' : n9 + '. ') + t9), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, s9)]);
     const dSteps = (status) => { const order = ['screening', 'skills_test', 'trial', 'verified', 'active']; const idx = order.indexOf(status); return agCard('🧭 Your path to a salaried seat', [
       h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
         stepPill(1, 'Apply', 'Submit your detailed application + CV.', idx >= 0),
@@ -1221,12 +1227,12 @@ async function agentPortal(user) {
         ['Per-active-truck', 'Extra for every truck you keep loaded — your pay grows as your book grows (5–8 → 10–15 trucks).'],
         ['Performance bonus', 'Paid monthly on your KPIs: utilization, on-time, gross/truck, retention.'],
       ].map((c9) => h('div', { style: 'flex:1;min-width:180px;border-radius:12px;padding:12px;background:rgba(8,131,247,.06);border:1px solid rgba(8,131,247,.2)' }, [
-        h('div', { style: 'font-weight:800;color:#7cc0ff' }, c9[0]), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, c9[1])]))),
+        h('div', { style: 'font-weight:800;color:var(--lbc-x-link,#7cc0ff)' }, c9[0]), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, c9[1])]))),
       h('div', { class: 'cp-row-s', style: 'margin-top:8px;opacity:.85' }, 'Exact figures for your tier are in your written offer and scale with your book and results.'),
     ]);
-    const det = (ic9, t9, body9) => h('details', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:11px;margin-top:8px;background:rgba(255,255,255,.03);overflow:hidden' }, [
-      h('summary', { style: 'cursor:pointer;padding:11px 13px;font-weight:800;font-size:.9rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, ic9), h('span', { style: 'flex:1' }, t9), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
-      h('div', { style: 'padding:0 13px 12px;color:#b9c6da;font-size:.85rem;line-height:1.75' }, body9)]);
+    const det = (ic9, t9, body9) => h('details', { style: 'border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:11px;margin-top:8px;background:var(--lbc-x-panel,rgba(255,255,255,.03));overflow:hidden' }, [
+      h('summary', { style: 'cursor:pointer;padding:11px 13px;font-weight:800;font-size:.9rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, ic9), h('span', { style: 'flex:1' }, t9), h('span', { style: 'color:var(--lbc-x-ink3,#7f92b3);font-weight:900' }, '▾')]),
+      h('div', { style: 'padding:0 13px 12px;color:var(--lbc-x-ink2,#b9c6da);font-size:.85rem;line-height:1.75' }, body9)]);
     const dAcademy = () => agCard('🎓 Dispatcher Academy — learn the craft', [
       h('div', { class: 'cp-row-s', style: 'margin-bottom:4px' }, 'Tap each lesson. Knowing these cold is what separates a hired dispatcher from an applicant.'),
       det('🔎', 'Load boards 101 (DAT & Truckstop)', 'You book on the CARRIER’s own DAT/Truckstop seat under their MC. Learn to filter by lane, equipment and rate-per-mile, spot ghost/duplicate postings, verify the broker’s MC and authority, and read a rate confirmation before you commit a truck.'),
@@ -1266,9 +1272,9 @@ async function agentPortal(user) {
       const ownBoards = checks(['DAT', 'Truckstop', '123Loadboard', 'Other board']);
       const ownWrap = h('div', { hidden: true }, [h('div', { class: 'cp-row-s', style: 'margin:6px 0 2px' }, 'Which board(s) can you log into and book on? *'), ownBoards.box]);
       const boardAck = h('input', { type: 'checkbox' });
-      const boardWarn = h('div', { hidden: true, role: 'note', style: 'margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid rgba(252,83,5,.5);background:rgba(252,83,5,.08);font-size:.85rem;line-height:1.6;color:#fdba74' }, [
+      const boardWarn = h('div', { hidden: true, role: 'note', style: 'margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid rgba(252,83,5,.5);background:rgba(252,83,5,.08);font-size:.85rem;line-height:1.6;color:var(--lbc-x-warn,#fdba74)' }, [
         h('div', null, 'This role requires working load-board access from week one and loads you find and book yourself. The subscription does not have to be in your name — an employer’s or a carrier’s login is fine — but you must be able to log in today. Applications with no board access are not being moved forward right now. If that changes, pick one of the first two options — otherwise you can still submit and we will keep your details.'),
-        h('label', { style: 'display:flex;gap:6px;align-items:center;margin-top:8px;color:#e2e8f0' }, [boardAck, 'I understand and want to submit anyway'])]);
+        h('label', { style: 'display:flex;gap:6px;align-items:center;margin-top:8px;color:var(--lbc-x-ink,#e2e8f0)' }, [boardAck, 'I understand and want to submit anyway'])]);
       // Owner rule 21 Sep 2026: own_paid AND employer both pass — the subscription need not be in
       // the candidate's own name. none_willing / none / learning are the gap.
       const boardOk9 = (v9) => v9 === 'own_paid' || v9 === 'employer';
@@ -1288,10 +1294,10 @@ async function agentPortal(user) {
       const docState = { cv: ps9.cv_doc || null, cvName: ps9.cv_name || null, idd: ps9.id_doc || null, iddName: ps9.id_name || null };
       const mkUpload = (type9, key9, nameKey9) => {
         const on9 = docState[nameKey9];
-        const st9 = h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:' + (on9 ? '#4ade80' : '#94a3b8') }, on9 ? '✓ ' + on9 + ' — already on file (upload again to replace)' : 'PDF, DOC or image · up to 25 MB');
+        const st9 = h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:' + (on9 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink3,#94a3b8)') }, on9 ? '✓ ' + on9 + ' — already on file (upload again to replace)' : 'PDF, DOC or image · up to 25 MB');
         const inp9 = h('input', { type: 'file', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png', class: 'cp-in', onChange: async (e9) => {
           const file9 = e9.target.files && e9.target.files[0]; if (!file9) return;
-          st9.style.color = '#94a3b8'; st9.textContent = 'Uploading…';
+          st9.style.color = 'var(--lbc-x-ink3,#94a3b8)'; st9.textContent = 'Uploading…';
           try {
             const m9 = await uploadDocument(file9, type9); docState[key9] = m9.path; docState[nameKey9] = m9.fileName;
             // bl_disp_0460 — the ID used to live only in docState until Submit; a submit blocked by validation
@@ -1301,10 +1307,10 @@ async function agentPortal(user) {
               const r9 = await dispatcherSubmitId(m9.path, m9.fileName);
               if (r9 && r9.error) throw new Error(r9.error);
               prof.skills = Object.assign({}, prof.skills || {}, { id_doc: m9.path, id_name: m9.fileName });
-              st9.style.color = '#4ade80'; st9.textContent = '✓ ' + m9.fileName + ' — saved to your profile.';
-            } else { st9.style.color = '#fbbf24'; st9.textContent = '✓ ' + m9.fileName + ' — attached, not yet saved. Submit the form to store it.'; }
+              st9.style.color = 'var(--lbc-x-ok,#4ade80)'; st9.textContent = '✓ ' + m9.fileName + ' — saved to your profile.';
+            } else { st9.style.color = 'var(--lbc-x-gold,#fbbf24)'; st9.textContent = '✓ ' + m9.fileName + ' — attached, not yet saved. Submit the form to store it.'; }
           }
-          catch (e10) { st9.style.color = '#f87171'; st9.textContent = 'Upload failed — ' + ((e10 && e10.message) || 'try again'); }
+          catch (e10) { st9.style.color = 'var(--lbc-x-danger,#f87171)'; st9.textContent = 'Upload failed — ' + ((e10 && e10.message) || 'try again'); }
         } });
         return h('div', null, [inp9, st9]);
       };
@@ -1347,8 +1353,8 @@ async function agentPortal(user) {
       }
       const msg = h('div', { class: 'cp-err' });
       const grp = (label, node) => h('div', { style: 'margin-bottom:2px' }, [h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 2px' }, label), node]);
-      const fsec = (title, open, kids) => h('details', Object.assign({ style: 'border:1px solid rgba(130,165,225,.16);border-radius:13px;margin-top:10px;background:rgba(255,255,255,.02);overflow:hidden' }, open ? { open: '' } : {}), [
-        h('summary', { style: 'cursor:pointer;padding:13px 15px;font-weight:800;font-size:.95rem;color:#fff;list-style:none;display:flex;align-items:center;gap:9px' }, [h('span', { style: 'flex:1' }, title), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
+      const fsec = (title, open, kids) => h('details', Object.assign({ style: 'border:1px solid var(--lbc-x-line,rgba(130,165,225,.16));border-radius:13px;margin-top:10px;background:var(--lbc-x-panel,rgba(255,255,255,.02));overflow:hidden' }, open ? { open: '' } : {}), [
+        h('summary', { style: 'cursor:pointer;padding:13px 15px;font-weight:800;font-size:.95rem;color:var(--lbc-x-ink,#fff);list-style:none;display:flex;align-items:center;gap:9px' }, [h('span', { style: 'flex:1' }, title), h('span', { style: 'color:var(--lbc-x-ink3,#7f92b3);font-weight:900' }, '▾')]),
         h('div', { style: 'padding:2px 15px 15px' }, kids)]);
       const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
         const b9 = ev.currentTarget;
@@ -1380,7 +1386,7 @@ async function agentPortal(user) {
           fsec('1 · About you', true, [
             grp('Full name *', f.full_name), h('div', { style: 'display:flex;gap:8px' }, [grp('Country *', f.country), grp('City', f.city)]), grp('Phone / WhatsApp', f.phone),
             grp('Timezone', f.timezone), grp('Hours available per week *', f.hours),
-            h('label', { style: 'display:flex;gap:6px;align-items:center;font-size:.85rem;color:#cbd5e1;margin:6px 0' }, [f.us_overlap, 'I can overlap with US business hours']),
+            h('label', { style: 'display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--lbc-x-ink2,#cbd5e1);margin:6px 0' }, [f.us_overlap, 'I can overlap with US business hours']),
           ]),
           fsec('2 · Experience & skills', false, [
             grp('Years of US dispatch experience', f.years), grp('Most trucks managed at once', f.trucks),
@@ -1421,12 +1427,12 @@ async function agentPortal(user) {
     // Post-application premium banner: candidate-list assurance (owner request) — the applicant
     // knows exactly where they stand, and is cross-sold into the Referral (1%) program while waiting.
     const waitBanner = ['screening', 'skills_test'].includes(prof.status) ? h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,rgba(34,197,94,.14),rgba(8,131,247,.10));border:1.5px solid rgba(74,222,128,.45)' }, [
-      h('div', { style: 'font-weight:900;color:#4ade80;font-size:1.05rem' }, '✅ Application received — you\u2019re on the candidate list'),
+      h('div', { style: 'font-weight:900;color:var(--lbc-x-ok,#4ade80);font-size:1.05rem' }, '✅ Application received — you\u2019re on the candidate list'),
       h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.7' }, 'Your dispatcher application is submitted and saved on LoadBoot\u2019s dispatcher candidate list. Whenever LoadBoot hires, we select directly from this list \u2014 you don\u2019t need to do anything else. If you\u2019re shortlisted, we\u2019ll reach out by email or phone for the next step (skills test \u2192 paid trial). Keep your phone reachable.'),
     ]) : null;
-    const referralUpsell = ['screening', 'skills_test', 'trial'].includes(prof.status) ? h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,#0d1f3a,#153055);border:1.5px solid rgba(252,83,5,.5)' }, [
-      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#ff9c66' }, 'WHILE YOU WAIT \u2014 START EARNING TODAY'),
-      h('div', { style: 'font-size:1.25rem;font-weight:900;color:#fff;margin:6px 0 4px' }, 'Your trucking network is worth 1% of every load \u2014 forever'),
+    const referralUpsell = ['screening', 'skills_test', 'trial'].includes(prof.status) ? h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:var(--lbc-x-hero,linear-gradient(135deg,#0d1f3a,#153055));border:1.5px solid rgba(252,83,5,.5)' }, [
+      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:var(--lbc-x-warn,#ff9c66)' }, 'WHILE YOU WAIT \u2014 START EARNING TODAY'),
+      h('div', { style: 'font-size:1.25rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:6px 0 4px' }, 'Your trucking network is worth 1% of every load \u2014 forever'),
       h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'You clearly know trucking \u2014 that network is money. Refer carriers or brokers with your personal link: every load they run on LoadBoot pays you 1% of gross, for as long as they keep running. No cap, no cost to them, paid monthly. Many of our dispatcher candidates earn from referrals before their first shift.'),
       h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [
         h('button', { class: 'cp-btn', onClick: async (e9) => { if (optedIn) { go('referral'); return; } e9.currentTarget.disabled = true; e9.currentTarget.textContent = 'Activating…'; try { await agentReferralOptIn(); location.hash = '#referral'; location.reload(); } catch (_) { e9.currentTarget.disabled = false; e9.currentTarget.textContent = 'Try again'; } } }, '\ud83d\ude80 Activate my referral link \u2192'),
@@ -1446,21 +1452,21 @@ async function agentPortal(user) {
     const idVerifyCard = (function () {
       const sk0 = prof.skills || {};
       const when0 = (function () { try { return sk0.id_uploaded_at ? new Date(sk0.id_uploaded_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; } catch (_) { return ''; } })();
-      const st = h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8;line-height:1.6' }, idOnFile
+      const st = h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:var(--lbc-x-ink3,#94a3b8);line-height:1.6' }, idOnFile
         ? 'On file: ' + (sk0.id_name || 'your ID') + (when0 ? ', uploaded ' + when0 : '') + '. Choosing a new file replaces it \u00b7 PDF or photo \u00b7 up to 25 MB \u00b7 stored privately.'
         : 'Passport, national ID or driver\u2019s licence \u00b7 PDF or photo \u00b7 up to 25 MB. Stored privately \u2014 only LoadBoot staff can open it.');
       const file = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png', class: 'cp-in', style: 'margin-top:10px', onChange: async (e9) => {
         const f9 = e9.target.files && e9.target.files[0]; if (!f9) return;
-        file.disabled = true; st.style.color = '#94a3b8'; st.textContent = 'Uploading\u2026';
+        file.disabled = true; st.style.color = 'var(--lbc-x-ink3,#94a3b8)'; st.textContent = 'Uploading\u2026';
         try {
           const up = await uploadDocument(f9, 'dispatcher_id');
           const r9 = await dispatcherSubmitId(up.path, up.fileName);
           if (r9 && r9.error) throw new Error(r9.error);
           prof.skills = Object.assign({}, prof.skills || {}, { id_doc: up.path, id_name: up.fileName, id_uploaded_at: new Date().toISOString() });
-          st.style.color = '#4ade80';
+          st.style.color = 'var(--lbc-x-ok,#4ade80)';
           st.textContent = '\u2713 ' + up.fileName + (idOnFile ? ' received \u2014 it replaces the previous file.' : ' received.') + ' Verification usually completes within one business day.';
         } catch (e10) {
-          file.disabled = false; st.style.color = '#f87171';
+          file.disabled = false; st.style.color = 'var(--lbc-x-danger,#f87171)';
           st.textContent = 'Upload failed \u2014 ' + ((e10 && e10.message) || 'please try again') + '.';
         }
       } });
@@ -1468,11 +1474,11 @@ async function agentPortal(user) {
       // card says what the ID still gates (the carrier hand-over); on phone it folds to one line so the
       // workspace tabs are not 560px down on every screen.
       const past9 = ['trial', 'verified', 'active'].includes(prof.status);
-      const card9 = h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;' + (idOnFile ? 'background:rgba(255,255,255,.03);border:1.5px solid rgba(130,165,225,.22)' : 'background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5)') }, [
-        h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:' + (idOnFile ? '#94a3b8' : '#fdba74') }, idOnFile ? 'IDENTITY DOCUMENT \u2014 ON FILE' : 'ACTION NEEDED \u2014 IDENTITY VERIFICATION'),
-        h('div', { style: 'font-size:1.1rem;font-weight:900;color:#fff;margin:6px 0 4px' }, idOnFile ? 'Your government ID is on file' : past9 ? 'Upload a government ID before your first carrier hand-over' : 'Upload a government ID to continue'),
+      const card9 = h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;' + (idOnFile ? 'background:var(--lbc-x-panel,rgba(255,255,255,.03));border:1.5px solid var(--lbc-x-line,rgba(130,165,225,.22))' : 'background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5)') }, [
+        h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:' + (idOnFile ? 'var(--lbc-x-ink3,#94a3b8)' : 'var(--lbc-x-warn,#fdba74)') }, idOnFile ? 'IDENTITY DOCUMENT \u2014 ON FILE' : 'ACTION NEEDED \u2014 IDENTITY VERIFICATION'),
+        h('div', { style: 'font-size:1.1rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:6px 0 4px' }, idOnFile ? 'Your government ID is on file' : past9 ? 'Upload a government ID before your first carrier hand-over' : 'Upload a government ID to continue'),
         h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, idOnFile ? 'Wrong file, unreadable, expired, or LoadBoot asked for a new one? Upload a different file below \u2014 the new upload replaces the current one.' : 'Every LoadBoot dispatcher is verified before a carrier account is handed over \u2014 you will hold that carrier\u2019s authority documents and speak to brokers in their name. We check that the name and country on your application match your ID.' + (past9 ? '' : ' Applications without a verified ID are not moved to the skills test.')),
-        idOnFile ? h('div', { style: 'margin-top:10px;font-size:.84rem;font-weight:800;color:#cbd5e1' }, 'Upload a different file') : null,
+        idOnFile ? h('div', { style: 'margin-top:10px;font-size:.84rem;font-weight:800;color:var(--lbc-x-ink2,#cbd5e1)' }, 'Upload a different file') : null,
         file, st,
       ]);
       if (idOnFile) return card9;   // calm state never folds into the orange summary
@@ -1480,7 +1486,7 @@ async function agentPortal(user) {
       if (!(past9 && phone9)) return card9;
       card9.style.marginBottom = '0'; card9.style.borderTopLeftRadius = '0'; card9.style.borderTopRightRadius = '0'; card9.style.borderTop = '0';
       return h('details', { style: 'margin-bottom:12px' }, [
-        h('summary', { style: 'list-style:none;cursor:pointer;border-radius:14px;padding:11px 14px;background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5);font-weight:800;color:#fdba74;font-size:.84rem;display:flex;align-items:center;gap:8px' }, [h('span', null, '\u26a0'), h('span', { style: 'flex:1' }, 'Government ID still needed \u2014 tap to upload'), h('span', { style: 'opacity:.7' }, '\u25be')]),
+        h('summary', { style: 'list-style:none;cursor:pointer;border-radius:14px;padding:11px 14px;background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5);font-weight:800;color:var(--lbc-x-warn,#fdba74);font-size:.84rem;display:flex;align-items:center;gap:8px' }, [h('span', null, '\u26a0'), h('span', { style: 'flex:1' }, 'Government ID still needed \u2014 tap to upload'), h('span', { style: 'opacity:.7' }, '\u25be')]),
         card9,
       ]);
     })();
@@ -1488,15 +1494,15 @@ async function agentPortal(user) {
     // the team's own note, and the named points to close, in that order.
     const rejPanel9 = () => {
       const rr9 = (Array.isArray(prof.reject_reasons) ? prof.reject_reasons : []).filter(Boolean);
-      return h('div', { style: 'border-radius:20px;padding:20px 20px 18px;margin-bottom:14px;background:linear-gradient(150deg,#22100c 0%,#152236 58%,#0b1f3d 100%);border:1.5px solid rgba(248,113,113,.45);box-shadow:0 18px 40px -26px rgba(248,113,113,.6)' }, [
-        h('div', { style: 'font-size:.7rem;font-weight:900;letter-spacing:.14em;color:#fca5a5' }, 'LOADBOOT DISPATCH · APPLICATION STATUS'),
-        h('div', { style: 'font-size:1.32rem;font-weight:900;color:#fff;margin:7px 0 4px;line-height:1.18' }, 'Not approved at this time'),
+      return h('div', { style: 'border-radius:20px;padding:20px 20px 18px;margin-bottom:14px;background:var(--lbc-x-hero,linear-gradient(150deg,#22100c 0%,#152236 58%,#0b1f3d 100%));border:1.5px solid rgba(248,113,113,.45);box-shadow:0 18px 40px -26px rgba(248,113,113,.6)' }, [
+        h('div', { style: 'font-size:.7rem;font-weight:900;letter-spacing:.14em;color:var(--lbc-x-danger,#fca5a5)' }, 'LOADBOOT DISPATCH · APPLICATION STATUS'),
+        h('div', { style: 'font-size:1.32rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:7px 0 4px;line-height:1.18' }, 'Not approved at this time'),
         h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, 'Your account stays open and every answer you gave is saved. This is not the end of the road — close the points below, then apply again.'),
-        prof.review_note ? h('div', { style: 'margin-top:12px;border-radius:12px;padding:12px 14px;background:rgba(2,8,20,.45);border-left:3px solid rgba(248,113,113,.8);font-size:.87rem;color:#e6edf9;line-height:1.7;white-space:pre-wrap' }, [
-          h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:#fca5a5;margin-bottom:5px' }, 'NOTE FROM THE TEAM'), prof.review_note]) : '',
+        prof.review_note ? h('div', { style: 'margin-top:12px;border-radius:12px;padding:12px 14px;background:var(--lbc-x-field,rgba(2,8,20,.45));border-left:3px solid rgba(248,113,113,.8);font-size:.87rem;color:var(--lbc-x-ink,#e6edf9);line-height:1.7;white-space:pre-wrap' }, [
+          h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:var(--lbc-x-danger,#fca5a5);margin-bottom:5px' }, 'NOTE FROM THE TEAM'), prof.review_note]) : '',
         rr9.length ? h('div', { style: 'margin-top:13px' }, [
-          h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:#fdba74;margin-bottom:7px' }, 'WHAT TO CLOSE BEFORE YOU APPLY AGAIN'),
-          h('div', { style: 'display:flex;gap:7px;flex-wrap:wrap' }, rr9.map((c9) => h('span', { class: 'cp-pill', style: 'background:rgba(252,83,5,.12);border:1px solid rgba(252,83,5,.45);color:#fdba74;font-weight:700' }, REJ_LABEL[c9] || c9))),
+          h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:var(--lbc-x-warn,#fdba74);margin-bottom:7px' }, 'WHAT TO CLOSE BEFORE YOU APPLY AGAIN'),
+          h('div', { style: 'display:flex;gap:7px;flex-wrap:wrap' }, rr9.map((c9) => h('span', { class: 'cp-pill', style: 'background:rgba(252,83,5,.12);border:1px solid rgba(252,83,5,.45);color:var(--lbc-x-warn,#fdba74);font-weight:700' }, REJ_LABEL[c9] || c9))),
         ]) : '',
       ]);
     };
@@ -1564,10 +1570,10 @@ async function agentPortal(user) {
     if (asg.length) {
       cards.push(agCard('🚚 Your assigned carriers (' + asg.length + ')', asg.map((a9) => {
         const s9 = a9.sop || {};
-        return h('div', { style: 'padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)' }, [
-          h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [h('b', { style: 'color:#fff' }, a9.carrier || 'Carrier'), h('span', { class: 'cp-pill', style: 'color:#4ade80' }, (a9.trucks || 0) + ' trucks · ' + a9.status)]),
+        return h('div', { style: 'padding:10px 0;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.06))' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [h('b', { style: 'color:var(--lbc-x-ink,#fff)' }, a9.carrier || 'Carrier'), h('span', { class: 'cp-pill', style: 'color:var(--lbc-x-ok,#4ade80)' }, (a9.trucks || 0) + ' trucks · ' + a9.status)]),
           h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.7' }, [
-            s9.scope_value ? h('div', { style: 'color:#7cc0ff' }, '⚖️ Your scope: ' + s9.scope_value + ' — only source loads that fit this scope.') : '',
+            s9.scope_value ? h('div', { style: 'color:var(--lbc-x-link,#7cc0ff)' }, '⚖️ Your scope: ' + s9.scope_value + ' — only source loads that fit this scope.') : '',
             s9.lanes ? h('div', null, 'Lanes: ' + s9.lanes) : '',
             s9.min_rate ? h('div', null, 'Min rate/mile: ' + s9.min_rate) : '',
             s9.equipment ? h('div', null, 'Equipment: ' + s9.equipment) : '',
@@ -1604,10 +1610,10 @@ async function agentPortal(user) {
   }
   function renderTrackChooser(host) {
     const card9 = (ic9, t9, s9, b9, cls9, on9) => h('div', { class: 'cp-card', style: 'padding:22px' }, [
-      h('div', { style: 'font-size:2rem' }, ic9), h('div', { style: 'font-size:1.15rem;font-weight:900;color:#fff;margin:6px 0 4px' }, t9), h('div', { class: 'cp-row-s', style: 'line-height:1.6' }, s9),
+      h('div', { style: 'font-size:2rem' }, ic9), h('div', { style: 'font-size:1.15rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:6px 0 4px' }, t9), h('div', { class: 'cp-row-s', style: 'line-height:1.6' }, s9),
       h('button', { class: 'cp-btn' + cls9, style: 'margin-top:14px', onClick: on9 }, b9)]);
     mount(host, h('div', null, [
-      h('div', { style: 'margin:4px 0 14px' }, [h('div', { style: 'font-size:1.35rem;font-weight:900;color:#fff' }, 'Welcome — pick your track'), h('div', { class: 'cp-row-s' }, 'One account, two ways to work with LoadBoot. Choose one now; you can add the other any time from your dashboard.')]),
+      h('div', { style: 'margin:4px 0 14px' }, [h('div', { style: 'font-size:1.35rem;font-weight:900;color:var(--lbc-x-ink,#fff)' }, 'Welcome — pick your track'), h('div', { class: 'cp-row-s' }, 'One account, two ways to work with LoadBoot. Choose one now; you can add the other any time from your dashboard.')]),
       h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px' }, [
         card9('🧑‍✈️', 'Work as a Dispatcher', 'Book loads for US carriers under LoadBoot. Commission trial first, then a written package. Own load-board access required.', 'Start my application →', '', async (e9) => { e9.currentTarget.disabled = true; try { await agentSetIntent('dispatcher'); } catch (_) {} location.reload(); }),
         card9('⚡', 'Earn 1% as a Referral Partner', 'Share your personal link. Every carrier, broker or shipper you bring in pays you 1% of every delivered load — for as long as they move freight.', 'Activate my referral link →', ' ghost', async (e9) => { e9.currentTarget.disabled = true; try { await agentReferralOptIn(); location.hash = '#dashboard'; } catch (_) {} location.reload(); }),
@@ -1633,28 +1639,28 @@ async function agentPortal(user) {
         signed: !!(obProfile && obProfile.agreement_signed_at),
       };
       const obCount = Object.values(obDone).filter(Boolean).length;
-      const obStep = (lbl9, ok9) => h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:' + (ok9 ? '#4ade80' : '#94a3b8') }, (ok9 ? '✓ ' : '○ ') + lbl9);
+      const obStep = (lbl9, ok9) => h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:' + (ok9 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink3,#94a3b8)') }, (ok9 ? '✓ ' : '○ ') + lbl9);
       const verifyCard =
-        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, [icon('shield',15),' Verified partner — payouts unlocked.'])
+        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:var(--lbc-x-ok,#4ade80);margin-bottom:12px' }, [icon('shield',15),' Verified partner — payouts unlocked.'])
         : obStatus === 'under_review' ? h('div', { style: 'background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.4);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
-            h('div', { style: 'font-weight:800;color:#7cc0ff' }, '⏳ Verification UNDER REVIEW'),
+            h('div', { style: 'font-weight:800;color:var(--lbc-x-link,#7cc0ff)' }, '⏳ Verification UNDER REVIEW'),
             h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'LoadBoot dispatch is reviewing your application — usually under 24 hours. Your link works; earnings switch on at approval.')])
         : obStatus === 'info_needed' ? h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
-            h('div', { style: 'font-weight:800;color:#fbbf24' }, [icon('alert',15),' Verification — more info needed']),
+            h('div', { style: 'font-weight:800;color:var(--lbc-x-gold,#fbbf24)' }, [icon('alert',15),' Verification — more info needed']),
             h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px' }, (obProfile && obProfile.review_note) || ''),
             h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('verify') }, 'Update & resubmit →')])
-        : obStatus === 'rejected' ? h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fca5a5;font-weight:700' }, '✕ Application not approved — ' + ((obProfile && obProfile.review_note) || 'contact support.'))
+        : obStatus === 'rejected' ? h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:var(--lbc-x-danger,#fca5a5);font-weight:700' }, '✕ Application not approved — ' + ((obProfile && obProfile.review_note) || 'contact support.'))
         : h('div', { style: 'background:linear-gradient(120deg,rgba(252,83,5,.14),rgba(8,131,247,.1));border:1.5px solid rgba(252,83,5,.5);border-radius:14px;padding:16px 18px;margin-bottom:12px' }, [
             h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center' }, [
               h('div', null, [
-                h('div', { style: 'font-weight:900;font-size:1.02rem;color:#fff' }, [icon('shield',15), ' Complete your verification — ' + obCount + ' of 4 steps done']),
+                h('div', { style: 'font-weight:900;font-size:1.02rem;color:var(--lbc-x-ink,#fff)' }, [icon('shield',15), ' Complete your verification — ' + obCount + ' of 4 steps done']),
                 h('div', { style: 'display:flex;gap:14px;flex-wrap:wrap;margin-top:8px' }, [
                   obStep('Identity', obDone.identity), obStep('Network', obDone.network), obStep('Payout & tax', obDone.payout), obStep('Agreement signed', obDone.signed)]),
                 h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Earnings stay locked until LoadBoot approves you. Your link works meanwhile — joins are recorded.'),
               ]),
               h('button', { class: 'cp-btn', style: 'background:#FC5305;flex:none', onClick: () => go('verify') }, obCount ? 'Continue verification →' : 'Start verification →'),
             ]),
-            h('div', { style: 'height:6px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden' },
+            h('div', { style: 'height:6px;border-radius:99px;background:var(--lbc-x-panel,rgba(255,255,255,.08));margin-top:12px;overflow:hidden' },
               h('div', { style: 'height:100%;width:' + (obCount * 25) + '%;border-radius:99px;background:linear-gradient(90deg,#FC5305,#4ade80)' })),
           ]);
       const refKids9 = [refHome9,
@@ -1668,9 +1674,9 @@ async function agentPortal(user) {
         agCard('📈 How your money works — tap any line to open it', [
           (() => {
             const det9 = (icon9, title9, body9) => {
-              const d9 = h('details', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:11px;margin-top:6px;background:rgba(255,255,255,.03);overflow:hidden' }, [
-                h('summary', { style: 'cursor:pointer;padding:10px 13px;font-weight:800;font-size:.88rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, icon9), h('span', { style: 'flex:1' }, title9), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
-                h('div', { style: 'padding:0 13px 12px;color:#b9c6da;font-size:.84rem;line-height:1.75' }, body9),
+              const d9 = h('details', { style: 'border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:11px;margin-top:6px;background:var(--lbc-x-panel,rgba(255,255,255,.03));overflow:hidden' }, [
+                h('summary', { style: 'cursor:pointer;padding:10px 13px;font-weight:800;font-size:.88rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, icon9), h('span', { style: 'flex:1' }, title9), h('span', { style: 'color:var(--lbc-x-ink3,#7f92b3);font-weight:900' }, '▾')]),
+                h('div', { style: 'padding:0 13px 12px;color:var(--lbc-x-ink2,#b9c6da);font-size:.84rem;line-height:1.75' }, body9),
               ]);
               return d9;
             };
@@ -1685,7 +1691,7 @@ async function agentPortal(user) {
                 'Freight has disputes, claims and reversals. The 15-day window lets every load settle cleanly — it protects YOU too: once cleared, that money is firmly yours. Ledger shows it as "Accrued" during clearing, then it flips to PAYABLE automatically.'),
               det9('🏦', 'STEP 5 — Monthly payout to your VERIFIED account',
                 'Payable balance ≥ $100 → request payout from the Payouts tab (or it goes out on the monthly run). Money goes only to the account you verified in onboarding (that\u2019s why we take the ID + bank proof — nobody can redirect your money). W-9/W-8BEN keeps you tax-clean; US persons get a 1099.'),
-              h('div', { style: 'margin:14px 0 4px;font-weight:900;font-size:.8rem;letter-spacing:.08em;color:#7f92b3' }, 'THE 5 LEVELS — TAP EACH TO SEE THE MATH'),
+              h('div', { style: 'margin:14px 0 4px;font-weight:900;font-size:.8rem;letter-spacing:.08em;color:var(--lbc-x-ink3,#7f92b3)' }, 'THE 5 LEVELS — TAP EACH TO SEE THE MATH'),
               det9('🥇', 'LEVEL 1 — your direct clients · 1.00%',
                 'Every delivered load your OWN referrals (or your own posted loads) touch. Example: your broker moves 20 loads/month averaging $2,400 → $48,000 moved → YOU earn $480 every month from that one relationship. This is your bread and butter.'),
               det9('🥈', 'LEVEL 2 — agents YOU recruit · 0.50%',
@@ -1699,7 +1705,7 @@ async function agentPortal(user) {
             ]);
           })(),
         ]),
-                agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.2)' }, (n.at ? fmtWhen9(n.at) + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
+                agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed var(--lbc-x-line,rgba(148,163,184,.2))' }, (n.at ? fmtWhen9(n.at) + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
       ];
       // ux-audit A3 (24 Sep 2026): with the live referral home on top (dispatcher + partner), the legacy
       // block below it repeated the link card, the seven tiles and the activity list — 4,969px on a phone.
@@ -1713,7 +1719,7 @@ async function agentPortal(user) {
       const obDocs9 = (ob && ob.docs) || {};
       const itemRow9 = (lbl9, ok9, hint9) => h('div', { class: 'cp-row' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, lbl9), hint9 ? h('div', { class: 'cp-row-s' }, hint9) : null].filter(Boolean)),
-        ok9 ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ missing'),
+        ok9 ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '✓ on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '✕ missing'),
       ]);
       const trackerCard9 = () => agCard('📋 Submission tracker — what CC sees', [
         itemRow9('Identity (name + mobile)', !!(obProfile && (obProfile.full_name || '').trim() && (obProfile.phone || '').trim())),
@@ -1722,27 +1728,27 @@ async function agentPortal(user) {
         itemRow9('Payout method + tax form', !!(obProfile && (obProfile.payout_method || '').trim() && (obProfile.tax_form || '').trim())),
         (() => { const st9 = obDocs9.id_doc_status || 'pending';
           return h('div', { class: 'cp-row' }, [
-            h('div', null, [h('div', { class: 'cp-row-t' }, 'Government photo ID'), st9 === 'rejected' && obDocs9.id_doc_reason ? h('div', { class: 'cp-row-s', style: 'color:#f87171' }, '✕ ' + obDocs9.id_doc_reason + ' — re-upload in step 3') : null].filter(Boolean)),
-            !obDocs9.id_doc ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ missing')
-              : st9 === 'accepted' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ accepted')
-              : st9 === 'rejected' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ rejected')
-              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '⏳ pending review')]); })(),
+            h('div', null, [h('div', { class: 'cp-row-t' }, 'Government photo ID'), st9 === 'rejected' && obDocs9.id_doc_reason ? h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-danger,#f87171)' }, '✕ ' + obDocs9.id_doc_reason + ' — re-upload in step 3') : null].filter(Boolean)),
+            !obDocs9.id_doc ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '✕ missing')
+              : st9 === 'accepted' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '✓ accepted')
+              : st9 === 'rejected' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '✕ rejected')
+              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:var(--lbc-x-gold,#fbbf24)' }, '⏳ pending review')]); })(),
         (() => { const st9 = obDocs9.bank_doc_status || 'pending';
           return h('div', { class: 'cp-row' }, [
-            h('div', null, [h('div', { class: 'cp-row-t' }, 'Bank proof document'), st9 === 'rejected' && obDocs9.bank_doc_reason ? h('div', { class: 'cp-row-s', style: 'color:#f87171' }, '✕ ' + obDocs9.bank_doc_reason + ' — re-upload in step 3') : null].filter(Boolean)),
-            !obDocs9.bank_doc ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ missing')
-              : st9 === 'accepted' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ accepted')
-              : st9 === 'rejected' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ rejected')
-              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '⏳ pending review')]); })(),
+            h('div', null, [h('div', { class: 'cp-row-t' }, 'Bank proof document'), st9 === 'rejected' && obDocs9.bank_doc_reason ? h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-danger,#f87171)' }, '✕ ' + obDocs9.bank_doc_reason + ' — re-upload in step 3') : null].filter(Boolean)),
+            !obDocs9.bank_doc ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '✕ missing')
+              : st9 === 'accepted' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '✓ accepted')
+              : st9 === 'rejected' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '✕ rejected')
+              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:var(--lbc-x-gold,#fbbf24)' }, '⏳ pending review')]); })(),
         itemRow9('Agent Agreement e-signed', !!(obProfile && obProfile.agreement_signed_at), obProfile && obProfile.agreement_name ? 'signed: ' + obProfile.agreement_name : null),
       ]);
       const tl9 = () => { const steps9 = [['Submitted', ['under_review','info_needed','approved','rejected'].includes(obStatus)], ['Under review', ['under_review','info_needed'].includes(obStatus) || obStatus === 'approved' || obStatus === 'rejected'], ['Decision', obStatus === 'approved' || obStatus === 'rejected' || obStatus === 'info_needed'], ['Active', obStatus === 'approved']];
-        return h('div', { style: 'display:flex;gap:6px;margin-bottom:12px' }, steps9.map(([nm9, on9], i9) => h('div', { style: 'flex:1;text-align:center;font-size:.68rem;font-weight:800;padding:7px 4px;border-radius:9px;background:' + (on9 ? (nm9 === 'Active' ? 'rgba(34,197,94,.2)' : 'rgba(8,131,247,.2)') : 'rgba(255,255,255,.05)') + ';color:' + (on9 ? (nm9 === 'Active' ? '#4ade80' : '#7cc0ff') : '#64748b') }, (i9 + 1) + '. ' + nm9))); };
+        return h('div', { style: 'display:flex;gap:6px;margin-bottom:12px' }, steps9.map(([nm9, on9], i9) => h('div', { style: 'flex:1;text-align:center;font-size:.68rem;font-weight:800;padding:7px 4px;border-radius:9px;background:' + (on9 ? (nm9 === 'Active' ? 'rgba(34,197,94,.2)' : 'rgba(8,131,247,.2)') : 'var(--lbc-x-panel,rgba(255,255,255,.05))') + ';color:' + (on9 ? (nm9 === 'Active' ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-link,#7cc0ff)') : 'var(--lbc-x-ink3,#64748b)') }, (i9 + 1) + '. ' + nm9))); };
       const threadCard9 = () => { const host9 = agCard('💬 Talk to LoadBoot dispatch — about YOUR verification', [h('div', { class: 'cp-muted' }, 'Loading…')]);
         (async () => {
           let msgs9 = []; try { msgs9 = (await agentMsgList()) || []; } catch (_) {}
           const list9 = h('div', { style: 'max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:4px 0' },
-            msgs9.length ? msgs9.map((m9) => h('div', { style: 'max-width:85%;padding:8px 12px;border-radius:12px;font-size:.85rem;line-height:1.55;' + (m9.sender === 'agent' ? 'align-self:flex-end;background:rgba(8,131,247,.2);color:#dbeafe' : 'align-self:flex-start;background:rgba(255,255,255,.07);color:#e6edf8') }, [
+            msgs9.length ? msgs9.map((m9) => h('div', { style: 'max-width:85%;padding:8px 12px;border-radius:12px;font-size:.85rem;line-height:1.55;' + (m9.sender === 'agent' ? 'align-self:flex-end;background:rgba(8,131,247,.2);color:var(--lbc-x-ink,#dbeafe)' : 'align-self:flex-start;background:var(--lbc-x-panel,rgba(255,255,255,.07));color:var(--lbc-x-ink,#e6edf8)') }, [
               h('div', null, m9.body), h('div', { style: 'font-size:.62rem;opacity:.6;margin-top:3px' }, (m9.sender === 'agent' ? 'You' : 'LoadBoot dispatch') + ' · ' + (m9.at ? fmtWhen9(m9.at) : ''))]))
             : [h('div', { class: 'cp-muted' }, 'No messages yet — ask anything about your verification, documents or the program. Dispatch replies here and you get a notification.')]);
           const inp9 = h('input', { class: 'cp-in', placeholder: 'Type a message to dispatch…', style: 'flex:1;margin:0' });
@@ -1773,12 +1779,12 @@ async function agentPortal(user) {
       // under-review screen below would lock them out of the very form they must fix.
       const req9 = pdSeed9.details_requested || null;
       const needsFix9 = pdSeed9.payout_status === 'info_requested' || pdSeed9.payout_status === 'rejected';
-      const stEl = (st9, note9, tone9) => h('div', { style: 'background:' + (tone9 === 'ok' ? 'rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' : tone9 === 'warn' ? 'rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)' : 'rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)') + ';border-radius:12px;padding:12px 14px;font-weight:700;color:#e6edf8' }, [h('b', null, st9), note9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, note9) : null]);
+      const stEl = (st9, note9, tone9) => h('div', { style: 'background:' + (tone9 === 'ok' ? 'rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' : tone9 === 'warn' ? 'rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)' : 'rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)') + ';border-radius:12px;padding:12px 14px;font-weight:700;color:var(--lbc-x-ink,#e6edf8)' }, [h('b', null, st9), note9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, note9) : null]);
       if (obStatus === 'under_review' && needsFix9 && !W.editPayout) {
         const fields9 = (req9 && Array.isArray(req9.fields)) ? req9.fields : [];
         mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [
           stEl('📋 ACTION NEEDED — payout details', 'Your application is with us, but we cannot approve your payout method until the details below are on file. Everything else is done.', 'warn'),
-          fields9.length ? h('div', { style: 'margin-top:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:12px 14px;color:#fcd9a2' }, [
+          fields9.length ? h('div', { style: 'margin-top:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:12px 14px;color:var(--lbc-x-gold,#fcd9a2)' }, [
             h('b', null, 'We still need:'),
             h('ul', { style: 'margin:6px 0 0;padding-left:20px;line-height:1.7' }, fields9.map((f9) => h('li', null, String(f9)))),
             (req9 && req9.note) ? h('div', { style: 'margin-top:8px;font-style:italic' }, String(req9.note)) : null,
@@ -1791,7 +1797,7 @@ async function agentPortal(user) {
       if (obStatus === 'rejected') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✕ NOT APPROVED', (obProfile && obProfile.review_note) || 'Contact support for details.', 'bad')]), threadCard9()])); return; }
       const fld = (lbl9, key9, ph9, type9) => { const i9 = h('input', { class: 'cp-in', type: type9 || 'text', placeholder: ph9 || '' }); i9.value = d[key9] || ''; i9.oninput = () => { d[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
       const steps9 = ['Identity', 'Your network', 'Payout & agreement'];
-      const bar9 = h('div', { style: 'display:flex;gap:8px;margin-bottom:14px' }, steps9.map((nm9, i9) => h('div', { style: 'flex:1;text-align:center;font-size:.72rem;font-weight:800;padding:7px;border-radius:9px;background:' + (i9 === W.step ? '#0883F7' : 'rgba(255,255,255,.06)') + ';color:' + (i9 === W.step ? '#fff' : '#7f92b3') }, (i9 + 1) + '. ' + nm9)));
+      const bar9 = h('div', { style: 'display:flex;gap:8px;margin-bottom:14px' }, steps9.map((nm9, i9) => h('div', { style: 'flex:1;text-align:center;font-size:.72rem;font-weight:800;padding:7px;border-radius:9px;background:' + (i9 === W.step ? '#0883F7' : 'var(--lbc-x-panel,rgba(255,255,255,.06))') + ';color:' + (i9 === W.step ? '#fff' : 'var(--lbc-x-ink3,#7f92b3)') }, (i9 + 1) + '. ' + nm9)));
       const err9 = h('div', { class: 'cp-err' });
       let body9;
       if (W.step === 0) {
@@ -1850,17 +1856,17 @@ async function agentPortal(user) {
             h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Tax form *'), tax9]),
           ].filter(Boolean)),
           // PAYOUT GUIDANCE — honest about what actually works cross-border, and what it costs.
-          d.payout_method ? h('div', { style: 'margin-top:10px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.28);border-radius:12px;padding:11px 14px;font-size:.84rem;line-height:1.65;color:#cbd5e1' },
+          d.payout_method ? h('div', { style: 'margin-top:10px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.28);border-radius:12px;padding:11px 14px;font-size:.84rem;line-height:1.65;color:var(--lbc-x-ink2,#cbd5e1)' },
             d.payout_method === 'payoneer' ? [h('b', null, '\u2b50 Why Payoneer'), ' \u2014 we send USD to your Payoneer account, then you withdraw to your own local bank in your own currency. Payoneer\u2019s standard withdrawal fee is a small fixed amount (about US$1.50 per withdrawal on USD accounts; currency conversion is charged separately by Payoneer). ', h('b', null, 'LoadBoot adds no fee.'), ' Open a free account at payoneer.com first, then paste that email here \u2014 it must be in the same legal name as your ID.']
             : d.payout_method === 'local_bank' ? [h('b', null, '\U0001f3e6 Your own local bank, paid through Payoneer'), ' \u2014 we send the payout through Payoneer\u2019s local transfer rail, so it lands in your normal bank account in your own currency, usually in 1\u20133 business days. Payoneer\u2019s standard fee applies (about US$1.50 fixed on USD withdrawals; currency conversion charged separately). ', h('b', null, 'The account must be a real bank account in your own legal name'), ' \u2014 mobile wallets are not banks and cannot receive it.']
             : d.payout_method === 'ach' ? [h('b', null, 'US bank (ACH)'), ' \u2014 free, arrives in 1\u20133 business days. Only for accounts held at a US bank in your legal name.']
             : d.payout_method === 'crypto' ? [h('b', null, 'USDT on the Tron (TRC-20) network only'), ' \u2014 the network fee (typically US$1\u20133) is deducted from your payout, and the exact amount is shown on the payout receipt. Send-to-wrong-network losses cannot be recovered, so the address is verified with a small test transfer before your first full payout.']
             : [h('b', null, 'Requesting another method'), ' \u2014 tell us the method and the reason. Our team reviews it and enables it only if it can legally and reliably receive an international USD payment in your name.']) : null,
           // What we cannot pay to — stated plainly so nobody wastes a payout cycle.
-          d.payout_method ? h('div', { style: 'margin-top:8px;background:rgba(245,158,11,.09);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:11px 14px;font-size:.83rem;line-height:1.6;color:#fcd9a2' },
+          d.payout_method ? h('div', { style: 'margin-top:8px;background:rgba(245,158,11,.09);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:11px 14px;font-size:.83rem;line-height:1.6;color:var(--lbc-x-gold,#fcd9a2)' },
             [h('b', null, '\u26a0 We cannot pay to mobile wallets.'), ' JazzCash, EasyPaisa, bKash, M-Pesa, GCash and similar local wallets cannot receive an international USD payment directly \u2014 a payout sent there is rejected or lost. Use Payoneer (it pays into your local bank for you), a US bank account, or ask us about another method. The receiving account must be in ', h('b', null, 'your own legal name'), ' \u2014 third-party accounts are refused for anti-fraud reasons.']) : null,
           // ---- substitute tax-form fields (signed by the same e-signature below) ----
-          d.tax_form === 'w9' ? h('div', { style: 'margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px' }, [
+          d.tax_form === 'w9' ? h('div', { style: 'margin-top:12px;background:var(--lbc-x-panel,rgba(255,255,255,.04));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:12px;padding:12px 14px' }, [
             h('div', { style: 'font-weight:800;font-size:.88rem' }, [icon('receipt',15),' W-9 (substitute) — US person']),
             h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;margin-top:8px' }, [
               (() => { const c9 = h('select', { class: 'cp-in' }, [['', 'Federal tax classification *'], ['individual', 'Individual / sole proprietor'], ['single_llc', 'Single-member LLC'], ['c_corp', 'C corporation'], ['s_corp', 'S corporation'], ['partnership', 'Partnership'], ['llc', 'LLC (C/S/P)']].map(([v9, l9]) => h('option', { value: v9 }, l9))); c9.value = d.tax_class || ''; c9.onchange = () => { d.tax_class = c9.value; }; return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Tax classification *'), c9]); })(),
@@ -1869,7 +1875,7 @@ async function agentPortal(user) {
             ]),
             h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Your Step-1 address is used on the form. Your e-signature below also signs this W-9 (substitute) — certification included (backup withholding & TIN correctness).'),
           ]) : null,
-          d.tax_form === 'w8ben' ? h('div', { style: 'margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px' }, [
+          d.tax_form === 'w8ben' ? h('div', { style: 'margin-top:12px;background:var(--lbc-x-panel,rgba(255,255,255,.04));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:12px;padding:12px 14px' }, [
             h('div', { style: 'font-weight:800;font-size:.88rem' }, [icon('receipt',15),' W-8BEN (substitute) — non-US person']),
             h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;margin-top:8px' }, [
               fld('Country of citizenship *', 'tax_citizen', 'e.g. Pakistan'),
@@ -1897,8 +1903,8 @@ async function agentPortal(user) {
                 return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Bank proof * (voided check / statement header / Payoneer screenshot)'), i9, st9, docTrustBadge('agent_bank', { compact: true })]); })(),
             ]),
           ]),
-          h('div', { style: 'margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;max-height:190px;overflow:auto;font-size:.82rem;line-height:1.7;color:#b9c6da' }, [
-            h('b', { style: 'color:#fff' }, 'LoadBoot Agent Agreement — summary (full text on loadboot.com/agents.html)'), h('br'),
+          h('div', { style: 'margin-top:14px;background:var(--lbc-x-panel,rgba(255,255,255,.04));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:12px;padding:12px 14px;max-height:190px;overflow:auto;font-size:.82rem;line-height:1.7;color:var(--lbc-x-ink2,#b9c6da)' }, [
+            h('b', { style: 'color:var(--lbc-x-ink,#fff)' }, 'LoadBoot Agent Agreement — summary (full text on loadboot.com/agents.html)'), h('br'),
             '1. Independent contractor — not an employee; you handle your own taxes (1099). ',
             '2. Commission: 1% of gross on GPS-verified DELIVERED loads only; pair-activation required; 15-day clearing; monthly payout from $100; paid from LoadBoot\u2019s own fee; nothing on cancelled/disputed loads. ',
             '3. Anti-fraud: self-referrals, fake companies or circumvention = immediate termination + forfeiture. ',
@@ -1963,10 +1969,10 @@ async function agentPortal(user) {
       const now9 = Date.now();
       const days9 = (x9) => x9.last_activity ? Math.round((now9 - new Date(x9.last_activity).getTime()) / 86400000) : 999;
       const health9 = (x9) => { const dd9 = days9(x9); const nn9 = (now9 - new Date(x9.joined_at || 0).getTime()) / 86400000;
-        return nn9 < 7 && !(x9.trips_delivered || 0) ? ['🆕 NEW', 'rgba(8,131,247,.15)', '#3b9dff']
-          : dd9 <= 7 ? ['🔥 ACTIVE', 'rgba(34,197,94,.15)', '#4ade80']
-          : dd9 <= 30 ? ['🌤 QUIET ' + dd9 + 'd', 'rgba(245,158,11,.15)', '#fbbf24']
-          : ['😴 IDLE ' + dd9 + 'd', 'rgba(239,68,68,.15)', '#f87171']; };
+        return nn9 < 7 && !(x9.trips_delivered || 0) ? ['🆕 NEW', 'rgba(8,131,247,.15)', 'var(--lbc-x-link,#3b9dff)']
+          : dd9 <= 7 ? ['🔥 ACTIVE', 'rgba(34,197,94,.15)', 'var(--lbc-x-ok,#4ade80)']
+          : dd9 <= 30 ? ['🌤 QUIET ' + dd9 + 'd', 'rgba(245,158,11,.15)', 'var(--lbc-x-gold,#fbbf24)']
+          : ['😴 IDLE ' + dd9 + 'd', 'rgba(239,68,68,.15)', 'var(--lbc-x-danger,#f87171)']; };
       // KPI strip
       const act9 = all9.filter((x9) => days9(x9) <= 7).length, idle9 = all9.filter((x9) => days9(x9) > 30).length;
       const earnTot9 = all9.reduce((a9, x9) => a9 + Number(x9.your_earnings || 0), 0);
@@ -1985,14 +1991,14 @@ async function agentPortal(user) {
         : x9.side === 'carrier'
         ? 'Salaam! Quick one — the board has fresh ' + '(your lanes)' + ' loads today, zero ghost posts, detention auto-paid with GPS proof. Jump in: loadboot.com/app/carrier/ — I\u2019m here if you need anything.'
         : 'Hi! Reminder — posting on LoadBoot takes 2 minutes and verified carriers book in one tap (GPS tracking + auto paperwork included). Post one today: loadboot.com/app/partner/ — I\u2019ll personally watch it get covered.';
-      const row9x = (x9) => { const hb9 = health9(x9); return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:12px 14px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
+      const row9x = (x9) => { const hb9 = health9(x9); return h('div', { style: 'border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:13px;padding:12px 14px;margin-top:8px;background:var(--lbc-x-panel,rgba(255,255,255,.03))' }, [
         h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
           h('div', { style: 'flex:1;min-width:200px' }, [
             h('div', { style: 'font-weight:800;font-size:.95rem' }, sideIc9(x9.side) + ' ' + (x9.org || '')),
             h('div', { class: 'cp-row-s' }, sideLb9(x9.side) + ' · joined ' + (x9.joined_at ? new Date(x9.joined_at).toLocaleDateString() : '') + ' · last activity ' + (days9(x9) >= 999 ? '—' : days9(x9) === 0 ? 'today' : days9(x9) + 'd ago')),
           ]),
           h('span', { class: 'cp-pill', style: 'background:' + hb9[1] + ';color:' + hb9[2] + ';font-weight:800' }, hb9[0]),
-          h('b', { style: 'color:#4ade80;font-size:1.02rem' }, money9(x9.your_earnings)),
+          h('b', { style: 'color:var(--lbc-x-ok,#4ade80);font-size:1.02rem' }, money9(x9.your_earnings)),
         ]),
         h('div', { style: 'display:flex;gap:14px;flex-wrap:wrap;margin-top:8px' }, [
           h('span', { class: 'cp-row-s' }, [icon('loads',15), ' ' + (x9.loads_posted || 0) + ' posted']),
@@ -2040,7 +2046,7 @@ async function agentPortal(user) {
       const row9 = (x9) => {
         const st9 = stOf9(x9);
         const clearBy9 = x9.delivered_at ? new Date(new Date(x9.delivered_at).getTime() + 15 * 86400000) : null;
-        return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:12px 14px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
+        return h('div', { style: 'border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:13px;padding:12px 14px;margin-top:8px;background:var(--lbc-x-panel,rgba(255,255,255,.03))' }, [
           h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
             h('div', { style: 'flex:1;min-width:210px' }, [
               h('div', { style: 'font-weight:800;font-size:.95rem' }, (x9.lane || '') + (x9.rate ? ' · $' + Number(x9.rate).toLocaleString() : '')),
@@ -2050,17 +2056,17 @@ async function agentPortal(user) {
                 (x9.broker_yours || x9.own_post) && x9.booked_by_yours ? ' · ⚡ double chain' : '',
               ].join('')),
             ]),
-            st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ DELIVERED')
-              : st9 === 'booked' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff;font-weight:800' }, [icon('truck',15),' MOVING'])
-              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800' }, [icon('loads',15),' ON BOARD']),
+            st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, '✓ DELIVERED')
+              : st9 === 'booked' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:var(--lbc-x-link,#3b9dff);font-weight:800' }, [icon('truck',15),' MOVING'])
+              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:var(--lbc-x-gold,#fbbf24);font-weight:800' }, [icon('loads',15),' ON BOARD']),
           ]),
-          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:.74rem;color:#8fa3bf;font-weight:700' }, [
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:.74rem;color:var(--lbc-x-ink3,#8fa3bf);font-weight:700' }, [
             h('span', null, [icon('loads',15), ' posted ' + fmtD9(x9.posted_at)]),
             x9.booked_at ? h('span', null, '→ 🚛 booked ' + fmtD9(x9.booked_at)) : null,
             x9.delivered_at ? h('span', null, '→ ✓ delivered ' + fmtD9(x9.delivered_at)) : null,
             h('span', { style: 'flex:1' }),
-            Number(x9.your_commission) ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80;font-weight:800' }, [icon('finance',15), ' your 1% = ' + money9(x9.your_commission) + (clearBy9 && clearBy9 > new Date() ? ' · clears ~' + fmtD9(clearBy9) : ' · cleared')])
-              : st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.14);color:#fbbf24' }, '⏳ 1% crediting…') : null,
+            Number(x9.your_commission) ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:var(--lbc-x-ok,#4ade80);font-weight:800' }, [icon('finance',15), ' your 1% = ' + money9(x9.your_commission) + (clearBy9 && clearBy9 > new Date() ? ' · clears ~' + fmtD9(clearBy9) : ' · cleared')])
+              : st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.14);color:var(--lbc-x-gold,#fbbf24)' }, '⏳ 1% crediting…') : null,
           ].filter(Boolean)),
         ]);
       };
@@ -2103,9 +2109,9 @@ async function agentPortal(user) {
           try { const r9 = await agentRequestPayout(); lbToast((r9 && r9.note) || 'Requested.', 'success', '💸 Payout requested'); render(); }
           catch (e9) { b9.disabled = false; b9.textContent = '💸 Request payout — ' + money9(pc.payable); lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
         } }, [icon('finance',15), ' Request payout — ' + money9(pc.payable)]) : null;
-        const stMap9 = { requested: ['🕐 REQUESTED — under review', 'rgba(245,158,11,.15)', '#fbbf24'], approved: ['✅ APPROVED — transfer being prepared', 'rgba(8,131,247,.15)', '#3b9dff'], sent: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', '#7cc0ff'], paid: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', '#7cc0ff'], received: ['✓ RECEIVED', 'rgba(34,197,94,.15)', '#4ade80'], rejected: ['✕ REJECTED', 'rgba(239,68,68,.15)', '#f87171'] };
-        const reqRows9 = (Array.isArray(pc.requests) ? pc.requests : []).map((r9) => { const m9 = stMap9[r9.status] || [r9.status, 'rgba(148,163,184,.15)', '#94a3b8'];
-          return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 13px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
+        const stMap9 = { requested: ['🕐 REQUESTED — under review', 'rgba(245,158,11,.15)', 'var(--lbc-x-gold,#fbbf24)'], approved: ['✅ APPROVED — transfer being prepared', 'rgba(8,131,247,.15)', 'var(--lbc-x-link,#3b9dff)'], sent: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', 'var(--lbc-x-link,#7cc0ff)'], paid: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', 'var(--lbc-x-link,#7cc0ff)'], received: ['✓ RECEIVED', 'rgba(34,197,94,.15)', 'var(--lbc-x-ok,#4ade80)'], rejected: ['✕ REJECTED', 'rgba(239,68,68,.15)', 'var(--lbc-x-danger,#f87171)'] };
+        const reqRows9 = (Array.isArray(pc.requests) ? pc.requests : []).map((r9) => { const m9 = stMap9[r9.status] || [r9.status, 'rgba(148,163,184,.15)', 'var(--lbc-x-ink3,#94a3b8)'];
+          return h('div', { style: 'border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:12px;padding:11px 13px;margin-top:8px;background:var(--lbc-x-panel,rgba(255,255,255,.03))' }, [
             h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
               h('div', { style: 'flex:1;min-width:170px' }, [
                 h('div', { style: 'font-weight:900;font-size:1.05rem' }, money9(r9.amount)),
@@ -2123,12 +2129,12 @@ async function agentPortal(user) {
             pc.next_clearing ? tile9('Next release', new Date(pc.next_clearing).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) : null].filter(Boolean)),
           pc.eligible
             ? h('div', { style: 'background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.45);border-radius:14px;padding:16px 18px;margin-bottom:12px;text-align:center' }, [
-                h('div', { style: 'font-weight:900;font-size:1.05rem;color:#4ade80;margin-bottom:10px' }, [icon('check',15),' You are ELIGIBLE — money is ready to move']), reqBtn,
+                h('div', { style: 'font-weight:900;font-size:1.05rem;color:var(--lbc-x-ok,#4ade80);margin-bottom:10px' }, [icon('check',15),' You are ELIGIBLE — money is ready to move']), reqBtn,
                 h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Goes to your verified account on file · reviewed by a person · bank transfers land in 3–5 business days after SENT.')])
             : h('div', { style: 'background:rgba(245,158,11,.09);border:1.5px solid rgba(245,158,11,.4);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
-                h('div', { style: 'font-weight:900;color:#fbbf24' }, '⏳ Not eligible yet — here is exactly why:'),
+                h('div', { style: 'font-weight:900;color:var(--lbc-x-gold,#fbbf24)' }, '⏳ Not eligible yet — here is exactly why:'),
                 ...(Array.isArray(pc.reasons) ? pc.reasons : []).map((x9) => h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, (x9.icon || '•') + ' ' + (x9.text || ''))),
-                h('div', { style: 'height:7px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden' },
+                h('div', { style: 'height:7px;border-radius:99px;background:var(--lbc-x-panel,rgba(255,255,255,.08));margin-top:12px;overflow:hidden' },
                   h('div', { style: 'height:100%;width:' + pct9 + '%;border-radius:99px;background:linear-gradient(90deg,#FC5305,#4ade80)' })),
                 h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, money9(pc.payable) + ' of ' + money9(pc.min_required) + ' minimum (' + pct9 + '%)')]),
           pc.bank ? agCard('🏦 Payout account on file', [
@@ -2137,8 +2143,8 @@ async function agentPortal(user) {
             pc.bank.bank_name ? h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Bank'), h('span', null, pc.bank.bank_name)]) : null,
             h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Account'), h('span', null, '···' + (pc.bank.last4 || '——'))]),
             h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
-              pc.bank.verified ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ Verified by LoadBoot') : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '⏳ pending verification'),
-              pc.bank.docs_ok ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '📎 ID + bank proof on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '📎 documents missing'),
+              pc.bank.verified ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '✓ Verified by LoadBoot') : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:var(--lbc-x-gold,#fbbf24)' }, '⏳ pending verification'),
+              pc.bank.docs_ok ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:var(--lbc-x-ok,#4ade80)' }, '📎 ID + bank proof on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:var(--lbc-x-danger,#f87171)' }, '📎 documents missing'),
               h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('verify') }, '✎ Update account'),
             ].filter(Boolean)),
             h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, [icon('lock',15),' Payouts only ever go to this verified account — nobody can redirect your money.']),
@@ -2147,10 +2153,15 @@ async function agentPortal(user) {
         ]));
       })();
     } else if (tab === 'settings') {
-      const kv9 = (k9, v9) => h('div', { style: 'display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem' }, [h('span', { class: 'cp-row-s' }, k9), h('b', { style: 'text-align:right;word-break:break-word' }, v9 || '—')]);
-      const stMap9 = { approved: ['#4ade80', '✅ Verified'], under_review: ['#fbbf24', '⏳ Under review'], info_needed: ['#fbbf24', '✋ Info needed'], rejected: ['#f87171', '✕ Not approved'], draft: ['#94a3b8', '📝 Not submitted'] };
+      const kv9 = (k9, v9) => h('div', { style: 'display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.06));font-size:.86rem' }, [h('span', { class: 'cp-row-s' }, k9), h('b', { style: 'text-align:right;word-break:break-word' }, v9 || '—')]);
+      const stMap9 = { approved: ['var(--lbc-x-ok,#4ade80)', '✅ Verified'], under_review: ['var(--lbc-x-gold,#fbbf24)', '⏳ Under review'], info_needed: ['var(--lbc-x-gold,#fbbf24)', '✋ Info needed'], rejected: ['var(--lbc-x-danger,#f87171)', '✕ Not approved'], draft: ['var(--lbc-x-ink3,#94a3b8)', '📝 Not submitted'] };
       const st9 = stMap9[obStatus] || stMap9.draft;
+      const themeSeg9 = h('div', { class: 'cpx-seg' }, [['off', 'Light'], ['on', 'Dark'], ['system', 'System']].map(([v9, l9]) =>
+        h('button', { class: v9 === themeMode() ? 'on' : '', onClick: (ev) => { setThemeMode(v9); Array.from(ev.currentTarget.parentNode.children).forEach((b) => b.classList.toggle('on', b === ev.currentTarget)); const tb9 = document.querySelector('.lb-theme-btn'); if (tb9) { const d9 = document.documentElement.getAttribute('data-lbtheme') === 'dark'; tb9.textContent = d9 ? '\u2600\ufe0f' : '\ud83c\udf19'; tb9.title = d9 ? 'Switch to light mode' : 'Switch to dark mode'; tb9.setAttribute('aria-label', tb9.title); tb9.setAttribute('aria-pressed', d9 ? 'true' : 'false'); } } }, l9)));
       mount(content, h('div', null, [
+        agCard('🌗 Appearance', [
+          h('div', { class: 'cpx-set-row' }, [h('div', null, [h('div', { class: 'cpx-set-t' }, 'Theme'), h('div', { class: 'cpx-set-s' }, 'Light is the default. System follows your device. Saved on this device.')]), themeSeg9]),
+        ]),
         agCard('👤 Account', [
           kv9('Name', (obProfile && obProfile.full_name) || feed.name),
           kv9('Email', (user && user.email) || ''),
@@ -2200,8 +2211,8 @@ async function agentPortal(user) {
   // ---- 🔔 notification bell (top-right): commissions, chain joins, payout + doc updates ----
   const agBellBadge = h('span', { class: 'cp-bell-badge', hidden: true });
   const agBellList = h('div', { style: 'max-height:380px;overflow:auto' });
-  const agBellPanel = h('div', { hidden: true, style: 'position:absolute;top:44px;right:0;width:min(360px,86vw);background:#0f1b30;border:1px solid rgba(255,255,255,.14);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.55);z-index:60;overflow:hidden;text-align:left' }, [
-    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.09)' }, [
+  const agBellPanel = h('div', { hidden: true, style: 'position:absolute;top:44px;right:0;width:min(360px,86vw);background:#0f1b30;border:1px solid var(--lbc-x-line,rgba(255,255,255,.14));border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.55);z-index:60;overflow:hidden;text-align:left' }, [
+    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.09))' }, [
       h('b', { style: 'font-size:.85rem' }, [icon('bell',15),' Notifications']),
       h('button', { class: 'cp-btn-ghost', style: 'font-size:.72rem;padding:4px 8px', onClick: async () => { try { await pocketMarkAllNotificationsRead(); } catch (_) {} agLoadBell(); } }, 'Mark all read'),
     ]),
@@ -2213,7 +2224,7 @@ async function agentPortal(user) {
     agBellBadge.hidden = un9 === 0; agBellBadge.textContent = un9 > 9 ? '9+' : String(un9);
     mount(agBellList, ns9.length ? h('div', null, ns9.map((n) => {
       const p9 = n.payload || {};
-      return h('button', { style: 'display:block;width:100%;text-align:left;background:' + (n.read_at ? 'transparent' : 'rgba(8,131,247,.09)') + ';border:0;border-bottom:1px solid rgba(255,255,255,.06);padding:10px 14px;cursor:pointer;color:inherit;font:inherit', onClick: async () => { try { await pocketMarkNotificationRead(n.id); } catch (_) {} agLoadBell(); } }, [
+      return h('button', { style: 'display:block;width:100%;text-align:left;background:' + (n.read_at ? 'transparent' : 'rgba(8,131,247,.09)') + ';border:0;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.06));padding:10px 14px;cursor:pointer;color:inherit;font:inherit', onClick: async () => { try { await pocketMarkNotificationRead(n.id); } catch (_) {} agLoadBell(); } }, [
         h('div', { style: 'font-weight:800;font-size:.82rem' }, p9.title || n.template_key || 'Update'),
         p9.body ? h('div', { class: 'cp-row-s', style: 'margin-top:2px;line-height:1.5' }, String(p9.body).slice(0, 160)) : null,
         h('div', { class: 'cp-row-s', style: 'margin-top:3px;opacity:.7;font-size:.68rem' }, fmtWhen9(n.created_at)),
@@ -2236,7 +2247,7 @@ async function agentPortal(user) {
     let close9 = null;
     const sideBox9 = (ok9, ic9, t9, lines9) => h('div', { style: 'flex:1;min-width:220px;border-radius:14px;padding:14px;border:1.5px solid ' + (ok9 ? 'rgba(34,197,94,.4)' : 'rgba(245,158,11,.4)') + ';background:' + (ok9 ? 'rgba(34,197,94,.07)' : 'rgba(245,158,11,.06)') }, [
       h('div', { style: 'font-size:1.3rem' }, ic9 + (ok9 ? ' ✅' : ' ⏳')),
-      h('div', { style: 'font-weight:900;margin-top:4px;color:#fff' }, t9),
+      h('div', { style: 'font-weight:900;margin-top:4px;color:var(--lbc-x-ink,#fff)' }, t9),
       h('div', { class: 'cp-row-s', style: 'margin-top:5px;line-height:1.65' }, lines9),
     ]);
     close9 = openModal(active9 ? '✅ Your chain is ACTIVE — earning is ON' : '⏳ Pair pending — one step from earning', [
@@ -2251,14 +2262,14 @@ async function agentPortal(user) {
           : 'No freight side yet — refer a broker or shipper with your link, OR post a load yourself from the Post a Load tab. Either one turns this green.'),
       ]),
       h('div', { style: 'margin-top:12px;border-radius:12px;padding:12px 14px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3)' }, [
-        h('div', { style: 'font-weight:800;color:#93c5fd' }, active9 ? '💰 What happens now' : '💰 What happens the moment both are green'),
+        h('div', { style: 'font-weight:800;color:var(--lbc-x-link,#93c5fd)' }, active9 ? '💰 What happens now' : '💰 What happens the moment both are green'),
         h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.7' },
           '1) A load is GPS-verified DELIVERED where any side is yours → 2) 1% of the gross lands in Earnings within the half hour (🔔 + email) → 3) it clears in 15 days → 4) from $100 you request a payout in the Payouts tab. Your clients never pay extra — your cut comes out of LoadBoot\u2019s own 5% fee.'),
       ]),
       // bl_agent_0307 (29 Aug 2026): money the pair rule is holding is the strongest reason
       // to finish the pair — show it, with the exact side that unlocks it.
       (!active9 && cs9 && Number(cs9.held_on_pair) > 0) ? h('div', { style: 'margin-top:10px;border-radius:12px;padding:12px 14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35)' }, [
-        h('div', { style: 'font-weight:900;color:#fcd34d' }, '💰 $' + Number(cs9.held_on_pair).toFixed(2) + ' already earned — waiting on your pair'),
+        h('div', { style: 'font-weight:900;color:var(--lbc-x-gold,#fcd34d)' }, '💰 $' + Number(cs9.held_on_pair).toFixed(2) + ' already earned — waiting on your pair'),
         h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.65' },
           'This is real commission from delivered loads, held only because your chain isn’t paired yet. '
           + (cs9.pair_missing === 'carrier' ? 'Bring ONE carrier through your link and it releases.' : 'Bring ONE broker or shipper through your link — or post a load yourself — and it releases.')
@@ -2322,6 +2333,12 @@ async function agentPortal(user) {
           titleEl,
         ]),
         h('div', { class: 'cp-top-right' }, [
+          (() => {   // bl_ui_theme: light-first, one tap to dark (also in Settings → Appearance)
+            const b9 = h('button', { class: 'cp-iconbtn lb-theme-btn', type: 'button' });
+            const paint9 = () => { const d9 = document.documentElement.getAttribute('data-lbtheme') === 'dark'; b9.textContent = d9 ? '\u2600\ufe0f' : '\ud83c\udf19'; b9.title = d9 ? 'Switch to light mode' : 'Switch to dark mode'; b9.setAttribute('aria-label', b9.title); b9.setAttribute('aria-pressed', d9 ? 'true' : 'false'); };
+            b9.addEventListener('click', () => { setThemeMode(document.documentElement.getAttribute('data-lbtheme') === 'dark' ? 'off' : 'on'); paint9(); });
+            paint9(); return b9;
+          })(),
           agBellWrap,
         ]),
       ]),

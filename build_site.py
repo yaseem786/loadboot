@@ -57,6 +57,15 @@ if not TARGETS_PROD and not STAGING_ANON:
         "  • For local testing against staging:  set LOADBOOT_STAGING_ANON_KEY=<staging anon key>  (Supabase → snslhvmkjusozgjelghi → API)\n"
         "  • For a deliberate production-bound local build:  set LOADBOOT_CONTEXT=production  (then never deploy that output by hand)\n\n" % _CTX)
     sys.exit(2)
+# bl_ui_theme (15 Oct 2026): every text/background pair in app/shared/theme.css must meet WCAG AA in both themes.
+if shutil.which('node'):
+    import subprocess as _sp_theme
+    _tc = _sp_theme.run(['node', os.path.join(SRC, 'tools', 'theme-contrast-check.mjs')], capture_output=True, text=True)
+    if _tc.returncode != 0:
+        sys.exit('BUILD REFUSED - theme contrast below WCAG AA:\n' + (_tc.stdout or '')[-2000:] + (_tc.stderr or ''))
+    print((_tc.stdout or '').strip().splitlines()[-1] if _tc.stdout else 'THEME CONTRAST: no output')
+else:
+    print('THEME CONTRAST: skipped (node not on PATH)')
 _BUILD_ID = (os.environ.get('COMMIT_REF') or os.environ.get('LOADBOOT_BUILD_ID') or ('b' + str(int(__import__('time').time()))))[:12]
 if TARGETS_PROD:
     APP_ENV, APP_REF, APP_ANON = 'production', PROD_REF, PROD_ANON
