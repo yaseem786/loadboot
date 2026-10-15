@@ -50,7 +50,7 @@ export async function renderPremiumAccount(host, ctx) {
   ctx = ctx || {};
   const ov = ctx.ov || {};
   const user = ctx.user || {};
-  host.innerHTML = '<div class="acx"><div style="padding:40px;text-align:center;color:#9aa7bd">Loading your account…</div></div>';
+  host.innerHTML = '<div class="acx"><div style="padding:40px;text-align:center;color:var(--lbc-x-ink3,#9aa7bd)">Loading your account…</div></div>';
 
   const [health, comp, prefs, pay, autopay, trust, prof] = await Promise.all([
     accountHealth().catch(() => null),
@@ -185,7 +185,7 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div style="margin-top:13px;display:flex;gap:8px"><button class="btn sm" data-toast="Profile saved">Save changes</button><button class="btn sec sm" id="acx-photo">Change photo</button></div>'
     +   '<input type="file" id="acx-avafile" accept="image/*" hidden></div>'
     + '<div class="card" id="s-verify"><div class="sec-h"><div class="sec-ico ic-green">' + sic('shield') + '</div><div class="sec-t">Verification &amp; documents</div></div><div class="sec-s">Same live status as the Documents tab — one source of truth.</div>'
-    +   '<div class="ringwrap"><svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e3ecf6" stroke-width="3.6"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#12a150" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="' + ringOff.toFixed(1) + '" transform="rotate(-90 18 18)"/><text x="18" y="17" text-anchor="middle" font-size="8" font-weight="800" fill="#0b1b33">' + okDocs + '/' + totalDocs + '</text><text x="18" y="24" text-anchor="middle" font-size="3.4" fill="#9aa7bd">verified</text></svg>'
+    +   '<div class="ringwrap"><svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e3ecf6" stroke-width="3.6"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#12a150" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="' + ringOff.toFixed(1) + '" transform="rotate(-90 18 18)"/><text x="18" y="17" text-anchor="middle" font-size="8" font-weight="800" fill="#0b1b33">' + okDocs + '/' + totalDocs + '</text><text x="18" y="24" text-anchor="middle" font-size="3.4" fill="#9aa7bd" style="fill:var(--lbc-x-ink3,#9aa7bd)">verified</text></svg>'
     +     '<div><div style="font-weight:800;font-size:.98rem">Compliance packet</div><div class="mini">' + ([needDocs ? needDocs + ' still needed' : '', revDocs ? revDocs + ' in review' : ''].filter(Boolean).join(' \u00b7 ') || 'All required documents verified \u2713') + '</div></div></div>'
     +   '<div>' + docHtml + '</div>'
     +   '<div style="margin-top:12px">' + (compliant ? '<button class="btn sm" data-go="documents">Open Documents</button>' : '<button class="btn sm" data-go="onboarding">Finish onboarding &rarr;</button> <button class="btn ghost sm" data-go="documents">Open Documents</button>') + '</div>'
@@ -447,7 +447,7 @@ export async function renderPremiumAccount(host, ctx) {
       const on = wkVal !== null && b.getAttribute('data-v') === wkVal;
       b.style.cssText = 'cursor:pointer;border-radius:999px;padding:8px 15px;font:700 .8rem inherit;'
         + (on ? 'background:#0883F7;color:#fff;border:1px solid #0883F7'
-              : 'background:transparent;color:#93a4bd;border:1px solid rgba(148,163,184,.4)');
+              : 'background:transparent;color:var(--lbc-x-ink3,#93a4bd);border:1px solid rgba(148,163,184,.4)');
     });
     if (wkHint) {
       wkHint.textContent = wkVal === null

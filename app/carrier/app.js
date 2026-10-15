@@ -269,7 +269,7 @@ const TONE = {
   warning: { c: 'var(--lbc-x-gold,#fbbf24)', bg: 'rgba(217,119,6,.14)', label: 'Attention' },
   action:  { c: 'var(--lbc-x-link,#3b9dff)', bg: 'rgba(8,131,247,.14)', label: 'Action' },
   success: { c: 'var(--lbc-x-ok,#34d399)', bg: 'rgba(22,163,74,.14)', label: 'Done' },
-  info:    { c: '#9fb0ca', bg: 'rgba(148,163,184,.10)', label: 'Info' },
+  info:    { c: 'var(--lbc-x-ink3,#9fb0ca)', bg: 'rgba(148,163,184,.10)', label: 'Info' },
 };
 const toneOf = (t) => TONE[t] || TONE.info;
 // Premium toast notifications (top-center slide-in card; replaces browser alert()).
@@ -2391,7 +2391,7 @@ function lbStopsModal9(l9) {
   const row9 = (ic9, t9, s9, hot9) => h('div', { style: 'display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.07))' }, [
     h('span', { style: 'font-size:1.15rem;flex:none' }, ic9),
     h('div', null, [
-      h('div', { style: 'font-weight:800;color:' + (hot9 ? 'var(--lbc-x-violet,#c4b5fd)' : '#fff') }, t9),
+      h('div', { style: 'font-weight:800;color:' + (hot9 ? 'var(--lbc-x-violet,#c4b5fd)' : 'var(--lbc-x-ink,#fff)') }, t9),
       s9 ? h('div', { class: 'cp-row-s', style: 'margin-top:1px' }, s9) : null,
     ].filter(Boolean)),
   ]);
@@ -2439,7 +2439,7 @@ function notCarrier() {
       const k = cs.kpis || {}; const tt = cs.totals || {};
       const tile = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:110px;background:var(--lbc-x-panel,rgba(255,255,255,.05));border:1px solid var(--lbc-x-line,rgba(255,255,255,.12));border-radius:13px;padding:12px;text-align:center' }, [
         h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:var(--lbc-x-ink3,#7f92b3);text-transform:uppercase' }, lbl),
-        h('div', { style: 'font-size:1.35rem;font-weight:900;margin-top:3px;color:' + (hi ? 'var(--lbc-x-ok,#4ade80)' : '#fff') }, val)]);
+        h('div', { style: 'font-size:1.35rem;font-weight:900;margin-top:3px;color:' + (hi ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink,#fff)') }, val)]);
       const kpis = h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
         tile('Referred', String(k.referred || 0)), tile('Brokers', String(k.brokers || 0)), tile('Carriers', String(k.carriers || 0)),
         tile('Clearing', money9(tt.accrued)), tile('Payable', money9(tt.payable), true), tile('Paid', money9(tt.paid), true)]);
@@ -3967,8 +3967,8 @@ async function appView(user) {
               'ACTIVE TRIP \u00b7 ' + stTxt9,
             ]),
             h('div', { style: 'font-weight:800;font-size:1.12rem;color:var(--lbc-x-ink,#fff);margin-top:9px' }, (t9.origin || '\u2014') + ' \u2192 ' + (t9.destination || '\u2014')),
-            h('div', { style: 'color:#bcd3f2;font-size:.8rem;margin-top:3px' }, [(t9.rate ? '$' + Number(t9.rate).toLocaleString() : null), (t9.miles ? Number(t9.miles).toLocaleString() + ' mi' : null)].filter(Boolean).join(' \u00b7 ')),
-            h('div', { style: 'color:#ffd7c2;font-size:.86rem;font-weight:800;margin-top:6px' }, cnt9),
+            h('div', { style: 'color:var(--lbc-x-ink2,#bcd3f2);font-size:.8rem;margin-top:3px' }, [(t9.rate ? '$' + Number(t9.rate).toLocaleString() : null), (t9.miles ? Number(t9.miles).toLocaleString() + ' mi' : null)].filter(Boolean).join(' \u00b7 ')),
+            h('div', { style: 'color:var(--lbc-x-warn,#ffd7c2);font-size:.86rem;font-weight:800;margin-top:6px' }, cnt9),
             (t9.status === 'planned') ? h('div', { style: 'margin-top:8px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.38);border-radius:10px;padding:8px 12px;font-size:.76rem;line-height:1.5;color:var(--lbc-x-ok,#bbf7d0);font-weight:700;max-width:480px' },
               '\ud83d\udef0 Tracking is ON since booking \u2014 your GPS proof records automatically (keep the app open while working this load). Tap \u201cStart your trip\u201d when you roll: it opens turn-by-turn navigation and the status then updates on its own from your movement.') : null,
             inTr9 ? h('div', { style: 'margin-top:8px;background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.4);border-radius:10px;padding:7px 12px;font-size:.76rem;font-weight:800;color:var(--lbc-x-ok,#86efac);max-width:480px' },
@@ -4593,7 +4593,7 @@ async function appView(user) {
             h('div', { style: 'margin:4px 0 6px' }, [
               dRow('Requirements', o.requirements),
               dRow('Load notes', o.notes),
-              o.message ? h('div', { style: 'margin-top:7px;padding:9px 12px;border-radius:11px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.2);font-size:.84rem;font-weight:600;color:#9fc3f5' }, '\ud83d\udcac ' + o.message) : null,
+              o.message ? h('div', { style: 'margin-top:7px;padding:9px 12px;border-radius:11px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.2);font-size:.84rem;font-weight:600;color:var(--lbc-x-link,#9fc3f5)' }, '\ud83d\udcac ' + o.message) : null,
             ].filter(Boolean)),
             (() => {
               // Your protections — the load's REAL accessorial rate card (detention, TONU, layover, lumper)
@@ -5678,7 +5678,7 @@ function tripStepper(status) {
         const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { const _ct3533 = ev.currentTarget; await pocketReportIssue(t.id, kind.value, note.value.trim()); fw.innerHTML = ''; fw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Reported to dispatch')); } catch (e) { _ct3533.disabled = false; _ct3533.textContent = 'Send'; alert((e && e.message) || 'Could not report.'); } } }, 'Send');
         fw.appendChild(h('div', { class: 'cp-inlineform' }, [kind, note, send]));
       } }, [icon('alert',15),' Report issue']) : null;
-      const emergency = active ? h('button', { class: 'cp-btn cp-btn-sm', style: 'border-color:#dc2626;color:#dc2626', onClick: () => openEmergency(t) }, '🚨 Emergency') : null;
+      const emergency = active ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'border-color:#dc2626;color:var(--lbc-x-danger,#dc2626)', onClick: () => openEmergency(t) }, '🚨 Emergency') : null;
       const podW = h('div');
       const canPod = t.status === 'delivered' || t.status === 'invoiced';
       // Suggested Reloads (Relay-style): loads picking up near this trip's destination
@@ -6016,7 +6016,7 @@ function tripStepper(status) {
       // ---- PREMIUM CARD: hero strip (route, rate, countdown, big map button) + collapsed tools ----
       const abRow = (color, letter, txt) => h('div', { style: 'display:flex;align-items:center;gap:9px;padding:3px 0' }, [
         h('span', { style: 'width:19px;height:19px;border-radius:50%;background:' + color + ';color:#ffffff;font-weight:900;font-size:11px;display:inline-flex;align-items:center;justify-content:center;flex:none' }, letter),
-        h('span', { style: 'font-weight:700;font-size:.92rem;color:#eef3fb' }, txt || '—'),
+        h('span', { style: 'font-weight:700;font-size:.92rem;color:var(--lbc-x-ink,#eef3fb)' }, txt || '—'),
       ]);
       let cdEl = null;
       if (active && t.pickup_mode !== 'fcfs' && (t.scheduled_pickup || t.scheduled_delivery)) {
@@ -6137,7 +6137,7 @@ function tripStepper(status) {
             h('div', { style: 'font-weight:800;color:var(--lbc-x-danger,#fca5a5);font-size:.9rem' }, '⛔ No TONU — you cannot claim this load'),
             h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'It was cancelled because your truck did not move toward pickup in time. Under the signed rate confirmation, a late / no-show carrier does NOT qualify for TONU — this is decided from your GPS, not opinion.'),
             h('div', { style: 'margin-top:8px;padding:9px 11px;border-radius:9px;background:rgba(0,0,0,.25)' }, [
-              h('div', { style: 'font-weight:700;font-size:.78rem;color:#e5edf8;margin-bottom:3px' }, [icon('pin',15),' GPS evidence recorded at cancellation']),
+              h('div', { style: 'font-weight:700;font-size:.78rem;color:var(--lbc-x-ink,#e5edf8);margin-bottom:3px' }, [icon('pin',15),' GPS evidence recorded at cancellation']),
               _ev.distance_mi != null ? h('div', { class: 'cp-row-s' }, '• Truck was ~' + _ev.distance_mi + ' mi from pickup and ' + (_ev.moving ? 'moving' : 'NOT moving toward it')) : null,
               _ev.must_depart_by ? h('div', { class: 'cp-row-s' }, '• You had to depart by ' + _fmtEv(_ev.must_depart_by) + ' to make the appointment') : null,
               (_ev.hours_to_pickup != null) ? h('div', { class: 'cp-row-s' }, '• Pickup was ' + (Number(_ev.hours_to_pickup) < 0 ? Math.abs(Math.round(_ev.hours_to_pickup)) + 'h overdue' : 'in ' + Math.round(_ev.hours_to_pickup) + 'h') + ' when the load was cancelled') : null,
@@ -7949,7 +7949,7 @@ function tripStepper(status) {
             h('div', { class: 'cp-row-s', style: 'margin-top:2px;line-height:1.5' }, s9)]);
           dw.appendChild(h('div', { style: 'margin-top:8px;border:1px solid var(--lbc-x-line,rgba(255,255,255,.14));border-radius:16px;overflow:hidden' }, [
             h('div', { style: 'background:var(--lbc-x-hero,linear-gradient(120deg,#10223B,#0d2f56));padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
-              h('div', null, [h('div', { style: 'font-weight:900;color:var(--lbc-x-ink,#fff)' }, [icon('card',15),' Pay LoadBoot']), h('div', { style: 'font-size:.72rem;color:#9fb0cc' }, 'flat 5% dispatch fee · net 15')]),
+              h('div', null, [h('div', { style: 'font-weight:900;color:var(--lbc-x-ink,#fff)' }, [icon('card',15),' Pay LoadBoot']), h('div', { style: 'font-size:.72rem;color:var(--lbc-x-ink2,#9fb0cc)' }, 'flat 5% dispatch fee · net 15')]),
               h('div', { style: 'font-size:1.5rem;font-weight:900;color:var(--lbc-x-ink,#fff)' }, money(pi.amount || i.fee || 0)),
             ]),
             h('div', { style: 'padding:12px 16px' }, [
@@ -9309,7 +9309,7 @@ function tripStepper(status) {
       };
       const act = (['urgent', 'warning', 'action'].indexOf(p.tone) >= 0 && !n.read_at)
         ? h('div', { style: 'margin-top:9px;display:flex;align-items:center;gap:11px;flex-wrap:wrap' }, [
-            h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0;background:' + tone.c + ';color:#07101d;font-weight:800', onClick: (e9) => { e9.stopPropagation(); open9(); } },
+            h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0;background:' + tone.c + ';color:var(--lbc-x-onfill,#07101d);font-weight:800', onClick: (e9) => { e9.stopPropagation(); open9(); } },
               (p.cta || (p.tone === 'urgent' ? 'Fix it' : 'Open')) + ' →'),
             navItem ? h('span', { style: 'font-size:.68rem;color:var(--lbc-x-ink3,#94a3b8)' }, navItem[1]) : null,
           ].filter(Boolean))
@@ -9318,7 +9318,7 @@ function tripStepper(status) {
       // says at a glance whether this is a document, a truck or a payment.
       const mark = '<span style="position:relative;display:inline-block">'
         + '<img src="/icon-512.png" width="36" height="36" alt="LoadBoot" style="display:block;border-radius:11px;box-shadow:0 0 0 2px ' + tone.c + '">'
-        + '<span style="position:absolute;right:-6px;bottom:-6px;width:19px;height:19px;border-radius:7px;background:#0e1726;border:1.5px solid ' + tone.c + ';font-size:10px;line-height:16px;text-align:center">' + lbNotifGlyph(n.template_key) + '</span></span>';
+        + '<span style="position:absolute;right:-6px;bottom:-6px;width:19px;height:19px;border-radius:7px;background:var(--lbc-x-field,#0e1726);border:1.5px solid ' + tone.c + ';font-size:10px;line-height:16px;text-align:center">' + lbNotifGlyph(n.template_key) + '</span></span>';
       const row = h('div', { class: 'cp-row cp-notif' + (n.read_at ? '' : ' unread'),
         style: 'align-items:flex-start;gap:12px;border-left:3px solid ' + tone.c + ';padding-left:11px;border-radius:0 12px 12px 0'
                + (n.read_at ? ';opacity:.72' : ';background:' + tone.bg),

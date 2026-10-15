@@ -91,7 +91,7 @@ function sheet(innerHTML) {
   const old = document.getElementById('psxModal'); if (old) { if (old.__psxGuard) popLayer(old.__psxGuard); old.remove(); }
   const wrap = document.createElement('div'); wrap.id = 'psxModal';
   wrap.innerHTML = '<div class="psx-ov" style="position:fixed;inset:0;background:rgba(4,8,16,.72);z-index:2400;display:flex;align-items:flex-end;justify-content:center">'
-    + '<div class="psx-sheet" style="background:#0d1526;border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:20px 20px 0 0;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:22px 20px 18px;box-shadow:0 -20px 60px rgba(0,0,0,.5)">'
+    + '<div class="psx-sheet" style="background:var(--lbc-x-field,#0d1526);border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:20px 20px 0 0;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:22px 20px 18px;box-shadow:0 -20px 60px rgba(0,0,0,.5)">'
     + innerHTML + '</div></div>'
     + '<style>#psxModal .mx-chips{display:flex;gap:8px;flex-wrap:wrap}'
     + '#psxModal .mx-chip{background:var(--lbc-x-field,#0a1322);border:1.5px solid var(--lbc-x-line,rgba(255,255,255,.14));color:var(--lbc-x-ink2,#c7d5ea);border-radius:999px;padding:9px 16px;font-size:.9rem;font-weight:700;cursor:pointer}'

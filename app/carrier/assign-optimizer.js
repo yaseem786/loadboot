@@ -28,7 +28,7 @@ export async function renderAssignOptimizer(host, opts) {
   const strip = el('div', 'display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px');
   const kpi = function (label, val, sub, color) {
     const c = el('div', 'background:var(--lbc-x-panel,rgba(255,255,255,.04));border:1px solid rgba(148,163,184,.18);border-radius:11px;padding:9px 11px;text-align:center');
-    c.innerHTML = '<div style="font-weight:900;font-size:1.05rem;color:' + (color || '#fff') + '">' + val + '</div>'
+    c.innerHTML = '<div style="font-weight:900;font-size:1.05rem;color:' + (color || 'var(--lbc-x-ink,#fff)') + '">' + val + '</div>'
       + '<div style="opacity:.65;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;margin-top:2px">' + label + '</div>'
       + (sub ? '<div style="opacity:.55;font-size:.68rem">' + sub + '</div>' : '');
     return c;

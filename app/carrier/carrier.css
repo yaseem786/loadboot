@@ -242,7 +242,7 @@ textarea.cp-in { resize: vertical; }
 .cp-auth-brand, .cp-brandrow { display: flex; align-items: center; gap: 3px; margin-bottom: 14px; }
 .cp-brandrow { margin-bottom: 4px; }
 .cp-tagline { font-size: .74rem; font-weight: 700; letter-spacing: .01em; color: var(--lb-orange, #FC5305); margin-top: 2px; }
-.cp-tagline.light { color: #f9a86b; }
+.cp-tagline.light { color: var(--lbc-x-warn,#f9a86b); }
 
 /* onboarding wizard (Phase 2A) */
 .cp-wiz-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
@@ -606,7 +606,7 @@ html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c33; border-colo
 .acx .ava .cam{position:absolute;right:-6px;bottom:-6px;width:30px;height:30px;border-radius:50%;background:var(--orange);color:#0b1b33;display:flex;align-items:center;justify-content:center;font-size:.85rem;border:3px solid #0d2444;cursor:pointer;box-shadow:0 4px 10px rgba(252,83,5,.5)}
 .acx .pname{font-size:1.32rem;font-weight:800;letter-spacing:-.02em;line-height:1.12}
 .acx .psub{color:#b9c6db;font-size:.8rem;margin-top:3px}
-.acx .vpill{display:inline-flex;gap:7px;align-items:center;margin-top:10px;background:linear-gradient(90deg,rgba(18,161,80,.28),rgba(18,161,80,.12));color:#8ef0b4;border:1px solid rgba(52,211,153,.4);border-radius:99px;padding:5px 12px;font-size:.7rem;font-weight:800;letter-spacing:.04em;position:relative;overflow:hidden}
+.acx .vpill{display:inline-flex;gap:7px;align-items:center;margin-top:10px;background:linear-gradient(90deg,rgba(18,161,80,.28),rgba(18,161,80,.12));color:var(--lbc-x-ok,#8ef0b4);border:1px solid rgba(52,211,153,.4);border-radius:99px;padding:5px 12px;font-size:.7rem;font-weight:800;letter-spacing:.04em;position:relative;overflow:hidden}
 .acx .vpill:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-120%);animation:acx-shine 3.2s infinite}
 @keyframes acx-shine{to{transform:translateX(120%)}}
 .acx .mstrip{display:flex;gap:9px;margin:-42px 16px 0;position:relative;z-index:6}

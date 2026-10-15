@@ -97,7 +97,7 @@ function answer(host, d) {
     + '<div style="font-size:2.3rem;font-weight:800;color:var(--lbc-x-ink,#eaf1fb);line-height:1">' + Number(d.breakeven_miles).toLocaleString() + '</div>'
     + '<div style="color:var(--lbc-x-ink3,#8ea2c3);font-size:.92rem;font-weight:700">loaded miles a week</div></div>'
     + '<div style="' + SUB + ';margin-bottom:14px">to cover ' + money(d.weekly_cost) + ' at your ' + money(d.rpm) + '.00 floor, after our ' + d.fee_pct + '% — '
-    + 'about <b style="color:#c9d8ee">' + Number(d.miles_per_day).toLocaleString() + ' a day</b> over ' + d.driving_days + ' driving days.</div>'
+    + 'about <b style="color:var(--lbc-x-ink2,#c9d8ee)">' + Number(d.miles_per_day).toLocaleString() + ' a day</b> over ' + d.driving_days + ' driving days.</div>'
 
     + bars
 

@@ -198,11 +198,11 @@ export async function mountEldCard(host, opts = {}) {
         // provider nobody had picked yet (Fleet tab 5,489px). Folded behind a summary on ≤560px, open on desktop;
         // the steps themselves are unchanged (vendor-published, see STEPS).
         h('details', { open: !PHONE9, style: 'margin-bottom:10px' }, [
-          h('summary', { style: 'cursor:pointer;font-weight:700;font-size:.85rem;color:#c9d4e5;list-style:none;display:flex;align-items:center;gap:6px' }, [
+          h('summary', { style: 'cursor:pointer;font-weight:700;font-size:.85rem;color:var(--lbc-x-ink2,#c9d4e5);list-style:none;display:flex;align-items:center;gap:6px' }, [
             h('span', { style: 'display:inline-block;transition:transform .15s', class: 'eld-caret' }, '▸'),
             prov === 'generic' ? 'How to set up the webhook (' + S.steps.length + ' steps)' : 'How to get your ' + S.label.replace(/ \(.*\)$/, '') + ' token (' + S.steps.length + ' steps)']),
           h('div', { class: 'cp-row-s', style: 'margin:8px 0 6px' }, [icon('shield', 13), ' ', S.who]),
-          h('ol', { style: 'margin:0;padding-left:20px;line-height:1.7;font-size:.86rem;color:#c9d4e5' }, S.steps.map((s) => h('li', null, s))),
+          h('ol', { style: 'margin:0;padding-left:20px;line-height:1.7;font-size:.86rem;color:var(--lbc-x-ink2,#c9d4e5)' }, S.steps.map((s) => h('li', null, s))),
         ]),
         prov === 'generic' ? webhookBox() : h('div', null, [
           h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [tokIn, h('div', { style: 'display:flex;gap:8px;align-items:center' }, [eye, connectBtn])]),

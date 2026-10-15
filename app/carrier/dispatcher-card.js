@@ -27,14 +27,14 @@ const CSS = `
 .dc-pill.warn{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.45);color:var(--lbc-x-gold,#fcd34d)}
 .dc-pill.blue{background:rgba(8,131,247,.16);border-color:rgba(8,131,247,.5);color:var(--lbc-x-link,#8ec5ff)}
 .dc-pill.bad{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.45);color:var(--lbc-x-danger,#fca5a5)}
-.dc-next{display:flex;gap:10px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--lbc-x-panel,rgba(10,19,34,.5));border:1px solid var(--lbc-x-line,rgba(255,255,255,.08));font-size:.84rem;color:#dfe9fb}
+.dc-next{display:flex;gap:10px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--lbc-x-panel,rgba(10,19,34,.5));border:1px solid var(--lbc-x-line,rgba(255,255,255,.08));font-size:.84rem;color:var(--lbc-x-ink,#dfe9fb)}
 .dc-next.hot{border-color:rgba(252,83,5,.45);background:rgba(252,83,5,.08)}
 .dc-next .ic{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;background:var(--lbc-x-panel,rgba(255,255,255,.06));color:var(--lbc-x-ink3,#8ea2c3)}
 .dc-next.hot .ic{background:#FC5305;color:#fff}
 .dc-next b{color:var(--lbc-x-ink,#fff)}
 .dc-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .dc-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:12px;font-weight:800;font-size:.84rem;border:0;cursor:pointer;text-decoration:none;color:#fff;background:#0883F7;box-shadow:0 10px 22px -12px rgba(8,131,247,.9)}
-.dc-btn.ghost{background:var(--lbc-x-panel,rgba(255,255,255,.07));border:1px solid var(--lbc-x-line,rgba(255,255,255,.14));box-shadow:none}
+.dc-btn.ghost{background:var(--lbc-x-panel,rgba(255,255,255,.07));color:var(--lbc-x-ink,#fff);border:1px solid var(--lbc-x-line,rgba(255,255,255,.14));box-shadow:none}
 .dc-btn.wa{background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.4);color:var(--lbc-x-ok,#6ee7b7);box-shadow:none}
 @container (max-width:520px){.dc-acts .dc-btn{flex:1 1 auto;justify-content:center}.dc-name{font-size:1rem}}
 `;

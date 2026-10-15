@@ -65,14 +65,14 @@ const CSS = `
 .dd-block{border-radius:20px;padding:16px 18px;background:linear-gradient(135deg,rgba(252,83,5,.16),rgba(252,83,5,.05) 60%,rgba(255,255,255,.02));border:1px solid rgba(252,83,5,.45)}
 .dd-block .hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .dd-block .hd b{color:var(--lbc-x-ink,#fff);font-size:1.02rem}
-.dd-block .hd span{color:#f8c9b0;font-size:.86rem}
+.dd-block .hd span{color:var(--lbc-x-warn,#f8c9b0);font-size:.86rem}
 .dd-blist{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:12px}
-.dd-bitem{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--lbc-x-panel,rgba(10,19,34,.55));border:1px solid rgba(252,83,5,.35);color:#eaf1fb;text-decoration:none;transition:transform .12s,border-color .12s}
+.dd-bitem{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--lbc-x-panel,rgba(10,19,34,.55));border:1px solid rgba(252,83,5,.35);color:var(--lbc-x-ink,#eaf1fb);text-decoration:none;transition:transform .12s,border-color .12s}
 .dd-bitem:hover{transform:translateY(-1px);border-color:#FC5305}
 .dd-bitem .n{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:#FC5305;color:#fff;font-weight:900;font-size:.8rem;flex:none}
-.dd-bitem .m{flex:1;min-width:0}.dd-bitem .m b{display:block;font-size:.9rem}.dd-bitem .m span{display:block;font-size:.76rem;color:#f8c9b0;margin-top:1px}
+.dd-bitem .m{flex:1;min-width:0}.dd-bitem .m b{display:block;font-size:.9rem}.dd-bitem .m span{display:block;font-size:.76rem;color:var(--lbc-x-warn,#f8c9b0);margin-top:1px}
 .dd-bitem .go{font-weight:800;color:var(--lbc-x-warn,#ffb38a);white-space:nowrap;font-size:.82rem}
-.dd-allok{display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:16px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.4);color:#d1fae5;font-size:.9rem}
+.dd-allok{display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:16px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.4);color:var(--lbc-x-ok,#d1fae5);font-size:.9rem}
 .dd-sec{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--lbc-x-link,#7fb4ff);margin:14px 0 4px}
 .dd-sec:first-child{margin-top:0}
 .dd-thread.empty{height:auto}
@@ -114,7 +114,7 @@ const CSS = `
 .dd-delay .note{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(245,158,11,.08);border:1px dashed rgba(245,158,11,.4);font-size:.86rem;color:var(--lbc-x-gold,#fde68a)}
 .dd-delay .eta{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-weight:800;color:var(--lbc-x-ink,#fff);font-size:.9rem}
 .dd-cta{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:14px;background:#0883F7;color:#fff;font-weight:800;border:0;cursor:pointer;font-size:.92rem;box-shadow:0 12px 26px -12px rgba(8,131,247,.9)}
-.dd-cta.ghost{background:var(--lbc-x-panel,rgba(255,255,255,.07));box-shadow:none;border:1px solid var(--lbc-x-line,rgba(255,255,255,.14))}
+.dd-cta.ghost{background:var(--lbc-x-panel,rgba(255,255,255,.07));color:var(--lbc-x-ink,#fff);box-shadow:none;border:1px solid var(--lbc-x-line,rgba(255,255,255,.14))}
 .dd-cta.danger{background:rgba(239,68,68,.14);color:var(--lbc-x-danger,#fca5a5);border:1px solid rgba(239,68,68,.4);box-shadow:none}
 .dd-btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .dd-wrap{container-type:inline-size}
@@ -296,7 +296,7 @@ export async function renderDispatcherDesk(host) {
     : hard.length ? h('div', { class: 'dd-block' }, [
         h('div', { class: 'hd' }, [icon('alert', 18), h('b', null, hard.length === 1 ? '1 thing is stopping your dispatcher from booking' : hard.length + ' things are stopping your dispatcher from booking'), h('span', null, '— each link opens the exact field')]),
         h('div', { class: 'dd-blist' }, hard.map(bitem)),
-        soft.length ? h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#f8c9b0' }, ['Also worth setting: ', soft.map((r, i) => [i ? ' · ' : '', h('a', { href: '#' + linkOf(r), style: 'color:var(--lbc-x-warn,#ffb38a);font-weight:700', onClick: (e) => { e.preventDefault(); nav(linkOf(r)); } }, r.label)])]) : null,
+        soft.length ? h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:var(--lbc-x-warn,#f8c9b0)' }, ['Also worth setting: ', soft.map((r, i) => [i ? ' · ' : '', h('a', { href: '#' + linkOf(r), style: 'color:var(--lbc-x-warn,#ffb38a);font-weight:700', onClick: (e) => { e.preventDefault(); nav(linkOf(r)); } }, r.label)])]) : null,
       ])
     : h('div', { class: 'dd-allok' }, [icon('check', 18), h('div', null, [h('b', { style: 'color:var(--lbc-x-ink,#fff)' }, 'Nothing is blocking your dispatcher. '), soft.length ? ['Optional: ', soft.map((r, i) => [i ? ' · ' : '', h('a', { href: '#' + linkOf(r), style: 'color:var(--lbc-x-ok,#6ee7b7);font-weight:700', onClick: (e) => { e.preventDefault(); nav(linkOf(r)); } }, r.label)])] : 'Every item on the checklist is done.'])]);
 
