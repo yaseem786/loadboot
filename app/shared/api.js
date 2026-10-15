@@ -535,6 +535,12 @@ export const ccDispatcherDecide = (user, action, note) => rpc('cc_dispatcher_dec
 export const ccDispatcherSetRejectReasons = (user, reasons) => rpc('cc_dispatcher_set_reject_reasons', { p_user: user, p_reasons: Array.isArray(reasons) ? reasons : [] });
 export const ccDispatcherAssign = (dispatcher, carrierOrg, sop) => rpc('cc_dispatcher_assign', { p_dispatcher: dispatcher, p_carrier_org: carrierOrg, p_sop: sop ?? {} });
 export const ccDispatcherSop = (assignment, sop) => rpc('cc_dispatcher_sop', { p_assignment: assignment, p_sop: sop ?? {} });
+// bl_disp_0555 — availability gate + call rule: desk config (modes), CC-editable call reasons, the carrier's own gate read
+export const ccDispDeskConfig = () => rpc('cc_disp_desk_config');
+export const ccDispDeskConfigSet = (key, value) => rpc('cc_disp_desk_config_set', { p_key: key, p_value: value ?? null });
+export const ccDispCallReasons = () => rpc('cc_disp_call_reasons');
+export const ccDispCallReasonSet = (p) => rpc('cc_disp_call_reason_set', { p: p ?? {} });
+export const carrierAvailabilityGate = () => rpc('carrier_availability_gate');
 export const ccDispatcherUnassign = (assignment, reason, pause) => rpc('cc_dispatcher_unassign', { p_assignment: assignment, p_reason: reason ?? null, p_pause: !!pause });
 export const ccDispatcherSalarySet = (user, base, perTruck, currency) => rpc('cc_dispatcher_salary_set', { p_user: user, p_base: base, p_per_truck: perTruck, p_currency: currency ?? 'PKR' });
 export const ccDispatcherSalaryRun = (user, period, bonus, kpi, note) => rpc('cc_dispatcher_salary_run', { p_user: user, p_period: period, p_bonus: bonus ?? 0, p_kpi: kpi ?? {}, p_note: note ?? null });

@@ -320,6 +320,11 @@ export async function renderDispatcherDesk(host) {
       sopRows.length ? h('div', { class: 'dd-sec' }, 'Rules your dispatcher works to · change them in Account → Dispatch') : null,
       sopRows.length ? h('div', { class: 'dd-cols' }, sopRows.map((r) => row(true, r[0], r[1]))) : null,
       sopRows.length ? h('div', { class: 'dd-sec' }, 'What your dispatcher needs from you') : null,
+      // bl_disp_0555 — availability gate: the dispatcher works only trucks the CARRIER marked available (their own post, not the dispatcher's)
+      (d.availability_gate && d.availability_gate.assigned && !d.availability_gate.fresh) ? h('div', { class: 'dd-sec', style: 'color:' + (d.availability_gate.blocked ? '#fca5a5' : '#fcd34d') },
+        (d.availability_gate.blocked ? '⛔ Your load board is hidden until you post availability' : '⚠ Post today’s availability — ' + (dp.first_name || 'your dispatcher') + ' hunts loads only for trucks you mark available')
+        + ' · last post: ' + (d.availability_gate.last_label || 'never') + ' · ') : null,
+      (d.availability_gate && d.availability_gate.assigned && !d.availability_gate.fresh) ? h('a', { class: 'fix', href: '#availability', style: 'display:inline-block;margin:0 0 8px', onClick: (e) => { e.preventDefault(); nav('availability'); } }, 'Post availability →') : null,
       h('div', { class: 'dd-cols' }, ready.map((r) => row(!!r.done, r.label, r.detail ? r.detail + ' · ' + (r.why || '') : r.why, r.link || r.tab || 'account'))),
     ]), h('div', { class: 'dd-ring', style: '--p:' + readyPct + ';width:52px;height:52px' }, h('i', { style: 'width:40px;height:40px;font-size:.78rem' }, readyPct + '%')));
   const readiness = setup; const sop = null;

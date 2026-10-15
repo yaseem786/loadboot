@@ -21,6 +21,7 @@ import {
   dispatcherPostLoad, dispatcherUpdateLoad, dispatcherWithdrawLoad, dispatcherMyPosts, dispatcherBrokerScreen, fmcsaVerify,   // bl_disp_0549 — post a 3rd-party load on the carrier's board
 } from '../shared/api.js';
 import { setTrainingBanner, trainingBannerHeight } from '../shared/training-banner.js';   // bl_train_0548
+import { BALL_LABEL } from '../shared/dispatcher-rules.js';   // bl_disp_0555 — "where is the load" line on your posts
 import { threadChat } from '../shared/thread-chat.js';   // bl_ui_0502
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { el, mount, clear } from '../shared/ui/dom.js';
@@ -549,6 +550,19 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     m.close = close; return m;
   }
   function toast(msg, bad) { const t = h('div', { class: 'dw-toast' + (bad ? ' bad' : ''), role: 'status' }, msg); document.body.appendChild(t); setTimeout(() => t.remove(), bad ? 6000 : 3500); }
+  // bl_disp_0555 — availability-first: the carrier posts availability; the chip says where that stands and the one intro call.
+  const rulesMode = () => (feed && feed.rules && feed.rules.availability_gate_mode) || 'warn';
+  const gated = (a) => !!(a && a.availability && a.availability.blocked);
+  const GATE_MSG = 'Carrier has not posted availability — nothing to work until they do.';
+  function availabilityChip(a) {
+    const g = a && a.availability; if (!g || !g.assigned) return null;
+    const intro = a.intro_call_at ? 'Intro call done ' + dwDay(a.intro_call_at) + ' · from here the portal, call only if urgent' : 'Intro call pending — the one call you make: show them where to post availability and why';
+    if (g.fresh) return h('div', { class: 'dw-ok', style: 'margin-bottom:8px' }, ['✓ Availability posted by the carrier ' + (g.last_label || '') + ' · ' + (g.trucks || 0) + ' truck' + (g.trucks === 1 ? '' : 's') + ' · ', h('span', { class: 'dw-muted' }, intro)]);
+    return h('div', { class: g.blocked ? 'dw-warn' : 'dw-info', style: 'margin-bottom:8px' }, [
+      h('b', null, '⏳ ' + (g.chip || 'Waiting for availability')),
+      ' — ' + (g.blocked ? 'nothing to post or book until the carrier posts it (the board is hidden on their side too).' : 'post only what fits a posted truck.') + ' Do not call about it — the portal reminds them. ',
+      h('span', { class: 'dw-muted' }, intro)]);
+  }
   // ask({title, text, fields:[{key,label,type,placeholder,required,value,options}], ok, danger}) → values | null
   function ask(o) {
     return new Promise((resolve) => {
@@ -765,6 +779,11 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         q.length ? q.map((x) => h('div', { class: 'dw-q' + (x.hot ? ' hot' : ''), style: x.go ? 'cursor:pointer' : '', tabindex: x.go ? '0' : null, role: x.go ? 'button' : null, onKeydown: (e) => { if (x.go && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go(x); } }, onClick: () => go(x) }, [h('div', { class: 'ic' }, ic(x.ic, 20)), h('div', null, [h('b', null, x.t), h('div', { class: 'dw-muted' }, x.s)])]))
           : h('div', { class: 'dw-ok' }, 'Nothing urgent. Trucks are covered, RCs are in, check calls are current.')]),
       h('div', { class: 'dw-card' }, [h('h3', null, 'Rules of the road'), h('div', { class: 'dw-muted', style: 'line-height:1.9' }, [
+        // bl_disp_0555 — the standing rules come from the server (same words as the brief e-mail and the thread)
+        feed.rules && feed.rules.text ? h('div', { class: 'dw-warn', style: 'margin-bottom:10px;line-height:1.7' }, [h('b', null, 'LoadBoot standing rules — every carrier'),
+          ...String(feed.rules.text).split('\n').map((ln) => h('div', null, ln)),
+          feed.rules.intro_script ? h('div', { style: 'margin-top:6px' }, [h('b', null, 'Intro call, in one breath: '), h('i', null, '“' + feed.rules.intro_script + '”')]) : null,
+          feed.rules.call_rule_mode === 'enforce' ? h('div', { style: 'margin-top:4px' }, 'The phone refuses a non-urgent carrier call after the intro.') : h('div', { style: 'margin-top:4px' }, 'The phone asks why before every carrier call; a non-urgent call after the intro is allowed for now but counted.')]) : null,
         h('div', null, '1. Every rate confirmation goes to LoadBoot first (attach it here). The driver does not move until the booking shows Approved.'),
         h('div', null, '2. Below the carrier’s minimum rate? Log it anyway — it is flagged and LoadBoot decides. Never promise the broker before that.'),
         h('div', null, '3. Check call every 4 hours while loaded: location + ETA. Log it under the booking.'),
@@ -806,6 +825,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         // capacity policy — numbers mirror app_private.disp_capacity_policy() (trial 1 · then up to 3 carriers / 5 trucks after 3 delivered loads, added by LoadBoot)
         h('div', { style: 'margin-top:6px' }, 'Carriers: one during the trial. After it, LoadBoot may add up to 3 carriers / 5 trucks once you have 3 delivered loads and no carrier report — you never add a carrier yourself.'),
       ])]),
+      availabilityChip(a),   // bl_disp_0555
       (s.scope_value || s.lanes || s.rules || s.min_rate || s.min_rate_note) ? h('div', { class: 'dw-avail' }, [h('b', { style: 'color:#7cc0ff' }, [ic('scale', 16), ' Your SOP for this carrier (set by LoadBoot)']), h('div', { class: 'dw-muted', style: 'line-height:1.8;margin-top:4px' }, [
         s.scope_value ? h('div', null, 'Scope: ' + s.scope_value + ' — only source loads inside this scope.') : null,
         s.lanes ? h('div', null, 'Lanes: ' + s.lanes) : null,
@@ -875,7 +895,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const renderAvail = (editing) => {
       if (!editing) {
         mount(availBox, h('div', { class: 'dw-avail' }, [
-          h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('b', { style: 'color:#7cc0ff' }, [ic('pin', 16), ' Availability' + (av.updated_at ? ' · updated ' + ago(av.updated_at) + (av.updated_by_role ? ' by ' + (av.updated_by_role === 'eld' ? 'ELD' : av.updated_by_role) : '') : ' · NOT SET')]), h('button', { class: 'dw-btn sm', onClick: () => renderAvail(true) }, av.updated_at ? 'Update' : 'Set availability')]),
+          h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('b', { style: 'color:#7cc0ff' }, [ic('pin', 16), ' Availability' + (av.updated_at ? ' · updated ' + ago(av.updated_at) + (av.updated_by_role ? ' by ' + (av.updated_by_role === 'eld' ? 'ELD' : av.updated_by_role) : '') : ' · NOT SET')]), rulesMode() === 'enforce' ? h('span', { class: 'dw-muted', title: 'The carrier posts their own availability. Ask in the thread.' }, 'Carrier posts this — ask in the thread') : h('button', { class: 'dw-btn sm', title: 'A line you enter never counts as the carrier’s own post — ask them to post it in their portal', onClick: () => renderAvail(true) }, av.updated_at ? 'Update' : 'Set availability')]),   // bl_disp_0555
           h('div', { class: 'dw-grid', style: 'margin-top:6px' }, [
             f('Status', (av.status || 'empty').toUpperCase()), f('Empty at', av.empty_location ? av.empty_location + (av.empty_zip ? ' ' + av.empty_zip : '') : null), f('Empty from', av.empty_at ? when(av.empty_at) : null),
             f('Must be home by', av.must_be_home_by ? whenDay(av.must_be_home_by) + (av.home_location ? ' · ' + av.home_location : '') : null),
@@ -908,7 +928,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
           const p = {}; for (const k of Object.keys(next)) if (norm(k, av[k]) !== norm(k, next[k])) p[k] = next[k];
           if (!Object.keys(p).length) p.status = st.value; // nothing changed → just re-confirm today's line (bumps updated_at)
           const r = await dispatcherSetAvailability(t.id, p);
-          if (r && r.error) throw new Error(r.error); try { dwLive.send('availability_posted', { truck: t.id }); } catch (_) {} toast('Availability saved'); await load();
+          if (r && r.error) throw new Error(r.error); try { dwLive.send('availability_posted', { truck: t.id }); } catch (_) {} toast(r && r.warning ? 'Saved — ' + r.warning : 'Availability saved', !!(r && r.warning)); await load();   // bl_disp_0555
         } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, 'Save'),
         h('button', { class: 'dw-btn ghost', onClick: () => renderAvail(false) }, 'Cancel'),
       ])]));
@@ -1179,7 +1199,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         let rc = null; const f0 = rcFile.files && rcFile.files[0]; if (f0) rc = await uploadDocument(f0, 'rate_confirmation');
         const p = { carrier_org_id: t._a.carrier_org_id, truck_id: t.id, broker: broker.value.trim(), broker_mc: bmc.value, broker_rep: rep.value, broker_phone: bphone.value, broker_email: bemail.value, origin: org.value.trim(), destination: dst.value.trim(), pickup_at: fromET(pu.value), delivery_at: fromET(dl.value), miles: miles.value || null, deadhead: dh.value || null, gross: gross.value, commodity: comm.value, weight_lbs: wt.value || null, equipment: eq.value || t.equipment, rc_number: rcno.value, rc_doc_path: rc && rc.path, rc_doc_name: rc && rc.fileName, notes: notes.value, source: 'external' };
         const st = stopsUI.value(); if (st) p.stops = st;
-        const r = await dispatcherLogBooking(p);
+        const r = await dispatcherLogBooking(p); if (r && r.availability_warning) toast(r.availability_warning, true);   // bl_disp_0555
         if (r && r.error) throw new Error(r.error); try { dwLive.send('booking_created', { booking: r.id }); } catch (_) {} m.close(); toast(r.status === 'rc_received' ? 'Logged — RC sent to LoadBoot for approval' : 'Logged — attach the RC as soon as you have it'); if (Array.isArray(r.warnings) && r.warnings.length) toast('⚠ ' + r.warnings.join(' · '), true); await load(); tab = 'bookings'; render();
       } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, 'Save booking'), h('button', { class: 'dw-btn ghost', onClick: () => m.close() }, 'Cancel')]),
     ]));
@@ -1263,7 +1283,8 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const wrap = h('div', null, [
       // bl_disp_0549 — loads this dispatcher posted for THIS carrier (DAT/Truckstop/… finds), with the carrier's decision
       postsHost,
-      h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('search'), ' LoadBoot board — ' + ((cur.carrier && cur.carrier.name) || '')]), h('div', { class: 'dw-row' }, [as.length > 1 ? sel : null, h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh board', onClick: () => paint(true) }, ic('refresh', 14)), h('button', { class: 'dw-btn sm accent', 'data-tour': 'dw-post-load', onClick: () => postLoadForm(cur, null) }, [ic('plus', 16), as.length > 1 ? 'Post a load' : 'Post a load for ' + ((cur.carrier && cur.carrier.name) || 'the carrier')]), h('button', { class: 'dw-btn sm', onClick: () => postForm(cur) }, [ic('plus', 16), 'Post the truck'])])]),
+      h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('search'), ' LoadBoot board — ' + ((cur.carrier && cur.carrier.name) || '')]), h('div', { class: 'dw-row' }, [as.length > 1 ? sel : null, h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh board', onClick: () => paint(true) }, ic('refresh', 14)), h('button', { class: 'dw-btn sm accent', 'data-tour': 'dw-post-load', disabled: gated(cur) ? '' : null, title: gated(cur) ? GATE_MSG : null, onClick: () => postLoadForm(cur, null) }, [ic('plus', 16), as.length > 1 ? 'Post a load' : 'Post a load for ' + ((cur.carrier && cur.carrier.name) || 'the carrier')]), h('button', { class: 'dw-btn sm', disabled: gated(cur) ? '' : null, title: gated(cur) ? GATE_MSG : null, onClick: () => postForm(cur) }, [ic('plus', 16), 'Post the truck'])])]),
+        availabilityChip(cur),   // bl_disp_0555
         h('div', { class: 'dw-muted', style: 'margin-bottom:8px' }, 'Loads posted on LoadBoot by brokers and shippers, ranked for this carrier’s truck. Requesting a load sends the broker a 30-minute booking request under the carrier’s MC; when the broker accepts, the booking appears under Bookings automatically. Found a load on DAT, Truckstop or a broker call? “Post a load” puts it on the carrier’s LoadBoot board, tagged with your name — they tap “I’ll take it” and the booking opens for the RC.'),
         h('div', { class: 'dw-row dw-filter', style: 'margin-bottom:8px' }, [h('span', { class: 'dw-muted' }, 'Filter:'), fMin, fDh, fEq]),
         body]),
@@ -1285,6 +1306,8 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
             h('div', { class: 'dw-muted', style: 'margin-top:4px' }, [money(p0.rate), p0.rpm != null ? '$' + Number(p0.rpm).toFixed(2) + '/mi' : null, p0.miles ? num(p0.miles) + ' mi' : null, p0.equipment, 'PU ' + dwDay(p0.pickup_date), p0.broker, 'found on ' + (p0.board_label || p0.board || '—'), st === 'available' ? '⏳ ' + leftTxt(p0.expires_at) : null, 'posted ' + ago(p0.created_at)].filter(Boolean).join(' · ')),
             // bl_disp_0551 — did the carrier see it, what is missing, and anything LoadBoot told you about it
             (() => { const sn = p0.seen || {}; return h('div', { class: sn.opened_at ? 'dw-ok' : 'dw-info', style: 'margin-top:6px' }, '👁 ' + postSeenLine(p0, (x) => ago(x))); })(),
+            // bl_disp_0555 — where the load is and whose move it is (same line the carrier and CC read)
+            p0.stage && p0.stage.ball !== 'closed' ? h('div', { class: p0.stage.ball === 'dispatcher' ? 'dw-warn' : 'dw-info', style: 'margin-top:6px' }, '➜ ' + (BALL_LABEL[p0.stage.ball] || p0.stage.ball) + ' · ' + p0.stage.label + (p0.stage.dispatcher_next ? ' — ' + p0.stage.dispatcher_next : '')) : null,
             (() => { const ms = postMissing(p0); const hi = ms.filter((x) => x.level === 'high'); const lo = ms.filter((x) => x.level !== 'high');
               return ms.length ? h('div', { class: hi.length ? 'dw-warn' : 'dw-muted', style: 'margin-top:6px' }, (hi.length ? '⚠ Missing: ' + hi.map((x) => x.label).join(', ') + (lo.length ? ' · also: ' : '') : 'Could add: ') + lo.map((x) => x.label).join(', ')) : null; })(),
             Array.isArray(p0.staff_alerts) && p0.staff_alerts.length ? h('div', { class: 'dw-warn', style: 'margin-top:6px' }, p0.staff_alerts.slice(-2).map((a9) => h('div', null, '🔔 LoadBoot (' + (a9.by || 'staff') + ', ' + ago(a9.at) + '): ' + a9.message))) : null,
@@ -1307,7 +1330,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       const best = (d.best && d.best.loads) || []; const avail = Array.isArray(d.available) ? d.available : []; const reqs = Array.isArray(d.requests) ? d.requests : []; const posts = Array.isArray(d.postings) ? d.postings : [];
       const bestIds = new Set(best.map((x) => x.load));
       const pass = (x) => { const r = Number(x.loaded_rpm || x.rpm || (x.rate && x.miles ? x.rate / x.miles : 0)); if (fMin.value && r && r < Number(fMin.value)) return false; if (fDh.value && x.deadhead_miles != null && Number(x.deadhead_miles) > Number(fDh.value)) return false; if (fEq.value) { const s = JSON.stringify(x).toLowerCase(); if (!s.includes(fEq.value.toLowerCase())) return false; } return true; };
-      const req = (loadId, lane) => async () => { const v = await ask({ title: 'Request to book', text: lane + ' — the broker gets a 30-minute booking request under ' + ((cur.carrier && cur.carrier.name) || 'the carrier') + '’s MC.', ok: 'Send request', fields: [{ key: 'note', label: 'Note to the broker (optional)', type: 'textarea', placeholder: 'e.g. can pick up today 14:00, liftgate on board' }] }); if (!v) return; const r = await dispatcherRequestBook(cur.carrier_org_id, loadId, v.note).catch((e) => ({ error: e.message })); if (r && r.error) { toast(r.error, true); return; } toast('Request sent — the broker has ' + (r.expires_in_minutes || 30) + ' minutes to respond.'); paint(true); };
+      const req = (loadId, lane) => async () => { const v = await ask({ title: 'Request to book', text: lane + ' — the broker gets a 30-minute booking request under ' + ((cur.carrier && cur.carrier.name) || 'the carrier') + '’s MC.', ok: 'Send request', fields: [{ key: 'note', label: 'Note to the broker (optional)', type: 'textarea', placeholder: 'e.g. can pick up today 14:00, liftgate on board' }] }); if (!v) return; const r = await dispatcherRequestBook(cur.carrier_org_id, loadId, v.note).catch((e) => ({ error: e.message })); if (r && r.error) { toast(r.error, true); return; } if (r && r.availability_warning) toast(r.availability_warning, true); toast('Request sent — the broker has ' + (r.expires_in_minutes || 30) + ' minutes to respond.'); paint(true); };
       const detail = (loadId) => async () => { const box = h('div', { class: 'dw-muted' }, 'Loading…'); modal('Load details', box); const d2 = await dispatcherLoadDetail(cur.carrier_org_id, loadId).catch((e) => ({ error: e.message })); if (!d2 || d2.error) { mount(box, err((d2 && d2.error) || 'Could not load.')); return; } const t = d2.terms || {}; const dx = t.details || {}; mount(box, [h('div', { class: 'dw-lane' }, (d2.origin || '') + ' → ' + (d2.destination || '')), h('div', { class: 'dw-grid', style: 'margin-top:8px' }, [f('Rate', money(d2.rate) + (d2.rpm != null ? ' · $' + Number(d2.rpm).toFixed(2) + '/mi' : '')), f('Miles', d2.miles), f('Equipment', d2.equipment), f('Commodity', d2.commodity), f('Weight', d2.weight), f('Pickup', [d2.pickup_date, t.pickup_window].filter(Boolean).join(' · ')), f('Delivery', [d2.delivery_date, t.delivery_window].filter(Boolean).join(' · ')), f('Scheduling', t.scheduling), f('Reference', t.reference), f('Posted by', d2.posted_by), f('Load size', dx.load_size), f('Pallets', dx.pallets), f('Tarps', dx.tarps), f('Pickup loading', dx.load_method_pickup), f('Delivery unloading', dx.load_method_delivery), f('Pickup hours', dx.dock_hours_pickup), f('Delivery hours', dx.dock_hours_delivery), dx.driver_assist_required ? f('Driver assist', 'REQUIRED') : null, dx.team_required ? f('Drivers', 'TEAM required') : null]), t.instructions ? h('div', { class: 'dw-muted', style: 'margin-top:8px;white-space:pre-wrap' }, t.instructions) : null, h('div', { class: 'dw-info', style: 'margin-top:10px' }, 'Exact addresses, pickup numbers and the executed RC are released the moment the broker accepts the request.'), h('div', { class: 'dw-row', style: 'margin-top:10px' }, [h('button', { class: 'dw-btn', onClick: req(loadId, (d2.origin || '') + ' → ' + (d2.destination || '')) }, 'Request to book')])]); };
       const loadRow = (x, scored) => h('div', { class: 'dw-book', style: 'cursor:default' }, [
         h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, String(x.lane || (x.origin + ' → ' + x.destination)).replace(/[\s,]+$/, '')), scored ? h('span', { class: 'dw-pill', style: 'color:' + (x.score >= 70 ? '#4ade80' : x.score >= 45 ? '#fbbf24' : '#94a3b8') + ';border-color:currentColor' }, 'FIT ' + x.score + '/100') : (x.direct_to_you ? h('span', { class: 'dw-pill', style: 'color:#7cc0ff;border-color:currentColor' }, 'DIRECT OFFER') : null)]),
@@ -1360,7 +1383,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       tsel.addEventListener('change', () => { const t = ts.find((x) => x.id === tsel.value) || t0; const av2 = t.availability || {}; origin.value = av2.empty_location || [t.domicile_city, t.domicile_state].filter(Boolean).join(', '); radius.value = t.max_radius_miles || 300; const mn = minFor({ ...t, _a: a }); minr.value = mn != null ? mn : ''; });
       const m = modal('Post the truck on LoadBoot', h('div', null, [h('div', { class: 'dw-muted', style: 'margin-bottom:8px' }, 'Brokers searching LoadBoot see this truck; the matcher alerts you when a fitting load is posted. Auto-request is always OFF for dispatcher postings — you confirm every load. Dates are Eastern.'),
         h('div', { class: 'dw-form' }, [h('label', { class: 'wide' }, ['Truck', tsel]), h('label', null, ['Available at (City, ST) *', origin]), h('label', null, ['Destination preference', dest]), h('label', null, ['From *', from]), h('label', null, ['To *', to]), h('label', null, ['Radius (mi)', radius]), h('label', null, ['Min $/mile', minr]), h('label', { class: 'wide' }, ['Notes for brokers', notes])]), e,
-        h('div', { class: 'dw-row', style: 'margin-top:12px' }, [h('button', { class: 'dw-btn', onClick: async (ev) => { ev.target.disabled = true; try { if (!origin.value.trim()) throw new Error('Where is the truck available?'); if (to.value < from.value) throw new Error('"To" is before "From".'); const r = await dispatcherPostTruck(a.carrier_org_id, { truck_id: tsel.value, origin: origin.value, dest_pref: dest.value, available_from: from.value, available_to: to.value, radius_miles: radius.value || null, min_rpm: minr.value || null, notes: notes.value }); if (r && r.error) throw new Error(r.error); m.close(); toast('Truck posted'); paint(true); } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, 'Post truck'), h('button', { class: 'dw-btn ghost', onClick: () => m.close() }, 'Cancel')])]));
+        h('div', { class: 'dw-row', style: 'margin-top:12px' }, [h('button', { class: 'dw-btn', onClick: async (ev) => { ev.target.disabled = true; try { if (!origin.value.trim()) throw new Error('Where is the truck available?'); if (to.value < from.value) throw new Error('"To" is before "From".'); const r = await dispatcherPostTruck(a.carrier_org_id, { truck_id: tsel.value, origin: origin.value, dest_pref: dest.value, available_from: from.value, available_to: to.value, radius_miles: radius.value || null, min_rpm: minr.value || null, notes: notes.value }); if (r && r.error) throw new Error(r.error); m.close(); toast(r && r.availability_warning ? 'Truck posted — ' + r.availability_warning : 'Truck posted', !!(r && r.availability_warning)); paint(true); } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, 'Post truck'), h('button', { class: 'dw-btn ghost', onClick: () => m.close() }, 'Cancel')])]));
     }
     // ---- POST A LOAD (bl_disp_0549): one page, grouped like a load-board card. The carrier sees it on THEIR
     // LoadBoot board as "Posted by your dispatcher <name>" with the same card/detail/decision they already know.
@@ -1493,6 +1516,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
           const done = [], bad = []; let flagged = false;
           for (const x of targets) {   // one post per carrier; the truck belongs to the carrier the form opened on
             const r = await dispatcherPostLoad(x.carrier_org_id, x.carrier_org_id === a.carrier_org_id ? p : Object.assign({}, p, { truck_id: null })).catch((err) => ({ error: err.message }));
+            if (r && r.availability_warning) toast(r.availability_warning, true);   // bl_disp_0555 (warn mode: posted, but the carrier has no fresh post)
             if (r && r.error) { bad.push([x, r]); continue; }
             done.push(x); picked.delete(x.carrier_org_id); if (r.below_min) flagged = true;
             try { dwLive.send('status_change', { load: r.id }); } catch (_) {}

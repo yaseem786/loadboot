@@ -156,6 +156,12 @@ body.lb-sw-bar{--lb-lift:72px}   /* bl_ui_0460 — the SW 'new version' bar is 6
 .lbd-numwrap{position:relative}.lbd-numwrap .lbd-ib{position:absolute;right:6px;top:10px}
 .lbd-match{min-height:40px;margin:8px 0 6px;padding:8px 12px;border-radius:12px;font-size:12.5px;color:var(--mu);display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.035)}
 .lbd-match b{color:#fff;font-weight:600}.lbd-match.bad{color:#fecaca;background:rgba(239,68,68,.12)}
+.lbd-cc{font-size:11.5px;color:#fcd34d;margin-left:auto;white-space:nowrap}
+.lbd-ask{display:flex;flex-direction:column;gap:8px;padding:4px 0}.lbd-ask-h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}.lbd-ask-h b{color:#fff;font-size:15px}.lbd-ask-h span{font-size:12px;color:var(--mu)}
+.lbd-ask-rule{font-size:12.5px;line-height:1.5;color:#fcd34d;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:8px 10px}
+.lbd-ask-list{display:flex;flex-direction:column;gap:6px}.lbd-ask-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:9px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#fff;cursor:pointer}
+.lbd-ask-opt span{font-size:11.5px;color:var(--mu)}.lbd-ask-opt.on{border-color:#4ea6f9;background:rgba(8,131,247,.18)}.lbd-ask-opt.warn span{color:#fcd34d}.lbd-ask-opt.off{opacity:.45;cursor:not-allowed}.lbd-ask-note{font-size:14px!important;text-align:left!important;letter-spacing:0!important}
+.lbd-row{display:flex;gap:8px;align-items:center}
 .lbd-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:6px}
 .lbd-key{height:56px;border-radius:16px;border:1px solid var(--ln);background:rgba(255,255,255,.04);color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:background .1s,transform .06s}
 .lbd-key:hover{background:rgba(255,255,255,.085)}.lbd-key:active{transform:scale(.96);background:rgba(8,131,247,.25)}
@@ -415,13 +421,25 @@ function createDialer() {
     if (S.call) { toast('Finish the current call first.'); S.open = true; paint(); return; }
     if (!S.boot || !S.boot.enabled) { toast('The phone is not available on your account yet.'); return; }
     if (S.conn !== 'ready') { S.open = true; paint(); toast(S.conn === 'elsewhere' ? 'The phone is active in another tab.' : 'Phone is still connecting — try again in a moment.'); if (S.conn !== 'connecting' && S.conn !== 'elsewhere') connect(true); return; }
+    // bl_disp_0555 — a call to one of MY carriers needs a reason: one intro call, then urgent only (the server decides; the
+    // phone asks first so the dispatcher never dials into a refusal). Brokers, drivers of other carriers, unknown numbers: untouched.
+    if (!ctx.reason) {
+      let l = (S.look && S.look.e164 && digits(S.look.e164) === digits(number)) ? S.look : null;
+      if (!l) { try { l = await dialerLookup(number); } catch (_) { l = null; } }
+      const cc = l && l.carrier_call;
+      if (cc && !cc.callback_ok) { S.ask = { number, ctx, cc, reason: cc.intro_done ? '' : 'intro', note: '' }; S.open = true; S.showSettings = false; paint(); return; }
+    }
     audioCtx();
     S.open = true; S.wrap = null;
     S.call = { sdk: null, dir: 'out', state: 'new', number, name: ctx.contact_name || '', row: null, since: null, note: '', muted: false, held: false, pad: false, ctx };
     paint();
     let r;
     try { r = await dialerCallStart(Object.assign({ to: number, source: ctx.source || 'keypad' }, ctx)); } catch (e) { r = { error: String((e && e.message) || e) }; }
-    if (!r || r.error) { S.call = null; S.connMsg = ''; paint(); toast((r && r.error) || 'Could not start the call.'); return; }
+    if (!r || r.error) {
+      S.call = null; S.connMsg = '';
+      if (r && r.code === 'reason_required' && r.carrier_call) S.ask = { number, ctx: Object.assign({}, ctx, { reason: '', reason_note: '' }), cc: r.carrier_call, reason: '', note: '' };   // bl_disp_0555
+      paint(); toast((r && r.error) || 'Could not start the call.'); return;
+    }
     if (!S.call) return;
     S.call.row = { id: r.id, broker_contact_id: r.match && r.match.broker_contact_id }; S.call.number = r.to; S.call.name = r.contact_name || S.call.name; S.call.match = r.match || {};
     try {
@@ -598,8 +616,35 @@ function createDialer() {
     const m = l.match || {};
     if (m.contact_name) mount(box, [ic('check', 15), h('span', null, [h('b', null, m.contact_name), m.mc ? ' · MC ' + m.mc : '', l.count ? ' · ' + l.count + ' call' + (l.count > 1 ? 's' : '') : '', l.last && l.last.outcome ? ' · last: ' + l.last.outcome : '', m.new_authority_ok === false ? ' · no new MCs' : ''])]);
     else mount(box, l.count ? ['Called ' + l.count + '× before', l.last && l.last.outcome ? ' · last: ' + l.last.outcome : ''] : 'New number — you can save it to your broker book after the call.');
+    if (l.carrier_call) box.appendChild(h('span', { class: 'lbd-cc' }, l.carrier_call.callback_ok ? 'Callback — no reason needed' : l.carrier_call.intro_done ? 'Intro done · urgent reasons only' : 'Your intro call'));   // bl_disp_0555
   }
   function paintCallBtn() { const b = root.querySelector('[data-callbtn]'); if (b) b.disabled = digits(S.number).length < 10 || !!(S.look && S.look.blocked) || S.conn !== 'ready'; }
+
+  // bl_disp_0555 — "Why this call?" — shown before an outbound call to an assigned carrier. The list is CC's (disp_call_reasons);
+  // 'allowed' / 'offpolicy' come from the server for THIS assignment (intro done or not, warn or enforce).
+  function vAsk() {
+    const a = S.ask; const cc = a.cc || {}; const reasons = Array.isArray(cc.reasons) ? cc.reasons : [];
+    const pick = (code) => { a.reason = code; paint(); };
+    const go = () => {
+      if (!a.reason) { toast('Pick a reason for this call.'); return; }
+      const ctx = Object.assign({}, a.ctx || {}, { reason: a.reason, reason_note: (a.note || '').trim() });
+      S.ask = null; dial(a.number, ctx);
+    };
+    const cur = reasons.find((r) => r.code === a.reason);
+    return h('div', { class: 'lbd-ask' }, [
+      h('div', { class: 'lbd-ask-h' }, [h('b', null, 'Why this call?'), h('span', null, (cc.carrier || 'Carrier') + ' · ' + pretty(a.number))]),
+      h('div', { class: 'lbd-ask-rule' }, cc.rule || ''),
+      h('div', { class: 'lbd-ask-list', role: 'radiogroup' }, reasons.map((r) => h('button', {
+        class: 'lbd-ask-opt' + (a.reason === r.code ? ' on' : '') + (r.allowed === false ? ' off' : '') + (r.offpolicy ? ' warn' : ''), role: 'radio', 'aria-checked': String(a.reason === r.code),
+        disabled: r.allowed === false ? '' : undefined, title: r.hint || '', onClick: () => pick(r.code) },
+        [h('b', null, r.label), h('span', null, r.code === 'intro' && cc.intro_done ? 'Done ' + (cc.intro_call_at ? new Date(cc.intro_call_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '') : r.offpolicy ? (r.allowed === false ? 'Refused after the intro — use the thread' : 'Outside the rule — allowed, but counted') : r.urgent ? 'Urgent' : r.hint || '')]))),
+      h('input', { class: 'lbd-num lbd-ask-note', type: 'text', maxlength: '300', placeholder: cur && cur.urgent ? 'What is urgent? (the carrier sees this in the thread)' : 'Note (optional)', value: a.note || '', onInput: (e) => { a.note = e.target.value; } }),
+      h('div', { class: 'lbd-row' }, [
+        h('button', { class: 'lbd-call', style: 'flex:1', disabled: !a.reason || (cur && cur.allowed === false) ? '' : undefined, onClick: go }, [ic('phone', 18), cur && cur.urgent ? 'Call — urgent' : 'Call']),
+        h('button', { class: 'lbd-btn ghost', onClick: () => { S.ask = null; paint(); } }, 'Cancel'),
+      ]),
+    ]);
+  }
 
   function vKeypad() {
     const inp = h('input', { class: 'lbd-num', type: 'tel', inputmode: 'tel', autocomplete: 'off', placeholder: 'Enter or paste a number', 'aria-label': 'Phone number', value: prettyTyping(S.number),
@@ -977,7 +1022,7 @@ function createDialer() {
     const gate = S.conn === 'terms' && !c;
     // bl_dial_0461 — first time the phone opens with a line and no call: show the guide once (per browser)
     if (!gate && b.line && S.open && !c && !S.wrap && !S.cf && !S.guideAuto) { S.guideAuto = true; if (!guideSeen()) S.showGuide = true; }
-    const body = gate ? vTerms() : S.showSettings ? vSettings() : c ? vCall() : S.cf ? vCallFields() : S.wrap ? vWrap() : S.showGuide && b.line ? guideView({ h, ic, pretty, line: b.line, terms: S.terms, onClose: () => { S.showGuide = false; S.tab = 'keypad'; paint(); } }) : !b.line ? h('div', { class: 'lbd-empty' }, 'No phone line yet.') : S.tab === 'recent' ? vRecent() : S.tab === 'texts' ? vTexts() : S.tab === 'callbacks' ? vCallbacks() : vKeypad();
+    const body = gate ? vTerms() : S.showSettings ? vSettings() : S.ask && !c ? vAsk() : c ? vCall() : S.cf ? vCallFields() : S.wrap ? vWrap() : S.showGuide && b.line ? guideView({ h, ic, pretty, line: b.line, terms: S.terms, onClose: () => { S.showGuide = false; S.tab = 'keypad'; paint(); } }) : !b.line ? h('div', { class: 'lbd-empty' }, 'No phone line yet.') : S.tab === 'recent' ? vRecent() : S.tab === 'texts' ? vTexts() : S.tab === 'callbacks' ? vCallbacks() : vKeypad();
     const showChrome = !gate && !c && !S.wrap && !S.cf && !S.showSettings && !S.showGuide && b.line;
     mount(root, [live, h('div', { class: 'lbd-panel' + (justOpened ? ' in' : ''), role: 'dialog', 'aria-label': 'LoadBoot phone' }, [
       head, note,

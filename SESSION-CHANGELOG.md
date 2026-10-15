@@ -650,3 +650,20 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   confirm popups no longer say "45 minutes, one attempt".
 - DB: STAGING applied + rolled-back E2E 15 Oct. PROD applied 15 Oct 2026 (via base64 execute_sql — apply_migration hung),
   anon SECDEF 36, names = baseline. Nothing re-sent on deploy (1-day window).
+
+## Availability-first dispatching + one-intro-call rule (bl_disp_0555, 15 Oct 2026) — WARN mode
+- The CARRIER posts availability (their own truck posting or Trucks-tab line, 7 days); a dispatcher-written line never counts.
+  `disp_desk_config`: `availability_gate_mode` off|warn|**enforce** (deploys as warn), `availability_fresh_days`, `call_rule_mode`.
+  Warn: chips everywhere, carrier notice `carrier.availability.required` (in-app + email_kit, once/24 h, stops when fresh, cron
+  `lb-disp-avail-sweep` hourly + at assign), `availability_warning` on dispatcher posts/books, counts. Enforce: carrier board empty +
+  full-width card, dispatcher post/book/availability-write refused. CC → Dispatcher 360 → Rules & call reasons flips it.
+- Calls: one intro call per assignment (`dispatcher_assignments.intro_call_at`, set by trigger on the answered call with reason
+  `intro`); every carrier call needs a reason from the CC list (`app_private.disp_call_reasons`, editable); after the intro urgent
+  reasons only (warn: allowed + counted as `offpolicy` + staff notice; enforce: refused); callback within 30 min and inbound always
+  allowed. Thread system lines for intro / urgent / off-rule calls. `dialer_calls.reason_code / reason_note / policy`.
+- Standing rules text (one SQL source) in the dispatcher brief e-mail, the thread at assignment, the workspace, CC SOP dialog;
+  `disp_load_stage` = step / whose move / next action on every dispatcher post (workspace + Carrier 360). Daily trial e-mail
+  tiles *Waiting for availability* + *Urgent calls*; `cc_dispatcher_360.calls`. Design + step table: docs/AVAILABILITY-GATE-0555.md.
+- DB: STAGING applied 15 Oct in parts + rolled-back E2E (all scenarios in the doc). Anon SECDEF 35, names unchanged.
+  PROD: not applied — file is the prod SQL; apply in parts, trigger in its own statement with lock_timeout (doc §6).
+- UI: node --check + ESM ALL PASS (237) + imports PASS + esbuild OK ×6. Not rendered in a browser.
