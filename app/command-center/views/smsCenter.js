@@ -31,7 +31,7 @@ function stateOf(r) {
   if (r.status === 'sent') return r.msg_status === 'delivered' ? ['Delivered', 'g'] : r.msg_status === 'failed' ? ['Carrier rejected', 'r'] : ['Sent', 'g'];
   if (r.status === 'sending') return ['Sending', 'b'];
   if (r.status === 'ready') return ['Going now', 'b'];
-  if (r.status === 'collecting') return [r.reason ? 'Held' : 'Waiting', 'a'];
+  if (r.status === 'collecting' || r.status === 'pending') return [r.reason ? 'Held' : 'Waiting', 'a'];
   if (r.status === 'failed') return ['Failed', 'r'];
   return ['Not sent', 'm'];
 }
@@ -41,7 +41,8 @@ const STEPS = {
   sender: { n: 2, t: 'Main line', d: 'The number document texts come from.' },
   test:   { n: 3, t: 'Test text to your phone', d: 'One real text through the real path, to a number on the test list.' },
   doc:    { n: 4, t: 'Document texts', d: 'Approve / reject in CC → the carrier gets one summary text 10 min later.' },
-  live:   { n: 5, t: 'Every carrier', d: 'Off = test mode: only test numbers get document texts.' },
+  email:  { n: 5, t: 'Email texts', d: 'A carrier email whose catalog row has a text also goes as that SMS (CC → Email catalog).' },   // bl_dial_0550
+  live:   { n: 6, t: 'Every carrier', d: 'Off = test mode: only test numbers get texts.' },
 };
 
 const CSS = `
@@ -60,7 +61,7 @@ const CSS = `
 .sc-kpi b{display:block;font-size:24px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1}
 .sc-kpi span{font-size:10.5px;color:var(--mu2);text-transform:uppercase;letter-spacing:.8px}
 .sc-kpi.r b{color:#fca5a5}.sc-kpi.a b{color:#fcd34d}
-.sc-track{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:22px;position:relative}
+.sc-track{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:22px;position:relative}
 .sc-step{position:relative;padding:0 10px 0 0}
 .sc-step .bar{position:absolute;top:15px;left:34px;right:0;height:2px;background:rgba(255,255,255,.12)}
 .sc-step.ok .bar{background:linear-gradient(90deg,#22c55e,rgba(34,197,94,.35))}
@@ -163,7 +164,7 @@ export async function renderSmsCenter(host) {
     const mode = live ? ['live', 'Live for every carrier', 'Every approve / reject in CC sends the carrier one summary text from the main line, 10 minutes after the last decision.']
       : test ? ['test', 'Test mode', 'Document texts are on, but only the phones on the test list receive them. Every other carrier shows "Test mode" in the feed below.']
       : ['off', 'Document texts are off', 'Nothing is texted to carriers yet. Decisions are still queued and shown below with the reason they did not go.'];
-    const firstOpen = ['sms', 'sender', 'test', 'doc', 'live'].find((x) => !stepOk(x));
+    const firstOpen = ['sms', 'sender', 'test', 'doc', 'email', 'live'].find((x) => !stepOk(x));
     const kpi = (v, l, tone) => el('div', { class: 'sc-kpi' + (tone && v ? ' ' + tone : '') }, [el('b', null, String(v || 0)), el('span', null, l)]);
     mount(heroEl, el('div', { class: 'sc-hero' }, [
       el('div', { class: 'sc-top' }, [
@@ -174,7 +175,7 @@ export async function renderSmsCenter(host) {
         ]),
         el('div', { class: 'sc-kpis' }, [kpi(k.sent_24h, 'Sent 24 h'), kpi(k.sent_7d, 'Sent 7 days'), kpi(k.waiting, 'Waiting'), kpi(k.skipped_7d, 'Not sent 7 d', 'a'), kpi(k.failed_7d, 'Failed 7 d', 'r')]),
       ]),
-      el('div', { class: 'sc-track' }, ['sms', 'sender', 'test', 'doc', 'live'].map((key) => {
+      el('div', { class: 'sc-track' }, ['sms', 'sender', 'test', 'doc', 'email', 'live'].map((key) => {
         const S = STEPS[key], ok = stepOk(key);
         return el('div', { class: 'sc-step' + (ok ? ' ok' : '') + (key === firstOpen ? ' next' : '') }, [
           el('div', { class: 'bar' }),
@@ -197,6 +198,7 @@ export async function renderSmsCenter(host) {
     if (key === 'sender') return el('button', { class: 'sc-hb' + (ok ? ' off' : ' o'), onClick: () => editMainLine() }, ok ? 'Change' : 'Set main line');
     if (key === 'test') return el('button', { class: 'sc-hb' + (ok ? ' off' : ' o'), disabled: !(dl.enabled && dl.sms_enabled) || null, onClick: () => document.getElementById('sc-tests')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, ok ? 'Send another' : 'Send a test');
     if (key === 'doc') return el('button', { class: 'sc-hb' + (c.enabled ? ' off' : ' o'), onClick: () => toggleDoc(!c.enabled) }, c.enabled ? 'Turn off' : 'Turn on');
+    if (key === 'email') return el('button', { class: 'sc-hb' + (c.email_enabled ? ' off' : ' o'), onClick: () => toggleEmail(!c.email_enabled) }, c.email_enabled ? 'Turn off' : 'Turn on');
     return el('button', { class: 'sc-hb' + (c.allow_all ? ' off' : ' o'), disabled: (!c.allow_all && !D.last_test_at) || null,
       title: !c.allow_all && !D.last_test_at ? 'Unlocks after one test text is sent' : null, onClick: () => toggleLive(!c.allow_all) },
       c.allow_all ? 'Back to test mode' : 'Go live');
@@ -214,9 +216,18 @@ export async function renderSmsCenter(host) {
     if (!on) { const ok = await askConfirm('Turn off document texts?', { body: 'Carriers stop getting texts about document decisions. Emails are not affected.', confirmLabel: 'Turn off', danger: true }); if (!ok) return; }
     save({ enabled: on }, on ? (D.config.allow_all ? 'Document texts are on for every carrier.' : 'Document texts are on — test mode.') : 'Document texts are off.');
   }
+  // bl_dial_0550: texts that ride with carrier emails. Which emails, and their words, live on each Email-catalog row.
+  async function toggleEmail(on) {
+    const ok = await askConfirm(on ? 'Turn on email texts?' : 'Turn off email texts?', {
+      body: on ? 'A carrier email whose Email-catalog row has "Text message too" on also goes as that short text from the main line. Same rules as document texts: SMS consent, STOP, 8 am – 9 pm their time, max ' + ((D.config || {}).max_per_day || 3) + ' texts a day (account notices are never held back). Marketing and outreach emails never get a text.' + ((D.config || {}).allow_all ? '' : ' Test mode is on, so only the test numbers get them.')
+               : 'Carriers stop getting texts with their emails. The emails themselves are not affected.',
+      confirmLabel: on ? 'Turn on' : 'Turn off', danger: !on });
+    if (!ok) return;
+    save({ email_enabled: on }, on ? 'Email texts are on.' : 'Email texts are off.');
+  }
   async function toggleLive(on) {
     if (on) {
-      const ok = await askConfirm('Go live for every carrier?', { body: 'From now on every carrier who ticked the SMS box gets one summary text from ' + pretty(D.config.from_e164) + ' after their documents are reviewed (max ' + (D.config.max_per_day || 3) + ' a day, 8 am – 9 pm their time, STOP always honoured).', confirmLabel: 'Go live' });
+      const ok = await askConfirm('Go live for every carrier?', { body: 'From now on every carrier who ticked the SMS box gets one summary text from ' + pretty(D.config.from_e164) + ' after their documents are reviewed, and with the emails that have a text (max ' + (D.config.max_per_day || 3) + ' a day, 8 am – 9 pm their time, STOP always honoured).', confirmLabel: 'Go live' });
       if (!ok) return;
     }
     save({ allow_all: on }, on ? 'Live — every carrier gets document texts.' : 'Back to test mode.');
@@ -323,12 +334,12 @@ export async function renderSmsCenter(host) {
   // ---------------------------------------------------------------- live feed
   function paintFeed() {
     const rows = D.feed || [];
-    const F = { all: () => true, sent: (r) => r.status === 'sent', waiting: (r) => ['collecting', 'ready', 'sending'].includes(r.status), notsent: (r) => r.status === 'skipped', failed: (r) => r.status === 'failed', test: (r) => r.kind === 'test' };
+    const F = { all: () => true, sent: (r) => r.status === 'sent', waiting: (r) => ['collecting', 'pending', 'ready', 'sending'].includes(r.status), notsent: (r) => r.status === 'skipped', failed: (r) => r.status === 'failed', test: (r) => r.kind === 'test' };
     const L = { all: 'All', sent: 'Sent', waiting: 'Waiting', notsent: 'Not sent', failed: 'Failed', test: 'Tests' };
     const shown = rows.filter(F[filter] || F.all);
     mount(feedEl, el('div', { class: 'sc-card' }, [
-      el('h3', null, [icon('activity', 17), 'Live feed — document texts']),
-      el('div', { class: 'hint' }, 'Every review that could have texted a carrier: what went, what is waiting, and the exact reason when nothing was sent.'),
+      el('h3', null, [icon('activity', 17), 'Live feed — carrier texts']),
+      el('div', { class: 'hint' }, 'Every review or email that could have texted a carrier: what went, what is waiting, and the exact reason when nothing was sent.'),
       el('div', { class: 'sc-tabs', role: 'tablist' }, Object.keys(L).map((k) => el('button', { class: 'sc-tab' + (filter === k ? ' on' : ''), role: 'tab', 'aria-selected': String(filter === k), onClick: () => { filter = k; paintFeed(); } }, [L[k], el('i', null, String(rows.filter(F[k]).length))]))),
       shown.length ? el('div', { class: 'sc-feed' }, shown.map(feedRow)) : el('div', { class: 'sc-empty' }, rows.length ? 'Nothing in this filter.' : 'No document decisions yet. The first approve / reject in CC shows up here within a minute.'),
     ]));
@@ -336,14 +347,16 @@ export async function renderSmsCenter(host) {
   function feedRow(r) {
     const [lab, tone] = stateOf(r);
     const docs = (r.keys || []).map((k) => DOC[k] || k).join(', ');
-    const when = r.sent_at || (r.status === 'collecting' ? r.due_at : r.updated_at);
-    const whenLabel = r.status === 'sent' ? 'Sent' : r.status === 'collecting' ? 'Goes at' : r.status === 'failed' ? 'Failed' : 'Updated';
+    const waiting = r.status === 'collecting' || r.status === 'pending';
+    const when = r.sent_at || (waiting ? r.due_at : r.updated_at);
+    const whenLabel = r.status === 'sent' ? 'Sent' : waiting ? 'Goes at' : r.status === 'failed' ? 'Failed' : 'Updated';
     return el('div', { class: 'sc-row ' + tone }, [
       el('div', { class: 'sc-when' }, [el('b', null, clock(when)), whenLabel, el('br'), ago(r.created_at)]),
       el('div', { style: 'min-width:0' }, [
         el('div', { class: 'sc-who' }, [
           r.kind === 'test' ? el('span', null, 'Test text') : r.org_id ? el('a', { href: '#/carrier?id=' + r.org_id }, r.carrier || 'Carrier') : el('span', null, r.carrier || 'Carrier'),
           r.kind === 'approved' ? el('span', { class: 'sc-pill g' }, 'Fully approved') : null,
+          r.kind === 'email' ? el('a', { class: 'sc-docs', href: '#/email-catalog', title: 'Sent with this email' }, '✉ ' + (r.catalog_key || 'email')) : null,
           docs ? el('span', { class: 'sc-docs' }, docs) : null,
         ]),
         r.body ? el('div', { class: 'sc-bubble' }, r.body) : null,

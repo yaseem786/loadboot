@@ -11,7 +11,7 @@ import { showLoading, showError } from '../../shared/loading.js';
 import { can } from '../../shared/permissions.js';
 import {
   emailCatalog, emailDetail, emailSave, emailOverrideSave, emailPreview,
-  emailTemplateNew, emailSends, emailMode,
+  emailTemplateNew, emailSends, emailMode, emailSms, emailSmsSet,
 } from '../../shared/api.js';
 
 const CLASS_TONE = { T: 'blue', O: 'violet', P: 'amber', M: 'red', S: 'gray' };
@@ -176,6 +176,7 @@ export async function renderEmailCatalog(host) {
           (r.send_mode && r.send_mode !== 'live')
             ? pill(MODE[r.send_mode].label, MODE[r.send_mode].tone) : '',
           r.has_override ? el('div', { class: 'cc-sub' }, 'override on') : '',
+          r.sms_enabled ? el('div', { class: 'cc-sub', title: 'A text message goes with this email' }, '📱 + SMS') : '',
         ]),
       ]))),
     ]));
@@ -206,6 +207,7 @@ async function detailDrawer(key, onSaved) {
   const stats = el('div', { class: 'cc-kpi-grid', style: 'grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 16px' });
   const feedBox = el('div');
   const previewBox = el('div');
+  const smsBox = el('div');
 
   mount(body, [
     el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px' }, [
@@ -220,6 +222,7 @@ async function detailDrawer(key, onSaved) {
       el('div', { style: 'font-weight:600' }, 'Sending: ' + MODE[r.send_mode || 'live'].label),
       el('div', { class: 'cc-sub' }, MODE[r.send_mode || 'live'].says),
     ]),
+    smsBox,
     stats,
     el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:0 18px' }, [
       fact('Who gets it', r.audience_role),
@@ -244,6 +247,94 @@ async function detailDrawer(key, onSaved) {
 
   renderPreview(previewBox, d.sample, d.from_address || '');
   loadFeed(key, feedBox, stats);
+  smsCard(key, smsBox, manage, onSaved);
+}
+
+// ------------------------------------------------- bl_dial_0550: "Text message too"
+
+const SMS_STATE = { sent: ['Sent', 'green'], ready: ['Going now', 'blue'], sending: ['Sending', 'blue'], pending: ['Waiting', 'amber'], skipped: ['Not sent', 'gray'], failed: ['Failed', 'red'] };
+
+async function smsCard(key, box, manage, onSaved) {
+  let s;
+  try { s = await emailSms(key); } catch (e) { mount(box, ''); return; }
+  const sw = s.switches || {};
+  const card = (kids) => el('div', { class: 'lb-card', style: 'padding:14px;margin-bottom:16px' }, kids);
+  const head = el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px' }, [
+    el('div', { style: 'font-weight:700' }, '📱 Text message too'),
+    s.not_allowed ? '' : pill(s.enabled ? 'On' : 'Off', s.enabled ? 'green' : 'gray'),
+    el('a', { href: '#/sms', class: 'cc-sub', style: 'margin-left:auto' }, 'Text messages →'),
+  ]);
+  if (s.not_allowed) { mount(box, card([head, el('div', { class: 'cc-sub' }, s.not_allowed)])); return; }
+
+  const gate = !sw.sms ? 'Text messaging (the master switch) is off, so nothing is texted.'
+    : !sw.email_texts ? 'Email texts are off in Text messages, so nothing is texted yet.'
+    : sw.test_mode ? 'Test mode: only the test numbers in Text messages get this text.'
+    : 'Live: every carrier with SMS consent gets it (8 am – 9 pm their time, max ' + (sw.max_per_day || 3) + ' texts a day, STOP honoured).';
+  const k = s.kpi || {};
+  const recent = (s.rows || []).slice(0, 8).map(r => el('div', { style: 'display:flex;gap:8px;align-items:baseline;padding:4px 0;border-top:1px solid var(--cc-border,#e5e7eb);font-size:.82rem' }, [
+    pill.apply(null, SMS_STATE[r.status] || [r.status, 'gray']),
+    el('span', null, r.carrier || '—'),
+    r.to ? mono(r.to, 'display:inline') : '',
+    el('span', { class: 'cc-sub', style: 'margin-left:auto;white-space:nowrap' }, ago(r.sent_at || r.created_at)),
+    r.reason ? el('div', { class: 'cc-sub', style: 'flex-basis:100%' }, r.reason) : '',
+  ]));
+  const history = [
+    el('div', { class: 'cc-sub', style: 'margin-top:10px' }, '30 days: ' + num(k.sent_30d) + ' sent · ' + num(k.skipped_30d) + ' not sent · ' + num(k.failed_30d) + ' failed'),
+    recent.length ? el('div', { style: 'margin-top:6px' }, recent) : '',
+  ];
+
+  if (!manage) {
+    mount(box, card([head, el('div', { class: 'cc-sub', style: 'margin-bottom:8px' }, gate),
+      s.text ? el('div', { style: 'white-space:pre-wrap;padding:10px;border-radius:12px;background:var(--cc-soft,#f1f5f9)' }, (s.shape || {}).text || s.text) : el('div', { class: 'cc-sub' }, 'No text written for this email.'),
+      ...history]));
+    return;
+  }
+
+  let on = !!s.enabled, t;
+  const ta = el('textarea', { class: 'cc-input', rows: 3, style: 'width:100%;font-family:inherit', placeholder: 'Short and plain. "LoadBoot: " and " Reply STOP to opt out." are added for you.' });
+  ta.value = s.text || '';
+  const bubble = el('div', { style: 'white-space:pre-wrap;padding:10px;border-radius:12px;background:var(--cc-soft,#f1f5f9);margin-top:8px' });
+  const meta = el('div', { class: 'cc-sub', style: 'margin-top:4px' });
+  const problem = el('div', { style: 'color:#b91c1c;font-size:.85rem;margin-top:6px' });
+  const onBtn = el('button', { class: 'cc-chip-btn' }, 'On');
+  const offBtn = el('button', { class: 'cc-chip-btn' }, 'Off');
+  const saveBtn = el('button', { class: 'lb-btn lb-btn-primary', style: 'margin-top:10px' }, 'Save text');
+
+  const paintShape = (shape, prob) => {
+    bubble.textContent = shape ? shape.text : 'Nothing written yet.';
+    meta.textContent = shape ? (shape.segments + ' SMS · ' + shape.text.length + ' characters. The very first text to a number adds the consent line and is ' + shape.first_segments + ' SMS.') : '';
+    problem.textContent = prob || '';
+  };
+  const paintBtns = () => { onBtn.classList.toggle('on', on); offBtn.classList.toggle('on', !on); };
+  const check = async () => {
+    try { const r = await emailSmsSet(key, on, ta.value, true); paintShape(r.shape, r.problem); return !r.problem; }
+    catch (e) { problem.textContent = humanizeError(e); return false; }
+  };
+  const save = async () => {
+    try {
+      const r = await emailSmsSet(key, on, ta.value, false);
+      if (!r || r.error) throw new Error((r && r.error) || 'Not saved.');
+      toast(on ? 'Saved — this email now carries a text.' : 'Saved — no text with this email.', 'success');
+      if (onSaved) onSaved();
+      return true;
+    } catch (e) { toast(humanizeError(e), 'error'); return false; }
+  };
+  onBtn.addEventListener('click', async () => { const was = on; on = true; paintBtns(); if (!(await check()) || !(await save())) { on = was; paintBtns(); } });
+  offBtn.addEventListener('click', async () => { const was = on; on = false; paintBtns(); if (!(await save())) { on = was; paintBtns(); } });
+  ta.addEventListener('input', () => { clearTimeout(t); t = setTimeout(check, 350); });
+  saveBtn.addEventListener('click', async () => { if (await check()) await save(); });
+
+  paintBtns();
+  paintShape(s.shape, s.problem);
+  mount(box, card([
+    head,
+    el('div', { class: 'cc-sub', style: 'margin-bottom:8px' }, 'When this email goes to a carrier, the same news also goes as a short text from the main line. ' + gate),
+    el('div', { style: 'display:flex;gap:8px;margin-bottom:10px' }, [onBtn, offBtn]),
+    ta, problem,
+    el('div', { class: 'cc-sub', style: 'margin-top:8px;text-transform:uppercase;font-size:10px;letter-spacing:.06em' }, 'What the carrier gets'),
+    bubble, meta, saveBtn,
+    ...history,
+  ]));
 }
 
 function renderPreview(box, sample, from) {
