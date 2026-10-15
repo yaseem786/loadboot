@@ -174,6 +174,61 @@ function style() {
 .d3-msgs{max-height:340px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .d3-msg{padding:6px 0;border-bottom:1px solid var(--line2);font-size:12.6px}.d3-msg.sys{color:var(--mut);font-style:italic}
 .d3-empty{padding:18px;text-align:center;color:var(--mut);font-size:12.6px}
+.d3-rl-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.d3-rl-mode{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:#fff;min-width:0}
+.d3-rl-mode .dt{width:8px;height:8px;border-radius:50%;flex:none;background:#94a3b8}
+.d3-rl-mode.warn .dt{background:#d97706;box-shadow:0 0 0 3px rgba(217,119,6,.16)}.d3-rl-mode.enf .dt{background:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.16)}.d3-rl-mode.days .dt{background:var(--b)}
+.d3-rl-mode span{display:block;font-size:9.6px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d3-rl-mode b{display:block;font-size:12.5px;line-height:1.3}
+.d3-rl-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.d3-rl-stat{border:1px solid var(--line);border-radius:12px;padding:10px 10px 9px;background:#fff;cursor:help}
+.d3-rl-stat b{display:block;font:800 23px/1.05 var(--lb-head,inherit);font-variant-numeric:tabular-nums;color:var(--ink)}
+.d3-rl-stat span{display:block;margin-top:4px;font-size:11px;line-height:1.3;color:var(--mut);font-weight:700}
+.d3-rl-stat.amber{border-color:#fcd9a8;background:linear-gradient(180deg,#fff8ec,#fff)}.d3-rl-stat.amber b{color:#b45309}
+.d3-rl-stat.red{border-color:#fecaca;background:linear-gradient(180deg,#fff4f4,#fff)}.d3-rl-stat.red b{color:#b91c1c}
+.d3-rl-stat.ok b{color:#15803d}.d3-rl-stat.blue b{color:#0466c8}
+.d3-rl-wait{margin-top:10px;border:1px solid #fcd9a8;background:#fffaf2;border-radius:12px;padding:9px 12px}
+.d3-rl-wait .hd{display:flex;gap:6px;align-items:center;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:800;color:#b45309;margin-bottom:2px}
+.d3-rl-wait .r{padding:7px 0;border-top:1px solid rgba(217,119,6,.16);font-size:12.3px}.d3-rl-wait .hd+.r{border-top:0}
+.d3-rl-wait .r b{display:block}.d3-rl-wait .r span{color:#92400e;font-size:11.8px}
+.d3-rl-wait .ft{margin-top:4px;padding-top:7px;border-top:1px dashed rgba(217,119,6,.3);font-size:11.4px;color:var(--mut);line-height:1.45}
+.d3-rl-ok{margin-top:10px;display:flex;gap:7px;align-items:center;font-size:12.2px;font-weight:700;color:#15803d;background:#f3fbf6;border:1px solid #bfe3cd;border-radius:11px;padding:9px 12px}
+.d3-rl-rules{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);overflow:hidden}
+.d3-rl-rules summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;font-weight:800;font-size:12.6px;color:var(--ink)}
+.d3-rl-rules summary::-webkit-details-marker{display:none}
+.d3-rl-rules summary>span{flex:1}.d3-rl-rules summary em{font-style:normal;font-size:11px;color:var(--b);font-weight:800}
+.d3-rl-rules summary .cc-ico:last-child{color:var(--faint);transition:transform .15s}.d3-rl-rules[open] summary .cc-ico:last-child{transform:rotate(90deg)}
+.d3-rl-rules[open] summary em{display:none}
+.d3-rl-rule{display:flex;gap:10px;padding:10px 12px;border-top:1px solid var(--line2);background:#fff;font-size:12px;line-height:1.55;color:var(--mut)}
+.d3-rl-rule>i{font-style:normal;width:20px;height:20px;border-radius:7px;background:rgba(8,131,247,.11);color:#0466c8;display:grid;place-items:center;font-weight:800;font-size:11px;flex:none;margin-top:1px}
+.d3-rl-rule b{display:block;color:var(--ink);font-size:12.6px}
+.d3-rl-calls{margin-top:12px}.d3-rl-calls .r{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line2);font-size:12.2px}
+.d3-rl-calls .r b{display:block}.d3-rl-calls .r span{color:var(--mut);font-size:11.6px}
+.d3-rl-drawer{display:grid;gap:12px}
+.d3-rl-intro{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:rgba(8,131,247,.07);border:1px solid rgba(8,131,247,.18);color:#0f3a66;font-size:12.6px;line-height:1.5}.d3-rl-intro .cc-ico{color:var(--b);margin-top:1px;flex:none}
+.d3-dsec{border:1px solid var(--line);border-radius:14px;padding:14px 15px;background:#fff}
+.d3-dsec h4{margin:0;font-size:14px}.d3-dsec .why{font-size:12px;color:var(--mut);margin:3px 0 11px;line-height:1.5}
+.d3-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.d3-opt{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;text-align:left;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px 11px 36px;background:#fff;cursor:pointer;font:inherit;color:var(--ink);transition:border-color .12s,box-shadow .12s}
+.d3-opt:hover{border-color:#b6c6da}
+.d3-opt:before{content:"";position:absolute;left:12px;top:13px;width:12px;height:12px;border-radius:50%;border:2px solid #cbd5e1;background:#fff}
+.d3-opt.on{border-color:var(--b);background:rgba(8,131,247,.04);box-shadow:0 0 0 3px rgba(8,131,247,.12)}
+.d3-opt.on:before{border-color:var(--b);background:var(--b);box-shadow:inset 0 0 0 2.5px #fff}
+.d3-opt b{display:block;font-size:13px}.d3-opt span{display:block;font-size:11.8px;color:var(--mut);margin-top:3px;line-height:1.45}
+.d3-step{display:flex;gap:6px;align-items:center}
+.d3-sw{display:inline-flex;align-items:center;gap:6px;font-size:11.8px;font-weight:700;color:var(--ink2,#334155);cursor:pointer;user-select:none}
+.d3-sw input{appearance:none;-webkit-appearance:none;width:30px;height:18px;border-radius:999px;background:#cbd5e1;position:relative;cursor:pointer;margin:0;transition:background .15s;flex:none}
+.d3-sw input:before{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
+.d3-sw input:checked{background:var(--b)}.d3-sw.o input:checked{background:var(--o)}.d3-sw input:checked:before{left:14px}
+.d3-sw input:disabled{opacity:.5;cursor:not-allowed}
+.d3-rgrp+.d3-rgrp{margin-top:14px}
+.d3-rgrp .gh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}.d3-rgrp .gh b{font-size:12.6px}.d3-rgrp .gh span{font-size:11.5px;color:var(--mut)}
+.d3-rr{border:1px solid var(--line);border-radius:12px;padding:10px 11px;display:grid;gap:7px;background:#fff}.d3-rr+.d3-rr{margin-top:7px}
+.d3-rr.offr{background:var(--bg);opacity:.8}
+.d3-rr .d3-in{font-size:13px;padding:7px 10px}.d3-rr .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.d3-rr code{font:600 10.5px ui-monospace,monospace;color:var(--faint);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+.d3-rr .ctl{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.d3-radd{margin-top:12px;border:1.5px dashed var(--line);border-radius:12px;padding:10px 11px;background:var(--bg)}.d3-radd>b{font-size:12.4px}
+.d3-radd .d3-in{font-size:13px;padding:7px 10px}.d3-radd .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:7px}
 .d3-mnav{display:none}
 @media (max-width:760px){
   .d3{margin:-12px -14px 0}
@@ -605,56 +660,111 @@ export async function renderDispatcher360(host, query) {
       [], 'overview');
   }
   // bl_disp_0555 — the standing rules, this dispatcher's call counts, and the switches (warn → enforce) + the CC call-reason list
+  // bl_disp_0555 UI pass (15 Oct 2026) — premium layout: the two switches as status tiles, three count tiles, WHO is waiting and why, rules folded.
+  const RL_MODE = { off: ['Off', 'off'], warn: ['Warn', 'warn'], enforce: ['Enforced', 'enf'] };
+  const RL_WHY = (av, days) => ({
+    never: 'Has never posted availability',
+    stale: 'Last post ' + (av.last_label || '—') + ' — older than ' + days + ' days',
+    dispatcher_only: 'Only the dispatcher entered it — that never counts',
+    no_trucks: 'No truck on file yet — the carrier adds a truck first',
+  }[av.reason] || 'Has not posted availability');
   function rulesCard() {
     const dd = state.dd || {}; const cs = dd.calls || {}; const ru = dd.rules || {};
-    const waiting = Number(cs.waiting_availability || 0), urgent = Number(cs.urgent || 0), off = Number(cs.offpolicy || 0);
-    return card('Rules & call reasons', 'availability gate: ' + (ru.availability_gate_mode || 'warn') + ' · call rule: ' + (ru.call_rule_mode || 'warn') + ' · ' + (ru.availability_fresh_days || 7) + '-day post', 'shield', el('div', null, [
-      el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px' }, [
-        pill(waiting + ' carrier' + (waiting === 1 ? '' : 's') + ' waiting for availability', waiting ? 'orange' : 'green', waiting ? 'alert' : 'check'),
-        pill(urgent + ' urgent call' + (urgent === 1 ? '' : 's') + ' · 7d', urgent > 5 ? 'orange' : 'blue', 'phone'),
-        off ? pill(off + ' outside the rule · 7d', 'orange', 'alert') : pill('0 outside the rule', 'green'),
+    const gate = ru.availability_gate_mode || 'warn', rule = ru.call_rule_mode || 'warn', days = Number(ru.availability_fresh_days || 7);
+    const urgent = Number(cs.urgent || 0), off = Number(cs.offpolicy || 0);
+    const wl = (dd.assignments || []).filter((a) => a.status === 'active' && a.availability && a.availability.fresh === false);
+    const waiting = Math.max(Number(cs.waiting_availability || 0), wl.length);
+    const mode = (label, m) => { const [txt, cls] = RL_MODE[m] || RL_MODE.warn; return el('div', { class: 'd3-rl-mode ' + cls }, [el('i', { class: 'dt' }), el('div', null, [el('span', null, label), el('b', null, txt)])]); };
+    const stat = (n, label, tone, tip) => el('div', { class: 'd3-rl-stat ' + tone, title: tip }, [el('b', null, String(n)), el('span', null, label)]);
+    return card('Rules & call reasons', 'What every dispatcher follows · this dispatcher, last 7 days', 'shield', el('div', { class: 'd3-pad' }, [
+      el('div', { class: 'd3-rl-modes' }, [mode('Gate', gate), mode('Call rule', rule), el('div', { class: 'd3-rl-mode days' }, [el('i', { class: 'dt' }), el('div', null, [el('span', null, 'Post lasts'), el('b', null, days + ' days')])])]),
+      el('div', { class: 'd3-rl-stats' }, [
+        stat(waiting, 'waiting for availability', waiting ? (gate === 'enforce' ? 'red' : 'amber') : 'ok', 'Carriers of this dispatcher with no availability post of their own in the last ' + days + ' days'),
+        stat(urgent, 'urgent calls', urgent > 5 ? 'amber' : 'blue', 'Calls after the intro with an urgent reason (pickup < 24 h, in-transit problem, broker needs an answer, carrier asked)'),
+        stat(off, 'outside the rule', off ? 'amber' : 'ok', 'Non-urgent calls after the intro. Warn: allowed but counted here. Enforce: the phone refuses them.'),
       ]),
-      el('div', { class: 'd3-mut', style: 'font-size:12px;line-height:1.6' }, STANDING_RULES.map((r, i) => el('div', null, [el('b', null, (i + 1) + '. ' + r[0] + '. '), r[1]]))),
-      Array.isArray(cs.recent) && cs.recent.length ? el('div', { style: 'margin-top:8px' }, [el('b', { style: 'font-size:12px' }, 'Recent urgent / off-rule calls'), ...cs.recent.slice(0, 6).map((c) => el('div', { class: 'd3-mut', style: 'font-size:12px' }, dShort(c.at) + ' · ' + (c.carrier || '') + ' · ' + (c.policy === 'urgent' ? 'URGENT' : 'outside the rule') + ' · ' + (c.reason || '') + (c.note ? ' — ' + c.note : '') + (c.answered ? '' : ' · no answer')))]) : '',
-      el('div', { style: 'margin-top:10px' }, btn('Modes & call reasons', rulesDrawer, 'sm', 'shield')),
+      wl.length ? el('div', { class: 'd3-rl-wait' }, [
+        el('div', { class: 'hd' }, [icon('clock', 13), gate === 'enforce' ? 'Board hidden until they post' : 'Waiting — nothing is blocked (warn)']),
+        ...wl.map((a) => el('div', { class: 'r' }, [el('b', null, a.carrier || 'Carrier'), el('span', null, RL_WHY(a.availability, days))])),
+        el('div', { class: 'ft' }, gate === 'off' ? 'Gate is off — no reminders go out.' : 'The portal reminds each carrier once a day until they post. The dispatcher does not chase it by phone.'),
+      ]) : el('div', { class: 'd3-rl-ok' }, [icon('check', 13), waiting ? 'Waiting carriers are not listed on this screen yet' : 'Every carrier has a fresh availability post']),
+      el('details', { class: 'd3-rl-rules' }, [
+        el('summary', null, [icon('book', 14), el('span', null, 'The ' + STANDING_RULES.length + ' standing rules'), el('em', null, 'show'), icon('chev', 13)]),
+        ...STANDING_RULES.map((r, i) => el('div', { class: 'd3-rl-rule' }, [el('i', null, String(i + 1)), el('div', null, [el('b', null, r[0]), r[1]])])),
+      ]),
+      Array.isArray(cs.recent) && cs.recent.length ? el('div', { class: 'd3-rl-calls' }, [el('div', { class: 'd3-sec', style: 'margin-bottom:4px' }, 'Recent urgent / off-rule calls'),
+        ...cs.recent.slice(0, 6).map((c) => el('div', { class: 'r' }, [
+          pill(c.policy === 'urgent' ? 'Urgent' : 'Outside the rule', c.policy === 'urgent' ? 'blue' : 'orange'),
+          el('div', null, [el('b', null, c.carrier || 'Carrier'), el('span', null, dShort(c.at) + ' · ' + (c.reason || '—') + (c.answered ? '' : ' · no answer') + (c.note ? ' — ' + c.note : ''))])]))]) : '',
+      btn('Modes & call reasons', rulesDrawer, 'p', 'cog', { style: 'width:100%;justify-content:center;margin-top:12px' }),
     ]));
   }
   async function rulesDrawer() {
     const [cfg, rs] = await Promise.all([ccDispDeskConfig().catch(() => []), ccDispCallReasons().catch(() => ({}))]);
     const cfgRows = Array.isArray(cfg) ? cfg : []; const val = (k) => { const r = cfgRows.find((x) => x.key === k); return r ? (r.value || '') : ''; };
-    const body = el('div', { style: 'display:grid;gap:12px' });
-    const sel = (key, options, label, why) => {
-      const s = el('select', { class: 'cc-input', style: 'max-width:220px' }, options.map(([v, l]) => el('option', { value: v, selected: val(key) === v ? '' : undefined }, l)));
-      s.addEventListener('change', async () => { const r = await ccDispDeskConfigSet(key, s.value).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ ' + label + ' → ' + s.value); rerender('dd'); });
-      return el('div', null, [el('b', null, label), el('div', { class: 'd3-mut', style: 'font-size:12px;margin:2px 0 4px' }, why), s]);
+    const save = async (key, v, okMsg) => { const r = await ccDispDeskConfigSet(key, v).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return false; } toast('✓ ' + okMsg); rerender('dd'); return true; };
+    const section = (title, why, body) => el('div', { class: 'd3-dsec' }, [el('h4', null, title), why ? el('div', { class: 'why' }, why) : '', body]);
+    // one radio-card group per switch; Enforce asks first (it changes what carriers and dispatchers can do)
+    const choose = (key, cur, opts, label) => {
+      const wrap = el('div', { class: 'd3-opts' });
+      const paint = (v) => mount(wrap, opts.map(([code, title, effect, confirm]) => el('button', { type: 'button', class: 'd3-opt' + (code === v ? ' on' : ''), onClick: async () => {
+        if (code === v) return;
+        if (confirm && !(await askConfirm(confirm[0], { body: confirm[1], danger: true }))) return;
+        if (await save(key, code, label + ' → ' + title)) { v = code; paint(v); }
+      } }, [el('b', null, title), el('span', null, effect)])));
+      paint(cur); return wrap;
     };
-    const days = el('input', { class: 'cc-input', type: 'number', min: '1', max: '30', value: val('availability_fresh_days') || '7', style: 'width:90px' });
-    days.addEventListener('change', async () => { const r = await ccDispDeskConfigSet('availability_fresh_days', days.value).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ post counts for ' + days.value + ' days'); });
-    body.appendChild(el('div', { class: 'cc-sub', style: 'line-height:1.5' }, 'Start in WARN: nothing is blocked, carriers are reminded once a day, chips and counts show who is waiting. Flip to ENFORCE when carriers are posting — then a carrier with a dispatcher sees no loads until they post, and the dispatcher cannot post or book for them.'));
-    body.appendChild(sel('availability_gate_mode', [['off', 'Off — no gate, no reminders'], ['warn', 'Warn — chips + daily reminder, nothing blocked'], ['enforce', 'Enforce — board hidden, dispatcher cannot post/book']], 'Availability gate', 'The carrier posts availability (their own truck posting or Trucks-tab line). A dispatcher-entered line never counts.'));
-    body.appendChild(el('div', null, [el('b', null, 'Post counts for'), el('div', { class: 'd3-mut', style: 'font-size:12px;margin:2px 0 4px' }, 'days — after that the carrier is "waiting for availability" again'), days]));
-    body.appendChild(sel('call_rule_mode', [['warn', 'Warn — a non-urgent call after the intro is allowed but counted'], ['enforce', 'Enforce — the phone refuses it']], 'Call rule after the intro', 'One intro call per carrier (set when the answered call had reason "intro"). After it: urgent reasons only. A reason is always required; a callback within 30 min of the carrier’s call needs none.'));
-    // reasons table
-    const list = el('div', { style: 'display:grid;gap:6px' });
+    const body = el('div', { class: 'd3-rl-drawer' });
+    body.appendChild(el('div', { class: 'd3-rl-intro' }, [icon('shield', 16), el('div', null, [el('b', null, 'Start in Warn, enforce when carriers post. '),
+      'Warn blocks nothing: carriers get one reminder a day, and CC shows who is waiting and who called outside the rule. Flip the call rule to Enforce first, the availability gate a week later.'])]));
+    body.appendChild(section('Availability gate', 'The carrier posts their own availability (a truck posting or a Trucks-tab line). A line the dispatcher enters never counts.',
+      choose('availability_gate_mode', val('availability_gate_mode') || 'warn', [
+        ['off', 'Off', 'No gate, no reminders, no chips.', null],
+        ['warn', 'Warn', 'Chips + a daily reminder to the carrier. Nothing is blocked.', null],
+        ['enforce', 'Enforce', 'Board hidden for a waiting carrier; the dispatcher cannot post or book for them.', ['Enforce the availability gate?', 'From now on a carrier with a dispatcher sees NO loads until they post availability, and their dispatcher cannot post or book for them. Carriers waiting right now are blocked immediately.']],
+      ], 'Availability gate')));
+    const days = el('input', { class: 'd3-in', type: 'number', min: '1', max: '30', value: val('availability_fresh_days') || '7', style: 'width:70px;text-align:center;font-weight:800' });
+    const setDays = async (n) => { n = Math.min(30, Math.max(1, Number(n) || 7)); days.value = String(n); await save('availability_fresh_days', String(n), 'a post counts for ' + n + ' days'); };
+    days.addEventListener('change', () => setDays(days.value));
+    body.appendChild(section('A post counts for', 'After this many days without a new post the carrier is "waiting for availability" again.',
+      el('div', { class: 'd3-step' }, [btn('−', () => setDays(Number(days.value) - 1), 'sm'), days, btn('+', () => setDays(Number(days.value) + 1), 'sm'), el('span', { class: 'd3-mut', style: 'font-weight:700;font-size:12.5px' }, 'days')])));
+    body.appendChild(section('Call rule after the intro', 'Each carrier gets ONE intro call (it counts once an answered call had the reason "intro"). After that only urgent reasons. Every call needs a reason; calling back within 30 min of the carrier’s own call needs none.',
+      choose('call_rule_mode', val('call_rule_mode') || 'warn', [
+        ['warn', 'Warn', 'A non-urgent call after the intro still goes through, but it is counted as "outside the rule" and staff is notified.', null],
+        ['enforce', 'Enforce', 'The phone refuses a non-urgent call after the intro — it goes in the thread instead.', ['Enforce the call rule?', 'After the intro call, the dispatcher phone will refuse every call whose reason is not urgent. Urgent reasons (pickup within 24 h, in-transit problem, broker needs an answer, carrier asked) still go through.']],
+      ], 'Call rule')));
+    // call reasons — the list the phone shows in "Why this call?"
+    const list = el('div');
+    const sw = (checked, disabled, label, tone) => { const i = el('input', { type: 'checkbox', checked: checked ? '' : undefined, disabled: disabled ? '' : undefined }); return [i, el('label', { class: 'd3-sw ' + (tone || '') }, [i, label])]; };
     const paintReasons = (data) => {
-      mount(list, (data.reasons || []).map((r) => {
-        const lab = el('input', { class: 'cc-input', value: r.label || '', style: 'flex:1;min-width:200px' });
-        const urg = el('input', { type: 'checkbox', checked: r.urgent ? '' : undefined, disabled: ['intro', 'callback'].includes(r.code) ? '' : undefined });
-        const act = el('input', { type: 'checkbox', checked: r.active ? '' : undefined, disabled: ['intro', 'callback'].includes(r.code) ? '' : undefined });
-        const srt = el('input', { class: 'cc-input', type: 'number', value: r.sort ?? 100, style: 'width:70px' });
-        const hint = el('input', { class: 'cc-input', value: r.hint || '', placeholder: 'hint the dispatcher sees', style: 'flex:1;min-width:200px' });
-        const saveB = btn('Save', async () => { const x = await ccDispCallReasonSet({ code: r.code, label: lab.value, urgent: urg.checked, active: act.checked, sort: Number(srt.value) || 100, hint: hint.value }).catch((e) => ({ error: humanizeError(e) })); if (x && x.error) { toast(x.error); return; } toast('✓ ' + r.code + ' saved'); paintReasons(x); }, 'sm');
-        return el('div', { style: 'border:1px solid #e5e7eb;border-radius:8px;padding:8px' }, [
-          el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [el('code', { style: 'font-size:11px' }, r.code), lab, el('label', { style: 'font-size:12px' }, [urg, ' urgent']), el('label', { style: 'font-size:12px' }, [act, ' active']), srt, saveB]),
-          el('div', { style: 'display:flex;gap:8px;margin-top:6px' }, [hint]),
+      const rows = (data.reasons || []).slice().sort((a, b) => (a.sort ?? 100) - (b.sort ?? 100));
+      const row = (r) => {
+        const fixed = ['intro', 'callback'].includes(r.code);
+        const lab = el('input', { class: 'd3-in', value: r.label || '', style: 'flex:1;min-width:180px;font-weight:700' });
+        const hint = el('input', { class: 'd3-in', value: r.hint || '', placeholder: 'Hint the dispatcher sees under this reason', style: 'flex:1;min-width:180px;font-size:12px' });
+        const [urg, urgL] = sw(r.urgent, fixed, 'Urgent', 'o'); const [act, actL] = sw(r.active, fixed, 'On');
+        const srt = el('input', { class: 'd3-in', type: 'number', value: r.sort ?? 100, title: 'Order in the phone list (lower = higher)', style: 'width:62px;text-align:center' });
+        const saveB = btn('Save', async () => { const x = await ccDispCallReasonSet({ code: r.code, label: lab.value, urgent: urg.checked, active: act.checked, sort: Number(srt.value) || 100, hint: hint.value }).catch((e) => ({ error: humanizeError(e) })); if (x && x.error) { toast(x.error); return; } toast('✓ ' + (lab.value || r.code) + ' saved'); paintReasons(x); }, 'sm p', 'check', { disabled: '' });
+        [lab, hint, srt].forEach((n) => n.addEventListener('input', () => { saveB.disabled = false; }));
+        [urg, act].forEach((n) => n.addEventListener('change', () => { saveB.disabled = false; }));
+        return el('div', { class: 'd3-rr' + (r.active ? '' : ' offr') }, [
+          el('div', { class: 'top' }, [lab, el('code', null, r.code), fixed ? pill('always on', 'line', 'lock') : '']),
+          hint,
+          el('div', { class: 'ctl' }, [urgL, actL, el('span', { class: 'd3-mut', style: 'font-size:11.5px;font-weight:700' }, 'Order'), srt, el('span', { style: 'flex:1' }), saveB]),
         ]);
-      }));
+      };
+      const grp = (title, sub, arr) => arr.length ? el('div', { class: 'd3-rgrp' }, [el('div', { class: 'gh' }, [el('b', null, title), el('span', null, sub)]), ...arr.map(row)]) : '';
+      mount(list, [
+        grp('Urgent — allowed any time', 'These still go through after the intro call', rows.filter((r) => r.urgent)),
+        grp('Intro period only', 'Before the intro call only — afterwards they count as "outside the rule"', rows.filter((r) => !r.urgent)),
+      ]);
     };
     paintReasons(rs || {});
-    const code = el('input', { class: 'cc-input', placeholder: 'new code (a-z, 0-9, _)', style: 'width:180px' }); const nlab = el('input', { class: 'cc-input', placeholder: 'label', style: 'flex:1;min-width:200px' }); const nurg = el('input', { type: 'checkbox' });
-    const addB = btn('Add reason', async () => { const x = await ccDispCallReasonSet({ code: code.value, label: nlab.value, urgent: nurg.checked, active: true }).catch((e) => ({ error: humanizeError(e) })); if (x && x.error) { toast(x.error); return; } code.value = ''; nlab.value = ''; nurg.checked = false; toast('✓ added'); paintReasons(x); }, 'sm');
-    body.appendChild(el('div', null, [el('b', null, 'Call reasons (what the phone offers before a carrier call)'), el('div', { class: 'd3-mut', style: 'font-size:12px;margin:2px 0 8px' }, 'Urgent = allowed after the intro. Not urgent = allowed before the intro only (warn: allowed + counted). intro and callback cannot be switched off.'), list,
-      el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px' }, [code, nlab, el('label', { style: 'font-size:12px' }, [nurg, ' urgent']), addB])]));
+    const code = el('input', { class: 'd3-in', placeholder: 'code (a-z, 0-9, _)', style: 'width:150px' }); const nlab = el('input', { class: 'd3-in', placeholder: 'What the dispatcher sees, e.g. "Detention at the shipper"', style: 'flex:1;min-width:200px' });
+    const [nurg, nurgL] = sw(false, false, 'Urgent', 'o');
+    const addB = btn('Add reason', async () => { const x = await ccDispCallReasonSet({ code: code.value, label: nlab.value, urgent: nurg.checked, active: true }).catch((e) => ({ error: humanizeError(e) })); if (x && x.error) { toast(x.error); return; } code.value = ''; nlab.value = ''; nurg.checked = false; toast('✓ added'); paintReasons(x); }, 'sm', 'plus');
+    body.appendChild(section('Call reasons', 'Before every carrier call the phone asks "Why this call?" and offers this list. Urgent = still allowed after the intro. "intro" and "callback" are built in and cannot be switched off.',
+      el('div', null, [list, el('div', { class: 'd3-radd' }, [el('b', null, 'New reason'), el('div', { class: 'row' }, [code, nlab, nurgL, addB])])])));
     openDrawer('Rules & call reasons', body, { size: 'lg' });
   }
 
