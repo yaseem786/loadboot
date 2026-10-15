@@ -49,6 +49,9 @@ Peer session's review (verified against staging + prod, read-only) and what chan
 - **Demo/training quiet:** no staff in-app on post or accept, no push, no e-mail for demo carriers; `training_blocked_log` shows the sandbox guard stopping the dispatcher-side e-mails too (ids 84–87).
 - Verified again: a real (non-demo) carrier session sees 0 targeted posts on the board and in best-loads; `authenticated` holds no SELECT grant on `public.loads` on either DB (the RLS change is defence in depth).
 
+## PROD — applied 13 Oct 2026 (project rwscphuhpjoudvljvmdk)
+Applied in the part order below after main merged `claude/dispatcher-load-post`. Policy changed: `loads_carrier_select`. All 19 anchor patches hit once. Cron `lb-disp-posts-expire` scheduled. Anon SECURITY DEFINER surface after apply: see the line in SESSION-CHANGELOG (must be 36, names = baseline).
+
 ## PROD apply notes — read before touching prod
 - **Apply in parts through the MCP, not as one `apply_migration` call.** A 66 KB apply timed out at 60 s with nothing committed; the real blocker was `drop policy` — the Supabase MCP holds any `drop policy` for a confirmation that never arrives in an autonomous session and times out. The file now uses `alter policy loads_visible … using (…)` (same end state). `drop constraint` is fine.
 - Order used on staging (each its own `execute_sql`, each re-runnable): (1) `fn_patch` helper + column + indexes + the three constraints + `lb_load_target_visible` + `alter policy` + catalog rows → (2) helpers (section 3) → (3a) dispatcher RPCs (section 4–5) + (3b) `carrier_dispatcher_load_decide` → (4) `disp_posts_expire` + cron → (5a) the `fn_patch` DO block → (5b) grants + anon assertion.
