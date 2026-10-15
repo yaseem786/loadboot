@@ -1,7 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// telnyx-sms v1 (bl_dial_0352) — sends ONE text message from the signed-in dispatcher's own LoadBoot number. verify_jwt = true.
-// Body: { to, body }. Every check (SMS switched on, line assigned, US/CA only, toll-fraud list, STOP opt-outs, length,
+// telnyx-sms v2 (bl_dial_0352 + bl_sms_0533) — sends ONE text message on a LoadBoot line. verify_jwt = true.
+// Body: { to | thread_id, body, reply_to? }. v2: the conversation has an OWNER (dialer_sms_prepare decides who may send, which
+// line it leaves on and which Telnyx messaging profile — carrier or broker — carries it), the text comes back BRANDED
+// ("LoadBoot: " … " Reply STOP to opt out." / the first-message disclosure) and that FINAL text is what goes to Telnyx. Every check (SMS switched on, line assigned, US/CA only, toll-fraud list, STOP opt-outs, length,
 // hourly cap) runs in Postgres AS THE CALLER (public.dialer_sms_prepare), which also writes the queued row — so a text
 // exists in LoadBoot's record before it leaves. The Telnyx API key lives only here; the browser never sees it.
 // Result is written back with the service role (dialer_sms_mark). Delivery receipts arrive later via telnyx-hook.
@@ -36,10 +38,10 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const prep = await fetch(`${SUPABASE_URL}/rest/v1/rpc/dialer_sms_prepare`, {
       method: "POST", headers: { apikey: ANON, Authorization: req.headers.get("Authorization") || "", "Content-Type": "application/json" },
-      body: JSON.stringify({ p: { to: String(body?.to || ""), body: String(body?.body || "") } }),
+      body: JSON.stringify({ p: { to: String(body?.to || ""), thread_id: body?.thread_id ? String(body.thread_id) : null, reply_to: body?.reply_to ? String(body.reply_to) : null, body: String(body?.body || "") } }),
     });
     const p = prep.ok ? await prep.json() : null;
-    if (!p?.ok) return json({ ok: false, error: p?.error || "Could not send that text." }, 200);
+    if (!p?.ok) return json({ ok: false, error: p?.error || "Could not send that text.", needs_consent: !!p?.needs_consent, broker_blocked: !!p?.broker_blocked }, 200);
 
     const payload: Record<string, unknown> = { from: p.from, to: p.to, text: p.body };
     if (p.messaging_profile_id) payload.messaging_profile_id = p.messaging_profile_id;
@@ -54,7 +56,7 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: why, message: m }, 200);
     }
     const m = await mark(p.id, "sent", String(j.data.id), null);
-    return json({ ok: true, message: m });
+    return json({ ok: true, thread_id: p.thread_id, message: m });
   } catch (e) {
     return json({ ok: false, error: String((e as Error)?.message || e) }, 500);
   }
