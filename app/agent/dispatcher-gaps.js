@@ -65,8 +65,8 @@ export function deriveReasons(prof) {
   return out.slice(0, 3);
 }
 
-const INPUT = 'width:100%;margin-top:8px;background:rgba(2,8,20,.55);border:1px solid rgba(130,165,225,.28);border-radius:10px;padding:10px 12px;color:#e8eefb;font:inherit;font-size:.88rem';
-const ACK = 'display:flex;gap:8px;align-items:flex-start;margin-top:9px;font-size:.84rem;color:#dbe6f6;line-height:1.55;cursor:pointer';
+const INPUT = 'width:100%;margin-top:8px;background:var(--lbc-x-field,rgba(2,8,20,.55));border:1px solid var(--lbc-x-line,rgba(130,165,225,.28));border-radius:10px;padding:10px 12px;color:#e8eefb;font:inherit;font-size:.88rem';
+const ACK = 'display:flex;gap:8px;align-items:flex-start;margin-top:9px;font-size:.84rem;color:var(--lbc-x-ink,#dbe6f6);line-height:1.55;cursor:pointer';
 
 // form: getters onto the live application form, supplied by app/carrier/app.js.
 //   { board, ownBoards, english, years, trucks, hours, overlap, note, cv, id, focus(key) }
@@ -183,10 +183,10 @@ export function reapplyGate({ h, prof, form }) {
   if (codes.includes('no_own_board') || codes.includes('board_unknown')) { const i = codes.indexOf('no_booking_proof'); if (i >= 0) codes.splice(i, 1); }
   const rows = codes.map((c) => {
     const g = DEF[c]; if (!g) return null;
-    const chip = h('span', { style: 'flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:.78rem;border:1.5px solid rgba(252,83,5,.55);background:rgba(252,83,5,.12);color:#fdba74' }, '!');
-    const node = h('div', { style: 'border-radius:14px;padding:13px 14px;margin-top:9px;background:rgba(2,8,20,.35);border:1px solid rgba(130,165,225,.18)' }, [
+    const chip = h('span', { style: 'flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:.78rem;border:1.5px solid rgba(252,83,5,.55);background:rgba(252,83,5,.12);color:var(--lbc-x-warn,#fdba74)' }, '!');
+    const node = h('div', { style: 'border-radius:14px;padding:13px 14px;margin-top:9px;background:var(--lbc-x-field,rgba(2,8,20,.35));border:1px solid var(--lbc-x-line,rgba(130,165,225,.18))' }, [
       h('div', { style: 'display:flex;gap:10px;align-items:flex-start' }, [chip, h('div', { style: 'flex:1;min-width:0' }, [
-        h('div', { style: 'font-weight:850;color:#fff;font-size:.94rem;line-height:1.35' }, g.title),
+        h('div', { style: 'font-weight:850;color:var(--lbc-x-ink,#fff);font-size:.94rem;line-height:1.35' }, g.title),
         h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.6' }, g.what),
       ])]),
       g.extra || '',
@@ -194,7 +194,7 @@ export function reapplyGate({ h, prof, form }) {
     return { code: c, g, chip, node };
   }).filter(Boolean);
 
-  const counter = h('div', { style: 'font-size:.78rem;font-weight:900;letter-spacing:.06em;color:#fdba74;margin-top:10px' }, '');
+  const counter = h('div', { style: 'font-size:.78rem;font-weight:900;letter-spacing:.06em;color:var(--lbc-x-warn,#fdba74);margin-top:10px' }, '');
 
   const refresh = () => {
     let done = 0;
@@ -204,11 +204,11 @@ export function reapplyGate({ h, prof, form }) {
       r.chip.textContent = ok ? '✓' : '!';
       r.chip.style.borderColor = ok ? 'rgba(74,222,128,.6)' : 'rgba(252,83,5,.55)';
       r.chip.style.background = ok ? 'rgba(34,197,94,.14)' : 'rgba(252,83,5,.12)';
-      r.chip.style.color = ok ? '#4ade80' : '#fdba74';
-      r.node.style.borderColor = ok ? 'rgba(74,222,128,.32)' : 'rgba(130,165,225,.18)';
+      r.chip.style.color = ok ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-warn,#fdba74)';
+      r.node.style.borderColor = ok ? 'rgba(74,222,128,.32)' : 'var(--lbc-x-line,rgba(130,165,225,.18))';
     });
     counter.textContent = done === rows.length ? '✓ ALL CLEAR — YOU CAN SUBMIT' : done + ' OF ' + rows.length + ' CLOSED';
-    counter.style.color = done === rows.length ? '#4ade80' : '#fdba74';
+    counter.style.color = done === rows.length ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-warn,#fdba74)';
     return done === rows.length;
   };
 
@@ -221,11 +221,11 @@ export function reapplyGate({ h, prof, form }) {
     return null;
   };
 
-  const note = (prof && prof.review_note) ? h('div', { style: 'margin-top:10px;border-radius:12px;padding:11px 13px;background:rgba(2,8,20,.45);border-left:3px solid rgba(252,83,5,.75);font-size:.86rem;color:#dbe6f6;line-height:1.65;white-space:pre-wrap' }, 'Note from the team: ' + prof.review_note) : '';
+  const note = (prof && prof.review_note) ? h('div', { style: 'margin-top:10px;border-radius:12px;padding:11px 13px;background:var(--lbc-x-field,rgba(2,8,20,.45));border-left:3px solid rgba(252,83,5,.75);font-size:.86rem;color:var(--lbc-x-ink,#dbe6f6);line-height:1.65;white-space:pre-wrap' }, 'Note from the team: ' + prof.review_note) : '';
 
-  const node = h('div', { style: 'border-radius:20px;padding:20px 20px 18px;margin-bottom:14px;background:linear-gradient(150deg,#1b1206 0%,#14223c 58%,#0b1f3d 100%);border:1.5px solid rgba(252,83,5,.5);box-shadow:0 18px 40px -26px rgba(252,83,5,.65)' }, [
-    h('div', { style: 'font-size:.7rem;font-weight:900;letter-spacing:.14em;color:#ff9c66' }, 'RE-APPLICATION · CLOSE THESE BEFORE YOU SUBMIT'),
-    h('div', { style: 'font-size:1.2rem;font-weight:900;color:#fff;margin:7px 0 4px;line-height:1.2' }, explicit.length ? 'Why your last application was closed' : 'What is most likely holding your application back'),
+  const node = h('div', { style: 'border-radius:20px;padding:20px 20px 18px;margin-bottom:14px;background:var(--lbc-x-hero,linear-gradient(150deg,#1b1206 0%,#14223c 58%,#0b1f3d 100%));border:1.5px solid rgba(252,83,5,.5);box-shadow:0 18px 40px -26px rgba(252,83,5,.65)' }, [
+    h('div', { style: 'font-size:.7rem;font-weight:900;letter-spacing:.14em;color:var(--lbc-x-warn,#ff9c66)' }, 'RE-APPLICATION · CLOSE THESE BEFORE YOU SUBMIT'),
+    h('div', { style: 'font-size:1.2rem;font-weight:900;color:var(--lbc-x-ink,#fff);margin:7px 0 4px;line-height:1.2' }, explicit.length ? 'Why your last application was closed' : 'What is most likely holding your application back'),
     h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, explicit.length
       ? 'These are the exact reasons the team closed your last application. Submit stays locked until each one is closed — the same answers as last time will not be reviewed again.'
       : 'Your file does not carry a coded reason, so this is read from the answers on your closed application. Close each one before you submit — the same answers as last time will not be reviewed again.'),

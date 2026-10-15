@@ -81,16 +81,16 @@ export async function mountEldCard(host, opts = {}) {
 
   const statusLine = (r) => {
     if (!r || r.status !== 'active') return h('div', { class: 'cp-row-s' }, 'Not connected.');
-    if (r.last_error) return h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:11px;padding:9px 12px;color:#fca5a5;line-height:1.5' }, [h('b', null, 'Connection failing'), ' — ', r.last_error, r.last_error_at ? ' (' + ago(r.last_error_at) + ')' : '', '. Reconnect with a fresh token below.']);
-    if (r.last_ok_at) return h('div', { style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:11px;padding:9px 12px;color:#86efac;line-height:1.5' }, [h('b', null, 'Connected'), r.org_name ? ' · ' + r.org_name : '', ' · last successful sync ' + ago(r.last_ok_at), '. LoadBoot polls every 5 minutes.']);
-    if (r.has_api_token) return h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:9px 12px;color:#fcd9a2;line-height:1.5' }, [h('b', null, 'Token saved'), r.org_name ? ' · ' + r.org_name : '', ' · waiting for the first 5-minute poll' + (r.updated_at ? ' (saved ' + ago(r.updated_at) + ')' : '') + '.']);
+    if (r.last_error) return h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:11px;padding:9px 12px;color:var(--lbc-x-danger,#fca5a5);line-height:1.5' }, [h('b', null, 'Connection failing'), ' — ', r.last_error, r.last_error_at ? ' (' + ago(r.last_error_at) + ')' : '', '. Reconnect with a fresh token below.']);
+    if (r.last_ok_at) return h('div', { style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:11px;padding:9px 12px;color:var(--lbc-x-ok,#86efac);line-height:1.5' }, [h('b', null, 'Connected'), r.org_name ? ' · ' + r.org_name : '', ' · last successful sync ' + ago(r.last_ok_at), '. LoadBoot polls every 5 minutes.']);
+    if (r.has_api_token) return h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:9px 12px;color:var(--lbc-x-gold,#fcd9a2);line-height:1.5' }, [h('b', null, 'Token saved'), r.org_name ? ' · ' + r.org_name : '', ' · waiting for the first 5-minute poll' + (r.updated_at ? ' (saved ' + ago(r.updated_at) + ')' : '') + '.']);
     // A generic webhook row is created the moment someone taps "Show webhook" — before a single
     // position has arrived. Saying "Webhook active" in quiet grey let two carriers sit in a dead
     // state for over a week (prod, 6 Sep 2026: 2 active webhooks, 0 pings ever, 0 tokens anywhere).
     // A webhook that has never been called is not a connection; say so, and offer the way out.
-    if (r.last_ping_at) return h('div', { style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:11px;padding:9px 12px;color:#86efac;line-height:1.5' },
+    if (r.last_ping_at) return h('div', { style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:11px;padding:9px 12px;color:var(--lbc-x-ok,#86efac);line-height:1.5' },
       [h('b', null, 'Webhook receiving'), ' · last position ' + ago(r.last_ping_at) + '.']);
-    return h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:9px 12px;color:#fcd9a2;line-height:1.55' }, [
+    return h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:9px 12px;color:var(--lbc-x-gold,#fcd9a2);line-height:1.55' }, [
       h('b', null, 'Nothing received yet'), ' — the webhook address exists, but your telematics platform has never sent us a position, so nothing is tracking.',
       h('div', { style: 'margin-top:7px' }, [
         h('a', { class: 'cp-btn cp-btn-sm', style: 'background:#25D366;color:#0b1526;font-weight:800;text-decoration:none;display:inline-block',
@@ -121,7 +121,7 @@ export async function mountEldCard(host, opts = {}) {
       try {
         const t = await liveTest(prov, tok);
         if (!t.ok) {
-          mount(result, h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:11px;padding:10px 12px;color:#fca5a5' }, [h('b', null, 'Not connected. '), t.error || 'Rejected.', t.hint ? h('div', { style: 'margin-top:4px;color:#fecaca' }, t.hint) : null]));
+          mount(result, h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:11px;padding:10px 12px;color:var(--lbc-x-danger,#fca5a5)' }, [h('b', null, 'Not connected. '), t.error || 'Rejected.', t.hint ? h('div', { style: 'margin-top:4px;color:var(--lbc-x-danger,#fecaca)' }, t.hint) : null]));
           b.disabled = false; return;
         }
         const saved = await carrierEldSetup(prov, false, tok, t.org || null);
@@ -131,7 +131,7 @@ export async function mountEldCard(host, opts = {}) {
         if (t.vehicles != null) bits.push(t.vehicles + ' vehicle' + (t.vehicles === 1 ? '' : 's'));
         if (t.hos_drivers != null) bits.push(t.hos_drivers + ' driver clock' + (t.hos_drivers === 1 ? '' : 's'));
         if (t.region === 'EU') bits.push('EU region');
-        mount(result, h('div', { style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:11px;padding:10px 12px;color:#86efac' }, [h('b', null, 'Connected to ' + S.label + '. '), bits.join(' · '), (t.warnings || []).length ? h('ul', { style: 'margin:6px 0 0;padding-left:18px;color:#fcd9a2' }, t.warnings.map((w) => h('li', null, w))) : null]));
+        mount(result, h('div', { style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:11px;padding:10px 12px;color:var(--lbc-x-ok,#86efac)' }, [h('b', null, 'Connected to ' + S.label + '. '), bits.join(' · '), (t.warnings || []).length ? h('ul', { style: 'margin:6px 0 0;padding-left:18px;color:var(--lbc-x-gold,#fcd9a2)' }, t.warnings.map((w) => h('li', null, w))) : null]));
         toast('LoadBoot will pull positions and drive-time every 5 minutes.', 'success', 'ELD connected');
         tokIn.value = '';
         setTimeout(paint, 1500);
@@ -151,15 +151,15 @@ export async function mountEldCard(host, opts = {}) {
     const waHref = (msg) => 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(msg);
 
     const benefitBox = () => h('div', { style: 'border:1px solid rgba(74,222,128,.25);background:rgba(74,222,128,.05);border-radius:12px;padding:11px 13px;margin-bottom:10px;font-size:.84rem;line-height:1.65' }, [
-      h('div', { style: 'font-weight:800;color:#4ade80;margin-bottom:5px' }, 'What you get once it is connected'),
-      h('div', { style: 'color:#cbd5e1' }, [
+      h('div', { style: 'font-weight:800;color:var(--lbc-x-ok,#4ade80);margin-bottom:5px' }, 'What you get once it is connected'),
+      h('div', { style: 'color:var(--lbc-x-ink2,#cbd5e1)' }, [
         h('b', null, 'Your trips track themselves'), ' — positions flow in every 5 minutes with the app closed, so nobody has to text "where are you?" and your proof-of-delivery record builds itself.',
       ]),
-      h('div', { style: 'color:#cbd5e1;margin-top:5px' }, [
+      h('div', { style: 'color:var(--lbc-x-ink2,#cbd5e1);margin-top:5px' }, [
         h('b', null, 'Your dispatcher plans from real hours'), ' — remaining drive time comes straight from your ELD, so you stop being offered a 600-mile run on 3 hours of clock.',
       ]),
-      h('div', { style: 'margin-top:8px;padding-top:7px;border-top:1px solid rgba(148,163,184,.18);color:#94a3b8;font-size:.8rem;line-height:1.6' }, [
-        h('b', { style: 'color:#fbbf24' }, 'It does not replace posting your availability.' ), ' Your ELD knows where the truck is. It cannot know where you want to go next, when you want to be home, or that you are done for the week — so the daily post still decides whether your dispatcher sources for you.',
+      h('div', { style: 'margin-top:8px;padding-top:7px;border-top:1px solid rgba(148,163,184,.18);color:var(--lbc-x-ink3,#94a3b8);font-size:.8rem;line-height:1.6' }, [
+        h('b', { style: 'color:var(--lbc-x-gold,#fbbf24)' }, 'It does not replace posting your availability.' ), ' Your ELD knows where the truck is. It cannot know where you want to go next, when you want to be home, or that you are done for the week — so the daily post still decides whether your dispatcher sources for you.',
       ]),
     ]);
 
@@ -192,17 +192,17 @@ export async function mountEldCard(host, opts = {}) {
     mount(host, [head(), benefitBox(),
       active.length ? h('div', { style: 'display:flex;flex-direction:column;gap:6px;margin-bottom:10px' }, active.map((r) => h('div', null, [h('div', { class: 'cp-row-t', style: 'font-size:.8rem;margin-bottom:3px' }, STEPS[r.provider] ? STEPS[r.provider].label : r.provider), statusLine(r),
         r.provider !== 'generic' ? h('button', { class: 'cp-link', style: 'margin-top:4px', onClick: async () => { if (!confirm('Disconnect ' + STEPS[r.provider].label + '? LoadBoot stops polling and forgets the token.')) return; await carrierEldDisconnect(r.provider); toast('Disconnected.', 'action', STEPS[r.provider].label); paint(); } }, 'Disconnect') : null]))) : PHONE9 ? null : h('div', { class: 'cp-row-s', style: 'margin-bottom:10px;line-height:1.6' }, 'Connect your ELD once and LoadBoot reads truck positions and each driver’s remaining drive time every 5 minutes — your trips track themselves with the app closed, and your dispatcher plans from real hours instead of asking.'),
-      h('div', { style: 'border-top:1px solid rgba(255,255,255,.08);padding-top:10px' }, [
+      h('div', { style: 'border-top:1px solid var(--lbc-x-line,rgba(255,255,255,.08));padding-top:10px' }, [
         h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px' }, [h('span', { class: 'cp-row-t', style: 'font-size:.85rem' }, 'Provider'), provSel]),
         // ux-audit OC1 (24 Sep 2026): on a phone the six vendor steps + the admin-login note sat open for a
         // provider nobody had picked yet (Fleet tab 5,489px). Folded behind a summary on ≤560px, open on desktop;
         // the steps themselves are unchanged (vendor-published, see STEPS).
         h('details', { open: !PHONE9, style: 'margin-bottom:10px' }, [
-          h('summary', { style: 'cursor:pointer;font-weight:700;font-size:.85rem;color:#c9d4e5;list-style:none;display:flex;align-items:center;gap:6px' }, [
+          h('summary', { style: 'cursor:pointer;font-weight:700;font-size:.85rem;color:var(--lbc-x-ink2,#c9d4e5);list-style:none;display:flex;align-items:center;gap:6px' }, [
             h('span', { style: 'display:inline-block;transition:transform .15s', class: 'eld-caret' }, '▸'),
             prov === 'generic' ? 'How to set up the webhook (' + S.steps.length + ' steps)' : 'How to get your ' + S.label.replace(/ \(.*\)$/, '') + ' token (' + S.steps.length + ' steps)']),
           h('div', { class: 'cp-row-s', style: 'margin:8px 0 6px' }, [icon('shield', 13), ' ', S.who]),
-          h('ol', { style: 'margin:0;padding-left:20px;line-height:1.7;font-size:.86rem;color:#c9d4e5' }, S.steps.map((s) => h('li', null, s))),
+          h('ol', { style: 'margin:0;padding-left:20px;line-height:1.7;font-size:.86rem;color:var(--lbc-x-ink2,#c9d4e5)' }, S.steps.map((s) => h('li', null, s))),
         ]),
         prov === 'generic' ? webhookBox() : h('div', null, [
           h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [tokIn, h('div', { style: 'display:flex;gap:8px;align-items:center' }, [eye, connectBtn])]),

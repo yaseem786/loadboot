@@ -26,6 +26,16 @@ import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { el, mount, clear } from '../shared/ui/dom.js';
 import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
 import { roadMiles } from '../shared/usGeo.js';
+// bl_disp_0554 — same rule as app_private.disp_city_st: "City, ST" with a US state / DC / PR / Canadian province
+const DISP_STATES = new Set('AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC PR AB BC MB NB NL NS NT NU ON PE QC SK YT'.split(' '));
+function cityST(v) {
+  let s = String(v || '').replace(/\s+/g, ' ').trim().replace(/[ ,]+(USA|US|United States|Canada|CAN)\.?$/i, '').replace(/[ ,]+\d{5}(-\d{4})?$/, '').replace(/[ ,]+[A-Za-z]\d[A-Za-z] ?\d[A-Za-z]\d$/, '');
+  const m = s.match(/^(.+?)[ ,]+([A-Za-z]{2})\.?$/); if (!m) return null;
+  let city = m[1].replace(/^[ ,]+|[ ,]+$/g, ''); const st = m[2].toUpperCase();
+  if (!DISP_STATES.has(st) || !/^\p{L}[\p{L} .'-]{1,39}$/u.test(city)) return null;
+  if (city === city.toLowerCase() || city === city.toUpperCase()) city = city.toLowerCase().replace(/(^|[^\p{L}])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
+  return city + ', ' + st;
+}
 import { postMissing, postSeenLine } from '../shared/dispatcher-post-quality.js';   // bl_disp_0551 — seen + gaps on your posts
 import { icon as sharedIcon } from '../shared/ui/icons.js';
 import { dispatchLiveJoin } from '../shared/dispatch-live.js';
@@ -112,24 +122,24 @@ const ago = (v) => { if (!v) return ''; const m = Math.round((Date.now() - new D
 function sixAmET() { const p = partsIn(new Date(), ET); const z = (n) => String(n).padStart(2, '0'); return new Date(fromET(p.year + '-' + z(p.month) + '-' + z(p.day) + 'T06:00')).getTime(); }
 
 const STATUS = {
-  pending_rc: ['Awaiting RC', '#fbbf24'], rc_received: ['RC in — awaiting LoadBoot approval', '#7cc0ff'],
-  approved: ['Approved — dispatch the driver', '#4ade80'], dispatched: ['Dispatched', '#4ade80'], picked_up: ['Picked up · in transit', '#4ade80'],
-  delivered: ['Delivered', '#a7f3d0'], invoiced: ['Invoiced', '#a7f3d0'], paid: ['Paid', '#a7f3d0'],
-  cancelled: ['Cancelled', '#94a3b8'], rejected: ['Not approved', '#f87171'],
+  pending_rc: ['Awaiting RC', 'var(--lbc-x-gold,#fbbf24)'], rc_received: ['RC in — awaiting LoadBoot approval', 'var(--lbc-x-link,#7cc0ff)'],
+  approved: ['Approved — dispatch the driver', 'var(--lbc-x-ok,#4ade80)'], dispatched: ['Dispatched', 'var(--lbc-x-ok,#4ade80)'], picked_up: ['Picked up · in transit', 'var(--lbc-x-ok,#4ade80)'],
+  delivered: ['Delivered', 'var(--lbc-x-ok,#a7f3d0)'], invoiced: ['Invoiced', 'var(--lbc-x-ok,#a7f3d0)'], paid: ['Paid', 'var(--lbc-x-ok,#a7f3d0)'],
+  cancelled: ['Cancelled', 'var(--lbc-x-ink3,#94a3b8)'], rejected: ['Not approved', 'var(--lbc-x-danger,#f87171)'],
 };
 const OPEN = ['pending_rc', 'rc_received', 'approved', 'dispatched', 'picked_up'];
 const MOVING = ['approved', 'dispatched', 'picked_up'];
 const DONE = ['delivered', 'invoiced', 'paid', 'cancelled', 'rejected'];
 const dwDay = (s) => { if (!s) return '?'; const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(String(s)) ? s + 'T12:00:00' : s); return isNaN(d) ? String(s) : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };   // ux-audit A11
-const pill = (s) => { const m = STATUS[s] || [s, '#cbd5e1']; return h('span', { class: 'dw-pill', style: 'color:' + m[1] + ';border-color:' + m[1] + '55' }, m[0]); };
+const pill = (s) => { const m = STATUS[s] || [s, 'var(--lbc-x-ink2,#cbd5e1)']; return h('span', { class: 'dw-pill', style: 'color:' + m[1] + ';border-color:color-mix(in srgb,' + m[1] + ' 33%,transparent)' }, m[0]); };
 
 const CSS = `
-.dw-tel{color:#9fc3ff;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}.dw-tel:hover{text-decoration:underline}
+.dw-tel{color:var(--lbc-x-link,#9fc3ff);text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}.dw-tel:hover{text-decoration:underline}
 .dw{--dw-line:rgba(255,255,255,.09);--dw-line2:rgba(255,255,255,.16);--dw-panel:rgba(255,255,255,.045);--dw-panel2:rgba(255,255,255,.07);--dw-ink:#eaf1fb;--dw-ink2:#c3d1e6;--dw-muted:#7f92b3;--dw-blue:#4EA6F9;--dw-orange:#FC5305;color:var(--dw-ink);font-family:Manrope,system-ui,sans-serif}
 .dw *{box-sizing:border-box}
 .dw-clock{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:.78rem;color:var(--dw-muted);font-weight:800;letter-spacing:.04em;margin:0 0 10px;padding:0 4px}
-.dw-clock b{color:#fff}
-.dw-clock .et{color:#7cc0ff}
+.dw-clock b{color:var(--lbc-x-ink,#fff)}
+.dw-clock .et{color:var(--lbc-x-link,#7cc0ff)}
 .dw-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;padding:6px;border-radius:16px;background:var(--dw-panel);border:1px solid var(--dw-line)}
 .dw-tab{border:0;background:transparent;color:var(--dw-ink2);font:inherit;font-weight:800;font-size:.86rem;padding:9px 13px;border-radius:11px;cursor:pointer;display:flex;gap:7px;align-items:center}
 .dw-tab.on{background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;box-shadow:0 8px 18px -10px rgba(8,131,247,.6)}
@@ -137,16 +147,16 @@ const CSS = `
 .dw-ic{display:inline-flex;align-items:center;vertical-align:-3px;line-height:0}
 .dw-ic svg{display:block}
 .dw-card h3 .dw-ic{color:var(--dw-blue);margin-right:2px}
-.dw-stars{display:inline-flex;gap:1px;color:#fbbf24}
+.dw-stars{display:inline-flex;gap:1px;color:var(--lbc-x-gold,#fbbf24)}
 .dw-btn .dw-ic{margin-right:6px}
 .dw-q .ic{color:var(--dw-blue);padding-top:2px}
 .dw-q.hot .ic{color:var(--dw-orange)}
 .dw-tab .n{background:var(--dw-orange);color:#fff;border-radius:99px;font-size:.7rem;padding:1px 7px}
 .dw-card{background:var(--dw-panel);border:1px solid var(--dw-line);border-radius:18px;padding:18px 20px;margin-bottom:14px}
-.dw-card h3{margin:0 0 10px;font-size:1.02rem;font-weight:900;color:#fff;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.dw-card h3{margin:0 0 10px;font-size:1.02rem;font-weight:900;color:var(--lbc-x-ink,#fff);display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
 .dw-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
 .dw-kpi{background:var(--dw-panel);border:1px solid var(--dw-line);border-radius:14px;padding:12px 14px}
-.dw-kpi b{display:block;font-size:1.35rem;color:#fff;font-weight:900}
+.dw-kpi b{display:block;font-size:1.35rem;color:var(--lbc-x-ink,#fff);font-weight:900}
 .dw-kpi span{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dw-muted);font-weight:800}
 .dw-pill{display:inline-block;border:1px solid;border-radius:99px;padding:3px 10px;font-size:.74rem;font-weight:800;white-space:nowrap}
 .dw-muted{color:var(--dw-muted);font-size:.86rem}
@@ -158,17 +168,17 @@ const CSS = `
 .dw-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 12px}
 .dw-form label{display:flex;flex-direction:column;gap:4px;font-size:.74rem;font-weight:800;color:var(--dw-muted);letter-spacing:.04em}
 .dw-form .wide{grid-column:1/-1}
-.dw .dw-in{width:100%;padding:10px 12px;border-radius:11px;border:1px solid var(--dw-line2);background:rgba(0,0,0,.25);color:#fff;font:inherit;font-size:.92rem}
+.dw .dw-in{width:100%;padding:10px 12px;border-radius:11px;border:1px solid var(--dw-line2);background:rgba(0,0,0,.25);color:var(--lbc-x-ink,#fff);font:inherit;font-size:.92rem}
 .dw .dw-in:focus{outline:2px solid rgba(8,131,247,.55);border-color:transparent}
 .dw select.dw-in option{color:#000}
 .dw-btn{border:0;border-radius:12px;padding:10px 16px;font:inherit;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;box-shadow:0 8px 18px -10px rgba(8,131,247,.55)}
 .dw-btn.ghost{background:transparent;border:1px solid var(--dw-line2);color:var(--dw-ink2);box-shadow:none}
 .dw-btn.warn{background:linear-gradient(135deg,#FC5305,#e04a03)}
-.dw-btn.accent{background:linear-gradient(180deg,rgba(255,145,80,.20),rgba(255,145,80,.08));border:1px solid rgba(255,160,100,.45);color:#ffe2cf;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 24px -16px rgba(255,130,60,.55);gap:6px;transition:background .15s,border-color .15s}
+.dw-btn.accent{background:linear-gradient(180deg,rgba(255,145,80,.20),rgba(255,145,80,.08));border:1px solid rgba(255,160,100,.45);color:var(--lbc-x-warn,#ffe2cf);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 24px -16px rgba(255,130,60,.55);gap:6px;transition:background .15s,border-color .15s}
 .dw-btn.accent:hover{background:linear-gradient(180deg,rgba(255,145,80,.30),rgba(255,145,80,.14));border-color:rgba(255,170,115,.7)}
 .dw-pick{display:flex;flex-wrap:wrap;gap:8px}
 .dw-pick button{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:7px 13px;border-radius:12px;border:1px solid var(--dw-line2);background:var(--dw-panel);color:var(--dw-ink2);font:inherit;font-size:.84rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.dw-pick button[aria-pressed="true"]{border-color:rgba(78,166,249,.7);background:rgba(78,166,249,.14);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.dw-pick button[aria-pressed="true"]{border-color:rgba(78,166,249,.7);background:rgba(78,166,249,.14);color:var(--lbc-x-ink,#fff);box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
 .dw-pick button .tick{width:16px;height:16px;border-radius:5px;border:1.5px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:.7rem;line-height:1}
 .dw-pick button[aria-pressed="true"] .tick{background:#4EA6F9;border-color:#4EA6F9;color:#0b1220}
 .dw-btn.sm{padding:7px 11px;font-size:.8rem;border-radius:10px}
@@ -176,11 +186,11 @@ const CSS = `
 .dw-q{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--dw-line)}
 .dw-q:last-child{border-bottom:0}
 .dw-q .ic{font-size:1.25rem;line-height:1.2}
-.dw-q b{color:#fff}
+.dw-q b{color:var(--lbc-x-ink,#fff)}
 .dw-q.hot{border-left:3px solid var(--dw-orange);padding-left:10px}
 .dw-book{padding:12px 0;border-bottom:1px solid var(--dw-line);cursor:pointer}
-.dw-book:hover{background:rgba(255,255,255,.02)}
-.dw-lane{font-weight:900;color:#fff;font-size:1rem}
+.dw-book:hover{background:var(--lbc-x-panel,rgba(255,255,255,.02))}
+.dw-lane{font-weight:900;color:var(--lbc-x-ink,#fff);font-size:1rem}
 .dw-msg{max-width:78%;padding:9px 12px;border-radius:14px;margin:6px 0;background:var(--dw-panel2);border:1px solid var(--dw-line)}
 .dw-msg.mine{margin-left:auto;background:rgba(8,131,247,.22);border-color:rgba(8,131,247,.4)}
 .dw-msg .who{font-size:.68rem;color:var(--dw-muted);font-weight:800;letter-spacing:.06em;text-transform:uppercase}
@@ -189,26 +199,26 @@ const CSS = `
 .dw-tl{border-left:2px solid var(--dw-line2);margin-left:8px;padding-left:14px}
 .dw-tl>div{position:relative;padding:4px 0 10px}
 .dw-tl>div:before{content:'';position:absolute;left:-19px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--dw-blue)}
-.dw-warn{background:rgba(252,83,5,.12);border:1px solid rgba(252,83,5,.45);border-radius:12px;padding:10px 12px;color:#ffb38a;font-weight:700;font-size:.86rem}
-.dw-ok{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.4);border-radius:12px;padding:10px 12px;color:#86efac;font-weight:700;font-size:.86rem}
-.dw-info{background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.35);border-radius:12px;padding:10px 12px;color:#bfdcff;font-weight:700;font-size:.86rem}
-.dw-err{color:#f87171;font-weight:700;font-size:.86rem;margin-top:8px}
+.dw-warn{background:rgba(252,83,5,.12);border:1px solid rgba(252,83,5,.45);border-radius:12px;padding:10px 12px;color:var(--lbc-x-warn,#ffb38a);font-weight:700;font-size:.86rem}
+.dw-ok{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.4);border-radius:12px;padding:10px 12px;color:var(--lbc-x-ok,#86efac);font-weight:700;font-size:.86rem}
+.dw-info{background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.35);border-radius:12px;padding:10px 12px;color:var(--lbc-x-link,#bfdcff);font-weight:700;font-size:.86rem}
+.dw-err{color:var(--lbc-x-danger,#f87171);font-weight:700;font-size:.86rem;margin-top:8px}
 .dw-err:empty{display:none}
 .dw-table{width:100%;border-collapse:collapse;font-size:.86rem}
 .dw-table th{text-align:left;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dw-muted);padding:6px 8px;border-bottom:1px solid var(--dw-line2)}
 .dw-table td{padding:8px;border-bottom:1px solid var(--dw-line);vertical-align:top}
 .dw-tablewrap{overflow-x:auto}
 .dw-modal{position:fixed;inset:0;background:rgba(3,8,18,.72);z-index:9000;display:flex;align-items:flex-end;justify-content:center;padding:0}
-.dw-modal .box{background:#0b1220;border:1px solid var(--dw-line2);border-radius:22px 22px 0 0;width:min(820px,100%);max-height:92vh;overflow:auto;padding:18px 20px 28px;color:var(--dw-ink);font-family:Manrope,system-ui,sans-serif}
+.dw-modal .box{background:var(--lbc-x-field,#0b1220);border:1px solid var(--dw-line2);border-radius:22px 22px 0 0;width:min(820px,100%);max-height:92vh;overflow:auto;padding:18px 20px 28px;color:var(--dw-ink);font-family:Manrope,system-ui,sans-serif}
 .dw-modal .box.narrow{width:min(480px,100%)}
 @media(min-width:720px){.dw-modal{align-items:center;padding:20px}.dw-modal .box{border-radius:22px}}
-.dw-modal h3{margin:0 0 12px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px}
-.dw-x{background:transparent;border:1px solid var(--dw-line2);color:#fff;border-radius:10px;padding:5px 10px;cursor:pointer;font-weight:800}
+.dw-modal h3{margin:0 0 12px;color:var(--lbc-x-ink,#fff);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.dw-x{background:transparent;border:1px solid var(--dw-line2);color:var(--lbc-x-ink,#fff);border-radius:10px;padding:5px 10px;cursor:pointer;font-weight:800}
 .dw-chip{display:inline-block;padding:3px 9px;border-radius:99px;background:var(--dw-panel2);border:1px solid var(--dw-line);font-size:.74rem;font-weight:700;color:var(--dw-ink2);margin:2px 3px 2px 0}
 .dw-chip.no{opacity:.45;text-decoration:line-through}
 .dw-avail{background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:14px;padding:12px 14px;margin-top:10px}
-.dw-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0b1220;border:1px solid rgba(74,222,128,.5);color:#86efac;padding:10px 16px;border-radius:12px;font-weight:800;z-index:9500;box-shadow:0 10px 30px rgba(0,0,0,.5);font-family:Manrope,system-ui,sans-serif;max-width:min(92vw,520px)}
-.dw-toast.bad{border-color:rgba(248,113,113,.6);color:#fca5a5}
+.dw-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--lbc-x-field,#0b1220);border:1px solid rgba(74,222,128,.5);color:var(--lbc-x-ok,#86efac);padding:10px 16px;border-radius:12px;font-weight:800;z-index:9500;box-shadow:0 10px 30px rgba(0,0,0,.5);font-family:Manrope,system-ui,sans-serif;max-width:min(92vw,520px)}
+.dw-toast.bad{border-color:rgba(248,113,113,.6);color:var(--lbc-x-danger,#fca5a5)}
 .dw-stop{display:grid;grid-template-columns:90px 1fr 150px 32px;gap:6px;align-items:center;margin:4px 0}
 @media(max-width:640px){.dw-stop{grid-template-columns:1fr 1fr;grid-auto-rows:auto}}
 /* ---- 20 Sep 2026 · mobile pass (phone-first, app-grade). Desktop rules above are untouched. ---- */
@@ -216,11 +226,11 @@ const CSS = `
 .dw-btn:active:not(:disabled),.dw-tab:active,.dw-more-row:active{transform:scale(.98)}
 .dw-bn{position:absolute;top:2px;left:calc(50% + 5px);min-width:17px;height:17px;padding:0 5px;border-radius:99px;background:#FC5305;color:#fff;font-size:.62rem;font-weight:800;font-style:normal;line-height:17px;text-align:center;box-shadow:0 0 0 2px #0e1830}
 .dw-more-h{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dw-muted,#7f92b3);font-weight:800;margin:14px 2px 6px}
-.dw-more-row{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:8px 12px;margin:0 0 6px;border-radius:14px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.045);color:#eaf1fb;font:inherit;font-weight:800;font-size:.95rem;text-align:left;cursor:pointer}
-.dw-more-row .i{width:36px;height:36px;border-radius:11px;background:rgba(8,131,247,.14);color:#4EA6F9;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.dw-more-row{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:8px 12px;margin:0 0 6px;border-radius:14px;border:1px solid var(--lbc-x-line,rgba(255,255,255,.09));background:var(--lbc-x-panel,rgba(255,255,255,.045));color:var(--lbc-x-ink,#eaf1fb);font:inherit;font-weight:800;font-size:.95rem;text-align:left;cursor:pointer}
+.dw-more-row .i{width:36px;height:36px;border-radius:11px;background:rgba(8,131,247,.14);color:var(--lbc-x-link,#4EA6F9);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
 .dw-more-row .t{flex:1;min-width:0}
 .dw-more-row .n{background:#FC5305;color:#fff;border-radius:99px;font-size:.7rem;padding:1px 8px}
-.dw-more-row .c{color:#7f92b3;font-size:1.3rem;line-height:1}
+.dw-more-row .c{color:var(--lbc-x-ink3,#7f92b3);font-size:1.3rem;line-height:1}
 @media(max-width:900px){
 .cp-tabbar.dw-bar .cp-navlink{position:relative;min-height:50px;justify-content:center}
 /* rail mode (.cp-shell--rail) shrinks navlinks to 46x44 and hides their spans - undo that inside our bar */
@@ -238,9 +248,9 @@ const CSS = `
 }
 @media(max-width:900px){.dw.dw-barred .dw-tabs{display:none}}   /* ux-audit A2: the bottom bar carries the ten tabs on phone (≤900, where .cp-tabbar shows) — one nav, not two */
 @media(max-width:760px){
-.dw-tabs{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;position:sticky;top:var(--dw-top,0px);z-index:15;margin:0 -14px 12px;padding:8px 14px;gap:8px;border-radius:0;border-width:0 0 1px;background:rgba(11,18,32,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.dw-tabs{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;position:sticky;top:var(--dw-top,0px);z-index:15;margin:0 -14px 12px;padding:8px 14px;gap:8px;border-radius:0;border-width:0 0 1px;background:var(--lbc-x-field,rgba(11,18,32,.94));-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .dw-tabs::-webkit-scrollbar{display:none}
-.dw-tab{flex:0 0 auto;min-height:40px;white-space:nowrap;border-radius:99px;padding:8px 14px;font-size:.84rem;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07)}
+.dw-tab{flex:0 0 auto;min-height:40px;white-space:nowrap;border-radius:99px;padding:8px 14px;font-size:.84rem;background:var(--lbc-x-panel,rgba(255,255,255,.055));border:1px solid var(--lbc-x-line,rgba(255,255,255,.07))}
 .dw-tab.on{border-color:transparent}
 .dw-card{padding:14px;border-radius:16px;margin-bottom:12px}
 .dw-card h3{font-size:.98rem;line-height:1.3}
@@ -273,37 +283,37 @@ const CSS = `
 .dw-tablewrap{overflow:visible}
 .dw-table,.dw-table tbody,.dw-table tr,.dw-table td{display:block;width:100%}
 .dw-table thead{display:none}
-.dw-table tr{border:1px solid var(--dw-line);border-radius:14px;padding:6px 12px;margin:0 0 10px;background:rgba(255,255,255,.03)}
+.dw-table tr{border:1px solid var(--dw-line);border-radius:14px;padding:6px 12px;margin:0 0 10px;background:var(--lbc-x-panel,rgba(255,255,255,.03))}
 .dw-table tr:has(th){display:none}
 .dw-table td{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:8px 0;border-bottom:1px solid var(--dw-line);text-align:right;overflow-wrap:anywhere}
 .dw-table td:last-child{border-bottom:0}
 .dw-table td:empty{display:none}
 .dw-table td[data-l]:before{content:attr(data-l);flex:0 0 auto;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dw-muted);font-weight:800;text-align:left}
 .dw-table td[data-l='']:before{display:none}
-.dw-table td:first-child{font-size:1rem;font-weight:900;color:#fff}
-.dw-stop{grid-template-columns:minmax(0,1fr) 44px!important;gap:8px;padding:10px;margin:8px 0;border:1px solid var(--dw-line);border-radius:14px;background:rgba(255,255,255,.03)}
+.dw-table td:first-child{font-size:1rem;font-weight:900;color:var(--lbc-x-ink,#fff)}
+.dw-stop{grid-template-columns:minmax(0,1fr) 44px!important;gap:8px;padding:10px;margin:8px 0;border:1px solid var(--dw-line);border-radius:14px;background:var(--lbc-x-panel,rgba(255,255,255,.03))}
 .dw-stop>:nth-child(1){grid-area:1/1}
 .dw-stop>:nth-child(4){grid-area:1/2;align-self:stretch}
 .dw-stop>:nth-child(2){grid-area:2/1/3/3}
 .dw-stop>:nth-child(3){grid-area:3/1/4/3}
 .dw-stop>:nth-child(5){grid-area:4/1/5/3}
 .dw-modal .box{max-height:92dvh;padding:8px 16px calc(24px + env(safe-area-inset-bottom));overscroll-behavior:contain;animation:dwSheet .22s cubic-bezier(.2,.8,.2,1)}
-.dw-modal .box:before{content:'';display:block;width:40px;height:4px;border-radius:99px;background:rgba(255,255,255,.22);margin:2px auto 6px}
-.dw-modal h3{position:sticky;top:-8px;z-index:3;background:#0b1220;margin:0 -16px 10px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08);font-size:1.02rem}
+.dw-modal .box:before{content:'';display:block;width:40px;height:4px;border-radius:99px;background:var(--lbc-x-panel,rgba(255,255,255,.22));margin:2px auto 6px}
+.dw-modal h3{position:sticky;top:-8px;z-index:3;background:var(--lbc-x-field,#0b1220);margin:0 -16px 10px;padding:10px 16px;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.08));font-size:1.02rem}
 .dw-toast{bottom:calc(84px + env(safe-area-inset-bottom));width:max-content}
 }
 @media(max-width:350px){.dw-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* ---- 20 Sep 2026 · premium phone header + drawer (scoped to .dw-head / .dw-dr; shell CSS untouched) ---- */
 .dw-ava{display:none}
 @media(max-width:900px){
-.cp-top.dw-head{padding:10px 14px;gap:10px;background:linear-gradient(180deg,rgba(16,34,59,.97),rgba(11,18,32,.94))!important;-webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);border-bottom:0!important;box-shadow:0 10px 30px -18px rgba(0,0,0,.9)}
+.cp-top.dw-head{padding:10px 14px;gap:10px;background:var(--lbc-x-hero,linear-gradient(180deg,rgba(16,34,59,.97),rgba(11,18,32,.94)))!important;-webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);border-bottom:0!important;box-shadow:0 10px 30px -18px rgba(0,0,0,.9)}
 .cp-top.dw-head:before{content:'';position:absolute;left:-40px;top:-60px;width:220px;height:140px;background:radial-gradient(closest-side,rgba(8,131,247,.28),transparent);pointer-events:none}
 .cp-top.dw-head:after{content:'';position:absolute;left:0;right:0;bottom:0;height:1.5px;background:linear-gradient(90deg,#0883F7 0%,rgba(8,131,247,.25) 45%,rgba(252,83,5,.55) 100%)}
 .cp-top.dw-head .cp-top-left{gap:12px;position:relative}
-.cp-top.dw-head .cpx-burger,.cp-top.dw-head .cp-iconbtn{width:42px;height:42px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:13px;background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.1)!important;color:#eaf1fb!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07);-webkit-tap-highlight-color:transparent;flex:none}
+.cp-top.dw-head .cpx-burger,.cp-top.dw-head .cp-iconbtn{width:42px;height:42px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:13px;background:var(--lbc-x-panel,rgba(255,255,255,.06))!important;border:1px solid var(--lbc-x-line,rgba(255,255,255,.1))!important;color:var(--lbc-x-ink,#eaf1fb)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07);-webkit-tap-highlight-color:transparent;flex:none}
 .cp-top.dw-head .cpx-burger:active,.cp-top.dw-head .cp-iconbtn:active,.dw-ava:active{transform:scale(.94);background:rgba(8,131,247,.2)!important}
-.cp-top.dw-head .cp-top-title{font-size:1.12rem;font-weight:900;letter-spacing:-.01em;line-height:1.15;color:#fff}
-.cp-top.dw-head .cp-top-title:before{content:'LOADBOOT · DISPATCH';display:block;font-size:.56rem;font-weight:800;letter-spacing:.18em;color:#4EA6F9;margin-bottom:2px}
+.cp-top.dw-head .cp-top-title{font-size:1.12rem;font-weight:900;letter-spacing:-.01em;line-height:1.15;color:var(--lbc-x-ink,#fff)}
+.cp-top.dw-head .cp-top-title:before{content:'LOADBOOT · DISPATCH';display:block;font-size:.56rem;font-weight:800;letter-spacing:.18em;color:var(--lbc-x-link,#4EA6F9);margin-bottom:2px}
 .cp-top.dw-head .cp-top-right{gap:8px;position:relative}
 .dw-ava{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;border:0;padding:0;font:800 .86rem Manrope,system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,#0883F7,#0a5fc0);box-shadow:0 0 0 2px #0b1220,0 0 0 3.5px rgba(8,131,247,.55);cursor:pointer;position:relative;flex:none;-webkit-tap-highlight-color:transparent}
 .dw-ava:after{content:'';position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#22c55e;border:2px solid #0b1220}
@@ -312,48 +322,48 @@ const CSS = `
 .dw-clock{gap:8px!important;margin:2px 0 10px!important}
 .dw-clock{gap:6px!important;overflow-x:auto!important;scrollbar-width:none;letter-spacing:0!important}
 .dw-clock::-webkit-scrollbar{display:none}
-.dw-clock>span{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:99px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:.64rem;flex:none}
+.dw-clock>span{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:99px;background:var(--lbc-x-panel,rgba(255,255,255,.05));border:1px solid var(--lbc-x-line,rgba(255,255,255,.08));font-size:.64rem;flex:none}
 .dw-clock>span.et{background:rgba(8,131,247,.12);border-color:rgba(8,131,247,.3)}
 }
 .dw-dr-scrim{position:fixed;inset:0;z-index:9100;background:rgba(2,6,23,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .22s}
 .dw-dr-scrim.show{opacity:1}
-.dw-dr{position:fixed;top:0;bottom:0;left:0;z-index:9101;width:min(86vw,340px);display:flex;flex-direction:column;background:linear-gradient(180deg,#10223B 0%,#0b1220 38%,#080e1a 100%);border-right:1px solid rgba(255,255,255,.09);box-shadow:30px 0 80px -20px rgba(0,0,0,.8);transform:translateX(-102%);transition:transform .26s cubic-bezier(.2,.8,.2,1);color:#eaf1fb;font-family:Manrope,system-ui,sans-serif;padding-top:env(safe-area-inset-top)}
+.dw-dr{position:fixed;top:0;bottom:0;left:0;z-index:9101;width:min(86vw,340px);display:flex;flex-direction:column;background:var(--lbc-x-hero,linear-gradient(180deg,#10223B 0%,#0b1220 38%,#080e1a 100%));border-right:1px solid var(--lbc-x-line,rgba(255,255,255,.09));box-shadow:30px 0 80px -20px rgba(0,0,0,.8);transform:translateX(-102%);transition:transform .26s cubic-bezier(.2,.8,.2,1);color:var(--lbc-x-ink,#eaf1fb);font-family:Manrope,system-ui,sans-serif;padding-top:env(safe-area-inset-top)}
 .dw-dr.show{transform:none}
-.dw-dr-head{position:relative;overflow:hidden;padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.dw-dr-head{position:relative;overflow:hidden;padding:20px 18px 16px;border-bottom:1px solid var(--lbc-x-line,rgba(255,255,255,.08))}
 .dw-dr-head:before{content:'';position:absolute;right:-60px;top:-70px;width:220px;height:200px;background:radial-gradient(closest-side,rgba(8,131,247,.32),transparent);pointer-events:none}
 .dw-dr-head:after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1.5px;background:linear-gradient(90deg,#0883F7,rgba(252,83,5,.6))}
 .dw-dr-who{display:flex;align-items:center;gap:13px;position:relative}
 .dw-dr-who .a{width:54px;height:54px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.15rem;color:#fff;background:linear-gradient(135deg,#0883F7,#0a5fc0);box-shadow:0 0 0 2px #10223B,0 0 0 4px rgba(8,131,247,.5)}
-.dw-dr-who .nm{font-weight:900;font-size:1.04rem;color:#fff;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dw-dr-who .rl{display:inline-flex;align-items:center;gap:6px;margin-top:5px;font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#86efac;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:99px;padding:3px 9px}
+.dw-dr-who .nm{font-weight:900;font-size:1.04rem;color:var(--lbc-x-ink,#fff);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dw-dr-who .rl{display:inline-flex;align-items:center;gap:6px;margin-top:5px;font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--lbc-x-ok,#86efac);background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:99px;padding:3px 9px}
 .dw-dr-who .rl i{width:6px;height:6px;border-radius:50%;background:#22c55e}
-.dw-dr-x{position:absolute;right:12px;top:calc(12px + env(safe-area-inset-top));width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+.dw-dr-x{position:absolute;right:12px;top:calc(12px + env(safe-area-inset-top));width:38px;height:38px;border-radius:12px;border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));background:var(--lbc-x-panel,rgba(255,255,255,.06));color:var(--lbc-x-ink,#fff);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
 .dw-dr-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px;position:relative}
-.dw-dr-stats div{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);border-radius:13px;padding:9px 8px;text-align:center}
-.dw-dr-stats b{display:block;font-size:1rem;font-weight:900;color:#fff}
-.dw-dr-stats span{display:block;font-size:.54rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#7f92b3;margin-top:2px;line-height:1.3}
+.dw-dr-stats div{background:var(--lbc-x-panel,rgba(255,255,255,.055));border:1px solid var(--lbc-x-line,rgba(255,255,255,.08));border-radius:13px;padding:9px 8px;text-align:center}
+.dw-dr-stats b{display:block;font-size:1rem;font-weight:900;color:var(--lbc-x-ink,#fff)}
+.dw-dr-stats span{display:block;font-size:.54rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--lbc-x-ink3,#7f92b3);margin-top:2px;line-height:1.3}
 .dw-dr-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px 10px 10px}
-.dw-dr-h{font-size:.6rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#64789a;margin:14px 10px 6px}
-.dw-dr-it{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:50px;padding:7px 10px;border:0;border-radius:14px;background:none;color:#dbe6f5;font:inherit;font-weight:800;font-size:.93rem;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.dw-dr-it .i{width:36px;height:36px;border-radius:11px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.055);color:#9fb3d1}
+.dw-dr-h{font-size:.6rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--lbc-x-ink3,#64789a);margin:14px 10px 6px}
+.dw-dr-it{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:50px;padding:7px 10px;border:0;border-radius:14px;background:none;color:var(--lbc-x-ink,#dbe6f5);font:inherit;font-weight:800;font-size:.93rem;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dw-dr-it .i{width:36px;height:36px;border-radius:11px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:var(--lbc-x-panel,rgba(255,255,255,.055));color:var(--lbc-x-ink2,#9fb3d1)}
 .dw-dr-it .t{flex:1;min-width:0}
 .dw-dr-it .n{background:#FC5305;color:#fff;border-radius:99px;font-size:.68rem;padding:1px 8px}
-.dw-dr-it:active{background:rgba(255,255,255,.06)}
+.dw-dr-it:active{background:var(--lbc-x-panel,rgba(255,255,255,.06))}
 .dw-dr-it.on{background:linear-gradient(90deg,rgba(8,131,247,.2),rgba(8,131,247,.04));color:#fff}
 .dw-dr-it.on:before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:#0883F7}
 .dw-dr-it.on .i{background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;box-shadow:0 8px 18px -8px rgba(8,131,247,.7)}
-.dw-dr-foot{padding:10px 12px calc(12px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.08)}
-.dw-dr-out{width:100%;min-height:46px;border-radius:13px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);color:#fca5a5;font:inherit;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
-.dw-dr-site{text-align:center;font-size:.6rem;color:#4b5d7c;font-weight:700;letter-spacing:.04em;margin-top:9px}
+.dw-dr-foot{padding:10px 12px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--lbc-x-line,rgba(255,255,255,.08))}
+.dw-dr-out{width:100%;min-height:46px;border-radius:13px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);color:var(--lbc-x-danger,#fca5a5);font:inherit;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.dw-dr-site{text-align:center;font-size:.6rem;color:var(--lbc-x-ink3,#4b5d7c);font-weight:700;letter-spacing:.04em;margin-top:9px}
 @media(prefers-reduced-motion:reduce){.dw-dr,.dw-dr-scrim{transition:none}}
 .dw-fold{display:none}
 @media(max-width:760px){
 .dw-grid:not(.show-empty)>.dw-f.empty{display:none}
-.dw-fold{display:block;grid-column:1/-1;min-height:40px;margin-top:4px;padding:8px 12px;border-radius:11px;border:1px dashed rgba(255,255,255,.16);background:transparent;color:#9fb3d1;font:inherit;font-size:.78rem;font-weight:800;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dw-fold{display:block;grid-column:1/-1;min-height:40px;margin-top:4px;padding:8px 12px;border-radius:11px;border:1px dashed var(--lbc-x-line,rgba(255,255,255,.16));background:transparent;color:var(--lbc-x-ink2,#9fb3d1);font:inherit;font-size:.78rem;font-weight:800;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .dw-statuscard{padding:0!important;margin-bottom:10px!important;border-radius:14px!important;overflow:hidden}
 .dw-statuscard .cp-cardhead{margin:0!important;padding:11px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .dw-statuscard .cp-cardhead h3{font-size:.86rem!important}
-.dw-statuscard .cp-cardhead:after{content:'';width:8px;height:8px;border-right:2px solid #7f92b3;border-bottom:2px solid #7f92b3;transform:rotate(45deg);transition:transform .2s;flex:none;margin:-3px 4px 0 10px}
+.dw-statuscard .cp-cardhead:after{content:'';width:8px;height:8px;border-right:2px solid var(--lbc-x-line,#7f92b3);border-bottom:2px solid var(--lbc-x-line,#7f92b3);transform:rotate(45deg);transition:transform .2s;flex:none;margin:-3px 4px 0 10px}
 .dw-statuscard.open .cp-cardhead:after{transform:rotate(-135deg);margin-top:4px}
 .dw-statuscard:not(.open)>*:not(.cp-cardhead){display:none!important}
 .dw-statuscard.open>*:not(.cp-cardhead){margin-left:14px;margin-right:14px}
@@ -362,9 +372,9 @@ const CSS = `
 .dw-acc{display:none}
 @media(max-width:760px){
 .dw-clock>span.dw-clock-note{display:none}
-.dw-acc{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;margin-top:10px;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.045);color:#dbe6f5;font:inherit;font-size:.86rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.dw-acc .dw-ic{color:#4EA6F9;margin-right:4px}
-.dw-acc i{width:8px;height:8px;border-right:2px solid #7f92b3;border-bottom:2px solid #7f92b3;transform:rotate(45deg);transition:transform .2s;margin:-3px 4px 0 0}
+.dw-acc{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;margin-top:10px;padding:8px 12px;border-radius:12px;border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));background:var(--lbc-x-panel,rgba(255,255,255,.045));color:var(--lbc-x-ink,#dbe6f5);font:inherit;font-size:.86rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dw-acc .dw-ic{color:var(--lbc-x-link,#4EA6F9);margin-right:4px}
+.dw-acc i{width:8px;height:8px;border-right:2px solid var(--lbc-x-line,#7f92b3);border-bottom:2px solid var(--lbc-x-line,#7f92b3);transform:rotate(45deg);transition:transform .2s;margin:-3px 4px 0 0}
 .dw-acc.open i{transform:rotate(-135deg);margin-top:4px}
 .dw-acc:not(.open)+.dw-grid,.dw-acc:not(.open)~.dw-chips{display:none}
 }
@@ -757,7 +767,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const hourET = partsIn(new Date(), ET).hour;
     return h('div', null, [
       h('div', { class: 'dw-card', style: 'background:linear-gradient(135deg,rgba(8,131,247,.16),rgba(252,83,5,.08))' }, [
-        h('h3', null, ['Good ' + (hourET < 12 ? 'morning' : hourET < 18 ? 'afternoon' : 'evening') + ' (ET), ' + (p.full_name || 'dispatcher').split(' ')[0], h('span', { class: 'dw-pill', style: 'color:#4ade80;border-color:#4ade8055' }, (p.status || '').toUpperCase())]),
+        h('h3', null, ['Good ' + (hourET < 12 ? 'morning' : hourET < 18 ? 'afternoon' : 'evening') + ' (ET), ' + (p.full_name || 'dispatcher').split(' ')[0], h('span', { class: 'dw-pill', style: 'color:var(--lbc-x-ok,#4ade80);border-color:#4ade8055' }, (p.status || '').toUpperCase())]),
         h('div', { class: 'dw-muted' }, A().length + ' carrier' + (A().length === 1 ? '' : 's') + ' · ' + trucksAll().length + ' truck' + (trucksAll().length === 1 ? '' : 's') + ' · ' + B().filter((b) => MOVING.includes(b.status)).length + ' load' + (B().filter((b) => MOVING.includes(b.status)).length === 1 ? '' : 's') + ' moving'),
       ]),
       kpis(),
@@ -791,25 +801,25 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const c = a.carrier || {}; const s = a.sop || {};
     return h('div', { class: 'dw-card', 'data-carrier': a.carrier_org_id }, [
       h('h3', null, [h('span', null, [ic('building'), ' ' + (c.name || 'Carrier')]), h('div', { class: 'dw-row', style: 'gap:6px' }, [
-        h('span', { class: 'dw-pill', style: 'color:#4ade80;border-color:currentColor' }, 'ASSIGNED'),
+        h('span', { class: 'dw-pill', style: 'color:var(--lbc-x-ok,#4ade80);border-color:currentColor' }, 'ASSIGNED'),
         isDemoOrg(a.carrier_org_id) ? h('span', { class: 'dw-pill', style: 'color:#FC5305;border-color:currentColor;background:#10223B' }, 'TRAINING — NOT REAL') : null,
-        h('span', { class: 'dw-pill', style: 'color:' + (c.broker_visible ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, c.broker_visible ? 'LIVE TO BROKERS' : 'NOT YET VISIBLE')])]),
+        h('span', { class: 'dw-pill', style: 'color:' + (c.broker_visible ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-gold,#fbbf24)') + ';border-color:currentColor' }, c.broker_visible ? 'LIVE TO BROKERS' : 'NOT YET VISIBLE')])]),
       h('div', { class: 'dw-grid', 'data-fill': 'profile' }, [
         f('MC', c.mc), f('USDOT', c.dot), f('Contact', c.contact_name), f('Phone', c.phone ? tel(c.phone, { name: c.contact_name || c.name }) : null), f('WhatsApp', c.whatsapp), f('Email', c.email, 'wide'),
         f('Home base', c.home_base), f('Carrier min $/mi', c.min_rpm != null ? '$' + Number(c.min_rpm).toFixed(2) : null), f('Max deadhead', c.max_deadhead != null ? c.max_deadhead + ' mi' : null),
         f('Avoid states', Array.isArray(c.avoid_states) ? c.avoid_states.join(', ') : c.avoid_states), f('Weekends', yn(c.weekend_ok)), f('Factoring', c.factoring_company ? c.factoring_company + (c.factoring_status ? ' · ' + c.factoring_status : '') : null),
       ]),
       // bl_disp_0443 — the contact rule, next to the contact details it governs. Accepted before the choice; repeated here every day.
-      h('div', { class: 'dw-avail', style: 'border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.06)' }, [h('b', { style: 'color:#fca5a5' }, [ic('alert', 16), ' Contact rule — permanent block']), h('div', { class: 'dw-muted', style: 'margin-top:4px;line-height:1.5' }, [
+      h('div', { class: 'dw-avail', style: 'border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.06)' }, [h('b', { style: 'color:var(--lbc-x-danger,#fca5a5)' }, [ic('alert', 16), ' Contact rule — permanent block']), h('div', { class: 'dw-muted', style: 'margin-top:4px;line-height:1.5' }, [
         h('div', null, 'Reach this carrier only through the LoadBoot WhatsApp group, your LoadBoot line and your LoadBoot mailbox. Never a personal phone, WhatsApp, e-mail or social account — yours or theirs. Never move the carrier, a driver, a broker or a load off LoadBoot.'),
-        h('div', { style: 'margin-top:4px;color:#fff;font-weight:700' }, 'The carrier is told to report anything else. A confirmed report = same-day suspension, permanent block, no re-application.'),
+        h('div', { style: 'margin-top:4px;color:var(--lbc-x-ink,#fff);font-weight:700' }, 'The carrier is told to report anything else. A confirmed report = same-day suspension, permanent block, no re-application.'),
         // capacity policy — numbers mirror app_private.disp_capacity_policy() (trial 1 · then up to 3 carriers / 5 trucks after 3 delivered loads, added by LoadBoot)
         h('div', { style: 'margin-top:6px' }, 'Carriers: one during the trial. After it, LoadBoot may add up to 3 carriers / 5 trucks once you have 3 delivered loads and no carrier report — you never add a carrier yourself.'),
       ])]),
-      (s.scope_value || s.lanes || s.rules || s.min_rate || s.min_rate_note) ? h('div', { class: 'dw-avail' }, [h('b', { style: 'color:#7cc0ff' }, [ic('scale', 16), ' Your SOP for this carrier (set by LoadBoot)']), h('div', { class: 'dw-muted', style: 'line-height:1.8;margin-top:4px' }, [
+      (s.scope_value || s.lanes || s.rules || s.min_rate || s.min_rate_note) ? h('div', { class: 'dw-avail' }, [h('b', { style: 'color:var(--lbc-x-link,#7cc0ff)' }, [ic('scale', 16), ' Your SOP for this carrier (set by LoadBoot)']), h('div', { class: 'dw-muted', style: 'line-height:1.8;margin-top:4px' }, [
         s.scope_value ? h('div', null, 'Scope: ' + s.scope_value + ' — only source loads inside this scope.') : null,
         s.lanes ? h('div', null, 'Lanes: ' + s.lanes) : null,
-        s.min_rate ? h('div', null, ['Min rate/mile: ', h('b', { style: 'color:#fff' }, '$' + Number(s.min_rate).toFixed(2)), s.min_rate_note ? ' — ' + s.min_rate_note : '']) : null,
+        s.min_rate ? h('div', null, ['Min rate/mile: ', h('b', { style: 'color:var(--lbc-x-ink,#fff)' }, '$' + Number(s.min_rate).toFixed(2)), s.min_rate_note ? ' — ' + s.min_rate_note : '']) : null,
         s.equipment ? h('div', null, 'Equipment: ' + s.equipment) : null, s.home_time ? h('div', null, 'Home time: ' + s.home_time) : null, s.rules ? h('div', null, 'Rules: ' + s.rules) : null,
       ])]) : null,
       prefsBlock(a.prefs),
@@ -820,7 +830,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   function prefsBlock(pf) {
     // bl_pref_0536: the grid is always printed (empty tiles become "ask" cells for carrier-fill.js); the note stays on top
     const none9 = !pf; pf = pf || {};
-    const noneNote9 = none9 ? h('div', { class: 'dw-avail', style: 'margin-top:10px' }, [h('b', { style: 'color:#fbbf24' }, [ic('alert', 16), ' No preferences set by the carrier yet']), h('div', { class: 'dw-muted' }, 'Ask the owner for rate floor, lanes and home time in the thread — do not guess them.')]) : null;   // the grid itself now comes from prefsCard (one [data-fill=prefs] per card)
+    const noneNote9 = none9 ? h('div', { class: 'dw-avail', style: 'margin-top:10px' }, [h('b', { style: 'color:var(--lbc-x-gold,#fbbf24)' }, [ic('alert', 16), ' No preferences set by the carrier yet']), h('div', { class: 'dw-muted' }, 'Ask the owner for rate floor, lanes and home time in the thread — do not guess them.')]) : null;   // the grid itself now comes from prefsCard (one [data-fill=prefs] per card)
     const arr = (v) => (Array.isArray(v) && v.length ? v.join(', ') : null);
     const money = (v) => (v == null || v === '' ? null : '$' + Number(v).toFixed(2));
     const rows = [
@@ -837,7 +847,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       ['Likes', arr(pf.facility_likes)], ['Avoids', arr(pf.facility_dislikes)],
     ];
     return h('div', { style: 'margin-top:12px' }, [
-      h('div', { class: 'dw-row', style: 'justify-content:space-between;align-items:baseline;margin-bottom:4px' }, [h('b', { style: 'color:#7cc0ff' }, [ic('filter', 16), ' Carrier preferences — set by the owner']), h('span', { class: 'dw-muted', style: 'font-size:.78rem' }, pf.updated_at ? 'updated ' + whenDay(pf.updated_at) : '')]),
+      h('div', { class: 'dw-row', style: 'justify-content:space-between;align-items:baseline;margin-bottom:4px' }, [h('b', { style: 'color:var(--lbc-x-link,#7cc0ff)' }, [ic('filter', 16), ' Carrier preferences — set by the owner']), h('span', { class: 'dw-muted', style: 'font-size:.78rem' }, pf.updated_at ? 'updated ' + whenDay(pf.updated_at) : '')]),
       noneNote9,
       prefsCard(pf, { bare: true, viewer: 'dispatcher', fillCompat: true }),   // bl_pref_0536 — same tiles as CC + carrier portal
       pf.notes ? h('div', { class: 'dw-muted', style: 'margin-top:6px;white-space:pre-wrap' }, ['Owner note: ', pf.notes]) : null,
@@ -845,10 +855,10 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   }
   // bl_disp_0409 — drivers with licence / medical / app status and which unit they are on.
   function driversBlock(ds) {
-    if (!ds.length) return h('div', { class: 'dw-avail', style: 'margin-top:10px' }, [h('b', { style: 'color:#fbbf24' }, [ic('alert', 16), ' No driver on file']), h('div', { class: 'dw-muted' }, 'Brokers need a driver name and phone for every load — ask the owner to add one in Fleet.')]);
+    if (!ds.length) return h('div', { class: 'dw-avail', style: 'margin-top:10px' }, [h('b', { style: 'color:var(--lbc-x-gold,#fbbf24)' }, [ic('alert', 16), ' No driver on file']), h('div', { class: 'dw-muted' }, 'Brokers need a driver name and phone for every load — ask the owner to add one in Fleet.')]);
     const soon = (d) => { if (!d) return ''; const days = Math.round((new Date(d).getTime() - Date.now()) / 864e5); return days < 0 ? ' · EXPIRED' : days < 30 ? ' · expires in ' + days + ' d' : ''; };
     return h('div', { style: 'margin-top:12px' }, [
-      h('b', { style: 'color:#7cc0ff' }, [ic('user', 16), ' Drivers on file (' + ds.length + ')']),
+      h('b', { style: 'color:var(--lbc-x-link,#7cc0ff)' }, [ic('user', 16), ' Drivers on file (' + ds.length + ')']),
       h('div', { class: 'dw-grid', style: 'margin-top:4px' }, ds.map((d) => h('div', { class: 'dw-f wide' }, [
         h('div', { class: 'k' }, [d.name || '?', d.driving ? ' · on ' + d.driving : ' · not on a truck', d.status && d.status !== 'active' ? ' · ' + d.status : '']),
         h('div', { class: 'v' }, [
@@ -875,13 +885,13 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const renderAvail = (editing) => {
       if (!editing) {
         mount(availBox, h('div', { class: 'dw-avail' }, [
-          h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('b', { style: 'color:#7cc0ff' }, [ic('pin', 16), ' Availability' + (av.updated_at ? ' · updated ' + ago(av.updated_at) + (av.updated_by_role ? ' by ' + (av.updated_by_role === 'eld' ? 'ELD' : av.updated_by_role) : '') : ' · NOT SET')]), h('button', { class: 'dw-btn sm', onClick: () => renderAvail(true) }, av.updated_at ? 'Update' : 'Set availability')]),
+          h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('b', { style: 'color:var(--lbc-x-link,#7cc0ff)' }, [ic('pin', 16), ' Availability' + (av.updated_at ? ' · updated ' + ago(av.updated_at) + (av.updated_by_role ? ' by ' + (av.updated_by_role === 'eld' ? 'ELD' : av.updated_by_role) : '') : ' · NOT SET')]), h('button', { class: 'dw-btn sm', onClick: () => renderAvail(true) }, av.updated_at ? 'Update' : 'Set availability')]),
           h('div', { class: 'dw-grid', style: 'margin-top:6px' }, [
             f('Status', (av.status || 'empty').toUpperCase()), f('Empty at', av.empty_location ? av.empty_location + (av.empty_zip ? ' ' + av.empty_zip : '') : null), f('Empty from', av.empty_at ? when(av.empty_at) : null),
             f('Must be home by', av.must_be_home_by ? whenDay(av.must_be_home_by) + (av.home_location ? ' · ' + av.home_location : '') : null),
             f('Overnight weekdays', yn(av.overnight_weekdays)), f('Overnight weekends', yn(av.overnight_weekends)),
             f('HOS drive left', av.hos_drive_left_h != null ? av.hos_drive_left_h + ' h' + (av.hos_note ? ' · ' + av.hos_note : '') : (av.hos_note || null)), f('Driver', av.driver_name ? h('span', null, [av.driver_name, av.driver_phone ? [' · ', tel(av.driver_phone, { name: av.driver_name + ' (driver)' })] : null]) : null),
-            gps ? f('Last GPS', h('a', { href: 'https://www.google.com/maps?q=' + gps.lat + ',' + gps.lng, target: '_blank', rel: 'noopener', style: 'color:#7cc0ff' }, Number(gps.lat).toFixed(3) + ', ' + Number(gps.lng).toFixed(3) + ' · ' + ago(gps.at))) : null,
+            gps ? f('Last GPS', h('a', { href: 'https://www.google.com/maps?q=' + gps.lat + ',' + gps.lng, target: '_blank', rel: 'noopener', style: 'color:var(--lbc-x-link,#7cc0ff)' }, Number(gps.lat).toFixed(3) + ', ' + Number(gps.lng).toFixed(3) + ' · ' + ago(gps.at))) : null,
           ]),
           av.note ? h('div', { class: 'dw-muted', style: 'margin-top:6px' }, av.note) : null,
           av.updated_by_role === 'carrier' && av.driver_name ? h('div', { class: 'dw-muted', style: 'margin-top:4px;font-size:.78rem' }, 'The carrier set the driver — ask in the thread before changing it.') : null,
@@ -894,7 +904,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       const owd = h('input', { type: 'checkbox', checked: av.overnight_weekdays !== false }), owe = h('input', { type: 'checkbox', checked: av.overnight_weekends === true });
       const hos = I('hos_drive_left_h', 'number', { step: '0.5', min: '0', max: '14' }), dn = I('driver_name'), dp = I('driver_phone'), note = h('textarea', { class: 'dw-in', rows: 2 }, av.note || '');
       const e = h('div', { class: 'dw-err' });
-      mount(availBox, h('div', { class: 'dw-avail' }, [h('b', { style: 'color:#7cc0ff' }, [ic('pin', 16), ' Update availability']), h('div', { class: 'dw-form', style: 'margin-top:8px' }, [
+      mount(availBox, h('div', { class: 'dw-avail' }, [h('b', { style: 'color:var(--lbc-x-link,#7cc0ff)' }, [ic('pin', 16), ' Update availability']), h('div', { class: 'dw-form', style: 'margin-top:8px' }, [
         h('label', null, ['Status', st]), h('label', null, ['Empty at (City, ST)', eloc]), h('label', null, ['ZIP', ezip]), h('label', null, ['Empty from (ET)', eat]),
         h('label', null, ['Must be home by (ET)', home]), h('label', null, ['Home location', hloc]),
         h('label', null, ['HOS drive hours left (0–14)', hos]), h('label', null, ['Driver name', dn]), h('label', null, ['Driver phone', dp]),
@@ -920,7 +930,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     }
     const min = minFor(t);
     mount(card, [
-      h('h3', null, [h('span', null, [ic('truck'), ' Unit ' + (t.unit_no || '?') + (function () { const d9 = [[t.year, t.make, t.model].filter(Boolean).join(' '), t.equipment].filter(Boolean); return d9.length ? ' — ' + d9.join(' · ') : ''; })()]), h('span', { class: 'dw-pill', style: 'color:' + (act.length ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, act.length ? act.length + ' LOAD' + (act.length > 1 ? 'S' : '') + ' MOVING' : pend ? pend + ' BOOKING' + (pend > 1 ? 'S' : '') + ' PENDING' : (av.status || 'EMPTY').toUpperCase())]),
+      h('h3', null, [h('span', null, [ic('truck'), ' Unit ' + (t.unit_no || '?') + (function () { const d9 = [[t.year, t.make, t.model].filter(Boolean).join(' '), t.equipment].filter(Boolean); return d9.length ? ' — ' + d9.join(' · ') : ''; })()]), h('span', { class: 'dw-pill', style: 'color:' + (act.length ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-gold,#fbbf24)') + ';border-color:currentColor' }, act.length ? act.length + ' LOAD' + (act.length > 1 ? 'S' : '') + ' MOVING' : pend ? pend + ' BOOKING' + (pend > 1 ? 'S' : '') + ' PENDING' : (av.status || 'EMPTY').toUpperCase())]),
       h('div', { class: 'dw-muted' }, (t._a.carrier && t._a.carrier.name) || ''),
       h('div', { class: 'dw-grid', 'data-fill': 'truck', style: 'margin-top:8px' }, [
         f('Payload', t.payload_lbs != null ? num(t.payload_lbs) + ' lb' : null), f('Interior L × W × H', (t.cargo_len_in || t.cargo_width_in || t.cargo_height_in) ? ftin(t.cargo_len_in) + ' × ' + inches(t.cargo_width_in) + ' × ' + inches(t.cargo_height_in) : null),
@@ -963,7 +973,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const t = trucksAll().find((x) => x.id === b.truck_id);
     return h('div', { class: 'dw-book', tabindex: '0', role: 'button', onKeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showBooking(b); } }, onClick: () => showBooking(b) }, [
       h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, b.origin + ' → ' + b.destination), pill(b.status)]),
-      h('div', { class: 'dw-muted', style: 'margin-top:4px' }, [b.broker, ' · ', money(b.gross), rpm ? ' · $' + rpm.toFixed(2) + '/mi' : '', b.miles ? ' · ' + num(b.miles) + ' mi' : '', b.pickup_at ? ' · PU ' + when(b.pickup_at) : '', t ? ' · Unit ' + (t.unit_no || '?') : '', b.source === 'loadboot' ? ' · LoadBoot board' : '', b.below_min ? h('span', { style: 'color:#ffb38a;font-weight:800' }, ' · below floor') : '', Array.isArray(b.stops) && b.stops.length > 2 ? ' · ' + b.stops.length + ' stops' : '']),
+      h('div', { class: 'dw-muted', style: 'margin-top:4px' }, [b.broker, ' · ', money(b.gross), rpm ? ' · $' + rpm.toFixed(2) + '/mi' : '', b.miles ? ' · ' + num(b.miles) + ' mi' : '', b.pickup_at ? ' · PU ' + when(b.pickup_at) : '', t ? ' · Unit ' + (t.unit_no || '?') : '', b.source === 'loadboot' ? ' · LoadBoot board' : '', b.below_min ? h('span', { style: 'color:var(--lbc-x-warn,#ffb38a);font-weight:800' }, ' · below floor') : '', Array.isArray(b.stops) && b.stops.length > 2 ? ' · ' + b.stops.length + ' stops' : '']),
     ]);
   }
   function dispatchMessage(b, t) {
@@ -986,7 +996,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const noteIn = h('input', { class: 'dw-in', placeholder: 'note (optional)' }), locIn = h('input', { class: 'dw-in', placeholder: 'location (City, ST)' }), etaIn = h('input', { class: 'dw-in', type: 'datetime-local' });
     const rcFile = h('input', { type: 'file', accept: '.pdf,image/*', class: 'dw-in' }), rcNo = h('input', { class: 'dw-in', placeholder: 'RC / load number', value: b.rc_number || '' });
     const actions = [];
-    if (['pending_rc', 'rc_received'].includes(b.status)) actions.push(h('div', { class: 'dw-avail', style: 'width:100%' }, [h('b', { style: 'color:#7cc0ff' }, [ic('doc', 16), b.rc_doc_path ? ' Replace rate confirmation' : ' Attach the rate confirmation']), h('div', { class: 'dw-form', style: 'margin-top:8px' }, [h('label', null, ['File (PDF / photo)', rcFile]), h('label', null, ['RC number', rcNo])]),
+    if (['pending_rc', 'rc_received'].includes(b.status)) actions.push(h('div', { class: 'dw-avail', style: 'width:100%' }, [h('b', { style: 'color:var(--lbc-x-link,#7cc0ff)' }, [ic('doc', 16), b.rc_doc_path ? ' Replace rate confirmation' : ' Attach the rate confirmation']), h('div', { class: 'dw-form', style: 'margin-top:8px' }, [h('label', null, ['File (PDF / photo)', rcFile]), h('label', null, ['RC number', rcNo])]),
       h('div', { class: 'dw-row', style: 'margin-top:8px' }, [h('button', { class: 'dw-btn', onClick: (ev) => act(async () => { const f0 = rcFile.files && rcFile.files[0]; if (!f0) throw new Error('Choose the RC file first.'); ev.target.disabled = true; const up = await uploadDocument(f0, 'rate_confirmation'); const rr = await dispatcherBookingUpdate(b.id, { rc_doc_path: up.path, rc_doc_name: up.fileName, rc_number: rcNo.value || null }); if (!(rr && rr.error)) { try { dwLive.send('rc_uploaded', { booking: b.id, lane: b.origin + ' → ' + b.destination }); } catch (_) {} } return rr; }, 'RC sent to LoadBoot for approval') }, 'Upload RC'),
         h('button', { class: 'dw-btn ghost', onClick: () => { m.close(); editBooking(b); } }, [ic('edit', 16), 'Edit booking'])])]));
     if (b.status === 'approved') actions.push(h('button', { class: 'dw-btn', onClick: () => act(() => dispatcherBookingUpdate(b.id, { status: 'dispatched', note: noteIn.value }), 'Marked dispatched — truck shows LOADED') }, [ic('truck', 16), 'Driver dispatched']));
@@ -997,7 +1007,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       actions.push(h('button', { class: 'dw-btn warn', onClick: () => act(() => { if (!noteIn.value) throw new Error('Describe the exception in the note.'); return dispatcherBookingEvent(b.id, 'exception', noteIn.value, locIn.value || null, null); }, 'Exception logged — LoadBoot alerted') }, [ic('alert', 16), 'Exception']));
       actions.push(h('button', { class: 'dw-btn ghost', onClick: async () => { try { await navigator.clipboard.writeText(dispatchMessage(b, t)); toast('Dispatch message copied — paste it in the WhatsApp group'); } catch (_) { modal('Dispatch message', h('pre', { style: 'white-space:pre-wrap;font-family:inherit' }, dispatchMessage(b, t)), { narrow: true }); } } }, [ic('copy', 16), 'Copy dispatch message']));
     }
-    if (!DONE.includes(b.status)) actions.push(h('button', { class: 'dw-btn ghost', style: 'color:#f87171', onClick: async () => {
+    if (!DONE.includes(b.status)) actions.push(h('button', { class: 'dw-btn ghost', style: 'color:var(--lbc-x-danger,#f87171)', onClick: async () => {
       if (b.status === 'picked_up') { e.textContent = 'The freight is on the truck — only LoadBoot can cancel now. Log an Exception and message LoadBoot.'; return; }
       const v = await ask({ title: 'Cancel this booking?', text: 'The broker, the carrier and LoadBoot are told. Cancelling an approved load counts against you in KPIs.', danger: true, ok: 'Cancel the booking', cancel: 'Keep it', fields: [{ key: 'reason', label: 'Reason', type: 'textarea', required: true, placeholder: 'e.g. broker cancelled — no freight ready; truck broke down; rate cut after booking' }] });
       if (!v) return; act(() => dispatcherBookingUpdate(b.id, { status: 'cancelled', note: v.reason }), 'Booking cancelled');
@@ -1018,7 +1028,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       b.trip_id ? tripPanel(b) : null,
       h('h3', { style: 'margin-top:16px;font-size:.9rem' }, 'Timeline'), tl,
     ]);
-    try { const r = await dispatcherBookingTimeline(b.id); const rows = Array.isArray(r) ? r : []; mount(tl, rows.length ? h('div', { class: 'dw-tl' }, rows.map((x) => h('div', null, [h('b', { style: 'color:#fff' }, ({ created: 'Logged', rc: 'RC', status: 'Status', check_call: 'Check call', note: 'Note', exception: 'Exception', decision: 'LoadBoot', eta: 'ETA' })[x.kind] || x.kind), ' · ', h('span', { class: 'dw-muted' }, when(x.created_at) + (x.by ? ' · ' + x.by : '')), h('div', null, [x.note || '', x.location ? ' — ' + x.location : '', x.eta_at ? ' — ETA ' + when(x.eta_at) : ''])]))) : h('div', { class: 'dw-muted' }, 'No events yet.')); } catch (x) { mount(tl, err(x.message)); }
+    try { const r = await dispatcherBookingTimeline(b.id); const rows = Array.isArray(r) ? r : []; mount(tl, rows.length ? h('div', { class: 'dw-tl' }, rows.map((x) => h('div', null, [h('b', { style: 'color:var(--lbc-x-ink,#fff)' }, ({ created: 'Logged', rc: 'RC', status: 'Status', check_call: 'Check call', note: 'Note', exception: 'Exception', decision: 'LoadBoot', eta: 'ETA' })[x.kind] || x.kind), ' · ', h('span', { class: 'dw-muted' }, when(x.created_at) + (x.by ? ' · ' + x.by : '')), h('div', null, [x.note || '', x.location ? ' — ' + x.location : '', x.eta_at ? ' — ETA ' + when(x.eta_at) : ''])]))) : h('div', { class: 'dw-muted' }, 'No events yet.')); } catch (x) { mount(tl, err(x.message)); }
   }
   // edit a booking before approval (gross / miles / times / stops / notes) — the server recomputes the floor flag
   function editBooking(b) {
@@ -1058,7 +1068,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const org = b.carrier_org_id;
     async function paint() {
       let d; try { d = await dispatcherTrip(org, b.trip_id); } catch (x) { d = { error: x.message }; }
-      if (d.error) { mount(box, [h('b', { style: 'color:#7cc0ff' }, [ic('navigation', 16), ' Trip']), err(d.error)]); return; }
+      if (d.error) { mount(box, [h('b', { style: 'color:var(--lbc-x-link,#7cc0ff)' }, [ic('navigation', 16), ' Trip']), err(d.error)]); return; }
       const t = d.trip || {}; const stops = d.stops || []; const dwell = d.dwell || []; const pods = d.pods || []; const acc = d.accessorials || []; const exc = d.exceptions || [];
       const open = (stop) => dwell.find((x) => x.stop === stop && x.arrived_at && !x.departed_at);
       const done = (stop) => dwell.find((x) => x.stop === stop && x.departed_at);
@@ -1073,8 +1083,8 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         ]);
       });
       mount(box, [
-        h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('b', { style: 'color:#7cc0ff' }, [ic('navigation', 16), ' Trip · ' + String(t.status || '').replace('_', ' ').toUpperCase()]), h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh trip', onClick: paint }, ic('refresh', 14))]),
-        h('div', { class: 'dw-grid', style: 'margin-top:6px' }, [f('Driver', t.driver_name ? h('span', null, [t.driver_name, t.driver_phone ? [' · ', tel(t.driver_phone, { name: t.driver_name + ' (driver)' })] : null]) : null), f('Truck', t.truck_no), f('Tracking', t.tracking_method), f('Last location', t.last_lat != null ? h('a', { href: 'https://www.google.com/maps?q=' + t.last_lat + ',' + t.last_lng, target: '_blank', rel: 'noopener', style: 'color:#7cc0ff' }, Number(t.last_lat).toFixed(3) + ', ' + Number(t.last_lng).toFixed(3) + ' · ' + ago(t.last_loc_at)) : null), f('Pickup risk', t.pickup_risk), f('POD', pods.length ? pods.length + ' file' + (pods.length > 1 ? 's' : '') + ' · ' + pods[0].status : 'not uploaded — ask the driver for the signed BOL photo')]),
+        h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('b', { style: 'color:var(--lbc-x-link,#7cc0ff)' }, [ic('navigation', 16), ' Trip · ' + String(t.status || '').replace('_', ' ').toUpperCase()]), h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh trip', onClick: paint }, ic('refresh', 14))]),
+        h('div', { class: 'dw-grid', style: 'margin-top:6px' }, [f('Driver', t.driver_name ? h('span', null, [t.driver_name, t.driver_phone ? [' · ', tel(t.driver_phone, { name: t.driver_name + ' (driver)' })] : null]) : null), f('Truck', t.truck_no), f('Tracking', t.tracking_method), f('Last location', t.last_lat != null ? h('a', { href: 'https://www.google.com/maps?q=' + t.last_lat + ',' + t.last_lng, target: '_blank', rel: 'noopener', style: 'color:var(--lbc-x-link,#7cc0ff)' }, Number(t.last_lat).toFixed(3) + ', ' + Number(t.last_lng).toFixed(3) + ' · ' + ago(t.last_loc_at)) : null), f('Pickup risk', t.pickup_risk), f('POD', pods.length ? pods.length + ' file' + (pods.length > 1 ? 's' : '') + ' · ' + pods[0].status : 'not uploaded — ask the driver for the signed BOL photo')]),
         stops.length ? h('div', { class: 'dw-muted', style: 'margin-top:6px' }, stops.map((s0) => (s0.kind || '') + ': ' + (s0.location || '') + (s0.scheduled_at ? ' · ' + when(s0.scheduled_at) : '')).join('  →  ')) : null,
         h('div', { style: 'margin-top:8px' }, stopBtns),
         h('div', { class: 'dw-form', style: 'margin-top:8px' }, [h('label', { class: 'wide' }, ['Note', note])]),
@@ -1190,7 +1200,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const rows = (feed.brokers || []).slice().sort((a, b) => Number(b.bookings || 0) - Number(a.bookings || 0) || String(a.broker).localeCompare(String(b.broker)));
     const list = h('div', { class: 'dw-tablewrap' });
     const paintRows = () => mount(list, rows.length ? h('table', { class: 'dw-table' }, [h('thead', null, h('tr', null, ['Broker', 'MC', 'Rep', 'Contact', 'Lanes / equipment', 'New MC ok?', 'Loads · gross', 'Last', ''].map((x) => h('th', null, x)))),
-      h('tbody', null, rows.map((r) => h('tr', null, [h('td', null, [h('b', { style: 'color:#fff' }, r.broker), r.rating ? stars(r.rating) : null]), h('td', null, r.mc || '—'), h('td', null, r.rep || '—'), h('td', null, [r.phone ? h('div', null, tel(r.phone, { name: r.broker + (r.rep ? ' · ' + r.rep : ''), broker: r.id })) : null, r.email ? h('div', null, h('a', { href: 'mailto:' + r.email, style: 'color:inherit' }, r.email)) : null]), h('td', null, [r.lanes ? h('div', null, r.lanes) : null, r.equipment ? h('div', { class: 'dw-muted' }, r.equipment) : null]), h('td', null, yn(r.new_authority_ok)), h('td', null, Number(r.bookings || 0) ? r.bookings + ' · ' + money(r.gross) : '—'), h('td', null, [r.last_contact_at ? ago(r.last_contact_at) : '—', r.last_outcome ? h('div', { class: 'dw-muted' }, r.last_outcome) : null]),
+      h('tbody', null, rows.map((r) => h('tr', null, [h('td', null, [h('b', { style: 'color:var(--lbc-x-ink,#fff)' }, r.broker), r.rating ? stars(r.rating) : null]), h('td', null, r.mc || '—'), h('td', null, r.rep || '—'), h('td', null, [r.phone ? h('div', null, tel(r.phone, { name: r.broker + (r.rep ? ' · ' + r.rep : ''), broker: r.id })) : null, r.email ? h('div', null, h('a', { href: 'mailto:' + r.email, style: 'color:inherit' }, r.email)) : null]), h('td', null, [r.lanes ? h('div', null, r.lanes) : null, r.equipment ? h('div', { class: 'dw-muted' }, r.equipment) : null]), h('td', null, yn(r.new_authority_ok)), h('td', null, Number(r.bookings || 0) ? r.bookings + ' · ' + money(r.gross) : '—'), h('td', null, [r.last_contact_at ? ago(r.last_contact_at) : '—', r.last_outcome ? h('div', { class: 'dw-muted' }, r.last_outcome) : null]),
         h('td', null, h('div', { class: 'dw-row', style: 'flex-wrap:nowrap' }, [h('button', { class: 'dw-btn sm ghost', onClick: () => brokerForm(r) }, 'Edit'), h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Remove ' + r.broker, onClick: async () => { if (!(await confirmBox('Remove ' + r.broker + '?', 'Only the contact card is removed — bookings stay.', 'Remove', true))) return; await dispatcherBrokerDelete(r.id); toast('Removed'); await load(); } }, ic('x', 14))]))])))]) : h('div', { class: 'dw-muted' }, 'No brokers yet. Every booking you log adds its broker here automatically — or add the ones you already know.'));
     paintRows();
     if (openAction === 'new-broker') { openAction = null; setTimeout(() => brokerForm(null), 0); }
@@ -1211,7 +1221,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   // ---- MONEY
   function vMoney() {
     const c = feed.commission || {}; const p = feed.profile || {}; const rows = c.rows || [];
-    const PC = { draft: '#fbbf24', approved: '#7cc0ff', paid: '#4ade80', void: '#94a3b8' };
+    const PC = { draft: 'var(--lbc-x-gold,#fbbf24)', approved: 'var(--lbc-x-link,#7cc0ff)', paid: 'var(--lbc-x-ok,#4ade80)', void: 'var(--lbc-x-ink3,#94a3b8)' };
     return h('div', null, [
       h('div', { class: 'dw-kpis' }, [['Pending (delivered)', money(c.pending)], ['Approved · unpaid', money(c.approved)], ['Paid', money(c.paid)], ['Your rate', (p.commission_pct || 0) + '% of gross']].map(([l, v]) => h('div', { class: 'dw-kpi' }, [h('b', null, v), h('span', null, l)]))),
       h('div', { class: 'dw-card' }, [h('h3', null, 'How you get paid'), h('div', { class: 'dw-muted', style: 'line-height:1.8' }, [
@@ -1219,7 +1229,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         h('div', null, 'Pending → LoadBoot approves it once the broker is invoiced → Paid, with the real payout' + (p.currency ? ' in ' + p.currency : '') + ', the exchange rate used and the transfer reference. Cancelled or rejected loads never earn.'),
         p.trial_end ? h('div', null, 'Trial window: ' + dwDay(p.trial_start) + ' → ' + dwDay(p.trial_end) + ' (commission only during the trial).') : null,
       ])]),
-      h('div', { class: 'dw-card' }, [h('h3', null, 'Commission ledger'), h('div', { class: 'dw-tablewrap' }, rows.length ? h('table', { class: 'dw-table' }, [h('thead', null, h('tr', null, ['Load', 'Gross', '%', 'Commission', 'Status', 'Paid', 'When'].map((x) => h('th', null, x)))), h('tbody', null, rows.map((r) => h('tr', null, [h('td', null, r.lane || r.booking_id), h('td', null, money(r.gross)), h('td', null, r.pct + '%'), h('td', null, h('b', { style: 'color:#fff' }, money(r.amount))), h('td', null, [h('span', { class: 'dw-pill', style: 'color:' + (PC[r.status] || '#cbd5e1') + ';border-color:currentColor' }, ({ draft: 'PENDING', approved: 'APPROVED', paid: 'PAID', void: 'VOID' })[r.status] || String(r.status).toUpperCase()), r.note ? h('div', { class: 'dw-muted' }, r.note) : null]), h('td', null, r.status === 'paid' ? [r.paid_amount != null ? Number(r.paid_amount).toLocaleString('en-US') + ' ' + (r.paid_currency || '') : '—', r.fx_rate ? h('div', { class: 'dw-muted' }, '@ ' + r.fx_rate) : null, r.payout_ref ? h('div', { class: 'dw-muted' }, 'ref ' + r.payout_ref) : null] : '—'), h('td', null, r.paid_at ? when(r.paid_at) : when(r.created_at))])))]) : h('div', { class: 'dw-muted' }, 'Nothing yet — your first delivered load appears here.'))]),
+      h('div', { class: 'dw-card' }, [h('h3', null, 'Commission ledger'), h('div', { class: 'dw-tablewrap' }, rows.length ? h('table', { class: 'dw-table' }, [h('thead', null, h('tr', null, ['Load', 'Gross', '%', 'Commission', 'Status', 'Paid', 'When'].map((x) => h('th', null, x)))), h('tbody', null, rows.map((r) => h('tr', null, [h('td', null, r.lane || r.booking_id), h('td', null, money(r.gross)), h('td', null, r.pct + '%'), h('td', null, h('b', { style: 'color:var(--lbc-x-ink,#fff)' }, money(r.amount))), h('td', null, [h('span', { class: 'dw-pill', style: 'color:' + (PC[r.status] || 'var(--lbc-x-ink2,#cbd5e1)') + ';border-color:currentColor' }, ({ draft: 'PENDING', approved: 'APPROVED', paid: 'PAID', void: 'VOID' })[r.status] || String(r.status).toUpperCase()), r.note ? h('div', { class: 'dw-muted' }, r.note) : null]), h('td', null, r.status === 'paid' ? [r.paid_amount != null ? Number(r.paid_amount).toLocaleString('en-US') + ' ' + (r.paid_currency || '') : '—', r.fx_rate ? h('div', { class: 'dw-muted' }, '@ ' + r.fx_rate) : null, r.payout_ref ? h('div', { class: 'dw-muted' }, 'ref ' + r.payout_ref) : null] : '—'), h('td', null, r.paid_at ? when(r.paid_at) : when(r.created_at))])))]) : h('div', { class: 'dw-muted' }, 'Nothing yet — your first delivered load appears here.'))]),
     ]);
   }
 
@@ -1233,7 +1243,8 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const slot = h('div'); const title = h('span');
     const open = () => {
       if (activeChat) activeChat.destroy();
-      activeChat = threadChat({ assignmentId: cur.id, theme: 'dark', height: '52vh', placeholder: 'Message the carrier + LoadBoot… (everyone in this thread sees it)',
+      activeChat = threadChat({ assignmentId: cur.id, theme: document.documentElement.getAttribute('data-lbtheme') === 'dark' ? 'dark' : 'light',   // bl_ui_theme: follows the portal theme
+        height: '52vh', placeholder: 'Message the carrier + LoadBoot… (everyone in this thread sees it)',
         emptyText: 'No messages yet. Introduce yourself — the carrier and LoadBoot both see this.',
         onSent: () => { try { dwLive.send('message', { assignment: cur.id }); } catch (_) {} },
         onLoaded: () => { cur.unread = 0; } });
@@ -1269,7 +1280,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         body]),
     ]);
     // ---- posts for this carrier (bl_disp_0549)
-    const POST_PILL = { available: ['OPEN', '#fbbf24'], carrier_accepted: ['ACCEPTED', '#4ade80'], booked: ['BOOKED', '#4ade80'], declined: ['DECLINED', '#f87171'], expired: ['EXPIRED', '#94a3b8'], withdrawn: ['WITHDRAWN', '#94a3b8'], in_transit: ['MOVING', '#4ade80'], delivered: ['DELIVERED', '#4ade80'] };
+    const POST_PILL = { available: ['OPEN', 'var(--lbc-x-gold,#fbbf24)'], carrier_accepted: ['ACCEPTED', 'var(--lbc-x-ok,#4ade80)'], booked: ['BOOKED', 'var(--lbc-x-ok,#4ade80)'], declined: ['DECLINED', 'var(--lbc-x-danger,#f87171)'], expired: ['EXPIRED', 'var(--lbc-x-ink3,#94a3b8)'], withdrawn: ['WITHDRAWN', 'var(--lbc-x-ink3,#94a3b8)'], in_transit: ['MOVING', 'var(--lbc-x-ok,#4ade80)'], delivered: ['DELIVERED', 'var(--lbc-x-ok,#4ade80)'] };
     const leftTxt = (iso) => { if (!iso) return ''; const s = Math.floor((new Date(iso).getTime() - Date.now()) / 1000); if (s <= 0) return 'expired'; const m0 = Math.floor(s / 60); return m0 >= 60 ? Math.floor(m0 / 60) + 'h ' + (m0 % 60) + 'm left' : m0 + 'm left'; };
     async function paintPosts() {
       let posts = []; try { posts = await dispatcherMyPosts(cur.carrier_org_id, 30); } catch (e) { posts = []; }
@@ -1278,10 +1289,10 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       mount(postsHost, h('div', { class: 'dw-card', 'data-tour': 'dw-posts' }, [
         h('h3', null, [h('span', null, [ic('package'), ' Loads you posted for ' + ((cur.carrier && cur.carrier.name) || 'the carrier') + (openN ? ' · ' + openN + ' open' : '')]), h('button', { class: 'dw-btn sm accent', onClick: () => postLoadForm(cur, null) }, [ic('plus', 16), 'Post a load'])]),
         posts.length ? posts.slice(0, 12).map((p0) => {
-          const st = p0.expired && p0.status === 'available' ? 'expired' : p0.status; const pm = POST_PILL[st] || [String(st).toUpperCase(), '#cbd5e1'];
+          const st = p0.expired && p0.status === 'available' ? 'expired' : p0.status; const pm = POST_PILL[st] || [String(st).toUpperCase(), 'var(--lbc-x-ink2,#cbd5e1)'];
           const dec = p0.decision || {}; const wd = p0.withdrawn || {};
           return h('div', { class: 'dw-book', style: 'cursor:default' }, [
-            h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, p0.origin + ' → ' + p0.destination), h('span', null, [p0.below_min ? h('span', { class: 'dw-pill', style: 'color:#fbbf24;border-color:currentColor;margin-right:6px', title: p0.below_min_reason || '' }, 'BELOW FLOOR') : null, h('span', { class: 'dw-pill', style: 'color:' + pm[1] + ';border-color:currentColor' }, pm[0])])]),
+            h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, p0.origin + ' → ' + p0.destination), h('span', null, [p0.below_min ? h('span', { class: 'dw-pill', style: 'color:var(--lbc-x-gold,#fbbf24);border-color:currentColor;margin-right:6px', title: p0.below_min_reason || '' }, 'BELOW FLOOR') : null, h('span', { class: 'dw-pill', style: 'color:' + pm[1] + ';border-color:currentColor' }, pm[0])])]),
             h('div', { class: 'dw-muted', style: 'margin-top:4px' }, [money(p0.rate), p0.rpm != null ? '$' + Number(p0.rpm).toFixed(2) + '/mi' : null, p0.miles ? num(p0.miles) + ' mi' : null, p0.equipment, 'PU ' + dwDay(p0.pickup_date), p0.broker, 'found on ' + (p0.board_label || p0.board || '—'), st === 'available' ? '⏳ ' + leftTxt(p0.expires_at) : null, 'posted ' + ago(p0.created_at)].filter(Boolean).join(' · ')),
             // bl_disp_0551 — did the carrier see it, what is missing, and anything LoadBoot told you about it
             (() => { const sn = p0.seen || {}; return h('div', { class: sn.opened_at ? 'dw-ok' : 'dw-info', style: 'margin-top:6px' }, '👁 ' + postSeenLine(p0, (x) => ago(x))); })(),
@@ -1310,7 +1321,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       const req = (loadId, lane) => async () => { const v = await ask({ title: 'Request to book', text: lane + ' — the broker gets a 30-minute booking request under ' + ((cur.carrier && cur.carrier.name) || 'the carrier') + '’s MC.', ok: 'Send request', fields: [{ key: 'note', label: 'Note to the broker (optional)', type: 'textarea', placeholder: 'e.g. can pick up today 14:00, liftgate on board' }] }); if (!v) return; const r = await dispatcherRequestBook(cur.carrier_org_id, loadId, v.note).catch((e) => ({ error: e.message })); if (r && r.error) { toast(r.error, true); return; } toast('Request sent — the broker has ' + (r.expires_in_minutes || 30) + ' minutes to respond.'); paint(true); };
       const detail = (loadId) => async () => { const box = h('div', { class: 'dw-muted' }, 'Loading…'); modal('Load details', box); const d2 = await dispatcherLoadDetail(cur.carrier_org_id, loadId).catch((e) => ({ error: e.message })); if (!d2 || d2.error) { mount(box, err((d2 && d2.error) || 'Could not load.')); return; } const t = d2.terms || {}; const dx = t.details || {}; mount(box, [h('div', { class: 'dw-lane' }, (d2.origin || '') + ' → ' + (d2.destination || '')), h('div', { class: 'dw-grid', style: 'margin-top:8px' }, [f('Rate', money(d2.rate) + (d2.rpm != null ? ' · $' + Number(d2.rpm).toFixed(2) + '/mi' : '')), f('Miles', d2.miles), f('Equipment', d2.equipment), f('Commodity', d2.commodity), f('Weight', d2.weight), f('Pickup', [d2.pickup_date, t.pickup_window].filter(Boolean).join(' · ')), f('Delivery', [d2.delivery_date, t.delivery_window].filter(Boolean).join(' · ')), f('Scheduling', t.scheduling), f('Reference', t.reference), f('Posted by', d2.posted_by), f('Load size', dx.load_size), f('Pallets', dx.pallets), f('Tarps', dx.tarps), f('Pickup loading', dx.load_method_pickup), f('Delivery unloading', dx.load_method_delivery), f('Pickup hours', dx.dock_hours_pickup), f('Delivery hours', dx.dock_hours_delivery), dx.driver_assist_required ? f('Driver assist', 'REQUIRED') : null, dx.team_required ? f('Drivers', 'TEAM required') : null]), t.instructions ? h('div', { class: 'dw-muted', style: 'margin-top:8px;white-space:pre-wrap' }, t.instructions) : null, h('div', { class: 'dw-info', style: 'margin-top:10px' }, 'Exact addresses, pickup numbers and the executed RC are released the moment the broker accepts the request.'), h('div', { class: 'dw-row', style: 'margin-top:10px' }, [h('button', { class: 'dw-btn', onClick: req(loadId, (d2.origin || '') + ' → ' + (d2.destination || '')) }, 'Request to book')])]); };
       const loadRow = (x, scored) => h('div', { class: 'dw-book', style: 'cursor:default' }, [
-        h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, String(x.lane || (x.origin + ' → ' + x.destination)).replace(/[\s,]+$/, '')), scored ? h('span', { class: 'dw-pill', style: 'color:' + (x.score >= 70 ? '#4ade80' : x.score >= 45 ? '#fbbf24' : '#94a3b8') + ';border-color:currentColor' }, 'FIT ' + x.score + '/100') : (x.direct_to_you ? h('span', { class: 'dw-pill', style: 'color:#7cc0ff;border-color:currentColor' }, 'DIRECT OFFER') : null)]),
+        h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, String(x.lane || (x.origin + ' → ' + x.destination)).replace(/[\s,]+$/, '')), scored ? h('span', { class: 'dw-pill', style: 'color:' + (x.score >= 70 ? 'var(--lbc-x-ok,#4ade80)' : x.score >= 45 ? 'var(--lbc-x-gold,#fbbf24)' : 'var(--lbc-x-ink3,#94a3b8)') + ';border-color:currentColor' }, 'FIT ' + x.score + '/100') : (x.direct_to_you ? h('span', { class: 'dw-pill', style: 'color:var(--lbc-x-link,#7cc0ff);border-color:currentColor' }, 'DIRECT OFFER') : null)]),
         h('div', { class: 'dw-muted', style: 'margin-top:4px' }, [x.equipment, x.rate != null ? money(x.rate) : 'rate on request', x.miles ? num(x.miles) + ' mi' : null, (x.loaded_rpm || x.rpm) ? '$' + Number(x.loaded_rpm || x.rpm).toFixed(2) + '/mi' : null, x.deadhead_miles != null ? 'DH ~' + x.deadhead_miles + ' mi' : null, x.all_in_rpm ? 'all-in $' + x.all_in_rpm : null, x.pickup_date ? 'PU ' + x.pickup_date : null, x.broker, x.commodity, x.weight].filter(Boolean).join(' · ')),
         scored && Array.isArray(x.factors) ? h('div', { style: 'margin-top:4px' }, x.factors.map((f0) => h('span', { class: 'dw-chip', title: f0.detail || '' }, f0.factor + ' ' + f0.points + '/' + f0.max))) : null,
         x.requirements ? h('div', { class: 'dw-muted' }, 'Req: ' + x.requirements) : null,
@@ -1324,12 +1335,12 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         h('h3', { style: 'font-size:.9rem;margin:14px 0 4px' }, 'All available (' + availF.length + ')'),
         availF.length ? availF.map((x) => loadRow(x, false)) : h('div', { class: 'dw-muted' }, 'No other loads on the board.'),
         h('h3', { style: 'font-size:.9rem;margin:14px 0 4px' }, 'Booking requests (' + reqs.length + ')'),
-        reqs.length ? reqs.map((r) => h('div', { class: 'dw-book', style: 'cursor:default' }, [h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, r.origin + ' → ' + r.destination), h('span', { class: 'dw-pill', style: 'color:' + ({ pending: '#fbbf24', approved: '#4ade80', declined: '#f87171', expired: '#94a3b8', cancelled: '#94a3b8' })[r.status] + ';border-color:currentColor' }, String(r.status).toUpperCase())]), h('div', { class: 'dw-muted' }, [money(r.rate), ' · sent ', when(r.created_at), r.decided_at ? ' · decided ' + when(r.decided_at) : '', r.note ? ' · ' + r.note : ''])])) : h('div', { class: 'dw-muted' }, 'No requests yet.'),
+        reqs.length ? reqs.map((r) => h('div', { class: 'dw-book', style: 'cursor:default' }, [h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, r.origin + ' → ' + r.destination), h('span', { class: 'dw-pill', style: 'color:' + ({ pending: 'var(--lbc-x-gold,#fbbf24)', approved: 'var(--lbc-x-ok,#4ade80)', declined: 'var(--lbc-x-danger,#f87171)', expired: 'var(--lbc-x-ink3,#94a3b8)', cancelled: 'var(--lbc-x-ink3,#94a3b8)' })[r.status] + ';border-color:currentColor' }, String(r.status).toUpperCase())]), h('div', { class: 'dw-muted' }, [money(r.rate), ' · sent ', when(r.created_at), r.decided_at ? ' · decided ' + when(r.decided_at) : '', r.note ? ' · ' + r.note : ''])])) : h('div', { class: 'dw-muted' }, 'No requests yet.'),
         h('h3', { style: 'font-size:.9rem;margin:14px 0 4px' }, 'Truck postings (' + posts.length + ')'),
-        posts.length ? posts.map((p0) => h('div', { class: 'dw-book', style: 'cursor:default' }, [h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, (p0.post_kind === 'backhaul' ? 'BACKHAUL · ' : '') + (p0.unit_no ? 'Unit ' + p0.unit_no + ' · ' : '') + (p0.post_kind === 'backhaul' ? 'delivers ' : '') + p0.origin + (p0.origin_zip ? ' ' + p0.origin_zip : '') + (p0.dest_pref ? ' → ' + p0.dest_pref : ' → anywhere')), h('span', { class: 'dw-pill', style: 'color:' + (p0.status === 'active' ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, String(p0.status).toUpperCase() + ' · ' + (p0.matches || 0) + ' matches')]),
+        posts.length ? posts.map((p0) => h('div', { class: 'dw-book', style: 'cursor:default' }, [h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('div', { class: 'dw-lane' }, (p0.post_kind === 'backhaul' ? 'BACKHAUL · ' : '') + (p0.unit_no ? 'Unit ' + p0.unit_no + ' · ' : '') + (p0.post_kind === 'backhaul' ? 'delivers ' : '') + p0.origin + (p0.origin_zip ? ' ' + p0.origin_zip : '') + (p0.dest_pref ? ' → ' + p0.dest_pref : ' → anywhere')), h('span', { class: 'dw-pill', style: 'color:' + (p0.status === 'active' ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-gold,#fbbf24)') + ';border-color:currentColor' }, String(p0.status).toUpperCase() + ' · ' + (p0.matches || 0) + ' matches')]),
           h('div', { class: 'dw-muted' }, [(p0.equipment || []).join('/'), ' · ', p0.from, ' → ', p0.to, ' · ', p0.radius, ' mi', p0.min_rpm ? ' · min $' + p0.min_rpm + '/mi' : '', p0.notes ? ' · ' + p0.notes : '']),
           // 5 Sep 2026 — daily availability: the carrier must re-confirm every 24h; work only FRESH posts.
-          h('div', { class: 'dw-muted', style: 'font-weight:700;color:' + (p0.status === 'paused' ? '#94a3b8' : p0.is_fresh ? '#4ade80' : p0.status === 'expired' ? '#f87171' : '#fbbf24') }, p0.status === 'paused' ? '⏸ Carrier marked this truck NOT AVAILABLE — do not source for it.' : p0.is_fresh ? ('● Confirmed by carrier ' + (p0.hours_since_confirm != null ? p0.hours_since_confirm + 'h ago' : 'today') + ' · expires in ' + (p0.hours_left != null ? p0.hours_left + 'h' : '24h') + ' — work this truck') : p0.status === 'expired' ? '⚠ Expired — carrier has not confirmed in 24h. Do not source until they repost.' : '◐ Not confirmed in 24h — ask the carrier to confirm before you work it.'),
+          h('div', { class: 'dw-muted', style: 'font-weight:700;color:' + (p0.status === 'paused' ? 'var(--lbc-x-ink3,#94a3b8)' : p0.is_fresh ? 'var(--lbc-x-ok,#4ade80)' : p0.status === 'expired' ? 'var(--lbc-x-danger,#f87171)' : 'var(--lbc-x-gold,#fbbf24)') }, p0.status === 'paused' ? '⏸ Carrier marked this truck NOT AVAILABLE — do not source for it.' : p0.is_fresh ? ('● Confirmed by carrier ' + (p0.hours_since_confirm != null ? p0.hours_since_confirm + 'h ago' : 'today') + ' · expires in ' + (p0.hours_left != null ? p0.hours_left + 'h' : '24h') + ' — work this truck') : p0.status === 'expired' ? '⚠ Expired — carrier has not confirmed in 24h. Do not source until they repost.' : '◐ Not confirmed in 24h — ask the carrier to confirm before you work it.'),
           h('div', { class: 'dw-row', style: 'margin-top:6px' }, [
             h('button', { class: 'dw-btn sm ghost', onClick: async () => { const m0 = await dispatcherPostingMatches(cur.carrier_org_id, p0.id).catch((e) => ({ error: e.message })); if (m0 && m0.error) { toast(m0.error, true); return; } const rows = Array.isArray(m0) ? m0 : []; modal('Matches — ' + p0.origin, h('div', null, rows.length ? rows.map((mm) => h('div', { class: 'dw-book', style: 'cursor:default' }, [h('div', { class: 'dw-lane' }, mm.origin + ' → ' + mm.destination), h('div', { class: 'dw-muted' }, [money(mm.rate), mm.miles ? ' · ' + mm.miles + ' mi' : '', ' · ', mm.equipment || '', mm.pickup_date ? ' · PU ' + mm.pickup_date : '', ' · ', mm.basis || '', mm.still_available ? '' : ' · GONE']), mm.still_available ? h('button', { class: 'dw-btn sm', style: 'margin-top:6px', onClick: req(mm.load_id, mm.origin + ' → ' + mm.destination) }, 'Request to book') : null])) : h('div', { class: 'dw-muted' }, 'No matches yet — the matcher runs as brokers post.'))); } }, 'Matches'),
             p0.status === 'active' ? h('button', { class: 'dw-btn sm ghost', onClick: async () => { await dispatcherUpdatePosting(cur.carrier_org_id, p0.id, 'pause'); paint(true); } }, 'Pause') : h('button', { class: 'dw-btn sm ghost', onClick: async () => { await dispatcherUpdatePosting(cur.carrier_org_id, p0.id, 'resume'); paint(true); } }, 'Resume'),
@@ -1380,7 +1391,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       const I = (ph, type, extra) => h('input', Object.assign({ class: 'dw-in', placeholder: ph || '', type: type || 'text' }, extra || {}));
       const S = (opts, val) => h('select', { class: 'dw-in' }, opts.map(([v, l]) => h('option', { value: v, selected: String(val == null ? '' : val) === String(v) }, l)));
       const V = (inp, v) => { if (v != null && v !== '') inp.value = String(v); return inp; };
-      const sec = (title, kids) => h('div', { style: 'margin:14px 0 4px' }, [h('div', { style: 'font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#7cc0ff;font-weight:900;margin-bottom:8px' }, title), h('div', { class: 'dw-form' }, kids)]);
+      const sec = (title, kids) => h('div', { style: 'margin:14px 0 4px' }, [h('div', { style: 'font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--lbc-x-link,#7cc0ff);font-weight:900;margin-bottom:8px' }, title), h('div', { class: 'dw-form' }, kids)]);
       // source
       const board = S([['', 'Where did you find it? *'], ['dat', 'DAT'], ['truckstop', 'Truckstop'], ['123loadboard', '123Loadboard'], ['direct_freight', 'Direct Freight'], ['broker_direct', 'Broker direct (call / e-mail)'], ['other', 'Other']], ex.board || exd.board || '');
       const bref = V(I('board load ID / reference'), ex.source_reference || exd.board_ref), blink = V(I('link to the posting (optional)', 'url'), exd.source_link);
@@ -1428,7 +1439,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       const haz = h('input', { type: 'checkbox', checked: ex.hazmat || exd.hazmat ? '' : undefined }); const temp = V(I('°F (reefer only)'), exd.temperature);
       const REQ = ['liftgate', 'pallet jack', 'team', 'TWIC', 'tarps', 'straps', 'chains', 'dock-high', 'residential', 'driver assist', 'lumper', 'hazmat endorsement'];
       const reqSet = new Set(Array.isArray(exd.requirements) ? exd.requirements : (ex.requirements ? String(ex.requirements).split(/\s*,\s*/) : []));
-      const reqRow = h('div', { class: 'dw-row', style: 'gap:6px' }, REQ.map((r0) => { const b = h('button', { type: 'button', class: 'dw-chip', style: 'cursor:pointer;font:inherit;font-size:.78rem;padding:5px 10px;border-radius:999px;border:1px solid ' + (reqSet.has(r0) ? '#FC5305' : 'var(--dw-line2)') + ';background:' + (reqSet.has(r0) ? 'rgba(252,83,5,.18)' : 'transparent') + ';color:#fff', onClick: () => { if (reqSet.has(r0)) reqSet.delete(r0); else reqSet.add(r0); b.style.borderColor = reqSet.has(r0) ? '#FC5305' : 'var(--dw-line2)'; b.style.background = reqSet.has(r0) ? 'rgba(252,83,5,.18)' : 'transparent'; } }, r0); return b; }));
+      const reqRow = h('div', { class: 'dw-row', style: 'gap:6px' }, REQ.map((r0) => { const b = h('button', { type: 'button', class: 'dw-chip', style: 'cursor:pointer;font:inherit;font-size:.78rem;padding:5px 10px;border-radius:999px;border:1px solid ' + (reqSet.has(r0) ? '#FC5305' : 'var(--dw-line2)') + ';background:' + (reqSet.has(r0) ? 'rgba(252,83,5,.18)' : 'transparent') + ';color:var(--lbc-x-ink,#fff)', onClick: () => { if (reqSet.has(r0)) reqSet.delete(r0); else reqSet.add(r0); b.style.borderColor = reqSet.has(r0) ? '#FC5305' : 'var(--dw-line2)'; b.style.background = reqSet.has(r0) ? 'rgba(252,83,5,.18)' : 'transparent'; } }, r0); return b; }));
       // money
       const rate = V(I('gross line-haul $ *', 'number', { min: '0', step: '0.01' }), ex.rate);
       const rpmBox = h('div', { class: 'dw-muted' }, 'Enter miles + rate to see $/mile.');
@@ -1466,6 +1477,10 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         h('div', { class: 'dw-row', style: 'margin-top:14px' }, [h('button', { class: 'dw-btn', onClick: async (ev) => { ev.target.disabled = true; try {
           if (!board.value) throw new Error('Pick the board you found this load on.');
           if (!origin.value.trim() || !dest.value.trim()) throw new Error('Origin and destination are required.');
+          if (!cityST(origin.value)) throw new Error('Origin must be City, ST — e.g. Dallas, TX.');
+          if (!cityST(dest.value)) throw new Error('Destination must be City, ST — e.g. Houston, TX.');
+          origin.value = cityST(origin.value); dest.value = cityST(dest.value);
+          if (!(Number(miles.value) >= 1 && Number(miles.value) <= 4000)) throw new Error('Loaded miles are required (1–4,000) — tap Estimate if you do not have them.');
           if (!broker.value.trim()) throw new Error('Broker company is required — the carrier has to know who pays.');
           if (!pud.value) throw new Error('Pickup date is required.');
           if (!(Number(rate.value) > 0)) throw new Error('Rate is required.');
@@ -1556,7 +1571,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       return h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('paperclip'), ' ' + (c.name || 'Carrier') + ' — broker setup packet']), h('button', { class: 'dw-btn sm ghost', onClick: async () => { try { await navigator.clipboard.writeText(summary); toast('Carrier details copied'); } catch (_) {} } }, [ic('copy', 14), 'Copy carrier details'])]),
         h('pre', { class: 'dw-muted', style: 'white-space:pre-wrap;font-family:inherit;margin:0 0 10px' }, summary),
         h('div', { class: 'dw-muted', style: 'margin-bottom:8px' }, 'Approved documents on file. Open → download → attach to the broker’s carrier-setup email. Never edit them. Bank letters, voided checks and insurance changes are never yours to send — those requests go to LoadBoot.'),
-        docs.length ? h('div', null, docs.map((d) => h('div', { class: 'dw-row', style: 'justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dw-line)' }, [h('div', null, [h('b', { style: 'color:#fff' }, LABEL[d.type] || d.type), h('div', { class: 'dw-muted' }, (d.file_name || '') + ' · ' + when(d.created_at))]), h('button', { class: 'dw-btn sm', onClick: async (ev) => { try { const u = await signedDocumentUrl(d.file_path, 600); window.open(u, '_blank'); } catch (x) { ev.target.textContent = 'No access — ask LoadBoot'; } } }, 'Open')]))) : h('div', { class: 'dw-warn' }, 'No approved documents yet — ask LoadBoot to send you the packet.'),
+        docs.length ? h('div', null, docs.map((d) => h('div', { class: 'dw-row', style: 'justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dw-line)' }, [h('div', null, [h('b', { style: 'color:var(--lbc-x-ink,#fff)' }, LABEL[d.type] || d.type), h('div', { class: 'dw-muted' }, (d.file_name || '') + ' · ' + when(d.created_at))]), h('button', { class: 'dw-btn sm', onClick: async (ev) => { try { const u = await signedDocumentUrl(d.file_path, 600); window.open(u, '_blank'); } catch (x) { ev.target.textContent = 'No access — ask LoadBoot'; } } }, 'Open')]))) : h('div', { class: 'dw-warn' }, 'No approved documents yet — ask LoadBoot to send you the packet.'),
         missing.length ? h('div', { class: 'dw-warn', style: 'margin-top:8px' }, 'Missing from the packet: ' + missing.map((k) => LABEL[k]).join(', ') + ' — tell LoadBoot before a broker asks.') : null,
       ]); }));
   }
