@@ -687,6 +687,10 @@ export const ccRileyCallbackDone = (id, note) => rpc('cc_riley_callback_done', {
 export const ccRileyCallbackDispatchers = () => rpc('cc_riley_callback_dispatchers', {});
 export const ccRileyCallbackAssign = (id, dispatcher, note) => rpc('cc_riley_callback_assign', { p_id: id, p_dispatcher: dispatcher, p_note: note ?? null });
 export const ccRileyPlanCreate = (org, reason, note, lang) => rpc('cc_riley_plan_create', { p_org: org, p_reason: reason, p_note: note ?? null, p_lang: lang || 'en' });   // bl_voice_0483
+// bl_voice_0555 — a call to someone else (for a carrier, or a custom call with no carrier) + the number pre-check
+export const ccRileyPlanCreateTarget = (org, reason, note, lang, t) => rpc('cc_riley_plan_create_target', { p_org: org ?? null, p_reason: reason || 'custom', p_note: note ?? null, p_lang: lang || 'en',
+  p_target_kind: 'third_party', p_to_number: t.number, p_target_name: t.name, p_target_org: t.org ?? null, p_target_role: t.role, p_target_tz: t.tz ?? null });
+export const ccRileyNumberCheck = (number) => rpc('cc_riley_number_check', { p_number: number });
 export const ccRileyPlans = (status, limit, org) => rpc('cc_riley_plans', { p_status: status ?? null, p_limit: limit ?? 100, p_org: org ?? null });
 export const ccRileyPlan = (id) => rpc('cc_riley_plan', { p_id: id });
 export const ccRileyPlanSet = (id, action, note) => rpc('cc_riley_plan_set', { p_id: id, p_action: action, p_note: note ?? null });

@@ -16,7 +16,8 @@ mis-splits long plpgsql files — the owner applies prod through a Claude sessio
 - Open owner tasks: WhatsApp "Reply" (quoted reply) — spec in the 8 Oct chat; item P below; N and O below.
 
 ---------------------------------------------------------------------------------------------------------------
-## P. Riley "call someone else" — third-party call plans (CC staff only)  — REVIEW DONE, nothing built
+## P. Riley "call someone else" — third-party call plans (CC staff only)  — DONE ON STAGING 15 Oct (bl_voice_0555,
+##    see claude/RILEY-THIRD-PARTY-0555.md); prod waits for "laga do"; owner: publish the Outbound "third_party" bullet
 
 Owner spec (verbatim, 11 Oct): target choice "The carrier" | "Someone else for this carrier" (name, organisation, role
 factoring/insurance/broker/shipper/other, phone E.164 validated, time zone default from area code, editable);
