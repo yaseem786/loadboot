@@ -665,7 +665,8 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   `disp_load_stage` = step / whose move / next action on every dispatcher post (workspace + Carrier 360). Daily trial e-mail
   tiles *Waiting for availability* + *Urgent calls*; `cc_dispatcher_360.calls`. Design + step table: docs/AVAILABILITY-GATE-0555.md.
 - DB: STAGING applied 15 Oct in parts + rolled-back E2E (all scenarios in the doc). Anon SECDEF 35, names unchanged.
-  PROD: not applied — file is the prod SQL; apply in parts, trigger in its own statement with lock_timeout (doc §6).
+  PROD applied 15 Oct 2026 in parts (trigger created alone with lock_timeout — the drop/create batch hangs the MCP); anon SECDEF 36,
+  names = baseline; cron lb-disp-avail-sweep live; 4 active carriers all read "waiting" (warn → chips + one reminder/24 h). Next number 0556.
 - UI: node --check + ESM ALL PASS (237) + imports PASS + esbuild OK ×6. Not rendered in a browser.
 ## Dispatcher posts — carrier told when a post expires (bl_disp_0553, 15 Oct 2026)
 - Gap: `app_private.disp_posts_expire()` told only the dispatcher; the carrier's board drops the post at `expires_at`,

@@ -170,9 +170,15 @@ urgent — everything else is in our thread."*
   inbound then outbound → callback, broker number → no rule · 360 calls `{intro 1, urgent 1, offpolicy 1, waiting 1}`, trial stats,
   daily e-mail tiles, brief rules box, feed.rules, desk gate all present. Anon SECDEF surface on staging: **35, names unchanged**
   (md5 `b862e7e206b44d39503adef7970b89d2`).
-- **Prod: not applied.** Apply the file in the same parts (the trigger `create trigger disp_intro_call … on dialer_calls` in its
-  own statement with `set local lock_timeout = '5s'`); then the names check (36, baseline list); `cron.job` must show
-  `lb-disp-avail-sweep`. On prod today all 5 assigned carriers read `dispatcher_only` → warn chips + one carrier e-mail each at the
-  first sweep (41 past the hour). Nothing is blocked until CC flips `availability_gate_mode` to `enforce`.
+- **Prod: applied 15 Oct 2026** in the same parts (a batch holding `drop trigger … on dialer_calls` timed out twice at the MCP's
+  60 s on both databases — `create trigger` alone, in `begin; set local lock_timeout='5s'; … commit;`, went through in seconds; the
+  file keeps the drop/create pair, so apply that line by hand next time). All 21 anchors hit. Registered as
+  `bl_disp_0555_availability_gate_call_rule`. Anon SECDEF surface **36, names = baseline** (staging 35 + `retell_inbound`; md5
+  `06f779f74423a983253c79ab9d4e1e84`). `lb-disp-avail-sweep` live (41 past the hour). Config: gate `warn`, 7 days, call rule `warn`.
+  Four active non-demo assignments at apply time, all "waiting": PICK N NETT (never), SPRINT SHIFT (dispatcher_only), THE WAY HOME
+  (no_trucks — the reminder still says "post availability"; a carrier with no truck on file gets it until a truck exists), GABE
+  LOGISTICS (dispatcher_only). Each gets one in-app + e-mail per 24 h from the first sweep. Nothing is blocked until CC flips
+  `availability_gate_mode` to `enforce`. (`bl_voice_0555` shipped the same day from another session — same number, different area;
+  next free number is **0556**.)
 - Not done: the dispatcher guide PDF (`docs/dispatch/…Guide-Book…pdf`) is not editable here — the rules live in the brief e-mail,
   the thread, the workspace and CC instead.
