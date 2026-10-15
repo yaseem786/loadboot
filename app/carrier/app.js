@@ -5479,6 +5479,9 @@ async function appView(user) {
         dpD9.note ? h('div', { class: 'cp-row-s', style: 'font-style:italic;margin:4px 0 6px' }, '💬 “' + dpD9.note + '” — ' + lbDispName(dpD9)) : null,
         row9('Broker', [d.broker, dx.broker_mc ? 'MC ' + dx.broker_mc : null].filter(Boolean).join(' · ')),
         row9('Broker rep', [dx.broker_rep, dx.broker_phone, dx.broker_email].filter(Boolean).join(' · ')),
+        // bl_disp_0552 (dispatch agreement Art. 10.2): rep, phone, e-mail and the board load ID / link are redacted by
+        // cc_load_detail until the carrier accepts; name + MC + the screen stay so the broker can still be judged.
+        d.contact_locked ? h('div', { class: 'cp-row-s', style: 'margin:4px 0 2px;color:#94a3b8' }, '🔒 Broker contact and the board load ID open after you accept — your dispatcher handles the broker until then.') : null,
         h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Broker screen'), h('span', { style: 'text-align:right;font-weight:800;color:' + (bs.authority === 'active' ? '#4ade80' : bs.authority === 'flagged' ? '#f87171' : '#fbbf24') }, bsLine)]),
         row9('Load type', dx.load_type || dx.load_size), row9('Pieces / pallets', dx.pieces), row9('Dims (in)', (dx.dims && (dx.dims.l || dx.dims.w || dx.dims.h)) ? [dx.dims.l, dx.dims.w, dx.dims.h].map((v) => v || '?').join(' × ') : null), row9('Reefer temp', dx.temperature), dx.hazmat ? row9('Hazmat', '☢ YES') : null,
         row9('Requirements', Array.isArray(dx.requirements) && dx.requirements.length ? dx.requirements.join(', ') : null),

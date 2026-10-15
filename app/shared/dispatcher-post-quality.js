@@ -13,8 +13,8 @@ export function postMissing(p) {
   if (!CITY_ST.test(String(p.destination || '').trim())) add('Destination as "City, ST"', 'high', 'Destination reads "' + (p.destination || '—') + '".');
   if (!(Number(p.miles) > 0)) add('Loaded miles', 'high', 'No miles → no $/mile, and the carrier’s floor rate was not checked.');
   if (!String(d.broker_mc || '').trim()) add('Broker MC', 'high', 'No MC → the broker was not screened on FMCSA.');
-  if (!String(d.broker_phone || '').trim() && !String(d.broker_email || '').trim()) add('Broker phone / e-mail', 'low', 'Nobody to call for the RC.');
-  if (!String(p.source_reference || d.board_ref || '').trim()) add('Board load ID', 'low', 'The load cannot be found again on the board.');
+  if (!String(d.broker_phone || '').trim() && !String(d.broker_email || '').trim()) add('Broker phone / e-mail', 'low', 'For the LoadBoot record and the RC — the carrier sees it only after accepting.');
+  if (!String(p.source_reference || d.board_ref || '').trim()) add('Board load ID', 'low', 'For the LoadBoot record — finds the load again on the board; the carrier sees it only after accepting.');
   if (!String(p.pickup_window || d.pickup_window || '').trim()) add('Pickup window', 'low');
   if (!p.delivery_date && !d.delivery_date) add('Delivery date', 'low');
   if (!String(p.commodity || d.commodity || '').trim()) add('Commodity', 'low');

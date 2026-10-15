@@ -633,3 +633,10 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   (the file's one inline comment in `cc_dispatcher_post_action` left out so prosrc matches staging): md5 of all 8
   functions = staging, both tables RLS on, the 5 public RPCs anon=false / authenticated=true. Anon SECURITY DEFINER
   surface 36, names = baseline. The doc's "Prod: not yet applied" line is superseded by this entry.
+
+## Dispatcher posts — broker contact + board load ID locked until accept (bl_disp_0552, 15 Oct 2026)
+- Carrier no longer sees rep / phone / e-mail / board load ID / link on a dispatcher post before accepting
+  (dispatch agreement Art. 10.2); name + MC + broker screen stay. Redacted server-side in `cc_load_detail`,
+  `cc_pocket_available_loads` and the carrier "new load" notice/e-mail. Notes: claude/DISPATCHER-POST-CONTACT-LOCK-0552.md.
+- DB: STAGING applied + rolled-back E2E 15 Oct. PROD applied 15 Oct 2026, md5 = staging, anon SECDEF 36, names = baseline.
+- UI: carrier lock line, missing-chip copy ("For the LoadBoot record"), dispatcher form hints. node --check OK.
