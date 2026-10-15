@@ -640,3 +640,13 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   `cc_pocket_available_loads` and the carrier "new load" notice/e-mail. Notes: claude/DISPATCHER-POST-CONTACT-LOCK-0552.md.
 - DB: STAGING applied + rolled-back E2E 15 Oct. PROD applied 15 Oct 2026, md5 = staging, anon SECDEF 36, names = baseline.
 - UI: carrier lock line, missing-chip copy ("For the LoadBoot record"), dispatcher form hints. node --check OK.
+
+## Dispatcher posts — carrier told when a post expires (bl_disp_0553, 15 Oct 2026)
+- Gap: `app_private.disp_posts_expire()` told only the dispatcher; the carrier's board drops the post at `expires_at`,
+  so for the carrier it just vanished. Now up to 3 active non-driver carrier members get an in-app notice
+  `dispatcher.load.expired` ("⏰ Load expired: A → B … off your board; nothing to do") linking to the load, which shows
+  "⏰ This post expired." In-app only (no e-mail, no catalog row — like `dispatcher.load.accepted/updated`). One per post
+  per member. Owner, 15 Oct: expired posts stay on record as `expired`, never deleted, off the board.
+  Notes: claude/DISPATCHER-POST-EXPIRY-NOTICE-0553.md.
+- DB: STAGING applied + rolled-back E2E 15 Oct (1 notice, re-run adds none). PROD applied 15 Oct 2026, md5 = staging
+  (4aea369b…), ACL unchanged, anon SECDEF 36 / 35, names = baseline. No UI change needed (notices render from payload).
