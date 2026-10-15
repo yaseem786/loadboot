@@ -25,12 +25,25 @@ Owner plan (14 Oct hand-off): carrier emails can carry a text. One switch + one 
 - Text rules (`email_sms_text_problem`): plain GSM characters only, no Riley number, no `{{tokens}}`, ≤ 2 SMS with
   "LoadBoot: " + " Reply STOP to opt out.".
 
-## State left on prod
-- 16 starter rows on (`sms_enabled=true` with a text): dispatcher.assigned.carrier, dispatcher.changed.carrier,
-  dispatcher.carrier.unreachable, account.pause, account.violation, authority_lapsed, carrier.reminder.* (10).
-- `doc_sms_config.email_enabled = false` → **nothing is texted** until the owner turns on step 5 "Email texts" in
-  CC → Text messages. Real carriers only after step 6 "Every carrier" (`allow_all`, needs a delivered test text).
+## State on prod (verified 15 Oct 2026)
+- **Live.** `doc_sms_config`: `enabled=true`, `email_enabled=true` (step 5 "Email texts" ON), `allow_all=true`
+  (step 6 "Every carrier" ON), from +18153651168, `max_per_day=3`.
+- **15 emails carry a text** (`sms_enabled=true`): account.pause, account.violation, authority_lapsed,
+  dispatcher.assigned.carrier, dispatcher.changed.carrier, dispatcher.carrier.unreachable,
+  carrier.reminder.{avail_continue, avail_start, confirm_email, docs_finish, docs_fix, docs_start, driver_add,
+  truck_add, truck_continue}.
+- **Off:** `carrier.reminder.avail_confirm` (text kept on the row, switch off).
+- First-text suffix (`dialer_config.sms_first_msg_suffix`) is plain ASCII now (" - LoadBoot dispatch. ...") →
+  a first text is **2 SMS**, not 4.
 - anon SECDEF: prod 36 / staging 35, names md5 unchanged.
+
+## Watch
+- CC → Text messages feed. If **Failed**, **Carrier rejected** or **STOP** counts start climbing → turn step 5
+  "Email texts" off (`email_enabled=false`); nothing new gets queued, emails keep sending.
+
+## To do
+- Telnyx campaign → Message flow: change the HELP number from 469 to **815** (+1 815 365-1168).
+- If Telnyx asks again, add onboarding-text samples to the campaign.
 
 ## Staging proof (one transaction, rolled back)
 email → message_deliveries row + pending SMS row to the consented number · same key again → deduped · same idem → no
@@ -39,6 +52,5 @@ skipped with reason · STOP → skipped "This number replied STOP." · M/marketi
 number and emoji refused.
 
 ## Known
-- First text to a number is 4 SMS while `sms_first_msg_suffix` has the "—" (UCS-2). CC → Text messages → Main line → "Fix it".
 - An email that is bounced/suppressed gets no text either (the text rides with the email).
 - UI (emailCatalog.js, smsCenter.js) was syntax-checked only, not rendered in a browser.
