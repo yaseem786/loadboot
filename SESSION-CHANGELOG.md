@@ -705,5 +705,5 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   dispatcher_post_load refuses held orgs; trial stats ignore hold-cancelled bookings. Essential mail exempt.
 - Cancel / staff reject lifts the hold (assignments not restored). CC Deletion requests: "Automatic actions" card +
   "Apply exit hold now" for older requests (#16 not auto-applied).
-- DB: STAGING applied + rolled-back E2E 15 Oct (anon SECDEF 35, names unchanged). PROD: owner runs the file —
-  steps in docs/ACCOUNT-EXIT-HOLD-0550.md.
+- DB: STAGING applied + rolled-back E2E 15 Oct (anon SECDEF 35, names unchanged). PROD applied 15 Oct 2026 —
+  details in docs/ACCOUNT-EXIT-HOLD-0550.md §6.
