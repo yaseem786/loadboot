@@ -24,4 +24,6 @@ Staging 15 Oct: applied; E2E in one rolled-back transaction — post → board +
 not counted, dispatcher sees `opens 2 / opened_by`, non-staff alert refused, alert → in-app row, hide, delete
 (withdrew the open post, `carrier_notified false`), dispatcher list count 0 after delete, restore. Staff name fix
 (`disp_staff_name`) applied as `bl_disp_0551b_staff_name` on staging; it is folded into the migration file.
-Prod: not yet applied — waiting on the owner's go.
+Prod: applied 15 Oct 2026 (`rwscphuhpjoudvljvmdk`, migration `bl_disp_0551_dispatcher_post_tracking`). md5 of all 8
+functions = staging (the file's inline comment in `cc_dispatcher_post_action` was left out of the apply so prosrc
+matches), both tables RLS on, new RPCs anon=false / authenticated=true, anon SECURITY DEFINER surface 36, names = baseline.
