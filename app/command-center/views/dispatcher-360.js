@@ -679,12 +679,12 @@ export async function renderDispatcher360(host, query) {
     return card('Rules & call reasons', 'What every dispatcher follows · this dispatcher, last 7 days', 'shield', el('div', { class: 'd3-pad' }, [
       el('div', { class: 'd3-rl-modes' }, [mode('Gate', gate), mode('Call rule', rule), el('div', { class: 'd3-rl-mode days' }, [el('i', { class: 'dt' }), el('div', null, [el('span', null, 'Post lasts'), el('b', null, days + ' days')])])]),
       el('div', { class: 'd3-rl-stats' }, [
-        stat(waiting, 'waiting for availability', waiting ? (gate === 'enforce' ? 'red' : 'amber') : 'ok', 'Carriers of this dispatcher with no availability post of their own in the last ' + days + ' days'),
+        stat(waiting, waiting === 1 ? 'carrier has not posted availability' : 'carriers have not posted availability', waiting ? (gate === 'enforce' ? 'red' : 'amber') : 'ok', 'Carriers of this dispatcher with no availability post of their own in the last ' + days + ' days'),
         stat(urgent, 'urgent calls', urgent > 5 ? 'amber' : 'blue', 'Calls after the intro with an urgent reason (pickup < 24 h, in-transit problem, broker needs an answer, carrier asked)'),
         stat(off, 'outside the rule', off ? 'amber' : 'ok', 'Non-urgent calls after the intro. Warn: allowed but counted here. Enforce: the phone refuses them.'),
       ]),
       wl.length ? el('div', { class: 'd3-rl-wait' }, [
-        el('div', { class: 'hd' }, [icon('clock', 13), gate === 'enforce' ? 'Board hidden until they post' : 'Waiting — nothing is blocked (warn)']),
+        el('div', { class: 'hd' }, [icon('clock', 13), gate === 'enforce' ? 'Availability not posted by the carrier · board hidden' : 'Availability not posted by the carrier · nothing blocked (warn)']),
         ...wl.map((a) => el('div', { class: 'r' }, [el('b', null, a.carrier || 'Carrier'), el('span', null, RL_WHY(a.availability, days))])),
         el('div', { class: 'ft' }, gate === 'off' ? 'Gate is off — no reminders go out.' : 'The portal reminds each carrier once a day until they post. The dispatcher does not chase it by phone.'),
       ]) : el('div', { class: 'd3-rl-ok' }, [icon('check', 13), waiting ? 'Waiting carriers are not listed on this screen yet' : 'Every carrier has a fresh availability post']),
