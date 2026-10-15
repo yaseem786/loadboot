@@ -182,3 +182,19 @@ urgent — everything else is in our thread."*
   next free number is **0556**.)
 - Not done: the dispatcher guide PDF (`docs/dispatch/…Guide-Book…pdf`) is not editable here — the rules live in the brief e-mail,
   the thread, the workspace and CC instead.
+
+## 7. Follow-up `bl_disp_0556` (15 Oct 2026, staging + prod)
+
+- **No-truck carriers are skipped.** `disp_avail_notice` returns false when `carrier_availability_fresh.reason = 'no_trucks'`:
+  no in-app notice, no e-mail, no notices row, no 24 h cap used (both callers: the hourly sweep and `cc_dispatcher_assign`).
+  The gate/chip is unchanged. THE WAY HOME LLC already got the first-run notice (row 4); nothing more goes to it.
+- **`disp_avail_notices.email_status`** (`queued | test | blocked | demo | no_email | error`). `sys_email` returns void and
+  refuses silently, so the status comes from the delivery row: no row, or a row a trigger marked `suppressed` → `blocked`;
+  a `…:test` key → `test` (went to the catalog's test_to). `emailed = (email_status = 'queued')`. Backfilled: Sprint Shift →
+  `blocked`/false, the internal test carrier → `demo`, the other three → `queued`. The 22 Oct review still counts sends from
+  `message_deliveries`.
+- Verified on staging in rolled-back transactions: demo, suppressed (`.invalid` address) → blocked, real address → queued,
+  catalog test mode → test. Anon SECURITY DEFINER names unchanged (prod 36, md5 `06f779f7…`; staging 35).
+- **Found, not fixed (pre-existing):** with a catalog row on `send_mode = 'off'`, `sys_email` raises
+  `email_block_note(...) is not unique` (two overloads, 5 and 6 args) instead of skipping quietly. Latent on prod (no row is
+  `off` today); the notice would land as `error`. Fix = drop the 5-arg overload (the 6-arg one is a superset, `p_code` defaults null).
