@@ -650,3 +650,47 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   confirm popups no longer say "45 minutes, one attempt".
 - DB: STAGING applied + rolled-back E2E 15 Oct. PROD applied 15 Oct 2026 (via base64 execute_sql — apply_migration hung),
   anon SECDEF 36, names = baseline. Nothing re-sent on deploy (1-day window).
+
+## Dispatcher posts — carrier told when a post expires (bl_disp_0553, 15 Oct 2026)
+- Gap: `app_private.disp_posts_expire()` told only the dispatcher; the carrier's board drops the post at `expires_at`,
+  so for the carrier it just vanished. Now up to 3 active non-driver carrier members get an in-app notice
+  `dispatcher.load.expired` ("⏰ Load expired: A → B … off your board; nothing to do") linking to the load, which shows
+  "⏰ This post expired." In-app only (no e-mail, no catalog row — like `dispatcher.load.accepted/updated`). One per post
+  per member. Owner, 15 Oct: expired posts stay on record as `expired`, never deleted, off the board.
+  Notes: claude/DISPATCHER-POST-EXPIRY-NOTICE-0553.md.
+- DB: STAGING applied + rolled-back E2E 15 Oct (1 notice, re-run adds none). PROD applied 15 Oct 2026, md5 = staging
+  (4aea369b…), ACL unchanged, anon SECDEF 36 / 35, names = baseline. No UI change needed (notices render from payload).
+
+## Dispatcher portal light-first + dark toggle (bl_ui_theme, 15 Oct 2026)
+- Agent portal opens LIGHT (navy sidebar, light workspace); ☀️/🌙 in the top bar + Settings → Appearance
+  (Light / Dark / System), stored in localStorage `lb_theme_agent`. Dark = the old carrier-dark look; a pixel diff vs the
+  old code shows only the new button and native file inputs. Carrier portal unchanged (theme.css linked, tokens only).
+- New: `app/shared/theme.css` (`--lbc-*` tokens), `tools/theme-contrast-check.mjs` (WCAG AA gate, wired into
+  build_site.py — 46/46 pass), `app/agent/agent-theme.css`. ~540 inline literals in app/agent/*.js + agentPortal()
+  → `var(--lbc-x-<role>, <old literal>)` (light-only roles, so dark falls back exactly). No DB change.
+- Checks: node --check + esbuild on every edited .js, BUILD OK, Playwright harness (fake Supabase) on 15 screens
+  × 2 themes × desktop/phone. Notes: claude/UI-THEME-LIGHT-FIRST.md.
+- 15 Oct follow-up: the phone hamburger drawer (`.dw-dr`) stays NAVY in Light too (owner: "suggest and implement";
+  it is the phone version of the navy sidebar). `agent-theme.css` resets the `--lbc-x-*` roles to `initial` inside
+  `.dw-dr`, so every `var(--lbc-x-*, <dark literal>)` there falls back to dark. Checked in Chromium: drawer
+  #10223B→#0b1220 + #dbe6f5 text while the page text stays #10223B.
+
+## Dispatcher posts — strict "City, ST" lane + required miles (bl_disp_0554, 15 Oct 2026)
+- Prod had a post "austin → tx" with no miles (so the $/mi floor never ran). New `app_private.disp_city_st(text)`
+  (US states + DC + PR + Canadian provinces; strips ZIP / postal code / ", USA"; title-cases all-lower/upper city) and
+  two exact-once `fn_patch` anchors on `disp_post_normalise`: lane must parse and is stored normalised; loaded miles
+  required, 1..4,000 ("1,234", "450.5", "450 mi" parse; the old regex made "450.5" → 4505). Dispatcher post form
+  checks the same rule client-side and normalises the fields before sending. Notes: claude/DISPATCHER-POST-LANE-VALIDATION-0554.md.
+- DB: STAGING applied + E2E 15 Oct (7 cases). PROD applied 15 Oct 2026, md5 = staging (normalise 57d91956…,
+  disp_city_st b3bb1a4b…), ACL `{postgres=X/postgres}`, anon SECDEF 36 / 35, names unchanged.
+
+## Carrier portal — Light-first + Dark toggle (bl_ui_theme carrier, 15 Oct 2026)
+- Same recipe as the dispatcher portal: ☀️/🌙 in the top bar + Settings → Appearance → Theme (Light / Dark / System),
+  key `lb_theme` (old Off/On/System values kept). Step 1 shipped with default Dark; after every screen was checked in
+  both themes (desktop 1440 + phone 390, local harness with fake data) the default is now **Light**.
+- ~810 inline colour literals in `app/carrier/*.js` (not `trip-map.js`) + `carrier.css` → `var(--lbc-x-<role>, <old>)`;
+  new `app/carrier/carrier-theme.css` (navy islands: sidebar, phone drawer, sign-in backdrop, heroes; carrier dark
+  fix-up); index.html links `agent-theme.css` + `carrier-theme.css`, carrier-dark.css switched by `applyTheme()`.
+- Dark compared pixel-by-pixel with the old code: unchanged apart from the new button/Theme card. Fixed on the way:
+  the 🚨 Emergency button on an active trip (red on blue, unreadable in both themes) is now a ghost button.
+- No DB change. Notes: claude/UI-THEME-CARRIER-LIGHT-FIRST.md.

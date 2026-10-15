@@ -113,7 +113,7 @@ async function inviteModal(d, ctx) {
   const ed = permEditor(cat, (cat.presets.find((p) => p.key === 'driver') || {}).perms || [], 'driver');
   const email = h('input', { class: 'cp-in', type: 'email', placeholder: 'Driver email (the invite is emailed here)', value: d.email || '', autocomplete: 'off' });
   const phone = h('input', { class: 'cp-in', type: 'tel', placeholder: 'Phone (for WhatsApp / link sharing)', value: d.phone || '' });
-  const err = h('div', { class: 'cp-row-s', style: 'color:#f87171;min-height:1.2em' });
+  const err = h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-danger,#f87171);min-height:1.2em' });
   const send = h('button', { class: 'cp-btn', style: 'background:#FC5305' }, 'Send invite');
   send.onclick = async () => {
     err.textContent = '';
@@ -147,7 +147,7 @@ function resultModal(d, r, ctx, phone) {
   const wa = phone ? h('a', { class: 'cp-btn cp-btn-sm ghost', href: waLink(phone, inviteText(ctx.carrier, link)), target: '_blank', rel: 'noopener' }, 'Send on WhatsApp') : null;
   const share = (navigator.share) ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { try { navigator.share({ title: 'Join ' + ctx.carrier + ' on LoadBoot', text: inviteText(ctx.carrier, link), url: link }); } catch (_) {} } }, 'Share…') : null;
   openModal('Invite ready for ' + (d.name || 'driver'), [
-    r.emailed ? h('div', { class: 'cp-row-s', style: 'color:#4ade80;font-weight:700' }, '✓ Emailed to ' + r.email) : h('div', { class: 'cp-row-s', style: 'color:#fbbf24' }, 'No email on file — share the link below yourself.'),
+    r.emailed ? h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-ok,#4ade80);font-weight:700' }, '✓ Emailed to ' + r.email) : h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-gold,#fbbf24)' }, 'No email on file — share the link below yourself.'),
     h('p', { class: 'cp-row-s' }, 'Preset: ' + (r.preset || 'custom') + ' · ' + ((r.perms || []).length) + ' optional permission' + ((r.perms || []).length === 1 ? '' : 's') + ' on top of the always-on trip tools. Expires in 14 days.'),
     inp,
     h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:6px' }, [copy, wa, share].filter(Boolean)),
@@ -165,7 +165,7 @@ async function manageModal(d, ctx) {
   const { h, openModal, lbToast } = UI();
   const cat = await catalog();
   const ed = permEditor(cat, d.perms || [], d.preset || null);
-  const err = h('div', { class: 'cp-row-s', style: 'color:#f87171;min-height:1.2em' });
+  const err = h('div', { class: 'cp-row-s', style: 'color:var(--lbc-x-danger,#f87171);min-height:1.2em' });
   const save = h('button', { class: 'cp-btn' }, 'Save access');
   save.onclick = async () => {
     save.disabled = true; save.textContent = 'Saving…'; err.textContent = '';
@@ -318,9 +318,9 @@ export async function mountDriverAccess(host, opts) {
     mount(host, [
       h('div', { class: 'da-kpis' }, [
         h('div', null, [h('b', null, String(rows.length)), h('span', null, 'Drivers')]),
-        h('div', null, [h('b', { style: 'color:#4ade80' }, String(joined)), h('span', null, 'On the app')]),
-        h('div', null, [h('b', { style: 'color:#fbbf24' }, String(pending)), h('span', null, 'Invite pending')]),
-        h('div', null, [h('b', { style: none ? 'color:#f87171' : '' }, String(none)), h('span', null, 'Not on the app')]),
+        h('div', null, [h('b', { style: 'color:var(--lbc-x-ok,#4ade80)' }, String(joined)), h('span', null, 'On the app')]),
+        h('div', null, [h('b', { style: 'color:var(--lbc-x-gold,#fbbf24)' }, String(pending)), h('span', null, 'Invite pending')]),
+        h('div', null, [h('b', { style: none ? 'color:var(--lbc-x-danger,#f87171)' : '' }, String(none)), h('span', null, 'Not on the app')]),
       ]),
       bulk ? h('div', { style: 'margin:0 0 10px' }, bulk) : null,
       rows.length ? h('div', null, rows.map(card)) : h('div', { class: 'cp-muted' }, 'No drivers yet. Add your first driver — then invite them so their phone tracks the truck.'),

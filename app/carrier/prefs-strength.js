@@ -41,12 +41,12 @@ async function fetchPrefs() {
 function ringSVG(score, size) {
   size = size || 84;
   const R = 34, C = 2 * Math.PI * R, off = C * (1 - Math.max(0, Math.min(100, score)) / 100);
-  const col = score >= 80 ? '#34d399' : score >= 40 ? '#0883F7' : '#FC5305';
+  const col = score >= 80 ? 'var(--lbc-x-ok,#34d399)' : score >= 40 ? '#0883F7' : '#FC5305';
   return '<svg viewBox="0 0 84 84" width="' + size + '" height="' + size + '" role="img" aria-label="Profile strength ' + score + '%">'
-    + '<circle cx="42" cy="42" r="' + R + '" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="8"/>'
-    + '<circle cx="42" cy="42" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="8" stroke-linecap="round"'
+    + '<circle cx="42" cy="42" r="' + R + '" fill="none" style="stroke:var(--lbc-x-line,rgba(255,255,255,.09))" stroke-width="8"/>'
+    + '<circle cx="42" cy="42" r="' + R + '" fill="none" style="stroke:' + col + '" stroke-width="8" stroke-linecap="round"'
     + ' stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '" transform="rotate(-90 42 42)" style="transition:stroke-dashoffset .8s ease"/>'
-    + '<text x="42" y="47" text-anchor="middle" font-size="20" font-weight="800" fill="#eaf1fb">' + score + '%</text></svg>';
+    + '<text x="42" y="47" text-anchor="middle" font-size="20" font-weight="800" fill="#eaf1fb" style="fill:var(--lbc-x-ink,#eaf1fb)">' + score + '%</text></svg>';
 }
 
 export async function mountStrengthCard(host) {
@@ -54,18 +54,18 @@ export async function mountStrengthCard(host) {
   const s = _strength || await fetchStrength();
   if (!s || s.error || typeof s.score !== 'number') { host.innerHTML = ''; return; }
   const missing = (s.sections || []).filter((x) => !x.filled);
-  host.innerHTML = '<div class="psx-card" style="background:#111c31;border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:16px 18px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px;cursor:pointer;transition:border-color .15s" '
+  host.innerHTML = '<div class="psx-card" style="background:var(--lbc-x-field,#111c31);border:1px solid var(--lbc-x-line,rgba(255,255,255,.09));border-radius:16px;padding:16px 18px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px;cursor:pointer;transition:border-color .15s" '
     + 'onmouseover="this.style.borderColor=\'rgba(8,131,247,.45)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,.09)\'">'
     + '<div>' + ringSVG(s.score) + '</div>'
     + '<div style="flex:1;min-width:220px">'
-    + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:800;color:#eaf1fb;font-size:1.02rem">Profile strength</span>'
-    + (missing.length ? '<span style="background:rgba(252,83,5,.15);border:1px solid rgba(252,83,5,.4);color:#ff8a50;border-radius:999px;padding:2px 9px;font-size:.72rem;font-weight:800">' + missing.length + ' missing</span>' : '')
+    + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:800;color:var(--lbc-x-ink,#eaf1fb);font-size:1.02rem">Profile strength</span>'
+    + (missing.length ? '<span style="background:rgba(252,83,5,.15);border:1px solid rgba(252,83,5,.4);color:var(--lbc-x-warn,#ff8a50);border-radius:999px;padding:2px 9px;font-size:.72rem;font-weight:800">' + missing.length + ' missing</span>' : '')
     + '</div>'
-    + '<div style="color:#8ea2c3;font-size:.86rem;margin:2px 0 8px">' + (s.score >= 100 ? 'Fully tuned — you get our best-matched loads first.' : 'Stronger profile = better-matched loads, first. Tap to complete.') + '</div>'
+    + '<div style="color:var(--lbc-x-ink3,#8ea2c3);font-size:.86rem;margin:2px 0 8px">' + (s.score >= 100 ? 'Fully tuned — you get our best-matched loads first.' : 'Stronger profile = better-matched loads, first. Tap to complete.') + '</div>'
     + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
-    + missing.slice(0, 3).map((m) => '<button type="button" class="psx-chip" data-sec="' + m.key + '" style="background:rgba(8,131,247,.14);border:1px solid rgba(8,131,247,.35);color:#7cc0ff;border-radius:999px;padding:5px 12px;font-size:.8rem;font-weight:700;cursor:pointer">+' + m.weight + '% · ' + ((SEC[m.key] && SEC[m.key].title) || m.label) + '</button>').join('')
-    + (missing.length > 3 ? '<button type="button" class="psx-more" style="background:none;border:1px dashed rgba(255,255,255,.25);color:#8ea2c3;border-radius:999px;padding:5px 12px;font-size:.8rem;font-weight:700;cursor:pointer">+' + (missing.length - 3) + ' more ›</button>' : '')
-    + (missing.length === 0 ? '<span style="color:#34d399;font-size:.85rem;font-weight:700">✓ All set — matching runs on your full profile · tap to review</span>' : '')
+    + missing.slice(0, 3).map((m) => '<button type="button" class="psx-chip" data-sec="' + m.key + '" style="background:rgba(8,131,247,.14);border:1px solid rgba(8,131,247,.35);color:var(--lbc-x-link,#7cc0ff);border-radius:999px;padding:5px 12px;font-size:.8rem;font-weight:700;cursor:pointer">+' + m.weight + '% · ' + ((SEC[m.key] && SEC[m.key].title) || m.label) + '</button>').join('')
+    + (missing.length > 3 ? '<button type="button" class="psx-more" style="background:none;border:1px dashed var(--lbc-x-line,rgba(255,255,255,.25));color:var(--lbc-x-ink3,#8ea2c3);border-radius:999px;padding:5px 12px;font-size:.8rem;font-weight:700;cursor:pointer">+' + (missing.length - 3) + ' more ›</button>' : '')
+    + (missing.length === 0 ? '<span style="color:var(--lbc-x-ok,#34d399);font-size:.85rem;font-weight:700">✓ All set — matching runs on your full profile · tap to review</span>' : '')
     + '</div></div>'
     + '<div style="color:#3d5375;font-size:1.3rem;font-weight:800">›</div></div>';
   const card = host.querySelector('.psx-card');
@@ -91,13 +91,13 @@ function sheet(innerHTML) {
   const old = document.getElementById('psxModal'); if (old) { if (old.__psxGuard) popLayer(old.__psxGuard); old.remove(); }
   const wrap = document.createElement('div'); wrap.id = 'psxModal';
   wrap.innerHTML = '<div class="psx-ov" style="position:fixed;inset:0;background:rgba(4,8,16,.72);z-index:2400;display:flex;align-items:flex-end;justify-content:center">'
-    + '<div class="psx-sheet" style="background:#0d1526;border:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:22px 20px 18px;box-shadow:0 -20px 60px rgba(0,0,0,.5)">'
+    + '<div class="psx-sheet" style="background:var(--lbc-x-field,#0d1526);border:1px solid var(--lbc-x-line,rgba(255,255,255,.1));border-radius:20px 20px 0 0;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:22px 20px 18px;box-shadow:0 -20px 60px rgba(0,0,0,.5)">'
     + innerHTML + '</div></div>'
     + '<style>#psxModal .mx-chips{display:flex;gap:8px;flex-wrap:wrap}'
-    + '#psxModal .mx-chip{background:#0a1322;border:1.5px solid rgba(255,255,255,.14);color:#c7d5ea;border-radius:999px;padding:9px 16px;font-size:.9rem;font-weight:700;cursor:pointer}'
-    + '#psxModal .mx-chip.on{background:rgba(8,131,247,.2);border-color:#0883F7;color:#7cc0ff}'
-    + '#psxModal .mx-sub{color:#8ea2c3;font-size:.84rem;margin-bottom:6px}'
-    + '#psxModal .mx-in{background:#0a1322;border:1.5px solid rgba(255,255,255,.14);border-radius:10px;color:#eaf1fb;padding:10px 12px;font-size:.92rem}'
+    + '#psxModal .mx-chip{background:var(--lbc-x-field,#0a1322);border:1.5px solid var(--lbc-x-line,rgba(255,255,255,.14));color:var(--lbc-x-ink2,#c7d5ea);border-radius:999px;padding:9px 16px;font-size:.9rem;font-weight:700;cursor:pointer}'
+    + '#psxModal .mx-chip.on{background:rgba(8,131,247,.2);border-color:#0883F7;color:var(--lbc-x-link,#7cc0ff)}'
+    + '#psxModal .mx-sub{color:var(--lbc-x-ink3,#8ea2c3);font-size:.84rem;margin-bottom:6px}'
+    + '#psxModal .mx-in{background:var(--lbc-x-field,#0a1322);border:1.5px solid var(--lbc-x-line,rgba(255,255,255,.14));border-radius:10px;color:var(--lbc-x-ink,#eaf1fb);padding:10px 12px;font-size:.92rem}'
     + '#psxModal .psx-row{display:flex;align-items:center;gap:12px;padding:13px 10px;border-radius:12px;cursor:pointer;border:1px solid transparent}'
     + '#psxModal .psx-row:hover{background:rgba(8,131,247,.08);border-color:rgba(8,131,247,.25)}'
     + '@keyframes psxPop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}'
@@ -122,19 +122,19 @@ export async function openChecklist(refreshHost) {
   const wrap = sheet('<div class="psx-anim">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
     + '<div style="display:flex;align-items:center;gap:14px">' + ringSVG(s.score, 64)
-    + '<div><div style="font-weight:800;color:#eaf1fb;font-size:1.08rem">Complete your profile</div>'
-    + '<div style="color:#8ea2c3;font-size:.85rem">Each answer sharpens your load matches — edit any time.</div></div></div>'
-    + '<button type="button" id="psxX" style="background:none;border:0;color:#8ea2c3;font-size:1.4rem;cursor:pointer;line-height:1">×</button></div>'
+    + '<div><div style="font-weight:800;color:var(--lbc-x-ink,#eaf1fb);font-size:1.08rem">Complete your profile</div>'
+    + '<div style="color:var(--lbc-x-ink3,#8ea2c3);font-size:.85rem">Each answer sharpens your load matches — edit any time.</div></div></div>'
+    + '<button type="button" id="psxX" style="background:none;border:0;color:var(--lbc-x-ink3,#8ea2c3);font-size:1.4rem;cursor:pointer;line-height:1">×</button></div>'
     + '<div style="margin-top:14px">'
     + ORDER.map((key) => {
       const m = SEC[key], st = bykey[key] || {};
       return '<div class="psx-row" data-sec="' + key + '">'
         + '<span style="font-size:1.25rem;width:30px;text-align:center">' + m.icon + '</span>'
-        + '<div style="flex:1"><div style="color:#eaf1fb;font-weight:700;font-size:.94rem">' + m.title + '</div>'
-        + '<div style="color:#8ea2c3;font-size:.78rem">' + m.sub + '</div></div>'
+        + '<div style="flex:1"><div style="color:var(--lbc-x-ink,#eaf1fb);font-weight:700;font-size:.94rem">' + m.title + '</div>'
+        + '<div style="color:var(--lbc-x-ink3,#8ea2c3);font-size:.78rem">' + m.sub + '</div></div>'
         + (st.filled
-          ? '<span style="color:#34d399;font-weight:800;font-size:.82rem;white-space:nowrap">✓ Added</span>'
-          : '<span style="background:rgba(252,83,5,.15);border:1px solid rgba(252,83,5,.4);color:#ff8a50;border-radius:999px;padding:4px 11px;font-size:.78rem;font-weight:800;white-space:nowrap">+' + (st.weight || m.pct) + '%</span>')
+          ? '<span style="color:var(--lbc-x-ok,#34d399);font-weight:800;font-size:.82rem;white-space:nowrap">✓ Added</span>'
+          : '<span style="background:rgba(252,83,5,.15);border:1px solid rgba(252,83,5,.4);color:var(--lbc-x-warn,#ff8a50);border-radius:999px;padding:4px 11px;font-size:.78rem;font-weight:800;white-space:nowrap">+' + (st.weight || m.pct) + '%</span>')
         + '</div>';
     }).join('')
     + '</div></div>');
@@ -147,7 +147,7 @@ function chip(v, label, group, multi, on) {
   return '<button type="button" class="mx-chip' + (on ? ' on' : '') + '" data-g="' + group + '" data-v="' + String(v).replace(/"/g, '&quot;') + '" data-multi="' + (multi ? 1 : 0) + '">' + label + '</button>';
 }
 function laneChipHTML(lane) {
-  return '<span data-lane="' + lane.replace(/"/g, '&quot;') + '" style="background:rgba(8,131,247,.14);border:1px solid rgba(8,131,247,.35);color:#7cc0ff;border-radius:999px;padding:6px 12px;font-size:.84rem;font-weight:700;cursor:pointer">' + lane + '  ✕</span>';
+  return '<span data-lane="' + lane.replace(/"/g, '&quot;') + '" style="background:rgba(8,131,247,.14);border:1px solid rgba(8,131,247,.35);color:var(--lbc-x-link,#7cc0ff);border-radius:999px;padding:6px 12px;font-size:.84rem;font-weight:700;cursor:pointer">' + lane + '  ✕</span>';
 }
 function bodyFor(key, p) {
   p = p || {};
@@ -207,15 +207,15 @@ export async function openMicroAsk(key, refreshHost, opts) {
     + '<div id="psxGain"></div>'
     + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'
     + '<div><span style="font-size:1.5rem">' + meta.icon + '</span>'
-    + '<span style="background:rgba(252,83,5,.15);border:1px solid rgba(252,83,5,.4);color:#ff8a50;border-radius:999px;padding:3px 10px;font-size:.75rem;font-weight:800;margin-left:8px;vertical-align:6px">+' + meta.pct + '% better matches</span>'
-    + '<div style="font-weight:800;color:#eaf1fb;font-size:1.08rem;margin-top:6px">' + meta.title + '</div>'
-    + '<div style="color:#8ea2c3;font-size:.86rem;margin-top:2px">' + meta.sub + '</div></div>'
-    + '<button type="button" id="psxX" style="background:none;border:0;color:#8ea2c3;font-size:1.4rem;cursor:pointer;line-height:1">×</button></div>'
+    + '<span style="background:rgba(252,83,5,.15);border:1px solid rgba(252,83,5,.4);color:var(--lbc-x-warn,#ff8a50);border-radius:999px;padding:3px 10px;font-size:.75rem;font-weight:800;margin-left:8px;vertical-align:6px">+' + meta.pct + '% better matches</span>'
+    + '<div style="font-weight:800;color:var(--lbc-x-ink,#eaf1fb);font-size:1.08rem;margin-top:6px">' + meta.title + '</div>'
+    + '<div style="color:var(--lbc-x-ink3,#8ea2c3);font-size:.86rem;margin-top:2px">' + meta.sub + '</div></div>'
+    + '<button type="button" id="psxX" style="background:none;border:0;color:var(--lbc-x-ink3,#8ea2c3);font-size:1.4rem;cursor:pointer;line-height:1">×</button></div>'
     + '<div style="margin:16px 0 18px" id="psxBody">' + bodyFor(key, p) + '</div>'
     + '<div style="display:flex;gap:10px;justify-content:space-between;align-items:center">'
-    + (opts.backToList ? '<button type="button" id="psxBack" style="background:none;border:0;color:#7cc0ff;font-weight:700;cursor:pointer;padding:10px">‹ All sections</button>' : '<span></span>')
+    + (opts.backToList ? '<button type="button" id="psxBack" style="background:none;border:0;color:var(--lbc-x-link,#7cc0ff);font-weight:700;cursor:pointer;padding:10px">‹ All sections</button>' : '<span></span>')
     + '<div style="display:flex;gap:10px;align-items:center">'
-    + '<button type="button" id="psxSkip" style="background:none;border:0;color:#8ea2c3;font-weight:700;cursor:pointer;padding:10px">Ask me later</button>'
+    + '<button type="button" id="psxSkip" style="background:none;border:0;color:var(--lbc-x-ink3,#8ea2c3);font-weight:700;cursor:pointer;padding:10px">Ask me later</button>'
     + '<button type="button" id="psxSave" style="background:#FC5305;border:0;color:#fff;border-radius:12px;padding:12px 26px;font-weight:800;font-size:.95rem;cursor:pointer">Save</button></div></div>'
     + '</div>');
   wrap.querySelectorAll('.mx-chip').forEach((b) => b.addEventListener('click', () => {
@@ -251,15 +251,15 @@ export async function openMicroAsk(key, refreshHost, opts) {
         // LinkedIn-style chain: straight to the next missing section, with a gain banner.
         openMicroAsk(ns.key, _host, { chain: true });
         const g = document.querySelector('#psxModal #psxGain');
-        if (g) g.innerHTML = '<div class="psx-anim" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.35);color:#34d399;border-radius:11px;padding:9px 13px;font-weight:800;font-size:.85rem;margin-bottom:12px">✓ Saved — profile now ' + (_strength.score || 0) + '% (was ' + prevScore + '%)</div>';
+        if (g) g.innerHTML = '<div class="psx-anim" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.35);color:var(--lbc-x-ok,#34d399);border-radius:11px;padding:9px 13px;font-weight:800;font-size:.85rem;margin-bottom:12px">✓ Saved — profile now ' + (_strength.score || 0) + '% (was ' + prevScore + '%)</div>';
         return;
       }
       // Nothing missing → celebration.
       sheet('<div class="psx-anim" style="text-align:center;padding:18px 6px">'
         + '<div style="font-size:2.6rem">🎉</div>'
         + '<div style="margin:10px auto">' + ringSVG((_strength && _strength.score) || 100, 96) + '</div>'
-        + '<h3 style="color:#eaf1fb;margin:6px 0 6px">Profile fully tuned</h3>'
-        + '<p style="color:#8ea2c3;font-size:.9rem;max-width:380px;margin:0 auto 16px">Matching now runs on your complete profile — best-fit loads reach you first. Edit any answer from the Profile strength card.</p>'
+        + '<h3 style="color:var(--lbc-x-ink,#eaf1fb);margin:6px 0 6px">Profile fully tuned</h3>'
+        + '<p style="color:var(--lbc-x-ink3,#8ea2c3);font-size:.9rem;max-width:380px;margin:0 auto 16px">Matching now runs on your complete profile — best-fit loads reach you first. Edit any answer from the Profile strength card.</p>'
         + '<button type="button" id="psxDone" style="background:#0883F7;border:0;color:#fff;border-radius:12px;padding:12px 30px;font-weight:800;cursor:pointer">Done</button></div>')
         .querySelector('#psxDone').onclick = () => { const m2 = document.getElementById('psxModal'); if (m2) { if (m2.__psxGuard) popLayer(m2.__psxGuard); m2.remove(); } refreshCard(); };
     } catch (e) { btn.disabled = false; btn.textContent = 'Retry'; }
