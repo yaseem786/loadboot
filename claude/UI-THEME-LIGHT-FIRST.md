@@ -23,7 +23,7 @@ Brief: `claude/BL-UI-THEME-BRIEF.md` (section A came through complete; the paste
 | `app/agent/index.html` | Links theme.css + agent-theme.css. `carrier-dark.css` now has `id="lb-dark-css" media="not all"`, so it is off until Dark is chosen. |
 | `app/carrier/app.js` | `applyTheme()`: the agent portal uses key `lb_theme_agent`, default `off` (light), and toggles `#lb-dark-css`. Adds the top-bar button and the Settings → Appearance card (agent portal only). The carrier portal keeps key `lb_theme` and its default, and its carrier-dark link has no id, so **nothing changes there**. |
 | `app/agent/*.js` + `agentPortal()` in `app/carrier/app.js` | ~540 inline colour literals are now `var(--lbc-x-<role>, <old literal>)`. |
-| `app/carrier/index.html` | Links theme.css (tokens only; "carrier portal second" is still to do). |
+| `app/carrier/index.html` | Links theme.css (carrier portal: see `claude/UI-THEME-CARRIER-LIGHT-FIRST.md`). |
 
 ## How the inline colours work
 The `--lbc-x-*` roles are defined **only in light**. In dark every `var(--lbc-x-ok,#4ade80)` falls back to its exact
@@ -51,7 +51,7 @@ checked Today, Board, Trucks, Bookings, Brokers, Money, Messages, Packet, My KPI
 Payouts, Verification and Settings, at 1440 px and 390 px, in both themes.
 
 ## Not done / next
-- Carrier portal light-first ("second" in the brief): the same recipe applies to the rest of `app/carrier/app.js`.
+- ~~Carrier portal light-first~~ — done 15 Oct 2026, see `claude/UI-THEME-CARRIER-LIGHT-FIRST.md`.
 - `app/shared/*` widgets inside the agent portal (chat bubble, dialer, dmail, tour) keep their own colours.
 - Revert: remove the two `<link>`s in `app/agent/index.html` and the `media` attribute. The `var(--lbc-x-*,<literal>)`
   calls then fall back to their old literals by themselves.

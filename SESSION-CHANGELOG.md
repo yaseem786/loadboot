@@ -683,3 +683,14 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   checks the same rule client-side and normalises the fields before sending. Notes: claude/DISPATCHER-POST-LANE-VALIDATION-0554.md.
 - DB: STAGING applied + E2E 15 Oct (7 cases). PROD applied 15 Oct 2026, md5 = staging (normalise 57d91956…,
   disp_city_st b3bb1a4b…), ACL `{postgres=X/postgres}`, anon SECDEF 36 / 35, names unchanged.
+
+## Carrier portal — Light-first + Dark toggle (bl_ui_theme carrier, 15 Oct 2026)
+- Same recipe as the dispatcher portal: ☀️/🌙 in the top bar + Settings → Appearance → Theme (Light / Dark / System),
+  key `lb_theme` (old Off/On/System values kept). Step 1 shipped with default Dark; after every screen was checked in
+  both themes (desktop 1440 + phone 390, local harness with fake data) the default is now **Light**.
+- ~810 inline colour literals in `app/carrier/*.js` (not `trip-map.js`) + `carrier.css` → `var(--lbc-x-<role>, <old>)`;
+  new `app/carrier/carrier-theme.css` (navy islands: sidebar, phone drawer, sign-in backdrop, heroes; carrier dark
+  fix-up); index.html links `agent-theme.css` + `carrier-theme.css`, carrier-dark.css switched by `applyTheme()`.
+- Dark compared pixel-by-pixel with the old code: unchanged apart from the new button/Theme card. Fixed on the way:
+  the 🚨 Emergency button on an active trip (red on blue, unreadable in both themes) is now a ghost button.
+- No DB change. Notes: claude/UI-THEME-CARRIER-LIGHT-FIRST.md.

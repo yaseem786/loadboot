@@ -142,10 +142,11 @@ try { const _q0 = new URLSearchParams(location.search); const _r0 = (_q0.get('re
 try { const _ack0 = new URLSearchParams(location.search).get('ack'); if (_ack0) { sessionStorage.setItem('lb_disp_ack', _ack0); if (!location.hash) history.replaceState(null, '', location.pathname + '#dispatcher'); } } catch (_) {}   // bl_disp_0409: the intro e-mail's "Got it" link lands on the Dispatcher tab (no confirm step any more)
 // bl_ui_theme (15 Oct 2026): both portals can be light or dark; carrier-dark.css (<link id="lb-dark-css">) is switched on
 // only in dark. Dispatcher portal: key lb_theme_agent, default 'off' (light).
-// Carrier portal (bl_ui_theme carrier, 15 Oct 2026): key lb_theme, default 'on' (dark) for the first ship, so nobody's
-// screen changes until every screen has been checked in both themes; then THEME_DEFAULT goes to 'off' (light-first).
+// Carrier portal (bl_ui_theme carrier, 15 Oct 2026): key lb_theme. Step 1 shipped with default 'on' (dark) so no screen
+// changed; after every screen was checked in both themes (desktop + phone) the default is 'off' (light-first) too.
+// A carrier who already picked Light / Dark / System keeps that choice.
 const THEME_KEY = window.__LB_AGENT ? 'lb_theme_agent' : 'lb_theme';
-const THEME_DEFAULT = window.__LB_AGENT ? 'off' : 'on';
+const THEME_DEFAULT = 'off';
 function themeMode() { try { return localStorage.getItem(THEME_KEY) || THEME_DEFAULT; } catch (_) { return THEME_DEFAULT; } }
 function setThemeMode(m) { try { localStorage.setItem(THEME_KEY, m); } catch (_) {} applyTheme(); }
 function isDarkTheme() { return document.documentElement.getAttribute('data-lbtheme') === 'dark'; }
