@@ -640,3 +640,13 @@ All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
   `cc_pocket_available_loads` and the carrier "new load" notice/e-mail. Notes: claude/DISPATCHER-POST-CONTACT-LOCK-0552.md.
 - DB: STAGING applied + rolled-back E2E 15 Oct. PROD applied 15 Oct 2026, md5 = staging, anon SECDEF 36, names = baseline.
 - UI: carrier lock line, missing-chip copy ("For the LoadBoot record"), dispatcher form hints. node --check OK.
+
+## Skills test — automatic re-invite, up to 3 rounds (bl_disp_0553, 15 Oct 2026)
+- An invitation that closes unstarted (48 h) is re-sent by `lb-skills-test-sweep` within 10 min, up to 3 times per
+  person-sent invite; after that only CC "Send another" (which starts a fresh chain). New catalog key
+  `dispatcher.skills_test.reinvite` (email_kit body); 12-h reminder now only on person-sent invites. Not re-invited:
+  rejected/withdrawn, started-but-blank, suppressed or opted-out-of-everything. Notes: claude/SKILLS-TEST-AUTO-REINVITE-0553.md.
+- Bug: CC still invited at the v1 45 minutes (decide path + api.js default + roster/dispatchers buttons) — now 75 everywhere;
+  confirm popups no longer say "45 minutes, one attempt".
+- DB: STAGING applied + rolled-back E2E 15 Oct. PROD applied 15 Oct 2026 (via base64 execute_sql — apply_migration hung),
+  anon SECDEF 36, names = baseline. Nothing re-sent on deploy (1-day window).

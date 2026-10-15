@@ -301,10 +301,10 @@ export function renderRoster(host, ctx) {
     const ids = [...st.sel]; if (!ids.length) return;
     const who = st.rows.filter((r) => st.sel.has(r.user_id));
     const ok = await askConfirm('Send the skills test to ' + ids.length + ' candidate' + (ids.length === 1 ? '' : 's') + '?',
-      { body: '45 minutes, one attempt, must be started within 48 hours. Each candidate receives the invitation e-mail immediately: ' + who.map((w) => w.name || w.email).join(', ') });
+      { body: '75 minutes once started, must be started within 48 hours. If a candidate does not start, LoadBoot re-invites them automatically up to 3 times. Each candidate receives the invitation e-mail immediately: ' + who.map((w) => w.name || w.email).join(', ') });
     if (!ok) return;
     let sent = 0, failed = 0;
-    for (const id of ids) { const r = await ccDispatcherTestInvite(id, 45, 48).catch(() => ({ error: 1 })); if (r && r.error) failed++; else sent++; }
+    for (const id of ids) { const r = await ccDispatcherTestInvite(id).catch(() => ({ error: 1 })); if (r && r.error) failed++; else sent++; }
     toast('✓ ' + sent + ' invitation' + (sent === 1 ? '' : 's') + ' sent' + (failed ? ' · ' + failed + ' failed' : ''));
     st.sel.clear(); syncBulk(); refresh();
   }
@@ -414,14 +414,14 @@ export function renderRoster(host, ctx) {
       ]);
     }
     const m = { invited: ['Invited', '#64748b'], in_progress: ['Live now', '#0883F7'], submitted: ['To review', '#FC5305'], expired: ['Expired', '#b91c1c'] }[t.status] || [t.status, '#64748b'];
-    return el('span', { class: 'dv-sc', style: 'color:' + m[1] }, m[0]);
+    return el('span', { class: 'dv-sc', style: 'color:' + m[1] }, m[0] + (t.auto_reinvite ? ' · auto ' + t.auto_reinvite + '/3' : ''));
   }
   function rowActions(x) {
     const b = [];
     if (x.status === 'screening') b.push(el('button', { class: 'dv-btn sm o', onClick: async (e) => {
       e.stopPropagation();
-      if (!(await askConfirm('Send the skills test to ' + (x.name || 'this candidate') + '?', { body: '45 minutes, one attempt, must start within 48 hours. The invitation e-mail goes out immediately.' }))) return;
-      const r = await ccDispatcherTestInvite(x.user_id, 45, 48).catch((err) => ({ error: humanizeError(err) }));
+      if (!(await askConfirm('Send the skills test to ' + (x.name || 'this candidate') + '?', { body: '75 minutes once started, must start within 48 hours. If they do not start, LoadBoot re-invites them automatically up to 3 times. The invitation e-mail goes out immediately.' }))) return;
+      const r = await ccDispatcherTestInvite(x.user_id).catch((err) => ({ error: humanizeError(err) }));
       if (r && r.error) { toast(r.error); return; } toast('✓ invitation sent'); refresh();
     } }, 'Send test'));
     if (x.test && x.test.status === 'submitted') b.push(el('button', { class: 'dv-btn sm o', onClick: (e) => { e.stopPropagation(); ctx.open360(x); } }, 'Mark test'));
