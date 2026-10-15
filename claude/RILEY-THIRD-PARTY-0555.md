@@ -4,9 +4,13 @@ Spec: `claude/NEXT-SESSION-0539.md` §P. Migration: `migrations/bl_voice_0555_th
 
 ## Status
 - **Staging** (`snslhvmkjusozgjelghi`): applied 15 Oct (as five parts `bl_voice_0555a…f`, same SQL as the file).
-- **Prod** (`rwscphuhpjoudvljvmdk`): NOT applied — waits for "laga do". Read-only check on 15 Oct: all 15 anchor
-  strings exist exactly once on prod, and `riley_dial_gate` / `riley_plan_gate_view` / `riley_plan_new` are
-  byte-identical in length to staging's pre-change versions, so the same file applies to both.
+- **Prod** (`rwscphuhpjoudvljvmdk`): **applied 15 Oct** ("laga do") as one migration `bl_voice_0555_third_party_plans`
+  (the file minus its own `begin;`/`commit;` — `apply_migration` is one transaction). Before applying: all anchors found
+  on prod, and prod's `riley_dial_gate` / `riley_plan_gate_view` were the exact pre-0555 bodies (nothing else lost).
+  After: anon SECDEF **36**, names md5 `06f779f74423a983253c79ab9d4e1e84` (unchanged); all 15 patch tags
+  `bl_voice_0555a…o` present; new public RPCs not anon/public-executable; `riley_plan_create` not callable by
+  `authenticated`; 5 `target_*` columns; existing plans 18/19 read `target.kind = carrier` and the gate view still
+  says ok. Third-party booking stays blocked (`prompt_old`) until the Outbound prompt with `"third_party"` is published.
 - anon SECURITY DEFINER surface: staging 35 → 35, names md5 unchanged (`b862e7e2…`). Prod before: 36
   (`06f779f7…`) — must still read 36 / same md5 after. The two new `public` functions are revoked from
   `public, anon` (granted to `authenticated, service_role`).
