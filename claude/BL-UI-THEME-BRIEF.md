@@ -39,6 +39,10 @@ B) DISPATCHER PORTAL — replace hard-coded colors with tokens
 
 ---
 
+## Status 15 Oct 2026
+Done in this session. The owner said "colour khud fill kar lo": AA-safe text colours were chosen and B was filled in.
+See **claude/UI-THEME-LIGHT-FIRST.md**. The notes below are what was found before starting.
+
 ## Notes for whoever picks this up (not part of the brief)
 
 - Several of A's own pairs fail AA (4.5:1 normal text), so the contrast script fails on the brief's hexes as written.
