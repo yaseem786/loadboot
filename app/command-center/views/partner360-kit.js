@@ -18,6 +18,7 @@ import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 import { printExecutedW9 } from '../../carrier/w9-form.js';
 import { partnerRoute, ROLE_LABEL } from '../../shared/ui/entityLink.js';
+import { partnersLiveJoin, coalesceEvents } from '../../shared/partners-live.js';  // bl_bp_0457
 
 export const money = (n) => '$' + Number(n || 0).toLocaleString();
 export const n0 = (v) => Number(v || 0);
@@ -140,8 +141,12 @@ export function mountPartner360(host, orgId, renderers) {
   ]));
   const body = host.querySelector('#p360-body');
   if (!orgId) { mount(body, el('div', { class: 'cc-sub' }, 'No partner selected.')); return; }
-  let timer = null, lastAt = null, alive = true, refreshing = false, lastSig = null, stampEl = null, unlockT = null;
-  const stop = () => { alive = false; if (timer) clearInterval(timer); document.removeEventListener('visibilitychange', onVis); };
+  let timer = null, lastAt = null, alive = true, refreshing = false, lastSig = null, stampEl = null, unlockT = null, lastOrg = null;
+  // bl_bp_0457: `partners:live` broadcast from notify_partner / trust / packet / org triggers → refetch this org.
+  const bump = coalesceEvents(() => { if (alive && document.visibilityState === 'visible') load(true); }, 500);
+  const live = partnersLiveJoin((p) => { if (String(p.org_id) === String(orgId) || (lastOrg && String(p.org_id) === String(lastOrg))) bump(); });
+  const stampText = () => (live.isLive() ? 'live · realtime · updated ' : 'live · polling 30 s · updated ') + new Date(lastAt).toLocaleTimeString();
+  const stop = () => { alive = false; if (timer) clearInterval(timer); document.removeEventListener('visibilitychange', onVis); try { live.leave(); } catch (_) {} };
   const onVis = () => { if (document.visibilityState === 'visible' && lastAt && Date.now() - lastAt > 25000) load(true); };
   document.addEventListener('visibilitychange', onVis);
   // stop refreshing once the view is swapped out
@@ -153,11 +158,11 @@ export function mountPartner360(host, orgId, renderers) {
     let d;
     try { d = await partner360(orgId); }
     catch (e) { refreshing = false; if (!silent) mount(body, el('div', { class: 'lb-state lb-error', style: 'margin:20px' }, [humanizeError(e), ' ', el('button', { class: 'lb-btn lb-btn-sm', onClick: () => load(false) }, 'Retry')])); return; }
-    refreshing = false; lastAt = Date.now();
+    refreshing = false; lastAt = Date.now(); lastOrg = (d.org && d.org.id) || orgId;
     // A silent 30 s refresh with nothing new must not rebuild the page: a rebuild reloads the async cards (two-lane,
     // playbook), the page shrinks for a moment, the browser clamps the scroll and open <details> close. Only the stamp moves.
     const sig = JSON.stringify(d);
-    if (silent && sig === lastSig && stampEl && body.contains(stampEl)) { stampEl.textContent = 'live · updated ' + new Date(lastAt).toLocaleTimeString(); return; }
+    if (silent && sig === lastSig && stampEl && body.contains(stampEl)) { stampEl.textContent = stampText(); return; }
     lastSig = sig;
     const role = d.role || (d.org && d.org.kind) || 'broker';
     // canonical hash for this role (a stale #/broker?id= link for an agent lands here, then the URL is fixed)
@@ -167,7 +172,7 @@ export function mountPartner360(host, orgId, renderers) {
     const fn = renderers[role] || renderers.broker;
     const y = window.scrollY;
     let nodes; try { nodes = fn(ctx); } catch (e) { console.error(e); mount(body, el('div', { class: 'lb-state lb-error', style: 'margin:20px' }, 'Render failed: ' + (e && e.message))); return; }
-    stampEl = el('span', { title: 'This screen re-reads the account every 30 s while the tab is visible' }, 'live · updated ' + new Date(lastAt).toLocaleTimeString());
+    stampEl = el('span', { title: live.isLive() ? 'Realtime: this screen re-reads the account the moment it changes (and every 30 s as a fallback)' : 'Realtime is not connected — this screen re-reads the account every 30 s while the tab is visible' }, stampText());
     const refreshBar = el('div', { class: 'p360-refresh', style: 'justify-content:flex-end;margin-top:8px' }, [
       stampEl,
       el('button', { onClick: () => load(false) }, '↻ refresh now'),
