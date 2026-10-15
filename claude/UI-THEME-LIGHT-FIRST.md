@@ -12,7 +12,7 @@ Brief: `claude/BL-UI-THEME-BRIEF.md` (section A came through complete; the paste
   1440 px, the only differences are the new ☀️ button and native file inputs, which now render dark (`color-scheme`).
 - The message thread follows the theme (it was always dark before).
 - Phones: the bottom bar, the More sheet and the hamburger drawer are all light in Light mode. The desktop sidebar
-  stays navy. The phone drawer is light as well; ask if it should be navy too.
+  stays navy, and so does the phone hamburger drawer (`.dw-dr`, 15 Oct follow-up: roles reset to `initial` there).
 
 ## Files
 | File | What |

@@ -26,6 +26,16 @@ import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { el, mount, clear } from '../shared/ui/dom.js';
 import { lockPage, unlockPage } from '../shared/ui/scrollLock.js';   // bl_ui_0413: page lock behind every sheet/drawer
 import { roadMiles } from '../shared/usGeo.js';
+// bl_disp_0554 — same rule as app_private.disp_city_st: "City, ST" with a US state / DC / PR / Canadian province
+const DISP_STATES = new Set('AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC PR AB BC MB NB NL NS NT NU ON PE QC SK YT'.split(' '));
+function cityST(v) {
+  let s = String(v || '').replace(/\s+/g, ' ').trim().replace(/[ ,]+(USA|US|United States|Canada|CAN)\.?$/i, '').replace(/[ ,]+\d{5}(-\d{4})?$/, '').replace(/[ ,]+[A-Za-z]\d[A-Za-z] ?\d[A-Za-z]\d$/, '');
+  const m = s.match(/^(.+?)[ ,]+([A-Za-z]{2})\.?$/); if (!m) return null;
+  let city = m[1].replace(/^[ ,]+|[ ,]+$/g, ''); const st = m[2].toUpperCase();
+  if (!DISP_STATES.has(st) || !/^\p{L}[\p{L} .'-]{1,39}$/u.test(city)) return null;
+  if (city === city.toLowerCase() || city === city.toUpperCase()) city = city.toLowerCase().replace(/(^|[^\p{L}])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
+  return city + ', ' + st;
+}
 import { postMissing, postSeenLine } from '../shared/dispatcher-post-quality.js';   // bl_disp_0551 — seen + gaps on your posts
 import { icon as sharedIcon } from '../shared/ui/icons.js';
 import { dispatchLiveJoin } from '../shared/dispatch-live.js';
@@ -1467,6 +1477,10 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         h('div', { class: 'dw-row', style: 'margin-top:14px' }, [h('button', { class: 'dw-btn', onClick: async (ev) => { ev.target.disabled = true; try {
           if (!board.value) throw new Error('Pick the board you found this load on.');
           if (!origin.value.trim() || !dest.value.trim()) throw new Error('Origin and destination are required.');
+          if (!cityST(origin.value)) throw new Error('Origin must be City, ST — e.g. Dallas, TX.');
+          if (!cityST(dest.value)) throw new Error('Destination must be City, ST — e.g. Houston, TX.');
+          origin.value = cityST(origin.value); dest.value = cityST(dest.value);
+          if (!(Number(miles.value) >= 1 && Number(miles.value) <= 4000)) throw new Error('Loaded miles are required (1–4,000) — tap Estimate if you do not have them.');
           if (!broker.value.trim()) throw new Error('Broker company is required — the carrier has to know who pays.');
           if (!pud.value) throw new Error('Pickup date is required.');
           if (!(Number(rate.value) > 0)) throw new Error('Rate is required.');

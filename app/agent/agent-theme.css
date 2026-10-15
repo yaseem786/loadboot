@@ -58,7 +58,15 @@ html[data-lbtheme="light"] .dw select,
 html[data-lbtheme="light"] .dw textarea { background: var(--lbc-surface); color: var(--lbc-text); border-color: var(--lbc-border-2); }
 html[data-lbtheme="light"] .dw .dw-in::placeholder, html[data-lbtheme="light"] .dw textarea::placeholder { color: var(--lbc-text-3); }
 html[data-lbtheme="light"] .dw-card, html[data-lbtheme="light"] .dw-kpi { box-shadow: var(--lbc-shadow); }
-html[data-lbtheme="light"] .dw-dr-it.on { color: var(--lbc-text); }
+/* Phone hamburger drawer = the phone version of the navy sidebar, so it stays navy in light too (owner, 15 Oct 2026).
+   `initial` makes each role guaranteed-invalid inside the drawer, so every var(--lbc-x-*, <old literal>) there falls
+   back to its dark literal — the drawer looks exactly like Dark mode while the page behind it is light. */
+html[data-lbtheme="light"] .dw-dr {
+  --lbc-x-ink: initial; --lbc-x-ink2: initial; --lbc-x-ink3: initial; --lbc-x-ok: initial; --lbc-x-gold: initial;
+  --lbc-x-danger: initial; --lbc-x-warn: initial; --lbc-x-link: initial; --lbc-x-violet: initial;
+  --lbc-x-panel: initial; --lbc-x-line: initial; --lbc-x-field: initial; --lbc-x-hero: initial;
+  color-scheme: dark;
+}
 html[data-lbtheme="light"] .dw-btn.accent { background: var(--lbc-tint-warn); border-color: rgba(252, 83, 5, .45); box-shadow: none; }
 html[data-lbtheme="light"] .dw-toast { box-shadow: 0 10px 30px rgba(16, 34, 59, .18); }
 
