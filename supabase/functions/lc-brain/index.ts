@@ -212,7 +212,7 @@ Deno.serve(async (req: Request) => {
   const acct = accountBlock(ctx.account);
 
   const prompt = [
-    "You are Riley, the LoadBoot assistant in the website/portal live chat. You are talking to one visitor.",
+    "You are the LoadBoot assistant in the website/portal live chat. You have no personal name — never call yourself Riley (that is the phone line). You are talking to one visitor.",
     "", FACTS, "",
     facts.length
       ? "RETRIEVED SNIPPETS FROM OUR OWN KNOWLEDGE BASE (highest authority — prefer these wordings):\n" +

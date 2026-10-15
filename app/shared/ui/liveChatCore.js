@@ -1,7 +1,7 @@
 // liveChatCore.js — LoadBoot live chat widget v6 (bl_lc_0475, 27 Sep 2026): premium shell + named specialists.
 //   v6: Amazon/Uber-grade shell (taller header with the specialist's avatar, grouped bubbles, day dividers, pill composer,
 //   pulsing launcher, full-screen sheet on phones, reduced-motion aware). The assistant answers from a named desk —
-//   Riley (general), Sara (billing), Omar (onboarding), Ali (tech), Maya (plans & pricing), Daniel (dispatch) — chosen
+//   LoadBoot Support (general, no personal name — bl_lc_0476), Sara (billing), Omar (onboarding), Ali (tech), Maya (plans & pricing), Daniel (dispatch) — chosen
 //   by the model with a leading [[as:<desk>]] tag (rule.chat_specialists). Same rules as before: it introduces itself as
 //   LoadBoot's assistant, says plainly that it is an AI when asked, and a real person is always one tap away.
 // v5 (bl_lc_0312): AI assistant + real human takeover.
@@ -131,9 +131,10 @@
   var cfg = null, open = false, convId = null, vKey = null, lastId = 0, pollT = null, unread = 0, started = false;
   var mode = 'bot', botPaused = false, staffName = null, online = false, awaiting = false, awaitingSince = 0;
   // v6 — the desks the assistant answers from. The model picks one per reply with a leading [[as:<key>]] tag
-  // (rule.chat_specialists in CC → AI Brain → Permissions); Gemini fallback replies carry no tag → Riley.
+  // (rule.chat_specialists in CC → AI Brain → Permissions); Gemini fallback replies carry no tag → LoadBoot Support.
+  // bl_lc_0476 (owner, 27 Sep): the chat never shows the name "Riley" — that is the phone line's persona, not the chat's.
   var SPECIALISTS = {
-    general:    { name: 'Riley',  role: 'LoadBoot Support',          grad: 'linear-gradient(135deg,#1a8ff9,#0a5fc0)', dot: '#0883F7' },
+    general:    { name: 'LoadBoot', role: 'Support',          grad: 'linear-gradient(135deg,#1a8ff9,#0a5fc0)', dot: '#0883F7' },
     billing:    { name: 'Sara',   role: 'Billing & payments',        grad: 'linear-gradient(135deg,#a78bfa,#6d28d9)', dot: '#7c3aed' },
     onboarding: { name: 'Omar',   role: 'Onboarding & verification', grad: 'linear-gradient(135deg,#34d399,#047857)', dot: '#059669' },
     tech:       { name: 'Ali',    role: 'Technical support',         grad: 'linear-gradient(135deg,#38bdf8,#0369a1)', dot: '#0ea5e9' },
@@ -465,7 +466,7 @@
              ['🙋 Talk to a person', 'I want to talk to a real person']]);
       return;
     }
-    addMsg('bot', "Hi! 👋 I'm Riley, LoadBoot's assistant — instant answers 24/7, and a real person is one tap away. Which one are you?");
+    addMsg('bot', "Hi! 👋 I'm the LoadBoot assistant — instant answers 24/7, and a real person is one tap away. Which one are you?");
     chips([['🚀 Get set up in 5 min', 'Start my 5-minute setup'],
            ['🚚 I\'m a carrier', "I'm a carrier"],
            ['🏢 I\'m a broker', "I'm a broker"],
@@ -720,8 +721,8 @@
     panel.innerHTML =
       '<div id="lbc-head">' +
         '<img id="lbc-logo" src="/icon-192.png" alt="" onerror="this.style.display=\'none\'">' +
-        '<div class="lbc-hav off" id="lbc-hav">R</div>' +
-        '<div class="lbc-hgrp"><div class="lbc-ht" id="lbc-ht">Riley<small>Assistant</small></div>' +
+        '<div class="lbc-hav off" id="lbc-hav">L</div>' +
+        '<div class="lbc-hgrp"><div class="lbc-ht" id="lbc-ht">LoadBoot<small>Assistant</small></div>' +
         '<div class="lbc-hs"><span class="lbc-dot off" id="lbc-dot"></span><span id="lbc-hs">Instant answers, 24/7 · person one tap away</span></div></div>' +
         '<div class="lbc-hb"><button id="lbc-more" aria-label="More">⋯</button><button id="lbc-min" aria-label="Minimize">—</button></div>' +
         '<div id="lbc-menu">' +

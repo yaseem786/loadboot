@@ -47,7 +47,7 @@ export function parseDirectives(body) {
     return '';
   });
   text = text.replace(/\[\[callform\]\]/gi, () => { callback = true; return ''; });
-  // v6 (bl_lc_0475): the desk the assistant answered from — Riley/Sara/Omar/Ali/Maya/Daniel in the widget.
+  // v6 (bl_lc_0475): the desk the assistant answered from — LoadBoot Support/Sara/Omar/Ali/Maya/Daniel in the widget (no "Riley" in chat since bl_lc_0476).
   let desk = null;
   text = text.replace(/\[\[as:([a-z]+)\]\]\s*/gi, (_m, d) => { desk = String(d).toLowerCase(); return ''; });
   text = text.replace(/^\s*\[\[note\]\]\s*/i, () => { note = true; return ''; });
