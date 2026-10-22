@@ -196,18 +196,27 @@ async function postLoc(trip, lat, lng, label) {
     return false;
   }
 }
+// 22 Oct 2026: async click handlers read ev.currentTarget AFTER an await — the browser has nulled it by then, so the
+// catch crashed ("Cannot set properties of null") and the real error never reached the carrier. Pin it to the element.
+const lbKeepTarget = (fn, el) => function (ev) {
+  if (!ev || typeof Proxy === 'undefined') return fn.call(this, ev);
+  const px = new Proxy(ev, { get(t, k) { if (k === 'currentTarget') return el; const v = Reflect.get(t, k, t); return typeof v === 'function' ? v.bind(t) : v; } });
+  return fn.call(this, px);
+};
+const lbNode = (c) => (c == null || c === false || c === true || (typeof c === 'object' && typeof c.then === 'function')) ? null
+  : (typeof c === 'object' && typeof c.nodeType === 'number') ? c : document.createTextNode(String(c));
 const h = (tag, attrs, kids) => {
   const e = document.createElement(tag);
   if (attrs) for (const k in attrs) {
     if (k === 'class') e.className = attrs[k];
     else if (k === 'html') e.innerHTML = attrs[k];
-    else if (k.slice(0, 2) === 'on' && typeof attrs[k] === 'function') e[k.toLowerCase()] = attrs[k];
+    else if (k.slice(0, 2) === 'on' && typeof attrs[k] === 'function') e[k.toLowerCase()] = lbKeepTarget(attrs[k], e);
     else if (attrs[k] != null && attrs[k] !== false) e.setAttribute(k, attrs[k]);
   }
-  (Array.isArray(kids) ? kids : kids != null ? [kids] : []).forEach(c => c != null && e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c));
+  (Array.isArray(kids) ? kids : kids != null ? [kids] : []).forEach(c => { const n = lbNode(c); if (n) e.appendChild(n); });
   return e;
 };
-const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
+const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => { const n = lbNode(c); if (n) el.appendChild(n); }); };
 
 // ── DEEP LINKS  #tab/target ───────────────────────────────────────────────────
 // An email or a push says "add your truck"; the link should land on the Add-truck button, not on
@@ -5674,7 +5683,7 @@ function tripStepper(status) {
     const PHONE9 = window.innerWidth <= 560; let doneSeen9 = 0;
     mount(content, h('div', { class: 'cp-card', 'data-tour': 'trips-list' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => { const cardOf = () => {
       const active = t.status === 'planned' || t.status === 'dispatched' || t.status === 'in_transit';
-      const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { ev.currentTarget.disabled = true; try { const _ct3516 = ev.currentTarget; await pocketConfirmTrip(t.id); _ct3516.textContent = 'Confirmed ✓'; } catch (x) { _ct3516.textContent = 'Error'; } } }, 'Confirm') : null;
+      const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const _ct3516 = ev.currentTarget; _ct3516.disabled = true; try { await pocketConfirmTrip(t.id); _ct3516.textContent = 'Confirmed ✓'; } catch (x) { _ct3516.disabled = false; _ct3516.textContent = 'Error — try again'; } } }, 'Confirm') : null;
       const share = active ? h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => shareLoc(ev, t.id) }, [icon('pin',15),' Share location']) : null;
       const nav = (active && t.destination) ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(t.destination), '_blank', 'noopener') }, '🧭 Navigate') : null;
       const _locked = active && /dispatched|in_transit/.test(String(t.status || ''));
@@ -5756,7 +5765,7 @@ function tripStepper(status) {
         catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = label; alert((e && e.message) || 'Could not update.'); }
       } }, label);
       const _openInApp = async () => {
-        try { const m = await import('./trip-map.js'); await m.openTripMap(t, { docs: () => { moreW.style.display = 'block'; moreT.textContent = '\ud83d\udcc1 Documents & tools \u25b4'; moreT.scrollIntoView({ behavior: 'smooth' }); }, emergency: () => openEmergency(t) }); } catch (e) { alert((e && e.message) || 'Could not open the map.'); }
+        try { const m = await import('./trip-map.js'); await m.openTripMap(t, { docs: () => { moreW.style.display = 'block'; moreT.textContent = '\ud83d\udcc1 Documents & tools \u25b4'; moreT.scrollIntoView({ behavior: 'smooth' }); }, pod: () => { if (!podW.firstChild) showCarrierPod(t, podW); setTimeout(() => { try { podW.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {} }, 150); }, emergency: () => openEmergency(t) }); } catch (e) { alert((e && e.message) || 'Could not open the map.'); }
       };
       const liveMap = active ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7;color:#fff', onClick: () => {
         const goingToPickup = (t.status === 'planned');

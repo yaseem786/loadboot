@@ -47,8 +47,21 @@ function ensurePulseCss() {
 async function geocode(q) {
   if (!q) return null;
   try {
-    const r = await geoFetch('https://photon.komoot.io/api/?limit=1&q=' + encodeURIComponent(q));
-    const j = await r.json(); const f = j && j.features && j.features[0];
+    // 22 Oct 2026: limit=1 took whatever came first — "Terrell, TX" pinned Terrell COUNTY, 400 mi away, and locked the
+    // driver out of delivery. Prefer a city/town of that name in that state; never a county or other admin area.
+    const r = await geoFetch('https://photon.komoot.io/api/?limit=8&q=' + encodeURIComponent(q));
+    const j = await r.json(); const fs = (j && j.features) || [];
+    const parts = String(q).split(',').map(s => s.trim().toLowerCase());
+    const city = parts[0] || '', st = (parts[1] || '').replace(/[^a-z]/g, '');
+    const ST = { al:'alabama',ak:'alaska',az:'arizona',ar:'arkansas',ca:'california',co:'colorado',ct:'connecticut',de:'delaware',fl:'florida',ga:'georgia',hi:'hawaii',id:'idaho',il:'illinois',in:'indiana',ia:'iowa',ks:'kansas',ky:'kentucky',la:'louisiana',me:'maine',md:'maryland',ma:'massachusetts',mi:'michigan',mn:'minnesota',ms:'mississippi',mo:'missouri',mt:'montana',ne:'nebraska',nv:'nevada',nh:'new hampshire',nj:'new jersey',nm:'new mexico',ny:'new york',nc:'north carolina',nd:'north dakota',oh:'ohio',ok:'oklahoma',or:'oregon',pa:'pennsylvania',ri:'rhode island',sc:'south carolina',sd:'south dakota',tn:'tennessee',tx:'texas',ut:'utah',vt:'vermont',va:'virginia',wa:'washington',wv:'west virginia',wi:'wisconsin',wy:'wyoming' };
+    const stName = ST[st] || st;
+    const okState = (p) => !stName || [String(p.state || '').toLowerCase(), String(p.state_code || '').toLowerCase()].some(v => v && (v === stName || v === st));
+    const isAdmin = (p) => /county|state|administrative|region/.test(String(p.type || '') + ' ' + String(p.osm_value || ''));
+    const isTown = (p) => p.osm_key === 'place' && /city|town|village|hamlet|suburb/.test(String(p.osm_value || ''));
+    const cand = fs.filter(f => f && f.geometry && f.properties && !isAdmin(f.properties) && okState(f.properties));
+    const f = cand.find(f => isTown(f.properties) && String(f.properties.name || '').toLowerCase() === city)
+      || cand.find(f => String(f.properties.city || f.properties.name || '').toLowerCase() === city)
+      || cand[0];
     return f ? { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] } : null;
   } catch (_) { return null; }
 }
@@ -220,8 +233,15 @@ export async function openTripMap(t, opts = {}) {
   const bubble = (ll, txt) => L.marker(ll, { zIndexOffset: 1200, icon: L.divIcon({ className: '', iconSize: [1, 1],
     html: '<div style="display:inline-block;width:max-content;transform:translate(-50%,-135%);background:#10223B;border:1px solid rgba(255,255,255,.3);color:#fff;font-weight:800;font-size:13px;font-family:Manrope,sans-serif;padding:7px 12px;border-radius:12px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.45)">' + txt + '</div>' }), interactive: false }).addTo(map);
 
-  const P = (t.pickup_lat != null && t.pickup_lng != null) ? { lat: t.pickup_lat, lng: t.pickup_lng } : await geocode(t.origin);
-  const D = (t.delivery_lat != null && t.delivery_lng != null) ? { lat: t.delivery_lat, lng: t.delivery_lng } : await geocode(t.destination);
+  let P = (t.pickup_lat != null && t.pickup_lng != null) ? { lat: t.pickup_lat, lng: t.pickup_lng } : await geocode(t.origin);
+  let D = (t.delivery_lat != null && t.delivery_lng != null) ? { lat: t.delivery_lat, lng: t.delivery_lng } : await geocode(t.destination);
+  // 22 Oct 2026: never pin a guessed pair that disagrees with the load's own miles — a wrong pin is worse than none
+  // (the server then demands a GPS check-in at a place the driver will never reach).
+  if ((t.pickup_lat == null || t.delivery_lat == null) && P && D && Number(t.miles) > 0
+      && hav(P.lat, P.lng, D.lat, D.lng) / 1609.34 > Number(t.miles) * 1.6 + 40) {
+    if (t.pickup_lat == null) P = null;
+    if (t.delivery_lat == null) D = null;
+  }
   if ((t.pickup_lat == null && P) || (t.delivery_lat == null && D)) tripSetStopCoords(t.id, P && P.lat, P && P.lng, D && D.lat, D && D.lng).catch(() => {});
   if (P) { L.marker([P.lat, P.lng], { icon: dot(BLUE, 'A') }).addTo(map); L.circle([P.lat, P.lng], { radius: RADIUS_M, color: BLUE, weight: 1, opacity: .5, fillOpacity: .07 }).addTo(map); }
   if (D) { L.marker([D.lat, D.lng], { icon: dot(ORANGE, 'B') }).addTo(map); L.circle([D.lat, D.lng], { radius: RADIUS_M, color: ORANGE, weight: 1, opacity: .5, fillOpacity: .07 }).addTo(map); }
@@ -552,7 +572,7 @@ export async function openTripMap(t, opts = {}) {
       else { actBtn.textContent = '📍  Auto check-in at 800 m — stop ' + (xsIdx + 1) + (distM != null ? ' · ' + fmtKm(distM) : ''); actBtn.disabled = true; actBtn.style.opacity = '.55'; statEl.textContent = (XS[xsIdx].kind === 'pickup' ? '📦 EXTRA PICKUP' : '📤 EXTRA DELIVERY') + ' ' + (xsIdx + 1) + (XS[xsIdx].purpose ? ' — ' + XS[xsIdx].purpose : '') + (XS[xsIdx].address ? ' · ' + XS[xsIdx].address : '') + '. Entering the purple circle checks you in automatically — its own detention clock and stop-off fee are tracked.'; }
     } else if (step === 'to_delivery') {
       stageChip.textContent = etaTxt ? '🚛 ' + etaTxt : '🚛 On the road' + (distM != null ? ' · ' + fmtKm(distM) + ' to B' : '') + ' · ' + money(t.rate);
-      if (!tg) { actBtn.textContent = '📍  Pinning the delivery location…'; actBtn.disabled = true; actBtn.style.opacity = '.55'; statEl.textContent = 'Setting the delivery point on the map — one moment. Check-in stays locked until it is pinned.'; }
+      if (!tg) { actBtn.textContent = '✓  Mark delivered'; statEl.textContent = 'The delivery point is not pinned on the map, so check-in is manual. Tap only once you are unloaded and released — then upload the POD.'; }
       else if (near) { actBtn.textContent = '📍  Checking you in at the delivery…'; statEl.textContent = 'Inside the delivery zone — auto check-in is running.'; }
       else { actBtn.textContent = '📍  Auto check-in at 800 m' + (distM != null ? ' — ' + fmtKm(distM) + ' to go' : ''); actBtn.disabled = true; actBtn.style.opacity = '.55'; statEl.textContent = 'Drive to B. Entering the orange circle checks you in automatically.'; }
     } else if (step === 'at_delivery') {
@@ -561,8 +581,8 @@ export async function openTripMap(t, opts = {}) {
       statEl.textContent = 'Checked in at B ✓ Unload, mark delivered, then upload the POD to get paid faster.';
     } else {
       stageChip.textContent = '✅ Delivered';
-      actBtn.textContent = 'Delivered ✓ — close';
-      statEl.textContent = 'Trip complete. Upload your POD from the trip card.';
+      actBtn.textContent = opts.pod ? '📄  Upload POD' : 'Delivered ✓ — close';
+      statEl.textContent = opts.pod ? 'Trip complete. Tap Upload POD to send the signed BOL/POD and get paid.' : 'Trip complete. Upload your POD from the trip card.';
     }
   }
 
@@ -588,7 +608,7 @@ export async function openTripMap(t, opts = {}) {
     if (autoBusy) return; autoBusy = true;
     try {
       try { await tripDepart(t.id, 'pickup', me && me.lat, me && me.lng); } catch (e) { if (!/already|no open/i.test(e.message || '')) throw e; }
-      try { await pocketAdvanceTrip(t.id, 'in_transit'); } catch (_) {}
+      await pocketAdvanceTrip(t.id, 'in_transit'); // 22 Oct 2026: was swallowed — the map moved on while the trip stayed 'dispatched'
       step = 'to_delivery'; setStep(t, step); await drawRoute(); paint();
       buildNav(true);
       flash('\ud83d\ude9b On the road \u2014 departure recorded, detention stamped');
@@ -645,6 +665,9 @@ export async function openTripMap(t, opts = {}) {
   }
   actBtn.onclick = async () => {
     const was = actBtn.textContent; actBtn.disabled = true; actBtn.textContent = '…';
+    // no pinned delivery point → the manual Mark delivered path (same release gate as a GPS check-in)
+    const manualDel = step === 'to_delivery' && !atStop && xsIdx >= XS.length && !target();
+    if (manualDel) step = 'at_delivery';
     try {
       if (step === 'to_pickup' && !onway) {
         if (!me && DEV_HOST) { actBtn.disabled = false; actBtn.textContent = was; toggleSim(); return; }
@@ -658,13 +681,13 @@ export async function openTripMap(t, opts = {}) {
       }
       else if (step === 'to_delivery') { if (atStop) { await doDepartStop(); } else if (xsIdx < XS.length) { await doArriveStop(); } else { await doArrive('delivery'); } }
       else if (step === 'at_delivery') {
-        if (!(await warnGate({ title: '\u26a0 Has the receiver released you?', body: 'Mark delivered ONLY after the facility has finished unloading and released you. Your dock time (detention) is measured until then \u2014 marking early can lose your detention proof. Tracking keeps running until you drive out of the receiver.', cta: '\u2713 Yes, unloaded & released' }))) { actBtn.textContent = was; actBtn.disabled = false; return; }
+        if (!(await warnGate({ title: '\u26a0 Has the receiver released you?', body: 'Mark delivered ONLY after the facility has finished unloading and released you. Your dock time (detention) is measured until then \u2014 marking early can lose your detention proof. Tracking keeps running until you drive out of the receiver.', cta: '\u2713 Yes, unloaded & released' }))) { if (manualDel) step = 'to_delivery'; actBtn.textContent = was; actBtn.disabled = false; return; }
         actBtn.textContent = '\u2026'; await pocketAdvanceTrip(t.id, 'delivered'); step = 'done'; setStep(t, step);
         flash('\ud83c\udfc1 Delivered \u2713 \u2014 tracking stays ON until you leave the receiver (800 m) so your dock time is GPS-proven for detention.');
       }
-      else { close(); return; }
+      else { close(); try { if (opts.pod) opts.pod(); } catch (_) {} return; } // 22 Oct 2026: the POD lives on the trip card — take the driver there
       paint();
-    } catch (e) { actBtn.textContent = was; flash((e && e.message) || 'Could not update the trip.', true); }
+    } catch (e) { if (manualDel && step === 'at_delivery') step = 'to_delivery'; actBtn.textContent = was; flash((e && e.message) || 'Could not update the trip.', true); }
     actBtn.disabled = false;
   };
 
