@@ -1,5 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
+// domain-check v7 (bl_ship_0527, 2026-10-17): sec_name_hit false positive fixed. v6 counted ANY EX-21 hit from the
+//   EDGAR phrase search as "this company is a public company's subsidiary" — but EDGAR's phrase search is loose
+//   ("MII BRAND IMPORT LLC" returned 28 L Brands / Victoria's Secret exhibits that merely share words), so a real
+//   small shipper was flagged "name matches an SEC-registered company". v7 only counts a hit when a filer's own
+//   display name contains every distinctive token of the company name. Subsidiary lists (EX-21) are no longer
+//   trusted on their own because the search response does not carry the document text to confirm the phrase.
 // domain-check v6 (bl_ship_0491, 2026-09-28): four FREE fraud signals added for the shipper trust engine.
 //   • rdap_created — domain registration date from RDAP (rdap.org bootstrap → the registry). Young domain = review.
 //   • dmarc / spf  — TXT records. DMARC p=none/absent on a budget mail host is how look-alike shippers usually look.
@@ -228,12 +234,15 @@ async function secNameHit(company: string): Promise<{ hit: boolean | null; names
   try {
     const j: any = await r.json();
     const all = (j?.hits?.hits || []) as any[];
-    // Only two kinds of hit mean "this name IS a public company or its subsidiary": the name is a filer's own
-    // display name, or it appears in an Exhibit 21 subsidiary list. A passing mention in some filing is not.
-    const low = q.toLowerCase();
-    const hits = all.filter((h) => /^EX-21/i.test(String(h?._source?.file_type || ""))
-      || ((h?._source?.display_names || []) as string[]).some((n) => String(n).toLowerCase().includes(low)));
-    const names = Array.from(new Set(hits.flatMap((h) => (h?._source?.display_names || []) as string[]))).slice(0, 5);
+    // v7: a hit means "a FILER's own display name carries this company's distinctive words". v6 also counted any
+    // EX-21 subsidiary exhibit the phrase search returned, but EDGAR's phrase search is loose and the response has
+    // no document text to confirm the phrase, so "MII BRAND IMPORT LLC" lit up on Victoria's Secret's subsidiary
+    // list. Without confirmation, an exhibit hit is just a word overlap — not a match.
+    const want = tokens(q);
+    if (want.length === 0) return { hit: null, names: [] };
+    const nameMatches = (n: string) => { const have = tokens(n); return want.every((w) => have.includes(w)); };
+    const hits = all.filter((h) => ((h?._source?.display_names || []) as string[]).some(nameMatches));
+    const names = Array.from(new Set(hits.flatMap((h) => ((h?._source?.display_names || []) as string[]).filter(nameMatches)))).slice(0, 5);
     return { hit: all.length === 0 ? false : hits.length > 0, names };
   } catch { return { hit: null, names: [] }; }
 }
