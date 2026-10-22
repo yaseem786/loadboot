@@ -152,7 +152,7 @@ export async function openTripMap(t, opts = {}) {
     mode = MODE_NEXT[mode] || 'day';
     localStorage.setItem('lb:mapstyle', mode);
     styleBtn.textContent = MODE_ICON[mode];
-    tiles.setUrl(TILES[mode]);
+    tiles.setUrl(TILES[mode]); setTileLook();
     if (mode === 'sat') tiles.options.maxZoom = 19;
     mapDiv.style.background = mode === 'day' ? '#e8ecf1' : '#0f1114';
     try { openTripMap._flow && openTripMap._flow.setStyle({ color: mode === 'day' ? '#10223B' : '#ffffff' }); } catch (_) {}
@@ -216,13 +216,17 @@ export async function openTripMap(t, opts = {}) {
   let L;
   try { L = await ensureLeaflet(); } catch (e) { bottom.appendChild(el('div', 'color:#fff', e.message)); return; }
   const map = L.map(mapDiv, { zoomControl: false, attributionControl: false }).setView([31.5, 73.0], 6);
-  const TILES = { dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', day: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', sat: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' };
+  // 22 Oct 2026: CARTO basemaps started painting "API KEY REQUIRED" over the driver map. OpenStreetMap tiles need no key;
+  // dark = the same tiles through a CSS invert (applied in setTileLook) so all three modes keep working.
+  const TILES = { dark: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', day: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', sat: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' };
   const MODE_ICON = { day: '🌙', dark: '🛰️', sat: '☀️' }; // icon = what you get NEXT
   const MODE_NEXT = { day: 'dark', dark: 'sat', sat: 'day' };
   let mode = localStorage.getItem('lb:mapstyle') || 'day';
-  let tiles = L.tileLayer(TILES[mode] || TILES.day, { maxZoom: 20, subdomains: 'abcd' }).addTo(map);
+  let tiles = L.tileLayer(TILES[mode] || TILES.day, { maxZoom: 19 }).addTo(map);
+  const setTileLook = () => { try { const tp = map.getPane('tilePane'); if (tp) tp.style.filter = mode === 'dark' ? 'invert(1) hue-rotate(180deg) brightness(.92) contrast(.9)' : ''; } catch (_) {} };
+  setTileLook();
   mapDiv.style.background = mode === 'day' ? '#e8ecf1' : '#0f1114';
-  L.control.attribution({ prefix: false, position: 'topright' }).addAttribution('© OSM · CARTO').addTo(map);
+  L.control.attribution({ prefix: false, position: 'topright' }).addAttribution('© OpenStreetMap contributors').addTo(map);
   requestAnimationFrame(() => { try { map.invalidateSize(); } catch (_) {} });
   setTimeout(() => { try { map.invalidateSize(); if (routeLine) map.fitBounds(routeLine.getBounds(), { padding: [70, 70] }); } catch (_) {} }, 400);
 

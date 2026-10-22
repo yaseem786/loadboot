@@ -167,7 +167,7 @@ export function openLoadTracker(loadRow) {
       if (ok && window.L && !dead && document.body.contains(mapEl)) {
         const L = window.L;
         map = L.map(mapEl, { zoomControl: false, attributionControl: false });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 })  /* 22 Oct 2026: CARTO now needs an API key */.addTo(map);
         const pu = [Number(pins.pickup_lat), Number(pins.pickup_lng)], de = [Number(pins.delivery_lat), Number(pins.delivery_lng)];
         L.circleMarker(pu, { radius: 8, color: '#0883F7', fillColor: '#0883F7', fillOpacity: .9 }).addTo(map).bindTooltip('Pickup');
         L.circleMarker(de, { radius: 8, color: '#FC5305', fillColor: '#FC5305', fillOpacity: .9 }).addTo(map).bindTooltip('Delivery');
