@@ -57,6 +57,8 @@ Deno.serve(async (req) => {
     switch (event.type) {
       case 'invoice.paid': {
         const inv = event.data.object as Stripe.Invoice;
+        // bl_stripe_0351: a $0 "paid" invoice is not a payment — never let it close a LoadBoot fee invoice
+        if (!inv.amount_paid || inv.amount_paid <= 0) { handled = 'ignored_zero_paid'; console.warn('[stripe-webhook] $0 invoice.paid ignored', inv.id); break; }
         const types = inv.payment_settings?.payment_method_types || [];
         const method = types.includes('us_bank_account') ? 'stripe_ach' : 'stripe_card';
         const paidAt = (inv.status_transitions?.paid_at ?? event.created) * 1000;

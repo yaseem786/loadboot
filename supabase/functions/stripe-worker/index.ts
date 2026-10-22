@@ -54,24 +54,43 @@ async function createInvoice(job: Job) {
     1, Math.ceil((new Date(job.due_at).getTime() - Date.now()) / 86_400_000),
   );
 
-  await stripe.invoiceItems.create({
-    customer,
-    currency: 'usd',
-    amount: Math.round(Number(job.fee) * 100),
-    description:
-      `Dispatch service fee (${job.fee_pct || 5}% of $${job.gross}) — ${job.lane}`,
-    metadata: { loadboot_invoice_no: job.invoice_no, loadboot_invoice_id: job.invoice_id },
-  }, { idempotencyKey: `lb-item-${job.invoice_id}` });
+  const cents = Math.round(Number(job.fee) * 100);
+
+  // 22 Oct 2026 (bl_stripe_0351): an invoice item created WITHOUT `invoice` is a *pending* item, and since Stripe API
+  // 2022-08-01 invoices.create() no longer pulls pending items in — the first live invoice came out $0 and Stripe marked
+  // it paid instantly. Create the draft first, attach the line to THAT draft, and refuse to finalize a wrong amount.
+  // Clean up any stray pending line a previous attempt left for this invoice, so it can never land on a later invoice.
+  const pend = await stripe.invoiceItems.list({ customer, pending: true, limit: 100 });
+  for (const it of pend.data) {
+    if (it.metadata?.loadboot_invoice_id === job.invoice_id) await stripe.invoiceItems.del(it.id);
+  }
 
   const draft = await stripe.invoices.create({
     customer,
     collection_method: 'send_invoice',
     days_until_due: daysUntilDue,
     auto_advance: false, // we finalize ourselves and send our own branded email
+    pending_invoice_items_behavior: 'exclude',
     description: `LoadBoot dispatch fee — invoice ${job.invoice_no}`,
     metadata: { loadboot_invoice_no: job.invoice_no, loadboot_invoice_id: job.invoice_id },
     payment_settings: { payment_method_types: ['us_bank_account', 'card'] },
-  }, { idempotencyKey: `lb-inv-${job.invoice_id}` });
+  }, { idempotencyKey: `lb-inv2-${job.invoice_id}` });
+
+  await stripe.invoiceItems.create({
+    customer,
+    invoice: draft.id,
+    currency: 'usd',
+    amount: cents,
+    description:
+      `Dispatch service fee (${job.fee_pct || 5}% of $${job.gross}) — ${job.lane}`,
+    metadata: { loadboot_invoice_no: job.invoice_no, loadboot_invoice_id: job.invoice_id },
+  }, { idempotencyKey: `lb-item2-${job.invoice_id}` });
+
+  const check = await stripe.invoices.retrieve(draft.id);
+  if (check.amount_due !== cents) {
+    await stripe.invoices.del(draft.id).catch(() => {});
+    throw new Error(`amount mismatch: Stripe draft ${check.amount_due} cents, expected ${cents} — draft deleted`);
+  }
 
   const inv = await stripe.invoices.finalizeInvoice(draft.id);
 
