@@ -40,7 +40,8 @@ import {
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } from '../shared/storage.js';
 import { setPostingHos } from '../shared/api.js'
-import { carrierAvailabilityGate } from '../shared/api.js';   // bl_disp_0555 — availability gate (dispatcher assigned + no fresh post of your own);
+import { carrierAvailabilityGate } from '../shared/api.js';
+import { carrierMyDispatcherBookings } from '../shared/api.js';   // 22 Oct 2026 — booked-but-not-approved dispatcher loads on My Loads   // bl_disp_0555 — availability gate (dispatcher assigned + no fresh post of your own);
 import { formProgressPing, formProgressDone } from '../shared/api.js';
 import { pocketFieldSuggestions, pocketFieldSuggestionDecide } from '../shared/api.js';   // bl_fill_0534 — dispatcher suggestions on locked fields
 import { sessionDemoState } from '../shared/api.js';   // bl_train_0548 — demo / training banner
@@ -5679,9 +5680,25 @@ function tripStepper(status) {
       if (act9) ensureLiveLoc(act9.id);
       else if (_liveWatch != null) { stopLiveLoc(); }
     } catch (_) {}
-    if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card', style: 'text-align:center;padding:26px 16px', 'data-tour': 'trips-empty' }, [h('div', { style: 'font-size:40px;line-height:1' }, '🚛'), h('div', { class: 'cp-row-t', style: 'margin:10px 0 4px' }, 'No trips yet'), h('div', { class: 'cp-muted' }, 'Book a load and it appears here with live tracking, documents and settlement.'), h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: () => go('loads') }, '🔎 Browse the Load Board')])); return; }
+    // 22 Oct 2026: a dispatcher load the carrier accepted is NOT a trip until LoadBoot approves the rate confirmation —
+    // it vanished from the board and was nowhere on My Loads. Show it here, with what it is waiting for.
+    let pend9 = [];
+    try { pend9 = ((await carrierMyDispatcherBookings(20)) || []).filter(b => !b.trip_id && ['carrier_accepted', 'pending_rc', 'rc_received'].includes(String(b.status || ''))); } catch (_) { pend9 = []; }
+    const pendCard9 = pend9.length ? h('div', { class: 'cp-card', style: 'border:1px solid #f59e0b' }, [
+      cardHead('⏳ Booked — waiting for approval', pend9.length + (pend9.length === 1 ? ' load' : ' loads')),
+      ...pend9.map(b => h('div', { class: 'cp-row', style: 'display:block;padding:10px 0;border-top:1px solid rgba(148,163,184,.18)' }, [
+        h('div', { class: 'cp-row-t' }, (b.origin || '—') + ' → ' + (b.destination || '—')),
+        h('div', { class: 'cp-row-s' }, ['$' + Number(b.gross || 0).toLocaleString(), b.miles ? b.miles + ' mi' : null, b.equipment, b.truck ? 'truck ' + b.truck : null,
+          b.pickup_at ? 'pickup ' + new Date(b.pickup_at).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : null].filter(Boolean).join(' · ')),
+        h('div', { class: 'cp-row-s', style: 'margin-top:4px;font-weight:700;color:#f59e0b' }, String(b.status) === 'rc_received'
+          ? 'Rate confirmation received — LoadBoot is approving it. It moves to My trips the moment it is approved.'
+          : 'Your dispatcher is getting the broker’s rate confirmation. Do not roll until it is approved here.'),
+      ])),
+    ]) : null;
+    const mountT9 = (x) => mount(content, [pendCard9, x]);
+    if (!rows || !rows.length) { mountT9(h('div', { class: 'cp-card', style: 'text-align:center;padding:26px 16px', 'data-tour': 'trips-empty' }, [h('div', { style: 'font-size:40px;line-height:1' }, '🚛'), h('div', { class: 'cp-row-t', style: 'margin:10px 0 4px' }, 'No trips yet'), h('div', { class: 'cp-muted' }, 'Book a load and it appears here with live tracking, documents and settlement.'), h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: () => go('loads') }, '🔎 Browse the Load Board')])); return; }
     const PHONE9 = window.innerWidth <= 560; let doneSeen9 = 0;
-    mount(content, h('div', { class: 'cp-card', 'data-tour': 'trips-list' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => { const cardOf = () => {
+    mountT9(h('div', { class: 'cp-card', 'data-tour': 'trips-list' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => { const cardOf = () => {
       const active = t.status === 'planned' || t.status === 'dispatched' || t.status === 'in_transit';
       const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const _ct3516 = ev.currentTarget; _ct3516.disabled = true; try { await pocketConfirmTrip(t.id); _ct3516.textContent = 'Confirmed ✓'; } catch (x) { _ct3516.disabled = false; _ct3516.textContent = 'Error — try again'; } } }, 'Confirm') : null;
       const share = active ? h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => shareLoc(ev, t.id) }, [icon('pin',15),' Share location']) : null;
