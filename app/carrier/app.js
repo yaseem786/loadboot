@@ -41,7 +41,7 @@ import {
 import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } from '../shared/storage.js';
 import { setPostingHos } from '../shared/api.js'
 import { carrierAvailabilityGate } from '../shared/api.js';
-import { carrierMyDispatcherBookings } from '../shared/api.js';   // 22 Oct 2026 — booked-but-not-approved dispatcher loads on My Loads   // bl_disp_0555 — availability gate (dispatcher assigned + no fresh post of your own);
+import { carrierMyDispatcherBookings, payFeeInvoiceLink } from '../shared/api.js';   // 22 Oct 2026 — booked-but-not-approved dispatcher loads on My Loads   // bl_disp_0555 — availability gate (dispatcher assigned + no fresh post of your own);
 import { formProgressPing, formProgressDone } from '../shared/api.js';
 import { pocketFieldSuggestions, pocketFieldSuggestionDecide } from '../shared/api.js';   // bl_fill_0534 — dispatcher suggestions on locked fields
 import { sessionDemoState } from '../shared/api.js';   // bl_train_0548 — demo / training banner
@@ -7965,6 +7965,8 @@ function tripStepper(status) {
         const payFee = i.status === 'sent' ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async () => {
           if (dw.firstChild) { dw.innerHTML = ''; return; }
           dw.appendChild(h('div', { class: 'cp-muted' }, 'Loading payment instructions…'));
+          // bl_stripe_0350: when the invoice has a Stripe pay page (card or bank), send the carrier straight there
+          try { const lk9 = await payFeeInvoiceLink(i.id); if (lk9 && lk9.url) { window.open(lk9.url, '_blank', 'noopener'); lbToast('Opening the secure Stripe page — pay by card or bank account. It marks PAID automatically.', 'info', 'Pay invoice'); return; } } catch (_) {}
           let pi; try { pi = await payInstructions('platform_fee', i.id); } catch (e9) { dw.innerHTML = ''; dw.appendChild(h('div', { class: 'cp-row-s' }, (e9 && e9.message) || 'Failed.')); return; }
           dw.innerHTML = '';
           const tr9 = pi && pi.transfer;
@@ -7991,7 +7993,7 @@ function tripStepper(status) {
             h('div', { class: 'cp-row-s', style: 'margin-top:2px;line-height:1.5' }, s9)]);
           dw.appendChild(h('div', { style: 'margin-top:8px;border:1px solid var(--lbc-x-line,rgba(255,255,255,.14));border-radius:16px;overflow:hidden' }, [
             h('div', { style: 'background:var(--lbc-x-hero,linear-gradient(120deg,#10223B,#0d2f56));padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
-              h('div', null, [h('div', { style: 'font-weight:900;color:var(--lbc-x-ink,#fff)' }, [icon('card',15),' Pay LoadBoot']), h('div', { style: 'font-size:.72rem;color:var(--lbc-x-ink2,#9fb0cc)' }, 'flat 5% dispatch fee · net 15')]),
+              h('div', null, [h('div', { style: 'font-weight:900;color:var(--lbc-x-ink,#fff)' }, [icon('card',15),' Pay LoadBoot']), h('div', { style: 'font-size:.72rem;color:var(--lbc-x-ink2,#9fb0cc)' }, 'flat 5% dispatch fee · net 30')]),
               h('div', { style: 'font-size:1.5rem;font-weight:900;color:var(--lbc-x-ink,#fff)' }, money(pi.amount || i.fee || 0)),
             ]),
             h('div', { style: 'padding:12px 16px' }, [

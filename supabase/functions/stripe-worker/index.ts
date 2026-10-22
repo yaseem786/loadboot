@@ -132,7 +132,7 @@ async function autopayRevoke(job: Job) {
 }
 
 Deno.serve(async (req) => {
-  if (req.headers.get('x-lb-worker') !== WORKER_TOKEN) return json({ error: 'forbidden' }, 403);
+  if (!WORKER_TOKEN || req.headers.get('x-lb-worker') !== WORKER_TOKEN) return json({ error: 'forbidden' }, 403);
 
   const { data: jobs, error } = await db.rpc('cc_stripe_queue_take', { p_limit: 20 });
   if (error) return json({ error: error.message }, 500);
