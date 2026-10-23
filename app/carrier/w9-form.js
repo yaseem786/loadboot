@@ -12,10 +12,22 @@ function today() { return new Date().toLocaleDateString('en-US', { year: 'numeri
 
 // ---- Completed W-9 print ----
 export function printExecutedW9(o) {
-  o = o || {};
+  o = Object.assign({}, o || {});
+  // The broker portal (partner/app.js openBrokerW9) stores its W-9 under different keys
+  // (city / signer / business) and short class labels ('LLC', 'C corporation'). Read both
+  // shapes so a broker's executed W-9 does not print blank boxes in Command Center.
+  if (!o.city_state_zip) o.city_state_zip = o.city || o.csz || '';
+  if (!o.signer_name) o.signer_name = o.signer || '';
+  if (!o.business_name) o.business_name = o.business || '';
+  // Every value below lands in a window that shares the opener's origin (CC or portal);
+  // a submitted name must never be able to inject markup there.
+  const esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); };
+  ['name', 'business_name', 'address', 'city_state_zip', 'signer_name', 'signed_date', 'date', 'ref', 'llc_class', 'tin_last4'].forEach(function (k) { if (o[k] != null) o[k] = esc(o[k]); });
   const w = window.open('', '_blank');
   if (!w) { alert('Allow pop-ups to download your W-9.'); return; }
-  const cls = o.classification || '';
+  const normCls = function (s) { return String(s || '').toLowerCase().replace(/[^a-z]/g, ''); };
+  const rawCls = normCls(o.classification);
+  const cls = CLASSES.find(function (c) { return normCls(c) === rawCls || (rawCls === 'llc' && c.indexOf('(LLC)') >= 0); }) || '';
   const llc = o.llc_class ? ' (' + o.llc_class + ')' : '';
   const tin = (o.tin || '').replace(/\D/g, '');
   const tinDisp = tin ? tin.replace(/(\d{2})(\d{0,7}).*/, function (m, a, b) { return a + (b ? '-' + b : ''); }) : (o.tin_last4 ? '**-***' + o.tin_last4 : '');
