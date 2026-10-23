@@ -4381,6 +4381,15 @@ async function brokerDash(user, ov) {
   const f = (ph, v) => h('input', { class: 'cp-in', placeholder: ph, value: v || '' });
   const name = f('Legal name (as on tax return)'), biz = f('Business / DBA name (optional)');
   const cls = h('select', { class: 'cp-in' }, ['Individual/sole proprietor', 'C corporation', 'S corporation', 'Partnership', 'Trust/estate', 'LLC'].map((x) => h('option', { value: x }, x)));
+  // IRS W-9 line 3: an LLC box must carry its tax letter (C / S / P). bl_onb_0565 — the broker
+  // form never asked, so every broker LLC W-9 was missing it.
+  const llcSel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'Select the LLC tax letter…')].concat(
+    ['C = C corporation', 'S = S corporation', 'P = Partnership'].map((x) => h('option', { value: x }, x))));
+  const llcWrap = h('div', { style: 'display:none' }, [
+    h('label', { class: 'cp-lbl' }, 'LLC tax classification (C / S / P)'), llcSel,
+    h('div', { class: 'cp-sub', style: 'margin-top:3px' }, 'It is on the IRS letter that accepted your LLC’s tax election. A single-member LLC with no election is a disregarded entity — pick “Individual/sole proprietor” instead.'),
+  ]);
+  cls.addEventListener('change', () => { llcWrap.style.display = cls.value === 'LLC' ? '' : 'none'; });
   const tin = f('EIN or SSN — exactly 9 digits'), addr = f('Street address'), city = f('City, State ZIP');
   tin.setAttribute('inputmode', 'numeric'); tin.setAttribute('maxlength', '11');
   const tinHint = h('div', { class: 'cp-sub', style: 'margin-top:3px;font-weight:700' });
@@ -4399,19 +4408,21 @@ async function brokerDash(user, ov) {
     h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Same IRS Form W-9 flow as the rest of LoadBoot — fill it once, sign by typing your name, and download the executed PDF any time.'),
     h('label', { class: 'cp-lbl' }, 'Legal name'), name,
     h('label', { class: 'cp-lbl' }, 'Business name'), biz,
-    h('label', { class: 'cp-lbl' }, 'Federal tax classification'), cls,
+    h('label', { class: 'cp-lbl' }, 'Federal tax classification'), cls, llcWrap,
     h('label', { class: 'cp-lbl' }, 'TIN (EIN / SSN)'), tin, tinHint,
     h('label', { class: 'cp-lbl' }, 'Address'), addr, city, addrHint,
     h('label', { class: 'cp-lbl' }, 'Signature'), sig, err,
     h('button', { class: 'cp-btn', style: 'margin-top:12px;width:100%', onClick: async (ev) => {
       const digits = tin.value.replace(/\D/g, '');
       if (!name.value.trim()) { err.textContent = 'Legal name is required.'; return; }
+      if (cls.value === 'LLC' && !llcSel.value) { err.textContent = 'Pick the LLC tax letter — C, S or P (from your IRS election letter).'; return; }
       if (digits.length !== 9) { err.textContent = 'Wrong TIN — EIN and SSN are both EXACTLY 9 digits (you entered ' + digits.length + ').'; return; }
       if (!addr.value.trim()) { err.textContent = 'Street address is required — pick a US suggestion.'; return; }
       if (!/^.+,\s*[A-Za-z]{2}\s*\d{5}(-\d{4})?$/.test(city.value.trim())) { err.textContent = 'US address required — City, ST ZIP (e.g. “Dallas, TX 75201”). Non-US addresses are not accepted on a W-9.'; return; }
       if (!sig.value.trim()) { err.textContent = 'Type your name to sign.'; return; }
       ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Signing…';
       const data = { name: name.value.trim(), business: biz.value.trim(), classification: cls.value,
+        llc_class: cls.value === 'LLC' ? llcSel.value : '',
         tin_last4: digits.slice(-4), address: addr.value.trim(), city: city.value.trim(),
         signer: sig.value.trim(), signed_date: new Date().toISOString().slice(0, 10) };
       try {
