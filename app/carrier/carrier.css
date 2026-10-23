@@ -933,3 +933,14 @@ input[type="file"]:not([hidden])::file-selector-button:hover{background:#e2e8f2}
 .cp-modal-card { touch-action: pan-y; overscroll-behavior: contain; }
 .cpx-scrim { touch-action: none; }
 .cpx-drawer { overscroll-behavior: contain; touch-action: pan-y; }
+
+/* fix 23 Oct 2026: theme-aware logo on the auth card (white card = dark-text logo; dark theme swaps in carrier-dark.css) */
+.lb-logo-on-light { display: block; }
+.lb-logo-on-dark { display: none; }
+/* fix 23 Oct 2026: load card actions — full-width primary, two secondary buttons side by side, never wider than the card */
+div.cpx-req-actions.cpx-req-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; flex-direction: initial; }
+div.cpx-req-actions.cpx-req-actions .cpx-req-bw { display: contents; }
+div.cpx-req-actions.cpx-req-actions .cp-btn { width: 100%; min-width: 0; margin: 0; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+div.cpx-req-actions.cpx-req-actions .cpx-req-bw > :first-child,
+div.cpx-req-actions.cpx-req-actions .cpx-req-bw > :not(.cp-btn) { grid-column: 1 / -1; }
+div.cpx-req-actions.cpx-req-actions .cpx-req-bw > .cp-btn:first-child { padding: 14px; font-size: 15px; }

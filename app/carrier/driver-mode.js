@@ -47,7 +47,7 @@ export function installGate(root, ctx, user) {
   const { h, mount } = UI();
   const intent = 'intent://loadboot.com/app/carrier/#Intent;scheme=https;package=' + PLAY_ID + ';S.browser_fallback_url=' + encodeURIComponent(PLAY_URL) + ';end';
   mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card dm-wall' }, [
-    h('div', { class: 'dm-brand', style: 'display:flex;align-items:flex-start;gap:4px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1;margin-top:7px" }, 'Driver')]),
+    h('div', { class: 'dm-brand', style: 'display:flex;align-items:flex-start;gap:4px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', class: 'lb-logo-on-light', style: 'height:34px;width:auto' }), h('img', { src: '/logo-full-dark.png', alt: '', 'aria-hidden': 'true', class: 'lb-logo-on-dark', style: 'height:34px;width:auto' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1;margin-top:7px" }, 'Driver')]),
     h('h1', null, 'Install the LoadBoot app to continue'),
     h('p', { class: 'cp-auth-sub' }, (ctx.carrier || 'Your carrier') + ' requires the app on Android — GPS check-in, live tracking on active loads and POD upload only work inside it. It takes about 30 seconds.'),
     h('a', { class: 'cp-btn cp-btn-lg dm-play', href: PLAY_URL, target: '_blank', rel: 'noopener' }, '▶ Get it on Google Play'),
@@ -68,7 +68,7 @@ export function renderBlocked(root, ctx, user) {
   const { h, mount } = UI();
   const paused = ctx.membership_status === 'suspended';
   mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card dm-wall' }, [
-    h('div', { class: 'dm-brand', style: 'display:flex;align-items:flex-start;gap:4px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1;margin-top:7px" }, 'Driver')]),
+    h('div', { class: 'dm-brand', style: 'display:flex;align-items:flex-start;gap:4px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', class: 'lb-logo-on-light', style: 'height:34px;width:auto' }), h('img', { src: '/logo-full-dark.png', alt: '', 'aria-hidden': 'true', class: 'lb-logo-on-dark', style: 'height:34px;width:auto' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1;margin-top:7px" }, 'Driver')]),
     h('h1', null, paused ? 'Access paused' : 'Almost there'),
     h('p', { class: 'cp-auth-sub' }, paused
       ? (ctx.carrier || 'Your carrier') + ' paused your app access. Nothing is lost — call the owner to resume it, and this screen updates by itself.'

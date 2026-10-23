@@ -295,3 +295,7 @@ html[data-lbtheme="dark"] input[type="file"]:not([hidden])::file-selector-button
 /* ux-audit OC1: ELD card "How to get your token" fold — caret turns when open, no native marker */
 .cp-card details>summary::-webkit-details-marker{display:none}
 .cp-card details[open]>summary .eld-caret{transform:rotate(90deg)}
+
+/* fix 23 Oct 2026: dark auth card shows the white-text logo */
+.lb-logo-on-light { display: none; }
+.lb-logo-on-dark { display: block; }

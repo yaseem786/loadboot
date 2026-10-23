@@ -693,7 +693,7 @@ function recoveryScreen() {
     catch (e) { err.textContent = (e && e.message) || 'Could not update password.'; btn.disabled = false; btn.textContent = 'Set new password'; }
   } }, 'Set new password');
   mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [
-    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Dispatcher' : 'Carrier')]),
+    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', class: 'lb-logo-on-light', style: 'height:34px;width:auto' }), h('img', { src: '/logo-full-dark.png', alt: '', 'aria-hidden': 'true', class: 'lb-logo-on-dark', style: 'height:34px;width:auto' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--lbc-x-warn,#FB923C);line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Dispatcher' : 'Carrier')]),
     h('h1', null, 'Set a new password'),
     h('p', { class: 'cp-auth-sub' }, 'You followed a reset link — choose a new password for your account.'),
     p1, p2, err, btn,
@@ -918,7 +918,7 @@ function authScreen() {
     h('div', { class: 'cpx-auth-split' }, [brandPanel,
     h('div', { class: 'cp-auth-card' }, [
       h('a', { href: '/app/?choose=1', style: 'display:inline-flex;align-items:center;gap:6px;color:var(--lbc-x-ink3,#8ea2c3);font-weight:700;font-size:.82rem;text-decoration:none;margin:-4px 0 12px;padding:4px 0', html: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>All portals</span>' }),
-      h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), descr]),
+      h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', class: 'lb-logo-on-light', style: 'height:34px;width:auto' }), h('img', { src: '/logo-full-dark.png', alt: '', 'aria-hidden': 'true', class: 'lb-logo-on-dark', style: 'height:34px;width:auto' }), descr]),
       chooser,
       formWrap,
     ]),
