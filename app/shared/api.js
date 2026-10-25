@@ -568,7 +568,13 @@ export const dispatcherBookingTimeline = (booking) => rpc('dispatcher_booking_ti
 export const dispatcherBrokerUpsert = (p) => rpc('dispatcher_broker_upsert', { p: p ?? {} });
 export const dispatcherBrokerDelete = (id) => rpc('dispatcher_broker_delete', { p_id: id });
 export const dispatcherThreadList = (assignment, limit) => rpc('dispatcher_thread_list', { p_assignment: assignment, p_limit: limit ?? 200 });
-export const dispatcherThreadSend = (assignment, body) => rpc('dispatcher_thread_send', { p_assignment: assignment, p_body: body });
+// bl_thread_0569: optional reply-to message id + staff department (support|dispatch_ops|compliance|billing|safety)
+export const dispatcherThreadSend = (assignment, body, opts) => {
+  const p = { p_assignment: assignment, p_body: body };
+  if (opts && opts.replyTo) p.p_reply_to = opts.replyTo;
+  if (opts && opts.dept) p.p_dept = opts.dept;
+  return rpc('dispatcher_thread_send', p);
+};
 export const carrierMyDispatcher = () => rpc('carrier_my_dispatcher', {});
 export const ccDispatcherSetTerms = (user, pct, trialStart, trialEnd) => rpc('cc_dispatcher_set_terms', { p_user: user, p_commission_pct: pct, p_trial_start: trialStart ?? null, p_trial_end: trialEnd ?? null });
 export const ccDispatcherBookings = (o = {}) => rpc('cc_dispatcher_bookings', { p_user: o.user ?? null, p_status: o.status ?? null, p_limit: o.limit ?? 200 });

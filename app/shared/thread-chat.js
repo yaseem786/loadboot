@@ -9,11 +9,15 @@
 //   • auto-growing composer: Enter sends, Shift+Enter = new line (touch: button sends)
 //   • optimistic send with Retry, draft kept per thread, 4000-char guard
 //   • polls while visible, marks read, "new messages" jump when scrolled up
+//   • reply to a specific message (quote shown on the bubble, tap it to jump) — bl_thread_0569
+//   • Command Center picks a department; staff messages read "LoadBoot Support", "LoadBoot Billing", …
 // Plain DOM only — no dependency on any portal's h()/el() helper.
 import { dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead } from './api.js';
 
 const MAX = 4000;
 const ROLE_COLOR = { dispatcher: '#0883F7', carrier: '#0E9F6E', staff: '#FC5305', system: '#64748b' };
+const DEPTS = [['support', 'Support'], ['dispatch_ops', 'Dispatch Ops'], ['compliance', 'Compliance'], ['billing', 'Billing'], ['safety', 'Safety & Claims']];
+const DEPT_KEY = 'tc-dept';
 
 function E(tag, attrs, kids) {
   const n = document.createElement(tag);
@@ -69,8 +73,21 @@ function injectCss() {
 .tc-send:not(:disabled):active{transform:scale(.92)}
 .tc-foot{display:flex;justify-content:space-between;gap:8px;padding:0 14px 8px;font-size:11px;color:var(--tc-mut);background:var(--tc-in)}
 .tc-foot .over{color:#dc2626;font-weight:800}
+.tc-q{display:block;border-left:3px solid currentColor;background:rgba(15,31,51,.06);border-radius:8px;padding:5px 9px;margin:1px 0 6px;font-size:12.5px;line-height:1.35;cursor:pointer;white-space:normal;max-height:4.2em;overflow:hidden;text-align:left}
+.tc[data-theme=dark] .tc-q{background:rgba(255,255,255,.08)}
+.tc-row.me .tc-q{background:rgba(255,255,255,.18)}
+.tc-q b{display:block;font-size:11.5px;margin-bottom:1px}
+.tc-act{border:0;background:none;color:var(--tc-mut);font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;padding:2px 8px;opacity:0;transition:opacity .12s}
+.tc-row:hover .tc-act,.tc-act:focus{opacity:1}
+@media (pointer:coarse){.tc-act{opacity:.85}}
+.tc-row.flash .tc-b{animation:tcFlash 1.4s ease}
+@keyframes tcFlash{0%,40%{box-shadow:0 0 0 3px rgba(252,83,5,.55)}100%{box-shadow:0 1px 1px rgba(15,31,51,.08)}}
+.tc-rbar{display:none;align-items:center;gap:10px;padding:8px 12px 0;background:var(--tc-in);font-size:12.5px;color:var(--tc-in-ink)}
+.tc-rbar .q{flex:1;min-width:0;border-left:3px solid #0883F7;padding:3px 9px;background:var(--tc-bg);border-radius:8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tc-rbar button{border:0;background:none;color:var(--tc-mut);font-size:18px;line-height:1;cursor:pointer;padding:2px 4px}
+.tc-dept{flex:none;height:40px;border:1px solid var(--tc-line);border-radius:20px;padding:0 10px;font:inherit;font-size:12.5px;font-weight:700;background:var(--tc-bg);color:#FC5305;max-width:185px}
 .tc-ro{padding:10px 14px;font-size:12.5px;color:var(--tc-mut);background:var(--tc-in);border-top:1px solid var(--tc-line);text-align:center}
-@media (max-width:640px){.tc-row{max-width:88%}.tc-hint{display:none}}
+@media (max-width:640px){.tc-row{max-width:88%}.tc-hint{display:none}.tc-dept{max-width:118px;font-size:11.5px}}
 `;
   document.head.appendChild(s);
 }
@@ -116,6 +133,7 @@ export function threadChat(opts) {
   const id = o.assignmentId;
   const dkey = 'tc-draft:' + id;
   let msgs = []; let pending = []; let lastId = null; let viewerRole = null; let status = 'active'; let timer = null; let dead = false; let loading = false;
+  let replyTo = null; // { id, by, body } of the message being answered
 
   const head = E('div', { class: 'tc-head' });
   const list = E('div', { class: 'tc-list', role: 'log', 'aria-live': 'polite', style: 'height:' + o.height + ';max-height:' + o.height }, E('div', { class: 'tc-empty' }, 'Loading messages…'));
@@ -125,10 +143,16 @@ export function threadChat(opts) {
   sendBtn.innerHTML = SEND_SVG;
   const count = E('span');
   const hint = E('span', { class: 'tc-hint' }, touch() ? '' : 'Enter to send · Shift+Enter for a new line');
-  const comp = E('div', { class: 'tc-comp' }, [ta, sendBtn]);
+  let savedDept = 'support'; try { savedDept = localStorage.getItem(DEPT_KEY) || 'support'; } catch (_) {}
+  const deptSel = E('select', { class: 'tc-dept', 'aria-label': 'Reply as department', title: 'Your message shows as "LoadBoot <department>"', style: 'display:none' },
+    DEPTS.map(([v, l]) => E('option', { value: v, selected: v === savedDept }, 'LoadBoot ' + l)));
+  deptSel.addEventListener('change', () => { try { localStorage.setItem(DEPT_KEY, deptSel.value); } catch (_) {} });
+  const rbarQ = E('div', { class: 'q' });
+  const rbar = E('div', { class: 'tc-rbar' }, [rbarQ, E('button', { type: 'button', 'aria-label': 'Cancel reply', title: 'Cancel reply', onClick: () => setReply(null) }, '×')]);
+  const comp = E('div', { class: 'tc-comp' }, [deptSel, ta, sendBtn]);
   const foot = E('div', { class: 'tc-foot' }, [hint, count]);
   const ro = E('div', { class: 'tc-ro', style: 'display:none' });
-  const root = E('div', { class: 'tc', 'data-theme': o.theme }, [o.showHead ? head : null, list, jump, comp, foot, ro]);
+  const root = E('div', { class: 'tc', 'data-theme': o.theme }, [o.showHead ? head : null, list, jump, rbar, comp, foot, ro]);
 
   try { const d = sessionStorage.getItem(dkey); if (d) ta.value = d; } catch (_) {}
 
@@ -145,7 +169,21 @@ export function threadChat(opts) {
   function readOnly() { return status !== 'active' && viewerRole !== 'staff' && viewerRole !== null; }
 
   function isMine(m) { return !!m.mine || (viewerRole === 'staff' && m.role === 'staff'); }
-  function sender(m) { return m.role === 'staff' ? 'LoadBoot' : (m.by || (m.role === 'carrier' ? 'Carrier' : m.role === 'dispatcher' ? 'Dispatcher' : 'LoadBoot')); }
+  function sender(m) { return m.by || (m.role === 'carrier' ? 'Carrier' : m.role === 'dispatcher' ? 'Dispatcher' : 'LoadBoot'); }
+  function deptLabel(v) { const d = DEPTS.find((x) => x[0] === v); return d ? 'LoadBoot ' + d[1] : 'LoadBoot'; }
+  function snippet(t, n) { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+  function setReply(m) {
+    replyTo = m ? { id: m.id, by: sender(m), body: m.body, role: m.role } : null;
+    rbar.style.display = replyTo ? 'flex' : 'none';
+    rbarQ.replaceChildren(...(replyTo ? [E('b', { style: 'color:' + (ROLE_COLOR[replyTo.role] || ROLE_COLOR.system) }, 'Replying to ' + replyTo.by + ': '), snippet(replyTo.body, 120)] : []));
+    if (replyTo) ta.focus();
+  }
+  function jumpTo(mid) {
+    const n = list.querySelector('[data-mid="' + String(mid).replace(/"/g, '') + '"]');
+    if (!n) return;
+    n.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    n.classList.remove('flash'); void n.offsetWidth; n.classList.add('flash');
+  }
 
   function paint() {
     const stick = nearBottom() || !list.dataset.painted;
@@ -164,9 +202,15 @@ export function threadChat(opts) {
       const cont = prev && prev.role === m.role && sender(prev) === sender(m) && isMine(prev) === mine && (d - new Date(prev.at || Date.now())) < 5 * 60e3;
       const tick = m._state === 'sending' ? ' 🕓' : m._state === 'failed' ? ' ⚠' : mine ? ' ✓' : '';
       const meta = E('span', { class: 'tc-meta' }, fmt(d, o.tz, { hour: 'numeric', minute: '2-digit' }) + (cont ? '' : ' ' + o.tzLabel) + tick);
-      const row = E('div', { class: 'tc-row' + (mine ? ' me' : '') + (cont ? ' cont' : '') + (m._state === 'failed' ? ' failed' : '') }, [
-        !mine && !cont ? E('div', { class: 'tc-name', style: 'color:' + (ROLE_COLOR[m.role] || ROLE_COLOR.system) }, sender(m) + (m.role === 'dispatcher' ? ' · dispatcher' : m.role === 'carrier' ? ' · carrier' : '')) : null,
-        E('div', { class: 'tc-b' }, richText(m.body).concat([meta])),
+      const q = m.reply_to;
+      const quote = q ? E('span', { class: 'tc-q', role: 'button', tabindex: '0', title: 'Show the original message', onClick: () => jumpTo(q.id), onKeydown: (e) => { if (e.key === 'Enter') jumpTo(q.id); } },
+        [E('b', { style: mine ? '' : 'color:' + (ROLE_COLOR[q.role] || ROLE_COLOR.system) }, q.by || 'Message'), snippet(q.body, 160)]) : null;
+      const showName = !cont && (!mine || m.role === 'staff');
+      const canReply = !m._state && !readOnly() && m.id && !String(m.id).startsWith('tmp-');
+      const row = E('div', { class: 'tc-row' + (mine ? ' me' : '') + (cont ? ' cont' : '') + (m._state === 'failed' ? ' failed' : ''), 'data-mid': m.id }, [
+        showName ? E('div', { class: 'tc-name', style: 'color:' + (ROLE_COLOR[m.role] || ROLE_COLOR.system) }, sender(m) + (m.role === 'dispatcher' ? ' · dispatcher' : m.role === 'carrier' ? ' · carrier' : '')) : null,
+        E('div', { class: 'tc-b' }, (quote ? [quote] : []).concat(richText(m.body), [meta])),
+        canReply ? E('button', { class: 'tc-act', type: 'button', 'aria-label': 'Reply to this message', onClick: () => setReply(m) }, '↩ Reply') : null,
         m._state === 'failed' ? E('div', { class: 'tc-fail' }, [m._err || 'Not sent.', E('button', { type: 'button', onClick: () => retry(m) }, 'Retry'), E('button', { type: 'button', onClick: () => { pending = pending.filter((x) => x !== m); paint(); } }, 'Delete')]) : null,
       ]);
       kids.push(row); prev = m;
@@ -185,6 +229,8 @@ export function threadChat(opts) {
   function applyStatus() {
     const r = readOnly();
     ta.disabled = r; comp.style.display = r ? 'none' : ''; foot.style.display = r ? 'none' : '';
+    deptSel.style.display = viewerRole === 'staff' && !r ? '' : 'none';
+    if (r && replyTo) setReply(null);
     ro.style.display = r ? '' : 'none';
     ro.textContent = r ? 'This assignment is ' + status + ' — the thread is read-only.' : '';
     sync();
@@ -214,7 +260,7 @@ export function threadChat(opts) {
 
   async function deliver(m) {
     try {
-      const r = await dispatcherThreadSend(id, m.body);
+      const r = await dispatcherThreadSend(id, m.body, { replyTo: m._replyId || null, dept: m._dept || null });
       if (r && r.error) throw new Error(r.error);
       pending = pending.filter((x) => x !== m);
       lastId = null; await load(false);
@@ -225,13 +271,18 @@ export function threadChat(opts) {
   function send() {
     const body = ta.value.replace(/\s+$/, '');
     if (!body.trim() || body.length > MAX || readOnly()) return;
-    const m = { id: 'tmp-' + Date.now(), role: viewerRole || 'staff', body, at: new Date().toISOString(), mine: true, _state: 'sending' };
-    pending.push(m); ta.value = ''; grow(); sync(); paint(); toBottom(); ta.focus();
+    const staff = (viewerRole || 'staff') === 'staff';
+    const m = { id: 'tmp-' + Date.now(), role: viewerRole || 'staff', body, at: new Date().toISOString(), mine: true, _state: 'sending',
+      _replyId: replyTo ? replyTo.id : null, _dept: staff ? deptSel.value : null,
+      by: staff ? deptLabel(deptSel.value) : undefined,
+      reply_to: replyTo ? { id: replyTo.id, by: replyTo.by, body: replyTo.body, role: replyTo.role } : null };
+    pending.push(m); ta.value = ''; setReply(null); grow(); sync(); paint(); toBottom(); ta.focus();
     deliver(m);
   }
 
   ta.addEventListener('input', () => { grow(); sync(); });
   ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && replyTo) { e.preventDefault(); setReply(null); return; }
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !touch()) { e.preventDefault(); send(); }
     else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(); }
   });
