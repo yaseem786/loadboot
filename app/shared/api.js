@@ -1097,7 +1097,11 @@ export const carrierUploadDocument = async ({ type, fileName, filePath, aiVerdic
   const { getClient } = await import('./supabaseClient.js');
   const sb = await getClient();
   const { error } = await sb.from('documents').insert({ type, file_name: fileName, file_path: filePath, ...(aiVerdict && typeof aiVerdict === 'object' && !Array.isArray(aiVerdict) ? { ai_verdict: { ...aiVerdict, overridden: aiVerdict.verdict === 'reject' } } : {}) });
-  if (error) throw new Error(error.message || 'Could not save the document.');
+  if (error) {
+    // bl_doc_0570: duplicate guard refused the row — remove the just-uploaded copy so no orphan file stays in storage
+    if (/^Duplicate file/i.test(error.message || '')) { try { await sb.storage.from('documents').remove([filePath]); } catch (_) {} }
+    throw new Error(error.message || 'Could not save the document.');
+  }
   return true;
 };
 export const carrierListDocuments = async () => {
