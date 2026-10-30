@@ -36,7 +36,7 @@
 //      verbatim. There is no "send anyway".
 //
 // DEEP LINKS — every screen state lives in the hash, so Back, refresh and shared links all work:
-//   #/mailbox                              Inbox (Primary)
+//   #/mailbox                              Needs reply (work queue, bl_mail_0579); Primary is ?folder=inbox
 //   #/mailbox?folder=updates|starred|snoozed|sent|drafts|all|trash
 //   #/mailbox?label=dispatch@loadboot.com  one mailbox; combines with folder= and q=
 //   #/mailbox?label=billing@loadboot.com&folder=sent   that mailbox's Sent
@@ -105,6 +105,7 @@ const WORK_VIEWS = [
 ];
 const WORK_IDS = WORK_VIEWS.map(f => f.id);
 const FOLDER_IDS = FOLDERS.concat(MORE_FOLDERS).map(f => f.id).concat(WORK_IDS);
+const DEFAULT_FOLDER = 'needs_reply';   // bl_mail_0579: the Mailbox opens on the work queue, soonest deadline first
 const serverFolder = (f) => f === 'updates' ? 'system' : WORK_IDS.includes(f) ? 'all' : f;
 const ROLES = [
   { id: 'carrier', label: 'Carrier' }, { id: 'broker', label: 'Broker' }, { id: 'shipper', label: 'Shipper' },
@@ -297,7 +298,7 @@ export function renderMailbox(host, query) {
 
 function createMailbox(host) {
   const S = {
-    folder: 'inbox', label: '', q: '', thread: null,
+    folder: DEFAULT_FOLDER, label: '', q: '', thread: null,
     threads: [], total: 0, cursors: [null], nextBefore: null, listLoaded: false, listKey: '',
     sel: new Set(), stats: null, canSend: false, canDraft: can('comm.send'),
     railCollapsed: window.innerWidth < 1280, moreOpen: false,
@@ -375,7 +376,7 @@ function createMailbox(host) {
   }
   function hashFor(p) {
     const q = new URLSearchParams();
-    if (p.folder && p.folder !== 'inbox') q.set('folder', p.folder);
+    if (p.folder && p.folder !== DEFAULT_FOLDER) q.set('folder', p.folder);
     if (p.label) q.set('label', p.label);
     if (p.role) q.set('role', p.role);
     if (p.q) q.set('q', p.q);
@@ -396,7 +397,7 @@ function createMailbox(host) {
   function hrefFor(patch) { return hashFor(Object.assign({ folder: S.folder, label: S.label, q: S.q, role: S.role }, patch)); }
 
   function apply(q, opts = {}) {
-    const folder = FOLDER_IDS.includes(q.get('folder')) ? q.get('folder') : 'inbox';
+    const folder = FOLDER_IDS.includes(q.get('folder')) ? q.get('folder') : DEFAULT_FOLDER;
     const label = (q.get('label') || '').trim().toLowerCase();
     const search = q.get('q') || '';
     const thread = q.get('thread') || null;
@@ -503,7 +504,7 @@ function createMailbox(host) {
   function boxIcon(b, size = 18) { return el('span', { class: 'gm-boxic', style: '--bx:' + safeColor(b.color) }, ic(b.icon || 'label', size)); }
   function boxTag(addr) { const b = boxMeta(addr); return el('span', { class: 'gm-boxtag', style: '--bx:' + safeColor(b.color), title: b.mailbox }, b.label); }
   function sigHtml(addr) { const b = boxMeta(addr); return b && b.signature_html ? String(b.signature_html) : ''; }
-  function goBox(addr, onPick) { onPick && onPick(); nav({ label: addr, folder: 'inbox', q: '', thread: null }); }
+  function goBox(addr, onPick) { onPick && onPick(); nav({ label: addr, folder: WORK_IDS.includes(S.folder) ? S.folder : 'inbox', q: '', thread: null }); }
 
   function folderCount(f) {
     const c = !f.count ? 0 : f.work ? Number((S.work || {})[f.count] || 0) : Number(scopeFolders()[f.count] || 0);
@@ -832,7 +833,7 @@ function createMailbox(host) {
     ]);
     const chips = [];
     const role = String(t.sender_role || '');
-    if (t.has_in && role && role !== 'internal' && role !== 'system') chips.push(el('span', { class: 'gm-wk r-' + role, title: 'Sender: ' + role + (t.org_name ? ' · ' + t.org_name : '') }, t.org_name ? role + ' · ' + t.org_name : role));
+    if (t.has_in && role && !['internal', 'system', 'unknown'].includes(role)) chips.push(el('span', { class: 'gm-wk r-' + role, title: 'Sender: ' + role + (t.org_name ? ' · ' + t.org_name : '') }, t.org_name ? role + ' · ' + t.org_name : role));
     if (t.reply_due_at) chips.push(el('span', { class: 'gm-wk due l' + Number(t.sla_level || 0), title: 'Reply by ' + fmtDateTime(t.reply_due_at) + (t.urgency ? ' · ' + t.urgency : '') + (t.urgency_reason ? ' — ' + t.urgency_reason : '') }, (t.urgency === 'urgent' ? 'URGENT · ' : '') + dueText(t.reply_due_at)));
     if (t.follow_up) chips.push(el('span', { class: 'gm-wk fu', title: 'We replied; no answer in 3 business days' }, 'follow up'));
     if (t.work_status === 'waiting' && S.folder !== 'waiting') chips.push(el('span', { class: 'gm-wk wait' }, 'waiting on them'));
