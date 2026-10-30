@@ -59,7 +59,7 @@ import { fmtDateTime, askConfirm, openDrawer } from '../../shared/ui/components.
 import {
   mailList, mailThread, mailDraftSave, mailDraftDiscard, mailSend, mailStats, mailSetFolder,
   mailThreadAction, mailComposeSave,
-  mailWorkCounts, mailRoleCounts, mailOwners, mailAssign, mailSetStatus, mailViewing,
+  mailWorkCounts, mailRoleCounts, mailOwners, mailAssign, mailSetStatus, mailViewing, mailSenderCard,
 } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
@@ -475,7 +475,7 @@ function createMailbox(host) {
     if (!S.thread) paintMain();
   }
 
-  function reloadAll() { S.listLoaded = false; S.stats = null; loadList({}); loadStats(); }
+  function reloadAll() { S.listLoaded = false; S.stats = null; cardCache.clear(); loadList({}); loadStats(); }
 
   // ── rail ──
   function toggleRail() {
@@ -1032,6 +1032,7 @@ function createMailbox(host) {
   async function openThread(key, markRead) {
     const seq = ++threadSeq;
     S.thread = key; S.openKey = key; S.msgs = null; S.reply = null; S.expanded = new Set(); S.showImages = new Set();
+    loadCard(key);
     root.classList.add('in-thread');
     progress.hidden = false;
     paintThread();
@@ -1059,6 +1060,93 @@ function createMailbox(host) {
     if (draft) S.reply = { mode: 'reply', html: draft.body_html || '', draftId: draft.id, savedAt: draft.created_at, dirty: false };
     paintThread();
     window.scrollTo(0, 0);
+  }
+
+  // bl_mail_0582 Phase 3 #1: the sender's LoadBoot record beside the conversation (cc_mail_sender_card).
+  // Fetched in parallel with the thread and painted into its own <aside>, so a late answer never repaints the
+  // reply editor. Cached per thread for the session; Refresh / reloadAll clear it.
+  const cardCache = new Map();
+  let sideEl = null;
+  async function loadCard(key, force) {
+    if (!force && cardCache.has(key)) return;
+    cardCache.set(key, null);
+    let c;
+    try { c = await mailSenderCard(key); c = c || { none: true }; }
+    catch (e) { c = { error: mailErr(e) }; }
+    cardCache.set(key, c);
+    if (S.thread === key && sideEl && sideEl.isConnected) mount(sideEl, cardBody(key));
+  }
+  const ORG_HREF = { carrier: '#/carrier?id=', broker: '#/broker?id=', shipper: '#/shipper?id=' };
+  const REQ_TXT = { missing: 'missing', pending: 'in review', rejected: 'rejected', expired: 'expired' };
+  function spSec(title, kids) { return el('section', { class: 'gm-sp-sec' }, [el('h4', null, title), ...kids]); }
+  function spLine(k, v, cls) { return el('div', { class: 'gm-sp-ln' + (cls ? ' ' + cls : '') }, [el('span', { class: 'gm-sp-k' }, k), el('span', { class: 'gm-sp-v' }, v)]); }
+  const unknownTxt = () => el('span', { class: 'gm-sp-unk' }, 'unknown');
+  function touch(x, label) {
+    if (!x || !x.at) return spLine(label, 'none on record');
+    const dir = x.direction === 'in' || x.direction === 'inbound' ? 'from them' : 'from us';
+    const extra = x.status && label === 'Call' ? ' · ' + x.status + (x.duration_sec ? ' ' + Math.round(x.duration_sec / 60) + ' min' : '') : '';
+    return spLine(label, relAgo(x.at) + ' · ' + dir + extra);
+  }
+  function cardBody(key) {
+    const c = cardCache.get(key);
+    if (!c) return el('div', { class: 'gm-sp-load' }, 'Loading sender…');
+    if (c.error) return el('div', { class: 'gm-sp-load' }, [c.error, ' ', el('button', { type: 'button', class: 'gm-linkbtn', onClick: () => loadCard(key, true) }, 'Try again')]);
+    if (c.none) return el('div', { class: 'gm-sp-load' }, 'No outside sender on this conversation.');
+    const o = c.org || null;
+    const who = (c.contact && c.contact.name) || c.peer_name || c.email;
+    const role = String(c.role || 'unknown');
+    const head = el('div', { class: 'gm-sp-head' }, [
+      avatar(who, 40),
+      el('div', { class: 'gm-sp-who' }, [
+        el('div', { class: 'gm-sp-name' }, who),
+        el('div', { class: 'gm-sp-mail' }, c.email),
+        c.contact && c.contact.phone ? el('div', { class: 'gm-sp-mail' }, c.contact.phone) : null,
+        el('div', null, [el('span', { class: 'gm-wk r-' + role }, role), o && o.is_demo ? el('span', { class: 'gm-wk' }, 'demo account') : null]),
+      ]),
+    ]);
+    const secs = [head];
+    if (!c.matched || !o) {
+      secs.push(el('div', { class: 'gm-sp-note' }, 'This address is not matched to a LoadBoot carrier, broker or shipper.'));
+    } else {
+      const href = ORG_HREF[o.kind] && can(o.kind === 'carrier' ? 'carriers.view' : 'comm.view') ? ORG_HREF[o.kind] + encodeURIComponent(o.id) : null;
+      secs.push(spSec(titleCase(o.kind || 'organization'), [
+        el('div', { class: 'gm-sp-org' }, href ? el('a', { href }, o.name || '(no name)') : (o.name || '(no name)')),
+        spLine('Status', o.status || unknownTxt()),
+        spLine('MC', o.mc || 'not on file'),
+        spLine('DOT', o.dot || 'not on file'),
+        o.kind === 'carrier' && c.onboarding_stage ? spLine('Onboarding', String(c.onboarding_stage).replace(/_/g, ' ')) : null,
+      ]));
+      if (o.kind === 'carrier') {
+        const req = Array.isArray(c.requirements) ? c.requirements : [];
+        const gaps = req.filter(r => r.status !== 'valid');
+        secs.push(spSec('Documents', gaps.length
+          ? gaps.map(r => el('div', { class: 'gm-sp-ln gm-sp-gap' }, [el('span', { class: 'gm-sp-k' }, r.label), el('span', { class: 'gm-sp-v s-' + r.status }, REQ_TXT[r.status] || r.status)]))
+          : [el('div', { class: 'gm-sp-ok' }, 'All ' + req.length + ' required documents valid')]));
+        const d = c.dispatcher;
+        secs.push(spSec('Dispatcher', [d ? spLine(d.name || 'Assigned', d.status === 'paused' ? 'paused' : 'active') : el('div', { class: 'gm-sp-note' }, 'No active dispatcher')]));
+      }
+      const loads = Array.isArray(c.open_loads) ? c.open_loads : [];
+      secs.push(spSec('Open loads' + (c.open_loads_count ? ' (' + c.open_loads_count + ')' : ''), loads.length
+        ? loads.map(l => el('div', { class: 'gm-sp-load-r' }, [
+            el('div', null, (l.origin || '?') + ' → ' + (l.destination || '?')),
+            el('div', { class: 'gm-sp-mut' }, String(l.status || '').replace(/_/g, ' ') + (l.pickup_date ? ' · pickup ' + listDate(l.pickup_date + 'T12:00:00') : '')),
+          ]))
+        : [el('div', { class: 'gm-sp-note' }, 'None open')]));
+      secs.push(spSec('Last contact', c.comms_known
+        ? [touch(c.last_whatsapp, 'WhatsApp'), touch(c.last_sms, 'SMS'), touch(c.last_call, 'Call')]
+        : [el('div', { class: 'gm-sp-note' }, 'WhatsApp, SMS and calls are only linked to carriers — unknown for this ' + (o.kind || 'sender') + '.')]));
+    }
+    const mails = Array.isArray(c.emails) ? c.emails : [];
+    secs.push(spSec('Recent emails', mails.length ? mails.map(m => {
+      const here = m.thread_key === key;
+      return el(here ? 'div' : 'a', Object.assign({ class: 'gm-sp-mailr' + (here ? ' here' : '') },
+        here ? {} : { href: hrefFor({ thread: m.thread_key }), onClick: (e) => { e.preventDefault(); flushReply(); nav({ thread: m.thread_key }, { markRead: true }); } }), [
+        el('span', { class: 'gm-sp-dir', title: m.direction === 'in' ? 'Received' : 'Sent' }, m.direction === 'in' ? '↙' : '↗'),
+        el('span', { class: 'gm-sp-subj' }, decodeSubject(m.subject) || '(no subject)'),
+        el('span', { class: 'gm-sp-mut' }, here ? 'this one' : listDate(m.created_at)),
+      ]);
+    }) : [el('div', { class: 'gm-sp-note' }, 'None')]));
+    return secs;
   }
 
   // bl_mail_0577: owner, deadline and "someone else is on this" above the conversation
@@ -1150,13 +1238,17 @@ function createMailbox(host) {
     });
     flushFolded();
 
+    sideEl = el('aside', { class: 'gm-sp', 'aria-label': 'Sender record' }, cardBody(S.thread));
     mount(mainHost, [
       threadToolbar(msgs),
-      el('div', { class: 'gm-th-scroll' }, [
-        subj,
-        workBanner(wrow),
-        el('div', { class: 'gm-msgs' }, cards),
-        replyArea(lastIn, head, subject),
+      el('div', { class: 'gm-th-wrap' }, [
+        el('div', { class: 'gm-th-scroll' }, [
+          subj,
+          workBanner(wrow),
+          el('div', { class: 'gm-msgs' }, cards),
+          replyArea(lastIn, head, subject),
+        ]),
+        sideEl,
       ]),
     ]);
   }
@@ -1796,6 +1888,22 @@ function injectStyleOnce() {
 .gm-avbtn{border:0;background:none;padding:0;cursor:pointer;border-radius:50%;line-height:0}
 /* thread */
 .gm-th-scroll{flex:1;overflow-y:auto;min-height:0;padding-bottom:24px}
+/* bl_mail_0582 sender record panel */
+.gm-th-wrap{flex:1;min-height:0;display:flex}.gm-th-wrap>.gm-th-scroll{min-width:0}
+.gm-sp{width:300px;flex:none;overflow-y:auto;border-left:1px solid var(--gm-line);padding:16px 16px 24px;font-size:13px;color:#3c4043}
+.gm-sp-head{display:flex;gap:12px;align-items:flex-start;padding-bottom:12px}.gm-sp-who{min-width:0}
+.gm-sp-name{font:500 15px/20px "Google Sans",Roboto,Arial,sans-serif;color:var(--gm-ink);word-break:break-word}
+.gm-sp-mail{color:var(--gm-mut);word-break:break-all;margin-bottom:4px}
+.gm-sp-sec{border-top:1px solid var(--gm-line);padding:10px 0}.gm-sp-sec h4{margin:0 0 6px;font:500 12px/16px Roboto,Arial,sans-serif;letter-spacing:.3px;text-transform:uppercase;color:var(--gm-mut)}
+.gm-sp-org{font-weight:500;color:var(--gm-ink);margin-bottom:4px}.gm-sp-org a{color:var(--gm-blue);text-decoration:none}.gm-sp-org a:hover{text-decoration:underline}
+.gm-sp-ln{display:flex;justify-content:space-between;gap:8px;padding:2px 0}.gm-sp-k{color:var(--gm-mut)}.gm-sp-v{text-align:right}
+.gm-sp-v.s-missing,.gm-sp-v.s-rejected,.gm-sp-v.s-expired{color:#b3261e;font-weight:500}.gm-sp-v.s-pending{color:#8a5a00}
+.gm-sp-ok{color:#146c2e}.gm-sp-note,.gm-sp-load{color:var(--gm-mut)}.gm-sp-unk{color:var(--gm-mut);font-style:italic}.gm-sp-mut{color:var(--gm-mut);font-size:12px}
+.gm-sp-load-r{padding:3px 0}
+.gm-sp-mailr{display:grid;grid-template-columns:16px 1fr auto;gap:6px;align-items:baseline;padding:4px 6px;margin:0 -6px;border-radius:6px;color:inherit;text-decoration:none}
+a.gm-sp-mailr:hover{background:var(--gm-hov)}.gm-sp-mailr.here{background:var(--gm-bg)}.gm-sp-subj{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gm-sp-dir{color:var(--gm-mut)}
+@media (max-width:1100px){.gm-th-wrap{flex-direction:column;overflow-y:auto}.gm-th-wrap>.gm-th-scroll{flex:none;overflow:visible}.gm-sp{width:auto;border-left:0;border-top:1px solid var(--gm-line);overflow:visible;padding:8px 16px 4px 72px}}
+@media (max-width:780px){.gm-th-wrap{overflow:visible}.gm-sp{padding:8px 16px 4px}}
 .gm-th-head{display:flex;align-items:flex-start;gap:8px;padding:20px 16px 8px 72px}
 .gm-th-subj{flex:1;margin:0;font:400 22px/28px "Google Sans",Roboto,Arial,sans-serif;color:var(--gm-ink);word-break:break-word}
 .gm-chip-x{font-size:12px;vertical-align:4px;margin-left:4px}

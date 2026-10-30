@@ -898,6 +898,8 @@ export const mailViewing = (thread) => rpc('cc_mail_viewing', { p_thread: thread
 // Move a whole thread between Inbox and System (comm.manage, audited). System = auto-read, not counted.
 export const mailSetFolder = (thread, folder) => rpc('cc_mail_set_folder', { p_thread: thread, p_folder: folder });
 export const mailThread = (thread, markRead = true) => rpc('cc_mail_thread', { p_thread: thread, p_mark_read: markRead !== false });
+// bl_mail_0582 — sender's LoadBoot record beside an open conversation (comm.view, read-only).
+export const mailSenderCard = (thread) => rpc('cc_mail_sender_card', { p_thread: thread });
 export const mailMark = (thread, read = true) => rpc('cc_mail_mark', { p_thread: thread, p_read: read !== false });
 export const mailDraftSave = (thread, bodyHtml) => rpc('cc_mail_draft_save', { p_thread: thread, p_body_html: bodyHtml });
 export const mailDraftDiscard = (thread) => rpc('cc_mail_draft_discard', { p_thread: thread });
