@@ -153,6 +153,9 @@ const STATUSES = [
 export function renderDocuments(host) {
   let state = { status: 'pending' };
   const listHost = el('div', { class: 'cc-table-wrap' });
+  // bl_mail_0583: #/documents?open=<id> (CC Mailbox "Review now") opens that document once the queue loads.
+  let wantOpen = null;
+  try { wantOpen = new URLSearchParams(String(location.hash).split('?')[1] || '').get('open'); } catch (_) { wantOpen = null; }
 
   async function load() {
     showLoading(listHost, 'Loading documents…');
@@ -176,6 +179,7 @@ export function renderDocuments(host) {
       ]))),
     ]);
     mount(listHost, table);
+    if (wantOpen) { const hit = rows.find(r => r.id === wantOpen); wantOpen = null; if (hit) openDoc(hit); }
   }
 
   function openDoc(d) {

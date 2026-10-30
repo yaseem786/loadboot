@@ -900,6 +900,9 @@ export const mailSetFolder = (thread, folder) => rpc('cc_mail_set_folder', { p_t
 export const mailThread = (thread, markRead = true) => rpc('cc_mail_thread', { p_thread: thread, p_mark_read: markRead !== false });
 // bl_mail_0582 — sender's LoadBoot record beside an open conversation (comm.view, read-only).
 export const mailSenderCard = (thread) => rpc('cc_mail_sender_card', { p_thread: thread });
+// bl_mail_0583 — attachments in this thread that can be fetched from the mail server (IMAP-connected mailboxes,
+// today dispatch@) + the carrier owner's user id for "Attach to carrier" (documents.review).
+export const mailAttachments = (thread, org) => rpc('cc_mail_attachments', { p_thread: thread, p_org: org ?? null });
 export const mailMark = (thread, read = true) => rpc('cc_mail_mark', { p_thread: thread, p_read: read !== false });
 export const mailDraftSave = (thread, bodyHtml) => rpc('cc_mail_draft_save', { p_thread: thread, p_body_html: bodyHtml });
 export const mailDraftDiscard = (thread) => rpc('cc_mail_draft_discard', { p_thread: thread });

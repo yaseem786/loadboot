@@ -60,7 +60,9 @@ import {
   mailList, mailThread, mailDraftSave, mailDraftDiscard, mailSend, mailStats, mailSetFolder,
   mailThreadAction, mailComposeSave,
   mailWorkCounts, mailRoleCounts, mailOwners, mailAssign, mailSetStatus, mailViewing, mailSenderCard,
+  mailAttachments, staffUploadDocument, dmailAct,
 } from '../../shared/api.js';
+import { uploadDocumentForCarrier } from '../../shared/storage.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 import { decodeMessage, decodeSubject, previewOf } from '../../shared/mime.js';
@@ -1087,6 +1089,78 @@ function createMailbox(host) {
     const extra = x.status && label === 'Call' ? ' · ' + x.status + (x.duration_sec ? ' ' + Math.round(x.duration_sec / 60) + ' min' : '') : '';
     return spLine(label, relAgo(x.at) + ' · ' + dir + extra);
   }
+  // bl_mail_0583 — Phase 3 #2: put an emailed file onto the carrier's document slot. The relay cuts body_text at
+  // 20,000 chars, so the bytes come from the mail server through the dmail "attachment" action (IMAP-connected
+  // mailboxes only — today dispatch@). Anything else: save it from webmail and pick it here. Same audited path as
+  // staffUpload.js (uploadDocumentForCarrier + cc_staff_upload_document, source 'email'); approval stays a human step.
+  const attCache = new Map();
+  const DOC_TYPES = [['', '— what is it? —'], ['insurance', 'Insurance (COI)'], ['authority', 'MC authority'], ['w9', 'W-9'],
+    ['bank_check', 'Bank verification'], ['noa', 'Factoring NOA'], ['mcs150', 'MCS-150'], ['other', 'Other']];
+  function guessType(name) {
+    const n = String(name || '').toLowerCase();
+    if (/\bcoi\b|insur|acord|certificate/.test(n)) return 'insurance';
+    if (/w[-_ ]?9/.test(n)) return 'w9';
+    if (/authority|\bmc[-_ ]?\d|\bmc\b|operating/.test(n)) return 'authority';
+    if (/\bnoa\b|factor|assignment/.test(n)) return 'noa';
+    if (/mcs[-_ ]?150/.test(n)) return 'mcs150';
+    if (/void|cheque|check|bank/.test(n)) return 'bank_check';
+    return '';
+  }
+  async function loadAtt(key, org, force) {
+    const ck = key + '|' + org;
+    if (!force && attCache.has(ck)) return;
+    attCache.set(ck, null);
+    let r; try { r = await mailAttachments(key, org); } catch (e) { r = { error: mailErr(e) }; }
+    attCache.set(ck, r || { items: [] });
+    if (S.thread === key && sideEl && sideEl.isConnected) mount(sideEl, cardBody(key));
+  }
+  function sizeTxt(b) { b = Number(b) || 0; return b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+  async function putOnFile(carrier, file, type, note) {
+    const up = await uploadDocumentForCarrier(file, type, carrier.user_id);
+    return staffUploadDocument({ carrier: carrier.user_id, type, path: up.path, fileName: up.fileName, source: 'email', sourceNote: note });
+  }
+  function attachRow(carrier, label, sub, getFile, note) {
+    const sel = el('select', { class: 'gm-sp-sel' }, DOC_TYPES.map(([v, l]) => el('option', { value: v }, l)));
+    sel.value = guessType(label);
+    const out = el('div', { class: 'gm-sp-mut' });
+    const btn = el('button', { type: 'button', class: 'gm-sp-btn', onClick: async () => {
+      if (!sel.value) { out.textContent = 'Choose what the document is first.'; return; }
+      btn.disabled = true; btn.textContent = 'Attaching…'; out.textContent = '';
+      try {
+        const file = await getFile(); if (!file) throw new Error('Choose the file first.');
+        const r = await putOnFile(carrier, file, sel.value, note());
+        mount(out, ['On ' + (carrier.name || 'their') + ' file · in review. ', el('a', { href: '#/documents?open=' + encodeURIComponent((r && r.id) || '') }, 'Review now')]);
+        btn.textContent = 'Attached'; toast('Attached to ' + (carrier.name || 'carrier') + ' — still needs approving', 'success');
+      } catch (e) { out.textContent = humanizeError(e); btn.disabled = false; btn.textContent = 'Attach'; }
+    } }, 'Attach');
+    return el('div', { class: 'gm-sp-att' }, [el('div', { class: 'gm-sp-attn' }, [label, sub ? el('span', { class: 'gm-sp-mut' }, ' · ' + sub) : null]),
+      el('div', { class: 'gm-sp-attr' }, [sel, btn]), out]);
+  }
+  function attachSection(key, o) {
+    const ck = key + '|' + o.id;
+    const r = attCache.get(ck);
+    if (r === undefined) { loadAtt(key, o.id); return [el('div', { class: 'gm-sp-note' }, 'Checking attachments…')]; }
+    if (r === null) return [el('div', { class: 'gm-sp-note' }, 'Checking attachments…')];
+    if (r.error) return [el('div', { class: 'gm-sp-note' }, [r.error, ' ', el('button', { type: 'button', class: 'gm-linkbtn', onClick: () => loadAtt(key, o.id, true) }, 'Try again')])];
+    const carrier = r.carrier;
+    if (!carrier || !carrier.user_id) return [el('div', { class: 'gm-sp-note' }, 'This carrier has no owner account, so a file cannot be put on its record yet.')];
+    const rows = (r.items || []).map(a => attachRow(carrier, a.name || 'attachment', sizeTxt(a.size),
+      async () => {
+        const blob = await dmailAct({ action: 'attachment', account: a.account, id: a.dmail_id, idx: a.idx });
+        if (!(blob instanceof Blob)) throw new Error('The mail server did not return the file — try again.');
+        return new File([blob], a.name || 'attachment', { type: a.type || blob.type || 'application/octet-stream' });
+      },
+      () => 'Emailed by ' + (a.from || 'sender') + ' on ' + fmtDateTime(a.at) + ' — "' + (decodeSubject(a.subject) || '(no subject)') + '" (CC Mailbox)'));
+    const pick = el('input', { type: 'file', class: 'gm-sp-file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic' });
+    const manual = attachRow(carrier, 'Upload a file instead', 'saved from webmail', async () => pick.files && pick.files[0],
+      () => 'Emailed by ' + (cardCache.get(key)?.email || 'sender') + ' — saved from webmail and attached in CC Mailbox');
+    manual.insertBefore(pick, manual.children[1]);
+    pick.addEventListener('change', () => { const f = pick.files && pick.files[0]; const s = manual.querySelector('select'); if (f && s && !s.value) s.value = guessType(f.name); });
+    return [
+      rows.length ? null : el('div', { class: 'gm-sp-note' }, 'No file here can be fetched from the mail server (only dispatch@ is connected over IMAP). Save it from webmail and pick it below.'),
+      ...rows, manual,
+    ];
+  }
   function cardBody(key) {
     const c = cardCache.get(key);
     if (!c) return el('div', { class: 'gm-sp-load' }, 'Loading sender…');
@@ -1122,6 +1196,7 @@ function createMailbox(host) {
         secs.push(spSec('Documents', gaps.length
           ? gaps.map(r => el('div', { class: 'gm-sp-ln gm-sp-gap' }, [el('span', { class: 'gm-sp-k' }, r.label), el('span', { class: 'gm-sp-v s-' + r.status }, REQ_TXT[r.status] || r.status)]))
           : [el('div', { class: 'gm-sp-ok' }, 'All ' + req.length + ' required documents valid')]));
+        if (can('documents.review')) secs.push(spSec('Attach to carrier', attachSection(key, o)));
         const d = c.dispatcher;
         secs.push(spSec('Dispatcher', [d ? spLine(d.name || 'Assigned', d.status === 'paused' ? 'paused' : 'active') : el('div', { class: 'gm-sp-note' }, 'No active dispatcher')]));
       }
@@ -1898,7 +1973,7 @@ function injectStyleOnce() {
 .gm-sp-org{font-weight:500;color:var(--gm-ink);margin-bottom:4px}.gm-sp-org a{color:var(--gm-blue);text-decoration:none}.gm-sp-org a:hover{text-decoration:underline}
 .gm-sp-ln{display:flex;justify-content:space-between;gap:8px;padding:2px 0}.gm-sp-k{color:var(--gm-mut)}.gm-sp-v{text-align:right}
 .gm-sp-v.s-missing,.gm-sp-v.s-rejected,.gm-sp-v.s-expired{color:#b3261e;font-weight:500}.gm-sp-v.s-pending{color:#8a5a00}
-.gm-sp-ok{color:#146c2e}.gm-sp-note,.gm-sp-load{color:var(--gm-mut)}.gm-sp-unk{color:var(--gm-mut);font-style:italic}.gm-sp-mut{color:var(--gm-mut);font-size:12px}
+.gm-sp-att{border:1px solid var(--gm-line);border-radius:8px;padding:8px;margin:6px 0}.gm-sp-attn{word-break:break-all;font-size:13px}.gm-sp-attr{display:flex;gap:6px;margin:6px 0 2px}.gm-sp-sel{flex:1;min-width:0;font-size:12px;padding:4px;border:1px solid var(--gm-line);border-radius:6px;background:transparent;color:inherit}.gm-sp-btn{font-size:12px;padding:4px 10px;border-radius:6px;border:0;background:#0b57d0;color:#fff;cursor:pointer}.gm-sp-btn:disabled{opacity:.6;cursor:default}.gm-sp-file{font-size:12px;max-width:100%;margin-top:4px}.gm-sp-ok{color:#146c2e}.gm-sp-note,.gm-sp-load{color:var(--gm-mut)}.gm-sp-unk{color:var(--gm-mut);font-style:italic}.gm-sp-mut{color:var(--gm-mut);font-size:12px}
 .gm-sp-load-r{padding:3px 0}
 .gm-sp-mailr{display:grid;grid-template-columns:16px 1fr auto;gap:6px;align-items:baseline;padding:4px 6px;margin:0 -6px;border-radius:6px;color:inherit;text-decoration:none}
 a.gm-sp-mailr:hover{background:var(--gm-hov)}.gm-sp-mailr.here{background:var(--gm-bg)}.gm-sp-subj{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gm-sp-dir{color:var(--gm-mut)}
