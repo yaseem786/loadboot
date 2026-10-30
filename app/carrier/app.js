@@ -718,6 +718,15 @@ function authScreen() {
   ];
   const ccSel = h('select', { class: 'cp-in', style: 'width:112px;flex:none' }, CC_LIST.map(([n9, c9]) => h('option', { value: c9, title: n9 }, c9 + '  ' + n9.split(' ')[0])));
   ccSel.value = '+1';
+  // bl_dial_0581: join the country select + typed number WITHOUT doubling the code.
+  // "+1 +1 919…" / "+1 1919…" used to become "+11919…" (not a real number).
+  const joinPhone = () => {
+    const raw = phone.value.trim(); let d = raw.replace(/\D/g, ''); const cc = ccSel.value.replace(/\D/g, '');
+    if (!d) return '';
+    if (/^\s*(\+|00)/.test(raw)) { d = d.replace(/^00/, ''); return '+' + d; }      // typed a full international number
+    if (cc === '1' && d.length === 11 && d[0] === '1') d = d.slice(1);               // US/CA: leading 1 typed again
+    return '+' + cc + d;
+  };
   const phone = h('input', { class: 'cp-in', type: 'tel', placeholder: 'Mobile number', autocomplete: 'tel' });
   // 10DLC / TCR: SMS consent is a SEPARATE, OPTIONAL, UNCHECKED box. The mobile number itself is used for
   // voice dispatch and is required; texting only ever happens if the carrier ticks this box themselves.
@@ -830,7 +839,7 @@ function authScreen() {
     btn.disabled = true; btn.textContent = signup ? 'Creating…' : 'Signing in…';
     try {
       if (signup) {
-        const { data, error } = await signUp(em, pw, Object.assign({ company: company.value.trim(), name: name.value.trim(), phone: (ccSel.value + ' ' + phone.value.trim()), sms_consent: !!smsOk.checked, sms_consent_at: (smsOk.checked ? new Date().toISOString() : null), sms_consent_source: 'carrier_portal_signup_checkbox' }, window.__LB_AGENT ? { role: 'agent', intent: (AGINTENT || null), ref: (function () { try { return localStorage.getItem('lb_ref') || null; } catch (_) { return null; } })() } : { ref: (function () { try { return localStorage.getItem('lb_ref') || null; } catch (_) { return null; } })() }));
+        const { data, error } = await signUp(em, pw, Object.assign({ company: company.value.trim(), name: name.value.trim(), phone: joinPhone(), sms_consent: !!smsOk.checked, sms_consent_at: (smsOk.checked ? new Date().toISOString() : null), sms_consent_source: 'carrier_portal_signup_checkbox' }, window.__LB_AGENT ? { role: 'agent', intent: (AGINTENT || null), ref: (function () { try { return localStorage.getItem('lb_ref') || null; } catch (_) { return null; } })() } : { ref: (function () { try { return localStorage.getItem('lb_ref') || null; } catch (_) { return null; } })() }));
         if (error) throw error;
         // Supabase returns success with an empty identities array when the address is
         // already registered — it will not error, and no email is sent. Without this the
@@ -845,7 +854,7 @@ function authScreen() {
         if (!data || !data.session) { setMode(false); err.className = 'cp-err ok'; err.textContent = '✓ Account created! We emailed a confirmation link to ' + em + '. Click it (check spam too), then sign in here.'; btn.disabled = false; return; }
         // Phone OTP verification — active the moment an SMS provider (Twilio) is configured; graceful otherwise.
         try {
-          const phv = (ccSel.value + phone.value.trim()).replace(/[^\d+]/g, '');
+          const phv = joinPhone();
           if (smsOk.checked && phv && phv.replace(/\D/g, '').length >= 7) {
             const { getClient } = await import('../shared/supabaseClient.js');
             const sb = await getClient();
