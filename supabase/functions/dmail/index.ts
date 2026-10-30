@@ -1,4 +1,4 @@
-// dmail v1 (bl_dmail_0356) + alias mode (bl_dmail_0489) — Dispatcher Mailbox engine. One function, two callers:
+// dmail v1 (bl_dmail_0356) + alias mode (bl_dmail_0489) + all folders (bl_mail_0576) — Dispatcher Mailbox engine. One function, two callers:
 //   • pg_cron every minute  → header x-dmail-secret (checked by dmail_cron_check) → sync every due mailbox
 //   • the portal (user JWT) → {action, account, ...}; access is decided by the dmail_access RPC run WITH the
 //     caller's JWT (assigned dispatcher or staff). The mailbox password lives in Vault, is read here with the
@@ -16,6 +16,13 @@ const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const ROLES = ["inbox", "sent", "spam", "trash"] as const;
 type Role = typeof ROLES[number];
+// bl_mail_0576: every other selectable IMAP folder (server-rule folders such as Dispatch, Billing, DMARC) is synced too,
+// as a "box" keyed 'x:<path>' in dmail_accounts.folders; dmail_ingest decides the CC folder ('inbox' or 'archive').
+// folders['x:<path>'].sync === false skips a box. A box backfills up to X_INITIAL of its newest messages.
+const SKIP_USE = new Set(["\\Sent", "\\Trash", "\\Junk", "\\Drafts", "\\All", "\\Flagged", "\\Important"]);
+const SKIP_NAME = /^(drafts?|templates?|unread|starred|flagged|all mail|outbox|notes)$/i;
+const X_INITIAL = 1000;
+const boxPath = (acc: Any, paths: Record<string, string | null>, key: string): string | null => paths[key] ?? acc?.folders?.[key]?.path ?? null;
 const BATCH = 25, INITIAL = 200, WINDOW = 300, MAX_SRC = 20 * 1024 * 1024, MAX_ATTACH = 15 * 1024 * 1024;
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -74,14 +81,26 @@ async function syncAccount(svc: SupabaseClient, acc: Any) {
   try {
     await client.connect();
     const paths = await rolePaths(client, folders);
-    for (const role of ROLES) {
-      const path = paths[role]; if (!path) continue;
-      const lock = await client.getMailboxLock(path);
+    const boxes: [string, string, number][] = ROLES.filter((r) => paths[r]).map((r) => [r, paths[r]!, INITIAL]);
+    try {
+      const taken = new Set(Object.values(paths).filter(Boolean).map((p) => String(p).toUpperCase()));
+      for (const b of (await client.list()) as Any[]) {
+        const fl: Set<string> = b.flags instanceof Set ? b.flags : new Set(b.flags || []);
+        if (fl.has("\\Noselect") || fl.has("\\NonExistent") || SKIP_USE.has(b.specialUse) || SKIP_NAME.test(String(b.name || ""))) continue;
+        if (taken.has(String(b.path).toUpperCase())) continue;
+        const key = "x:" + b.path; if (folders[key]?.sync === false) continue;
+        boxes.push([key, b.path, X_INITIAL]);
+      }
+    } catch (e) { console.warn("dmail list:", String((e as Any)?.message || e).slice(0, 160)); }
+    for (const [role, path, initial] of boxes) {
+      let lock: Any;
+      try { lock = await client.getMailboxLock(path); }
+      catch (e) { if (role.startsWith("x:")) { console.warn("dmail box skipped:", path, String((e as Any)?.message || e).slice(0, 120)); continue; } throw e; }
       try {
         const mb: Any = client.mailbox; const uv = Number(mb.uidValidity); const uidNext = Number(mb.uidNext || 1);
         let st = folders[role] || {};
         if (st.uidvalidity && st.uidvalidity !== uv) { await svc.rpc("dmail_folder_reset", { p_account: acc.id, p_folder: role, p_uidvalidity: uv }); st = {}; }
-        let last: number = st.last_uid ?? Math.max(0, uidNext - 1 - INITIAL);
+        let last: number = st.last_uid ?? Math.max(0, uidNext - 1 - initial);
         if (mb.exists > 0 && uidNext - 1 > last) {
           const found: number[] = ((await client.search({ uid: `${last + 1}:*` }, { uid: true })) || []).filter((u: number) => u > last).sort((a: number, b: number) => a - b).slice(0, BATCH);
           if (found.length) {
@@ -100,7 +119,7 @@ async function syncAccount(svc: SupabaseClient, acc: Any) {
         const hi = uidNext - 1, lo = Math.max(1, hi - WINDOW + 1); const flags: Any[] = [];
         if (mb.exists > 0 && hi >= lo) for await (const m of client.fetch(`${lo}:${hi}`, { uid: true, flags: true }, { uid: true })) flags.push({ uid: m.uid, seen: m.flags.has("\\Seen"), starred: m.flags.has("\\Flagged"), answered: m.flags.has("\\Answered") });
         if (hi >= lo) await svc.rpc("dmail_flags_apply", { p_account: acc.id, p_folder: role, p_uidvalidity: uv, p_lo: lo, p_hi: Math.min(hi, last), p_flags: flags });
-        folders[role] = { path, uidvalidity: uv, last_uid: last };
+        folders[role] = { ...(role.startsWith("x:") ? st : {}), path, uidvalidity: uv, last_uid: last };
       } finally { lock.release(); }
     }
     await bye(client);
@@ -116,7 +135,7 @@ async function syncAccount(svc: SupabaseClient, acc: Any) {
 
 async function withFolder<T>(acc: Any, role: string, fn: (c: Any, paths: Record<Role, string | null>) => Promise<T>): Promise<T> {
   const client = imapFor(acc); await client.connect();
-  try { const paths = await rolePaths(client, acc.folders); const path = paths[role as Role]; if (!path) throw new Error("folder not found: " + role);
+  try { const paths = await rolePaths(client, acc.folders); const path = boxPath(acc, paths, role); if (!path) throw new Error("folder not found: " + role);
     const lock = await client.getMailboxLock(path); try { return await fn(client, paths); } finally { lock.release(); }
   } finally { await bye(client); }
 }
@@ -160,7 +179,7 @@ async function actSend(svc: SupabaseClient, acc: Any, uid: string, b: Any) {
   let ap: Any = null;
   try { ap = await withFolder(acc, "sent", async (c, paths) => {
       const r = await c.append(paths.sent!, rawMsg, ["\\Seen"]);
-      if (answered?.uid && answered.folder) { try { const l2 = await c.getMailboxLock(paths[answered.folder as Role]!); try { await c.messageFlagsAdd(String(answered.uid), ["\\Answered"], { uid: true }); } finally { l2.release(); } } catch (_) { /* best effort */ } }
+      if (answered?.uid && answered.folder) { try { const p2 = boxPath(acc, paths, answered.folder); if (!p2) throw new Error("no box"); const l2 = await c.getMailboxLock(p2); try { await c.messageFlagsAdd(String(answered.uid), ["\\Answered"], { uid: true }); } finally { l2.release(); } } catch (_) { /* best effort */ } }
       return r; }); } catch (_) { /* the next sync will pick the Sent copy up if the server saved one */ }
   const meta = attachments.map((a, idx) => ({ idx, name: a.filename, type: a.contentType || "application/octet-stream", size: a.content.length, inline: false }));
   const { data: sid } = await svc.rpc("dmail_sent_store", { p_account: acc.id, p_user: uid, p_draft: b.draft_id || null, p_msg: {

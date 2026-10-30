@@ -573,7 +573,14 @@ export const dispatcherThreadSend = (assignment, body, opts) => {
   const p = { p_assignment: assignment, p_body: body };
   if (opts && opts.replyTo) p.p_reply_to = opts.replyTo;
   if (opts && opts.dept) p.p_dept = opts.dept;
-  return rpc('dispatcher_thread_send', p);
+  // bl_disp_0572: the conduct guard refuses the insert (nothing is sent); log the attempt for staff review —
+  // the server re-checks the text itself, so this can only record what the guard really blocked.
+  return rpc('dispatcher_thread_send', p).catch((e) => {
+    if (e && typeof e.message === 'string' && e.message.indexOf('BLOCKED —') === 0) {
+      rpc('contact_guard_report', { p_channel: 'thread', p_body: body, p_target: assignment }).catch(() => {});
+    }
+    throw e;
+  });
 };
 export const carrierMyDispatcher = () => rpc('carrier_my_dispatcher', {});
 export const ccDispatcherSetTerms = (user, pct, trialStart, trialEnd) => rpc('cc_dispatcher_set_terms', { p_user: user, p_commission_pct: pct, p_trial_start: trialStart ?? null, p_trial_end: trialEnd ?? null });
@@ -878,7 +885,16 @@ export const mailList = (o = {}) => rpc('cc_mail_list', {
   p_search: o.search ?? null,
   p_before: o.before ?? null,
   p_folder: o.folder ?? 'inbox',          // inbox | system | all (bl_mail_0471)
+  p_role: o.role ?? null,                 // carrier | broker | shipper | dispatcher | unknown … (bl_mail_0578)
+  p_view: o.view ?? null,                 // needs_reply | mine | late | waiting | done (bl_mail_0578)
 });
+// bl_mail_0577 — phase 2: owner, status, reply deadline per conversation
+export const mailWorkCounts = () => rpc('cc_mail_work_counts');
+export const mailRoleCounts = (mailbox) => rpc('cc_mail_role_counts', { p_mailbox: mailbox ?? null });
+export const mailOwners = () => rpc('cc_mail_owners');
+export const mailAssign = (threads, owner) => rpc('cc_mail_assign', { p_threads: threads, p_owner: owner ?? null });
+export const mailSetStatus = (threads, status) => rpc('cc_mail_set_status', { p_threads: threads, p_status: status });
+export const mailViewing = (thread) => rpc('cc_mail_viewing', { p_thread: thread });
 // Move a whole thread between Inbox and System (comm.manage, audited). System = auto-read, not counted.
 export const mailSetFolder = (thread, folder) => rpc('cc_mail_set_folder', { p_thread: thread, p_folder: folder });
 export const mailThread = (thread, markRead = true) => rpc('cc_mail_thread', { p_thread: thread, p_mark_read: markRead !== false });

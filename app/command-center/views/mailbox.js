@@ -1,4 +1,11 @@
-// mailbox.js — Command Center Mailbox, Gmail edition (bl_mail_0335 → bl_mail_0488 → bl_mail_0489).
+// mailbox.js — Command Center Mailbox, Gmail edition (bl_mail_0335 → bl_mail_0488 → bl_mail_0489 → bl_mail_0577).
+//
+// bl_mail_0577 — WORK QUEUE (owner design, 30 Oct 2026, "Amazon jaisa"). Every conversation from a person has an owner,
+// a status (open → waiting → done) and a reply deadline from its urgency, counted in business hours (server-side,
+// app_private.mail_settings). The rail gets a Work queue: Needs reply (soonest deadline first), Assigned to me, Late,
+// Waiting on them, Done. Rows show who sent it (role), the deadline (amber at 75 %, red when late) and a follow-up flag;
+// the toolbar can assign and mark done; an open conversation tells you when a colleague is already reading it.
+// The role chips above the list filter by sender role and show unread counts (cc_mail_role_counts).
 //
 // bl_mail_0489 — FOUR MAILBOXES. hello@, dispatch@, billing@ and loads@ each get their own colour,
 // icon, banner, folder counts, From identity and signature. "All inboxes" shows everything this
@@ -52,6 +59,7 @@ import { fmtDateTime, askConfirm, openDrawer } from '../../shared/ui/components.
 import {
   mailList, mailThread, mailDraftSave, mailDraftDiscard, mailSend, mailStats, mailSetFolder,
   mailThreadAction, mailComposeSave,
+  mailWorkCounts, mailRoleCounts, mailOwners, mailAssign, mailSetStatus, mailViewing,
 } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
@@ -87,8 +95,28 @@ const MORE_FOLDERS = [
   { id: 'all',     label: 'All Mail', ic: 'mails' },
   { id: 'trash',   label: 'Trash',   ic: 'trash' },
 ];
-const FOLDER_IDS = FOLDERS.concat(MORE_FOLDERS).map(f => f.id);
-const serverFolder = (f) => f === 'updates' ? 'system' : f;
+// bl_mail_0577 work queue — server views of cc_mail_list (p_view), counts from cc_mail_work_counts
+const WORK_VIEWS = [
+  { id: 'needs_reply', label: 'Needs reply',     ic: 'reply', count: 'needs_reply', work: true, bold: true },
+  { id: 'mine',        label: 'Assigned to me',  ic: 'check', count: 'mine',        work: true },
+  { id: 'late',        label: 'Late',            ic: 'clock', count: 'late',        work: true, bold: true, alarm: true },
+  { id: 'waiting',     label: 'Waiting on them', ic: 'send',  count: 'waiting',     work: true },
+  { id: 'done',        label: 'Done',            ic: 'archive', work: true },
+];
+const WORK_IDS = WORK_VIEWS.map(f => f.id);
+const FOLDER_IDS = FOLDERS.concat(MORE_FOLDERS).map(f => f.id).concat(WORK_IDS);
+const serverFolder = (f) => f === 'updates' ? 'system' : WORK_IDS.includes(f) ? 'all' : f;
+const ROLES = [
+  { id: 'carrier', label: 'Carrier' }, { id: 'broker', label: 'Broker' }, { id: 'shipper', label: 'Shipper' },
+  { id: 'dispatcher', label: 'Dispatcher' }, { id: 'vendor', label: 'Vendor' }, { id: 'unknown', label: 'Unknown' },
+];
+const ROLE_IDS = ROLES.map(r => r.id).concat(['internal', 'system']);
+function dueText(ts) {
+  const ms = new Date(ts).getTime() - Date.now();
+  const abs = Math.abs(ms), m = Math.round(abs / 60000), h = Math.round(abs / 3600000), d = Math.round(abs / 86400000);
+  const span = m < 60 ? m + 'm' : h < 48 ? h + 'h' : d + 'd';
+  return ms >= 0 ? 'due in ' + span : 'late ' + span;
+}
 
 const EMPTY_TEXT = {
   inbox: 'Your Primary tab is empty.',
@@ -99,6 +127,11 @@ const EMPTY_TEXT = {
   drafts: 'You don’t have any saved drafts. Saving a draft allows you to keep a message you aren’t ready to send yet.',
   all: 'No conversations.',
   trash: 'No conversations in Trash. Nothing here is ever deleted for good — Trash only hides.',
+  needs_reply: 'Nobody is waiting on us. Every conversation from a person has been answered.',
+  mine: 'Nothing assigned to you needs a reply.',
+  late: 'Nothing is late. Every conversation is inside its reply time.',
+  waiting: 'Not waiting on anyone. Conversations land here after we reply; no answer in 3 business days brings them back as a follow-up.',
+  done: 'Nothing marked done yet. Archive or Mark done closes a conversation.',
 };
 
 // ── icons: code-defined, trusted markup only (never built from data) ─────────
@@ -270,6 +303,7 @@ function createMailbox(host) {
     railCollapsed: window.innerWidth < 1280, moreOpen: false,
     msgs: null, openKey: null, expanded: new Set(), showImages: new Set(),
     pushedThread: false, pushedCompose: false, reply: null,
+    role: '', work: null, roleCounts: null, owners: null, viewing: null,
   };
   let composer = null;
   let openingDraft = null;
@@ -312,6 +346,12 @@ function createMailbox(host) {
   document.addEventListener('keydown', onKey);
 
   // Live mail: a quiet refresh every minute while someone is looking at the first page of a list.
+  const ping = setInterval(() => { if (root.isConnected && S.thread && document.visibilityState === 'visible') pingViewing(S.thread); }, 30000);
+  async function pingViewing(key) {
+    let r; try { r = await mailViewing(key); } catch (_) { return; }
+    const other = r && r.other ? String(r.other) : null;
+    if (key === S.thread && other !== S.viewing) { S.viewing = other; if (S.msgs) paintThread(); }
+  }
   const poll = setInterval(() => {
     if (!root.isConnected) { destroy(); return; }
     if (document.visibilityState !== 'visible' || S.thread || S.sel.size || S.cursors.length > 1) return;
@@ -319,7 +359,7 @@ function createMailbox(host) {
   }, 60000);
 
   function destroy() {
-    clearInterval(poll);
+    clearInterval(poll); clearInterval(ping);
     window.removeEventListener('resize', fit);
     window.removeEventListener('scroll', onScroll);
     document.removeEventListener('keydown', onKey);
@@ -329,7 +369,7 @@ function createMailbox(host) {
 
   // ── routing ──
   function current() {
-    return { folder: S.folder, label: S.label, q: S.q, thread: S.thread,
+    return { folder: S.folder, label: S.label, q: S.q, thread: S.thread, role: S.role,
       compose: composer && composer.routeCompose ? composer.routeCompose : null,
       draft: composer && composer.routeDraft ? composer.routeDraft : null };
   }
@@ -337,6 +377,7 @@ function createMailbox(host) {
     const q = new URLSearchParams();
     if (p.folder && p.folder !== 'inbox') q.set('folder', p.folder);
     if (p.label) q.set('label', p.label);
+    if (p.role) q.set('role', p.role);
     if (p.q) q.set('q', p.q);
     if (p.thread) q.set('thread', p.thread);
     if (p.compose) q.set('compose', p.compose);
@@ -352,16 +393,17 @@ function createMailbox(host) {
     }
     apply(new URLSearchParams(h.split('?')[1] || ''), opts);
   }
-  function hrefFor(patch) { return hashFor(Object.assign({ folder: S.folder, label: S.label, q: S.q }, patch)); }
+  function hrefFor(patch) { return hashFor(Object.assign({ folder: S.folder, label: S.label, q: S.q, role: S.role }, patch)); }
 
   function apply(q, opts = {}) {
     const folder = FOLDER_IDS.includes(q.get('folder')) ? q.get('folder') : 'inbox';
     const label = (q.get('label') || '').trim().toLowerCase();
     const search = q.get('q') || '';
     const thread = q.get('thread') || null;
-    const listKey = [folder, label, search].join('|');
+    const role = ROLE_IDS.includes(q.get('role')) ? q.get('role') : '';
+    const listKey = [folder, label, search, role].join('|');
 
-    S.folder = folder; S.label = label; S.q = search;
+    S.folder = folder; S.label = label; S.q = search; S.role = role;
     if (document.activeElement !== searchIn) searchIn.value = search;
     searchPill.classList.toggle('has-q', !!search);
     paintRail();
@@ -378,7 +420,7 @@ function createMailbox(host) {
       if (thread !== S.openKey || !S.msgs) openThread(thread, !!opts.markRead);
       else paintMain();
     } else {
-      S.thread = null; S.openKey = null; S.msgs = null; S.reply = null; S.pushedThread = false;
+      S.thread = null; S.openKey = null; S.msgs = null; S.reply = null; S.pushedThread = false; S.viewing = null;
       paintMain();
     }
     root.classList.toggle('in-thread', !!thread);
@@ -398,6 +440,8 @@ function createMailbox(host) {
     let s;
     try { s = await mailStats(); } catch (_) { return; }
     S.stats = s || {};
+    try { const [w, rc] = await Promise.all([mailWorkCounts(), mailRoleCounts(S.label || null)]); S.work = w || {}; S.roleCounts = (rc && rc.roles) || {}; } catch (_) { /* older server: no work queue counts */ }
+    if (!S.owners) { try { S.owners = await mailOwners(); } catch (_) { S.owners = []; } }
     S.canSend = !!(s && s.can_send);
     if (s && typeof s.can_draft === 'boolean') S.canDraft = s.can_draft;
     paintRail();
@@ -411,7 +455,8 @@ function createMailbox(host) {
     let res;
     try {
       res = await mailList({ limit: PAGE, mailbox: S.label || null, search: S.q || null,
-        before: S.cursors[S.cursors.length - 1], folder: serverFolder(S.folder) });
+        before: S.cursors[S.cursors.length - 1], folder: serverFolder(S.folder),
+        role: S.role || null, view: WORK_IDS.includes(S.folder) ? S.folder : null });
     } catch (e) {
       if (seq !== loadSeq) return;
       progress.hidden = true;
@@ -461,14 +506,14 @@ function createMailbox(host) {
   function goBox(addr, onPick) { onPick && onPick(); nav({ label: addr, folder: 'inbox', q: '', thread: null }); }
 
   function folderCount(f) {
-    const c = f.count ? Number(scopeFolders()[f.count] || 0) : 0;
+    const c = !f.count ? 0 : f.work ? Number((S.work || {})[f.count] || 0) : Number(scopeFolders()[f.count] || 0);
     return c > 0 ? c.toLocaleString('en-US') : '';
   }
   function navItem(f, onPick) {
     const count = folderCount(f);
     const active = S.folder === f.id || (f.id === 'inbox' && S.folder === 'updates');
     const a = el('a', {
-      class: 'gm-nav' + (active ? ' active' : '') + (f.bold && count ? ' bold' : ''),
+      class: 'gm-nav' + (active ? ' active' : '') + (f.bold && count ? ' bold' : '') + (f.alarm && count ? ' gm-alarm' : ''),
       href: hrefFor({ folder: f.id, q: '', thread: null }), title: f.label,
       onClick: (e) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey) return;
@@ -505,6 +550,8 @@ function createMailbox(host) {
     return [
       S.canDraft ? el('button', { type: 'button', class: 'gm-compose', onClick: () => { onPick && onPick(); openCompose(cur && cur.known !== false ? { from: cur.mailbox } : {}); } },
         [ic('pencil', 22), el('span', null, 'Compose')]) : null,
+      el('div', { class: 'gm-labels-h' }, [el('span', null, 'Work queue')]),
+      el('nav', { class: 'gm-navs gm-worknavs' }, WORK_VIEWS.map(f => navItem(f, onPick))),
       boxes.length ? el('div', { class: 'gm-labels-h' }, [el('span', null, 'Mailboxes')]) : null,
       boxes.length ? el('nav', { class: 'gm-navs gm-boxnavs' }, boxes) : null,
       boxes.length ? el('div', { class: 'gm-labels-h gm-folders-h' }, [el('span', null, cur ? cur.label + ' folders' : 'Folders')]) : null,
@@ -536,7 +583,7 @@ function createMailbox(host) {
   function folderTitle() {
     const box = curBox();
     if (S.q) return 'Search results' + (box ? ' in ' + box.label : '');
-    const f = FOLDERS.concat(MORE_FOLDERS).find(x => x.id === S.folder);
+    const f = FOLDERS.concat(MORE_FOLDERS, WORK_VIEWS).find(x => x.id === S.folder);
     const name = f ? f.label : 'Inbox';
     if (box) return box.label + ' · ' + name;
     return S.folder === 'inbox' ? 'Primary' : name;
@@ -634,6 +681,14 @@ function createMailbox(host) {
         ? ib('clock', 'Unsnooze', () => act(keys, 'unsnooze'))
         : ib('clock', 'Snooze', () => openSnooze(keys)));
     }
+    if (S.canDraft && !inTrash) {
+      const allDone = o.rows ? o.rows.every(t => t.work_status === 'done') : false;
+      out.push(allDone
+        ? ib('inbox', 'Reopen (needs a reply)', () => setWork(keys, 'open'))
+        : ib('check', 'Mark done — no reply needed', () => setWork(keys, 'done')));
+      const owners = S.owners || [];
+      if (owners.length) out.push(dropBtn('caret', 'Assign to…', owners.map(p => [(p.me ? 'Me (' + p.name + ')' : p.name), () => assignTo(keys, p.id, p.name)]), null, 'gm-assign'));
+    }
     out.push(dropBtn('more', 'More', [
       [o.anyStarred ? 'Remove star' : 'Add star', () => act(keys, o.anyStarred ? 'unstar' : 'star')],
       o.anyUnread ? ['Mark as unread', null] : ['Mark as read', () => act(keys, 'read')],
@@ -680,6 +735,7 @@ function createMailbox(host) {
     mount(mainHost, [
       listToolbar(),
       boxBar(),
+      roleBar(),
       tabsHost,
       el('div', { class: 'gm-mhead' }, [
         el('span', null, folderTitle()),
@@ -687,6 +743,22 @@ function createMailbox(host) {
       ]),
       body,
     ]);
+  }
+
+  // bl_mail_0577: who sent it — one chip per sender role with its unread count; a click filters the list.
+  function roleBar() {
+    if (S.q || ['sent', 'drafts', 'trash'].includes(S.folder)) return null;
+    const rc = S.roleCounts || {};
+    const chip = (r) => {
+      const id = r ? r.id : '';
+      const n = r ? Number(rc[r.id] || 0) : 0;
+      return el('a', {
+        class: 'gm-rolep' + (S.role === id ? ' active' : '') + (r ? ' r-' + r.id : ''),
+        href: hrefFor({ role: id, thread: null }),
+        onClick: (e) => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); nav({ role: id, thread: null }); },
+      }, [el('span', null, r ? r.label : 'Everyone'), n ? el('span', { class: 'gm-rolep-n' }, n > 99 ? '99+' : String(n)) : null]);
+    };
+    return el('div', { class: 'gm-rolebar', role: 'tablist', 'aria-label': 'Who sent it' }, [chip(null), ...ROLES.map(chip)]);
   }
 
   // Mailbox switcher above the list (every width; on phones it is THE switcher) + the open mailbox's banner.
@@ -759,6 +831,13 @@ function createMailbox(host) {
       t.has_draft ? el('span', { class: 'gm-draft' }, 'Draft') : null,
     ]);
     const chips = [];
+    const role = String(t.sender_role || '');
+    if (t.has_in && role && role !== 'internal' && role !== 'system') chips.push(el('span', { class: 'gm-wk r-' + role, title: 'Sender: ' + role + (t.org_name ? ' · ' + t.org_name : '') }, t.org_name ? role + ' · ' + t.org_name : role));
+    if (t.reply_due_at) chips.push(el('span', { class: 'gm-wk due l' + Number(t.sla_level || 0), title: 'Reply by ' + fmtDateTime(t.reply_due_at) + (t.urgency ? ' · ' + t.urgency : '') + (t.urgency_reason ? ' — ' + t.urgency_reason : '') }, (t.urgency === 'urgent' ? 'URGENT · ' : '') + dueText(t.reply_due_at)));
+    if (t.follow_up) chips.push(el('span', { class: 'gm-wk fu', title: 'We replied; no answer in 3 business days' }, 'follow up'));
+    if (t.work_status === 'waiting' && S.folder !== 'waiting') chips.push(el('span', { class: 'gm-wk wait' }, 'waiting on them'));
+    if (t.owner_name && t.owner_id && !(S.owners || []).some(o => o.me && o.id === t.owner_id)) chips.push(el('span', { class: 'gm-wk own', title: 'Owner' }, '@' + String(t.owner_name).split('@')[0]));
+    if (t.viewing) chips.push(el('span', { class: 'gm-wk view', title: t.viewing + ' has this open' }, t.viewing.split('@')[0] + ' is reading'));
     if (showBox) chips.push(boxTag(t.mailbox));
     if (t.folder === 'system' && S.folder !== 'updates' && t.mail_class) chips.push(el('span', { class: 'gm-chip amber' }, String(t.mail_class).replace(/_/g, ' ')));
     if (t.snoozed_until && S.folder === 'snoozed') chips.push(el('span', { class: 'gm-chip blue' }, 'until ' + listDate(t.snoozed_until)));
@@ -882,6 +961,21 @@ function createMailbox(host) {
     if (S.thread && keys.includes(S.thread)) backToList(); else paintMain();
   }
 
+  async function setWork(keys, status) {
+    try { await mailSetStatus(keys, status); }
+    catch (e) { toast(mailErr(e), 'error'); return; }
+    snack((keys.length === 1 ? 'Conversation' : keys.length + ' conversations') + (status === 'done' ? ' marked done.' : ' reopened.'));
+    S.sel.clear();
+    if (status === 'done' && S.thread && keys.includes(S.thread)) { backToList(); }
+    S.listLoaded = false; loadList({ silent: true }); loadStats();
+  }
+  async function assignTo(keys, owner, name) {
+    try { await mailAssign(keys, owner); }
+    catch (e) { toast(mailErr(e), 'error'); return; }
+    snack((keys.length === 1 ? 'Conversation' : keys.length + ' conversations') + ' assigned to ' + name + '.');
+    loadList({ silent: true }); loadStats();
+  }
+
   function backToList() {
     flushReply();
     if (S.pushedThread && history.length > 1) { S.pushedThread = false; history.back(); }
@@ -951,6 +1045,7 @@ function createMailbox(host) {
     if (seq !== threadSeq) return;
     progress.hidden = true;
     S.msgs = Array.isArray(msgs) ? msgs : [];
+    S.viewing = null; pingViewing(key);
     if (markRead) {
       const t = S.threads.find(x => x.thread_key === key);
       if (t) t.unread = 0;
@@ -965,6 +1060,22 @@ function createMailbox(host) {
     window.scrollTo(0, 0);
   }
 
+  // bl_mail_0577: owner, deadline and "someone else is on this" above the conversation
+  function workBanner(t) {
+    const bits = [];
+    if (S.viewing) bits.push(el('div', { class: 'gm-wban warn' }, S.viewing + ' has this conversation open right now — check with them before you reply, so the sender does not get two answers.'));
+    if (t && (t.reply_due_at || t.work_status)) {
+      const line = [];
+      if (t.work_status === 'open' && t.reply_due_at) line.push(el('span', { class: 'gm-wk due l' + Number(t.sla_level || 0) }, dueText(t.reply_due_at)), ' Reply by ' + fmtDateTime(t.reply_due_at));
+      else if (t.work_status === 'waiting') line.push(el('span', { class: 'gm-wk wait' }, 'waiting on them'), ' We replied; no answer in 3 business days brings it back.');
+      else if (t.work_status === 'done') line.push(el('span', { class: 'gm-wk' }, 'done'));
+      if (t.urgency && t.work_status === 'open') line.push(' · ' + t.urgency + (t.urgency_reason ? ' — ' + t.urgency_reason : ''));
+      if (t.owner_name) line.push(' · Owner: ' + t.owner_name);
+      bits.push(el('div', { class: 'gm-wban' }, line));
+    }
+    return bits.length ? el('div', { class: 'gm-wbans' }, bits) : null;
+  }
+
   function threadToolbar(msgs) {
     const key = S.thread;
     const row = S.threads.find(t => t.thread_key === key);
@@ -973,6 +1084,7 @@ function createMailbox(host) {
       starred: row ? !!row.starred : !!(msgs[0] && msgs[0].starred),
       archived: row ? !!row.archived : !!(msgs[0] && msgs[0].archived),
       trashed: row ? !!row.trashed : !!(msgs[0] && msgs[0].trashed),
+      work_status: row ? row.work_status : null,
     };
     const anyUnread = msgs.some(m => m.direction === 'in' && !m.read_at);
     const idx = S.threads.findIndex(t => t.thread_key === key);
@@ -998,6 +1110,7 @@ function createMailbox(host) {
 
     const head = msgs[0];
     const shown = msgs.filter(m => m.status !== 'draft' || m.mail_class === 'compose');
+    const wrow = S.threads.find(t => t.thread_key === S.thread);
     const lastIn = [...msgs].reverse().find(m => m.direction === 'in') || null;
     const subject = decodeSubject(head.subject) || '(no subject)';
     const row = S.threads.find(t => t.thread_key === S.thread);
@@ -1040,6 +1153,7 @@ function createMailbox(host) {
       threadToolbar(msgs),
       el('div', { class: 'gm-th-scroll' }, [
         subj,
+        workBanner(wrow),
         el('div', { class: 'gm-msgs' }, cards),
         replyArea(lastIn, head, subject),
       ]),
@@ -1657,6 +1771,17 @@ function injectStyleOnce() {
 .gm-snip{color:var(--gm-mut);font-weight:400}
 .gm-chip{display:inline-block;font-size:12px;line-height:18px;padding:0 6px;border-radius:4px;background:#e8eaed;color:#444746;margin-right:6px;font-weight:400;vertical-align:1px;white-space:nowrap}
 .gm-chip.amber{background:#fef7e0;color:#b06000}.gm-chip.blue{background:#e8f0fe;color:#1a73e8}
+.gm-wk{display:inline-block;font-size:11.5px;line-height:18px;padding:0 6px;border-radius:9px;background:#f1f3f4;color:#444746;margin-right:6px;font-weight:500;vertical-align:1px;white-space:nowrap;text-transform:none}
+.gm-wk.r-carrier{background:#e6f4ea;color:#137333}.gm-wk.r-broker{background:#e8f0fe;color:#1a56c4}.gm-wk.r-shipper{background:#e4f7fb;color:#007b83}
+.gm-wk.r-dispatcher{background:#f3e8fd;color:#8430ce}.gm-wk.r-vendor{background:#fef7e0;color:#9a6700}.gm-wk.r-unknown{background:#f1f3f4;color:#5f6368}
+.gm-wk.due.l0{background:#f1f3f4;color:#3c4043}.gm-wk.due.l1{background:#fef7e0;color:#b06000}.gm-wk.due.l2,.gm-wk.due.l3{background:#fce8e6;color:#c5221f}
+.gm-wk.fu{background:#fff4e5;color:#b45309}.gm-wk.wait{background:#e8f0fe;color:#1a73e8}.gm-wk.own{background:#fff;border:1px solid #dadce0}.gm-wk.view{background:#fce8e6;color:#c5221f}
+.gm-nav.gm-alarm .gm-nav-c{color:#c5221f;font-weight:700}
+.gm-rolebar{display:flex;gap:6px;flex-wrap:wrap;padding:6px 16px 2px}
+.gm-rolep{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid #dadce0;border-radius:14px;font-size:13px;color:#3c4043;text-decoration:none;background:#fff}
+.gm-rolep.active{background:#e8f0fe;border-color:#1a73e8;color:#1a56c4;font-weight:600}
+.gm-rolep-n{font-size:11.5px;font-weight:700;background:#f1f3f4;border-radius:9px;padding:0 6px;line-height:18px}
+.gm-wbans{margin:4px 0 8px}.gm-wban{font-size:13px;color:#3c4043;padding:6px 0}.gm-wban.warn{background:#fce8e6;color:#a50e0e;border-radius:8px;padding:8px 12px;margin-bottom:6px}
 .gm-date{font-size:12px;text-align:right;color:var(--gm-mut);white-space:nowrap}
 .gm-hover{display:none;position:absolute;right:8px;top:0;bottom:0;align-items:center;background:inherit;padding-left:8px}
 .gm-row:hover .gm-hover{display:flex}.gm-row:hover .gm-date{visibility:hidden}

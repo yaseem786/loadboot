@@ -7,6 +7,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // hourly cap) runs in Postgres AS THE CALLER (public.dialer_sms_prepare), which also writes the queued row — so a text
 // exists in LoadBoot's record before it leaves. The Telnyx API key lives only here; the browser never sees it.
 // Result is written back with the service role (dialer_sms_mark). Delivery receipts arrive later via telnyx-hook.
+// bl_disp_0572: a database guard refusal (42501 — conduct guard, training guard, shipper rate rule) now reaches the
+// sender in plain words instead of "Could not send that text."; a conduct-guard block is reported for staff review.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const ANON = Deno.env.get("SUPABASE_ANON_KEY") || "";
@@ -36,11 +38,24 @@ Deno.serve(async (req: Request) => {
   if (!TELNYX_KEY) return json({ error: "The phone service is not configured yet (TELNYX_API_KEY)." }, 503);
   try {
     const body = await req.json().catch(() => ({}));
+    const auth = req.headers.get("Authorization") || "";
     const prep = await fetch(`${SUPABASE_URL}/rest/v1/rpc/dialer_sms_prepare`, {
-      method: "POST", headers: { apikey: ANON, Authorization: req.headers.get("Authorization") || "", "Content-Type": "application/json" },
+      method: "POST", headers: { apikey: ANON, Authorization: auth, "Content-Type": "application/json" },
       body: JSON.stringify({ p: { to: String(body?.to || ""), thread_id: body?.thread_id ? String(body.thread_id) : null, reply_to: body?.reply_to ? String(body.reply_to) : null, body: String(body?.body || "") } }),
     });
-    const p = prep.ok ? await prep.json() : null;
+    const pj = await prep.json().catch(() => null);
+    if (!prep.ok) {
+      const code = String(pj?.code || ""), msg = String(pj?.message || "");
+      if (msg.startsWith("BLOCKED —")) {
+        await fetch(`${SUPABASE_URL}/rest/v1/rpc/contact_guard_report`, {
+          method: "POST", headers: { apikey: ANON, Authorization: auth, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_channel: "sms", p_body: String(body?.body || ""), p_target: String(body?.to || body?.thread_id || "") }),
+        }).catch(() => null);
+        return json({ ok: false, error: msg, conduct_blocked: true }, 200);
+      }
+      return json({ ok: false, error: (code === "42501" && msg) ? msg : "Could not send that text." }, 200);
+    }
+    const p = pj;
     if (!p?.ok) return json({ ok: false, error: p?.error || "Could not send that text.", needs_consent: !!p?.needs_consent, broker_blocked: !!p?.broker_blocked }, 200);
 
     const payload: Record<string, unknown> = { from: p.from, to: p.to, text: p.body };

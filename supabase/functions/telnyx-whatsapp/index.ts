@@ -21,6 +21,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // messages only has a Telnyx id (Telnyx returns no wamid, see the migration). If Telnyx refuses that id as context
 // (`context_fallback` from the RPC), the SAME request goes once more WITHOUT context - a refused request sent nothing,
 // so nothing is doubled - and the quote simply stays visible in LoadBoot only.
+// bl_disp_0572: a database guard refusal (42501 — conduct guard, training guard, shipper rate rule) now reaches the
+// sender in plain words; a conduct-guard block is reported for staff review.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const ANON = Deno.env.get("SUPABASE_ANON_KEY") || "";
@@ -63,6 +65,7 @@ Deno.serve(async (req: Request) => {
   if (!TELNYX_KEY) return json({ error: "The WhatsApp service is not configured yet (TELNYX_API_KEY)." }, 503);
   try {
     const b = await req.json().catch(() => ({}));
+    const auth = req.headers.get("Authorization") || "";
     const p_in: Record<string, unknown> = {};
     if (b?.thread_id) p_in.thread_id = String(b.thread_id);
     if (b?.reply_to) p_in.reply_to = String(b.reply_to);
@@ -77,10 +80,23 @@ Deno.serve(async (req: Request) => {
     }
 
     const prep = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wa_send_prepare`, {
-      method: "POST", headers: { apikey: ANON, Authorization: req.headers.get("Authorization") || "", "Content-Type": "application/json" },
+      method: "POST", headers: { apikey: ANON, Authorization: auth, "Content-Type": "application/json" },
       body: JSON.stringify({ p: p_in }),
     });
-    const p = prep.ok ? await prep.json() : null;
+    const pj = await prep.json().catch(() => null);
+    if (!prep.ok) {
+      const code = String(pj?.code || ""), emsg = String(pj?.message || "");
+      if (emsg.startsWith("BLOCKED —")) {
+        const said = [typeof b?.body === "string" ? b.body : "", String(b?.media?.caption || "")].join(" ").trim();
+        await fetch(`${SUPABASE_URL}/rest/v1/rpc/contact_guard_report`, {
+          method: "POST", headers: { apikey: ANON, Authorization: auth, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_channel: "whatsapp", p_body: said, p_target: String(b?.thread_id || b?.to || "") }),
+        }).catch(() => null);
+        return json({ ok: false, error: emsg, conduct_blocked: true }, 200);
+      }
+      return json({ ok: false, error: (code === "42501" && emsg) ? emsg : "Could not send that WhatsApp message." }, 200);
+    }
+    const p = pj;
     if (!p?.ok) return json({ ok: false, error: p?.error || "Could not send that WhatsApp message.", needs_template: !!p?.needs_template }, 200);
 
     const msg = p.whatsapp_message || {};
