@@ -244,7 +244,17 @@ function mailErr(e) {
 // ── HTML we write: whitelist sanitizer (drafts, sent mail, composer) ──────────
 // Parsed in an inert DOMParser document (no scripts run, no images load), then rebuilt node by node
 // in THIS document from a short whitelist. Anything else is unwrapped to its text.
-const KEEP = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'BR', 'P', 'DIV', 'UL', 'OL', 'LI', 'A', 'BLOCKQUOTE', 'SPAN']);
+const KEEP = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'BR', 'P', 'DIV', 'UL', 'OL', 'LI', 'A', 'BLOCKQUOTE', 'SPAN',
+  'H1', 'H2', 'H3', 'H4', 'HR', 'PRE', 'CODE', 'SUB', 'SUP', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TD', 'TH']);
+// bl_mail_0585: formatting that survives a paste — only these CSS properties, only plain values (no url(), no expression).
+const KEEP_CSS = ['color', 'background-color', 'font-weight', 'font-style', 'font-size', 'text-decoration', 'text-align',
+  'border', 'border-left', 'border-top', 'border-collapse', 'border-radius', 'padding', 'padding-left', 'padding-top', 'margin-left',
+  'vertical-align', 'width', 'line-height', 'letter-spacing', 'text-transform', 'display'];
+function cleanStyle(v) {
+  return String(v || '').split(';').map(x => x.trim()).filter(Boolean).map(x => { const i = x.indexOf(':'); return [x.slice(0, i).trim().toLowerCase(), x.slice(i + 1).trim()]; })
+    .filter(([k, val]) => KEEP_CSS.includes(k) && val && !/url\(|expression|javascript:|[<>]/i.test(val) && val.length < 80)
+    .map(([k, val]) => k + ':' + val).join(';');
+}
 const DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'HEAD', 'TITLE', 'META', 'LINK', 'SVG', 'MATH', 'NOSCRIPT', 'FORM', 'INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'IMG', 'VIDEO', 'AUDIO']);
 function cleanNode(n) {
   if (n.nodeType === 3) return [document.createTextNode(n.nodeValue)];
@@ -259,6 +269,9 @@ function cleanNode(n) {
     const href = String(n.getAttribute('href') || '').trim();
     if (/^(https?:|mailto:)/i.test(href)) { out.setAttribute('href', href); out.setAttribute('target', '_blank'); out.setAttribute('rel', 'noopener noreferrer'); }
   }
+  const st = cleanStyle(n.getAttribute('style'));
+  if (st) out.setAttribute('style', st);
+  if ((tag === 'TD' || tag === 'TH') && /^\d{1,2}$/.test(n.getAttribute('colspan') || '')) out.setAttribute('colspan', n.getAttribute('colspan'));
   kids.forEach(k => out.appendChild(k));
   return [out];
 }
@@ -1405,7 +1418,7 @@ function createMailbox(host) {
         el('div', { class: 'gm-msg-c-body' }, [
           el('div', { class: 'gm-msg-c-top' }, [el('span', { class: 'gm-msg-name' }, name),
             el('span', { class: 'gm-msg-date gm-msg-date-l' }, longDate(when)), el('span', { class: 'gm-msg-date gm-msg-date-s' }, listDate(when))]),
-          el('div', { class: 'gm-msg-snip' }, m.status === 'draft' ? 'Draft' : snippet),
+          el('div', { class: 'gm-msg-snip' }, m.status === 'draft' ? 'Draft' : (m.source === 'imap' ? '↗ Sent from webmail · ' : '') + snippet),
         ]),
       ]);
     }
@@ -1619,12 +1632,21 @@ function createMailbox(host) {
     const node = el('div', { class: 'gm-editor', contenteditable: 'true', role: 'textbox', 'aria-multiline': 'true', 'aria-label': 'Message Body', spellcheck: 'true' });
     sanitizeNodes(initialHtml || '').forEach(n => node.appendChild(n));
     node.addEventListener('input', () => onInput && onInput());
-    // Paste as plain text: other people's markup never enters our outbound HTML.
+    // bl_mail_0585: paste keeps its formatting (bold, lists, links, tables, colours) the way Gmail does — but only
+    // through sanitizeNodes, so scripts, event handlers and foreign styles never enter our outbound HTML. Ctrl+Shift+V
+    // (or a plain-text clipboard) still pastes plain text.
+    let plainNext = false;
+    node.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'v' || e.key === 'V')) plainNext = true; });
     node.addEventListener('paste', (e) => {
-      const t = e.clipboardData && e.clipboardData.getData('text/plain');
-      if (t == null) return;
+      const cd = e.clipboardData; if (!cd) return;
+      const h = cd.getData('text/html'); const t = cd.getData('text/plain');
       e.preventDefault();
-      document.execCommand('insertText', false, t);
+      if (h && !plainNext) {
+        const box = document.createElement('div');
+        sanitizeNodes(h.replace(/<!--StartFragment-->|<!--EndFragment-->/g, '')).forEach(n => box.appendChild(n));
+        document.execCommand('insertHTML', false, box.innerHTML);
+      } else if (t != null) document.execCommand('insertText', false, t);
+      plainNext = false; onInput && onInput();
     });
     const cmd = (c, v) => (e) => { e.preventDefault(); node.focus(); document.execCommand(c, false, v); onInput && onInput(); };
     const tbtn = (name, title, c, v) => el('button', { type: 'button', class: 'gm-ib gm-fmt', title, 'aria-label': title, onMousedown: cmd(c, v) }, ic(name, 18));
