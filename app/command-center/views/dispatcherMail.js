@@ -51,12 +51,18 @@ function css() { if (document.getElementById('dmc-css')) return; const s = docum
 const ago = (v) => { if (!v) return 'never'; const s = (Date.now() - new Date(v).getTime()) / 1000; return s < 90 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' d ago'; };
 const PILL = { active: ['Live', 'g'], unverified: ['Needs a connection test', 'a'], error: ['Connection problem', 'r'], paused: ['Paused', 'm'] };
 
+// Staff inboxes (hello@ / billing@ / loads@) may be connected over IMAP for the CC Mailbox's "Attach to carrier", but they
+// are never a dispatcher mailbox: they are connected from Mailbox → Mail server connections and are hidden here (cards, alias
+// hubs, the activity feed). dispatch@ stays, because it is the main mailbox that holds the dispatcher aliases.
+const STAFF_INBOX = new Set(['hello@loadboot.com', 'billing@loadboot.com', 'loads@loadboot.com']);
+const isStaffInbox = (addr) => STAFF_INBOX.has(String(addr || '').toLowerCase());
+
 export function renderDispatcherMail(host) {
   css(); let data = null, editing = null, inbox = null, inboxOpen = null, inboxInst = null; const F = { account: '', dir: '', q: '' }; let feed = { rows: [], today: {} }, feedT = null;
   const root = el('div', { class: 'dmc' }); mount(host, root);
   const btn = (label, icn, fn, cls) => el('button', { class: 'dmc-btn ' + (cls || ''), type: 'button', onClick: fn }, [icn ? icon(icn, 15) : null, label]);
-  async function load() { try { data = await ccDmailOverview(); if (data && data.error) throw new Error(data.error); } catch (e) { data = { accounts: [], dispatchers: [], failed: humanizeError(e) }; } await loadFeed(true); paint(); }
-  async function loadFeed(silent) { try { const r = await ccDmailActivity({ account: F.account, dir: F.dir, q: F.q, limit: 80 }); if (r && r.error) throw new Error(r.error); feed = r || feed; } catch (e) { if (!silent) toast(humanizeError(e), 'error'); } if (!silent) paintFeed(); }
+  async function load() { try { data = await ccDmailOverview(); if (data && data.error) throw new Error(data.error); data.accounts = (data.accounts || []).filter((a) => !isStaffInbox(a.address)); } catch (e) { data = { accounts: [], dispatchers: [], failed: humanizeError(e) }; } await loadFeed(true); paint(); }
+  async function loadFeed(silent) { try { const r = await ccDmailActivity({ account: F.account, dir: F.dir, q: F.q, limit: 80 }); if (r && r.error) throw new Error(r.error); feed = r || feed; if (feed && Array.isArray(feed.rows)) feed.rows = feed.rows.filter((x) => !isStaffInbox(x.address)); } catch (e) { if (!silent) toast(humanizeError(e), 'error'); } if (!silent) paintFeed(); }
   async function run(b, fn, okMsg) { b.disabled = true; try { const r = await fn(); if (r && r.error) throw new Error(r.error); if (okMsg) toast(typeof okMsg === 'function' ? okMsg(r) : okMsg, 'success'); await load(); return r; } catch (e) { toast(humanizeError(e), 'error'); b.disabled = false; } }
   async function verify(a, b) { b.disabled = true; b.lastChild.textContent = 'Testing…';
     try { const r = await dmailAct({ action: 'verify', account: a.id }); toast(r && r.ok ? 'Connected — IMAP and SMTP both logged in' + (r.added ? ', ' + r.added + ' email(s) pulled' : '') : 'Failed: ' + ((r && r.error) || 'unknown'), r && r.ok ? 'success' : 'error'); }

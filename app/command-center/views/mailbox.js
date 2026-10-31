@@ -60,7 +60,7 @@ import {
   mailList, mailThread, mailDraftSave, mailDraftDiscard, mailSend, mailStats, mailSetFolder,
   mailThreadAction, mailComposeSave,
   mailWorkCounts, mailRoleCounts, mailOwners, mailAssign, mailSetStatus, mailViewing, mailSenderCard,
-  mailAttachments, staffUploadDocument, dmailAct,
+  mailAttachments, staffUploadDocument, dmailAct, ccDmailOverview, ccDmailAccountSave,
 } from '../../shared/api.js';
 import { uploadDocumentForCarrier } from '../../shared/storage.js';
 import { humanizeError, toast } from '../../shared/errors.js';
@@ -139,6 +139,7 @@ const EMPTY_TEXT = {
 
 // ── icons: code-defined, trusted markup only (never built from data) ─────────
 const IC = {
+  plug: '<path d="M9 2v6M15 2v6"/><path d="M6 8h12v3a6 6 0 0 1-12 0V8z"/><path d="M12 17v5"/>',
   menu: '<path d="M3 6h18M3 12h18M3 18h18"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
   pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
@@ -324,6 +325,7 @@ function createMailbox(host) {
   const topHost = el('div', { class: 'gm-top' }, [
     ib('menu', 'Main menu', () => toggleRail(), { cls: 'gm-railbtn' }),
     searchPill,
+    (can('carriers.approve') || can('dispatch.manage')) ? ib('plug', 'Mail server connections', () => openMailServers(), { cls: 'gm-msbtn' }) : null,
   ]);
   const mainHost = el('section', { class: 'gm-main' });
   const progress = el('div', { class: 'gm-progress', hidden: true });
@@ -1089,6 +1091,66 @@ function createMailbox(host) {
     const extra = x.status && label === 'Call' ? ' · ' + x.status + (x.duration_sec ? ' ' + Math.round(x.duration_sec / 60) + ' min' : '') : '';
     return spLine(label, relAgo(x.at) + ' · ' + dir + extra);
   }
+  // bl_mail_0584 — Mail server connections. A staff inbox connected over IMAP (dmail_accounts, password in Supabase Vault
+  // through the existing cc_dmail_account_save) lets "Attach to carrier" fetch files straight from the mail server. Staff
+  // inboxes live here, not in Dispatcher email (that list hides hello@ / billing@ / loads@). dispatch@ is shown read-only:
+  // it holds the dispatcher aliases, so it is managed there. Never assignable from here.
+  function openMailServers() {
+    const body = el('div', { class: 'gm-ms' }, 'Loading…');
+    openDrawer('Mail server connections', body, { size: 'md' });
+    const PILLS = { active: ['Connected', 'g'], unverified: ['Needs a connection test', 'a'], error: ['Connection problem', 'r'], paused: ['Paused', 'm'] };
+    let editing = null;
+    async function paint() {
+      let d;
+      try { d = await ccDmailOverview(); if (d && d.error) throw new Error(d.error); } catch (e) { mount(body, el('div', { class: 'gm-ms-note' }, humanizeError(e))); return; }
+      const acc = d.accounts || [];
+      mount(body, [
+        el('p', { class: 'gm-ms-note' }, 'A connected inbox lets “Attach to carrier” take files straight from the mail server. The password is encrypted in Supabase Vault and is never shown again. These inboxes stay staff-only.'),
+        ...BOX_DEFAULTS.map((b) => row(b, acc.find((a) => String(a.address).toLowerCase() === b.mailbox))),
+      ]);
+    }
+    async function test(a, b) {
+      b.disabled = true; b.textContent = 'Testing…';
+      try { const r = await dmailAct({ action: 'verify', account: a.id }); toast(r && r.ok ? a.address + ' connected' + (r.added ? ' · ' + r.added + ' email(s) pulled' : '') : 'Connection failed: ' + ((r && r.error) || 'unknown'), r && r.ok ? 'success' : 'error'); }
+      catch (e) { toast(humanizeError(e), 'error'); }
+      paint();
+    }
+    function row(b, a) {
+      const P = a ? (PILLS[a.status] || PILLS.unverified) : ['Not connected', 'm'];
+      const head = el('div', { class: 'gm-ms-head' }, [el('span', { class: 'gm-ms-dot', style: 'background:' + b.color }), el('b', null, b.label), el('span', { class: 'gm-ms-addr' }, b.mailbox), el('span', { class: 'gm-ms-pill ' + P[1] }, P[0])]);
+      const lines = [head];
+      if (a && a.last_error && a.status !== 'active') lines.push(el('div', { class: 'gm-ms-err' }, a.last_error));
+      if (a && a.last_sync_at) lines.push(el('div', { class: 'gm-ms-sub' }, 'Last sync ' + fmtDateTime(a.last_sync_at)));
+      if (b.mailbox === 'dispatch@loadboot.com') {
+        lines.push(el('div', { class: 'gm-ms-sub' }, 'Holds the dispatcher aliases, so it is managed in Dispatcher email.'));
+        return el('div', { class: 'gm-ms-row' }, lines);
+      }
+      if (editing === b.mailbox) {
+        const pw = el('input', { type: 'password', class: 'gm-ms-in', placeholder: 'Mailbox password (Namecheap Private Email)', autocomplete: 'new-password' });
+        const save = el('button', { type: 'button', class: 'gm-ms-btn pri', onClick: async () => {
+          if (!pw.value) { toast('Enter the mailbox password', 'error'); return; }
+          save.disabled = true; save.textContent = 'Saving…';
+          try {
+            const r = await ccDmailAccountSave(a ? { id: a.id, address: b.mailbox, password: pw.value } : { address: b.mailbox, display_name: b.from_name, password: pw.value });
+            pw.value = '';
+            if (!r || r.error) throw new Error((r && r.error) || 'save failed');
+            editing = null; toast('Password stored in the vault — testing the connection…', 'info');
+            const v = await dmailAct({ action: 'verify', account: r.id || (a && a.id) });
+            toast(v && v.ok ? b.mailbox + ' connected' : 'Connection failed: ' + ((v && v.error) || 'unknown'), v && v.ok ? 'success' : 'error');
+          } catch (e) { toast(humanizeError(e), 'error'); }
+          paint();
+        } }, 'Save & connect');
+        lines.push(el('div', { class: 'gm-ms-form' }, [pw, save, el('button', { type: 'button', class: 'gm-ms-btn', onClick: () => { editing = null; paint(); } }, 'Cancel')]));
+      } else {
+        const btns = [el('button', { type: 'button', class: 'gm-ms-btn' + (a ? '' : ' pri'), onClick: () => { editing = b.mailbox; paint(); } }, a ? 'Change password' : 'Connect')];
+        if (a) { const t = el('button', { type: 'button', class: 'gm-ms-btn', onClick: () => test(a, t) }, 'Test connection'); btns.push(t); }
+        lines.push(el('div', { class: 'gm-ms-form' }, btns));
+      }
+      return el('div', { class: 'gm-ms-row' }, lines);
+    }
+    paint();
+  }
+
   // bl_mail_0583 — Phase 3 #2: put an emailed file onto the carrier's document slot. The relay cuts body_text at
   // 20,000 chars, so the bytes come from the mail server through the dmail "attachment" action (IMAP-connected
   // mailboxes only — today dispatch@). Anything else: save it from webmail and pick it here. Same audited path as
@@ -1157,7 +1219,7 @@ function createMailbox(host) {
     manual.insertBefore(pick, manual.children[1]);
     pick.addEventListener('change', () => { const f = pick.files && pick.files[0]; const s = manual.querySelector('select'); if (f && s && !s.value) s.value = guessType(f.name); });
     return [
-      rows.length ? null : el('div', { class: 'gm-sp-note' }, 'No file here can be fetched from the mail server (only dispatch@ is connected over IMAP). Save it from webmail and pick it below.'),
+      rows.length ? null : el('div', { class: 'gm-sp-note' }, 'No file here can be fetched from the mail server — this inbox is not connected over IMAP yet (plug icon at the top → Mail server connections). Until then, save it from webmail and pick it below.'),
       ...rows, manual,
     ];
   }
@@ -1867,6 +1929,21 @@ function injectStyleOnce() {
 .gm-m-only{display:none!important}
 /* top */
 .gm-top{grid-area:top;display:flex;align-items:center;gap:8px;padding:8px 16px 8px 12px}
+.gm-msbtn{margin-left:auto}
+.gm-ms{display:flex;flex-direction:column;gap:12px}
+.gm-ms-note{margin:0;color:#5f6368;font-size:13px;line-height:1.45}
+.gm-ms-row{border:1px solid #e0e3e7;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.gm-ms-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.gm-ms-dot{width:10px;height:10px;border-radius:50%}
+.gm-ms-addr{color:#5f6368;font-size:13px}
+.gm-ms-pill{margin-left:auto;font-size:12px;padding:2px 8px;border-radius:999px;background:#eef0f2;color:#3c4043}
+.gm-ms-pill.g{background:#e6f4ea;color:#137333}.gm-ms-pill.a{background:#fef7e0;color:#8a5a00}.gm-ms-pill.r{background:#fce8e6;color:#b3261e}
+.gm-ms-sub{font-size:12px;color:#5f6368}.gm-ms-err{font-size:12px;color:#b3261e}
+.gm-ms-form{display:flex;gap:8px;flex-wrap:wrap}
+.gm-ms-in{flex:1;min-width:180px;padding:8px 10px;border:1px solid #c4c7c5;border-radius:8px;font:inherit}
+.gm-ms-btn{padding:7px 14px;border-radius:999px;border:1px solid #c4c7c5;background:#fff;cursor:pointer;font:inherit;font-size:13px}
+.gm-ms-btn.pri{background:#0b57d0;border-color:#0b57d0;color:#fff}
+.gm-ms-btn:disabled{opacity:.6;cursor:default}
 .gm-railbtn{margin-right:6px}
 .gm-search{flex:1;max-width:720px;height:48px;border-radius:24px;background:#eaf1fb;display:flex;align-items:center;padding:0 6px;transition:background .15s,box-shadow .15s}
 .gm-search:focus-within{background:#fff;box-shadow:0 1px 1px 0 rgba(65,69,73,.3),0 1px 3px 1px rgba(65,69,73,.15)}
