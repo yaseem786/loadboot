@@ -1712,6 +1712,30 @@ function createMailbox(host) {
     };
     fillFrom(wantFrom);
     const toIn = el('input', { class: 'gm-fld-in', type: 'email', autocomplete: 'email', 'aria-label': 'To recipients', value: init.to || '' });
+    // Gmail-style recipient chip: Enter / Tab / comma / leaving the field turns a valid address into a chip.
+    // One recipient only (cc_mail_compose_save takes a single address); toIn.value stays the source of truth.
+    const EMAIL_RE = /^[^\s@<>(),;:]+@[^\s@<>(),;:]+\.[a-z]{2,}$/i;
+    const toChip = el('span', { class: 'gm-to-chip' });
+    const toBox = el('span', { class: 'gm-to-box' }, [toChip, toIn]);
+    const paintTo = () => {
+      const v = toIn.value.trim().replace(/[,;]+$/, '');
+      if (v !== toIn.value) toIn.value = v;
+      if (!v || !EMAIL_RE.test(v)) { toChip.hidden = true; toIn.hidden = false; toIn.classList.toggle('bad', !!v); return; }
+      toChip.replaceChildren(
+        el('span', { class: 'gm-to-av', 'aria-hidden': 'true' }, v[0].toUpperCase()),
+        el('span', { class: 'gm-to-addr', title: 'Click to edit' }, v),
+        el('button', { type: 'button', class: 'gm-to-x', 'aria-label': 'Remove ' + v, onClick: (e) => { e.preventDefault(); e.stopPropagation(); toIn.value = ''; C.dirty = true; paintTo(); toIn.focus(); } }, '\u00d7'));
+      toIn.classList.remove('bad'); toChip.hidden = false; toIn.hidden = true;
+    };
+    toChip.addEventListener('click', (e) => { if (e.target.closest('.gm-to-x')) return; toChip.hidden = true; toIn.hidden = false; toIn.focus(); toIn.select(); });
+    toIn.addEventListener('keydown', (e) => {
+      if ((e.key === 'Enter' || e.key === ',' || e.key === ';' || (e.key === 'Tab' && !e.shiftKey)) && toIn.value.trim()) {
+        if (EMAIL_RE.test(toIn.value.trim().replace(/[,;]+$/, ''))) { if (e.key !== 'Tab') e.preventDefault(); paintTo(); if (e.key !== 'Tab') subjIn.focus(); }
+        else if (e.key === 'Enter') { e.preventDefault(); toIn.classList.add('bad'); }
+      }
+    });
+    toIn.addEventListener('blur', paintTo);
+    paintTo();
     const subjIn = el('input', { class: 'gm-fld-in', type: 'text', placeholder: 'Subject', 'aria-label': 'Subject', value: init.subject || '' });
     const titleEl = el('span', { class: 'gm-cmp-title' }, init.subject || 'New Message');
     const markDirty = () => { C.dirty = true; titleEl.textContent = subjIn.value.trim() || 'New Message'; };
@@ -1820,7 +1844,7 @@ function createMailbox(host) {
       ]),
       el('div', { class: 'gm-cmp-body' }, [
         el('label', { class: 'gm-fld' }, [el('span', { class: 'gm-fld-l' }, 'From'), fromSel]),
-        el('label', { class: 'gm-fld' }, [el('span', { class: 'gm-fld-l' }, 'To'), toIn]),
+        el('label', { class: 'gm-fld' }, [el('span', { class: 'gm-fld-l' }, 'To'), toBox]),
         el('label', { class: 'gm-fld' }, [el('span', { class: 'gm-fld-l gm-m-only' }, 'Subject'), subjIn]),
         err,
         editor.node,
@@ -1877,7 +1901,7 @@ function createMailbox(host) {
       focus: () => { win.classList.remove('min'); toIn.focus(); },
       // stats arrived after the window opened: rebuild From from the server's list, keep the choice
       refreshFrom: () => { fillFrom(String(fromSel.value || wantFrom)); if (wantFrom && sendBoxes().some(b => b.mailbox === wantFrom) && !C.dirty) fromSel.value = wantFrom; paintFrom(); },
-      fill: (i) => { if (!i) return; if (i.to && !toIn.value) toIn.value = i.to; if (i.subject && !subjIn.value) { subjIn.value = i.subject; titleEl.textContent = i.subject; }
+      fill: (i) => { if (!i) return; if (i.to && !toIn.value) { toIn.value = i.to; paintTo(); } if (i.subject && !subjIn.value) { subjIn.value = i.subject; titleEl.textContent = i.subject; }
         if (i.from && sendBoxes().some(b => b.mailbox === String(i.from).toLowerCase())) { fromSel.value = String(i.from).toLowerCase(); paintFrom(); }
         // body goes ABOVE an untouched signature (forward, prefilled links)
         if (i.bodyHtml && onlySig()) { const first = editor.node.firstChild; sanitizeNodes(i.bodyHtml).forEach(n => editor.node.insertBefore(n, first)); }
@@ -2148,6 +2172,14 @@ a.gm-sp-mailr:hover{background:var(--gm-hov)}.gm-sp-mailr.here{background:var(--
 .gm-cmp-body{flex:1;display:flex;flex-direction:column;min-height:0}
 .gm-fld{display:flex;align-items:center;min-height:40px;margin:0 16px;border-bottom:1px solid #f1f3f4;gap:8px;flex:none}
 .gm-fld-l{color:#444746;min-width:0}
+.gm-to-box{flex:1;min-width:0;display:flex;align-items:center}
+.gm-to-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;height:28px;padding:0 4px 0 2px;border:1px solid #dadce0;border-radius:14px;background:#fff;cursor:text;margin:6px 0}
+.gm-to-chip[hidden]{display:none}
+.gm-to-av{width:24px;height:24px;border-radius:50%;background:#5f6bc4;color:#fff;font:500 13px/24px Roboto,Arial,sans-serif;text-align:center;flex:none}
+.gm-to-addr{font:14px/20px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gm-to-x{border:0;background:transparent;color:#444746;font-size:18px;line-height:20px;width:22px;height:22px;border-radius:50%;cursor:pointer;flex:none}
+.gm-to-x:hover{background:#f1f3f4}
+.gm-fld-in.bad{color:#b3261e;text-decoration:underline wavy #b3261e}
 .gm-fld-in:focus,.gm-fld-in:focus-visible,.gm-editor:focus-visible{outline:none!important;box-shadow:none!important}
 .gm-fld-in{flex:1;min-width:0;border:0;outline:0;background:transparent;font:14px/20px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f;padding:8px 0}
 .gm-from-sel{appearance:none;-webkit-appearance:none;cursor:pointer}
