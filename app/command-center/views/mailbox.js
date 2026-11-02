@@ -78,6 +78,9 @@ const BOX_DEFAULTS = [
   { mailbox: 'dispatch@loadboot.com', label: 'Dispatch', from_name: 'LoadBoot Dispatch', color: '#e8590c', icon: 'truck',  known: true },
   { mailbox: 'billing@loadboot.com',  label: 'Billing',  from_name: 'LoadBoot Billing',  color: '#188038', icon: 'dollar', known: true },
   { mailbox: 'loads@loadboot.com',    label: 'Loads',    from_name: 'LoadBoot Loads',    color: '#9334e6', icon: 'boxes',  known: true },
+  // bl_mail_0590: owner-only inbox for yaseen@ (alias of hello@). Listed here so replies leave FROM yaseen@;
+  // the server still decides who may see it (mail.box.billing).
+  { mailbox: 'yaseen@loadboot.com',   label: 'Yaseen',   from_name: 'LoadBoot Operations', color: '#5f6368', icon: 'label', known: true },
 ];
 const BOX_ADDRS = BOX_DEFAULTS.map(b => b.mailbox);
 // Which address a REPLY leaves from: the mailbox the mail came to (cc_mail_send takes the catalog key

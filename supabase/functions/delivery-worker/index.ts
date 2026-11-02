@@ -46,6 +46,8 @@
 // v22 (2026-09-28, bl_mail_0489): fifth identity "loads" (LoadBoot Loads <loads@loadboot.com>) for the
 //   CC Mailbox's loads@ replies and new messages (template keys loads.mail.*). DB mirror: email_sender_for.
 // v23 (2026-10-12, bl_comm_0543): shell moved to ../_shared/email-shell.ts (verbatim; output unchanged).
+// v24 (2026-11-02, bl_mail_0590): sixth identity "yaseen" (LoadBoot Operations <yaseen@loadboot.com>) for the CC Mailbox
+//   Yaseen inbox (yaseen.mail.*). NOTE: prod runs v22 + this patch (deployed as v31 on 2 Nov); v23's shell move is NOT deployed yet.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { renderCallBand, renderShell, type ShellCtx } from "../_shared/email-shell.ts";
 
@@ -145,6 +147,7 @@ Deno.serve(async (_req) => {
     billing: { from: Deno.env.get("SENDER_BILLING") || "LoadBoot Billing <billing@loadboot.com>", replyTo: "billing@loadboot.com" },
     support: { from: Deno.env.get("SENDER_SUPPORT") || "LoadBoot Support <hello@loadboot.com>", replyTo: "hello@loadboot.com" },
     loads: { from: Deno.env.get("SENDER_LOADS") || "LoadBoot Loads <loads@loadboot.com>", replyTo: "loads@loadboot.com" },
+    yaseen: { from: Deno.env.get("SENDER_YASEEN") || "LoadBoot Operations <yaseen@loadboot.com>", replyTo: "yaseen@loadboot.com" },
   };
   const DISPATCH_RE = /(load|trip|offer|dispatch|booking|tracking|pod|detention|checkin|carrier|driver|ops\.)/i;
   const BILLING_RE = /(billing|invoice|payment|settlement|payout|statement|receipt|factoring)/i;
@@ -160,6 +163,8 @@ Deno.serve(async (_req) => {
     // v22: CC Mailbox replies from loads@ (loads.mail.*) leave from loads@. Checked before
     // DISPATCH_RE, which would otherwise claim them for the word "load".
     if (/^loads\.mail\./i.test(key)) return "loads";
+    // v24: CC Mailbox Yaseen inbox (yaseen.mail.*) leaves from yaseen@.
+    if (/^yaseen\.mail\./i.test(key)) return "yaseen";
     if (BILLING_RE.test(key)) return "billing";
     if (DISPATCH_RE.test(key)) return "dispatch";
     if (d.source === "campaign") return "marketing";
