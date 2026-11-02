@@ -1148,6 +1148,9 @@ export const pocketTrucks = async () => {
   try { const sd = await rpc('cc_pocket_truck_side_doors'); if (Array.isArray(rows) && sd) rows.forEach((r) => { if (r && sd[r.id] !== undefined) r.has_side_door = sd[r.id]; }); } catch (_) {}
   return rows;
 };
+// bl_fleet_0592: who drives each truck.
+export const pocketTruckDrivers = () => rpc('cc_pocket_truck_drivers');
+export const pocketSetTruckDriver = (truck, driver) => rpc('cc_pocket_set_truck_driver', { p_truck: truck, p_driver: driver ?? null });
 export const coiVehicles = () => rpc('cc_coi_vehicles');
 // One jsonb payload instead of 40 positional params. The positional overload still
 // exists server-side for tabs that were open during the deploy; its arg names do not

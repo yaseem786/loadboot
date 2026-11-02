@@ -15,7 +15,7 @@ import {
   myCarrierOrg, pocketOverview, pocketTrips, pocketInvoices, tripPnl, tripFinanceAdd, tripFinanceRemove, carrierEarnings, getCostModel, setCostModel, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, tripSetDriving, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods, pocketTripDocs, requestPacketCopies,
-  pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, coiVehicles, vinCoverage, fleetFmcsaCheck, setLegalOwner, truckLoadingProfiles, pocketTeam, pocketSetMember, carrierInviteDriver, myCapacity,
+  pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, pocketTruckDrivers, pocketSetTruckDriver, coiVehicles, vinCoverage, fleetFmcsaCheck, setLegalOwner, truckLoadingProfiles, pocketTeam, pocketSetMember, carrierInviteDriver, myCapacity,
   pocketFleetAlerts, pocketStatement, pocketTripTimeline, pocketMyExceptions, pocketAssignTrip, pocketAdvanceTrip,
   carrierUploadDocument, carrierListDocuments, fmcsaVerify, carrierAgreementSignature, carrierW9,
   emergencyContacts, emergencyContactAdd, emergencyContactDelete, reportTripIncident, myTripIncidents,
@@ -6288,8 +6288,10 @@ function tripStepper(status) {
         openModal('Assign driver / truck', [h('p', { class: 'cp-row-s' }, 'Add a driver or truck in the Fleet tab first, then come back to assign one to this trip.'), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('fleet') }, 'Go to Fleet')]);
         return;
       }
+      let _tripTruckDrivers = {}; pocketTruckDrivers().then((m) => { _tripTruckDrivers = m || {}; }).catch(() => {});
       const dSel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'No change / unassigned')].concat(drivers.map(d => h('option', { value: d.id }, d.name))));
       const tSel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'No change / unassigned')].concat(trucks.map(tr => h('option', { value: tr.id }, 'Unit ' + tr.unit_no + (tr.equipment ? ' · ' + tr.equipment : '')))));
+      tSel.onchange = () => { const dv = _tripTruckDrivers[tSel.value]; if (dv && !dSel.value && [...dSel.options].some((o) => o.value === dv)) dSel.value = dv; };   // bl_fleet_0592: the truck's own driver is the default
       // bl_drv_0345a: who is at the wheel decides whose phone reports the truck (owner phone is refused otherwise).
       const whoMe = h('input', { type: 'radio', name: 'lb-who', value: 'me' }), whoDrv = h('input', { type: 'radio', name: 'lb-who', value: 'driver' });
       (t.driven_by_owner ? whoMe : whoDrv).checked = true;
@@ -6506,6 +6508,24 @@ function tripStepper(status) {
     // the truck card because it is the first thing that decides whether a load is even
     // possible — and because an unanswered one costs the carrier the freight that pays best.
     let _loadProfiles = {};
+    // bl_fleet_0592: who drives this truck. One driver per truck; choosing a driver already on another truck moves them.
+    let _truckDrivers = {};
+    const truckDriverRow = (t) => {
+      const usable = drivers.filter((d) => (d.status || 'active') === 'active');
+      if (!usable.length) return h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, ['No driver on this truck yet. ', h('button', { class: 'cp-link', style: 'background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit', onClick: () => driverForm(null) }, 'Add a driver')]);
+      const sel = h('select', { class: 'cp-in', 'aria-label': 'Driver on Unit ' + t.unit_no, 'data-lb': 'truck-driver', style: 'margin-top:4px;max-width:320px', onChange: async () => {
+        const was = _truckDrivers[t.id] || ''; const now = sel.value; sel.disabled = true;
+        try {
+          const r = await pocketSetTruckDriver(t.id, now || null);
+          Object.keys(_truckDrivers).forEach((k) => { if (now && _truckDrivers[k] === now) delete _truckDrivers[k]; });
+          if (now) _truckDrivers[t.id] = now; else delete _truckDrivers[t.id];
+          lbToast(now ? ((r && r.driver_name) || 'Driver') + ' is now on Unit ' + t.unit_no + '.' : 'Unit ' + t.unit_no + ' has no driver set.', 'success', 'Fleet updated');
+          renderTrucks();
+        } catch (e) { sel.value = was; sel.disabled = false; lbToast((e && e.message) || 'Could not save the driver.', 'urgent', 'Not saved'); }
+      } }, [h('option', { value: '' }, 'No driver set')].concat(usable.map((d) => h('option', { value: d.id }, d.name || 'Driver'))));
+      sel.value = _truckDrivers[t.id] || '';
+      return h('div', { style: 'margin-top:8px' }, [h('label', { class: 'cp-row-s' }, 'Driver on this truck'), sel]);
+    };
     const renderTrucks = () => mount(truckList, trucks.length ? h('div', null, trucks.map(t => {
       const prof = _loadProfiles[t.id];
       const chipHost = h('span');
@@ -6519,6 +6539,7 @@ function tripStepper(status) {
           ]),
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => truckForm(t) }, 'Edit'),
         ]),
+        truckDriverRow(t),
         (prof && prof.code === 'unknown') ? h('button', { class: 'cpx-banner amber', style: 'margin-top:8px', onClick: () => truckForm(t) },
           [h('span', null, [icon('alert', 15), '']), h('span', null, 'Tell us about the ' + prof.ask + ' — until we know, we cannot promise a shipper how this truck loads'), h('span', { class: 'cpx-b-go' }, '\u203a')]) : null,
       ].filter(Boolean));
@@ -6530,6 +6551,7 @@ function tripStepper(status) {
         if (Object.keys(_loadProfiles).length) renderTrucks();
       } catch (_) {}
     })();
+    (async () => { try { _truckDrivers = (await pocketTruckDrivers()) || {}; if (Object.keys(_truckDrivers).length) renderTrucks(); } catch (_) {} })();
 
     async function inviteDriverToApp(d) {
       try {
@@ -6567,7 +6589,7 @@ function tripStepper(status) {
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
         try {
           await pocketUpsertDriver({ id: d && d.id, name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim(), licenseNo: lic.value.trim(), licenseState: st.value.trim().toUpperCase(), licenseExp: lexp.value || null, medicalExp: mexp.value || null });
-          drivers = await pocketDrivers(); _daMounted = false; renderDrivers();
+          drivers = await pocketDrivers(); _daMounted = false; renderDrivers(); renderTrucks();
           try { draftD9.clear(); } catch (_) {}
           fpDone('driver');
           try { closeD9(); } catch (_) {}

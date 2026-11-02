@@ -430,7 +430,7 @@ export function renderCarrier360(host, orgId) {
         const vNote = (st === 'covered' && coiMode === 'any_auto')
           ? 'The certificate is written as any-auto, so this vehicle does not need to be named on it.' : V[2];
         const heading = [t.unit_no ? 'Unit ' + t.unit_no : 'Truck', t.equipment,
-          list9([t.vin_year, t.vin_make, t.vin_model])].filter(Boolean).join(' · ');
+          list9([t.vin_year, t.vin_make, t.vin_model]), t.default_driver_name ? 'Driver: ' + t.default_driver_name : null].filter(Boolean).join(' · ');
         const lp = t.loading || {};
         return el('details', { style: 'border:1px solid #e6edf6;border-radius:12px;padding:11px 14px;margin-top:10px;background:#fff' }, [
           el('summary', { style: 'cursor:pointer;display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-weight:800;font-size:.9rem' }, [
