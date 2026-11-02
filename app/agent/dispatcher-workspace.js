@@ -21,7 +21,7 @@ import {
   dispatcherPostLoad, dispatcherUpdateLoad, dispatcherWithdrawLoad, dispatcherMyPosts, dispatcherBrokerScreen, fmcsaVerify,   // bl_disp_0549 — post a 3rd-party load on the carrier's board
 } from '../shared/api.js';
 import { setTrainingBanner, trainingBannerHeight } from '../shared/training-banner.js';   // bl_train_0548
-import { BALL_LABEL } from '../shared/dispatcher-rules.js';   // bl_disp_0555 — "where is the load" line on your posts
+import { BALL_LABEL, introLastText } from '../shared/dispatcher-rules.js';   // bl_disp_0555 — "where is the load" line on your posts
 import { threadChat } from '../shared/thread-chat.js';   // bl_ui_0502
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { el, mount, clear } from '../shared/ui/dom.js';
@@ -566,7 +566,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   const GATE_MSG = 'Carrier has not posted availability — nothing to work until they do.';
   function availabilityChip(a) {
     const g = a && a.availability; if (!g || !g.assigned) return null;
-    const intro = a.intro_call_at ? 'Intro call done ' + dwDay(a.intro_call_at) + ' · from here the portal, call only if urgent' : 'Intro call pending — the one call you make: show them where to post availability and why';
+    const intro = a.intro_call_at ? 'Intro call done ' + dwDay(a.intro_call_at) + ' · from here the portal, call only if urgent' : 'Intro call pending' + (a.intro_last ? ' (' + introLastText(a.intro_last) + ') — call again' : ' — the one call you make') + ': show them where to post availability and why';
     if (g.fresh) return h('div', { class: 'dw-ok', style: 'margin-bottom:8px' }, ['✓ Availability posted by the carrier ' + (g.last_label || '') + ' · ' + (g.trucks || 0) + ' truck' + (g.trucks === 1 ? '' : 's') + ' · ', h('span', { class: 'dw-muted' }, intro)]);
     return h('div', { class: g.blocked ? 'dw-warn' : 'dw-info', style: 'margin-bottom:8px' }, [
       h('b', null, '⏳ ' + (g.chip || 'Waiting for availability')),

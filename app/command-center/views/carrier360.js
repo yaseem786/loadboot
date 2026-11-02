@@ -6,6 +6,7 @@
 // via cc_carrier_360 (keyed on the carrier organization id), RBAC-gated on carriers.view.
 import { el, mount } from '../../shared/ui/dom.js';
 import { ccDispatcherDelaySet, ccCarrierLoginStatus, ccCarrierPhoneStatus } from '../../shared/api.js';   // bl_disp_0410 · bl_ux_0486
+import { introLastText } from '../../shared/dispatcher-rules.js';   // bl_disp_0591
 import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
 import { prefsCard as sharedPrefsCard, prefsSourcesMap } from '../../shared/ui/prefs-card.js';   // bl_pref_0536 — aliased: `prefsCard` below is the local card() element
 import { ccCarrierFieldSources, ccFieldSuggestions, ccFieldSuggestionDecide } from '../../shared/api.js';
@@ -164,7 +165,7 @@ export function renderCarrier360(host, orgId) {
     if (d.dispatcher_assignment) {
       const g = d.availability_gate || {}; const da = d.dispatcher_assignment;
       body.appendChild(card('Dispatcher · availability + intro call', el('div', { class: 'cc-sub', style: 'line-height:1.7' }, [
-        el('div', null, [el('b', null, da.dispatcher || 'Dispatcher'), ' · assigned ' + String(da.assigned_at || '').slice(0, 10) + (da.intro_call_at ? ' · intro call done ' + String(da.intro_call_at).slice(0, 10) + ' — urgent calls only since' : ' · intro call pending (the one call the dispatcher makes)')]),
+        el('div', null, [el('b', null, da.dispatcher || 'Dispatcher'), ' · assigned ' + String(da.assigned_at || '').slice(0, 10) + (da.intro_call_at ? ' · intro call done ' + String(da.intro_call_at).slice(0, 10) + ' — urgent calls only since' : ' · intro call pending' + (da.intro_last ? ' — ' + introLastText(da.intro_last) : da.intro_last === null ? ' — no attempt yet' : ''))]),
         el('div', { style: 'color:' + (g.fresh ? '#15803d' : g.blocked ? '#b91c1c' : '#b45309') + ';font-weight:700' }, g.fresh ? '✓ Availability posted by the carrier ' + g.last_label + ' · ' + (g.trucks || 0) + ' truck(s)' : (g.chip || 'Waiting for availability') + (g.blocked ? ' · board hidden, dispatcher cannot post (enforce)' : ' · warn mode — nothing blocked, carrier reminded once a day')),
         el('div', null, 'A line the dispatcher enters in Trucks never counts — only the carrier’s own post (truck posting or Trucks-tab line, within ' + (g.days || 7) + ' days). Modes: Dispatcher 360 → Rules & call reasons.'),
       ])));

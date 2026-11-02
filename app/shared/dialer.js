@@ -25,6 +25,7 @@ import {
 } from './api.js';
 import { createWaPanel } from './dialer-wa.js';
 import { guideView, guideSeen } from './dialer-guide.js';   // bl_dial_0461 — in-phone guide (auto once, then the ? in the header)
+import { introLastText } from './dispatcher-rules.js';   // bl_disp_0591
 
 const h = el;
 const ET = 'America/New_York';
@@ -626,7 +627,7 @@ function createDialer() {
     const m = l.match || {};
     if (m.contact_name) mount(box, [ic('check', 15), h('span', null, [h('b', null, m.contact_name), m.mc ? ' · MC ' + m.mc : '', l.count ? ' · ' + l.count + ' call' + (l.count > 1 ? 's' : '') : '', l.last && l.last.outcome ? ' · last: ' + l.last.outcome : '', m.new_authority_ok === false ? ' · no new MCs' : ''])]);
     else mount(box, l.count ? ['Called ' + l.count + '× before', l.last && l.last.outcome ? ' · last: ' + l.last.outcome : ''] : 'New number — you can save it to your broker book after the call.');
-    if (l.carrier_call) box.appendChild(h('span', { class: 'lbd-cc' }, l.carrier_call.callback_ok ? 'Callback — no reason needed' : l.carrier_call.intro_done ? 'Intro done · urgent reasons only' : 'Your intro call'));   // bl_disp_0555
+    if (l.carrier_call) box.appendChild(h('span', { class: 'lbd-cc' }, l.carrier_call.callback_ok ? 'Callback — no reason needed' : l.carrier_call.intro_done ? 'Intro done · urgent reasons only' : 'Your intro call' + (l.carrier_call.intro_last ? ' · ' + introLastText(l.carrier_call.intro_last) : '')));   // bl_disp_0555
   }
   function paintCallBtn() { const b = root.querySelector('[data-callbtn]'); if (b) b.disabled = digits(S.number).length < 10 || !!(S.look && S.look.blocked) || S.conn !== 'ready'; }
 

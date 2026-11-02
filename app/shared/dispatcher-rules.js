@@ -12,3 +12,13 @@ export const STANDING_RULES = [
 
 // Where a dispatcher-posted load is, in one line for either side (mirrors app_private.disp_load_stage ball values).
 export const BALL_LABEL = { carrier: 'Waiting on the carrier', dispatcher: 'Your move', broker: 'Waiting on the broker', loadboot: 'Waiting on LoadBoot', driver: 'Driver moving', done: 'Done', closed: 'Closed' };
+
+// bl_disp_0591 — the last intro-call attempt, in words ("last try Nov 2: no answer · 2 tries"). Only a CONNECTED call
+// counts as the intro; every other result keeps the intro pending.
+export const INTRO_RESULT_LABEL = { connected: 'connected', short: 'picked up, ended in seconds', voicemail: 'voicemail', no_answer: 'no answer', busy: 'line busy', declined: 'declined', bad_number: 'number not reachable' };
+export function introLastText(l) {
+  if (!l || !l.result) return '';
+  const d = new Date(l.at);
+  const when = isNaN(d) ? '' : ' ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' }) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) + ' ET';
+  return 'last try' + when + ': ' + (INTRO_RESULT_LABEL[l.result] || l.result) + (l.tries > 1 ? ' · ' + l.tries + ' tries' : '');
+}
