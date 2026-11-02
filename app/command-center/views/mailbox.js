@@ -109,6 +109,15 @@ const WORK_VIEWS = [
   { id: 'done',        label: 'Done',            ic: 'archive', work: true },
 ];
 const WORK_IDS = WORK_VIEWS.map(f => f.id);
+// Owner 2 Nov 2026: lists read newest first (date + time). The deadline-ordered queue is one click away ("Due soonest first").
+const DUE_SORT_VIEWS = ['needs_reply', 'mine', 'late'];
+const SORT_KEY = 'lb.mail.sort';
+const readSort = () => { try { return localStorage.getItem(SORT_KEY) === 'due' ? 'due' : 'newest'; } catch (_) { return 'newest'; } };
+const ts = (v) => { const n = v ? new Date(v).getTime() : NaN; return isNaN(n) ? null : n; };
+function sortThreads(list, mode) {
+  if (mode === 'due') return list.sort((a, b) => (ts(a.reply_due_at) ?? Infinity) - (ts(b.reply_due_at) ?? Infinity) || (ts(b.last_at) ?? 0) - (ts(a.last_at) ?? 0));
+  return list.sort((a, b) => (ts(b.last_at) ?? 0) - (ts(a.last_at) ?? 0));
+}
 const FOLDER_IDS = FOLDERS.concat(MORE_FOLDERS).map(f => f.id).concat(WORK_IDS);
 const DEFAULT_FOLDER = 'needs_reply';   // bl_mail_0579: the Mailbox opens on the work queue, soonest deadline first
 const serverFolder = (f) => f === 'updates' ? 'system' : WORK_IDS.includes(f) ? 'all' : f;
@@ -219,9 +228,12 @@ function avatar(nameOrEmail, size = 40) {
 function listDate(ts) {
   if (!ts) return '';
   const d = new Date(ts), now = new Date();
-  if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  if (d.getFullYear() === now.getFullYear()) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  return d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' });
+  const tm = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });   // owner 2 Nov 2026: every row shows date AND time
+  if (d.toDateString() === now.toDateString()) return 'Today, ' + tm;
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return 'Yesterday, ' + tm;
+  if (d.getFullYear() === now.getFullYear()) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + tm;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ', ' + tm;
 }
 function relAgo(ts) {
   const s = (Date.now() - new Date(ts).getTime()) / 1000;
@@ -317,7 +329,7 @@ export function renderMailbox(host, query) {
 
 function createMailbox(host) {
   const S = {
-    folder: DEFAULT_FOLDER, label: '', q: '', thread: null,
+    folder: DEFAULT_FOLDER, label: '', q: '', thread: null, sort: readSort(),
     threads: [], total: 0, cursors: [null], nextBefore: null, listLoaded: false, listKey: '',
     sel: new Set(), stats: null, canSend: false, canDraft: can('comm.send'),
     railCollapsed: window.innerWidth < 1280, moreOpen: false,
@@ -488,6 +500,7 @@ function createMailbox(host) {
     progress.hidden = true;
     S.listError = null;
     S.threads = res?.threads || [];
+    if (DUE_SORT_VIEWS.includes(S.folder)) sortThreads(S.threads, S.sort);
     S.total = Number(res?.total ?? S.threads.length);
     S.nextBefore = res?.next_before || null;
     S.listLoaded = true;
@@ -779,7 +792,16 @@ function createMailbox(host) {
         onClick: (e) => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); nav({ role: id, thread: null }); },
       }, [el('span', null, r ? r.label : 'Everyone'), n ? el('span', { class: 'gm-rolep-n' }, n > 99 ? '99+' : String(n)) : null]);
     };
-    return el('div', { class: 'gm-rolebar', role: 'tablist', 'aria-label': 'Who sent it' }, [chip(null), ...ROLES.map(chip)]);
+    const sortBtn = DUE_SORT_VIEWS.includes(S.folder) ? el('button', {
+      type: 'button', class: 'gm-rolep gm-sortp', title: 'Change the order of this list',
+      onClick: () => {
+        S.sort = S.sort === 'due' ? 'newest' : 'due';
+        try { localStorage.setItem(SORT_KEY, S.sort); } catch (_) {}
+        sortThreads(S.threads, S.sort);
+        if (!S.thread) paintListView();
+      },
+    }, S.sort === 'due' ? '⇅ Due soonest first' : '⇅ Newest first') : null;
+    return el('div', { class: 'gm-rolebar', role: 'tablist', 'aria-label': 'Who sent it' }, [chip(null), ...ROLES.map(chip), sortBtn]);
   }
 
   // Mailbox switcher above the list (every width; on phones it is THE switcher) + the open mailbox's banner.
@@ -2049,7 +2071,7 @@ function injectStyleOnce() {
 .gm-list{flex:1;overflow-y:auto;min-height:0}
 .gm-empty{padding:48px 24px;text-align:center;color:var(--gm-mut);font-size:14px;line-height:1.6}
 /* rows */
-.gm-row{position:relative;display:grid;grid-template-columns:34px 30px minmax(120px,200px) minmax(0,1fr) 76px;align-items:center;height:40px;padding:0 16px 0 12px;
+.gm-row{position:relative;display:grid;grid-template-columns:34px 30px minmax(120px,200px) minmax(0,1fr) 132px;align-items:center;height:40px;padding:0 16px 0 12px;
   background:#f2f6fc;color:#202124;cursor:pointer;border-bottom:1px solid var(--gm-line);outline:none}
 .gm-row.unread{background:#fff}
 .gm-row.unread .gm-from,.gm-row.unread .gm-subj,.gm-row.unread .gm-date{font-weight:700;color:#1f1f1f}
@@ -2073,6 +2095,7 @@ function injectStyleOnce() {
 .gm-nav.gm-alarm .gm-nav-c{color:#c5221f;font-weight:700}
 .gm-rolebar{display:flex;gap:6px;flex-wrap:wrap;padding:6px 16px 2px}
 .gm-rolep{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid #dadce0;border-radius:14px;font-size:13px;color:#3c4043;text-decoration:none;background:#fff}
+.gm-sortp{margin-left:auto;cursor:pointer;font:inherit;font-size:13px}
 .gm-rolep.active{background:#e8f0fe;border-color:#1a73e8;color:#1a56c4;font-weight:600}
 .gm-rolep-n{font-size:11.5px;font-weight:700;background:#f1f3f4;border-radius:9px;padding:0 6px;line-height:18px}
 .gm-wbans{margin:4px 0 8px}.gm-wban{font-size:13px;color:#3c4043;padding:6px 0}.gm-wban.warn{background:#fce8e6;color:#a50e0e;border-radius:8px;padding:8px 12px;margin-bottom:6px}
