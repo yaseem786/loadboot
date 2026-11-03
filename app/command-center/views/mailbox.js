@@ -60,7 +60,7 @@ import {
   mailList, mailThread, mailDraftSave, mailDraftDiscard, mailSend, mailStats, mailSetFolder,
   mailThreadAction, mailComposeSave,
   mailWorkCounts, mailRoleCounts, mailOwners, mailAssign, mailSetStatus, mailViewing, mailSenderCard,
-  mailAttachments, staffUploadDocument, dmailAct, ccDmailOverview, ccDmailAccountSave,
+  mailAttachments, staffUploadDocument, dmailAct, ccDmailOverview, ccDmailAccountSave, globalSearch,
 } from '../../shared/api.js';
 import { uploadDocumentForCarrier } from '../../shared/storage.js';
 import { humanizeError, toast } from '../../shared/errors.js';
@@ -1194,6 +1194,67 @@ function createMailbox(host) {
   // mailboxes only — today dispatch@). Anything else: save it from webmail and pick it here. Same audited path as
   // staffUpload.js (uploadDocumentForCarrier + cc_staff_upload_document, source 'email'); approval stays a human step.
   const attCache = new Map();
+  // bl_mail_0595: files on each incoming email, read from the IMAP copy. Only types a browser shows safely can open in a
+  // tab; anything else (HTML above all) only downloads, so an emailed file can never run inside the Command Center.
+  const threadAtt = new Map();
+  const OPEN_OK = ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+  function threadFiles(thread) {
+    if (!threadAtt.has(thread)) threadAtt.set(thread, mailAttachments(thread).then((r) => { const it = (r && r.items) || []; if (!it.length) threadAtt.delete(thread); return it; }).catch(() => { threadAtt.delete(thread); return []; }));
+    return threadAtt.get(thread);
+  }
+  async function fetchMailFile(a) {
+    const blob = await dmailAct({ action: 'attachment', account: a.account, id: a.dmail_id, idx: a.idx });
+    if (!(blob instanceof Blob)) throw new Error('The mail server did not return the file — try again.');
+    return blob;
+  }
+  function mailFilesRow(m) {
+    if (!can('documents.review') || m.direction === 'out' || m.source === 'imap') return null;
+    const host = el('div', { class: 'gm-files' });
+    threadFiles(S.thread).then((items) => {
+      const mine = items.filter((a) => a.mail_id === m.id);
+      if (!mine.length) return;
+      mount(host, mine.map((a) => {
+        const type = String(a.type || '').toLowerCase();
+        const open = el('button', { type: 'button', class: 'gm-file-btn', onClick: async () => {
+          const w = window.open('', '_blank'); if (w) w.opener = null;
+          open.disabled = true;
+          try {
+            const url = URL.createObjectURL(new Blob([await fetchMailFile(a)], { type }));
+            if (w) w.location.href = url; else toast('Your browser blocked the new tab — use Download.', 'error');
+            setTimeout(() => URL.revokeObjectURL(url), 120000);
+          } catch (e) { if (w) w.close(); toast(humanizeError(e), 'error'); }
+          open.disabled = false;
+        } }, 'Open');
+        const dl = el('button', { type: 'button', class: 'gm-file-btn', onClick: async () => {
+          dl.disabled = true;
+          try {
+            const url = URL.createObjectURL(await fetchMailFile(a));
+            const link = el('a', { href: url, download: a.name || 'attachment' }); document.body.appendChild(link); link.click(); link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+          } catch (e) { toast(humanizeError(e), 'error'); }
+          dl.disabled = false;
+        } }, 'Download');
+        return el('div', { class: 'gm-file' }, [ic('file', 18), el('span', { class: 'gm-file-n', title: a.name || '' }, a.name || 'attachment'), el('span', { class: 'gm-file-s' }, sizeTxt(a.size)), OPEN_OK.includes(type) ? open : null, dl]);
+      }));
+    });
+    return host;
+  }
+  // bl_mail_0595: a sender whose address is not on file (a personal mailbox, say) can still have the file put on the right
+  // carrier: staff search for the carrier here; the same attach rows and audited upload path are used.
+  const pickedCarrier = new Map();
+  function carrierPicker(key) {
+    const q = el('input', { class: 'gm-sp-sel', type: 'search', placeholder: 'Carrier name, MC or DOT' });
+    const out = el('div');
+    const find = async () => {
+      const t = q.value.trim(); if (t.length < 2) { mount(out, el('div', { class: 'gm-sp-note' }, 'Type at least 2 characters.')); return; }
+      mount(out, el('div', { class: 'gm-sp-note' }, 'Searching…'));
+      let rows = []; try { rows = ((await globalSearch(t, 12)) || []).filter((r) => r.kind === 'carrier'); } catch (e) { mount(out, el('div', { class: 'gm-sp-note' }, humanizeError(e))); return; }
+      mount(out, rows.length ? rows.map((r) => el('button', { type: 'button', class: 'gm-linkbtn gm-sp-pick', onClick: () => { pickedCarrier.set(key, { id: r.id, name: r.label }); if (sideEl && sideEl.isConnected) mount(sideEl, cardBody(key)); } }, r.label + (r.sublabel ? ' · ' + r.sublabel : ''))) : el('div', { class: 'gm-sp-note' }, 'No carrier found.'));
+    };
+    q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); find(); } });
+    return [el('div', { class: 'gm-sp-note' }, 'Check that this person speaks for the carrier before attaching. The file still needs approving.'),
+      el('div', { class: 'gm-sp-attr' }, [q, el('button', { type: 'button', class: 'gm-sp-btn', onClick: find }, 'Find')]), out];
+  }
   const DOC_TYPES = [['', '— what is it? —'], ['insurance', 'Insurance (COI)'], ['authority', 'MC authority'], ['w9', 'W-9'],
     ['bank_check', 'Bank verification'], ['noa', 'Factoring NOA'], ['mcs150', 'MCS-150'], ['other', 'Other']];
   function guessType(name) {
@@ -1281,6 +1342,12 @@ function createMailbox(host) {
     const secs = [head];
     if (!c.matched || !o) {
       secs.push(el('div', { class: 'gm-sp-note' }, 'This address is not matched to a LoadBoot carrier, broker or shipper.'));
+      if (can('documents.review')) {
+        const pc = pickedCarrier.get(key);
+        secs.push(spSec('Attach to carrier', pc
+          ? [el('div', { class: 'gm-sp-ln' }, [el('span', { class: 'gm-sp-k' }, pc.name), el('button', { type: 'button', class: 'gm-linkbtn', onClick: () => { pickedCarrier.delete(key); mount(sideEl, cardBody(key)); } }, 'Change')]), ...attachSection(key, pc)]
+          : carrierPicker(key)));
+      }
     } else {
       const href = ORG_HREF[o.kind] && can(o.kind === 'carrier' ? 'carriers.view' : 'comm.view') ? ORG_HREF[o.kind] + encodeURIComponent(o.id) : null;
       secs.push(spSec(titleCase(o.kind || 'organization'), [
@@ -1478,6 +1545,7 @@ function createMailbox(host) {
         d.attachments && d.attachments.length
           ? el('div', { class: 'gm-attach' }, [ic('file', 18), ' ' + d.attachments.map(a => a.filename).join(', ') + ' — attachments are not stored yet; open the message in your mail app to get them.'])
           : null,
+        mailFilesRow(m),
         bodyHost,
       ]),
     ]);
@@ -2155,6 +2223,7 @@ a.gm-sp-mailr:hover{background:var(--gm-hov)}.gm-sp-mailr.here{background:var(--
 .gm-frame-tools{display:flex;gap:16px;margin-top:6px;font-size:12px}
 .gm-imgbar{display:flex;align-items:center;gap:8px;background:#f1f3f4;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:#3c4043}
 .gm-attach{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:var(--gm-mut)}
+.gm-files{display:flex;flex-direction:column;gap:6px;margin:10px 0 2px}.gm-files:empty{display:none}.gm-file{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--gm-line);border-radius:8px;padding:8px 10px;font-size:13px;max-width:520px}.gm-file-n{flex:1 1 140px;min-width:0;overflow-wrap:anywhere;font-weight:600}.gm-file-s{color:var(--gm-mut);font-size:12px}.gm-file-btn{border:1px solid var(--gm-line);background:transparent;color:inherit;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer}.gm-file-btn[disabled]{opacity:.55;cursor:default}.gm-sp-pick{display:block;text-align:left;margin:6px 0;overflow-wrap:anywhere}
 .gm-folded{display:flex;align-items:center;height:26px;border:0;border-top:1px solid var(--gm-line);border-bottom:1px solid var(--gm-line);background:repeating-linear-gradient(#fff 0 3px,#f1f3f4 3px 4px);cursor:pointer;padding:0 0 0 20px;margin:4px 0}
 .gm-folded-n{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid #dadce0;color:var(--gm-mut);font-size:13px}
 .gm-reply-btns{display:flex;gap:12px;padding:20px 16px 8px 72px;flex-wrap:wrap}
