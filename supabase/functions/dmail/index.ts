@@ -42,6 +42,8 @@ const hdrRcpt = (p: Any): string[] => Array.from(new Set((p.headers || []).filte
 const b64 = (u8: Uint8Array) => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); };
 const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 const bytesOf = (c: Any): Uint8Array => typeof c === "string" ? new TextEncoder().encode(c) : c instanceof Uint8Array ? c : new Uint8Array(c);
+// bl_mail_0593: jsonb cannot hold U+0000. One email carrying it made dmail_ingest fail on every run and stalled that mailbox's sync.
+const scrub = (v: Any): Any => typeof v === "string" ? v.replace(/\u0000/g, "") : Array.isArray(v) ? v.map(scrub) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, scrub(x)])) : v;
 
 async function rolePaths(client: Any, known: Any): Promise<Record<Role, string | null>> {
   const out: Record<Role, string | null> = { inbox: "INBOX", sent: known?.sent?.path ?? null, spam: known?.spam?.path ?? null, trash: known?.trash?.path ?? null };
@@ -112,7 +114,7 @@ async function syncAccount(svc: SupabaseClient, acc: Any) {
             if (big.length) for await (const m of client.fetch(big.join(","), { uid: true, flags: true, size: true, internalDate: true, envelope: true }, { uid: true })) raw.push(m);
             const msgs = []; for (const m of raw) { try { msgs.push(await parseMsg(m)); } catch (e) { msgs.push({ uid: m.uid, subject: "(unreadable message)", text: String(e).slice(0, 200), to: [], cc: [], bcc: [], refs: [], attachments: [] }); } }
             // one RPC per message keeps each payload small; ingest is idempotent on (folder, uidvalidity, uid)
-            for (const one of msgs) { const { data, error } = await svc.rpc("dmail_ingest", { p_account: acc.id, p_folder: role, p_uidvalidity: uv, p_msgs: [one] }); if (error) throw new Error("ingest: " + error.message); added += Number(data || 0); }
+            for (const one of msgs) { const { data, error } = await svc.rpc("dmail_ingest", { p_account: acc.id, p_folder: role, p_uidvalidity: uv, p_msgs: [scrub(one)] }); if (error) throw new Error("ingest: " + error.message); added += Number(data || 0); }
             last = found[found.length - 1];
           } else last = uidNext - 1;
         }
