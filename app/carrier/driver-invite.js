@@ -75,7 +75,10 @@ function joined(r) {
   msg('', true);
 }
 
-async function finish() {
+// One join at a time: signing in while init() is still checking the link must not fire a second accept.
+let joining = null;
+function finish() { if (!joining) joining = doFinish().finally(() => { joining = null; }); return joining; }
+async function doFinish() {
   msg('Joining your carrier…', true);
   try { localStorage.setItem('lb_role_hint', 'driver'); } catch (_) {}
   try { const r = await acceptDriverInvite(token, platform); joined(r); }
@@ -88,8 +91,42 @@ async function finish() {
   }
 }
 
+// bl_fleet_0595: what state is this link in? Asked through driver-join because the visitor has no session and the peek RPC
+// stays off the anon surface. If the check itself fails we fall back to the normal form: the server still decides on join.
+async function peekInvite() {
+  try {
+    const r = await fetch(ENV.supabaseUrl + '/functions/v1/driver-join', { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': ENV.supabaseAnonKey, 'Authorization': 'Bearer ' + ENV.supabaseAnonKey }, body: JSON.stringify({ action: 'peek', token }) });
+    return r.ok ? await r.json() : null;
+  } catch (_) { return null; }
+}
+function closedLink(title, text) { document.querySelector('h1').textContent = title; $('sub').textContent = text; $('form').style.display = 'none'; }
+// An old link can still join: the person the newest invite was sent to signs in, and the server moves them onto that invite.
+function signInOnly(title, text, label) {
+  document.querySelector('h1').textContent = title; $('sub').textContent = text;
+  ['name', 'signupBtn'].forEach((id) => { const e = $(id); if (e) e.style.display = 'none'; });
+  const l = document.querySelector('label[for="name"]'); if (l) l.style.display = 'none';
+  $('pw').placeholder = 'Your password'; $('pw').autocomplete = 'current-password';
+  $('signinBtn').textContent = label; $('signinBtn').classList.remove('ghost');
+}
+function closedScreen(st) {
+  const who = st.carrier || 'Your carrier';
+  if (st.status === 'accepted') { signInOnly('This invite was already used', 'If you joined with it, sign in with that login.', 'Sign in'); return; }
+  const title = st.status === 'expired' ? 'This invite expired' : 'This invite link was replaced';
+  if (st.newer_pending) signInOnly(title, who + ' sent a newer invite to ' + (st.newer_email_hint || 'another email') + '. Open that newest email and tap its button. Already made a LoadBoot login with that email? Sign in below and you join right away.', 'Sign in & join');
+  else closedLink(title, 'Ask ' + who + ' to send you a new invite from their Fleet page. This link can’t create an account any more.');
+}
+
 async function init() {
   if (!token) { msg('This invite link is missing its code. Ask the carrier to resend it.'); $('form').style.display = 'none'; return; }
+  $('form').style.visibility = 'hidden';   // no flash of a form this link may not be able to use
+  const st = await peekInvite();
+  $('form').style.visibility = '';
+  if (st && st.status === 'not_found') { closedLink('This invite link isn’t valid', 'Open the newest invite email from your carrier, or ask them to send a new one.'); return; }
+  if (st && !st.ok) closedScreen(st);
+  else if (st) {
+    if (st.carrier) document.querySelector('h1').textContent = 'Join ' + st.carrier + ' on LoadBoot';
+    if (st.email_hint) { const n = document.createElement('div'); n.className = 'hint'; n.style.marginBottom = '6px'; n.textContent = 'This invite was sent to ' + st.email_hint + '. Use that email.'; $('form').prepend(n); }
+  }
   try { const u = await getUser(); if (u) { finish(); } } catch (_) {}
 }
 

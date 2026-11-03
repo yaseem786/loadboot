@@ -2427,6 +2427,23 @@ function lbStopsModal9(l9) {
       h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, [icon('finance',15),' Every extra stop carries stop-off pay on the rate card, and each stop gets its own GPS check-in — detention protection applies at EVERY stop, not just pickup and delivery.'])),
   ]);
 }
+// bl_fleet_0595: a driver login that no carrier has linked yet (usually signed up on an old invite link). If the newest invite
+// was sent to this confirmed email, one tap joins; the invite page and cc_accept_driver_invite do the rest.
+function unlinkedDriver(ctx) {
+  const inv = ctx && ctx.invite; const who = (ctx && ctx.email) || 'this login';
+  const out = async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Signing out…'; await signOut(); location.reload(); };
+  mount(root, h('div', { class: 'cp-auth' }, [h('div', { class: 'cp-auth-card' }, inv ? [
+    h('h1', null, 'Join ' + (inv.carrier || 'your carrier')),
+    h('p', { class: 'cp-auth-sub' }, (inv.carrier || 'Your carrier') + ' invited ' + who + ' to drive on LoadBoot. Tap below to finish joining. There is nothing else to fill in.'),
+    h('button', { class: 'cp-btn cp-btn-lg', onClick: () => { location.href = '/app/carrier/driver-invite.html?t=' + encodeURIComponent(inv.token); } }, 'Join now'),
+    h('button', { class: 'cp-btn cp-btn-lg cp-btn-ghost', style: 'margin-top:10px', onClick: out }, 'Sign out'),
+  ] : [
+    h('h1', null, 'Your login isn’t linked to a carrier yet'),
+    h('p', { class: 'cp-auth-sub' }, 'You’re signed in as ' + who + ', but no carrier has an open invite for it. Open the newest invite email from your carrier and tap its button. Older links stop working when a new invite is sent. No email? Ask your carrier to send a new invite from their Fleet page, to this address.'),
+    h('button', { class: 'cp-btn cp-btn-lg', onClick: out }, 'Sign out'),
+  ])]));
+  root.setAttribute('aria-busy', 'false');
+}
 function notCarrier() {
   const card = h('div', { class: 'cp-auth-card' }, [
     h('h1', null, 'No carrier account'),
@@ -2538,7 +2555,7 @@ async function appView(user) {
   // bl_perf_0415: the overview request leaves at the same time as the driver-context one (they never depended on each
   // other) — one round trip fewer before the shell can draw. A driver's overview result is simply ignored.
   const ovP9 = pocketOverview().then((v) => ({ v }), (e) => ({ e }));
-  try { const dctx = await myDriverContext(); if (dctx && dctx.role === 'driver') DRV = dctx; } catch (_) {}
+  try { const dctx = await myDriverContext(); if (dctx && dctx.role === 'driver') DRV = dctx; if (dctx && dctx.role === 'unlinked') { unlinkedDriver(dctx); return; } } catch (_) {}
   window.__lbDriver = DRV;
   try { if (DRV) localStorage.setItem('lb_role_hint', 'driver'); } catch (_) {}
   window.__lbUI = { h, mount, openModal, lbToast, icon, cardHead };

@@ -23,6 +23,16 @@ Deno.serve(async (req: Request) => {
     const URL_ = Deno.env.get("SUPABASE_URL") ?? ""; const SRK = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     if (!URL_ || !SRK) return out({ ok: false, error: "server_config" }, 500);
     const b = await req.json().catch(() => ({}));
+    // bl_fleet_0595: the invite page asks what state its link is in before showing a form. The caller has no session and
+    // cc_driver_invite_peek stays off the anon surface, so it runs here. Only safe fields go back: masked emails, no names.
+    if (String(b.action ?? "") === "peek") {
+      const t = String(b.token ?? "").trim();
+      if (!/^[0-9a-f]{20,64}$/.test(t)) return out({ ok: false, status: "not_found" });
+      const pr = await fetch(`${URL_}/rest/v1/rpc/cc_driver_invite_peek`, { method: "POST", headers: { "Content-Type": "application/json", "apikey": SRK, "Authorization": `Bearer ${SRK}` }, body: JSON.stringify({ p_token: t }) });
+      const p = await pr.json().catch(() => null);
+      if (!pr.ok || !p) return out({ ok: false, error: "peek_failed" }, 500);
+      return out({ ok: p.ok === true, status: p.status ?? p.reason ?? "not_found", carrier: p.carrier ?? null, email_hint: p.email_hint ?? null, newer_pending: p.newer_pending === true, newer_email_hint: p.newer_email_hint ?? null });
+    }
     const token = String(b.token ?? "").trim(), code = String(b.code ?? "").trim();
     const email = String(b.email ?? "").trim().toLowerCase(), password = String(b.password ?? "");
     const name = String(b.name ?? "").trim().slice(0, 120), platform = String(b.platform ?? "").slice(0, 20);
