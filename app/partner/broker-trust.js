@@ -286,7 +286,7 @@ function screenCard(st, refresh) {
     facts,
     (!scr || scr.outcome !== 'pass') ? h('div', { class: 'bt-row' }, [h('div', { class: 'bt-seg' }, [segMc, segDot]), mc, btn]) : null,
     err,
-    (!scr || scr.outcome !== 'pass') ? h('div', { class: 'bt-note' }, 'Don’t have your own MC? Post under the brokerage you work for instead — ', [h('a', { href: '#', onClick: (ev) => { ev.preventDefault(); refresh(false, 'agent'); } }, 'I’m an agent →')]) : null,
+    (!scr || scr.outcome !== 'pass') ? h('div', { class: 'bt-note' }, ['Don’t have your own MC? Post under the brokerage you work for instead — ', h('a', { href: '#', onClick: (ev) => { ev.preventDefault(); refresh(false, 'agent'); } }, 'I’m an agent →')]) : null,
   ]);
 }
 
@@ -548,14 +548,16 @@ export function mountBrokerTrust(host, opts = {}) {
     if (!st) { mount(host, h('div', { class: 'bt-wrap' }, h('div', { class: 'bt-card' }, [h('div', { class: 'bt-skel', style: 'width:40%' }), h('div', { class: 'bt-skel', style: 'width:90%' }), h('div', { class: 'bt-skel', style: 'width:70%' })]))); return; }
     const isAgent = st.agent ? true : mode === 'agent';
     const [cls, label] = TIER_LABEL[st.tier] || TIER_LABEL.new;
-    const authBlocked = st.tier === 'authority_fail' || st.tier === 'authority_stale';  // bl_bp_0343
+    // bl_bp_0597: an MC that never passed is not a lost authority. Show the MC form and the agent route, not the pause card.
+    const neverCleared = st.tier === 'authority_fail' && !st.agent && !!st.screening && st.screening.ever_passed === false;
+    const authBlocked = (st.tier === 'authority_fail' && !neverCleared) || st.tier === 'authority_stale';  // bl_bp_0343
     const sst = stepState(st); const nDone = ['s1', 's2', 's3', 's4'].filter((k) => sst[k] === 'done').length;
     const hero = h('div', { class: 'bt-hero' }, [
       h('div', { class: 'bt-hero-top' }, [
         h('div', { style: 'flex:1;min-width:260px' }, [
           h('div', { class: 'bt-hero-k' }, 'Broker onboarding · ' + label),
-          h('div', { class: 'bt-hero-t' }, st.tier === 'authority_fail' ? 'New posting is paused.' : st.tier === 'authority_stale' ? 'We could not re-confirm your authority.' : st.tier === 'verified' ? 'You’re fully verified.' : st.can_post ? 'You’re cleared to post.' : st.tier === 'unclaimed' ? 'Authority confirmed — one click left.' : 'Post your first load in minutes — no documents to start.'),
-          h('div', { class: 'bt-hero-s' }, st.tier === 'authority_fail' ? 'FMCSA no longer shows active broker authority for this MC. Booked trips, tracking, invoices and payments are untouched — see below.' : st.tier === 'authority_stale' ? 'Our FMCSA lookup has not succeeded recently, so we will not claim a verification we do not have. Nothing was cancelled — see below.' : st.tier === 'verified' ? 'Unlimited postings, instant booking for carriers, payables inside LoadBoot.' : 'Authority read live from FMCSA — no PDFs. Documents only where they matter: first booking, first payment.'),
+          h('div', { class: 'bt-hero-t' }, neverCleared ? 'We could not clear this MC yet.' : st.tier === 'authority_fail' ? 'New posting is paused.' : st.tier === 'authority_stale' ? 'We could not re-confirm your authority.' : st.tier === 'verified' ? 'You’re fully verified.' : st.can_post ? 'You’re cleared to post.' : st.tier === 'unclaimed' ? 'Authority confirmed — one click left.' : 'Post your first load in minutes — no documents to start.'),
+          h('div', { class: 'bt-hero-s' }, neverCleared ? 'Enter your broker MC below, or choose the agent option if you post under another brokerage.' : st.tier === 'authority_fail' ? 'FMCSA no longer shows active broker authority for this MC. Booked trips, tracking, invoices and payments are untouched — see below.' : st.tier === 'authority_stale' ? 'Our FMCSA lookup has not succeeded recently, so we will not claim a verification we do not have. Nothing was cancelled — see below.' : st.tier === 'verified' ? 'Unlimited postings, instant booking for carriers, payables inside LoadBoot.' : 'Authority read live from FMCSA — no PDFs. Documents only where they matter: first booking, first payment.'),
         ]),
         progressRing(nDone, 4, st.tier === 'verified' ? 'verified' : 'steps done'),
       ]),
