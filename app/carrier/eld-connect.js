@@ -41,7 +41,7 @@ const STEPS = {
       'Sign in to the Motive Fleet Dashboard (web) as a Fleet Admin.',
       'Click Admin at the bottom of the left menu.',
       'In the Admin menu click Developers.',
-      'Click Create API Key (on some accounts the button says "+ Request API Key" — it creates the key instantly).',
+      'Click Create API Key. If your account says "Request API Key" and asks you to email Motive API Support, follow that step; Motive issues the key. If Motive will not issue one, skip this: an ELD connection is optional.',
       'Name it "LoadBoot" and click Save. Leave Test Mode UNCHECKED — with Test Mode on, LoadBoot cannot read your live trucks.',
       'Copy the key, paste it below and click Test & connect.',
     ],
@@ -76,7 +76,7 @@ async function liveTest(provider, token) {
 
 export async function mountEldCard(host, opts = {}) {
   const toast = opts.toast || (() => {});
-  const head = () => h('div', { class: 'cp-cardhead' }, [h('div', null, [h('h3', null, [icon('gps', 15), ' ELD & telematics']), h('span', { class: 'cp-cardhead-sub' }, 'device GPS + drive-time feed your trips and your dispatcher')])]);
+  const head = () => h('div', { class: 'cp-cardhead' }, [h('div', null, [h('h3', null, [icon('gps', 15), ' ELD & telematics']), h('span', { class: 'cp-cardhead-sub' }, 'optional · not required to work with a dispatcher · device GPS + drive-time feed')])]);
   let rows = []; let prov = 'samsara';
 
   const statusLine = (r) => {

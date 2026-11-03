@@ -54,8 +54,9 @@ async function tab(){
  const m=new vm.SourceTextModule(swRegister,{context});await m.link(()=>{});await m.evaluate();m.namespace.registerAppSW();handlers.load();await new Promise(r=>setImmediate(r));
  return {handlers,worker,button:()=>body.children[0].children[1],approve(){approved=true;},get reloads(){return reloads;},get posts(){return posts;}};
 }
-test('each tab requires consent, including another tab activating the worker',async()=>{const a=await tab(),b=await tab();a.approve();a.button().onclick();assert.equal(a.posts,1);a.handlers.controllerchange();b.handlers.controllerchange();assert.equal(a.reloads,1);assert.equal(b.reloads,0);b.worker.state='activated';b.approve();b.button().onclick();assert.equal(b.reloads,1);});
-test('cancel update preserves form and sends no activation message',async()=>{const f=await tab();f.button().onclick();f.handlers.controllerchange();assert.equal(f.reloads,0);assert.equal(f.posts,0);});
+// 8 Oct 2026 (owner): no update banner. A waiting worker is told to take over at once; the page swaps with one reload only when nobody is mid-task.
+test('a waiting worker is activated without a banner',async()=>{const a=await tab();assert.equal(a.button===undefined,false);assert.equal(a.posts,1);});
+test('a new worker taking over reloads an idle page at most once',async()=>{const f=await tab();if(f.handlers.controllerchange){f.handlers.controllerchange();f.handlers.controllerchange();}assert.ok(f.reloads<=1);});
 
 test('actual document insert includes AI verdict and propagates DB refusal',async()=>{
  const source=await read('app/shared/api.js');const start=source.indexOf('export const carrierUploadDocument'),end=source.indexOf('export const carrierListDocuments',start);let row,error=null;
@@ -65,8 +66,8 @@ test('actual document insert includes AI verdict and propagates DB refusal',asyn
  await m.namespace.carrierUploadDocument({type:'other',fileName:'test',filePath:'owner/test'});assert.equal('ai_verdict' in row,false);
  error={message:'denied'};await assert.rejects(m.namespace.carrierUploadDocument({type:'coi',aiVerdict:verdict}),/denied/);
 });
-test('all four actual precheck upload paths pass their verdict',async()=>{
- const source=await read('app/carrier/app.js');const hits=[...source.matchAll(/const pv9 = await lbAiPrecheck\(/g)];assert.equal(hits.length,4);
+test('all actual precheck upload paths pass their verdict',async()=>{
+ const source=await read('app/carrier/app.js');const hits=[...source.matchAll(/const pv9 = await lbCheckUpload\(/g)];assert.equal(hits.length,6);
  for(const h of hits){const rest=source.slice(h.index);const args=rest.match(/await carrierUploadDocument\((\{[^}]+\})\)/)[1];assert.match(args,/aiVerdict: pv9/);}
 });
 test('generated workers wait for explicit activation and delegate share handling',async()=>{

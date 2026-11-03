@@ -17,7 +17,8 @@ for(const [value,label] of [[true,'Yes'],[false,'No'],[null,'Not checked'],[unde
     await mod.link(async spec=>{
       const exports=spec.endsWith('api.js') ? {
         partnerShipperStatus:async()=>({tier:'business_verified',can_post:true,check:{mx:value},packet:[]}),
-        partnerShipperVerify:()=>assert.fail('must not verify'),partnerShipperCompanyEmail:()=>assert.fail('must not email'),partnerVerifyCode:()=>assert.fail('must not verify code')
+        partnerShipperVerify:()=>assert.fail('must not verify'),partnerShipperCompanyEmail:()=>assert.fail('must not email'),partnerVerifyCode:()=>assert.fail('must not verify code'),
+        currentAgreement:async()=>null,acceptAgreement:()=>assert.fail('must not accept')
       } : {ensureCss(){},decorateCards(){},progressRing:()=>new Element()};
       return new vm.SyntheticModule(Object.keys(exports),function(){for(const [k,v] of Object.entries(exports))this.setExport(k,v);},{context});
     });await mod.evaluate();
