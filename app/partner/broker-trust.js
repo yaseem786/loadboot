@@ -14,7 +14,7 @@
 // brokerages). Each brokerage confirms on its own: a 6-digit code + link emailed to the address FMCSA
 // lists (or its LoadBoot owner, or an address on the same domain) — the brokerage hands the code to the
 // agent, the agent types it here. No calls, no LoadBoot staff. Loads post under ONE chosen brokerage.
-import { partnerBrokerScreen, partnerAgentDeclare, partnerTrustStatus, currentAgreement, acceptAgreement, fmcsaVerify, partnerIdentityResend, partnerIdentityRequestCall, partnerVerifyCall, partnerVerifyCode, partnerAgentParentRemove, partnerAgentParentResend } from '../shared/api.js';
+import { partnerBrokerScreen, partnerAgentDeclare, partnerTrustStatus, currentAgreement, acceptAgreement, fmcsaVerify, partnerIdentityResend, partnerIdentityRequestCall, partnerIdentityCompanyRequest, partnerVerifyCall, partnerVerifyCode, partnerAgentParentRemove, partnerAgentParentResend } from '../shared/api.js';
 
 const h = (tag, attrs, kids) => {
   const e = document.createElement(tag);
@@ -329,6 +329,50 @@ function voiceOtpBlock(st, purpose, refresh) {
   ]);
 }
 
+/* ---------------- company path (bl_bp_0592) — FMCSA lists NO email and NO usable phone ---------------- */
+// Nothing on the FMCSA record can be contacted, so LoadBoot confirms through the company itself: staff call the main
+// line published on the company's own website / public listing and ask for this person. The number typed here is a
+// hint — staff look it up independently, so typing someone else's number does not get an account verified.
+let coNotice = null;
+function companyBlock(st, refresh) {
+  const idn = st.identity || {};
+  const err = h('div', { class: 'bt-err' });
+  if (coNotice) { err.style.color = coNotice.ok ? '#12a150' : ''; err.textContent = coNotice.text; }
+  if (idn.company_requested_at && !coNotice) {
+    return h('div', { class: 'bt-idbox', style: 'flex-direction:column;align-items:stretch;gap:6px' }, [
+      h('div', { class: 'm' }, '📞 We’re confirming with your company'),
+      h('div', { class: 'bt-note', style: 'margin:0' }, 'Received ' + new Date(idn.company_requested_at).toLocaleString() + '. Our team calls your company’s main line'
+        + (idn.company_phone_masked ? ' (you gave ' + idn.company_phone_masked + ')' : '') + ' and asks for you — usually within one business day. Posting opens the moment it is confirmed; you’ll get a notice here and by email.'),
+    ]);
+  }
+  const site0 = String((st.signup_email || '').split('@')[1] || '');
+  const main = h('input', { class: 'bt-in', placeholder: 'Company main phone line', inputmode: 'tel', autocomplete: 'tel', maxlength: 24 });
+  const direct = h('input', { class: 'bt-in', placeholder: 'Your direct number / extension (optional)', inputmode: 'tel', maxlength: 32 });
+  const site = h('input', { class: 'bt-in', placeholder: 'Company website', value: idn.company_site || '', maxlength: 200, style: 'letter-spacing:0' });
+  if (!site.value && site0 && !/^(gmail|yahoo|outlook|hotmail|aol|icloud|protonmail|live|msn|me)\./i.test(site0)) site.value = site0;
+  const when = h('input', { class: 'bt-in', placeholder: 'Best time to reach you (optional)', maxlength: 120, style: 'letter-spacing:0' });
+  const send = h('button', { class: 'bt-btn orange' }, 'Confirm through my company →');
+  send.onclick = async () => {
+    coNotice = null; err.textContent = '';
+    if (digits(main.value).length < 10 && digits(direct.value).length < 10) { err.style.color = ''; err.textContent = 'Add your company’s main phone line (10 digits).'; return; }
+    send.disabled = true;
+    try {
+      const r = await partnerIdentityCompanyRequest({ company_phone: main.value, direct_phone: direct.value, company_site: site.value, note: when.value });
+      coNotice = r && r.ok ? { ok: true, text: '✓ Received — our team will call your company’s main line and ask for you, usually within one business day.' } : { ok: false, text: (r && r.why) || 'Could not send.' };
+    } catch (e) { coNotice = { ok: false, text: (e && e.message) || 'Could not send.' }; }
+    send.disabled = false; await refresh(true);
+  };
+  return h('div', { class: 'bt-idbox', style: 'flex-direction:column;align-items:stretch;gap:8px' }, [
+    h('div', { class: 'm' }, '🏢 Confirm through your company'),
+    h('div', { class: 'bt-note', style: 'margin:0' }, 'FMCSA lists no email or phone for your MC, so the automatic checks have nothing to reach. Instead our team calls your company’s main line — the one published on your website — and asks for you. Usually within one business day.'),
+    h('div', { class: 'bt-row', style: 'flex-wrap:wrap;gap:8px' }, [main, direct]),
+    h('div', { class: 'bt-row', style: 'flex-wrap:wrap;gap:8px' }, [site, when]),
+    h('div', { class: 'bt-row' }, [send]),
+    err,
+    h('div', { class: 'bt-note', style: 'margin:0' }, 'Faster for next time: add an email and phone to your FMCSA record (MCS-150 update at fmcsa.dot.gov). Once FMCSA shows them, confirmation is instant.'),
+  ]);
+}
+
 /* ---------------- identity card (own MC · screening passed · not yet claimed) ---------------- */
 // Authority ≠ identity: anyone can type a real brokerage's MC. This is the Highway-style claim —
 // prove you are that brokerage via the contact FMCSA has on file (email link) or a staff call
@@ -339,6 +383,7 @@ function identityCard(st, refresh) {
   const err = h('div', { class: 'bt-err' });
   if (idNotice) { err.style.color = idNotice.ok ? '#12a150' : ''; err.textContent = idNotice.text; }
   const hasMail = !!idn.has_fmcsa_email;
+  const noContact = !hasMail && (idn.has_fmcsa_phone === false || st.verify_phone_ok === false);   // bl_bp_0592
   const sentAt = idn.email_sent_at ? new Date(idn.email_sent_at) : null;
   const resend = h('button', { class: 'bt-btn ghost' }, 'Resend the email');
   resend.onclick = async () => {
@@ -347,19 +392,17 @@ function identityCard(st, refresh) {
     catch (e) { idNotice = { ok: false, text: (e && e.message) || 'Could not resend.' }; }
     resend.disabled = false; await refresh(true);
   };
-  // last resort only (no FMCSA phone AND no FMCSA email): a human at LoadBoot
-  const help = h('a', { href: '#', onClick: async (ev) => { ev.preventDefault(); try { await partnerIdentityRequestCall(null, 'no FMCSA phone/email usable'); idNotice = { ok: true, text: 'Logged — our team will reach out.' }; } catch (e) { idNotice = { ok: false, text: (e && e.message) || 'Could not log the request.' }; } await refresh(true); } }, 'ask our team to help →');
   return h('div', { class: 'bt-card', style: 'border-left:4px solid #b45309' }, [
     h('h3', null, '1b · Confirm it’s really your brokerage'),
-    subMore('Authority confirmed. One click from the FMCSA-listed contact proves this account is really yours.', 'The same check the big load boards run: freight fraud starts with someone typing a real MC into a signup form, and confirming through the contact FMCSA lists closes that door.'),
-    h('div', { class: 'bt-note', style: 'margin-top:10px;font-weight:800;color:#334155' }, 'Pick whichever is faster — both are automatic:'),
-    voiceOtpBlock(st, 'identity', refresh),
+    subMore(noContact ? 'Authority confirmed. One call to your company proves this account is really yours.' : 'Authority confirmed. One click from the FMCSA-listed contact proves this account is really yours.', 'The same check the big load boards run: freight fraud starts with someone typing a real MC into a signup form, and confirming through the contact FMCSA lists closes that door.'),
+    noContact ? companyBlock(st, refresh) : h('div', { class: 'bt-note', style: 'margin-top:10px;font-weight:800;color:#334155' }, hasMail ? 'Pick whichever is faster — both are automatic:' : 'FMCSA lists no email for your brokerage, so the automated call is the way in:'),
+    noContact ? null : voiceOtpBlock(st, 'identity', refresh),
     hasMail
       ? h('div', null, [
           h('div', { class: 'bt-idbox' }, [h('span', null, '📧'), h('div', null, [h('div', { class: 'm' }, 'Or click the link we emailed to ' + (idn.fmcsa_email_masked || 'the address FMCSA has on file')), h('div', { class: 'bt-note', style: 'margin-top:2px' }, (sentAt ? 'Sent ' + sentAt.toLocaleString() + '. ' : '') + 'One click there unlocks posting. The address is masked here on purpose — it comes from your FMCSA registration, not from you.')])]),
           h('div', { class: 'bt-row' }, [resend]),
         ])
-      : h('div', { class: 'bt-note' }, ['FMCSA lists no email for your brokerage, so the phone call is the way in.', st.verify_phone_ok === false ? ' No usable phone either — ' : null, st.verify_phone_ok === false ? help : null]),
+      : null,
     err,
     h('div', { class: 'bt-note' }, 'Tip: signing up with an email at the same domain FMCSA has on file confirms identity automatically. Old contact details on your FMCSA record? Update them at FMCSA first — we only ever use what FMCSA lists.'),
   ]);

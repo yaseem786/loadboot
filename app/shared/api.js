@@ -1425,6 +1425,8 @@ export const ccBrokerTrustSet = (org, action, note) => rpc('cc_broker_trust_set'
 // bl_bp_0313 — identity claim (own-MC brokers), parent-side agent management, claim-confirm page
 export const partnerIdentityResend = () => rpc('partner_identity_resend');
 export const partnerIdentityRequestCall = (phone, note) => rpc('partner_identity_request_call', { p_phone: phone ?? null, p_note: note ?? null });
+// bl_bp_0592 — FMCSA lists no email AND no phone: the broker asks to be confirmed through their company's main line
+export const partnerIdentityCompanyRequest = (p) => rpc('partner_identity_company_request', { p });
 export const partnerAgentsList = () => rpc('partner_agents_list');
 export const partnerAgentDecide = (agentOrg, decision, note) => rpc('partner_agent_decide', { p_agent_org: agentOrg, p_decision: decision, p_note: note ?? null });
 export const partnerAgentInvite = (email, name) => rpc('partner_agent_invite', { p_email: email, p_name: name ?? null });
