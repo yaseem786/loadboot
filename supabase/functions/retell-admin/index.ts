@@ -285,11 +285,14 @@ Deno.serve(async (req: Request) => {
 
       // bl_voice_0593: Retell removed POST /publish-agent/{id} on 20 Jul 2026 (400 "Legacy agent publish endpoints");
       // the unified replacement is POST /publish-agent-version/{id}.
-      const pub = await retell(cfg, "POST", `/publish-agent-version/${id}`, {});
+      // The body must name the draft version to publish: the one update-agent just wrote (else the latest draft).
+      let draftVersion = u.body?.version ?? null;
+      if (draftVersion === null) { const g = await retell(cfg, "GET", `/get-agent/${id}`); draftVersion = g.ok ? g.body?.version ?? null : null; }
+      if (draftVersion === null) return json({ error: "could not read the agent draft version to publish" }, 502);
+      const pub = await retell(cfg, "POST", `/publish-agent-version/${id}`, { version: draftVersion });
       if (!pub.ok) return json({ error: `retell publish ${pub.status}`, detail: pub.body }, 502);
 
-      const after = await retell(cfg, "GET", `/get-agent/${id}`);
-      const agentVersion = pub.body?.version ?? (after.ok ? after.body?.version ?? null : null);
+      const agentVersion = pub.body?.version ?? draftVersion;
       await svcRpc("riley_prompt_mark_published", { p_key: key, p_llm_version: llmVersion, p_agent_version: agentVersion });
       return json({ ok: true, key, llm_id: llmId, llm_version: llmVersion, agent_version: agentVersion });
     }
