@@ -11,6 +11,8 @@
 import { breakeven, setCostAndLanes } from '../shared/api.js';
 
 const money = (n) => '$' + Math.round(Math.abs(Number(n) || 0)).toLocaleString();
+// Per-mile rates keep their cents: money() rounds to whole dollars, which showed a $1.50 floor as $2.00.
+const perMile = (n) => '$' + Math.abs(Number(n) || 0).toFixed(2);
 const signed = (n) => (Number(n) >= 0 ? '+' : '−') + money(n);
 
 const CARD = 'background:var(--lbc-x-field,#111c31);border:1px solid var(--lbc-x-line,rgba(255,255,255,.09));border-radius:16px;padding:16px 18px;margin-bottom:14px';
@@ -76,7 +78,7 @@ function answer(host, d) {
       + '<div style="flex:1;height:8px;background:' + soft + ';border-radius:99px;overflow:hidden">'
       + '<div style="width:' + pct + '%;height:100%;background:' + col + ';border-radius:99px"></div></div>'
       + '<div style="width:74px;text-align:right;color:' + col + ';font-size:.82rem;font-weight:800">' + signed(over) + '</div>'
-      + '<div style="width:52px;text-align:right;color:#5f7599;font-size:.76rem">' + money(r.cost_per_mile) + '/mi</div>'
+      + '<div style="width:52px;text-align:right;color:#5f7599;font-size:.76rem">' + perMile(r.cost_per_mile) + '/mi</div>'
       + '</div>';
   }).join('');
 
@@ -96,7 +98,7 @@ function answer(host, d) {
     + '<div style="display:flex;align-items:baseline;gap:10px;margin:12px 0 2px;flex-wrap:wrap">'
     + '<div style="font-size:2.3rem;font-weight:800;color:var(--lbc-x-ink,#eaf1fb);line-height:1">' + Number(d.breakeven_miles).toLocaleString() + '</div>'
     + '<div style="color:var(--lbc-x-ink3,#8ea2c3);font-size:.92rem;font-weight:700">loaded miles a week</div></div>'
-    + '<div style="' + SUB + ';margin-bottom:14px">to cover ' + money(d.weekly_cost) + ' at your ' + money(d.rpm) + '.00 floor, after our ' + d.fee_pct + '% — '
+    + '<div style="' + SUB + ';margin-bottom:14px">to cover ' + money(d.weekly_cost) + ' at your ' + perMile(d.rpm) + ' floor, after our ' + d.fee_pct + '% — '
     + 'about <b style="color:var(--lbc-x-ink2,#c9d8ee)">' + Number(d.miles_per_day).toLocaleString() + ' a day</b> over ' + d.driving_days + ' driving days.</div>'
 
     + bars
