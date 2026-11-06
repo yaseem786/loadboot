@@ -32,6 +32,7 @@ import { renderTestPanel } from './dispatcher-test.js';
 import { can } from '../../shared/permissions.js';   // bl_sec_0509 — dispatch.view opens this page read-only
 import { dispatcherPostsPanel } from './dispatcherPosts.js';   // bl_disp_0551
 import { feedbackReply } from './feedbackReply.js';
+import { feedbackReplyHistory } from './feedbackReplyHistory.js';
 
 const ET = 'America/New_York';
 const et = (v) => { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleString('en-US', { timeZone: ET, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET'; };
@@ -936,9 +937,10 @@ export async function renderDispatcher360(host, query) {
           f.kind === 'mood' ? pill((MOOD[f.mood] || ['', f.mood])[1], (MOOD[f.mood] || ['line'])[0]) : pill(f.kind === 'help' ? 'Help' : 'Feedback', f.kind === 'help' ? 'orange' : 'violet'),
           el('span', { class: 'd3-mut' }, ago(f.created_at)),
           f.handled_at ? el('span', { class: 'd3-mut' }, '· handled ' + dShort(f.handled_at) + (f.handled_by ? ' by ' + f.handled_by : '')) : '']),
-        f.note ? el('div', { style: 'margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere' }, f.note) : '']),
+        f.note ? el('div', { style: 'margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere' }, f.note) : '',
+        !viewOnly && can('comm.view') && state.dd.email ? feedbackReplyHistory(state.dd.email, f.id) : '']),
       el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end' }, [
-        !viewOnly && can('comm.send') && state.dd.email ? btn('Reply', () => feedbackReply({ email: state.dd.email, feedback: f }), 'sm', 'mail') : '',
+        !viewOnly && can('comm.send') && state.dd.email ? btn('Reply', () => feedbackReply({ email: state.dd.email, feedback: f, onSent: () => rerender('trial') }), 'sm', 'mail') : '',
         f.needs_action ? (f.handled_at ? btn('Reopen', () => trialAck('feedback', f.id, true), 'sm g') : btn('Handled', () => trialAck('feedback', f.id, false), 'sm', 'check')) : ''])]);
     const body = el('div', null, [
       el('div', { class: 'd3-pad d3-kpis', style: 'padding-bottom:4px' }, [['Reports sent', sm.reports], ['Red days', sm.bad], ['Quiet days', sm.warn], ['Solid days', sm.good], ['Last mood', sm.last_mood ? (MOOD[sm.last_mood.mood] || ['', sm.last_mood.mood])[1] : null]]
