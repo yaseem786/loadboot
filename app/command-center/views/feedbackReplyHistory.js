@@ -8,9 +8,11 @@ export const requestReplies = (messages, email, id) => (messages || []).filter(m
   String(m.peer_email || '').toLowerCase() === String(email || '').toLowerCase() &&
   String(m.subject || '').includes(id));
 
+export const attachReplyThread = (messages, threadKey) => (messages || []).map(m => ({ ...m, thread_key: threadKey }));
+
 // Detached parsing + text nodes only. Never render stored email HTML into CC.
 function replyText(m) {
-  if (m.body_text) return m.body_text;
+  if (!m.body_html) return m.body_text || '';
   const doc = new DOMParser().parseFromString(m.body_html || '', 'text/html');
   doc.querySelectorAll('blockquote,script,style').forEach(n => n.remove());
   doc.querySelectorAll('p,br,div').forEach(n => n.appendChild(doc.createTextNode('\n')));
@@ -24,7 +26,7 @@ export function feedbackReplyHistory(email, id) {
     try {
       const result = await mailList({ search: id, folder: 'all', limit: 50 });
       const threads = (result?.threads || []).filter(t => String(t.subject || '').includes(id) && String(t.peer_email || '').toLowerCase() === email.toLowerCase());
-      const messages = (await Promise.all(threads.map(t => mailThread(t.thread_key, false)))).flat();
+      const messages = (await Promise.all(threads.map(async t => attachReplyThread(await mailThread(t.thread_key, false), t.thread_key)))).flat();
       const replies = requestReplies(messages, email, id).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       box.replaceChildren(...(replies.length ? replies.map(m => el('div', { style: 'margin:4px 0 12px' }, [
         el('b', null, 'Reply sent · ' + fmtDateTime(m.sent_at || m.created_at)),
