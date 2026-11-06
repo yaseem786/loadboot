@@ -34,6 +34,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 //                                   <audio src>; the browser gets the bytes from here instead (same shape as telnyx-recording:
 //                                   octet-stream so functions.invoke() hands back a Blob, X-Audio-Type says what it is).
 //
+// bl_voice_0593 (2026-11-06): publish → POST /publish-agent-version/{id}; set_phone_agents → weighted inbound_agents/outbound_agents.
 // Deployed to staging + production via Supabase MCP. verify_jwt = true.
 
 const RETELL = "https://api.retellai.com";
@@ -212,14 +213,17 @@ Deno.serve(async (req: Request) => {
     }
 
     if (op === "set_phone_agents") {
-      const patch: Record<string, string> = {};
+      // bl_voice_0593: the single-agent fields (inbound_agent_id / outbound_agent_id) were removed 31 Mar 2026 —
+      // Retell takes weighted lists now; one agent at weight 1.
+      const patch: Record<string, unknown> = {};
       const inb = body.inbound_agent_id ?? cfg.inbound_agent_id, out = body.outbound_agent_id ?? cfg.outbound_agent_id;
-      if (inb) patch.inbound_agent_id = String(inb);
-      if (out) patch.outbound_agent_id = String(out);
+      if (inb) patch.inbound_agents = [{ agent_id: String(inb), weight: 1 }];
+      if (out) patch.outbound_agents = [{ agent_id: String(out), weight: 1 }];
       if (!Object.keys(patch).length) return json({ error: "nothing to set" }, 400);
       const r = await retell(cfg, "PATCH", `/update-phone-number/${encodeURIComponent(cfg.from_number)}`, patch);
       if (!r.ok) return json({ error: `retell ${r.status}`, detail: r.body }, 502);
-      return json({ ok: true, phone: { inbound_agent_id: r.body?.inbound_agent_id ?? null, outbound_agent_id: r.body?.outbound_agent_id ?? null } });
+      return json({ ok: true, phone: { inbound_agent_id: r.body?.inbound_agent_id ?? (r.body?.inbound_agents?.[0]?.agent_id ?? null),
+        outbound_agent_id: r.body?.outbound_agent_id ?? (r.body?.outbound_agents?.[0]?.agent_id ?? null) } });
     }
 
     if (op === "get_llm") {
@@ -279,11 +283,13 @@ Deno.serve(async (req: Request) => {
       const u = await retell(cfg, "PATCH", `/update-agent/${id}`, agentPatch);
       if (!u.ok) return json({ error: `retell agent ${u.status}`, detail: u.body }, 502);
 
-      const pub = await retell(cfg, "POST", `/publish-agent/${id}`, {});
+      // bl_voice_0593: Retell removed POST /publish-agent/{id} on 20 Jul 2026 (400 "Legacy agent publish endpoints");
+      // the unified replacement is POST /publish-agent-version/{id}.
+      const pub = await retell(cfg, "POST", `/publish-agent-version/${id}`, {});
       if (!pub.ok) return json({ error: `retell publish ${pub.status}`, detail: pub.body }, 502);
 
       const after = await retell(cfg, "GET", `/get-agent/${id}`);
-      const agentVersion = after.ok ? after.body?.version ?? null : null;
+      const agentVersion = pub.body?.version ?? (after.ok ? after.body?.version ?? null : null);
       await svcRpc("riley_prompt_mark_published", { p_key: key, p_llm_version: llmVersion, p_agent_version: agentVersion });
       return json({ ok: true, key, llm_id: llmId, llm_version: llmVersion, agent_version: agentVersion });
     }
