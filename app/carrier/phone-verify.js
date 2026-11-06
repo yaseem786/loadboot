@@ -1,7 +1,7 @@
 // bl_onb_0490 — "Verify your phone number" dashboard card (owner-approved preview GKdvkFVL6yT5uKZDe2FBkP).
 // Steps: start → confirm (or change number) → code (we call, a voice reads 6 digits) → done.
 // All rules live in Postgres (carrier_phone_status / _call / _code); this file only draws the steps.
-import { carrierPhoneStatus, carrierPhoneCall, carrierPhoneCode } from '../shared/api.js';
+import { carrierPhoneStatus, carrierPhoneCall, carrierPhoneCode, carrierContactPrefsSet } from '../shared/api.js';
 
 const fmt = (p) => { const d = String(p || '').replace(/\D/g, '').slice(-10); return d.length === 10 ? '+1 (' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6) : (p || ''); };
 const mask = (p) => { const d = String(p || '').replace(/\D/g, '').slice(-10); return d.length === 10 ? '+1 (' + d.slice(0, 3) + ') ***-' + d.slice(6) : (p || ''); };
@@ -32,7 +32,7 @@ export function phoneVerifyCard(h, mount) {
     if (!st || !st.applies) { mount(host, []); return; }
     if (st.verified) {
       if (!doneFresh() || doneHidden()) { mount(host, []); return; }
-      step = 'done';
+      step = st.prefs_saved_at ? 'done' : 'prefs';   // bl_onb_0598
     }
     if (st && st.pending && step === 'start') { step = 'code'; target = st.pending.to; }
     draw();
@@ -42,7 +42,7 @@ export function phoneVerifyCard(h, mount) {
     if (busy) return; busy = true; err = ''; draw();
     try {
       const r = await carrierPhoneCall(num || null);
-      if (r && r.already) { step = 'done'; }
+      if (r && r.already) { step = st && st.prefs_saved_at ? 'done' : 'prefs'; }
       else if (r && r.ok) { step = 'code'; target = r.to; st = Object.assign({}, st, { next_call_at: r.next_call_at }); }
       else { err = (r && r.why) || 'The call could not be placed. Try again in a minute.'; if (r && r.next_call_at) st = Object.assign({}, st, { next_call_at: r.next_call_at }); }
     } catch (e) { err = 'The call could not be placed. Try again in a minute.'; }
@@ -53,9 +53,20 @@ export function phoneVerifyCard(h, mount) {
     if (busy) return; busy = true; err = ''; draw();
     try {
       const r = await carrierPhoneCode(code);
-      if (r && r.ok) { step = 'done'; st = Object.assign({}, st, { phone: r.phone, verified: true, verified_at: r.verified_at || new Date().toISOString() }); }
+      if (r && r.ok) { step = 'prefs'; st = Object.assign({}, st, { phone: r.phone, verified: true, verified_at: r.verified_at || new Date().toISOString() }); }
       else err = (r && r.why) || 'That code doesn’t match.';
     } catch (e) { err = 'Could not check the code. Try again.'; }
+    busy = false; draw();
+  }
+
+  // bl_onb_0598: both boxes start unticked and both are optional. The SMS words match the older opt-in prompt (10DLC web form).
+  async function savePrefs(sms, whatsapp) {
+    if (busy) return; busy = true; err = ''; draw();
+    try {
+      const r = await carrierContactPrefsSet(sms, whatsapp);
+      if (r && r.ok) { step = 'done'; st = Object.assign({}, st, { prefs_saved_at: new Date().toISOString() }); }
+      else err = (r && r.error) || 'Could not save your choices. Try again.';
+    } catch (e) { err = 'Could not save your choices. Try again.'; }
     busy = false; draw();
   }
 
@@ -108,6 +119,20 @@ export function phoneVerifyCard(h, mount) {
       ];
       tick(); timer = setInterval(tick, 1000);
       setTimeout(() => { try { inp.focus(); } catch (_) {} }, 0);
+    } else if (step === 'prefs') {
+      const box = (id) => h('input', { id, type: 'checkbox', style: 'margin:3px 0 0;width:18px;height:18px;flex:none' });
+      const row = (input, kids) => h('label', { style: 'display:flex;gap:10px;align-items:flex-start;cursor:pointer' }, [input, h('span', { class: 'cp-row-s', style: 'margin:0' }, kids)]);
+      const sms = box('lb-pv-sms'), wa = box('lb-pv-wa');
+      const a = (href, t) => h('a', { href, target: '_blank', rel: 'noopener', onClick: (e) => e.stopPropagation() }, t);
+      body = [
+        h('div', { class: 'cp-row-t', style: 'font-size:1.08rem;color:var(--lbc-x-ok,#34d399)' }, '✓ Phone verified'),
+        h('div', { class: 'cp-row-s' }, 'How can we reach you at ' + fmt(st && st.phone) + '? Both are optional.'),
+        row(sms, ['Text me about my loads and account: dispatch updates, check calls and paperwork requests. This is not a condition of using LoadBoot or of any purchase. Message frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help. See our ', a('/terms.html#s11', 'Terms'), ' and ', a('/privacy.html#sms', 'Privacy Policy'), '.']),
+        row(wa, 'Message me on WhatsApp at this number.'),
+        errEl,
+        btn(busy ? 'Saving…' : 'Save my choices', () => savePrefs(sms.checked, wa.checked)),
+        h('button', { style: S.link, onClick: () => { step = 'done'; err = ''; draw(); } }, 'Skip for now'),
+      ];
     } else {
       body = [
         h('button', { type: 'button', 'aria-label': 'Dismiss', title: 'Dismiss', onClick: dismiss,
@@ -116,7 +141,7 @@ export function phoneVerifyCard(h, mount) {
         h('div', { class: 'cp-row-s' }, 'Your dispatcher will use ' + fmt(st && st.phone) + ' to reach you. Next: add your trucks and post availability.'),
       ];
     }
-    mount(host, h('div', { class: 'cp-card', style: S.card + (step === 'done' ? ';position:relative;border-color:rgba(52,211,153,.45);background:linear-gradient(135deg,rgba(52,211,153,.08),transparent)' : '') }, body.filter(Boolean)));
+    mount(host, h('div', { class: 'cp-card', style: S.card + ((step === 'done' || step === 'prefs') ? ';position:relative;border-color:rgba(52,211,153,.45);background:linear-gradient(135deg,rgba(52,211,153,.08),transparent)' : '') }, body.filter(Boolean)));
   }
 
   load();

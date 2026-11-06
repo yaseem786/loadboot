@@ -74,6 +74,10 @@ export function renderCarrier360(host, orgId) {
         ? [pill('rgba(34,197,94,.18)', '#4ade80', '\u2713 Phone verified'), ' ' + (pv.verified_at ? fmtDate(pv.verified_at) : '')]
         : [pill('rgba(245,158,11,.18)', '#fbbf24', 'Phone not verified'),
            pv.required_for_dispatcher ? ' \u00b7 required before a dispatcher is assigned (carrier does it from their dashboard card)' : ' \u00b7 older account, not required']);
+      // bl_onb_0598: what the carrier chose for this number. No answer stays "not asked", never a guess.
+      const smsTxt = pv.sms_opted_out ? 'replied STOP' : pv.sms_consent ? 'yes' : pv.sms_answered ? 'no' : 'not asked';
+      const waTxt = pv.whatsapp_pref === true ? 'yes' : pv.whatsapp_pref === false ? 'no' : 'not asked';
+      phoneEl.appendChild(el('div', { style: 'margin-top:4px' }, 'Texts: ' + smsTxt + ' \u00b7 WhatsApp: ' + waTxt));
     }).catch(() => {});
     const head = el('div', { style: 'background:linear-gradient(135deg,#0b1b33,#12294a);border-radius:18px;padding:22px 26px;color:#fff;box-shadow:0 14px 34px -18px rgba(8,30,63,.45)' }, [
       el('div', { style: 'display:flex;gap:18px;align-items:center;flex-wrap:wrap' }, [

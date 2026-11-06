@@ -722,6 +722,7 @@ export const ccCarriersLoginStatus = (orgs) => rpc('cc_carriers_login_status', {
 export const carrierPhoneStatus = () => rpc('carrier_phone_status', {});
 export const carrierPhoneCall = (phone) => rpc('carrier_phone_call', { p_phone: phone || null });
 export const carrierPhoneCode = (code) => rpc('carrier_phone_code', { p_code: code });
+export const carrierContactPrefsSet = (sms, whatsapp) => rpc('carrier_contact_prefs_set', { p_sms: !!sms, p_whatsapp: !!whatsapp });   // bl_onb_0598
 export const ccCarrierPhoneStatus = (org) => rpc('cc_carrier_phone_status', { p_org: org });
 export const ccRileyPlanBook = (id, when, force) => rpc('cc_riley_plan_book', { p_id: id, p_when: when ?? null, p_force: !!force });   // bl_voice_0485
 export const ccRileyFollowupAct = (id, action, payload) => rpc('cc_riley_followup_act', { p_id: id, p_action: action, p_payload: payload || {} });
