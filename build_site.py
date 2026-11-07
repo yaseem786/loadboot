@@ -9632,7 +9632,10 @@ _APP_CSP = (
   "base-uri 'self'; "
   "object-src 'none'; "
   "frame-ancestors 'self'; "   # same-origin only — the agent workspace frames the partner wizard
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://%s.supabase.co; "
+  # https: (7 Nov 2026) — CC/dispatcher mailbox "Display images below". An srcdoc iframe inherits THIS page CSP,
+  # so remote images stayed blocked even after the click. The message frame's own meta CSP still blocks remote
+  # images until staff click (tracking pixels do not load on open). Scripts/connect stay locked down.
+  "img-src 'self' data: blob: https: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://%s.supabase.co; "
   "frame-src 'self' https://%s.supabase.co; "
   "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
   "font-src 'self' data:; "
