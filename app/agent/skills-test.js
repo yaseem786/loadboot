@@ -36,6 +36,8 @@ const CARD = 'border-radius:18px;padding:22px;margin-bottom:14px;background:var(
 const mmss = (s) => { s = Math.max(0, s | 0); const m = Math.floor(s / 60); return String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
 const whenET = (iso) => { try { return new Date(iso).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET'; } catch (_) { return ''; } };
 const hoursLeft = (iso) => Math.max(0, Math.round((new Date(iso).getTime() - Date.now()) / 3600000));
+// bl_disp_0602: the invitation is open for 5 days — say "3 days", not "72 hours"
+const timeLeft = (iso) => { const hh = hoursLeft(iso); return hh >= 48 ? Math.floor(hh / 24) + ' days' : hh + ' hours'; };
 
 // ---------------------------------------------------------------- shell pieces
 const hero = (title, kicker, sub, accent) => h('div', { style: 'border-radius:18px;padding:24px;margin-bottom:14px;background:var(--lbc-x-hero,linear-gradient(135deg,#10223B 0%,#0d2a4d 55%,#0b1f3d 100%));border:1px solid ' + (accent || 'rgba(8,131,247,.35)') }, [
@@ -50,19 +52,23 @@ const factRow = (items) => h('div', { style: 'display:flex;gap:9px;flex-wrap:wra
     h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, it[1]),
   ])));
 
-function confirmBox(title, body, okLabel) {
+function confirmBox(title, body, okLabel, cancelLabel) {
   return new Promise((resolve) => {
-    const close = (v) => { try { document.body.removeChild(back); } catch (_) {} resolve(v); };
+    // bl_disp_0602: Esc and a click outside the box both mean "no" — only the explicit button submits
+    const onKey = (e) => { if (e.key === 'Escape') close(false); };
+    const close = (v) => { document.removeEventListener('keydown', onKey); try { document.body.removeChild(back); } catch (_) {} resolve(v); };
     const back = h('div', { style: 'position:fixed;inset:0;background:var(--lbc-x-field,rgba(2,8,20,.72));z-index:9500;display:flex;align-items:center;justify-content:center;padding:18px' }, [
       h('div', { style: 'max-width:440px;width:100%;background:#0f1e35;border:1px solid var(--lbc-x-line,rgba(130,165,225,.22));border-radius:16px;padding:20px' }, [
         h('div', { style: 'font-weight:900;color:var(--lbc-x-ink,#fff);font-size:1.05rem;margin-bottom:6px' }, title),
         h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, body),
         h('div', { style: 'display:flex;gap:8px;justify-content:flex-end;margin-top:16px' }, [
-          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => close(false) }, 'Cancel'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => close(false) }, cancelLabel || 'Cancel'),
           h('button', { class: 'cp-btn cp-btn-sm', onClick: () => close(true) }, okLabel || 'Confirm'),
         ]),
       ]),
     ]);
+    back.addEventListener('click', (e) => { if (e.target === back) close(false); });
+    document.addEventListener('keydown', onKey);
     document.body.appendChild(back); lockPage(back);
   });
 }
@@ -99,7 +105,7 @@ function briefing(host, d, reload) {
         rule('✓', 'There is no trick.', 'This is the work: read a rate con, run the math, spot the risk, write the e-mail. If you do this job well you will do well here. If you do not know something, write “I don’t know” — an honest gap costs far less than an answer you cannot defend.'),
       ]),
       d.start_by ? h('div', { style: 'margin-top:14px;padding:11px 14px;border-radius:10px;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35);color:var(--lbc-x-warn,#fdba74);font-size:.85rem;line-height:1.6' },
-        'This invitation expires in about ' + hoursLeft(d.start_by) + ' hours — by ' + whenET(d.start_by) + '. If it lapses, ask us for a new one.') : null,
+        'You can take the test any time in the next ' + timeLeft(d.start_by) + ' — the invitation closes ' + whenET(d.start_by) + '. You do not have to wait: start today if you are ready. If it lapses, ask us for a new one.') : null,
       h('div', { style: 'margin-top:16px' }, go), msg,
     ]),
   ]));
@@ -241,9 +247,12 @@ function live(host, d, reload) {
     if (!auto) {
       const total = qs.length;
       const done = qs.filter(answered).length;
-      const ok = await confirmBox('Submit your test?',
-        done < total ? ('You have answered ' + done + ' of ' + total + '. Unanswered questions score zero, and the test cannot be reopened.')
-                     : 'All ' + total + ' answered. Once submitted, nothing can be changed.', 'Submit');
+      // bl_disp_0602: nothing is sent on the first click — the candidate has to confirm, and can go back
+      const ok = await confirmBox('Are you sure you want to submit your test?',
+        (done < total ? ('You have answered ' + done + ' of ' + total + ' questions. Unanswered questions score zero. ')
+                      : ('All ' + total + ' questions are answered. '))
+        + 'Once you submit, the test is closed: nothing can be changed and it cannot be reopened. If you pressed Submit by mistake, go back — your answers are saved and the clock keeps running.',
+        'Yes, submit my test', 'No, go back to my answers');
       if (!ok) return;
     }
     state.submitting = true; submitted = true;

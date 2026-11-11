@@ -301,7 +301,7 @@ export function renderRoster(host, ctx) {
     const ids = [...st.sel]; if (!ids.length) return;
     const who = st.rows.filter((r) => st.sel.has(r.user_id));
     const ok = await askConfirm('Send the skills test to ' + ids.length + ' candidate' + (ids.length === 1 ? '' : 's') + '?',
-      { body: '75 minutes once started, must be started within 48 hours. If a candidate does not start, LoadBoot re-invites them automatically up to 3 times. Each candidate receives the invitation e-mail immediately: ' + who.map((w) => w.name || w.email).join(', ') });
+      { body: '75 minutes once started; each candidate has 5 days to take it. If a candidate does not start, LoadBoot re-invites them automatically up to 3 times. Each candidate receives the invitation e-mail immediately: ' + who.map((w) => w.name || w.email).join(', ') });
     if (!ok) return;
     let sent = 0, failed = 0;
     for (const id of ids) { const r = await ccDispatcherTestInvite(id).catch(() => ({ error: 1 })); if (r && r.error) failed++; else sent++; }
@@ -418,12 +418,14 @@ export function renderRoster(host, ctx) {
   }
   function rowActions(x) {
     const b = [];
-    if (x.status === 'screening') b.push(el('button', { class: 'dv-btn sm o', onClick: async (e) => {
+    const expired9 = !!(x.test && x.test.status === 'expired');   // bl_disp_0602: an expired test can always be sent again from the list
+    if (x.dup_held) b.push(el('button', { class: 'dv-btn sm o', onClick: (e) => { e.stopPropagation(); ctx.open360(x); } }, 'Duplicate — review'));
+    else if (x.status === 'screening' || (x.status === 'skills_test' && expired9)) b.push(el('button', { class: 'dv-btn sm o', onClick: async (e) => {
       e.stopPropagation();
-      if (!(await askConfirm('Send the skills test to ' + (x.name || 'this candidate') + '?', { body: '75 minutes once started, must start within 48 hours. If they do not start, LoadBoot re-invites them automatically up to 3 times. The invitation e-mail goes out immediately.' }))) return;
+      if (!(await askConfirm('Send the skills test to ' + (x.name || 'this candidate') + '?', { body: '75 minutes once started; they have 5 days to take it. If they do not start, LoadBoot re-invites them automatically up to 3 times. The invitation e-mail goes out immediately.' }))) return;
       const r = await ccDispatcherTestInvite(x.user_id).catch((err) => ({ error: humanizeError(err) }));
       if (r && r.error) { toast(r.error); return; } toast('✓ invitation sent'); refresh();
-    } }, 'Send test'));
+    } }, expired9 ? 'Send test again' : 'Send test'));
     if (x.test && x.test.status === 'submitted') b.push(el('button', { class: 'dv-btn sm o', onClick: (e) => { e.stopPropagation(); ctx.open360(x); } }, 'Mark test'));
     if (x.test && x.test.status === 'scored' && !x.test.told) b.push(el('button', { class: 'dv-btn sm o', onClick: (e) => { e.stopPropagation(); ctx.open360(x); } }, 'Send result'));
     if (x.status === 'skills_test' && x.test && x.test.told && x.test.decision === 'pass') b.push(el('button', { class: 'dv-btn sm o', onClick: (e) => { e.stopPropagation(); ctx.open360(x); } }, 'Set up trial'));
@@ -499,9 +501,9 @@ export function renderRoster(host, ctx) {
     const t = (c) => c.test || {};
     // Columns are STAGES of work, not just profile statuses: the test states split "skills test" into three.
     const COLS = [
-      { k: 'applied', label: 'Applied', ic: 'user', sub: 'screen or reject', budget: 3, pick: (c) => c.status === 'applied', na: (c) => (!c.has_id ? ['Ask for ID', 'id'] : ['Screen the application', 'arrow']) },
-      { k: 'screening', label: 'Screened', ic: 'eye', sub: 'ready for a test', budget: 3, pick: (c) => c.status === 'screening' && !t(c).status, na: () => ['Send skills test', 'send'] },
-      { k: 'sent', label: 'Test sent', ic: 'send', sub: '48 h to start', budget: 2, pick: (c) => ['invited', 'in_progress'].includes(t(c).status) && !['trial', 'verified', 'active', 'suspended', 'rejected'].includes(c.status), na: (c) => (t(c).status === 'in_progress' ? ['Watch — no action', 'eye'] : (t(c).start_by && new Date(t(c).start_by) - Date.now() < 12 * 36e5 ? ['Nudge or let it lapse', 'alert'] : ['Waiting on the candidate', 'clock'])) },
+      { k: 'applied', label: 'Applied', ic: 'user', sub: 'screen or reject', budget: 3, pick: (c) => c.status === 'applied', na: (c) => (c.dup_held ? ['Duplicate — review the earlier record', 'alert'] : !c.has_id ? ['Ask for ID', 'id'] : ['Screen the application', 'arrow']) },
+      { k: 'screening', label: 'Screened', ic: 'eye', sub: 'ready for a test', budget: 3, pick: (c) => ['screening', 'skills_test'].includes(c.status) && (!t(c).status || t(c).status === 'expired'), na: (c) => (t(c).status === 'expired' ? ['Test expired — send again', 'send'] : ['Send skills test', 'send']) },   // bl_disp_0602: an expired test is back here, not off the board
+      { k: 'sent', label: 'Test sent', ic: 'send', sub: '5 days to take it', budget: 2, pick: (c) => ['invited', 'in_progress'].includes(t(c).status) && !['trial', 'verified', 'active', 'suspended', 'rejected'].includes(c.status), na: (c) => (t(c).status === 'in_progress' ? ['Watch — no action', 'eye'] : (t(c).start_by && new Date(t(c).start_by) - Date.now() < 12 * 36e5 ? ['Nudge or let it lapse', 'alert'] : ['Waiting on the candidate', 'clock'])) },
       { k: 'scoring', label: 'Needs scoring', ic: 'flame', sub: 'waiting on you', budget: 1, hot: true, pick: (c) => t(c).status === 'submitted' || (t(c).status === 'scored' && t(c).decision && !(t(c).told && t(c).score_told) && !['trial', 'verified', 'active'].includes(c.status)), na: (c) => (t(c).status === 'submitted' ? ['Grade the test', 'clipboard'] : ['Tell him — send the result', 'mail']) },
       { k: 'placing', label: 'Passed · placing', ic: 'handshake', sub: 'choosing a carrier', budget: 3, pick: (c) => (t(c).status === 'scored' && t(c).decision === 'pass' && t(c).told && t(c).score_told && ['skills_test', 'screening'].includes(c.status)) || (c.status === 'verified' && !Number(c.carriers)), na: (c) => (c.status === 'verified' ? ['Assign a carrier', 'handshake'] : ['Set terms → trial', 'play']) },
       { k: 'trial', label: 'Paid trial', ic: 'timer', sub: 'commission-only', budget: null, pick: (c) => c.status === 'trial', na: (c) => { const d = c.trial_end ? Math.ceil((new Date(c.trial_end) - Date.now()) / 864e5) : null; return d == null ? ['Set the trial window', 'cal'] : d < 0 ? ['Overdue — decide', 'alert'] : ['Decide by ' + fmtDate(c.trial_end), 'zap']; } },
@@ -537,6 +539,8 @@ export function renderRoster(host, ctx) {
         shown.length ? shown.map((c) => {
           const tt = t(c); const chips = [];
           const chip = (txt, cls, ic) => chips.push(el('span', { class: cls || '' }, [ic ? icon(ic, 10) : '', txt]));
+          if (c.dup_held) chip('Duplicate — held', 'r', 'alert');   // bl_disp_0602
+          if (col.k === 'screening' && tt.status === 'expired') chip('Test expired' + (tt.attempt_no > 1 ? ' · attempt ' + tt.attempt_no : ''), 'r', 'clock');
           if (col.k === 'applied' || col.k === 'screening') { chip(c.has_cv ? 'CV' : 'No CV', c.has_cv ? 'b' : 'r', 'doc'); chip(c.has_id ? 'ID' : 'No ID', c.has_id ? 'g' : 'r', 'id'); if (c.own_board) chip('Own board', 'g'); if (!c.us_overlap) chip('No US overlap', 'o'); (c.equipment || []).slice(0, 2).forEach((e) => chip(e)); }
           if (col.k === 'sent') { chip(tt.status === 'in_progress' ? 'In progress' : 'Not started', tt.status === 'in_progress' ? 'b' : 'o', tt.status === 'in_progress' ? 'play' : 'clock'); if (tt.attempt_no > 1) chip('Attempt ' + tt.attempt_no); }
           if (col.k === 'scoring') { if (tt.auto != null) chip('auto ' + tt.auto + '/' + (tt.max || 100), 'b'); if (tt.status === 'scored') chip((tt.decision === 'pass' ? 'passed' : 'failed') + ' ' + (tt.score != null ? tt.score : ''), tt.decision === 'pass' ? 'g' : 'r'); if (tt.status === 'scored' && !tt.told) chip('result not sent', 'o', 'mail'); else if (tt.status === 'scored' && !tt.score_told) chip('score not sent', 'o', 'mail'); if (Number(tt.pastes) > 0) chip(tt.pastes + ' pastes', 'r'); if (Number(tt.blur) > 5) chip(tt.blur + ' tab leaves', 'r'); }
@@ -544,7 +548,7 @@ export function renderRoster(host, ctx) {
           if (col.k === 'trial' || col.k === 'active' || col.k === 'suspended') { chip(num(c.carriers) + ' carrier' + (Number(c.carriers) === 1 ? '' : 's'), 'b', 'truck'); if (Number(c.trucks)) chip(num(c.trucks) + ' truck' + (Number(c.trucks) === 1 ? '' : 's')); if (c.commission_pct) chip(c.commission_pct + '%', 'g'); if (Number(c.owed) > 0) chip(usd(c.owed) + ' owed', 'o', 'wallet'); }
           let ageTxt, pct, tone;
           if (col.k === 'trial' && c.trial_start && c.trial_end) { const tot = Math.max(1, days(c.trial_start) + Math.max(0, Math.ceil((new Date(c.trial_end) - Date.now()) / 864e5))); const d = days(c.trial_start); ageTxt = 'day ' + Math.min(d + 1, tot) + ' of ' + tot; pct = Math.min(100, Math.round(100 * (d + 1) / tot)); tone = pct >= 80 ? 'var(--o)' : 'var(--b)'; }
-          else if (col.k === 'sent' && tt.start_by && tt.status === 'invited') { const h = Math.round((new Date(tt.start_by) - Date.now()) / 36e5); ageTxt = h >= 0 ? 'expires in ' + h + ' h' : 'expired'; pct = Math.min(100, Math.max(0, 100 - Math.round(100 * h / 48))); tone = h < 12 ? 'var(--o)' : 'var(--b)'; }
+          else if (col.k === 'sent' && tt.start_by && tt.status === 'invited') { const h = Math.round((new Date(tt.start_by) - Date.now()) / 36e5); ageTxt = h >= 0 ? 'expires in ' + (h >= 48 ? Math.floor(h / 24) + ' d' : h + ' h') : 'expired'; pct = Math.min(100, Math.max(0, 100 - Math.round(100 * h / 120))); tone = h < 12 ? 'var(--o)' : 'var(--b)'; }
           else if (col.k === 'scoring' && tt.submitted_at) { const h = Math.round((Date.now() - new Date(tt.submitted_at)) / 36e5); ageTxt = 'submitted ' + (h < 48 ? h + ' h ago' : Math.round(h / 24) + ' d ago'); pct = Math.min(100, Math.round(100 * h / 24)); tone = h > 24 ? 'var(--o)' : 'var(--b)'; }
           else if (col.k === 'active') { const d = c.last_booking_at ? days(c.last_booking_at) : null; ageTxt = d == null ? 'no booking yet' : d === 0 ? 'booked today' : 'last booking ' + d + ' d ago'; pct = d == null ? 0 : Math.min(100, d * 25); tone = d != null && d >= 3 ? 'var(--o)' : 'var(--ok)'; }
           else { const d = days(c.stage_since); ageTxt = d == null ? '—' : d === 0 ? 'today' : d + ' d in stage'; pct = col.budget ? Math.min(100, Math.round(100 * d / col.budget)) : 0; tone = col.budget && d > col.budget ? 'var(--o)' : 'var(--ok)'; }

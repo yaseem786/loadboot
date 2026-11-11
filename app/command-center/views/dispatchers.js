@@ -539,7 +539,7 @@ export function renderDispatchers(host) {
       return el('button', { class: 'lb-btn', onClick: async () => {
         const ok = await askConfirm(again ? 'Send another skills test?' : 'Send the skills test?', {
           body: (again ? 'This issues a fresh attempt — the previous one stays on the record, and the new one is numbered so you can see it was a second go. ' : '')
-              + 'The candidate gets a short e-mail with one button into their portal: 75 minutes once they press Start, and they must start within 48 hours. If they do not start, LoadBoot re-invites them automatically up to 3 times.',
+              + 'The candidate gets a short e-mail with one button into their portal: 75 minutes once they press Start, and they have 5 days to take it. If they do not start, LoadBoot re-invites them automatically up to 3 times.',
           confirmLabel: 'Send it',
         });
         if (!ok) return;

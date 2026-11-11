@@ -24,6 +24,7 @@ import { ccDispatcherSetRejectReasons, ccDispatcherChoices, ccDispatcherChoiceDe
 import { fieldSourcesPanel } from './fieldSources.js';   // bl_disp_0459 — who set each carrier field
 import { ccDispDeskConfig, ccDispDeskConfigSet, ccDispCallReasons, ccDispCallReasonSet } from '../../shared/api.js';   // bl_disp_0555 — availability gate + call rule
 import { STANDING_RULES, introLastText } from '../../shared/dispatcher-rules.js';
+import { ccDispatcherIdentity, ccDispatcherDuplicateResolve } from '../../shared/api.js';   // bl_disp_0602 — duplicate applications
 import { ccDispatcherReports, ccDispatcherReportDecide } from '../../shared/api.js';   // bl_disp_0443 — carrier reports → permanent block
 import { ccDispatcherTrialReports, ccDispatcherTrialAck } from '../../shared/api.js';   // bl_disp_0485 — trial daily report history + feedback
 import { REASONS, BOARD_RULE, noteContradictsBoardRule } from '../../agent/dispatcher-gaps.js';
@@ -437,13 +438,14 @@ export async function renderDispatcher360(host, query) {
   const root = el('div', { class: 'd3' }, el('div', { class: 'd3-empty' }, 'Loading dispatcher…'));
   mount(host, root);
 
-  const state = { dd: null, test: null, kpi: null, kpiDays: 30, bookings: null, comm: null, activity: null, carriers: [], choices: [], reports: [], trial: null };
+  const state = { dd: null, test: null, kpi: null, kpiDays: 30, bookings: null, comm: null, activity: null, carriers: [], choices: [], reports: [], trial: null, identity: null };
   const load = async (what) => {
     const all = !what;
     const jobs = [];
     if (all || what === 'dd') jobs.push(ccDispatcher360(id).then((r) => { state.dd = r; }));
     if (all || what === 'dd') jobs.push(ccDispatcherChoices('all', id).then((r) => { state.choices = Array.isArray(r) ? r : []; }).catch(() => { state.choices = []; }));   // bl_disp_0442
     if (all || what === 'dd') jobs.push(ccDispatcherReports('all', id).then((r) => { state.reports = Array.isArray(r) ? r : []; }).catch(() => { state.reports = []; }));   // bl_disp_0443
+    if (all || what === 'dd') jobs.push(ccDispatcherIdentity(id).then((r) => { state.identity = r && !r.error ? r : null; }).catch(() => { state.identity = null; }));   // bl_disp_0602
     if (all || what === 'trial') jobs.push(ccDispatcherTrialReports(id, 30).then((r) => { state.trial = r; }).catch((e) => { state.trial = { error: humanizeError(e) }; }));   // bl_disp_0485
     if (all || what === 'test') jobs.push(ccDispatcherTestReview(id).then((r) => { state.test = r; }).catch((e) => { state.test = { error: humanizeError(e) }; }));
     if (all || what === 'kpi') jobs.push(ccDispatcherKpis(id, state.kpiDays).then((r) => { state.kpi = r; }).catch((e) => { state.kpi = { error: humanizeError(e) }; }));
@@ -526,7 +528,11 @@ export async function renderDispatcher360(host, query) {
   // ---- primary pipeline action for the hero (mirrors the old "Verification pipeline" card, one button at a time)
   function primaryAction() {
     const pp = state.dd.profile; const st = pp.status; const ts = state.test && state.test.state;
+    // bl_disp_0602: a held duplicate is decided on its Identity card, not pushed into screening
+    if (state.identity && state.identity.hold && state.identity.hold.open) return btn('Duplicate — review', () => go('documents'), 'o', 'alert');
     if (st === 'applied') return btn('Start screening', () => act('screening'), 'o', 'eye');
+    // bl_disp_0602: management's second chance — the SAME application reopens, history intact
+    if (st === 'rejected' && !pp.blocked_at) return btn('Reactivate application', () => act('screening', 'Reactivate ' + (pp.full_name || 'this application') + '?', 'Management decision: the rejected application goes back to Screening. Nothing is lost — earlier test scores, trial record and notes stay on file (the old reject note is archived). You can then send the skills test again or move it forward.'), 'o', 'play');
     if (st === 'screening') return ts === 'submitted' ? btn('Grade the test', () => go('test'), 'o', 'clipboard') : btn(ts && ts !== 'none' ? 'Open the test' : 'Send skills test', () => go('test'), 'o', 'send');
     if (st === 'skills_test') return btn('Move to trial — set terms', () => trialForm(), 'o', 'play');
     if (st === 'trial') return btn('Verify — passed trial', () => act('verify', 'Verify ' + (pp.full_name || 'this dispatcher') + '?', 'Check the scorecard first: ≥3 loads/week/truck, avg $/mi above the floor, 100% RC attached, ≥2 check calls per load, no dispatch-caused cancellations.'), 'o', 'award');
@@ -1060,6 +1066,58 @@ export async function renderDispatcher360(host, query) {
   function activityCard() {
     return card('Activity', 'Bookings, events, messages, test, money', 'activity', el('div', { class: 'd3-pad' }, [activityList(7), btn('Full timeline', () => go('timeline'), 'g', 'arrow', { style: 'width:100%;justify-content:center' })]), [pill('Live', 'green', 'dot')], 'timeline');
   }
+  // ---- bl_disp_0602: who is this, really — earlier applications sharing the phone / e-mail, and the decision on a held duplicate
+  function identityCards() {
+    const idn = state.identity; if (!idn) return [];
+    const hold = idn.hold; const ms = idn.matches || [];
+    if (!hold && !ms.length) return [];
+    const VIA = { phone: ['same phone', 'red'], email: ['same e-mail', 'red'], name: ['same name — possible', 'amber'] };
+    const orig = hold ? ms.find((m) => m.user_id === hold.dup_of) : null;
+    const resolve = async (action, title, placeholder) => {
+      const note = await askReason(title, { placeholder });
+      if (note === null) return;
+      const r = await ccDispatcherDuplicateResolve(id, action, typeof note === 'string' ? note : (note && note.note) || null).catch((e) => ({ error: humanizeError(e) }));
+      if (r && r.error) { toast(r.error); return; }
+      toast(action === 'allow' ? '✓ allowed — now in screening' : '✓ original application reactivated');
+      if (action === 'reactivate_original' && r.original) { location.hash = '#/dispatcher?id=' + r.original; return; }
+      rerender();
+    };
+    const rows = [];
+    if (hold && hold.open) rows.push(el('div', { style: 'border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:11px;padding:10px 12px;font-size:12.6px;line-height:1.6;margin-bottom:8px' }, [
+      el('b', null, 'Held as a duplicate — not in screening. '),
+      'This application has the ' + (hold.via === 'phone' ? 'same phone number' : 'same e-mail (dots / +tags ignored)') + ' as an earlier one' + (Number(hold.attempts) > 1 ? ' (submitted ' + hold.attempts + ' times)' : '') + '. It moves only on a management decision below.']));
+    else if (hold) rows.push(el('div', { class: 'd3-mut', style: 'font-size:12.3px;margin-bottom:8px' },
+      (hold.action === 'allowed' ? 'Re-application allowed by management' : 'Management reactivated the original application instead; this one stays closed') + ' · ' + dShort(hold.resolved_at) + (hold.note ? ' — “' + hold.note + '”' : '')));
+    ms.forEach((m) => {
+      const t = m.test || {}; const v = VIA[m.via] || [m.via, ''];
+      const facts = [
+        'applied ' + dShort(m.applied_at),
+        t.status === 'scored' ? 'test ' + (t.score != null ? t.score : '—') + '/' + (t.max || '—') + (t.decision ? ' · ' + t.decision : '') : t.status ? 'test ' + t.status : 'no test',
+        Number(m.attempts) > 1 ? m.attempts + ' test attempts' : null,
+        m.trial_start ? 'trial ' + m.trial_start + ' → ' + (m.trial_end || '?') : 'no trial',
+        Number(m.delivered) ? m.delivered + ' delivered load' + (Number(m.delivered) === 1 ? '' : 's') : null,
+        Number(m.reapply_count) ? 're-applied ' + m.reapply_count + '×' : null,
+        m.status === 'rejected' && m.reviewed_at ? 'rejected ' + dShort(m.reviewed_at) : null,
+      ].filter(Boolean).join(' · ');
+      rows.push(el('div', { class: 'd3-flag' }, [el('span', { style: 'color:' + (m.via === 'name' ? 'var(--faint)' : 'var(--warn)') }, icon(m.via === 'name' ? 'user' : 'alert', 15)), el('div', { style: 'min-width:0;flex:1' }, [
+        el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:center' }, [
+          el('a', { class: 'd3-lnk', href: '#/dispatcher?id=' + m.user_id, style: 'font-weight:700' }, m.name || 'Earlier application'),
+          pill(m.status, m.status === 'rejected' ? 'red' : m.status === 'active' || m.status === 'verified' ? 'green' : 'amber'), pill(v[0], v[1]),
+          m.blocked ? pill('Permanently blocked', 'red', 'alert') : '', m.held ? pill('itself held', 'amber') : '']),
+        el('div', { class: 'd3-mut', style: 'margin-top:3px' }, [m.email || '', m.phone ? ' · ' + m.phone : '', m.country ? ' · ' + m.country : '']),
+        el('div', { class: 'd3-mut', style: 'margin-top:2px' }, facts),
+        m.review_note ? el('div', { style: 'margin-top:5px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:12px;background:#fcfdff;white-space:pre-wrap' }, m.review_note) : ''])]));
+    });
+    const acts = [];
+    if (hold && hold.open && !viewOnly) {
+      if (orig && orig.status === 'rejected' && !orig.blocked) acts.push(btn('Reactivate the original', () => resolve('reactivate_original', 'Reactivate ' + (orig.name || 'the original application') + ' — why the second chance?', 'On the record, never shown to the candidate. The original application returns to Screening with its history; this duplicate stays closed. Tell the candidate to sign in with the first e-mail.'), 'o', 'play'));
+      acts.push(btn('Allow this application', () => resolve('allow', 'Allow this new application — why?', 'On the record, never shown to the candidate. This application goes to Screening; the earlier record stays linked here.'), '', 'check'));
+    }
+    return [card(hold && hold.open ? 'Duplicate application' : 'Identity & previous record',
+      hold && hold.open ? 'One person, one application — a new e-mail does not start a clean record' : 'Other applications sharing this phone, e-mail or name', 'id',
+      el('div', { class: 'd3-pad' }, [...rows, acts.length ? el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' }, acts) : '']),
+      [hold && hold.open ? pill('Needs a decision', 'red', 'alert') : pill(ms.length + ' on file', 'amber')], 'documents')];
+  }
   function noteCard() {
     const pp = state.dd.profile;
     return card('Last decision note', 'Never shown to the dispatcher · written when a status changes', 'lock', el('div', { class: 'd3-pad' }, [
@@ -1197,7 +1255,7 @@ export async function renderDispatcher360(host, query) {
   // ---- compose
   function body() {
     const left = []; const right = [];
-    if (tab === 'overview') { left.push(...reportCards(), ...choiceCards(), ...(trialOpen() ? [trialReportsCard()] : []), nbaCard(), readinessCard(), carriersCard(false), scorecardCard(false)); right.push(termsCard(), rulesCard(), documentsCard(false), signalsCard(), activityCard(), noteCard()); }   // bl_disp_0555: rulesCard   // bl_disp_0442: a waiting carrier choice comes first
+    if (tab === 'overview') { left.push(...identityCards(), ...reportCards(), ...choiceCards(), ...(trialOpen() ? [trialReportsCard()] : []), nbaCard(), readinessCard(), carriersCard(false), scorecardCard(false)); right.push(termsCard(), rulesCard(), documentsCard(false), signalsCard(), activityCard(), noteCard()); }   // bl_disp_0555: rulesCard   // bl_disp_0442: a waiting carrier choice comes first
     else if (tab === 'test') { const h = el('div'); renderTestPanel(h, { userId: id, name: state.dd.profile.full_name, onChange: () => rerender('test') }); left.push(h); right.push(signalsCard(), applicationCard()); }
     else if (tab === 'carriers') { left.push(...reportCards(), ...choiceCards(), carriersCard(true)); right.push(termsCard(), signalsCard(), activityCard()); }
     else if (tab === 'performance') { left.push(scorecardCard(true), trialReportsCard(), readinessCard()); right.push(termsCard(), signalsCard()); }
@@ -1205,7 +1263,7 @@ export async function renderDispatcher360(host, query) {
     else if (tab === 'money') { left.push(moneyCard()); right.push(termsCard(), activityCard()); }
     else if (tab === 'messages') { left.push(messagesCard()); right.push(carriersCard(false), activityCard()); }
     else if (tab === 'timeline') { left.push(card('Timeline', 'Everything the system recorded, newest first', 'activity', el('div', { class: 'd3-pad' }, activityList()), [], 'timeline')); right.push(termsCard(), noteCard()); }
-    else if (tab === 'documents') { left.push(documentsCard(true), applicationCard()); right.push(signalsCard(), noteCard()); }
+    else if (tab === 'documents') { left.push(...identityCards(), documentsCard(true), applicationCard()); right.push(signalsCard(), noteCard()); }
     return el('div', { class: 'd3-body' }, el('div', { class: 'd3-grid' }, [el('div', { class: 'd3-col' }, left), el('div', { class: 'd3-col' }, right)]));
   }
   function top() {

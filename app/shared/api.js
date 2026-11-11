@@ -517,7 +517,10 @@ export const dispatcherTestMy = () => rpc('dispatcher_test_my', {});
 export const dispatcherTestStart = () => rpc('dispatcher_test_start', {});
 export const dispatcherTestSave = (q, answer, seconds, paste) => rpc('dispatcher_test_save', { p_question: q, p_answer: answer, p_seconds: seconds || 0, p_paste: paste || 0 });
 export const dispatcherTestSubmit = (integrity) => rpc('dispatcher_test_submit', { p_integrity: integrity || {} });
-export const ccDispatcherTestInvite = (user, minutes, startHours) => rpc('cc_dispatcher_test_invite', { p_user: user, ...(minutes ? { p_minutes: minutes } : {}), ...(startHours ? { p_start_hours: startHours } : {}) });   // bl_disp_0553: omitted = DB default (75 min, 48 h)
+export const ccDispatcherTestInvite = (user, minutes, startHours) => rpc('cc_dispatcher_test_invite', { p_user: user, ...(minutes ? { p_minutes: minutes } : {}), ...(startHours ? { p_start_hours: startHours } : {}) });   // bl_disp_0553: omitted = DB default (75 min; bl_disp_0602: 5 days to start)
+// bl_disp_0602 — duplicate applications: the record behind an application + management's decision ('allow' | 'reactivate_original')
+export const ccDispatcherIdentity = (user) => rpc('cc_dispatcher_identity', { p_user: user });
+export const ccDispatcherDuplicateResolve = (user, action, note) => rpc('cc_dispatcher_duplicate_resolve', { p_user: user, p_action: action, p_note: note ?? null });
 export const ccDispatcherTestReview = (user) => rpc('cc_dispatcher_test_review', { p_user: user });
 export const ccDispatcherTestScore = (attempt, scores, decision, note) => rpc('cc_dispatcher_test_score', { p_attempt: attempt, p_scores: scores || {}, p_decision: decision || null, p_note: note || null });
 export const ccDispatcherTestSendScore = (attempt) => rpc('cc_dispatcher_test_send_score', { p_attempt: attempt });
