@@ -5,7 +5,7 @@ import { humanizeError } from '../../shared/errors.js';
 
 // Use the existing mailbox draft/send path: permissions, catalog, opt-outs and
 // delivery audit remain enforced by the server. Feedback stays open until handled.
-export async function feedbackReply({ email, feedback }) {
+export async function feedbackReply({ email, feedback, onSent }) {
   const status = el('p', { role: 'status' }, 'Loading mailboxes…');
   const body = el('div', null, status);
   const drawer = openDrawer('Reply to dispatcher', body, { subtitle: 'Email reply · request stays open until marked Handled' });
@@ -38,6 +38,7 @@ export async function feedbackReply({ email, feedback }) {
           if (!response || response.ok !== true) throw new Error(response?.reason || 'The message was not sent.');
           sent = true; input.disabled = true; from.disabled = true;
           result.textContent = 'Reply queued through Mailbox. Check delivery there; mark this request Handled when resolved.';
+          if (onSent) Promise.resolve().then(onSent).catch(() => {});
         } else result.textContent = 'Draft saved in Mailbox. Nothing sent.';
       } catch (e) { result.textContent = humanizeError(e); }
       finally { busy = false; input.disabled = sent; from.disabled = sent; actions.forEach(b => { b.disabled = sent; }); }

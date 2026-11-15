@@ -16,7 +16,7 @@ import { ccDispatcherTestInvite, ccDispatcherTestReview, ccDispatcherTestScore, 
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const INVITE_MINUTES = 75;   // v2: 18 items incl. 5 written — 45 was the v1 budget
-const INVITE_START_HOURS = 48;
+const INVITE_START_DAYS = 5;   // bl_disp_0602 (was 48 hours)
 const pill = (txt, tone, ic) => el('span', { class: 'd3-pill ' + (tone || '') }, [ic ? icon(ic, 12) : '', txt]);
 const btn = (label, onClick, tone, ic, extra) => el('button', Object.assign({ class: 'd3-btn ' + (tone || ''), type: 'button', onClick }, extra || {}), [ic ? icon(ic, 15) : '', label]);
 const fmtS = (s) => { s = Math.round(Number(s || 0)); return s < 60 ? s + 's' : Math.floor(s / 60) + 'm ' + String(s % 60).padStart(2, '0') + 's'; };
@@ -100,10 +100,10 @@ export function renderTestPanel(host, opts) {
   function inviteBtn(again) {
     return btn(again ? 'Send another' : 'Send skills test', async () => {
       const ok = await askConfirm(again ? 'Send another skills test?' : 'Send the skills test?', {
-        body: (again ? 'This issues a fresh attempt — the previous one stays on the record. ' : '') + 'The candidate gets one e-mail with a button into their portal: ' + INVITE_MINUTES + ' minutes once they press Start, must start within ' + INVITE_START_HOURS + ' hours. If they do not start, LoadBoot re-invites them automatically up to 3 times. Bank v2 draws one item per group, so no two candidates get the same test.',
+        body: (again ? 'This issues a fresh attempt — the previous one stays on the record. ' : '') + 'The candidate gets one e-mail with a button into their portal: ' + INVITE_MINUTES + ' minutes once they press Start, and ' + INVITE_START_DAYS + ' days to take it (any day inside that window). If they do not start, LoadBoot re-invites them automatically up to 3 times. Bank v2 draws one item per group, so no two candidates get the same test.',
         confirmLabel: 'Send it' });
       if (!ok) return;
-      const r = await ccDispatcherTestInvite(userId, INVITE_MINUTES, INVITE_START_HOURS).catch((e) => ({ error: humanizeError(e) }));
+      const r = await ccDispatcherTestInvite(userId, INVITE_MINUTES, INVITE_START_DAYS * 24).catch((e) => ({ error: humanizeError(e) }));
       if (r && r.error) { toast(r.error); return; }
       toast('✓ Skills test sent'); await reload(); onChange();
     }, 'p', 'send');
