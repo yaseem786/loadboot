@@ -2032,9 +2032,17 @@ function createMailbox(host) {
           // Could not save (e.g. no valid To yet): keep the window, and its history entry, alive.
           if (o.fromRoute) { try { history.pushState(null, '', hashFor(Object.assign(current(), { compose: C.routeCompose, draft: C.routeDraft }))); } catch (_) {} }
           win.classList.remove('min');
-          return;
+          if (o.fromRoute) return;
+          // The X must always be able to close: a draft that cannot be saved yet (no valid To, or no text) asks once, then closes.
+          const drop = await askConfirm(C.draftId ? 'Close without saving these changes?' : 'Discard this message?', {
+            body: C.draftId ? 'These changes cannot be saved until To has one valid email address. The earlier saved draft stays in Drafts.'
+              : 'It cannot be saved as a draft until To has one valid email address and the message has some text. Closing now discards it' + (A.items.length ? ' and its attachments' : '') + '.',
+            subtitle: 'Draft not saved', confirmLabel: C.draftId ? 'Close' : 'Discard',
+          });
+          if (!drop) { toIn.focus(); return; }
+          if (!C.draftId) mailAttachRemove(A.items.map(a => a.path).concat(A.gone));
         }
-        if (r !== 'empty') snack('Draft saved.');
+        if (r && r !== 'empty') snack('Draft saved.');
       }
       destroyQuiet();
       if (!o.fromRoute && !o.keepRoute) {
