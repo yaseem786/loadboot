@@ -921,6 +921,10 @@ export const mailComposeSave = (o) => rpc('cc_mail_compose_save', {
   p_from: o.from, p_to: o.to, p_subject: o.subject ?? '', p_body_html: o.bodyHtml, p_draft_id: o.draftId ?? null,
   p_attachments: (o.attachments && o.attachments.length) ? o.attachments : null,
 });
+// bl_mail_0606 — attachments on a reply draft (the inline reply box). Same bucket and limits as Compose.
+export const mailDraftAttach = (draftId, attachments) => rpc('cc_mail_draft_attach', {
+  p_draft_id: draftId, p_attachments: (attachments && attachments.length) ? attachments : null,
+});
 // bl_mail_0605 — Compose attachments. Private bucket mail-attachments (staff only, 10 MB/file).
 // Path = <own user id>/<random>/<safe name>. XHR (not sb.storage.upload) so the composer can show progress.
 export const MAIL_ATTACH_MAX = 10 * 1024 * 1024;

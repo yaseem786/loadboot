@@ -58,7 +58,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { fmtDateTime, askConfirm, openDrawer } from '../../shared/ui/components.js';
 import {
   mailList, mailThread, mailDraftSave, mailDraftDiscard, mailSend, mailStats, mailSetFolder,
-  mailThreadAction, mailComposeSave, mailAttachUpload, mailAttachRemove, mailAttachUrl, mailAttachType, MAIL_ATTACH_MAX,
+  mailThreadAction, mailComposeSave, mailDraftAttach, mailAttachUpload, mailAttachRemove, mailAttachUrl, mailAttachType, MAIL_ATTACH_MAX,
   mailWorkCounts, mailRoleCounts, mailOwners, mailAssign, mailSetStatus, mailViewing, mailSenderCard,
   mailAttachments, staffUploadDocument, dmailAct, ccDmailOverview, ccDmailAccountSave, globalSearch,
 } from '../../shared/api.js';
@@ -1100,7 +1100,8 @@ function createMailbox(host) {
     const shown = S.msgs.filter(m => m.status !== 'draft');
     shown.forEach((m, i) => { if (i === shown.length - 1 || (m.direction === 'in' && !m.read_at) || shown.length <= 2) S.expanded.add(m.id); });
     const draft = S.msgs.find(m => m.status === 'draft' && m.mail_class !== 'compose');
-    if (draft) S.reply = { mode: 'reply', html: draft.body_html || '', draftId: draft.id, savedAt: draft.created_at, dirty: false };
+    if (draft) S.reply = { mode: 'reply', html: draft.body_html || '', draftId: draft.id, savedAt: draft.created_at, dirty: false,
+      atts: (Array.isArray(draft.attachments) ? draft.attachments : []).filter(a => a && a.path).map(a => Object.assign({}, a)), gone: [] };
     paintThread();
     window.scrollTo(0, 0);
   }
@@ -1635,7 +1636,7 @@ function createMailbox(host) {
       return;
     }
     const sig = sigHtml(replyFromFor(lastIn.mailbox));
-    if (!S.reply) S.reply = { mode, html: sig ? '<p><br></p>' + sig : '', draftId: null, dirty: false };
+    if (!S.reply) S.reply = { mode, html: sig ? '<p><br></p>' + sig : '', draftId: null, dirty: false, atts: [], gone: [] };
     paintThread();
     setTimeout(() => { const b = mainHost.querySelector('.gm-reply .gm-editor'); if (b) { b.focus(); b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }, 30);
   }
@@ -1667,11 +1668,60 @@ function createMailbox(host) {
     const showErr = (msg) => { err.textContent = msg; err.hidden = !msg; };
     const from = replyFromFor(lastIn && lastIn.mailbox);
 
+    // bl_mail_0606 — attachments on a reply. The state lives on S.reply because this box is rebuilt on every repaint.
+    if (!R.atts) R.atts = [];
+    if (!R.gone) R.gone = [];
+    if (R.hadAtts == null) R.hadAtts = R.atts.length > 0;
+    const markDirty = () => { R.dirty = true; status.textContent = ''; };
+    const attRow = el('div', { class: 'gm-att-row', hidden: true });
+    const removeAtt = (a) => {
+      R.atts = R.atts.filter(x => x !== a);
+      if (a.uploading) a.cancelled = true; else if (a.path) { R.gone.push(a.path); markDirty(); }
+      R.paintAtt();
+    };
+    R.paintAtt = () => {
+      attRow.hidden = !R.atts.length;
+      mount(attRow, R.atts.map(a => {
+        const bar = a.uploading ? el('span', { class: 'gm-att-bar' }, el('i')) : null;
+        if (bar) bar.firstChild.style.width = Math.round((a.pct || 0) * 100) + '%';
+        return el('span', { class: 'gm-att-chip' + (a.uploading ? ' up' : ''), title: a.filename }, [
+          ic('clip', 16), el('span', { class: 'gm-att-name' }, a.filename),
+          el('span', { class: 'gm-att-size' }, a.uploading ? Math.round((a.pct || 0) * 100) + '%' : attSize(a.size)), bar,
+          el('button', { type: 'button', class: 'gm-to-x', 'aria-label': 'Remove ' + a.filename, onClick: (e) => { e.preventDefault(); removeAtt(a); } }, '\u00d7'),
+        ]);
+      }));
+    };
+    const addFiles = async (files) => {
+      showErr('');
+      for (const file of Array.from(files || [])) {
+        if (S.reply !== R) break;
+        if (R.atts.length >= 10) { showErr('At most 10 attachments per email.'); break; }
+        if (!mailAttachType(file)) { showErr('"' + file.name + '" was not attached — only PDF, JPG, PNG, DOCX and XLSX files.'); continue; }
+        if (file.size > MAIL_ATTACH_MAX) { showErr('"' + file.name + '" is over 10 MB.'); continue; }
+        if (R.atts.reduce((n, x) => n + (x.size || 0), 0) + file.size > 25 * 1024 * 1024) { showErr('Attachments are over 25 MB in total.'); break; }
+        const a = { filename: file.name, size: file.size, uploading: true, pct: 0 };
+        R.atts.push(a); R.paintAtt();
+        try {
+          const done = await mailAttachUpload(file, (pct) => { a.pct = pct; R.paintAtt(); });
+          if (a.cancelled || S.reply !== R) { mailAttachRemove(done.path); continue; }
+          Object.assign(a, done, { uploading: false }); R.dirty = true;
+        } catch (e) { R.atts = R.atts.filter(x => x !== a); showErr(mailErr(e)); }
+        R.paintAtt();
+      }
+    };
+    const fileIn = el('input', { type: 'file', multiple: true, hidden: true, accept: '.pdf,.jpg,.jpeg,.png,.docx,.xlsx' });
+    fileIn.addEventListener('change', () => { const f = Array.from(fileIn.files || []); fileIn.value = ''; addFiles(f); });
+    const attachBtn = ib('clip', 'Attach files (PDF, JPG, PNG, DOCX, XLSX — 10 MB each)', () => fileIn.click());
+    R.paintAtt();
+
     const save = async (quiet) => {
       const html = sanitizeHtml(editor.getHtml());
       if (!htmlToText(html)) { if (!quiet) showErr('Write something first.'); return null; }
       try {
         const id = await mailDraftSave(S.thread, html);
+        const atts = R.atts.filter(a => a.path && !a.uploading).map(a => ({ path: a.path, filename: a.filename, size: a.size, content_type: a.content_type }));
+        if (atts.length || R.hadAtts) { await mailDraftAttach(id, atts); R.hadAtts = atts.length > 0; }
+        if (R.gone.length) mailAttachRemove(R.gone.splice(0));
         R.draftId = id; R.dirty = false; R.html = html; R.savedAt = new Date().toISOString();
         status.textContent = 'Draft saved'; showErr('');
         const t = S.threads.find(x => x.thread_key === S.thread); if (t) t.has_draft = true;
@@ -1680,6 +1730,7 @@ function createMailbox(host) {
       } catch (e) { showErr(mailErr(e)); return null; }
     };
     const sendBtn = el('button', { type: 'button', class: 'gm-send', onClick: async () => {
+      if (R.atts.some(a => a.uploading)) { showErr('Wait for the attachment to finish uploading.'); return; }
       if (!S.canSend) {
         const id = await save(false);
         if (id) snack('Draft saved. Sending needs comm.manage — an owner can open it and press Send.');
@@ -1689,7 +1740,7 @@ function createMailbox(host) {
       const id = (R.dirty || !R.draftId) ? await save(false) : R.draftId;
       if (!id) { sendBtn.disabled = false; return; }
       const ok = await askConfirm('Send this reply for real?', {
-        body: 'This emails ' + ((lastIn && lastIn.peer_email) || 'the sender') + ' from ' + from + ' now. Drafts are safe; sending cannot be undone.',
+        body: 'This emails ' + ((lastIn && lastIn.peer_email) || 'the sender') + ' from ' + from + ' now' + (R.atts.length ? ' with ' + R.atts.length + ' attachment' + (R.atts.length > 1 ? 's' : '') + ' (' + R.atts.map(a => a.filename).join(', ') + ')' : '') + '. Drafts are safe; sending cannot be undone.',
         subtitle: 'Outbound email', confirmLabel: 'Send it',
       });
       if (!ok) { sendBtn.disabled = false; return; }
@@ -1708,10 +1759,12 @@ function createMailbox(host) {
         el('div', { class: 'gm-reply-to' }, [ic(R.mode === 'forward' ? 'forward' : 'reply', 18), el('span', null, (lastIn && lastIn.peer_email) || ''),
           el('span', { class: 'gm-reply-from', style: '--bx:' + safeColor(boxMeta(from).color) }, [el('i', { class: 'gm-dot' }), 'from ' + boxMeta(from).from_name + ' <' + from + '>'])]),
         editor.node,
+        attRow, fileIn,
         err,
         el('div', { class: 'gm-cmp-bottom' }, [
           sendBtn,
           editor.formatToggle,
+          attachBtn,
           status,
           el('span', { class: 'gm-flex' }),
           ib('trash', 'Discard draft', async () => {
@@ -1720,6 +1773,7 @@ function createMailbox(host) {
               const t = S.threads.find(x => x.thread_key === S.thread); if (t) t.has_draft = false;
               loadStats(); snack('Draft discarded.');
             }
+            mailAttachRemove(R.atts.map(a => a.path).concat(R.gone));
             S.reply = null;
             S.msgs = S.msgs.filter(m => m.id !== R.draftId);
             paintThread();
