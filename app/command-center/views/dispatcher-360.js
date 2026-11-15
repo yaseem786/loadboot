@@ -1070,8 +1070,9 @@ export async function renderDispatcher360(host, query) {
   function identityCards() {
     const idn = state.identity; if (!idn) return [];
     const hold = idn.hold; const ms = idn.matches || [];
-    if (!hold && !ms.length) return [];
-    const VIA = { phone: ['same phone', 'red'], email: ['same e-mail', 'red'], name: ['same name — possible', 'amber'] };
+    const me9 = idn.self || null;   // bl_disp_0604: the ID number this applicant declared
+    if (!hold && !ms.length && !me9) return [];
+    const VIA = { id: ['same ID number', 'red'], phone: ['same phone', 'red'], email: ['same e-mail', 'red'], name: ['same name — possible', 'amber'] };   // bl_disp_0604: id
     const orig = hold ? ms.find((m) => m.user_id === hold.dup_of) : null;
     const resolve = async (action, title, placeholder) => {
       const note = await askReason(title, { placeholder });
@@ -1085,9 +1086,11 @@ export async function renderDispatcher360(host, query) {
     const rows = [];
     if (hold && hold.open) rows.push(el('div', { style: 'border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:11px;padding:10px 12px;font-size:12.6px;line-height:1.6;margin-bottom:8px' }, [
       el('b', null, 'Held as a duplicate — not in screening. '),
-      'This application has the ' + (hold.via === 'phone' ? 'same phone number' : 'same e-mail (dots / +tags ignored)') + ' as an earlier one' + (Number(hold.attempts) > 1 ? ' (submitted ' + hold.attempts + ' times)' : '') + '. It moves only on a management decision below.']));
+      'This application has the ' + (hold.via === 'id' ? 'same government ID number' : hold.via === 'phone' ? 'same phone number' : 'same e-mail (dots / +tags ignored)') + ' as an earlier one' + (Number(hold.attempts) > 1 ? ' (submitted ' + hold.attempts + ' times)' : '') + '. It moves only on a management decision below.']));
     else if (hold) rows.push(el('div', { class: 'd3-mut', style: 'font-size:12.3px;margin-bottom:8px' },
       (hold.action === 'allowed' ? 'Re-application allowed by management' : 'Management reactivated the original application instead; this one stays closed') + ' · ' + dShort(hold.resolved_at) + (hold.note ? ' — “' + hold.note + '”' : '')));
+    const IDT = { national_id: 'National ID', passport: 'Passport', driver_licence: 'Driver’s licence' };
+    rows.push(el('div', { class: 'd3-mut', style: 'font-size:12.4px;margin-bottom:6px' }, me9 ? ['Declared ID: ', el('b', { style: 'color:var(--ink)' }, (IDT[me9.id_type] || 'ID') + ' · ' + me9.id_number)] : 'No ID number on file — applied before it became mandatory (15 Nov 2026).'));
     ms.forEach((m) => {
       const t = m.test || {}; const v = VIA[m.via] || [m.via, ''];
       const facts = [
@@ -1104,7 +1107,7 @@ export async function renderDispatcher360(host, query) {
           el('a', { class: 'd3-lnk', href: '#/dispatcher?id=' + m.user_id, style: 'font-weight:700' }, m.name || 'Earlier application'),
           pill(m.status, m.status === 'rejected' ? 'red' : m.status === 'active' || m.status === 'verified' ? 'green' : 'amber'), pill(v[0], v[1]),
           m.blocked ? pill('Permanently blocked', 'red', 'alert') : '', m.held ? pill('itself held', 'amber') : '']),
-        el('div', { class: 'd3-mut', style: 'margin-top:3px' }, [m.email || '', m.phone ? ' · ' + m.phone : '', m.country ? ' · ' + m.country : '']),
+        el('div', { class: 'd3-mut', style: 'margin-top:3px' }, [m.email || '', m.phone ? ' · ' + m.phone : '', m.country ? ' · ' + m.country : '', m.id_number ? ' · ID ' + m.id_number : '']),
         el('div', { class: 'd3-mut', style: 'margin-top:2px' }, facts),
         m.review_note ? el('div', { style: 'margin-top:5px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:12px;background:#fcfdff;white-space:pre-wrap' }, m.review_note) : ''])]));
     });
@@ -1114,9 +1117,9 @@ export async function renderDispatcher360(host, query) {
       acts.push(btn('Allow this application', () => resolve('allow', 'Allow this new application — why?', 'On the record, never shown to the candidate. This application goes to Screening; the earlier record stays linked here.'), '', 'check'));
     }
     return [card(hold && hold.open ? 'Duplicate application' : 'Identity & previous record',
-      hold && hold.open ? 'One person, one application — a new e-mail does not start a clean record' : 'Other applications sharing this phone, e-mail or name', 'id',
+      hold && hold.open ? 'One person, one application — a new e-mail does not start a clean record' : 'Other applications sharing this ID number, phone, e-mail or name', 'id',
       el('div', { class: 'd3-pad' }, [...rows, acts.length ? el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' }, acts) : '']),
-      [hold && hold.open ? pill('Needs a decision', 'red', 'alert') : pill(ms.length + ' on file', 'amber')], 'documents')];
+      [hold && hold.open ? pill('Needs a decision', 'red', 'alert') : ms.length ? pill(ms.length + ' on file', 'amber') : pill('No earlier record', 'green', 'check')], 'documents')];
   }
   function noteCard() {
     const pp = state.dd.profile;

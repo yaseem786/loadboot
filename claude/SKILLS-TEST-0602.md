@@ -64,3 +64,15 @@ dots and `+tags`. Same name + country is shown as "possible" only — never held
   names md5 unchanged; the 10 touched/new functions md5 = staging. Not in `supabase_migrations.schema_migrations`.
 - Frontend is on branch `claude/tender-edison-al8jhv` — until it is merged to `main`, a held duplicate has no resolve
   card in CC (the DB still holds it and notifies staff).
+
+## bl_disp_0604 (15 Nov 2026) — government ID number is now mandatory and is the first identity key
+
+Closes the first "known limit" above. The application form (section 1) asks for **ID type + ID number** and a phone
+with country code; a submit without an ID number is refused by `dispatcher_apply`. The number lives in
+`app_private.dispatcher_identity` (not on `dispatcher_profiles`, which several functions hand out as JSON) and is
+compared as letters+digits only. Match order: **ID → phone → e-mail**; a match is held as before (`via = 'id'`).
+CC identity card shows the declared ID and each match's ID. Applications from before 15 Nov have no ID number.
+Still open: the number is typed, not checked against the uploaded document (staff compare the two on the card), and
+phone OTP is not built — it needs a sending channel that reaches PH / PK / KE / IN / NG numbers (WhatsApp
+authentication template approved by Meta, or an international SMS route); Telnyx 10DLC lines are US-only.
+Applied: staging + prod 15 Nov (`execute_sql`).

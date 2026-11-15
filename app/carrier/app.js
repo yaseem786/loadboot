@@ -1289,6 +1289,8 @@ async function agentPortal(user) {
       const p = (prof && prof) || {};
       const f = {
         full_name: inp('Full name'), phone: inp('WhatsApp / phone'), country: inp('Country'), city: inp('City'),
+        // bl_disp_0604: one person, one application — the government ID number is what identifies the person, not the e-mail
+        id_type: sel([['', 'Type of ID…'], ['national_id', 'National ID card (CNIC / NIN / Aadhaar / PhilSys …)'], ['passport', 'Passport'], ['driver_licence', 'Driver’s licence']]), id_number: inp('ID number, exactly as printed'),
         timezone: inp('Your timezone (e.g. PKT / GMT+5)'),
         hours: sel([['', 'Hours available / week *'], ['20-30', '20–30'], ['30-40', '30–40'], ['40-50', '40–50'], ['50+', '50+']]),
         us_overlap: h('input', { type: 'checkbox' }),
@@ -1401,7 +1403,9 @@ async function agentPortal(user) {
         // bl_disp_0460 — name the one missing field, open its (collapsed) section and scroll to it; the old
         // single line listed six fields and returned without scrolling, so a hidden Section-2 field looked like a dead button.
         const focus9 = (el9, text9) => { msg.textContent = text9; try { const d9 = el9 && el9.closest ? el9.closest('details') : null; if (d9) d9.open = true; if (el9 && el9.scrollIntoView) el9.scrollIntoView({ block: 'center' }); if (el9 && el9.focus) el9.focus({ preventScroll: true }); } catch (_) {} };
-        const req9 = [[f.full_name, !f.full_name.value.trim(), 'your full name'], [f.country, !f.country.value.trim(), 'your country'], [f.hours, !f.hours.value, 'hours available per week'],
+        const req9 = [[f.full_name, !f.full_name.value.trim(), 'your full name'], [f.country, !f.country.value.trim(), 'your country'],
+          [f.phone, f.phone.value.replace(/\D/g, '').length < 8, 'your phone / WhatsApp number with country code'],
+          [f.id_type, !f.id_type.value, 'the type of your government ID'], [f.id_number, f.id_number.value.replace(/[^A-Za-z0-9]/g, '').length < 5, 'your government ID number'], [f.hours, !f.hours.value, 'hours available per week'],
           [f.english, !f.english.value, 'your English level'], [f.can_source, !f.can_source.value, 'how you get load-board access today'], [f.payout, !f.payout.value, 'how you want to be paid']];
         const miss9 = req9.find((x9) => x9[1]);
         if (miss9) { focus9(miss9[0], 'Required (*): ' + miss9[2] + '.'); return; }
@@ -1414,7 +1418,7 @@ async function agentPortal(user) {
         const skills = { availability_hours: f.hours.value, timezone: f.timezone.value.trim(), us_hours_overlap: f.us_overlap.checked, trucks_handled: f.trucks.value || null, equipment: equip.values(), negotiation: f.negotiation.value, fmcsa_hos: f.fmcsa.value, us_geography: f.geography.value, tools: f.tools.value.trim(), can_source_loads: boardLegacy().can, own_board_access: boardLegacy().own, board_status: f.can_source.value, board_ack: boardAck.checked, sourcing_channels: sources.values(), network_desc: f.network.value.trim(), payout_pref: f.payout.value, note: f.note.value.trim(), linkedin: f.linkedin.value.trim(), cv_doc: docState.cv, cv_name: docState.cvName, id_doc: docState.idd, id_name: docState.iddName };
         if (gate9) skills.reapply_gap = gate9.answers();
         const refs = f.refs.value.split('\n').map((x9) => x9.trim()).filter(Boolean);
-        const payload = { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), country: f.country.value.trim(), city: f.city.value.trim(), english_level: f.english.value, years_exp: f.years.value || null, load_boards: boards.values(), skills: skills, refs: refs };
+        const payload = { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), country: f.country.value.trim(), city: f.city.value.trim(), english_level: f.english.value, years_exp: f.years.value || null, load_boards: boards.values(), skills: skills, refs: refs, id_type: f.id_type.value, id_number: f.id_number.value.trim() };
         const r = await dispatcherApply(payload, true).catch((e9) => ({ error: (e9 && e9.message) || 'error' }));
         if (r && r.error) { msg.textContent = r.error; b9.disabled = false; b9.textContent = 'Submit application'; return; }
         go('dashboard');
@@ -1424,7 +1428,9 @@ async function agentPortal(user) {
             ? 'Your previous answers are already filled in below — update what has changed, close the points at the top, then submit. Re-application ' + (Number(prof.reapply_count || 1)) + ' of 3.'
             : 'This is a SALARIED role dispatching for assigned US carriers — base + per-active-truck + performance bonus, starting when a carrier is assigned. Strict screening (skills test + paid trial) before hiring. Fill each section below.'),
           fsec('1 · About you', true, [
-            grp('Full name *', f.full_name), h('div', { style: 'display:flex;gap:8px' }, [grp('Country *', f.country), grp('City', f.city)]), grp('Phone / WhatsApp', f.phone),
+            grp('Full name *', f.full_name), h('div', { style: 'display:flex;gap:8px' }, [grp('Country *', f.country), grp('City', f.city)]), grp('Phone / WhatsApp * (with country code)', f.phone),
+            h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [grp('Government ID *', f.id_type), grp('ID number *', f.id_number)]),
+            h('div', { class: 'cp-row-s', style: 'margin:-2px 0 6px;line-height:1.6' }, 'One application per person. Your ID number and phone are checked against earlier applications — a new e-mail address does not start a new record. The number is kept private and never shown to carriers.'),
             grp('Timezone', f.timezone), grp('Hours available per week *', f.hours),
             h('label', { style: 'display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--lbc-x-ink2,#cbd5e1);margin:6px 0' }, [f.us_overlap, 'I can overlap with US business hours']),
           ]),

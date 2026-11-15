@@ -1,9 +1,9 @@
--- bl_disp_0602 rolled-back end-to-end test. STAGING ONLY. Everything runs inside one DO block that ends by
+-- bl_disp_0602 + bl_disp_0604 rolled-back end-to-end test. STAGING ONLY. Everything runs inside one DO block that ends by
 -- raising its own report, so nothing is kept (three throwaway auth users, their applications, attempts, e-mails).
 do $$
-declare v_staff uuid; u1 uuid := gen_random_uuid(); u2 uuid := gen_random_uuid(); u3 uuid := gen_random_uuid();
+declare v_staff uuid; u1 uuid := gen_random_uuid(); u2 uuid := gen_random_uuid(); u3 uuid := gen_random_uuid(); u4 uuid := gen_random_uuid();
   r jsonb; out text := ''; v text; n int; rec record;
-  pay jsonb := '{"full_name":"Zed Testcase","country":"Pakistan","city":"Lahore","english_level":"fluent","years_exp":"3","load_boards":["DAT"],"skills":{"own_board_access":["DAT"]},"refs":[]}';
+  pay jsonb := '{"full_name":"Zed Testcase","country":"Pakistan","city":"Lahore","english_level":"fluent","years_exp":"3","load_boards":["DAT"],"skills":{"own_board_access":["DAT"]},"refs":[],"id_type":"national_id"}';
   procedure_note text;
 begin
   for rec in select id from auth.users order by created_at limit 400 loop
@@ -15,11 +15,12 @@ begin
   insert into auth.users (id, email, aud, role) values
     (u1, 'zed.testcase0602@gmail.com', 'authenticated', 'authenticated'),
     (u2, 'zedtest.case0602+again@gmail.com', 'authenticated', 'authenticated'),
-    (u3, 'someoneelse0602@outlook.com', 'authenticated', 'authenticated');
+    (u3, 'someoneelse0602@outlook.com', 'authenticated', 'authenticated'),
+    (u4, 'brandnew0604@yahoo.com', 'authenticated', 'authenticated');
 
   -- 1. first application goes to screening
   perform set_config('request.jwt.claims', json_build_object('sub', u1, 'role', 'authenticated')::text, true);
-  r := public.dispatcher_apply(pay || '{"phone":"+92 300 5550602"}', true);
+  r := public.dispatcher_apply(pay || '{"phone":"+92 300 5550602","id_number":"35202-0602060-1"}', true);
   out := out || E'\n1 apply u1: ' || r::text;
 
   -- 2. invite: 5 days
@@ -54,11 +55,11 @@ begin
 
   -- 7. same phone, written differently, other e-mail -> held
   perform set_config('request.jwt.claims', json_build_object('sub', u3, 'role', 'authenticated')::text, true);
-  r := public.dispatcher_apply(pay || '{"phone":"0300-5550602"}', true);
+  r := public.dispatcher_apply(pay || '{"phone":"0300-5550602","id_number":"PK-AA0602111"}', true);
   select status into v from app_private.dispatcher_profiles where user_id = u3;
   select via || ' attempts=' || attempts into procedure_note from app_private.dispatcher_dup_holds where user_id = u3;
   out := out || E'\n7 apply u3 (same phone): held=' || coalesce(r->>'held', 'NO') || ' status=' || v || ' hold=' || coalesce(procedure_note, 'none');
-  r := public.dispatcher_apply(pay || '{"phone":"0300-5550602"}', true);
+  r := public.dispatcher_apply(pay || '{"phone":"0300-5550602","id_number":"PK-AA0602111"}', true);
   select count(*) into n from app_private.notifications where template_key = 'dispatcher.duplicate.held' and payload->>'url' like '%' || u3::text || '%';
   out := out || E'\n7b second submit: held=' || coalesce(r->>'held', 'NO') || ' staff_notices=' || n;
 
@@ -82,7 +83,7 @@ begin
 
   -- 11. Gmail dots / +tag, different phone -> held on e-mail; management allows it
   perform set_config('request.jwt.claims', json_build_object('sub', u2, 'role', 'authenticated')::text, true);
-  r := public.dispatcher_apply(pay || '{"phone":"+1 415 555 0199"}', true);
+  r := public.dispatcher_apply(pay || '{"phone":"+1 415 555 0199","id_number":"X0602222"}', true);
   select via into procedure_note from app_private.dispatcher_dup_holds where user_id = u2;
   out := out || E'\n11 apply u2 (gmail alias): held=' || coalesce(r->>'held', 'NO') || ' via=' || coalesce(procedure_note, 'none');
   perform set_config('request.jwt.claims', json_build_object('sub', v_staff, 'role', 'authenticated')::text, true);
@@ -90,8 +91,19 @@ begin
   select status into v from app_private.dispatcher_profiles where user_id = u2;
   out := out || E'\n11b allow: ' || coalesce(r->>'action', r->>'error') || ' u2=' || v;
   perform set_config('request.jwt.claims', json_build_object('sub', u2, 'role', 'authenticated')::text, true);
-  r := public.dispatcher_apply(pay || '{"phone":"+1 415 555 0199"}', true);
+  r := public.dispatcher_apply(pay || '{"phone":"+1 415 555 0199","id_number":"X0602222"}', true);
   out := out || E'\n11c submit after allow: ' || r::text;
+
+  -- 12. bl_disp_0604: new e-mail AND new phone, same ID number (written differently) -> held on the ID; no ID -> refused
+  perform set_config('request.jwt.claims', json_build_object('sub', u4, 'role', 'authenticated')::text, true);
+  r := public.dispatcher_apply(pay || '{"phone":"+63 917 555 0604"}', true);
+  out := out || E'\n12 submit without ID: ' || left(coalesce(r->>'error', 'ACCEPTED?!'), 45);
+  r := public.dispatcher_apply(pay || '{"phone":"+63 917 555 0604","id_number":"3520206020601"}', true);
+  select via into procedure_note from app_private.dispatcher_dup_holds where user_id = u4;
+  out := out || E'\n12b same ID, new mail+phone: held=' || coalesce(r->>'held', 'NO') || ' via=' || coalesce(procedure_note, 'none');
+  perform set_config('request.jwt.claims', json_build_object('sub', v_staff, 'role', 'authenticated')::text, true);
+  r := public.cc_dispatcher_identity(u4);
+  out := out || E'\n12c identity: self=' || coalesce(r->'self'->>'id_number', 'none') || ' match_via=' || coalesce(r->'matches'->0->>'via', 'none') || ' match_id=' || coalesce(r->'matches'->0->>'id_number', 'none');
 
   raise exception E'ROLLBACK REPORT%', out;
 end $$;
