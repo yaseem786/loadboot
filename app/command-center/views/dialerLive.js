@@ -3,13 +3,15 @@
 //   · NUMBERS — the pool of Telnyx numbers LoadBoot owns (bl_dial_0456): add every bought number once, then assign from the pool
 //   · LINES — one dedicated US number per dispatcher: assign / change / release, online state, today's scorecard
 //   · CALL LOG — every call LoadBoot owns: filter by dispatcher / direction / result / text, play the recording
+//   · TEXT INBOX — every text conversation: read, reply, hand to a dispatcher (smsInbox.js, bl_sms_0609) + the flat log
 //   · SETTINGS — master switch, Telnyx connection id, recording + beep notice, ring timeout, missed-call fallback
 // Staff-gated by the RPCs themselves (cc_dialer_*). Self-contained scoped styles (dl-): a dark wallboard that reads
 // the same in the light and dark CC themes. No alert/confirm/prompt.
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm } from '../../shared/ui/components.js';
-import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerNumbers, ccDialerNumberAdd, ccDialerNumberRemove, ccDialerConfigSet, dialerRecordingBlob, ccDialerSms, dialerTranscribe, dialerTranscriptGet, ccSmsThreads, ccSmsAssign } from '../../shared/api.js';
+import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerNumbers, ccDialerNumberAdd, ccDialerNumberRemove, ccDialerConfigSet, dialerRecordingBlob, ccDialerSms, dialerTranscribe, dialerTranscriptGet } from '../../shared/api.js';
+import { smsInbox } from './smsInbox.js';   // bl_sms_0609
 import { humanizeError, toast } from '../../shared/errors.js';
 import { getClient } from '../../shared/supabaseClient.js';
 
@@ -105,58 +107,26 @@ export async function renderDialerLive(host) {
     paintLog(); loadSms();
   }
 
-  // ---- text messages log (bl_dial_0352): every text a dispatcher sent or received, newest first
-  let smsRows = [], smsQ = '', smsT = null, smsThreads = [], smsUn = 0;
+  // ---- text messages (bl_dial_0352) — the INBOX (bl_sms_0609: two panes, read + reply + hand-over) and, under it, the flat log
+  let smsRows = [], smsQ = '', smsT = null;
+  const inbox = smsInbox({ getDispatchers: () => (ov && ov.dispatchers) || [] });
+  const smsLogEl = el('div');
+  smsEl.append(inbox.el, smsLogEl);
   async function loadSms() {
+    inbox.refresh({ dispatcher: F.dispatcher });
     try { const r = await ccDialerSms({ dispatcher: F.dispatcher, q: smsQ, limit: 100 }); if (r && r.error) throw new Error(r.error); smsRows = (r && r.messages) || []; }
     catch (e) { smsRows = []; }
-    // bl_sms_0533 — the conversations and who owns them; an owner-less one is Command Center's to answer or hand out
-    try { const r = await ccSmsThreads({ dispatcher: F.dispatcher, q: smsQ, limit: 200 }); if (r && r.error) throw new Error(r.error); smsThreads = (r && r.threads) || []; smsUn = (r && r.unassigned) || 0; }
-    catch (e) { smsThreads = []; smsUn = 0; }
     paintSms();
-  }
-  async function assignSms(t, userId) {
-    try {
-      const r = await ccSmsAssign(t.id, userId || null);
-      if (r && r.error) throw new Error(r.error);
-      toast(userId ? 'Conversation handed to ' + ((r.thread && r.thread.owner) || 'them') : 'Conversation back in the Command Center queue');
-      await loadSms();
-    } catch (e) { toast(humanizeError(e), 'error'); }
-  }
-  function smsThreadRows() {
-    const ds = ov && ov.dispatchers ? ov.dispatchers : [];
-    const dname = (d) => d.full_name || d.name || d.contact_name || d.email || d.user_id;
-    return el('div', { style: 'overflow-x:auto' }, el('table', { class: 'dl-tbl' }, [
-      el('thead', null, el('tr', null, ['Last', 'Who', 'Owner', 'Last message', 'Consent', 'Hand to'].map((x) => el('th', null, x)))),
-      el('tbody', null, smsThreads.map((t) => el('tr', null, [
-        el('td', { style: 'white-space:nowrap' }, et(t.last_at)),
-        el('td', null, [el('b', null, t.contact_name || pretty(t.number)), el('div', { style: 'font-size:12px;opacity:.7' }, [t.contact_name ? pretty(t.number) : '', t.contact_kind ? ' · ' + t.contact_kind : '', t.carrier ? ' · ' + t.carrier : ''].join(''))]),
-        el('td', null, t.owner_user_id ? el('span', { class: 'dl-pill g' }, t.owner || 'assigned') : el('span', { class: 'dl-pill r', title: 'Nobody sees this but Command Center' }, 'Unassigned')),
-        el('td', { style: 'max-width:380px;white-space:pre-wrap' }, [(t.last_direction === 'outbound' ? 'LoadBoot: ' : ''), t.last_body || '', t.unread ? el('span', { class: 'dl-pill b', style: 'margin-left:6px' }, t.unread + ' new') : null]),
-        el('td', null, t.opted_out ? el('span', { class: 'dl-pill r' }, 'STOP') : t.consented ? el('span', { class: 'dl-pill g', title: t.consent_method || '' }, 'yes') : el('span', { class: 'dl-pill m' }, 'none')),
-        el('td', null, el('select', { class: 'dl-in', 'aria-label': 'Hand this conversation to', onChange: (e) => { const v = e.target.value; if (v !== (t.owner_user_id || '')) assignSms(t, v || null); } }, [
-          el('option', { value: '', selected: !t.owner_user_id }, 'Command Center (unassigned)'),
-          ...ds.map((d) => el('option', { value: d.user_id, selected: d.user_id === t.owner_user_id }, dname(d))),
-        ])),
-      ]))),
-    ]));
   }
   function paintSms() {
     const SS = { queued: ['sending', 'a'], sent: ['sent', 'b'], delivered: ['delivered', 'g'], failed: ['not sent', 'r'], received: ['received', 'm'] };
     const keep = document.activeElement && document.activeElement.id === 'dl-smsq';
-    mount(smsEl, [el('div', { class: 'dl-card', style: 'margin-top:14px' }, [
+    mount(smsLogEl, [el('div', { class: 'dl-card', style: 'margin-top:14px' }, [
       el('div', { class: 'dl-filters' }, [
-        el('b', { style: 'align-self:center;margin-right:6px' }, 'Text conversations'),
-        smsUn ? el('span', { class: 'dl-pill r' }, smsUn + ' unassigned') : null,
-        el('span', { class: 'hint', style: 'align-self:center;opacity:.75' }, 'Carriers and their drivers route to their dispatcher by themselves; brokers and unknown numbers wait here until you hand them to someone.'),
-      ]),
-      smsThreads.length ? smsThreadRows() : el('div', { style: 'opacity:.7;padding:8px 0' }, 'No text conversations yet.'),
-    ]), el('div', { class: 'dl-card', style: 'margin-top:14px' }, [
-      el('div', { class: 'dl-filters' }, [
-        el('b', { style: 'align-self:center;margin-right:6px' }, 'Text messages'),
+        el('b', { style: 'align-self:center;margin-right:6px' }, 'Text message log'),
         el('input', { class: 'dl-in', id: 'dl-smsq', type: 'search', placeholder: 'Search number, name or text', 'aria-label': 'Search texts', value: smsQ, style: 'flex:1;min-width:180px', onInput: (e) => { smsQ = e.target.value; clearTimeout(smsT); smsT = setTimeout(loadSms, 350); } }),
       ]),
-      smsRows.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'dl-tbl' }, [
+      smsRows.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'dl-t' }, [
         el('thead', null, el('tr', null, ['When', 'Dispatcher', '', 'Who', 'Message', 'Status'].map((x) => el('th', null, x)))),
         el('tbody', null, smsRows.map((m) => { const st = SS[m.status] || [m.status, 'm']; return el('tr', null, [
           el('td', { style: 'white-space:nowrap' }, et(m.at)), el('td', null, m.dispatcher || '—'), el('td', { title: m.direction }, m.direction === 'inbound' ? '↙' : '↗'),
@@ -166,7 +136,7 @@ export async function renderDialerLive(host) {
         ]); })),
       ])) : el('div', { style: 'opacity:.7;padding:8px 0' }, smsQ ? 'No texts match that search.' : 'No text messages yet.'),
     ])]);
-    if (keep) { const i = smsEl.querySelector('#dl-smsq'); if (i) { i.focus(); try { i.setSelectionRange(i.value.length, i.value.length); } catch (_) {} } }
+    if (keep) { const i = smsLogEl.querySelector('#dl-smsq'); if (i) { i.focus(); try { i.setSelectionRange(i.value.length, i.value.length); } catch (_) {} } }
   }
 
   function paintWarn() {
@@ -487,7 +457,7 @@ export async function renderDialerLive(host) {
   await load(); await loadLog();
   timer = setInterval(() => { if (document.visibilityState === 'visible') load(true); }, 4000);
   tick = setInterval(() => { root.querySelectorAll('[data-since]').forEach((n) => { n.textContent = mmss((Date.now() - new Date(n.getAttribute('data-since')).getTime()) / 1000); }); }, 1000);
-  const mo = new MutationObserver(() => { if (!document.body.contains(root)) { clearInterval(timer); clearInterval(tick); if (playing) { try { playing.a.pause(); } catch (_) {} } mo.disconnect(); } });
+  const mo = new MutationObserver(() => { if (!document.body.contains(root)) { clearInterval(timer); clearInterval(tick); if (playing) { try { playing.a.pause(); } catch (_) {} } inbox.destroy(); mo.disconnect(); } });
   mo.observe(document.body, { childList: true, subtree: true });
 }
 export default renderDialerLive;
