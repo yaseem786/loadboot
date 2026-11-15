@@ -1070,9 +1070,9 @@ export async function renderDispatcher360(host, query) {
   function identityCards() {
     const idn = state.identity; if (!idn) return [];
     const hold = idn.hold; const ms = idn.matches || [];
-    const me9 = idn.self || null;   // bl_disp_0604: the ID number this applicant declared
+    const me9 = idn.self || null;   // bl_disp_0608: the ID number this applicant declared
     if (!hold && !ms.length && !me9) return [];
-    const VIA = { id: ['same ID number', 'red'], phone: ['same phone', 'red'], email: ['same e-mail', 'red'], name: ['same name — possible', 'amber'] };   // bl_disp_0604: id
+    const VIA = { id: ['same ID number', 'red'], phone: ['same phone', 'red'], email: ['same e-mail', 'red'], name: ['same name — possible', 'amber'] };   // bl_disp_0608: id
     const orig = hold ? ms.find((m) => m.user_id === hold.dup_of) : null;
     const resolve = async (action, title, placeholder) => {
       const note = await askReason(title, { placeholder });

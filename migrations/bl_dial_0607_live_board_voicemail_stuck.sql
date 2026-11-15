@@ -1,4 +1,4 @@
--- bl_dial_0603 — "Phones & live calls": finished voicemail calls stayed on the live board for ever (15 Nov 2026)
+-- bl_dial_0607 — "Phones & live calls": finished voicemail calls stayed on the live board for ever (15 Nov 2026)
 --
 -- Yaseen 15 Nov (screenshot: nine "incoming · Voicemail" cards with clocks at 150 h … 727 h).
 -- Cause: 'voicemail' is BOTH a state while the caller is leaving a message AND the final result of the call
@@ -33,16 +33,16 @@ end $$;
 revoke all on function app_private.dial_stale_sweep() from public, anon, authenticated;
 
 do $$
-declare d text; miss constant text := 'bl_dial_0603: anchor not found in cc_dialer_overview: ';
+declare d text; miss constant text := 'bl_dial_0607: anchor not found in cc_dialer_overview: ';
   a_live constant text := 'where c.status in (''dialing'',''ringing'',''active'',''voicemail'')), ''[]''::jsonb),';
   a_ret  constant text := '  return jsonb_build_object(';
 begin
   d := pg_get_functiondef('public.cc_dialer_overview()'::regprocedure);
   if position(a_live in d) = 0 then raise exception '%live', miss; end if;
   if position(a_ret in d) = 0 then raise exception '%return', miss; end if;
-  d := replace(d, a_live, 'where c.ended_at is null and c.status in (''dialing'',''ringing'',''active'',''voicemail'')), ''[]''::jsonb),   -- bl_dial_0603: a finished voicemail is not live');
+  d := replace(d, a_live, 'where c.ended_at is null and c.status in (''dialing'',''ringing'',''active'',''voicemail'')), ''[]''::jsonb),   -- bl_dial_0607: a finished voicemail is not live');
   -- first occurrence only: the sweep runs right before the result is built
-  d := overlay(d placing E'  perform app_private.dial_stale_sweep();   -- bl_dial_0603\n' || a_ret from position(a_ret in d) for length(a_ret));
+  d := overlay(d placing E'  perform app_private.dial_stale_sweep();   -- bl_dial_0607\n' || a_ret from position(a_ret in d) for length(a_ret));
   execute d;
 end $$;
 

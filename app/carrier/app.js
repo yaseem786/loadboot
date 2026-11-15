@@ -1289,7 +1289,7 @@ async function agentPortal(user) {
       const p = (prof && prof) || {};
       const f = {
         full_name: inp('Full name'), phone: inp('WhatsApp / phone'), country: inp('Country'), city: inp('City'),
-        // bl_disp_0604: one person, one application — the government ID number is what identifies the person, not the e-mail
+        // bl_disp_0608: one person, one application — the government ID number is what identifies the person, not the e-mail
         id_type: sel([['', 'Type of ID…'], ['national_id', 'National ID card (CNIC / NIN / Aadhaar / PhilSys …)'], ['passport', 'Passport'], ['driver_licence', 'Driver’s licence']]), id_number: inp('ID number, exactly as printed'),
         timezone: inp('Your timezone (e.g. PKT / GMT+5)'),
         hours: sel([['', 'Hours available / week *'], ['20-30', '20–30'], ['30-40', '30–40'], ['40-50', '40–50'], ['50+', '50+']]),

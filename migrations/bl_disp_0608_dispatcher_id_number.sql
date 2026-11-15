@@ -1,4 +1,4 @@
--- bl_disp_0604 — dispatcher applications carry a government ID number, and it is the first identity key (15 Nov 2026)
+-- bl_disp_0608 — dispatcher applications carry a government ID number, and it is the first identity key (15 Nov 2026)
 --
 -- Yaseen 15 Nov, on the limit left open by bl_disp_0602 ("naya Gmail aur naya number dono hon to nikal jayega"):
 -- "ye bnao". A phone is whatever the applicant types; an ID number is much harder to change.
@@ -57,14 +57,14 @@ $$;
 revoke all on function app_private.disp_identity_matches(uuid, text) from public, anon, authenticated;
 
 do $$
-declare d text; miss constant text := 'bl_disp_0604: anchor not found: ';
+declare d text; miss constant text := 'bl_disp_0608: anchor not found: ';
   a_app  constant text := '  -- bl_disp_0602: one person, one application.';
   a_hold constant text := '    ''hold'', (select jsonb_build_object(''dup_of''';
   a_m    constant text := '''phone'', d.phone, ''country'', d.country,';
 begin
   d := pg_get_functiondef('public.dispatcher_apply(jsonb,boolean)'::regprocedure);
   if position(a_app in d) = 0 then raise exception '%dispatcher_apply', miss; end if;
-  execute replace(d, a_app, $ins$  -- bl_disp_0604: the government ID number identifies the person; a submit needs one on file
+  execute replace(d, a_app, $ins$  -- bl_disp_0608: the government ID number identifies the person; a submit needs one on file
   if app_private.disp_id_key(p->>'id_number') is not null then
     insert into app_private.dispatcher_identity as i (user_id, id_type, id_number, id_key)
     values (v_uid, nullif(btrim(p->>'id_type'), ''), btrim(p->>'id_number'), app_private.disp_id_key(p->>'id_number'))
@@ -78,7 +78,7 @@ $ins$ || a_app);
   d := pg_get_functiondef('public.cc_dispatcher_identity(uuid)'::regprocedure);
   if position(a_hold in d) = 0 then raise exception '%cc_dispatcher_identity hold', miss; end if;
   if position(a_m in d) = 0 then raise exception '%cc_dispatcher_identity match', miss; end if;
-  d := replace(d, a_hold, '    ''self'', (select jsonb_build_object(''id_type'', i.id_type, ''id_number'', i.id_number) from app_private.dispatcher_identity i where i.user_id = p_user),   -- bl_disp_0604' || E'\n' || a_hold);
+  d := replace(d, a_hold, '    ''self'', (select jsonb_build_object(''id_type'', i.id_type, ''id_number'', i.id_number) from app_private.dispatcher_identity i where i.user_id = p_user),   -- bl_disp_0608' || E'\n' || a_hold);
   d := replace(d, a_m, a_m || ' ''id_number'', (select i.id_number from app_private.dispatcher_identity i where i.user_id = d.user_id),');
   execute d;
 end $$;

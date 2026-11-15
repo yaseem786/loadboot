@@ -1,4 +1,4 @@
-# bl_dial_0603 — voicemail calls stuck on "Phones & live calls"
+# bl_dial_0607 — voicemail calls stuck on "Phones & live calls"
 
 Symptom (owner, 15 Nov 2026): cards "incoming · Voicemail" with clocks at 150–727 hours that never left the board.
 Cause: `voicemail` is the final result of a call as well as a live state; `cc_dialer_overview` listed every call with

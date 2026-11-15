@@ -1,4 +1,4 @@
--- bl_disp_0602 + bl_disp_0604 rolled-back end-to-end test. STAGING ONLY. Everything runs inside one DO block that ends by
+-- bl_disp_0602 + bl_disp_0608 rolled-back end-to-end test. STAGING ONLY. Everything runs inside one DO block that ends by
 -- raising its own report, so nothing is kept (three throwaway auth users, their applications, attempts, e-mails).
 do $$
 declare v_staff uuid; u1 uuid := gen_random_uuid(); u2 uuid := gen_random_uuid(); u3 uuid := gen_random_uuid(); u4 uuid := gen_random_uuid();
@@ -94,7 +94,7 @@ begin
   r := public.dispatcher_apply(pay || '{"phone":"+1 415 555 0199","id_number":"X0602222"}', true);
   out := out || E'\n11c submit after allow: ' || r::text;
 
-  -- 12. bl_disp_0604: new e-mail AND new phone, same ID number (written differently) -> held on the ID; no ID -> refused
+  -- 12. bl_disp_0608: new e-mail AND new phone, same ID number (written differently) -> held on the ID; no ID -> refused
   perform set_config('request.jwt.claims', json_build_object('sub', u4, 'role', 'authenticated')::text, true);
   r := public.dispatcher_apply(pay || '{"phone":"+63 917 555 0604"}', true);
   out := out || E'\n12 submit without ID: ' || left(coalesce(r->>'error', 'ACCEPTED?!'), 45);

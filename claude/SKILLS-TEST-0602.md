@@ -65,7 +65,7 @@ dots and `+tags`. Same name + country is shown as "possible" only — never held
 - Frontend is on branch `claude/tender-edison-al8jhv` — until it is merged to `main`, a held duplicate has no resolve
   card in CC (the DB still holds it and notifies staff).
 
-## bl_disp_0604 (15 Nov 2026) — government ID number is now mandatory and is the first identity key
+## bl_disp_0608 (15 Nov 2026) — government ID number is now mandatory and is the first identity key
 
 Closes the first "known limit" above. The application form (section 1) asks for **ID type + ID number** and a phone
 with country code; a submit without an ID number is refused by `dispatcher_apply`. The number lives in
