@@ -58,7 +58,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { fmtDateTime, askConfirm, openDrawer } from '../../shared/ui/components.js';
 import {
   mailList, mailThread, mailDraftSave, mailDraftDiscard, mailSend, mailStats, mailSetFolder,
-  mailThreadAction, mailComposeSave,
+  mailThreadAction, mailComposeSave, mailAttachUpload, mailAttachRemove, mailAttachUrl, mailAttachType, MAIL_ATTACH_MAX,
   mailWorkCounts, mailRoleCounts, mailOwners, mailAssign, mailSetStatus, mailViewing, mailSenderCard,
   mailAttachments, staffUploadDocument, dmailAct, ccDmailOverview, ccDmailAccountSave, globalSearch,
 } from '../../shared/api.js';
@@ -159,6 +159,7 @@ const IC = {
   star: '<path d="M12 2.5l2.94 5.96 6.56.95-4.75 4.63 1.12 6.54L12 17.49l-5.87 3.09 1.12-6.54L2.5 9.41l6.56-.95z"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   send: '<path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4Z"/>',
+  clip: '<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
   file: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>',
   mails: '<rect x="6" y="4" width="16" height="13" rx="2"/><path d="m22 7-7.1 3.78a1.9 1.9 0 0 1-1.8 0L6 7"/><path d="M2 8v11a2 2 0 0 0 2 2h14"/>',
@@ -1207,6 +1208,15 @@ function createMailbox(host) {
     if (!(blob instanceof Blob)) throw new Error('The mail server did not return the file — try again.');
     return blob;
   }
+  // bl_mail_0605 — files WE attached to a composed message (mail_messages.attachments rows that carry a storage path).
+  const attSize = (n) => !n ? '' : n < 1024 * 1024 ? Math.max(1, Math.round(n / 1024)) + ' KB' : (n / 1024 / 1024).toFixed(1) + ' MB';
+  function sentFilesRow(m) {
+    const list = (Array.isArray(m.attachments) ? m.attachments : []).filter(a => a && a.path);
+    if (!list.length) return null;
+    return el('div', { class: 'gm-att-row gm-att-sent' }, list.map(a => el('button', { type: 'button', class: 'gm-att-chip', title: 'Open ' + (a.filename || 'file'),
+      onClick: async () => { try { window.open(await mailAttachUrl(a.path), '_blank', 'noopener'); } catch (e) { toast(mailErr(e), 'error'); } } },
+      [ic('clip', 16), el('span', { class: 'gm-att-name' }, a.filename || 'file'), el('span', { class: 'gm-att-size' }, attSize(a.size))])));
+  }
   function mailFilesRow(m) {
     if (!can('documents.review') || m.direction === 'out' || m.source === 'imap') return null;
     const host = el('div', { class: 'gm-files' });
@@ -1545,6 +1555,7 @@ function createMailbox(host) {
         d.attachments && d.attachments.length
           ? el('div', { class: 'gm-attach' }, [ic('file', 18), ' ' + d.attachments.map(a => a.filename).join(', ') + ' — attachments are not stored yet; open the message in your mail app to get them.'])
           : null,
+        sentFilesRow(m),
         mailFilesRow(m),
         bodyHost,
       ]),
@@ -1787,7 +1798,7 @@ function createMailbox(host) {
     const d = (msgs || []).find(m => m.status === 'draft' && m.mail_class === 'compose');
     if (!d) { toast('That draft was already sent or discarded.'); reloadAll(); nav({ draft: null }, { replace: true }); return; }
     if (composer) composer.destroyQuiet();
-    composer = createComposer({ to: d.peer_email, subject: decodeSubject(d.subject), from: d.mailbox, bodyHtml: d.body_html || '', draftId: d.id, threadKey }, { routeDraft: threadKey });
+    composer = createComposer({ to: d.peer_email, subject: decodeSubject(d.subject), from: d.mailbox, bodyHtml: d.body_html || '', draftId: d.id, threadKey, attachments: d.attachments }, { routeDraft: threadKey });
   }
 
   function createComposer(init, opts = {}) {
@@ -1864,12 +1875,57 @@ function createMailbox(host) {
     const showErr = (m) => { err.textContent = m || ''; err.hidden = !m; err.classList.toggle('info', false); };
     const saved = el('span', { class: 'gm-reply-status' }, C.draftId ? 'Draft saved' : '');
 
+    // bl_mail_0605 — attachments: upload to the private bucket first (progress on the chip), the draft keeps the list.
+    const A = { items: (Array.isArray(init.attachments) ? init.attachments : []).filter(a => a && a.path).map(a => Object.assign({}, a)), gone: [] };
+    const attRow = el('div', { class: 'gm-att-row', hidden: true });
+    const attBusy = () => A.items.some(a => a.uploading);
+    const paintAtt = () => {
+      attRow.hidden = !A.items.length;
+      mount(attRow, A.items.map(a => {
+        const bar = a.uploading ? el('span', { class: 'gm-att-bar' }, el('i')) : null;
+        if (bar) bar.firstChild.style.width = Math.round((a.pct || 0) * 100) + '%';
+        return el('span', { class: 'gm-att-chip' + (a.uploading ? ' up' : ''), title: a.filename }, [
+          ic('clip', 16), el('span', { class: 'gm-att-name' }, a.filename),
+          el('span', { class: 'gm-att-size' }, a.uploading ? Math.round((a.pct || 0) * 100) + '%' : attSize(a.size)), bar,
+          el('button', { type: 'button', class: 'gm-to-x', 'aria-label': 'Remove ' + a.filename, onClick: (e) => { e.preventDefault(); removeAtt(a); } }, '\u00d7'),
+        ]);
+      }));
+    };
+    const removeAtt = (a) => {
+      A.items = A.items.filter(x => x !== a);
+      if (a.uploading) a.cancelled = true; else if (a.path) { A.gone.push(a.path); markDirty(); }
+      paintAtt();
+    };
+    const addFiles = async (files) => {
+      showErr('');
+      for (const file of Array.from(files || [])) {
+        if (A.items.length >= 10) { showErr('At most 10 attachments per email.'); break; }
+        if (!mailAttachType(file)) { showErr('"' + file.name + '" was not attached — only PDF, JPG, PNG, DOCX and XLSX files.'); continue; }
+        if (file.size > MAIL_ATTACH_MAX) { showErr('"' + file.name + '" is over 10 MB.'); continue; }
+        if (A.items.reduce((n, x) => n + (x.size || 0), 0) + file.size > 25 * 1024 * 1024) { showErr('Attachments are over 25 MB in total.'); break; }
+        const a = { filename: file.name, size: file.size, uploading: true, pct: 0 };
+        A.items.push(a); paintAtt();
+        try {
+          const done = await mailAttachUpload(file, (pct) => { a.pct = pct; paintAtt(); });
+          if (a.cancelled) { mailAttachRemove(done.path); continue; }
+          Object.assign(a, done, { uploading: false }); markDirty();
+        } catch (e) { A.items = A.items.filter(x => x !== a); showErr(mailErr(e)); }
+        paintAtt();
+      }
+    };
+    const fileIn = el('input', { type: 'file', multiple: true, hidden: true, accept: '.pdf,.jpg,.jpeg,.png,.docx,.xlsx' });
+    fileIn.addEventListener('change', () => { const f = Array.from(fileIn.files || []); fileIn.value = ''; addFiles(f); });
+    const attachBtn = ib('clip', 'Attach files (PDF, JPG, PNG, DOCX, XLSX — 10 MB each)', () => fileIn.click());
+    paintAtt();
+
     const save = async (quiet) => {
       const html = sanitizeHtml(editor.getHtml());
-      if (!htmlToText(html) && !toIn.value.trim() && !subjIn.value.trim()) return 'empty';
+      const atts = A.items.filter(a => a.path && !a.uploading).map(a => ({ path: a.path, filename: a.filename, size: a.size, content_type: a.content_type }));
+      if (!htmlToText(html) && !toIn.value.trim() && !subjIn.value.trim() && !atts.length) return 'empty';
       try {
-        const r = await mailComposeSave({ from: fromSel.value, to: toIn.value.trim(), subject: subjIn.value.trim(), bodyHtml: html, draftId: C.draftId });
+        const r = await mailComposeSave({ from: fromSel.value, to: toIn.value.trim(), subject: subjIn.value.trim(), bodyHtml: html, draftId: C.draftId, attachments: atts });
         C.draftId = r && r.id; C.threadKey = r && r.thread_key; C.dirty = false;
+        if (A.gone.length) { mailAttachRemove(A.gone.splice(0)); }
         saved.textContent = 'Draft saved'; showErr('');
         loadStats();
         if (S.folder === 'drafts') loadList({ silent: true });
@@ -1880,6 +1936,7 @@ function createMailbox(host) {
     const send = async () => {
       if (C.sending) return;
       if (!toIn.value.trim()) { showErr('Please specify at least one recipient.'); toIn.focus(); return; }
+      if (attBusy()) { showErr('Wait for the attachment to finish uploading.'); return; }
       if (!S.canSend) {
         const id = await save(false);
         if (id && id !== 'empty') { snack('Draft saved. Sending needs comm.manage — an owner can open it from Drafts and press Send.'); close({ save: false }); }
@@ -1889,7 +1946,7 @@ function createMailbox(host) {
       const id = (C.dirty || !C.draftId) ? await save(false) : C.draftId;
       if (!id || id === 'empty') { C.sending = false; sendBtn.disabled = false; if (id === 'empty') showErr('Write the message first.'); return; }
       const ok = await askConfirm('Send this email for real?', {
-        body: 'This emails ' + toIn.value.trim() + ' from ' + fromSel.value + ' now. Drafts are safe; sending cannot be undone.',
+        body: 'This emails ' + toIn.value.trim() + ' from ' + fromSel.value + ' now' + (A.items.length ? ' with ' + A.items.length + ' attachment' + (A.items.length > 1 ? 's' : '') + ' (' + A.items.map(a => a.filename).join(', ') + ')' : '') + '. Drafts are safe; sending cannot be undone.',
         subtitle: 'Outbound email', confirmLabel: 'Send it',
       });
       if (!ok) { C.sending = false; sendBtn.disabled = false; return; }
@@ -1921,6 +1978,7 @@ function createMailbox(host) {
         try { await mailDraftDiscard(C.threadKey); } catch (e) { showErr(mailErr(e)); return; }
         loadStats(); if (S.folder === 'drafts') loadList({ silent: true });
       }
+      mailAttachRemove(A.items.map(a => a.path).concat(A.gone));
       close({ save: false });
       snack('Draft discarded.');
     };
@@ -1941,10 +1999,12 @@ function createMailbox(host) {
         el('label', { class: 'gm-fld' }, [el('span', { class: 'gm-fld-l gm-m-only' }, 'Subject'), subjIn]),
         err,
         editor.node,
+        attRow, fileIn,
         editor.toolbar,
         el('div', { class: 'gm-cmp-bottom' }, [
           el('span', { class: 'gm-send-grp' }, [sendBtn, sendMenu]),
           editor.formatToggle,
+          attachBtn,
           saved,
           el('span', { class: 'gm-flex' }),
           ib('trash', 'Discard draft', discard),
@@ -2223,6 +2283,17 @@ a.gm-sp-mailr:hover{background:var(--gm-hov)}.gm-sp-mailr.here{background:var(--
 .gm-frame-tools{display:flex;gap:16px;margin-top:6px;font-size:12px}
 .gm-imgbar{display:flex;align-items:center;gap:8px;background:#f1f3f4;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:#3c4043}
 .gm-attach{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:var(--gm-mut)}
+.gm-att-row{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px 4px}
+.gm-att-row[hidden]{display:none}
+.gm-att-sent{padding:10px 0 0}
+.gm-att-chip{position:relative;display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:6px 8px 6px 10px;border:1px solid #dadce0;border-radius:8px;background:#f5f7fa;color:#10223B;font-size:13px;line-height:1.2;overflow:hidden}
+button.gm-att-chip{cursor:pointer;font-family:inherit}
+button.gm-att-chip:hover{background:#e8f0fe;border-color:#0883F7}
+.gm-att-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
+.gm-att-size{color:#5f6368;font-size:12px;white-space:nowrap}
+.gm-att-chip.up{background:#fff}
+.gm-att-bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:#e2e8f0}
+.gm-att-bar i{display:block;height:100%;width:0;background:#0883F7;transition:width .15s}
 .gm-files{display:flex;flex-direction:column;gap:6px;margin:10px 0 2px}.gm-files:empty{display:none}.gm-file{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--gm-line);border-radius:8px;padding:8px 10px;font-size:13px;max-width:520px}.gm-file-n{flex:1 1 140px;min-width:0;overflow-wrap:anywhere;font-weight:600}.gm-file-s{color:var(--gm-mut);font-size:12px}.gm-file-btn{border:1px solid var(--gm-line);background:transparent;color:inherit;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer}.gm-file-btn[disabled]{opacity:.55;cursor:default}.gm-sp-pick{display:block;text-align:left;margin:6px 0;overflow-wrap:anywhere}
 .gm-folded{display:flex;align-items:center;height:26px;border:0;border-top:1px solid var(--gm-line);border-bottom:1px solid var(--gm-line);background:repeating-linear-gradient(#fff 0 3px,#f1f3f4 3px 4px);cursor:pointer;padding:0 0 0 20px;margin:4px 0}
 .gm-folded-n{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid #dadce0;color:var(--gm-mut);font-size:13px}

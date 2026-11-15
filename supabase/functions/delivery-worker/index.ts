@@ -48,7 +48,13 @@
 // v23 (2026-10-12, bl_comm_0543): shell moved to ../_shared/email-shell.ts (verbatim; output unchanged).
 // v24 (2026-11-02, bl_mail_0590): sixth identity "yaseen" (LoadBoot Operations <yaseen@loadboot.com>) for the CC Mailbox
 //   Yaseen inbox (yaseen.mail.*). NOTE: prod runs v22 + this patch (deployed as v31 on 2 Nov); v23's shell move is NOT deployed yet.
+// v25 (2026-11-14, bl_mail_0605): attachments. When meta.attachments is a non-empty list
+//   ([{path, filename, size, content_type}], written by cc_mail_send from a CC Mailbox compose), each file is
+//   downloaded from the private mail-attachments bucket with the service role and sent to Resend as base64.
+//   A file that cannot be read fails the delivery — the email never goes without its attachment.
+//   Rows with no meta.attachments take exactly the old path.
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { encodeBase64 } from "jsr:@std/encoding@1/base64";
 import { renderCallBand, renderShell, type ShellCtx } from "../_shared/email-shell.ts";
 
 // v16: normalize a full HTML document into a shell-safe fragment.
@@ -267,6 +273,24 @@ Deno.serve(async (_req) => {
       const payload: Record<string, unknown> = { from: ident.from, to: d.recipient_email, subject, text, headers };
       if (ident.replyTo) payload.reply_to = ident.replyTo;
       if (html) payload.html = html;
+      // v25: attachments from the private mail-attachments bucket.
+      const atts = (d.meta && Array.isArray(d.meta.attachments)) ? d.meta.attachments as Array<Record<string, unknown>> : [];
+      if (atts.length) {
+        const files: Array<{ filename: string; content: string; content_type?: string }> = [];
+        for (const a of atts.slice(0, 10)) {
+          const path = String(a.path ?? "");
+          if (!path || path.startsWith("/") || path.includes("..")) throw new Error("attachment path not valid");
+          const { data: blob, error: dlErr } = await sb.storage.from("mail-attachments").download(path);
+          if (dlErr || !blob) throw new Error(`attachment missing: ${String(a.filename ?? path)}${dlErr ? " (" + dlErr.message + ")" : ""}`);
+          const file: { filename: string; content: string; content_type?: string } = {
+            filename: String(a.filename ?? path.split("/").pop() ?? "attachment"),
+            content: encodeBase64(new Uint8Array(await blob.arrayBuffer())),
+          };
+          if (a.content_type) file.content_type = String(a.content_type);
+          files.push(file);
+        }
+        payload.attachments = files;
+      }
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },

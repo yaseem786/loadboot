@@ -916,7 +916,63 @@ export const mailThreadAction = (threads, action, until) => rpc('cc_mail_thread_
 // A NEW message (Compose). Saves a draft only — mailSend is still the one call that sends.
 export const mailComposeSave = (o) => rpc('cc_mail_compose_save', {
   p_from: o.from, p_to: o.to, p_subject: o.subject ?? '', p_body_html: o.bodyHtml, p_draft_id: o.draftId ?? null,
+  p_attachments: (o.attachments && o.attachments.length) ? o.attachments : null,
 });
+// bl_mail_0605 — Compose attachments. Private bucket mail-attachments (staff only, 10 MB/file).
+// Path = <own user id>/<random>/<safe name>. XHR (not sb.storage.upload) so the composer can show progress.
+export const MAIL_ATTACH_MAX = 10 * 1024 * 1024;
+export const MAIL_ATTACH_TYPES = {
+  pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+};
+export function mailAttachType(file) {
+  const ext = String(file && file.name || '').split('.').pop().toLowerCase();
+  const byExt = MAIL_ATTACH_TYPES[ext] || '';
+  const t = String(file && file.type || '').toLowerCase();
+  return Object.values(MAIL_ATTACH_TYPES).includes(t) ? t : byExt;
+}
+export async function mailAttachUpload(file, onProgress) {
+  const mime = mailAttachType(file);
+  if (!mime) throw new Error('Only PDF, JPG, PNG, DOCX and XLSX files can be attached.');
+  if (!file.size) throw new Error('That file is empty.');
+  if (file.size > MAIL_ATTACH_MAX) throw new Error('Each attachment must be 10 MB or smaller.');
+  const sb = await getClient();
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session || !session.user) throw new Error('Please sign in again.');
+  const rand = (self.crypto && self.crypto.randomUUID) ? self.crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2);
+  const safe = String(file.name || 'file').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^[._]+/, '').slice(-100) || 'file';
+  const path = session.user.id + '/' + rand + '/' + safe;
+  await new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open('POST', sb.supabaseUrl + '/storage/v1/object/mail-attachments/' + path.split('/').map(encodeURIComponent).join('/'));
+    x.setRequestHeader('Authorization', 'Bearer ' + session.access_token);
+    x.setRequestHeader('apikey', sb.supabaseKey);
+    x.setRequestHeader('Content-Type', mime);
+    x.setRequestHeader('x-upsert', 'false');
+    x.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) { try { onProgress(e.loaded / e.total); } catch (_) {} } };
+    x.onload = () => {
+      if (x.status >= 200 && x.status < 300) return resolve();
+      let m = ''; try { m = (JSON.parse(x.responseText) || {}).message || ''; } catch (_) {}
+      reject(new Error(m || 'That file could not be uploaded (' + x.status + ').'));
+    };
+    x.onerror = () => reject(new Error('Upload failed — check your connection and try again.'));
+    x.send(file);
+  });
+  return { path, filename: String(file.name || safe).slice(0, 150), size: file.size, content_type: mime };
+}
+export async function mailAttachRemove(paths) {
+  const list = (Array.isArray(paths) ? paths : [paths]).filter(Boolean);
+  if (!list.length) return;
+  const sb = await getClient();
+  try { await sb.storage.from('mail-attachments').remove(list); } catch (_) {}
+}
+export async function mailAttachUrl(path, seconds = 600) {
+  const sb = await getClient();
+  const { data, error } = await sb.storage.from('mail-attachments').createSignedUrl(path, seconds);
+  if (error) throw error;
+  return data.signedUrl;
+}
 
 // ---- Wave 4 Communications (flag: comms_enabled) ----
 export const commOverview = () => rpc('cc_comm_overview');

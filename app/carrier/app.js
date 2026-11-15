@@ -9508,7 +9508,7 @@ async function boot() {
   let user = null; try { user = await getUser(); } catch (_) {}
   // /app/agent/ is the AGENT product — never render the carrier portal here,
   // even if this login also owns a carrier org (agents are a separate persona).
-  if (window.__LB_AGENT) { agentPortal(user); return; }
+  if (window.__LB_AGENT) { agentPortal(user); import('../agent/portal-hold.js').then((m) => m.checkPortalHold()).catch(() => {}); return; }   // bl_disp_0604 portal hold
   appView(user);
 }
 
