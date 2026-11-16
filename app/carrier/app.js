@@ -6859,6 +6859,67 @@ function tripStepper(status) {
       vin.addEventListener('blur', () => checkCoi(vin.value.trim().toUpperCase()));
       if (t && t.vin) checkCoi(String(t.vin).toUpperCase());
 
+      // bl_fleet_0610 — REQUIRED vs OPTIONAL, by equipment. Required = what every load board (DAT, Truckstop)
+      // asks before a truck can be posted (equipment, where it starts, weight it carries, length), plus what
+      // LoadBoot needs to match loads and check the insurance schedule (unit no., VIN). Everything else is optional
+      // and only widens the loads we can match. Labels update live as the equipment changes.
+      const F9 = [[unit, 'Unit number', 'unit_no'], [plate, 'Plate', 'plate'], [vin, 'VIN', 'vin'], [payload, 'Payload (lb)', 'payload_lbs'],
+        [cLen, 'Cargo length (in)', 'cargo_len_in'], [cWid, 'Cargo width (in)', 'cargo_width_in'], [cHgt, 'Cargo height (in)', 'cargo_height_in'],
+        [wWell, 'Between wheel wells (in)', 'wheel_well_width_in'], [pallets, 'Pallet positions', 'pallet_positions'],
+        [doorW, 'Door width (in)', 'door_width_in'], [doorH, 'Door height (in)', 'door_height_in'], [deckH, 'Deck height (in)', 'deck_height_in'],
+        [lgCap, 'Liftgate capacity (lb)', 'liftgate_cap_lbs'], [trLen, 'Deck length (ft)', 'trailer_len_ft'], [trVin, 'Trailer VIN', 'trailer_vin'],
+        [tMin, 'Coldest °F', 'temp_min_f'], [tMax, 'Warmest °F', 'temp_max_f'], [radius, 'Max miles from home', 'max_radius_miles'],
+        [minRpm, 'Floor rate $/mi', 'min_rpm'], [dCity, 'Home city', 'domicile_city'], [dState, 'State', 'domicile_state'], [dZip, 'ZIP', 'domicile_zip'],
+        [eq, 'Equipment type', 'equipment'], [trType, 'Trailer type', 'trailer_type']];
+      const VANBOX9 = ['Dry Van', 'Reefer', 'Box Truck', 'Cargo Van', 'Sprinter Van'];
+      const reqEls9 = () => {
+        const r = [unit, eq, vin, payload];
+        if (OPEN_DECK.indexOf(eq.value) >= 0) r.push(trType, trLen);
+        else if (VANBOX9.indexOf(eq.value) >= 0) r.push(cLen, cWid, cHgt);
+        if (tempCtl.value !== 'none') r.push(tMin, tMax);
+        if (liftgate._box.checked) r.push(lgCap);
+        return r;
+      };
+      const homeOk9 = () => !!(dZip.value.trim() || (dCity.value.trim() && dState.value.trim()));
+      const paintReq9 = () => {
+        const req = reqEls9();
+        F9.forEach(([el]) => {
+          if (el.tagName !== 'INPUT') return;
+          if (el._ph0 === undefined) el._ph0 = String(el.placeholder || '').replace(/\s*\*$/, '').replace(/\s*\(optional\)$/, '');
+          if (el === dCity || el === dState || el === dZip) return;
+          el.placeholder = el._ph0 + (req.indexOf(el) >= 0 ? ' *' : ' (optional)');
+        });
+        dCity.placeholder = dCity._ph0 + ' *'; dState.placeholder = dState._ph0 + ' *'; dZip.placeholder = dZip._ph0 + ' (or city + ST)';
+      };
+      const flag9 = (el) => { try { el.style.borderColor = 'var(--lbc-x-danger,#f87171)'; el.style.boxShadow = '0 0 0 2px rgba(248,113,113,.25)';
+        const clr = () => { el.style.borderColor = ''; el.style.boxShadow = ''; }; el.addEventListener('input', clr, { once: true }); el.addEventListener('change', clr, { once: true }); } catch (_) {} };
+      const label9 = (el) => { const f = F9.find((x) => x[0] === el); return f ? f[1] : 'a field'; };
+      const reqMissing9 = () => {
+        const miss = reqEls9().filter((el) => !String(el.value || '').trim());
+        const out = miss.map((el) => [el, label9(el)]);
+        if (!homeOk9()) out.push([dCity.value.trim() ? dState : dCity, 'Home base (city + state, or ZIP)']);
+        F9.forEach(([el, lab]) => { if (el.tagName === 'INPUT' && el.type === 'number' && String(el.value).trim() !== '' && Number(el.value) < 0) out.push([el, lab + ' (cannot be negative)']); });
+        return out;
+      };
+      // Turns a raw database error into the field and the fix, so the carrier never sees "22P02".
+      const friendlyErr9 = (e) => {
+        const m = String((e && e.message) || ''), c = e && e.code;
+        const byCol = (col) => (F9.find((x) => x[2] === col) || [])[0];
+        if (c === '22P02') {
+          const v = (m.match(/:\s*"([^"]*)"/) || [])[1];
+          const el = F9.map((x) => x[0]).find((x) => x.tagName === 'INPUT' && v !== undefined && String(x.value).trim() === v);
+          return { el, title: 'Check ' + (el ? label9(el) : 'the numbers'), msg: (el ? label9(el) : 'One of the number fields') + ' has "' + (v || '?') + '", which this field does not accept. Use whole numbers only (for example 5 instead of 5.1), with no units or commas, then press Save again.' };
+        }
+        if (c === '22003') return { title: 'A number is too large', msg: 'One of the numbers is bigger than any real truck would have — check payload (lb), sizes (inches) and deck length (ft), then press Save again.' };
+        if (c === '23505') return { el: unit, title: 'Unit number already used', msg: 'You already have a truck with unit number "' + unit.value.trim() + '". Give this truck its own unit number, or edit the existing truck instead.' };
+        if (c === '23502') { const col = (m.match(/column "([a-z_]+)"/) || [])[1]; const el = byCol(col); return { el, title: 'Missing: ' + (el ? label9(el) : col || 'a required field'), msg: (el ? label9(el) : 'A required field') + ' is required. Fill it in and press Save again.' }; }
+        if (c === '23514') { const col = F9.map((x) => x[2]).find((k) => m.indexOf(k) >= 0); const el = byCol(col); return { el, title: 'Check ' + (el ? label9(el) : 'the values'), msg: (el ? label9(el) + ' has a value that is not allowed.' : 'One of the values is outside what a real truck can have.') + ' Please check it and press Save again.' }; }
+        return null;
+      };
+      paintReq9();
+      [eq, trType, tempCtl].forEach((el2) => el2.addEventListener('change', paintReq9));
+      liftgate._box.addEventListener('change', paintReq9);
+
       const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
         const btn9 = ev.currentTarget;
         // 29 Aug 2026 — OUTER GUARD. Everything below used to run unguarded: the field
@@ -6871,6 +6932,8 @@ function tripStepper(status) {
         // Nothing in this form is allowed to fail in silence again.
         try {
         if (!unit.value.trim()) { lbToast('Every truck needs a unit number — it is how you, your dispatcher and the broker all refer to this truck.', 'urgent', 'Unit number required'); unit.focus(); return; }
+        { const miss9 = reqMissing9(); if (miss9.length) { miss9.forEach(([el]) => flag9(el)); try { miss9[0][0].focus(); } catch (_) {}   // bl_fleet_0610
+            lbToast('Please fill in: ' + miss9.map((x) => x[1]).join(', ') + '. These are what load boards and LoadBoot need before this truck can get loads.', 'urgent', miss9.length === 1 ? 'One field needed' : miss9.length + ' fields needed'); return; } }
         if (!lbFutureDate(insp, 'Inspection expiry')) return;
         const ww = numOf(wWell), cw = numOf(cWid);
         if (ww !== null && cw !== null && ww > cw) {
@@ -6982,6 +7045,7 @@ function tripStepper(status) {
           if (e && e.code === '42501') { lbToast('This account is not allowed to change that truck. If you think that is wrong, tell your dispatcher.', 'urgent', 'Not allowed on this account'); return; }
           const net9 = /failed to fetch|networkerror|load failed/i.test((e && e.message) || '');
           if (net9) { lbToast('The truck was NOT saved — the app could not reach the server. Check your signal and press Save again.', 'urgent', 'No connection'); return; }
+          { const fe9 = friendlyErr9(e); if (fe9) { if (fe9.el) { flag9(fe9.el); try { fe9.el.focus(); } catch (_) {} } lbToast(fe9.msg, 'urgent', fe9.title); return; } }   // bl_fleet_0610
           lbToast(((e && e.message) || 'Could not save.') + (e && e.code ? ' (code ' + e.code + ')' : ''), 'urgent', 'Truck not saved');
         }
         finally {
@@ -7002,7 +7066,7 @@ function tripStepper(status) {
         }
       } }, 'Save truck');
 
-      const reqNoteT9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:var(--lbc-x-ink3,#94a3b8)' }, 'Fields marked * are required. Everything else makes you match more loads.');
+      const reqNoteT9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:var(--lbc-x-ink3,#94a3b8)' }, 'Fields marked * are required: they are what load boards like DAT and Truckstop ask before a truck can be posted, plus what LoadBoot needs to match loads and check your insurance. Fields marked (optional) help you match more loads. The required fields change with the equipment you pick.');
       // ~30 fields. Losing them to a phone call is the fastest way to make someone give up on
       // the fleet tab, so the whole modal is drafted to this device for 7 days.
       const draftHostT9 = h('div');
