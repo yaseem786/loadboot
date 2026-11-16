@@ -22,23 +22,25 @@ export async function checkPortalHold() {
   const msg = 'Hi LoadBoot, this is ' + (p.full_name || 'a dispatcher') + '. My dispatcher portal is on hold and I would like to regain access.';
   const href = wa.url + (wa.url.indexOf('?') >= 0 ? '&' : '?') + 'text=' + encodeURIComponent(msg);
 
+  const resigned = p.status === 'resigned';   // bl_disp_0605: closed account → rejoin via hello@
   const ov = mk('div', 'position:fixed;inset:0;z-index:2147483646;background:rgba(10,22,40,.97);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;font-family:Manrope,system-ui,sans-serif');
   ov.id = ID; ov.setAttribute('role', 'alertdialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', ID + '-t');
   const card = mk('div', 'max-width:520px;width:100%;background:#10223B;border:1.5px solid rgba(252,83,5,.55);border-radius:18px;padding:26px 22px;color:#e2e8f0;box-shadow:0 20px 60px rgba(0,0,0,.45)');
-  const chip = mk('div', 'display:inline-block;background:rgba(252,83,5,.15);color:#FC5305;font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:5px 11px;margin-bottom:12px', '⚠ Portal access on hold');
-  const t = mk('h2', 'margin:0 0 10px;font-size:22px;line-height:1.3;color:#fff', 'Your dispatcher portal is on hold');
+  const chip = mk('div', 'display:inline-block;background:rgba(252,83,5,.15);color:#FC5305;font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:5px 11px;margin-bottom:12px', resigned ? 'Account closed · Resigned' : '⚠ Portal access on hold');
+  const t = mk('h2', 'margin:0 0 10px;font-size:22px;line-height:1.3;color:#fff', resigned ? 'Your dispatcher access is closed' : 'Your dispatcher portal is on hold');
   t.id = ID + '-t';
-  const intro = mk('p', 'margin:0 0 14px;line-height:1.6;color:#cbd5e1', 'LoadBoot has paused your access to this portal while we review an issue with you.');
+  const intro = mk('p', 'margin:0 0 14px;line-height:1.6;color:#cbd5e1', resigned ? 'You resigned from your LoadBoot dispatcher role, so your carrier, phone line, mailbox and tools are no longer available.' : 'LoadBoot has paused your access to this portal while we review an issue with you.');
   const rb = mk('div', 'background:rgba(255,255,255,.06);border-left:4px solid #FC5305;border-radius:10px;padding:12px 14px;margin:0 0 16px');
   rb.appendChild(mk('div', 'font-weight:800;font-size:13px;color:#FC5305;margin-bottom:4px', 'Reason'));
   rb.appendChild(mk('div', 'line-height:1.6;color:#f1f5f9;white-space:pre-wrap', p.portal_hold_reason || 'Contact LoadBoot for details.'));
-  const how = mk('p', 'margin:0 0 18px;line-height:1.6;color:#cbd5e1', 'To regain access, message LoadBoot on WhatsApp. Please do not contact your carrier or brokers about this.');
-  const btn = mk('a', 'display:flex;align-items:center;justify-content:center;gap:8px;background:#FC5305;color:#fff;text-decoration:none;font-weight:800;font-size:16px;border-radius:12px;padding:14px 16px', '💬 Message LoadBoot on WhatsApp');
-  btn.href = href; btn.target = '_blank'; btn.rel = 'noopener';
+  const how = mk('p', 'margin:0 0 18px;line-height:1.6;color:#cbd5e1', resigned ? 'To rejoin LoadBoot as a dispatcher, email hello@loadboot.com and our team will review your request. Please do not contact your former carrier or its brokers.' : 'To regain access, message LoadBoot on WhatsApp. Please do not contact your carrier or brokers about this.');
+  const btn = mk('a', 'display:flex;align-items:center;justify-content:center;gap:8px;background:#FC5305;color:#fff;text-decoration:none;font-weight:800;font-size:16px;border-radius:12px;padding:14px 16px', resigned ? '✉ Email hello@loadboot.com' : '💬 Message LoadBoot on WhatsApp');
+  btn.href = resigned ? 'mailto:hello@loadboot.com?subject=' + encodeURIComponent('Rejoin LoadBoot as a dispatcher — ' + (p.full_name || '')) : href;
+  if (!resigned) { btn.target = '_blank'; btn.rel = 'noopener'; }
   const num = mk('div', 'text-align:center;margin-top:10px;font-size:13px;color:#94a3b8', '📞💬 Call or WhatsApp · ' + wa.display);
   const re = mk('button', 'display:block;margin:14px auto 0;background:none;border:0;color:#94a3b8;font-size:13px;text-decoration:underline;cursor:pointer', 'Access restored? Reload');
   re.type = 'button'; re.addEventListener('click', () => location.reload());
-  [chip, t, intro, rb, how, btn, num, re].forEach((n) => card.appendChild(n));
+  (resigned ? [chip, t, intro, rb, how, btn] : [chip, t, intro, rb, how, btn, num, re]).forEach((n) => card.appendChild(n));
   ov.appendChild(card);
   document.body.appendChild(ov);
   try { document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden'; } catch (_) {}

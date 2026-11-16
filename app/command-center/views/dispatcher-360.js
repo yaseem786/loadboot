@@ -14,7 +14,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { threadChat } from '../../shared/thread-chat.js';   // bl_ui_0502
 import { icon } from '../../shared/ui/icons.js';
 import { money, fmtDate, fmtDateTime, askReason, askConfirm, openDrawer } from '../../shared/ui/components.js';
-import { ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSop, ccDispatcherUnassign, ccDispatcherUnreachableClear,
+import { ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSop, ccDispatcherUnassign, ccDispatcherUnreachableClear, ccDispatcherResign,
          getCarriersDirectory, ccCarrierPrefs, ccDispatcherSetTerms, ccDispatcherBookings, ccDispatcherBookingDecide,
          ccDispatcherCommissionStatus, ccDispatcherCommissionList, ccDispatcherCommissionPay, ccDispatcherResendIntro, ccDispatcherContactRelease,
          ccDispatcherTestInvite, ccDispatcherTestReview, dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead,
@@ -51,7 +51,7 @@ const workingDays = (a, b) => { let n = 0; const x = dAt(a); const e = dAt(b); w
 const initials = (n) => { const p = String(n || '').trim().split(/\s+/).filter(Boolean).slice(0, 2); return p.length ? p.map((w) => w[0]).join('').toUpperCase() : '?'; };
 const hue = (k) => { let h = 0; const s = String(k || ''); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return ['#7c3aed', '#0e7490', '#b45309', '#0f766e', '#9333ea', '#1d4ed8'][h % 6]; };
 export const CHOICE_MK = { exact: ['EXACT MATCH', 'green'], partial: ['PARTIAL MATCH', 'amber'], related: ['RELATED CLASS', 'blue'], unknown: ['EQUIPMENT NOT ON FILE', 'violet'], none: ['OUTSIDE STATED EQUIPMENT', 'red'] };   // bl_disp_0442 · exported for CC → Carrier choices (bl_disp_0481)
-const STL = { applied: ['Applied', 'violet'], screening: ['Screening', 'amber'], skills_test: ['Skills test', 'amber'], trial: ['Trial', 'blue'], verified: ['Verified', 'green'], active: ['Active', 'green'], suspended: ['Suspended', 'red'], rejected: ['Rejected', 'red'], withdrawn: ['Withdrawn', 'violet'] };
+const STL = { applied: ['Applied', 'violet'], screening: ['Screening', 'amber'], skills_test: ['Skills test', 'amber'], trial: ['Trial', 'blue'], verified: ['Verified', 'green'], active: ['Active', 'green'], suspended: ['Suspended', 'red'], rejected: ['Rejected', 'red'], withdrawn: ['Withdrawn', 'violet'], resigned: ['Resigned', 'violet'] };
 const pill = (txt, tone, ic) => el('span', { class: 'd3-pill ' + (tone || '') }, [ic ? icon(ic, 12) : '', txt]);
 const stPill = (st) => { const m = STL[st] || [st || '—', '']; return pill(m[0], m[1]); };
 // deep-link chip: the href is the full route, the label is the short form (#/dispatcher/…/money)
@@ -549,10 +549,17 @@ export async function renderDispatcher360(host, query) {
     return btn('', () => {
       const items = [];
       if (['active', 'verified', 'trial'].includes(st)) items.push(['Suspend', () => act('suspend', 'Suspend this dispatcher?', 'Every active assignment is PAUSED immediately: the workspace, documents, thread and bookings close. Carriers are told LoadBoot dispatch covers them.', true)]);
+      if (['trial', 'verified', 'active', 'suspended'].includes(st)) items.push(['Mark as resigned', async () => {   // bl_disp_0605
+        if (!(await askConfirm('Mark ' + (pp.full_name || 'this dispatcher') + ' as resigned?', { body: 'Every assignment ENDS now, the LoadBoot phone line, mailbox and WhatsApp are released, the portal locks with a hello@loadboot.com rejoin note, the dispatcher gets the resignation email, and each carrier is re-opened to dispatchers who passed the skills test.', danger: true }))) return;
+        const note = await askReason('Resignation note (internal, e.g. date + what they said)'); if (note === null) return;
+        const r = await ccDispatcherResign(id, note).catch((e) => ({ error: humanizeError(e) }));
+        if (r && r.error) { toast(r.error); return; }
+        toast('✓ resigned' + (r.carriers ? ' — carrier re-opened: ' + r.carriers : '')); rerender();
+      }]);
       if (!['rejected', 'active'].includes(st)) items.push(['Reject application', () => act('reject', 'Reject this applicant?', 'Active assignments end. This is final for the application. The reason you type next is the e-mail the applicant receives.', true)]);
       items.push(['Edit terms', termsForm]);
       items.push(['Copy link to this page', () => { try { navigator.clipboard.writeText(location.origin + location.pathname + '#/dispatcher?id=' + id + '&tab=' + tab); toast('Link copied'); } catch (_) { toast(location.hash); } }]);
-      const dr = openDrawer('More — ' + (pp.full_name || ''), el('div', { style: 'display:flex;flex-direction:column;gap:8px' }, items.map(([l, fn]) => btn(l, () => { dr.close(); fn(); }, /Suspend|Reject/.test(l) ? 'danger' : ''))));
+      const dr = openDrawer('More — ' + (pp.full_name || ''), el('div', { style: 'display:flex;flex-direction:column;gap:8px' }, items.map(([l, fn]) => btn(l, () => { dr.close(); fn(); }, /Suspend|Reject|resigned/.test(l) ? 'danger' : ''))));
     }, 'dk', 'more', { title: 'More actions' });
   }
 

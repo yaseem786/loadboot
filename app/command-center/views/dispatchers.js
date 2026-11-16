@@ -18,7 +18,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm, openDrawer } from '../../shared/ui/components.js';
 import { STANDING_RULES } from '../../shared/dispatcher-rules.js';   // bl_disp_0555
 import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSop,
-         ccDispatcherUnassign, ccDispatcherUnreachableClear, getCarriersDirectory, ccCarrierPrefs,
+         ccDispatcherUnassign, ccDispatcherUnreachableClear, getCarriersDirectory, ccCarrierPrefs, ccDispatcherResign,
          ccDispatcherSetTerms, ccDispatcherBookings, ccDispatcherBookingDecide, ccDispatcherCommissionStatus, ccDispatcherCommissionList,
          ccDispatcherCommissionPay, ccDispatcherQueue, ccDispatcherResendIntro,
          ccDispatcherTestInvite, ccDispatcherTestReview, ccDispatcherTestScore,
@@ -780,6 +780,13 @@ export function renderDispatchers(host) {
       if (st === 'trial') { btns.push(actBtn('✓ Verify (passed trial)', 'verify', 'lb-btn-primary', 'Verify ' + (pp.full_name || 'this dispatcher') + '?', 'Check My KPIs first: ≥3 loads/week/truck, avg $/mi above the floor, 100% RC attached, ≥2 check calls per load, no dispatch-caused cancellations.')); hint = 'Trial runs on commission. Assign a carrier below (with the SOP) — the workspace opens the moment it is assigned. Verify only after the KPIs above the pass bar.'; }
       if (st === 'verified') btns.push(el('span', { class: 'cc-sub' }, 'Verified — assign a carrier below to activate.'));
       if (st === 'active' || st === 'verified' || st === 'trial') btns.push(actBtn('Suspend', 'suspend', 'lb-btn-danger', 'Suspend this dispatcher?', 'Every active assignment is PAUSED immediately: the workspace, documents, thread and bookings close. Carriers are told LoadBoot dispatch covers them.'));
+      if (['trial', 'verified', 'active', 'suspended'].includes(st)) btns.push(el('button', { class: 'lb-btn lb-btn-danger', style: 'margin:4px 6px 0 0', onClick: async () => {   // bl_disp_0605
+        if (!(await askConfirm('Mark ' + (pp.full_name || 'this dispatcher') + ' as resigned?', { body: 'Every assignment ENDS now, the LoadBoot phone line, mailbox and WhatsApp are released, the portal locks with a hello@loadboot.com rejoin note, the dispatcher gets the resignation email, and each carrier is re-opened to dispatchers who passed the skills test.', danger: true }))) return;
+        const note = await askReason('Resignation note (internal, e.g. date + what they said)'); if (note === null) return;
+        const r = await ccDispatcherResign(x.user_id, note).catch((e) => ({ error: humanizeError(e) }));
+        if (r && r.error) { toast(r.error); return; }
+        toast('✓ resigned' + (r.carriers ? ' — carrier re-opened: ' + r.carriers : '')); rerender();
+      } }, 'Mark as resigned'));
       if (st === 'suspended') btns.push(actBtn('Reinstate', 'reinstate', 'lb-btn-primary', 'Reinstate?', 'Paused assignments resume; returns to trial if the trial window is still open.'));
       if (!['rejected', 'active'].includes(st)) btns.push(actBtn('Reject', 'reject', 'lb-btn-danger', 'Reject this applicant?', 'Active assignments end. This is final for the application.'));
       return card([el('div', { style: 'font-weight:700;margin-bottom:4px' }, 'Verification pipeline'),

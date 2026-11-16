@@ -548,6 +548,8 @@ export const ccDispCallReasons = () => rpc('cc_disp_call_reasons');
 export const ccDispCallReasonSet = (p) => rpc('cc_disp_call_reason_set', { p: p ?? {} });
 export const carrierAvailabilityGate = () => rpc('carrier_availability_gate');
 export const ccDispatcherUnassign = (assignment, reason, pause) => rpc('cc_dispatcher_unassign', { p_assignment: assignment, p_reason: reason ?? null, p_pause: !!pause });
+// bl_disp_0605 — dispatcher resigned: ends carriers, releases line/mailbox/WhatsApp, locks portal (hello@), emails, re-opens carriers
+export const ccDispatcherResign = (user, note) => rpc('cc_dispatcher_resign', { p_user: user, p_note: note ?? null });
 // bl_disp_0534 — staff clear the carrier-unreachable flag by hand (the carrier reached LoadBoot somewhere the rule cannot see)
 export const ccDispatcherUnreachableClear = (assignment, note) => rpc('cc_dispatcher_unreachable_clear', { p_assignment: assignment, p_note: note ?? null });
 export const ccDispatcherSalarySet = (user, base, perTruck, currency) => rpc('cc_dispatcher_salary_set', { p_user: user, p_base: base, p_per_truck: perTruck, p_currency: currency ?? 'PKR' });
