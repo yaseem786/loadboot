@@ -437,6 +437,8 @@ function createMailbox(host) {
     const role = ROLE_IDS.includes(q.get('role')) ? q.get('role') : '';
     const listKey = [folder, label, search, role].join('|');
 
+    const mailboxChanged = label !== S.label;
+    if (mailboxChanged) S.roleCounts = null;
     S.folder = folder; S.label = label; S.q = search; S.role = role;
     if (document.activeElement !== searchIn) searchIn.value = search;
     searchPill.classList.toggle('has-q', !!search);
@@ -446,7 +448,7 @@ function createMailbox(host) {
       S.listKey = listKey; S.cursors = [null]; S.sel.clear(); S.threads = []; S.listLoaded = false;
       loadList({});
     }
-    if (!S.stats) loadStats();
+    if (!S.stats || mailboxChanged) loadStats();
 
     // leaving a conversation with an unsaved reply → keep it as a draft, like Gmail
     if (S.thread && S.thread !== thread) flushReply();
@@ -474,7 +476,12 @@ function createMailbox(host) {
     let s;
     try { s = await mailStats(); } catch (_) { return; }
     S.stats = s || {};
-    try { const [w, rc] = await Promise.all([mailWorkCounts(), mailRoleCounts(S.label || null)]); S.work = w || {}; S.roleCounts = (rc && rc.roles) || {}; } catch (_) { /* older server: no work queue counts */ }
+    const roleMailbox = S.label;
+    try {
+      const [work, roleCounts] = await Promise.all([mailWorkCounts(), mailRoleCounts(roleMailbox || null)]);
+      S.work = work || {};
+      if (S.label === roleMailbox) S.roleCounts = (roleCounts && roleCounts.roles) || {};
+    } catch (_) { /* older server: no work queue counts */ }
     if (!S.owners) { try { S.owners = await mailOwners(); } catch (_) { S.owners = []; } }
     S.canSend = !!(s && s.can_send);
     if (s && typeof s.can_draft === 'boolean') S.canDraft = s.can_draft;
@@ -538,7 +545,7 @@ function createMailbox(host) {
   function boxIcon(b, size = 18) { return el('span', { class: 'gm-boxic', style: '--bx:' + safeColor(b.color) }, ic(b.icon || 'label', size)); }
   function boxTag(addr) { const b = boxMeta(addr); return el('span', { class: 'gm-boxtag', style: '--bx:' + safeColor(b.color), title: b.mailbox }, b.label); }
   function sigHtml(addr) { const b = boxMeta(addr); return b && b.signature_html ? String(b.signature_html) : ''; }
-  function goBox(addr, onPick) { onPick && onPick(); nav({ label: addr, folder: WORK_IDS.includes(S.folder) ? S.folder : 'inbox', q: '', thread: null }); }
+  function goBox(addr, onPick) { onPick && onPick(); nav({ label: addr, folder: WORK_IDS.includes(S.folder) ? S.folder : 'inbox', role: '', q: '', thread: null }); }
 
   function folderCount(f) {
     const c = !f.count ? 0 : f.work ? Number((S.work || {})[f.count] || 0) : Number(scopeFolders()[f.count] || 0);
@@ -569,7 +576,7 @@ function createMailbox(host) {
       return el('a', {
         class: 'gm-nav gm-boxnav' + (S.label === addr ? ' active' : '') + (n ? ' bold' : ''),
         style: b ? '--bx:' + safeColor(b.color) : null,
-        href: hrefFor({ label: addr, folder: 'inbox', q: '', thread: null }),
+        href: hrefFor({ label: addr, folder: 'inbox', role: '', q: '', thread: null }),
         title: b ? b.mailbox + (b.purpose ? ' — ' + b.purpose : '') : 'Every mailbox you can open',
         onClick: (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); goBox(addr, onPick); },
       }, [b ? boxIcon(b, 16) : el('span', { class: 'gm-boxic all' }, ic('layers', 16)),
@@ -760,6 +767,9 @@ function createMailbox(host) {
     } else if (S.label && S.stats && !boxList().some(b => b.mailbox === S.label)) {
       mount(body, el('div', { class: 'gm-empty' }, ['You do not have access to ' + S.label + '. ',
         el('button', { type: 'button', class: 'gm-linkbtn', onClick: () => goBox('') }, 'Go to All inboxes')]));
+    } else if (!S.threads.length && S.role && !S.q) {
+      mount(body, el('div', { class: 'gm-empty' }, ['No conversations match this sender filter. ',
+        el('button', { type: 'button', class: 'gm-linkbtn', onClick: () => nav({ role: '', thread: null }) }, 'Show everyone')]));
     } else if (!S.threads.length) {
       mount(body, el('div', { class: 'gm-empty' }, S.q ? 'No messages matched your search.'
         : S.label ? 'Nothing in ' + folderTitle() + '.' : (EMPTY_TEXT[S.folder] || 'No conversations.')));
@@ -816,7 +826,7 @@ function createMailbox(host) {
       return el('a', {
         class: 'gm-bxp' + (active ? ' active' : ''), style: b ? '--bx:' + safeColor(b.color) : null,
         role: 'tab', 'aria-selected': active ? 'true' : 'false', title: b ? b.mailbox : 'All inboxes',
-        href: hrefFor({ label: addr, folder: 'inbox', q: '', thread: null }),
+        href: hrefFor({ label: addr, folder: 'inbox', role: '', q: '', thread: null }),
         onClick: (e) => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); goBox(addr); },
       }, [ic(b ? (b.icon || 'label') : 'layers', 16), el('span', null, b ? b.label : 'All inboxes'),
         n ? el('span', { class: 'gm-bxp-n' }, n > 99 ? '99+' : String(n)) : null]);
