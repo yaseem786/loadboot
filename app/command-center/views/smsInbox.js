@@ -203,13 +203,24 @@ export function smsInbox(opts) {
     const name = (t && t.contact_name) || m.contact_name || '';
     const bits = [name ? pretty(sel) : '', t && t.contact_kind ? (KIND[t.contact_kind] || t.contact_kind) : '', t && t.carrier ? t.carrier : ''].filter(Boolean).join(' · ');
     const mainLine = t && !t.owner_user_id && !t.line;
+    const consent = cur && cur.consent;
+    let consentBadge = el('span', { class: 'sx-pill m' }, 'Checking consent…');
+    if ((cur && cur.opted_out) || (consent && consent.opted_out)) {
+      consentBadge = el('span', { class: 'sx-pill r' }, 'Replied STOP');
+    } else if (consent && consent.consented) {
+      consentBadge = el('span', { class: 'sx-pill g', title: consent.method || '' }, 'Consent on file');
+    } else if (cur && cur.consentError) {
+      consentBadge = el('span', { class: 'sx-pill a' }, 'Consent check unavailable');
+    } else if (consent) {
+      consentBadge = el('span', { class: 'sx-pill a' }, 'No consent');
+    }
     mount(headEl, [
       el('button', { class: 'sx-back', type: 'button', 'aria-label': 'Back to conversations', onClick: () => { root.classList.remove('open'); } }, '←'),
       el('div', { class: 'who' }, [
         el('b', null, name || pretty(sel)),
         el('div', null, [bits, bits ? ' · ' : '', t ? (mainLine ? 'Main line' : t.line ? 'Line ' + pretty(t.line) : 'No line yet') : 'New conversation']),
         el('div', { style: 'margin-top:5px;display:flex;gap:5px;flex-wrap:wrap' }, [
-          cur && cur.opted_out ? el('span', { class: 'sx-pill r' }, 'Replied STOP') : t && t.consented ? el('span', { class: 'sx-pill g', title: t.consent_method || '' }, 'Consent on file') : el('span', { class: 'sx-pill a' }, 'No consent'),
+          consentBadge,
           t && t.status && t.status !== 'open' ? el('span', { class: 'sx-pill m' }, 'Closed') : null,
           t && t.broker_blocked ? el('span', { class: 'sx-pill a' }, 'Broker texting off') : null,
         ]),
@@ -253,10 +264,12 @@ export function smsInbox(opts) {
   function gate() {
     const t = cur && cur.thread;
     if (!cur) return null;
-    if (cur.opted_out) return ['r', 'This number replied STOP.', 'It cannot be texted again until it sends START. Call them instead.'];
+    if (cur.opted_out || (cur.consent && cur.consent.opted_out)) return ['r', 'This number replied STOP.', 'It cannot be texted again until it sends START. Call them instead.'];
     if (t && t.status !== 'open') return ['', 'This conversation is closed.', 'It is kept for the record; no new text can be sent on it.'];
     if (t && t.broker_blocked) return ['', 'Broker texting is not switched on.', 'Texts to brokers stay off until the broker campaign is approved (Phone settings).'];
-    if (!(t && t.consented)) return ['', 'No SMS consent on file for this number.', 'A text can only go out after they agreed to receive texts, or texted LoadBoot first.', 'consent'];
+    if (cur.consentError) return ['', 'Could not check SMS consent.', 'Retry the consent check before sending.', 'retry'];
+    if (!cur.consent) return ['', 'Checking SMS consent…', 'Please wait for the consent check.'];
+    if (!cur.consent.consented) return ['', 'No SMS consent on file for this number.', 'A text can only go out after they agreed to receive texts, or texted LoadBoot first.', 'consent'];
     return null;
   }
   function paintFoot(force) {
@@ -267,7 +280,7 @@ export function smsInbox(opts) {
     if (!cur) { mount(footEl, null); return; }
     if (g) {
       mount(footEl, el('div', { class: 'sx-gate ' + g[0] }, [el('b', null, g[1]), g[2],
-        g[3] === 'consent' ? el('div', { style: 'margin-top:8px' }, el('button', { class: 'sx-btn p', type: 'button', onClick: consentDrawer }, 'Record their consent')) : null]));
+        g[3] === 'retry' ? el('button', { class: 'sx-btn p', type: 'button', onClick: () => loadThread(false) }, 'Retry consent check') : g[3] === 'consent' ? el('div', { style: 'margin-top:8px' }, el('button', { class: 'sx-btn p', type: 'button', onClick: consentDrawer }, 'Record their consent')) : null]));
       return;
     }
     const pv = el('div', { class: 'sx-pv' });
@@ -294,7 +307,16 @@ export function smsInbox(opts) {
   async function loadThread(quiet) {
     const num = sel; if (!num) return;
     let t;
-    try { t = await dialerSmsThread(num); } catch (e) { t = { error: humanizeError(e) }; }
+    try {
+      const results = await Promise.allSettled([dialerSmsThread(num), dialerSmsConsentState(num)]);
+      if (results[0].status === 'rejected') throw results[0].reason;
+      t = results[0].value;
+      if (t && !t.error) {
+        const consent = results[1].status === 'fulfilled' ? results[1].value : null;
+        t.consent = consent && !consent.error && typeof consent.consented === 'boolean' ? consent : null;
+        t.consentError = !t.consent;
+      }
+    } catch (e) { t = { error: humanizeError(e) }; }
     if (dead || sel !== num) return;
     if (!t || t.error) { if (!quiet) { cur = null; curErr = (t && t.error) || 'Could not open that conversation.'; paintMsgs(true); paintFoot(true); } return; }
     const sigOf = (x) => (x && x.messages ? x.messages.map((m) => m.id + m.status).join() : '');
