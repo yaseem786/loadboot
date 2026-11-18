@@ -145,7 +145,7 @@ const EMPTY_TEXT = {
   needs_reply: 'Nobody is waiting on us. Every conversation from a person has been answered.',
   mine: 'Nothing assigned to you needs a reply.',
   late: 'Nothing is late. Every conversation is inside its reply time.',
-  waiting: 'Not waiting on anyone. Conversations land here after we reply; no answer in 3 business days brings them back as a follow-up.',
+  waiting: 'Not waiting on anyone. After a reply is sent, the conversation stays here until they write back. Look for the follow-up badge when a check-in is due.',
   done: 'Nothing marked done yet. Archive or Mark done closes a conversation.',
 };
 
@@ -878,7 +878,7 @@ function createMailbox(host) {
     const role = String(t.sender_role || '');
     if (t.has_in && role && !['internal', 'system', 'unknown'].includes(role)) chips.push(el('span', { class: 'gm-wk r-' + role, title: 'Sender: ' + role + (t.org_name ? ' · ' + t.org_name : '') }, t.org_name ? role + ' · ' + t.org_name : role));
     if (t.reply_due_at) chips.push(el('span', { class: 'gm-wk due l' + Number(t.sla_level || 0), title: 'Reply by ' + fmtDateTime(t.reply_due_at) + (t.urgency ? ' · ' + t.urgency : '') + (t.urgency_reason ? ' — ' + t.urgency_reason : '') }, (t.urgency === 'urgent' ? 'URGENT · ' : '') + dueText(t.reply_due_at)));
-    if (t.follow_up) chips.push(el('span', { class: 'gm-wk fu', title: 'We replied; no answer in 3 business days' }, 'follow up'));
+    if (t.follow_up) chips.push(el('span', { class: 'gm-wk fu', title: 'No reply yet. Consider following up.' }, 'follow up'));
     if (t.work_status === 'waiting' && S.folder !== 'waiting') chips.push(el('span', { class: 'gm-wk wait' }, 'waiting on them'));
     if (t.owner_name && t.owner_id && !(S.owners || []).some(o => o.me && o.id === t.owner_id)) chips.push(el('span', { class: 'gm-wk own', title: 'Owner' }, '@' + String(t.owner_name).split('@')[0]));
     if (t.viewing) chips.push(el('span', { class: 'gm-wk view', title: t.viewing + ' has this open' }, t.viewing.split('@')[0] + ' is reading'));
@@ -1409,7 +1409,7 @@ function createMailbox(host) {
     if (t && (t.reply_due_at || t.work_status)) {
       const line = [];
       if (t.work_status === 'open' && t.reply_due_at) line.push(el('span', { class: 'gm-wk due l' + Number(t.sla_level || 0) }, dueText(t.reply_due_at)), ' Reply by ' + fmtDateTime(t.reply_due_at));
-      else if (t.work_status === 'waiting') line.push(el('span', { class: 'gm-wk wait' }, 'waiting on them'), ' We replied; no answer in 3 business days brings it back.');
+      else if (t.work_status === 'waiting') line.push(el('span', { class: 'gm-wk wait' }, 'waiting on them'), ' A sent message is on file. A new incoming reply brings this back to Needs reply.');
       else if (t.work_status === 'done') line.push(el('span', { class: 'gm-wk' }, 'done'));
       if (t.urgency && t.work_status === 'open') line.push(' · ' + t.urgency + (t.urgency_reason ? ' — ' + t.urgency_reason : ''));
       if (t.owner_name) line.push(' · Owner: ' + t.owner_name);
