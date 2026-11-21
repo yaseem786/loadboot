@@ -1336,11 +1336,15 @@ async function agentPortal(user) {
       const docState = { cv: ps9.cv_doc || null, cvName: ps9.cv_name || null, idd: ps9.id_doc || null, iddName: ps9.id_name || null };
       const mkUpload = (type9, key9, nameKey9) => {
         const on9 = docState[nameKey9];
-        const st9 = h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:' + (on9 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink3,#94a3b8)') }, on9 ? '✓ ' + on9 + ' — already on file (upload again to replace)' : 'PDF, DOC or image · up to 25 MB');
-        const inp9 = h('input', { type: 'file', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png', class: 'cp-in', onChange: async (e9) => {
+        const st9 = h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:' + (on9 ? 'var(--lbc-x-ok,#4ade80)' : 'var(--lbc-x-ink3,#94a3b8)') }, on9 ? '✓ ' + on9 + ' — already on file (upload again to replace)' : 'PDF, JPG or PNG · up to 15 MB');
+        const inp9 = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png', class: 'cp-in', onChange: async (e9) => {
           const file9 = e9.target.files && e9.target.files[0]; if (!file9) return;
           st9.style.color = 'var(--lbc-x-ink3,#94a3b8)'; st9.textContent = 'Uploading…';
           try {
+            if (!['application/pdf', 'image/jpeg', 'image/png'].includes(file9.type)) {
+              throw new Error('Choose a PDF, JPG or PNG file. Save Word documents as PDF first.');
+            }
+            if (!file9.size || file9.size > 15 * 1024 * 1024) throw new Error('Choose a file between 1 byte and 15 MB.');
             const m9 = await uploadDocument(file9, type9); docState[key9] = m9.path; docState[nameKey9] = m9.fileName;
             // bl_disp_0460 — the ID used to live only in docState until Submit; a submit blocked by validation
             // threw it away while the green tick said "saved". Persist it on select when a profile exists

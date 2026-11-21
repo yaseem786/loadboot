@@ -5,6 +5,7 @@
 import { getClient } from './supabaseClient.js';
 import { syncShareOwner, clearSharedFiles } from './share-inbox.js';
 let logoutInProgress = false, authRevision = 0;
+let sessionUserId = null;
 // A manual token purge must also invalidate reads already running in sibling tabs.
 if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('storage', event => {
   if (event.newValue === null && event.key && (event.key.startsWith('lb-auth-') || (event.key.startsWith('sb-') && event.key.includes('auth-token')))) {
@@ -19,6 +20,7 @@ export async function getSession() {
   const { data, error } = await sb.auth.getSession();
   if (logoutInProgress || revision !== authRevision) return null;
   const session = error ? null : data.session || null;
+  if (session?.user?.id) sessionUserId = session.user.id;
   try { await syncShareOwner(session?.user?.id); } catch (_) {}
   if (logoutInProgress || revision !== authRevision) return null;
   return session;
@@ -206,8 +208,19 @@ export async function signOut(scope = 'global') {
 export async function onAuthChange(cb) {
   const sb = await getClient();
   const { data } = sb.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN') { logoutInProgress = false; authRevision++; }
-    if (event === 'SIGNED_OUT') authRevision++;
+    const userId = session?.user?.id;
+    if (event === 'SIGNED_IN' && userId) {
+      // Supabase also emits SIGNED_IN when it reconfirms the same session.
+      // Invalidate pending reads only when the account actually changes.
+      if (sessionUserId && sessionUserId !== userId) authRevision++;
+      logoutInProgress = false;
+    }
+    if (event === 'SIGNED_OUT') {
+      authRevision++;
+      sessionUserId = null;
+    } else if (userId && !logoutInProgress) {
+      sessionUserId = userId;
+    }
     syncShareOwner(logoutInProgress ? null : session?.user?.id).catch(() => {});
     cb(session);
   });
