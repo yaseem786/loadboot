@@ -87,6 +87,13 @@ const BOX_ADDRS = BOX_DEFAULTS.map(b => b.mailbox);
 // prefix from the registry; delivery-worker picks the identity by key). Anything else → hello@.
 const replyFromFor = (mailbox) => { const a = String(mailbox || '').toLowerCase(); return BOX_ADDRS.includes(a) ? a : 'hello@loadboot.com'; };
 const safeColor = (c) => /^#[0-9a-f]{6}$/i.test(String(c || '')) ? c : '#5f6368';
+const formatCount = (n) => Number(n || 0).toLocaleString('en-US');
+
+// The stats RPC counts conversations in Primary, regardless of the current list view.
+function inboxCounts(folders = {}) {
+  const unread = Number(folders.inbox_unread || 0);
+  return { unread, read: Math.max(0, Number(folders.inbox || 0) - unread) };
+}
 
 const FOLDERS = [
   { id: 'inbox',   label: 'Inbox',   ic: 'inbox', count: 'inbox_unread', bold: true },
@@ -340,7 +347,7 @@ function createMailbox(host) {
   };
   let composer = null;
   let openingDraft = null;
-  let loadSeq = 0, threadSeq = 0;
+  let loadSeq = 0, threadSeq = 0, statsSeq = 0;
 
   // ── skeleton ──
   const railHost = el('aside', { class: 'gm-rail' });
@@ -379,24 +386,29 @@ function createMailbox(host) {
   const onKey = (e) => keyboard(e);
   document.addEventListener('keydown', onKey);
 
-  // Live mail: a quiet refresh every minute while someone is looking at the first page of a list.
+  // Refresh counts while the mailbox is visible. Keep the current selection and
+  // scrollable pages stable, and refresh both the counts and list on return.
   const ping = setInterval(() => { if (root.isConnected && S.thread && document.visibilityState === 'visible') pingViewing(S.thread); }, 30000);
   async function pingViewing(key) {
     let r; try { r = await mailViewing(key); } catch (_) { return; }
     const other = r && r.other ? String(r.other) : null;
     if (key === S.thread && other !== S.viewing) { S.viewing = other; if (S.msgs) paintThread(); }
   }
-  const poll = setInterval(() => {
+  const refreshVisible = () => {
     if (!root.isConnected) { destroy(); return; }
-    if (document.visibilityState !== 'visible' || S.thread || S.sel.size || S.cursors.length > 1) return;
-    loadList({ silent: true }); loadStats();
-  }, 60000);
+    if (document.visibilityState !== 'visible') return;
+    if (!S.thread && !S.sel.size && S.cursors.length === 1) loadList({ silent: true });
+    loadStats();
+  };
+  const poll = setInterval(refreshVisible, 20000);
+  document.addEventListener('visibilitychange', refreshVisible);
 
   function destroy() {
     clearInterval(poll); clearInterval(ping);
     window.removeEventListener('resize', fit);
     window.removeEventListener('scroll', onScroll);
     document.removeEventListener('keydown', onKey);
+    document.removeEventListener('visibilitychange', refreshVisible);
     if (composer) { composer.destroyQuiet(); composer = null; }
     document.documentElement.classList.remove('gm-lock');
   }
@@ -473,21 +485,27 @@ function createMailbox(host) {
 
   // ── data ──
   async function loadStats() {
+    const seq = ++statsSeq;
+    const label = S.label;
     let s;
     try { s = await mailStats(); } catch (_) { return; }
+    if (seq !== statsSeq || !root.isConnected) return;
     S.stats = s || {};
-    const roleMailbox = S.label;
     try {
-      const [work, roleCounts] = await Promise.all([mailWorkCounts(), mailRoleCounts(roleMailbox || null)]);
-      S.work = work || {};
-      if (S.label === roleMailbox) S.roleCounts = (roleCounts && roleCounts.roles) || {};
+      const [w, rc] = await Promise.all([mailWorkCounts(), mailRoleCounts(label || null)]);
+      if (seq !== statsSeq || !root.isConnected) return;
+      S.work = w || {}; S.roleCounts = (rc && rc.roles) || {};
     } catch (_) { /* older server: no work queue counts */ }
-    if (!S.owners) { try { S.owners = await mailOwners(); } catch (_) { S.owners = []; } }
+    if (seq !== statsSeq || !root.isConnected) return;
+    if (!S.owners) {
+      try { S.owners = await mailOwners(); } catch (_) { S.owners = []; }
+      if (seq !== statsSeq || !root.isConnected) return;
+    }
     S.canSend = !!(s && s.can_send);
     if (s && typeof s.can_draft === 'boolean') S.canDraft = s.can_draft;
     paintRail();
     if (composer && composer.refreshFrom) composer.refreshFrom();
-    if (!S.thread) paintListView();   // permissions just arrived: the row hover actions depend on them
+    if (!S.thread) paintListView({ preserveScroll: true });
   }
 
   async function loadList(opts = {}) {
@@ -513,7 +531,7 @@ function createMailbox(host) {
     S.nextBefore = res?.next_before || null;
     S.listLoaded = true;
     for (const k of [...S.sel]) if (!S.threads.some(t => t.thread_key === k)) S.sel.delete(k);
-    if (!S.thread) paintMain();
+    if (!S.thread) paintListView({ preserveScroll: !!opts.silent });
   }
 
   function reloadAll() { S.listLoaded = false; S.stats = null; cardCache.clear(); loadList({}); loadStats(); }
@@ -545,7 +563,8 @@ function createMailbox(host) {
   function boxIcon(b, size = 18) { return el('span', { class: 'gm-boxic', style: '--bx:' + safeColor(b.color) }, ic(b.icon || 'label', size)); }
   function boxTag(addr) { const b = boxMeta(addr); return el('span', { class: 'gm-boxtag', style: '--bx:' + safeColor(b.color), title: b.mailbox }, b.label); }
   function sigHtml(addr) { const b = boxMeta(addr); return b && b.signature_html ? String(b.signature_html) : ''; }
-  function goBox(addr, onPick) { onPick && onPick(); nav({ label: addr, folder: WORK_IDS.includes(S.folder) ? S.folder : 'inbox', role: '', q: '', thread: null }); }
+  function inboxRoute(addr) { return { label: addr, folder: 'inbox', q: '', role: '', thread: null }; }
+  function goBox(addr, onPick) { onPick && onPick(); nav(inboxRoute(addr)); }
 
   function folderCount(f) {
     const c = !f.count ? 0 : f.work ? Number((S.work || {})[f.count] || 0) : Number(scopeFolders()[f.count] || 0);
@@ -576,8 +595,8 @@ function createMailbox(host) {
       return el('a', {
         class: 'gm-nav gm-boxnav' + (S.label === addr ? ' active' : '') + (n ? ' bold' : ''),
         style: b ? '--bx:' + safeColor(b.color) : null,
-        href: hrefFor({ label: addr, folder: 'inbox', role: '', q: '', thread: null }),
-        title: b ? b.mailbox + (b.purpose ? ' — ' + b.purpose : '') : 'Every mailbox you can open',
+        href: hrefFor(inboxRoute(addr)),
+        title: (b ? b.mailbox : 'All inboxes') + (S.stats ? ' · ' + formatCount(n) + ' unread in Primary' : ''),
         onClick: (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); goBox(addr, onPick); },
       }, [b ? boxIcon(b, 16) : el('span', { class: 'gm-boxic all' }, ic('layers', 16)),
         el('span', { class: 'gm-nav-t' }, b ? b.label : 'All inboxes'),
@@ -686,7 +705,10 @@ function createMailbox(host) {
     const start = S.total ? ((S.cursors.length - 1) * PAGE + 1) : 0;
     const end = (S.cursors.length - 1) * PAGE + S.threads.length;
     const right = el('div', { class: 'gm-pager' }, [
-      el('span', { class: 'gm-range' }, S.total ? start.toLocaleString('en-US') + '–' + end.toLocaleString('en-US') + ' of ' + S.total.toLocaleString('en-US') : ''),
+      el('span', { class: 'gm-range' }, S.listLoaded && !S.listError ? [
+        el('b', { class: 'gm-range-scope' }, folderTitle()),
+        ' · ' + (S.total ? formatCount(start) + '–' + formatCount(end) + ' of ' + formatCount(S.total) : '0') + ' conversations',
+      ] : null),
       ib('left', 'Newer', () => { if (S.cursors.length > 1) { S.cursors.pop(); S.sel.clear(); loadList({}); } }, { disabled: S.cursors.length <= 1 }),
       ib('right', 'Older', () => { if (S.nextBefore) { S.cursors.push(S.nextBefore); S.sel.clear(); loadList({}); } }, { disabled: !S.nextBefore }),
     ]);
@@ -757,7 +779,9 @@ function createMailbox(host) {
     return wrap;
   }
 
-  function paintListView() {
+  function paintListView(opts = {}) {
+    const scrollTop = opts.preserveScroll ? mainHost.querySelector('.gm-list')?.scrollTop : null;
+    const boxesLeft = opts.preserveScroll ? mainHost.querySelector('.gm-boxbar')?.scrollLeft : null;
     fab.hidden = !!composer;
     const body = el('div', { class: 'gm-list', role: 'grid', 'aria-label': folderTitle() });
     if (!S.listLoaded) {
@@ -788,6 +812,11 @@ function createMailbox(host) {
       ]),
       body,
     ]);
+    if (scrollTop != null) body.scrollTop = scrollTop;
+    if (boxesLeft != null) {
+      const bar = mainHost.querySelector('.gm-boxbar');
+      if (bar) bar.scrollLeft = boxesLeft;
+    }
   }
 
   // bl_mail_0577: who sent it — one chip per sender role with its unread count; a click filters the list.
@@ -818,23 +847,26 @@ function createMailbox(host) {
   // Mailbox switcher above the list (every width; on phones it is THE switcher) + the open mailbox's banner.
   function boxBar() {
     const boxes = boxList();
-    if (boxes.length < 2 && !S.label) return null;
+    if (!boxes.length) return null;
     const pill = (b) => {
       const addr = b ? b.mailbox : '';
       const active = S.label === addr;
-      const n = Number((b ? (b.folders || {}) : ((S.stats && S.stats.folders) || {})).inbox_unread || 0);
+      const counts = inboxCounts(b ? b.folders : S.stats?.folders);
       return el('a', {
         class: 'gm-bxp' + (active ? ' active' : ''), style: b ? '--bx:' + safeColor(b.color) : null,
-        role: 'tab', 'aria-selected': active ? 'true' : 'false', title: b ? b.mailbox : 'All inboxes',
-        href: hrefFor({ label: addr, folder: 'inbox', role: '', q: '', thread: null }),
+        role: 'tab', 'aria-selected': active ? 'true' : 'false',
+        title: (b ? b.mailbox : 'All inboxes') + ' · Primary inbox conversations',
+        href: hrefFor(inboxRoute(addr)),
         onClick: (e) => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); goBox(addr); },
       }, [ic(b ? (b.icon || 'label') : 'layers', 16), el('span', null, b ? b.label : 'All inboxes'),
-        n ? el('span', { class: 'gm-bxp-n' }, n > 99 ? '99+' : String(n)) : null]);
+        S.stats ? el('span', { class: 'gm-bxp-n' }, formatCount(counts.unread) + ' unread') : null,
+        S.stats ? el('span', { class: 'gm-bxp-read' }, formatCount(counts.read) + ' read') : null]);
     };
     const cur = S.label ? boxList().find(b => b.mailbox === S.label) : null;
     let banner = null;
     if (cur) {
       const f = cur.folders || {};
+      const counts = inboxCounts(f);
       const kpi = (n, label) => el('span', { class: 'gm-boxban-kpi' }, [el('b', null, Number(n || 0).toLocaleString('en-US')), ' ' + label]);
       banner = el('div', { class: 'gm-boxban', style: '--bx:' + safeColor(cur.color) }, [
         boxIcon(cur, 22),
@@ -844,13 +876,14 @@ function createMailbox(host) {
           !cur.last_in_at ? el('div', { class: 'gm-boxban-p gm-boxban-warn' },
             'No mail has reached ' + cur.mailbox + ' yet. It will appear here once that address forwards to in.loadboot.com. Sent mail and drafts already work.') : null,
         ]),
-        el('div', { class: 'gm-boxban-k' }, [kpi(f.inbox_unread, 'unread'), kpi(f.inbox, 'in inbox'), kpi(f.drafts, 'drafts')]),
+        S.stats ? el('div', { class: 'gm-boxban-k', 'aria-label': 'Mailbox totals' }, [kpi(counts.unread, 'unread'), kpi(counts.read, 'read'), kpi(f.drafts, 'drafts')]) : null,
         S.canDraft && cur.known !== false ? el('button', { type: 'button', class: 'gm-boxban-cmp', onClick: () => openCompose({ from: cur.mailbox }) },
           [ic('pencil', 16), el('span', null, 'Write from ' + cur.label)]) : null,
       ]);
     }
     return el('div', { class: 'gm-boxbar-wrap' }, [
-      boxes.length >= 2 ? el('div', { class: 'gm-boxbar', role: 'tablist', 'aria-label': 'Mailboxes' }, [pill(null), ...boxes.map(pill)]) : null,
+      el('div', { class: 'gm-boxbar', role: 'tablist', 'aria-label': 'Mailboxes' },
+        boxes.length === 1 ? [pill(S.label ? boxes[0] : null)] : [pill(null), ...boxes.map(pill)]),
       banner,
     ]);
   }
@@ -2254,6 +2287,7 @@ function injectStyleOnce() {
 .gm-cb{width:18px;height:18px;margin:0;accent-color:#444746;cursor:pointer}
 .gm-pager{display:flex;align-items:center;gap:0;color:var(--gm-mut);font-size:12px;flex:none}
 .gm-range{padding:0 8px;white-space:nowrap}
+.gm-range-scope{color:var(--gm-ink);font-weight:600}
 .gm-drop{position:relative;display:inline-flex}
 .gm-menu{position:absolute;top:100%;left:0;z-index:40;min-width:180px;background:#fff;border-radius:4px;padding:6px 0;box-shadow:0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.12),0 1px 5px 0 rgba(0,0,0,.2)}
 .gm-menu-up{top:auto;bottom:100%}
@@ -2530,7 +2564,7 @@ html.gm-lock,html.gm-lock body{overflow:hidden}
 .gm-boxtag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--bx)}
 .gm-th-subj .gm-boxtag{font-size:12px;vertical-align:4px;margin-left:4px}
 .gm-boxbar-wrap{flex:none;border-bottom:1px solid var(--gm-line)}
-.gm-boxbar{display:flex;gap:8px;padding:10px 16px;overflow-x:auto;scrollbar-width:none}
+.gm-boxbar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;overflow-x:auto;scrollbar-width:none}
 .gm-boxbar::-webkit-scrollbar{display:none}
 .gm-bxp{--bx:#444746;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 12px;border-radius:17px;border:1px solid #dadce0;
   background:#fff;color:#1f1f1f;text-decoration:none;font:500 14px "Google Sans",Roboto,Arial,sans-serif;white-space:nowrap;flex:none;transition:background .15s,border-color .15s,box-shadow .15s}
@@ -2542,6 +2576,8 @@ html.gm-lock,html.gm-lock body{overflow:hidden}
 .gm-bxp-n{min-width:20px;height:20px;padding:0 6px;border-radius:10px;font-size:12px;line-height:20px;text-align:center;font-weight:700;
   background:color-mix(in srgb,var(--bx) 14%,#fff);color:color-mix(in srgb,var(--bx) 85%,#000)}
 .gm-bxp.active .gm-bxp-n{background:rgba(255,255,255,.25);color:#fff}
+.gm-bxp-read{color:var(--gm-mut);font-size:12px}
+.gm-bxp.active .gm-bxp-read{color:inherit}
 .gm-boxban{--bx:#0b57d0;display:flex;align-items:center;gap:14px;margin:0 16px 12px;padding:12px 16px;border-radius:14px;
   background:linear-gradient(100deg,color-mix(in srgb,var(--bx) 11%,#fff),color-mix(in srgb,var(--bx) 3%,#fff));border:1px solid color-mix(in srgb,var(--bx) 22%,#fff)}
 .gm-boxban .gm-boxic{width:44px;height:44px;border-radius:12px;background:var(--bx);color:#fff;box-shadow:0 2px 6px color-mix(in srgb,var(--bx) 35%,transparent)}
@@ -2565,8 +2601,9 @@ html.gm-lock,html.gm-lock body{overflow:hidden}
 @media (max-width:1100px){.gm-boxban-k{display:none}}
 @media (max-width:780px){
   .gm-boxbar-wrap{border-bottom:0}
-  .gm-boxbar{padding:4px 12px 8px}
+  .gm-boxbar{padding:4px 12px 8px;flex-wrap:nowrap}
   .gm-bxp{height:32px}
+  .gm-range-scope{display:none}
   .gm-boxban{margin:0 12px 8px;padding:10px 12px;gap:10px;flex-wrap:wrap}
   .gm-boxban .gm-boxic{width:36px;height:36px}
   .gm-boxban-cmp{width:100%;justify-content:center}
